@@ -2,7 +2,8 @@
 
 module Transform (transform) where
 
-import Data.Char
+import Util
+
 import Data.List
 import Data.Maybe
 import Data.FileEmbed
@@ -65,5 +66,3 @@ predicate index classesWithSubclasses associations = "pred cd" ++ index ++ " {\n
         makeAssoc att from name to (low, Nothing) = "  ObjL" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ "]\n"
         makeAssoc att from name to (low, Just up) = "  ObjLU" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ ", " ++ show up ++ "]\n"
         subsCD = "SubsCD" ++ index
-
-firstLower (c:cs) | isUpper c = toLower c : cs
