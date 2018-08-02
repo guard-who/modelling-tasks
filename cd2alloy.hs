@@ -7,23 +7,25 @@ import Data.Time.LocalTime
 
 import System.Environment (getArgs)
 
-run mfoname template index input = do
+run :: Maybe FilePath -> Bool -> String -> String -> IO ()
+run output template index input = do
   -- putStrLn ("INPUT:\n\n" ++ show input ++ "\n")
   let tokens = lexer input
   -- putStrLn ("TOKENS:\n\n" ++ show tokens ++ "\n")
   let syntax = parser tokens
   -- putStrLn ("SYNTAX:\n\n" ++ show syntax ++ "\n")
   time <- getZonedTime
-  let result = transform time template index syntax
-  case mfoname of
-    Just fo -> writeFile fo result
+  let result = transform (show time) template index syntax
+  case output of
+    Just file -> writeFile file result >> putStrLn ("Output written to " ++ file)
     Nothing -> putStrLn result
 
+main :: IO ()
 main = do
   args <- getArgs
   case args of
    [] -> getContents >>= run Nothing False ""
-   [fname] -> readFile fname >>= run Nothing False ""
-   [fname, foname] -> readFile fname >>= run (Just foname) True ""
-   [fname, foname, index] -> readFile fname >>= run (Just foname) True (show (read index :: Int))
+   [input] -> readFile input >>= run Nothing False ""
+   [input, output] -> readFile input >>= run (Just output) True ""
+   [input, output, index] -> readFile input >>= run (Just output) True (show (read index :: Int))
    _ -> error "zu viele Parameter"

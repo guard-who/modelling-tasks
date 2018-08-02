@@ -8,12 +8,13 @@ import Data.List
 import Data.Maybe
 import Data.FileEmbed
 
+transform :: String -> Bool -> String -> ([(String, Maybe String)], [(String, (Int, Maybe Int), String, String, (Int, Maybe Int))]) -> String
 transform time template index (classes, associations) = unlines $
   concat
   [
     [ "// Alloy Model for CD" ++ index
     , "// Produced by Haskell simulation of Eclipse plugin"
-    , "// Generated: " ++ show time
+    , "// Generated: " ++ time
     , ""
     , "module umlp2alloy/CD" ++ index ++ "Module"
     , ""
@@ -51,14 +52,18 @@ transform time template index (classes, associations) = unlines $
       | elem name seen = []
       | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
 
+associationSigs :: [(String, a, b, c, d)] -> String
 associationSigs = concatMap (\(name,_,_,_,_) -> "one sig " ++ firstLower name ++ " extends FName {}\n")
 
+classSigs :: [String] -> String
 classSigs = concatMap (\name -> "sig " ++ name ++ " extends Obj {}\n")
 
+subTypes :: String -> [(String, [String])] -> String
 subTypes index = concatMap (\(name, subclasses) -> "fun " ++ name ++ subsCD ++ ": set Obj {\n  " ++ intercalate " + " subclasses ++ "\n}\n")
   where
     subsCD = "SubsCD" ++ index
 
+predicate :: String -> [(String, [String])] -> [(String, (Int, Maybe Int), String, String, (Int, Maybe Int))] -> String
 predicate index classesWithSubclasses associations = "pred cd" ++ index ++ " {\n\n" ++ objFNames ++ "\n  // Associations\n" ++ objAttribs ++ "\n}"
   where classes = map fst classesWithSubclasses
         objFNames = concatMap (\name -> "  // Definition of class " ++ name ++ "\n  ObjFNames[" ++ name ++ ", " ++ intercalate " + " (concatMap (\from -> map (\(assoc,_,_,_,_) -> firstLower assoc) (filter (\(_,_,this,_,_) -> from == this) associations)) (filter ((name `elem`) . fromJust . flip lookup classesWithSubclasses) classes) ++ ["none"]) ++ "]\n") classes
