@@ -13,3 +13,6 @@ firstUpper (c:cs) = toUpper c : cs
 
 underlinedLabel :: String -> Dot.Attribute
 underlinedLabel s = Label (HtmlLabel (Text [HTML.Format HTML.Underline [Str (pack s)]]))
+
+emptyArr :: ArrowType
+emptyArr = AType [(openMod, Normal)]

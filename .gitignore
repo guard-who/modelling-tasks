@@ -6,3 +6,4 @@ Parser.hs
 Parser.info
 cd2alloy.exe
 instance2pic.exe
+cd2pic.exe
