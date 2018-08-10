@@ -57,6 +57,8 @@ Multiplicity
     { ($1, Just $3) }
   | number ".." "*"
     { ($1, Nothing) }
+  | "*"
+    { (0, Nothing) }
 
 {
 
