@@ -18,7 +18,8 @@ data Connection = Inheritance | Assoc (Int, Maybe Int) (Int, Maybe Int)
 connectionArrow :: Connection -> [Attribute]
 connectionArrow Inheritance = [arrowTo emptyArr]
 connectionArrow (Assoc from to) = [ArrowHead noArrow, TailLabel (mult from), HeadLabel (mult to)]
-  where mult (l, Nothing) = toLabelValue (show l ++ "..*")
+  where mult (0, Nothing) = toLabelValue ""
+        mult (l, Nothing) = toLabelValue (show l ++ "..*")
         mult (l, Just u) | l == u = toLabelValue l
                          | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
