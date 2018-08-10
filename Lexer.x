@@ -20,7 +20,7 @@ $white+ ;
 
 "->" | ".." | ";" | "*" | "[" | "]" | "{" | "}" { \s -> Symbol s }
 
-$letter ($letter | ".")* { \s -> Id s }
+$letter ($letter | $digit | ".")* { \s -> Id s }
 
 $digit+ { \s -> Num (read s) }
 
