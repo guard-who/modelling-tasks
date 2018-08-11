@@ -1,14 +1,17 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, StandaloneDeriving #-}
 
 module Transform (transform) where
 
 import Util
+import Types
 
 import Data.List
 import Data.Maybe
 import Data.FileEmbed
 
-transform :: String -> Bool -> String -> ([(String, Maybe String)], [(String, (Int, Maybe Int), String, String, (Int, Maybe Int))]) -> String
+deriving instance Eq AssociationType
+
+transform :: String -> Bool -> String -> ([(String, Maybe String)], [Association]) -> String
 transform time template index (classes, associations) = unlines $
   concat
   [
@@ -23,22 +26,23 @@ transform time template index (classes, associations) = unlines $
   | template ]
   ++
   [ "// Concrete names of fields"
-  , associationSigs associations
+  , associationSigs associations -- Figure 2.1, Rule 3, part 2
   , "// Classes"
-  , classSigs classNames
+  , classSigs classNames -- Figure 2.1, Rule 1, part 1
   , "///////////////////////////////////////////////////"
   , "// CD" ++ index
   , "///////////////////////////////////////////////////"
   , ""
   , "// Types wrapping subtypes"
-  , subTypes index classesWithSubclasses
+  , subTypes index classesWithSubclasses -- Figure 2.1, Rule 1, part 2
+  , "// Types wrapping composite structures and field names"
+  , compositesAndFieldNames index compositions compositionParts -- Figure 2.1, Rule 6
   , "// Relations"
-  , predicate index classesWithSubclasses associations
+  , predicate index classesWithSubclasses associations compositionParts
   ]
   ++
   if template then
-    [ ""
-    , "///////////////////////////////////////////////////"
+    [ "///////////////////////////////////////////////////"
     , "// Run commands"
     , "///////////////////////////////////////////////////"
     , ""
@@ -51,9 +55,11 @@ transform time template index (classes, associations) = unlines $
     subs seen name
       | elem name seen = []
       | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
+    compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
+    compositionParts = nub (map (\(_,_,_,_,to,_) -> to) compositions)
 
-associationSigs :: [(String, a, b, c, d)] -> String
-associationSigs = concatMap (\(name,_,_,_,_) -> "one sig " ++ firstLower name ++ " extends FName {}\n")
+associationSigs :: [Association] -> String
+associationSigs = concatMap (\(_,name,_,_,_,_) -> "one sig " ++ firstLower name ++ " extends FName {}\n")
 
 classSigs :: [String] -> String
 classSigs = concatMap (\name -> "sig " ++ name ++ " extends Obj {}\n")
@@ -63,11 +69,26 @@ subTypes index = concatMap (\(name, subclasses) -> "fun " ++ name ++ subsCD ++ "
   where
     subsCD = "SubsCD" ++ index
 
-predicate :: String -> [(String, [String])] -> [(String, (Int, Maybe Int), String, String, (Int, Maybe Int))] -> String
-predicate index classesWithSubclasses associations = "pred cd" ++ index ++ " {\n\n" ++ objFNames ++ "\n  // Associations\n" ++ objAttribs ++ "\n}"
+compositesAndFieldNames :: String -> [Association] -> [String] -> String
+compositesAndFieldNames index compositions = concatMap (\part -> let partCompositions = filter (\(_,_,_,_,to,_) -> to == part) compositions in "fun " ++ part ++ "CompositesCD" ++ index ++ ": set Obj {\n  " ++ intercalate " + " (map (\(_,_,_,from,_,_) -> from ++ subsCD) partCompositions) ++ "\n}\nfun " ++ part ++ "CompFieldNamesCD" ++ index ++ ": set FName {\n  " ++ intercalate " + " (map (\(_,name,_,_,_,_) -> firstLower name) partCompositions) ++ "\n}\n")
+  where
+    subsCD = "SubsCD" ++ index
+
+predicate :: String -> [(String, [String])] -> [Association] -> [String] -> String
+predicate index classesWithSubclasses associations compositionParts = unlines
+  [ "pred cd" ++ index ++ " {"
+  , ""
+  , objFNames -- Figure 2.2, Rule 2, relevant portion
+  , "  // Associations"
+  , objAttribs -- Figure 2.3, Rule A3
+  , "  // Compositions"
+  , compositions -- Figure 2.2, Rule 4
+  , "}"
+  ]
   where classes = map fst classesWithSubclasses
-        objFNames = concatMap (\name -> "  // Definition of class " ++ name ++ "\n  ObjFNames[" ++ name ++ ", " ++ intercalate " + " (concatMap (\from -> map (\(assoc,_,_,_,_) -> firstLower assoc) (filter (\(_,_,this,_,_) -> from == this) associations)) (filter ((name `elem`) . fromJust . flip lookup classesWithSubclasses) classes) ++ ["none"]) ++ "]\n") classes
-        objAttribs = concatMap (\(name, mult1, class1, class2, mult2) -> makeAssoc "Attrib" class1 name class2 mult2 ++ makeAssoc "" class2 name class1 mult1) associations
+        objFNames = concatMap (\name -> "  // Content of class " ++ name ++ "\n  ObjFNames[" ++ name ++ ", " ++ intercalate " + " (concatMap (\from -> map (\(_,assoc,_,_,_,_) -> firstLower assoc) (filter (\(_,_,_,this,_,_) -> from == this) associations)) (filter ((name `elem`) . fromJust . flip lookup classesWithSubclasses) classes) ++ ["none"]) ++ "]\n") classes
+        objAttribs = concatMap (\(_, name, mult1, class1, class2, mult2) -> makeAssoc "Attrib" class1 name class2 mult2 ++ makeAssoc "" class2 name class1 mult1) associations
         makeAssoc att from name to (low, Nothing) = "  ObjL" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ "]\n"
         makeAssoc att from name to (low, Just up) = "  ObjLU" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ ", " ++ show up ++ "]\n"
         subsCD = "SubsCD" ++ index
+        compositions = concatMap (\part -> "  Composition[" ++ part ++ "CompositesCD" ++ index ++ ", " ++ part ++ "CompFieldNamesCD" ++ index ++ ", " ++ part ++ "]\n") compositionParts

@@ -16,7 +16,7 @@ $letter = [a-zA-Z]
 
 $white+ ;
 
-"package" | "classdiagram" | "class" | "extends" | "association" { \s -> Keyword s }
+"package" | "classdiagram" | "class" | "extends" | "association" | "aggregation" | "composition" { \s -> Keyword s }
 
 "->" | ".." | ";" | "*" | "[" | "]" | "{" | "}" { \s -> Symbol s }
 

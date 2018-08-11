@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Util
+import Types
 import Lexer (lexer)
 import Parser (parser)
 
@@ -13,15 +14,26 @@ import Data.GraphViz.Attributes.Complete
 import System.Environment (getArgs)
 import System.FilePath (dropExtension)
 
-data Connection = Inheritance | Assoc (Int, Maybe Int) (Int, Maybe Int)
+data Connection = Inheritance | Assoc AssociationType (Int, Maybe Int) (Int, Maybe Int)
 
 connectionArrow :: Connection -> [Attribute]
 connectionArrow Inheritance = [arrowTo emptyArr]
-connectionArrow (Assoc from to) = [ArrowHead noArrow, TailLabel (mult from), HeadLabel (mult to)]
-  where mult (0, Nothing) = toLabelValue ""
-        mult (l, Nothing) = toLabelValue (show l ++ "..*")
-        mult (l, Just u) | l == u = toLabelValue l
-                         | otherwise = toLabelValue (show l ++ ".." ++ show u)
+connectionArrow (Assoc Composition from to) =
+  case from of
+    (1, Just 1) -> arrow Composition ++ [HeadLabel (mult to)]
+    (0, Just 1) -> arrow Composition ++ [TailLabel (mult from), HeadLabel (mult to)]
+connectionArrow (Assoc a from to) = arrow a ++ [TailLabel (mult from), HeadLabel (mult to)]
+
+arrow :: AssociationType -> [Attribute]
+arrow Association = [ArrowHead noArrow]
+arrow Aggregation = [arrowFrom oDiamond, edgeEnds Back]
+arrow Composition = [arrowFrom diamond, edgeEnds Back]
+
+mult :: (Int, Maybe Int) -> Label
+mult (0, Nothing) = toLabelValue ""
+mult (l, Nothing) = toLabelValue (show l ++ "..*")
+mult (l, Just u) | l == u    = toLabelValue l
+                 | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
 draw :: FilePath -> GraphvizOutput -> String -> IO ()
 draw file format input = do
@@ -33,7 +45,7 @@ draw file format input = do
   let (classes, associations) = syntax
   let theNodes = map fst classes
   let inhEdges = mapMaybe (\(from,mto) -> fmap (\to -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Inheritance)) mto) classes
-  let assocEdges = map (\(_,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc m1 m2)) associations
+  let assocEdges = map (\(a,_,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a m1 m2)) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [toLabel l, shape BoxShape], fmtEdge = \(_,_,l) -> connectionArrow l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"

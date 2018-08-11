@@ -17,6 +17,8 @@ import Types
   class        { Keyword "class" }
   extends      { Keyword "extends" }
   association  { Keyword "association" }
+  aggregation  { Keyword "aggregation" }
+  composition  { Keyword "composition" }
 
   "->" { Symbol "->" }
   ".." { Symbol ".." }
@@ -28,7 +30,9 @@ import Types
   "]" { Symbol "]" }
 
   name { Id $$ }
-  number { Num $$ }
+  "0" { Num 0 }
+  "1" { Num 1 }
+  pluralNumber { Num $$ }
 
 %%
 
@@ -46,19 +50,41 @@ Classes
 
 Associations
   : association name "[" Multiplicity "]" name "->" name "[" Multiplicity "]" ";" Associations
-    { [ ($2, $4, $6, $8, $10) ] ++ $13 }
+    { [ (Association, $2, $4, $6, $8, $10) ] ++ $13 }
+  | aggregation name "[" Multiplicity "]" name "->" name "[" Multiplicity "]" ";" Associations
+    { [ (Aggregation, $2, $4, $6, $8, $10) ] ++ $13 }
+  | composition name "[" CompositionMultiplicity "]" name "->" name "[" Multiplicity "]" ";" Associations
+    { [ (Composition, $2, $4, $6, $8, $10) ] ++ $13 }
   | {- empty -}
     { [] }
 
 Multiplicity
-  : number
+  : CompositionMultiplicity
+    { $1 }
+  | pluralNumber
     { ($1, Just $1) }
-  | number ".." number
+  | "0" ".." pluralNumber
+    { (0, Just $3) }
+  | "1" ".." pluralNumber
+    { (1, Just $3) }
+  | pluralNumber ".." pluralNumber
     { ($1, Just $3) }
-  | number ".." "*"
+  | "0" ".." "*"
+    { (0, Nothing) }
+  | "1" ".." "*"
+    { (1, Nothing) }
+  | pluralNumber ".." "*"
     { ($1, Nothing) }
   | "*"
     { (0, Nothing) }
+
+CompositionMultiplicity
+  : "1"
+    { (1, Just 1) }
+  | "1" ".." "1"
+    { (1, Just 1) }
+  | "0" ".." "1"
+    { (0, Just 1) }
 
 {
 
