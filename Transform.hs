@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Transform (transform) where
 
@@ -8,8 +8,6 @@ import Types
 import Data.List
 import Data.Maybe
 import Data.FileEmbed
-
-deriving instance Eq AssociationType
 
 transform :: String -> Bool -> String -> ([(String, Maybe String)], [Association]) -> String
 transform time template index (classes, associations) = unlines $

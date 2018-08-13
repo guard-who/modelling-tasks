@@ -10,3 +10,4 @@ data Token
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
 
 data AssociationType = Association | Aggregation | Composition
+  deriving Eq
