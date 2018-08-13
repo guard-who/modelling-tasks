@@ -16,7 +16,7 @@ draw file format input = do
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
   let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
   let theEdges = map ((\[from,_,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), ())) . splitOn "->") $
-                 splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine))))
+                 filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   let graph = undir (mkGraph (zip [0..] theNodes) theEdges) :: Gr String ()
   let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [underlinedLabel (firstLower l ++ " : " ++ takeWhile (/= '$') l), shape BoxShape] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
