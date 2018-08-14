@@ -90,5 +90,5 @@ predicate index classesWithSubclasses associations compositionParts = unlines
         objAttribs = concatMap (\(_, name, mult1, class1, class2, mult2) -> makeAssoc "Attrib" class1 name class2 mult2 ++ makeAssoc "" class2 name class1 mult1) associations
         makeAssoc att from name to (low, Nothing) = "  ObjL" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ "]\n"
         makeAssoc att from name to (low, Just up) = "  ObjLU" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ ", " ++ show up ++ "]\n"
+        compositions = concatMap (\part -> "  Composition[" ++ part ++ "CompositesCD" ++ index ++ ", " ++ part ++ "CompFieldNamesCD" ++ index ++ ", " ++ part ++ subsCD ++ "]\n") compositionParts
         subsCD = "SubsCD" ++ index
-        compositions = concatMap (\part -> "  Composition[" ++ part ++ "CompositesCD" ++ index ++ ", " ++ part ++ "CompFieldNamesCD" ++ index ++ ", " ++ part ++ "]\n") compositionParts
