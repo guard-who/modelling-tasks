@@ -44,7 +44,7 @@ pred ObjU[objs: set Obj, fName:one FName, fType: set Obj, up: Int] {
 
 pred Composition[left: set Obj, lFName: some FName, right: set Obj] {
 	// all l1, l2: left | (# {l1.get[lFName] & l2.get[lFName]} > 0) => l1=l2
-	all r: right | # { l: left, lF: lFName | r in l.get[lF]} = 1
+	all r: right | # { l: left, lF: lFName | r in l.get[lF]} =< 1
 }
 
 fact NonEmptyInstancesOnly {
