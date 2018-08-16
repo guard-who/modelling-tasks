@@ -34,9 +34,9 @@ transform time template index (classes, associations) = unlines $
   , "// Types wrapping subtypes"
   , subTypes index classesWithSubclasses -- Figure 2.1, Rule 1, part 2
   , "// Types wrapping composite structures and field names"
-  , compositesAndFieldNames index compositions compositionParts -- Figure 2.1, Rule 6
+  , compositesAndFieldNames index compositions classes -- Figure 2.1, Rule 6, corrected
   , "// Relations"
-  , predicate index classesWithSubclasses associations compositionParts
+  , predicate index classesWithSubclasses associations
   ]
   ++
   if template then
@@ -54,7 +54,6 @@ transform time template index (classes, associations) = unlines $
       | elem name seen = []
       | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
-    compositionParts = nub (map (\(_,_,_,_,to,_) -> to) compositions)
 
 associationSigs :: [Association] -> String
 associationSigs = concatMap (\(_,name,_,_,_,_) -> "one sig " ++ firstLower name ++ " extends FName {}\n")
@@ -67,13 +66,26 @@ subTypes index = concatMap (\(name, subclasses) -> "fun " ++ name ++ subsCD ++ "
   where
     subsCD = "SubsCD" ++ index
 
-compositesAndFieldNames :: String -> [Association] -> [String] -> String
-compositesAndFieldNames index compositions = concatMap (\part -> let partCompositions = filter (\(_,_,_,_,to,_) -> to == part) compositions in "fun " ++ part ++ "CompositesCD" ++ index ++ ": set Obj {\n  " ++ intercalate " + " (map (\(_,_,_,from,_,_) -> from ++ subsCD) partCompositions) ++ "\n}\nfun " ++ part ++ "CompFieldNamesCD" ++ index ++ ": set FName {\n  " ++ intercalate " + " (map (\(_,name,_,_,_,_) -> firstLower name) partCompositions) ++ "\n}\n")
+compositesAndFieldNames :: String -> [Association] -> [(String, Maybe String)] -> String
+compositesAndFieldNames index compositions = unlines . concatMap (\(this, super) ->
+  let thisCompositions = filter (\(_,_,_,_,to,_) -> to == this) compositions
+  in
+    [ "fun " ++ this ++ compositesCD ++ ": set Obj {"
+    , "  " ++ intercalate " + " ("none" : map (\(_,_,_,from,_,_) -> from ++ subsCD) thisCompositions
+                                 ++ maybe [] (\name -> [name ++ compositesCD]) super)
+    , "}"
+    , "fun " ++ this ++ compFieldNamesCD ++ ": set FName {"
+    , "  " ++ intercalate " + " ("none" : map (\(_,name,_,_,_,_) -> firstLower name) thisCompositions
+                                 ++ maybe [] (\name -> [name ++ compFieldNamesCD]) super)
+    , "}"
+    ])
   where
+    compositesCD = "CompositesCD" ++ index
+    compFieldNamesCD = "CompFieldNamesCD" ++ index
     subsCD = "SubsCD" ++ index
 
-predicate :: String -> [(String, [String])] -> [Association] -> [String] -> String
-predicate index classesWithSubclasses associations compositionParts = unlines
+predicate :: String -> [(String, [String])] -> [Association] -> String
+predicate index classesWithSubclasses associations = unlines
   [ "pred cd" ++ index ++ " {"
   , ""
   , "  Obj = " ++ intercalate " + " classes -- Figure 2.2, Rule 5
@@ -82,7 +94,7 @@ predicate index classesWithSubclasses associations compositionParts = unlines
   , "  // Associations"
   , objAttribs -- Figure 2.3, Rule A3
   , "  // Compositions"
-  , compositions -- Figure 2.2, Rule 4
+  , compositions -- Figure 2.2, Rule 4, corrected
   , "}"
   ]
   where classes = map fst classesWithSubclasses
@@ -90,5 +102,7 @@ predicate index classesWithSubclasses associations compositionParts = unlines
         objAttribs = concatMap (\(_, name, mult1, class1, class2, mult2) -> makeAssoc "Attrib" class1 name class2 mult2 ++ makeAssoc "" class2 name class1 mult1) associations
         makeAssoc att from name to (low, Nothing) = "  ObjL" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ "]\n"
         makeAssoc att from name to (low, Just up) = "  ObjLU" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ ", " ++ show up ++ "]\n"
-        compositions = concatMap (\part -> "  Composition[" ++ part ++ "CompositesCD" ++ index ++ ", " ++ part ++ "CompFieldNamesCD" ++ index ++ ", " ++ part ++ subsCD ++ "]\n") compositionParts
+        compositions = concatMap (\name -> "  Composition[" ++ name ++ compositesCD ++ ", " ++ name ++ compFieldNamesCD ++ ", " ++ name ++ "]\n") classes
+        compositesCD = "CompositesCD" ++ index
+        compFieldNamesCD = "CompFieldNamesCD" ++ index
         subsCD = "SubsCD" ++ index
