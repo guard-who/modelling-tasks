@@ -76,7 +76,7 @@ predicate :: String -> [(String, [String])] -> [Association] -> [String] -> Stri
 predicate index classesWithSubclasses associations compositionParts = unlines
   [ "pred cd" ++ index ++ " {"
   , ""
-  , "  Obj = " ++ intercalate " + " (map fst classesWithSubclasses) -- Figure 2.2, Rule 5
+  , "  Obj = " ++ intercalate " + " classes -- Figure 2.2, Rule 5
   , ""
   , objFNames -- Figure 2.2, Rule 2, relevant portion
   , "  // Associations"
