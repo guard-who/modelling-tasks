@@ -71,12 +71,12 @@ compositesAndFieldNames index compositions = unlines . concatMap (\(this, super)
   let thisCompositions = filter (\(_,_,_,_,to,_) -> to == this) compositions
   in
     [ "fun " ++ this ++ compositesCD ++ ": set Obj {"
-    , "  " ++ intercalate " + " ("none" : map (\(_,_,_,from,_,_) -> from ++ subsCD) thisCompositions
-                                 ++ maybe [] (\name -> [name ++ compositesCD]) super)
+    , "  " ++ intercalate " + " (maybe "none" (++ compositesCD) super
+                                  : map (\(_,_,_,from,_,_) -> from ++ subsCD) thisCompositions)
     , "}"
     , "fun " ++ this ++ compFieldNamesCD ++ ": set FName {"
-    , "  " ++ intercalate " + " ("none" : map (\(_,name,_,_,_,_) -> firstLower name) thisCompositions
-                                 ++ maybe [] (\name -> [name ++ compFieldNamesCD]) super)
+    , "  " ++ intercalate " + " (maybe "none" (++ compFieldNamesCD) super
+                                  : map (\(_,name,_,_,_,_) -> firstLower name) thisCompositions)
     , "}"
     ])
   where
