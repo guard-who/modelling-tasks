@@ -6,7 +6,6 @@ import Util
 import Types
 
 import Data.List
-import Data.Maybe
 import Data.FileEmbed
 
 transform :: String -> Bool -> String -> ([(String, Maybe String)], [Association]) -> String
@@ -32,11 +31,13 @@ transform time template index (classes, associations) = unlines $
   , "///////////////////////////////////////////////////"
   , ""
   , "// Types wrapping subtypes"
-  , subTypes index classesWithSubclasses -- Figure 2.1, Rule 1, part 2
+  , subTypes index classesWithDirectSubclasses -- Figure 2.1, Rule 1, part 2, alternative implementation
+  , "// Types wrapping field names"
+  , fieldNames index associations classes -- Figure 2.2, Rule 2, relevant portion, alternative implementation
   , "// Types wrapping composite structures and field names"
   , compositesAndFieldNames index compositions classes -- Figure 2.1, Rule 6, corrected
-  , "// Relations"
-  , predicate index classesWithSubclasses associations
+  , "// Properties"
+  , predicate index associations classNames
   ]
   ++
   if template then
@@ -49,10 +50,7 @@ transform time template index (classes, associations) = unlines $
   else []
   where
     classNames = map fst classes
-    classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
-    subs seen name
-      | elem name seen = []
-      | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
+    classesWithDirectSubclasses = map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
 
 associationSigs :: [Association] -> String
@@ -62,9 +60,25 @@ classSigs :: [String] -> String
 classSigs = concatMap (\name -> "sig " ++ name ++ " extends Obj {}\n")
 
 subTypes :: String -> [(String, [String])] -> String
-subTypes index = concatMap (\(name, subclasses) -> "fun " ++ name ++ subsCD ++ ": set Obj {\n  " ++ intercalate " + " subclasses ++ "\n}\n")
+subTypes index = unlines . concatMap (\(name, directSubclasses) ->
+    [ "fun " ++ name ++ subsCD ++ ": set Obj {"
+    , "  " ++ intercalate " + " (name : map (++ subsCD) directSubclasses)
+    , "}"
+    ])
   where
     subsCD = "SubsCD" ++ index
+
+fieldNames :: String -> [Association] -> [(String, Maybe String)] -> String
+fieldNames index associations = unlines . concatMap (\(this, super) ->
+  let thisAssociations = filter (\(_,_,_,from,_,_) -> from == this) associations
+  in
+    [ "fun " ++ this ++ fieldNamesCD ++": set FName {"
+    , "  " ++ intercalate " + " (maybe "none" (++ fieldNamesCD) super
+                                  : map (\(_,name,_,_,_,_) -> firstLower name) thisAssociations)
+    , "}"
+    ])
+  where
+    fieldNamesCD = "FieldNamesCD" ++ index
 
 compositesAndFieldNames :: String -> [Association] -> [(String, Maybe String)] -> String
 compositesAndFieldNames index compositions = unlines . concatMap (\(this, super) ->
@@ -84,25 +98,26 @@ compositesAndFieldNames index compositions = unlines . concatMap (\(this, super)
     compFieldNamesCD = "CompFieldNamesCD" ++ index
     subsCD = "SubsCD" ++ index
 
-predicate :: String -> [(String, [String])] -> [Association] -> String
-predicate index classesWithSubclasses associations = unlines
+predicate :: String -> [Association] -> [String] -> String
+predicate index associations classNames = unlines
   [ "pred cd" ++ index ++ " {"
   , ""
-  , "  Obj = " ++ intercalate " + " classes -- Figure 2.2, Rule 5
+  , "  Obj = " ++ intercalate " + " classNames -- Figure 2.2, Rule 5
   , ""
-  , objFNames -- Figure 2.2, Rule 2, relevant portion
+  , "  // Contents"
+  , objFNames
   , "  // Associations"
   , objAttribs -- Figure 2.3, Rule A3
   , "  // Compositions"
   , compositions -- Figure 2.2, Rule 4, corrected
   , "}"
   ]
-  where classes = map fst classesWithSubclasses
-        objFNames = concatMap (\name -> "  // Content of class " ++ name ++ "\n  ObjFNames[" ++ name ++ ", " ++ intercalate " + " (concatMap (\from -> map (\(_,assoc,_,_,_,_) -> firstLower assoc) (filter (\(_,_,_,this,_,_) -> from == this) associations)) (filter ((name `elem`) . fromJust . flip lookup classesWithSubclasses) classes) ++ ["none"]) ++ "]\n") classes
+  where objFNames = unlines (map (\name -> "  ObjFNames[" ++ name ++ ", " ++ name ++ fieldNamesCD ++ "]") classNames)
         objAttribs = concatMap (\(_, name, mult1, class1, class2, mult2) -> makeAssoc "Attrib" class1 name class2 mult2 ++ makeAssoc "" class2 name class1 mult1) associations
         makeAssoc att from name to (low, Nothing) = "  ObjL" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ "]\n"
         makeAssoc att from name to (low, Just up) = "  ObjLU" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ ", " ++ show up ++ "]\n"
-        compositions = concatMap (\name -> "  Composition[" ++ name ++ compositesCD ++ ", " ++ name ++ compFieldNamesCD ++ ", " ++ name ++ "]\n") classes
+        compositions = concatMap (\name -> "  Composition[" ++ name ++ compositesCD ++ ", " ++ name ++ compFieldNamesCD ++ ", " ++ name ++ "]\n") classNames
+        fieldNamesCD = "FieldNamesCD" ++ index
         compositesCD = "CompositesCD" ++ index
         compFieldNamesCD = "CompFieldNamesCD" ++ index
         subsCD = "SubsCD" ++ index
