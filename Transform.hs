@@ -7,26 +7,30 @@ import Types
 
 import Data.List
 import Data.FileEmbed
+import Data.Time.LocalTime
+import Control.Monad
 
-transform :: String -> Bool -> String -> ([(String, Maybe String)], [Association]) -> String
-transform time template index (classes, associations) = unlines $
-  concat
-  [
+transform :: ([(String, Maybe String)], [Association]) -> Maybe FilePath -> Bool -> String -> IO ()
+transform (classes, associations) output template index = getZonedTime >>= \time -> let
+ part1 = unlines
     [ "// Alloy Model for CD" ++ index
-    , "// Produced by Haskell simulation of Eclipse plugin"
-    , "// Generated: " ++ time
+    , "// Produced by Haskell reimplementation of Eclipse plugin transformation"
+    , "// Generated: " ++ show time
     , ""
     , "module umlp2alloy/CD" ++ index ++ "Module"
     , ""
     , $(embedStringFile "Template.txt")
     ]
-  | template ]
-  ++
+ part2 = unlines
   [ "// Concrete names of fields"
   , unlines (associationSigs associations) -- Figure 2.1, Rule 3, part 2
-  , "// Classes"
+  ]
+ part3 = unlines
+  [ "// Classes"
   , unlines (classSigs classNames) -- Figure 2.1, Rule 1, part 1
-  , "///////////////////////////////////////////////////"
+  ]
+ part4 = unlines
+  [ "///////////////////////////////////////////////////"
   , "// CD" ++ index
   , "///////////////////////////////////////////////////"
   , ""
@@ -39,15 +43,22 @@ transform time template index (classes, associations) = unlines $
   , "// Properties"
   , unlines (predicate index associations classNames)
   ]
-  ++
-  if template then
+ part5 = unlines
     [ "///////////////////////////////////////////////////"
     , "// Run commands"
     , "///////////////////////////////////////////////////"
     , ""
     , "run cd" ++ index ++ " for 5"
     ]
-  else []
+ in
+   case output of
+     Just file -> do
+       when template $ let out = file ++ ".part1" in writeFile out part1 >> putStrLn ("Some output written to " ++ out)
+       let out = file ++ ".part2" in writeFile out part2 >> putStrLn ("Some output written to " ++ out)
+       let out = file ++ ".part3" in writeFile out part3 >> putStrLn ("Some output written to " ++ out)
+       let out = file ++ ".part4" in writeFile out part4 >> putStrLn ("Some output written to " ++ out)
+       when template $ let out = file ++ ".part5" in writeFile out part5 >> putStrLn ("Some output written to " ++ out)
+     Nothing -> putStrLn $ (if template then part1 else "") ++ part2 ++ part3 ++ part4 ++ (if template then part5 else "")
   where
     classNames = map fst classes
     classesWithDirectSubclasses = map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
