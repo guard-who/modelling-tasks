@@ -54,7 +54,7 @@ fact {
 // p2 connected to t1,t3
 fact {
   all p : P2_ , t : T1_ | p.flow[t] = 1
-  all p : P2_ , t : T3_ | p.flow[t] = 1
+  all p : P2_ , t : T3_ | p.flow[t] = 2
   all p : P2_ | no p.flow[Node - T1_ - T3_]
 }
 
@@ -131,8 +131,5 @@ pred showCo(){
 
 
 pred show () {}
-run show for 10
-run showConflict
-run showConcurrency
-run showEnabled
-run showCo
+
+run show

@@ -39,7 +39,6 @@ pred noLoop(p : Place, t : Transition){
 
 //enable pred
 pred enabled(t : Transition){
-  (sum s: Place | s.flow[t]) != 0
   all p:Place | p.tokens>=p.flow[t]
 }
 
