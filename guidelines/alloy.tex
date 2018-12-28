@@ -4,6 +4,8 @@
 
 \usepackage[utf8]{inputenc}
 
+\usepackage{ulem}
+
 \usepackage{tikz}
 \usetikzlibrary{petri}
 
@@ -65,16 +67,14 @@ instead of
 Likewise, be explicit about what the intended multiplicity of arguments is in predicate definitions.
 For example, write
 \begin{lstlisting}
-  pred concurrencyMultiple(ts : set Transition) {
-    all t : one ts | enabled[t]
-    all p : one Place | p.tokens >= (sum s : ts | p.flow[s])
+  pred concurrentlyEnabled(ts : set Transition) {
+    all p : one Place | p.tokens >= (sum t : ts | p.flow[t])
   }
 \end{lstlisting}
 instead of
 \begin{lstlisting}
-  pred concurrencyMultiple(ts : Transition) {
-    all t : one ts | enabled[t]
-    all p : one Place | p.tokens >= (sum s : ts | p.flow[s])
+  pred concurrentlyEnabled(ts : Transition) {
+    all p : one Place | p.tokens >= (sum t : ts | p.flow[t])
   }
 \end{lstlisting}
 Analogously for function definitions.
@@ -90,9 +90,8 @@ For example, given the definition
 \end{lstlisting}
 do \emph{not} do something like
 \begin{lstlisting}
-  pred concurrencyMultiple(ts : set Transition) {
-    enabled[ts]
-    all p : one Place | p.tokens >= (sum s : ts | p.flow[s])
+  pred someOtherPRedicate(ts : set Transition) {
+    enabled[ts] and ...
   }
 \end{lstlisting}
 
