@@ -56,7 +56,7 @@ pred conflict(t1,t2 : Transition){
 }
 
 //concurrency pred
-pred concurrency(t1,t2 : Transition){
+pred concurrency(t1,t2 : one Transition){
   enabled[t1] and enabled[t2] and not conflict[t1,t2]
 }
 
@@ -66,25 +66,38 @@ pred concurrencyMultiple(ts : set Transition){
   all p:Place | p.tokens >= (sum s:ts | p.flow[s])
 }
 
+
 //try max multple concurrency
-pred tryMaxConcurrency(ts : set Transition, number : Int){
+
+//way1:
+pred tryMaxConcurrency(ts : set Transition, number : one Int){
   #ts = number and concurrencyMultiple[ts]
 }
 
 //is max multiple now
-pred isMaxConcurrency(ts : set Transition, number : Int){
+pred isMaxConcurrency(ts : set Transition, number : one Int){
     tryMaxConcurrency[ts,number] and not tryMaxConcurrency[ts,number+1]
+}
+
+//way2:
+pred tryMax(number : one Int){
+  some ts : set Transition | #ts = number and Place.tokens >= (sum s:ts | Place.flow[s])
+}
+
+//is max multiple now
+pred isMax(number : one Int){
+  tryMax[number] and not tryMax[number + 1]
 }
 //concrete Petri net
 
 one sig S1 extends Place{}
 {
-   tokens = 2
+   tokens = 3
 }
 
 one sig S2 extends Place{}
 {
-  tokens = 0
+  tokens = 1
 }
 
 one sig S3 extends Place{}
@@ -166,9 +179,8 @@ pred showMultipleCon[t : set Transition]{
 }
 
 //max concurrently activated
-pred showMax(ts : set Transition, n : Int){
-  n = 2 and isMaxConcurrency[ts, n] implies n = 2 else
-  n= 3 and isMaxConcurrency[ts, n]
+pred showMax(n : one Int){
+  n = 3 and isMax[n]
 }
 
 //concurrency for certain numbe of transitions

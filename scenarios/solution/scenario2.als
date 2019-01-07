@@ -63,7 +63,7 @@ pred conflict(t1,t2 : Transition){
 //conflict for more pred
 pred conflictMultiple(ts : set Transition){
   #ts>=2  and
-  some t1:ts,t2:ts | conflict[t1,t2]
+  some t1 ,t2:ts | t1 != t2 and conflict[t1,t2]
 }
 
 pred showConflictM(ts : set Transition){
@@ -82,27 +82,17 @@ pred concurrencyMultiple(ts : set Transition){
   all p:Place | p.tokens >= (sum s:ts | p.flow[s])
 }
 
-//try max multple concurrency
-pred tryMaxConcurrency(number : Int){
-  let ts = Transition |
-  #ts = number and concurrencyMultiple[ts]
-}
-
-//is max multiple now
-pred isMaxConcurrency(number : Int){
-    tryMaxConcurrency[number] and not tryMaxConcurrency[number+1]
-}
 
 //concrete Petri net
 
 one sig S1 extends Place{}
 {
-   tokens =1
+   tokens = 3
 }
 
 one sig S2 extends Place{}
 {
-  tokens = 0
+  tokens = 1
 }
 
 one sig S3 extends Place{}
@@ -226,14 +216,20 @@ pred showAddMostly(ts : set Transition){
 
 
 //check there is no conflict overall, for now should mannualy input the transitions which are enabled,
-//also can be used for checking no concurrently activated transitions
+
 
 pred showNoConf(ts: set Transition){
    a1.term = 0 and a2.term = 0 and a3.term =0 and
-   ts = T1 + T2 +T3 and not conflictMultiple[ts]
+   #ts>1 and enabled[ts] and not conflictMultiple[ts]
 }
 
 run showNoConf
+
+//checking no concurrently activated transitions
+pred showNoCon(ts: set Transition){
+   a1.term = 0 and a2.term = 0 and a3.term =0 and
+   #ts>1 and enabled[ts] and conflictMultiple[ts]
+}
 
 //check that 2 transitions are conflict after adding at most certain number of tokens
 //for each place
