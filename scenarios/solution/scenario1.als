@@ -38,7 +38,7 @@ pred noLoop(p : Place, t : Transition){
 //enable pred
 pred enabled(t : Transition){
   //(sum s: Place | s.flow[t]) != 0
-  all p:Place | p.tokens >= p.flow[t]
+  all p: one Place | p.tokens >= p.flow[t]
 }
 
 //pred for whether multiple trnasition enabled
@@ -47,20 +47,28 @@ pred enabledMultiple(ts : set Transition){
 }
 
 //conflict pred
-pred conflict(t1,t2 : Transition){
+pred conflict(t1,t2 : one Transition){
    (t1 != t2) and enabled[t1] and enabled[t2] and
-  some p:Place | one p.flow[t1] and one p.flow[t2] and p.tokens<add[p.flow[t1] , p.flow[t2]]
+  some p: one Place | one p.flow[t1] and one p.flow[t2] and
+   p.tokens < (add[p.flow[t1] , p.flow[t2]])
+}
+
+//conflict pred, avoid duplicated checking
+pred conflictSet(ts : set Transition){
+  (#ts = 2) and enabledMultiple[ts] and
+  some p : one Place | p.tokens < (sum t:ts | p.flow[t])
 }
 
 //concurrency pred
 pred concurrency(t1,t2 : one Transition){
-  (t1 != t2) and enabled[t1] and enabled[t2] and not conflict[t1,t2]
+  (t1 != t2) and enabled[t1] and enabled[t2] and
+  not conflict[t1,t2]
 }
 
 //concurrency for any numbers of transitions
 pred concurrencyMultiple(ts : set Transition){
   enabledMultiple[ts] and
-  all p:Place | p.tokens >= (sum s:ts | p.flow[s])
+  all p: one Place | p.tokens >= (sum s:ts | p.flow[s])
 }
 
 
@@ -75,12 +83,12 @@ pred isMaxConcurrency(ts : set Transition){
 
 one sig S1 extends Place{}
 {
-   tokens = 2
+   tokens = 3
 }
 
 one sig S2 extends Place{}
 {
-  tokens = 0
+  tokens = 1
 }
 
 one sig S3 extends Place{}
@@ -108,76 +116,53 @@ fact {
 S1.flow[T1] = 1
 S1.flow[T2] = 1
 S1.flow[T3] = 1
-}
 
 //s2 connects to t2
-fact {
 S2.flow[T2] = 1
 no S2.flow[Node - T2]
-}
-
 
 //s3 connects to t2
-fact {
 S3.flow[T2] = 1
 no S3.flow[Node - T2]
-}
+
 
 //t1 connects to s2
-fact {
 T1.flow[S2] = 1
 no T1.flow[Node - S2]
-}
 
 //t2 connects to nothing
-fact {
 no T2.flow[Node]
-}
-
 
 //t3 connects to s3
-fact {
 T3.flow[S3] = 1
 no T3.flow[Node - S3]
 }
 
 //show petri net
 pred show{}
+run show for 3
 
 //which transitions are activated
 pred showEnabled(t: one Transition){
   enabled[t]
 }
+run showEnabled for 3 Transition
 
 //transitions in conflict
-pred showConf[t1, t2 : one Transition]{
-  t1 ! = t2 and
-  conflict[t1,t2]
+pred showConf[ts : set Transition]{
+  conflictSet[ts]
 }
+run showConf for 3 Transition
 
 //multiple transitions concurrently activated
 pred showMultipleCon[t : set Transition]{
-  #t > 1 and
+  (#t > 1) and
   concurrencyMultiple[t]
 }
+run showMultipleCon for 3 Transition
 
 //max concurrently activated
 pred showMax(ts : set Transition){
   isMaxConcurrency[ts]
 }
-
-//concurrency for certain numbe of transitions
-pred enabledN(ts : set Transition, n : one Int){
-  #ts = n and enabled[ts]
-}
-
-pred showN[ts : set Transition]{
-  enabledN[ts,2]
-}
-run showN
-
-run show
-run showEnabled
-run showConf
-run showMultipleCon
-run showMax
+run showMax for 3 Transition
