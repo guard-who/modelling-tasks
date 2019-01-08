@@ -111,8 +111,10 @@ one sig T3 extends Transition{}
 
 }
 
-//s1 connects to t1,t2,t3
+
 fact {
+
+//s1 connects to t1,t2,t3
 S1.flow[T1] = 1
 S1.flow[T2] = 1
 S1.flow[T3] = 1
