@@ -1,34 +1,27 @@
-abstract sig Node
+abstract sig Place
 {
-  flow : Node set -> lone Int
-}
-{
-  all v : one flow[Node] | v > 0
-}
-
-abstract sig Place extends Node
-{
+  inp : Transition set -> lone Int,
   tokens : one Int
 }
 { 
   tokens >= 0
-  //set place only going to transition
-  flow.Int in Transition
 }
 
-abstract sig Transition extends Node
+abstract sig Transition
 {
-}
-{
-  //set transition only going to place
-  flow.Int in Place
+  out : Place set -> lone Int
 }
 
+fact {
+  let Node = Place + Transition |
+  let flow = inp + out |
+  all v : one Node.flow[Node] | v > 0
+}
 
 //enable pred
 pred enabled(t : one Transition){
-  //(sum s: Place | s.flow[t]) != 0
-  all p: one Place | p.tokens >= p.flow[t]
+  //(sum s: Place | s.inp[t]) != 0
+  all p: one Place | p.tokens >= p.inp[t]
 }
 
 //pred for whether multiple trnasition enabled
@@ -39,14 +32,14 @@ pred enabledMultiple(ts : set Transition){
 //conflict pred
 pred conflict(t1,t2 : one Transition){
    (t1 != t2) and enabled[t1] and enabled[t2] and
-  some p: one Place | one p.flow[t1] and one p.flow[t2] and
-   p.tokens < (add[p.flow[t1] , p.flow[t2]])
+  some p: one Place | one p.inp[t1] and one p.inp[t2] and
+   p.tokens < (add[p.inp[t1] , p.inp[t2]])
 }
 
 //conflict pred, avoid duplicated checking
 pred conflictSet(ts : set Transition){
   (#ts = 2) and enabledMultiple[ts] and
-  some p : one Place | p.tokens < (sum t:ts | p.flow[t])
+  some p : one Place | p.tokens < (sum t:ts | p.inp[t])
 }
 
 //concurrency pred
@@ -57,7 +50,7 @@ pred concurrency(t1,t2 : one Transition){
 
 //concurrency for any numbers of transitions
 pred concurrencyMultiple(ts : set Transition){
-  all p: one Place | p.tokens >= (sum s:ts | p.flow[s])
+  all p: one Place | p.tokens >= (sum s:ts | p.inp[s])
 }
 
 
@@ -102,29 +95,29 @@ one sig T3 extends Transition{}
 
 //s1 connects to t1,t2,t3
 fact {
-S1.flow[T1] = 1
-S1.flow[T2] = 1
-S1.flow[T3] = 1
+S1.inp[T1] = 1
+S1.inp[T2] = 1
+S1.inp[T3] = 1
 
 //s2 connects to t2
-S2.flow[T2] = 1
-no S2.flow[Node - T2]
+S2.inp[T2] = 1
+no S2.inp[Transition - T2]
 
 //s3 connects to t2
-S3.flow[T2] = 1
-no S3.flow[Node - T2]
+S3.inp[T2] = 1
+no S3.inp[Transition - T2]
 
 
 //t1 connects to s2
-T1.flow[S2] = 1
-no T1.flow[Node - S2]
+T1.out[S2] = 1
+no T1.out[Place - S2]
 
 //t2 connects to nothing
-no T2.flow[Node]
+no T2.out[Place]
 
 //t3 connects to s3
-T3.flow[S3] = 1
-no T3.flow[Node - S3]
+T3.out[S3] = 1
+no T3.out[Place - S3]
 }
 
 //show petri net
