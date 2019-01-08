@@ -25,25 +25,15 @@ abstract sig Transition extends Node
 }
 
 
-//set there are some outcomming arcs from transition
-pred outComing(t : Transition){
-  (sum p : Place | t.flow[p]) > 0
-}
-
-//set there is no loop between a place and a transition
-pred noLoop(p : Place, t : Transition){
-  (p.flow[t] > 0) implies (t.flow[p] = 0)
-}
-
 //enable pred
-pred enabled(t : Transition){
+pred enabled(t : one Transition){
   //(sum s: Place | s.flow[t]) != 0
   all p: one Place | p.tokens >= p.flow[t]
 }
 
 //pred for whether multiple trnasition enabled
 pred enabledMultiple(ts : set Transition){
-  enabled[ts]
+  all t : one ts | enabled[t]
 }
 
 //conflict pred
@@ -67,7 +57,6 @@ pred concurrency(t1,t2 : one Transition){
 
 //concurrency for any numbers of transitions
 pred concurrencyMultiple(ts : set Transition){
-  enabledMultiple[ts] and
   all p: one Place | p.tokens >= (sum s:ts | p.flow[s])
 }
 
@@ -83,12 +72,12 @@ pred isMaxConcurrency(ts : set Transition){
 
 one sig S1 extends Place{}
 {
-   tokens = 3
+   tokens = 2
 }
 
 one sig S2 extends Place{}
 {
-  tokens = 1
+  tokens = 0
 }
 
 one sig S3 extends Place{}
@@ -111,10 +100,8 @@ one sig T3 extends Transition{}
 
 }
 
-
-fact {
-
 //s1 connects to t1,t2,t3
+fact {
 S1.flow[T1] = 1
 S1.flow[T2] = 1
 S1.flow[T3] = 1
@@ -148,23 +135,23 @@ run show for 3
 pred showEnabled(t: one Transition){
   enabled[t]
 }
-run showEnabled for 3 Transition
+run showEnabled for 3
 
 //transitions in conflict
 pred showConf[ts : set Transition]{
   conflictSet[ts]
 }
-run showConf for 3 Transition
+run showConf for 3
 
 //multiple transitions concurrently activated
 pred showMultipleCon[t : set Transition]{
   (#t > 1) and
   concurrencyMultiple[t]
 }
-run showMultipleCon for 3 Transition
+run showMultipleCon for 3
 
 //max concurrently activated
 pred showMax(ts : set Transition){
   isMaxConcurrency[ts]
 }
-run showMax for 3 Transition
+run showMax for 3
