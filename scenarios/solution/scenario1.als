@@ -28,7 +28,6 @@ pred enabled[t : one Transition]{
 
 //conflict pred
 pred conflict[t1,t2 : one Transition]{
-   gt[t2,t1] and
    (t1 != t2) and enabled[t1] and enabled[t2] and
   some p: one Place | one p.inp[t1] and one p.inp[t2] and
    p.tokens < (add[p.inp[t1] , p.inp[t2]])
@@ -36,7 +35,6 @@ pred conflict[t1,t2 : one Transition]{
 
 //concurrency pred
 pred concurrency[t1,t2 : one Transition]{
-  gt[t1,t2] and
   (t1 != t2) and enabled[t1] and enabled[t2] and
   not conflict[t1,t2]
 }
@@ -58,12 +56,12 @@ pred isMaxConcurrency[ts : set Transition]{
 
 one sig S1 extends Place{}
 {
-   tokens = 2
+   tokens = 1
 }
 
 one sig S2 extends Place{}
 {
-  tokens = 0
+  tokens = 1
 }
 
 one sig S3 extends Place{}
@@ -130,9 +128,9 @@ pred showEnabled[t: one Transition]{
 }
 run showEnabled for 3
 
-//transitions in conflict
+//transitions in conflict, duplicated results removed
 pred showConf[t1, t2 : one Transition]{
-  conflict[t1,t2]
+  gt[t2,t1] and conflict[t1,t2]
 }
 run showConf for 3
 
