@@ -1,3 +1,5 @@
+open util/ordering[Transition]
+
 abstract sig Place
 {
   inp : Transition set -> lone Int,
@@ -19,44 +21,35 @@ fact {
 }
 
 //enable pred
-pred enabled(t : one Transition){
+pred enabled[t : one Transition]{
   //(sum s: Place | s.inp[t]) != 0
   all p: one Place | p.tokens >= p.inp[t]
 }
 
-//pred for whether multiple trnasition enabled
-pred enabledMultiple(ts : set Transition){
-  all t : one ts | enabled[t]
-}
-
 //conflict pred
-pred conflict(t1,t2 : one Transition){
+pred conflict[t1,t2 : one Transition]{
+   gt[t2,t1] and
    (t1 != t2) and enabled[t1] and enabled[t2] and
   some p: one Place | one p.inp[t1] and one p.inp[t2] and
    p.tokens < (add[p.inp[t1] , p.inp[t2]])
 }
 
-//conflict pred, avoid duplicated checking
-pred conflictSet(ts : set Transition){
-  (#ts = 2) and enabledMultiple[ts] and
-  some p : one Place | p.tokens < (sum t:ts | p.inp[t])
-}
-
 //concurrency pred
-pred concurrency(t1,t2 : one Transition){
+pred concurrency[t1,t2 : one Transition]{
+  gt[t1,t2] and
   (t1 != t2) and enabled[t1] and enabled[t2] and
   not conflict[t1,t2]
 }
 
 //concurrency for any numbers of transitions
-pred concurrencyMultiple(ts : set Transition){
+pred concurrencyMultiple[ts : set Transition]{
   all p: one Place | p.tokens >= (sum s:ts | p.inp[s])
 }
 
 
 
 //is max multiple
-pred isMaxConcurrency(ts : set Transition){
+pred isMaxConcurrency[ts : set Transition]{
    concurrencyMultiple[ts] and
    no t : one (Transition - ts) | concurrencyMultiple[ts+t]
 }
@@ -118,21 +111,28 @@ no T2.out[Place]
 //t3 connects to s3
 T3.out[S3] = 1
 no T3.out[Place - S3]
+
+//set the order for transitions
+no T1.prevs
+T1.next = T2
+T2.next = T3
+no T3.next
 }
 
 //show petri net
-pred show{}
+pred show[]{
+}
 run show for 3
 
 //which transitions are activated
-pred showEnabled(t: one Transition){
+pred showEnabled[t: one Transition]{
   enabled[t]
 }
 run showEnabled for 3
 
 //transitions in conflict
-pred showConf[ts : set Transition]{
-  conflictSet[ts]
+pred showConf[t1, t2 : one Transition]{
+  conflict[t1,t2]
 }
 run showConf for 3
 
@@ -144,7 +144,7 @@ pred showMultipleCon[t : set Transition]{
 run showMultipleCon for 3
 
 //max concurrently activated
-pred showMax(ts : set Transition){
+pred showMax[ts : set Transition]{
   isMaxConcurrency[ts]
 }
 run showMax for 3
