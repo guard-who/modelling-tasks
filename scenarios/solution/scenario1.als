@@ -35,7 +35,7 @@ pred concurrency[t1,t2 : one Transition]{
 }
 
 pred concurrencyMultiple[ts : set Transition]{
-  all p : one Place | p.tokens >= (sum s:ts | p.inp[s])
+  all p : one Place | p.tokens >= (sum t:ts | p.inp[t])
 }
 
 pred isMaxConcurrency[ts : set Transition]{
@@ -111,9 +111,9 @@ pred showConf[t1, t2 : one Transition]{
 run showConf for 3
 
 //multiple transitions concurrently activated
-pred showMultipleCon[t : set Transition]{
-  #t > 1 and
-  concurrencyMultiple[t]
+pred showMultipleCon[ts : set Transition]{
+  #ts > 1 and
+  concurrencyMultiple[ts]
 }
 run showMultipleCon for 3
 
