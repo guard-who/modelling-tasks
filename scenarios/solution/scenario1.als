@@ -51,27 +51,17 @@ pred isMaxConcurrency[ts : set Transition]{
 //concrete Petri net
 
 one sig S1 extends Place{}
-{
-  tokens = 1
-}
-
 one sig S2 extends Place{}
-{
-  tokens = 1
-}
-
 one sig S3 extends Place{}
-{
-  tokens = 1
-}
-
 one sig T1 extends Transition{}
-
 one sig T2 extends Transition{}
-
 one sig T3 extends Transition{}
 
 fact {
+  S1.tokens = 2
+  S2.tokens = 0
+  S3.tokens = 1
+
   S1.inp[T1] = 1
   S1.inp[T2] = 1
   S1.inp[T3] = 1
