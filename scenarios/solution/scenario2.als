@@ -36,6 +36,10 @@ pred concurrency[t1,t2 : one Transition]{
   not conflict[t1,t2]
 }
 
+pred concurrencyMultiple[ts : set Transition]{
+  all p : one Place | p.tokens >= (sum t:ts | p.inp[t])
+}
+
 //altogether excactly n tokens should be added
 pred nTokensAdded[n : one Int]{
   n = (sum p : Place | p.tokens)
@@ -51,11 +55,6 @@ pred kTransitionsActivated[ts : set Transition, k : one Int]{
   #ts = k
   all t : ts | activated[t]
   no t : (Transition - ts) | activated[t]
-}
-
-//there is no conflict
-pred noConflict[]{
-  all t1,t2 : Transition | not conflict[t1,t2]
 }
 
 //there is no concurrently activated transitions
@@ -122,10 +121,11 @@ pred showAdd3Mostly2and2TransitionActivated[ts : set Transition]{
 run showAdd3Mostly2and2TransitionActivated for 3
 
 //excatly 3 tokens added in total, at most 2 for each place, and there is no conflict
-pred showAdd3Mostly2NoConflict[]{
-  nTokensAdded[3]
+pred showAdd3Mostly2NoConflict[ts : set Transition]{
+  nTokensAdded[4]
   mTokensAtMost[2]
-  noConflict
+ kTransitionsActivated[ts,3]
+  concurrencyMultiple[ts]
 }
 run showAdd3Mostly2NoConflict for 3
 
