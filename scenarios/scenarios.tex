@@ -34,9 +34,9 @@ and we want to use Alloy to report:
 \item
   Which transitions are activated?
 \item
-  Are there transitions in conflict? Which?
+  Are there pairs of transitions in conflict? Which?
 \item
-  Are there multiple transitions that are concurrently activated?
+  Are there pairs of transitions that are concurrently activated?
 \item
   What is the maximum number of transitions concurrently activated?
 \end{itemize}
@@ -67,7 +67,7 @@ and we want to use Alloy to find possible markings with certain properties.
 Properties we might want to be able to impose (combinations of some of the following):
 \begin{itemize}
 \item
-  Altogether only, or exactly, $n$ tokens should be added.
+  Altogether at most, or exactly, $n$ tokens should be added.
 \item
   In each place, at most $m$ tokens should be added.
 \item
@@ -77,7 +77,7 @@ Properties we might want to be able to impose (combinations of some of the follo
 \item
   There is no conflict.
 \item
-  There is a conflict between transitions $t$ and $t'$.
+  There is a conflict between specific transitions $t$ and $t'$.
 \item
   There are no concurrently activated transitions.
 \item
@@ -109,9 +109,9 @@ A Petri net with an initial marking is given, such as:
 and we want to use Alloy to solve tasks like the following:
 \begin{itemize}
 \item
-  Add exactly one token somewhere so that two transitions become concurrently activated.
+  Add exactly one token somewhere so that two transitions are concurrently activated.
 \item
-  Remove a token so that there are no activated transitions anymore.
+  Remove a token so that there are no activated transitions.
 % \item
 %   Remove a token so that two previously concurrently activated transitions get into conflict.
 \item
@@ -143,9 +143,9 @@ A concrete Petri net is given, such as:
 and we want to use Alloy to solve tasks like the following:
 \begin{itemize}
 \item
-  Change one incoming or outgoing weight of a transition (or add or remove an arrow) so that two transitions become concurrently activated.
+  Change one incoming or outgoing weight of a transition (or add or remove an arrow) so that two transitions are concurrently activated.
 \item
-  Or: \dots\ so that there are no activated transitions anymore.
+  Or: \dots\ so that there are no activated transitions.
 % \item
 %   Or: \dots\ so that two previously concurrently activated transitions get into conflict.
 \item
