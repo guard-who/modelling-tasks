@@ -20,18 +20,18 @@ fact {
   all v : one Node.flow[Node] | v > 0
 }
 
-pred enabled[t : one Transition]{
+pred activated[t : one Transition]{
   all p: one Place | p.tokens >= p.inp[t]
 }
 
 pred conflict[t1,t2 : one Transition]{
-   (t1 != t2) and enabled[t1] and enabled[t2] and
+   (t1 != t2) and activated[t1] and activated[t2] and
   some p: one Place | one p.inp[t1] and one p.inp[t2] and
    p.tokens < (add[p.inp[t1] , p.inp[t2]])
 }
 
 pred concurrency[t1,t2 : one Transition]{
-  (t1 != t2) and enabled[t1] and enabled[t2] and
+  (t1 != t2) and activated[t1] and activated[t2] and
   not conflict[t1,t2]
 }
 
@@ -108,10 +108,10 @@ pred show[]{
 run show for 3
 
 //which transitions are activated
-pred showEnabled[t: one Transition]{
-  enabled[t]
+pred showActivated[t: one Transition]{
+  activated[t]
 }
-run showEnabled for 3
+run showActivated for 3
 
 //transitions in conflict, duplicated results removed
 pred showConf[t1, t2 : one Transition]{
