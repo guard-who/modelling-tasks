@@ -25,12 +25,16 @@ pred activated[t : one Transition]{
 }
 
 pred conflict[t1,t2 : one Transition]{
-  (t1 != t2) and activated[t1] and activated[t2] and
+  t1 != t2
+  activated[t1]
+  activated[t2]
   some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < add[p.inp[t1] , p.inp[t2]]
 }
 
 pred concurrency[t1,t2 : one Transition]{
-  (t1 != t2) and activated[t1] and activated[t2] and
+  t1 != t2
+  activated[t1]
+  activated[t2]
   not conflict[t1,t2]
 }
 
@@ -39,7 +43,7 @@ pred concurrencyMultiple[ts : set Transition]{
 }
 
 pred isMaxConcurrency[ts : set Transition]{
-  concurrencyMultiple[ts] and
+  concurrencyMultiple[ts]
   no t : one (Transition - ts) | concurrencyMultiple[ts+t]
 }
 
@@ -106,13 +110,14 @@ run showActivated for 3
 
 //transitions in conflict, duplicated results removed
 pred showConf[t1, t2 : one Transition]{
-  gt[t2,t1] and conflict[t1,t2]
+  gt[t2,t1]
+  conflict[t1,t2]
 }
 run showConf for 3
 
 //multiple transitions concurrently activated
 pred showMultipleCon[ts : set Transition]{
-  #ts > 1 and
+  #ts > 1
   concurrencyMultiple[ts]
 }
 run showMultipleCon for 3
