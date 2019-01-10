@@ -17,7 +17,7 @@ abstract sig Transition
 fact {
   let Node = Place + Transition |
   let flow = inp + out |
-  all v : one Node.flow[Node] | v > 0
+  all weight : one Node.flow[Node] | weight > 0
 }
 
 pred activated[t : one Transition]{
