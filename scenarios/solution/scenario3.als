@@ -71,7 +71,7 @@ pred addOneTokenOnePairConcurrency[t1,t2 : one Transition]{
 
 //Remove a token so that there are no activated transitions.
 pred removeOneTokenNoActivatedTransition[]{
-  all p : Place | p.tokenChange >= (-1)
+  all p : Place | p.tokenChange =< 0
   (sum p : Place | p.tokenChange) = (-1)
   no t : Transition | activated[t]
 }
