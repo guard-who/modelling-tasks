@@ -113,10 +113,10 @@ pred showAdd3Mostly2T1Activated[]{
 run showAdd3Mostly2T1Activated for 3
 
 //exactly 3 tokens added in total, at most 2 for each place, and exactly 2 transitions activated
-pred showAdd3Mostly2and2TransitionActivated[]{
+pred showAdd3Mostly2and2TransitionActivated[ts : set Transition]{
   nTokensAdded[3]
   mTokensAtMost[2]
- no t1,t2 : one Transition | conflict[t1,t2]
+ kTransitionsActivated[ts,2]
 }
 run showAdd3Mostly2and2TransitionActivated for 3
 
