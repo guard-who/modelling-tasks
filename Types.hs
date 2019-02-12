@@ -13,5 +13,6 @@ data AssociationType = Association | Aggregation | Composition
   deriving Eq
 
 data Connection = Inheritance | Assoc AssociationType (Int, Maybe Int) (Int, Maybe Int) Bool
+  deriving Eq
 
 type Syntax = ([(String, Maybe String)], [Association])
