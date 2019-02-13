@@ -32,7 +32,7 @@ main = do
     writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5)
     putStrLn ("More output written to " ++ out)
     instances <- giveMeInstances
-    print $ "I'll do something with " ++ show instances
+    mapM_ (\(i, insta) -> drawOdFromInstance (show i) Pdf insta) (zip [1 :: Integer ..] instances)
 
 giveMeInstances :: IO [String]
 giveMeInstances = return []
