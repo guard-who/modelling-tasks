@@ -50,7 +50,7 @@ generate c = do
       | otherwise                                       = True
 
 generateEdges :: [String] -> Int -> Int -> Int -> Int -> IO [DiagramEdge]
-generateEdges classes inh com ass agg =
+generateEdges classs inh com ass agg =
   foldl (\es t -> es >>= flip generateEdge t) (return []) $
     replicate inh Nothing
     ++ replicate com (Just Composition)
@@ -63,8 +63,8 @@ generateEdges classes inh com ass agg =
       return $ xs !! x
     generateEdge :: [DiagramEdge] -> Maybe AssociationType -> IO [DiagramEdge]
     generateEdge cs mt = do
-      s <- oneOf classes
-      e <- oneOf $ filter (s /=) classes
+      s <- oneOf classs
+      e <- oneOf $ filter (s /=) classs
       l <- generateLimits mt
       let c = (s, e, l)
       if checkConstraints $ c:cs

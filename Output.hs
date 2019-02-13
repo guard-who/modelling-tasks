@@ -1,7 +1,7 @@
 module Output where
 
 import Util
-import Types
+import Types (AssociationType(..), Connection(..), Syntax)
 
 import Data.List
 import Data.Maybe

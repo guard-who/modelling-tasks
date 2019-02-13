@@ -3,7 +3,7 @@
 module Transform (transform) where
 
 import Util
-import Types
+import Types (Association, AssociationType(..))
 
 import Data.List
 import Data.FileEmbed
