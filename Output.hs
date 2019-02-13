@@ -32,8 +32,8 @@ mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
-drawCdFromSyntax :: FilePath -> GraphvizOutput -> Syntax -> IO ()
-drawCdFromSyntax file format syntax = do
+drawCdFromSyntax :: Syntax -> FilePath -> GraphvizOutput -> IO ()
+drawCdFromSyntax syntax file format = do
   let (classes, associations) = syntax
   let classNames = map fst classes
   let theNodes = classNames
@@ -51,8 +51,8 @@ drawCdFromSyntax file format syntax = do
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
 
-drawOdFromInstance :: FilePath -> GraphvizOutput -> String -> IO ()
-drawOdFromInstance file format input = do
+drawOdFromInstance :: String -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromInstance input file format = do
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
   let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
   let theEdges = map ((\[from,_,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), ())) . splitOn "->") $

@@ -23,7 +23,7 @@ main = do
       searchSpace  = 10
     }
  let output = "output"
- drawCdFromSyntax output Pdf syntax
+ drawCdFromSyntax syntax output Pdf
  unless (anyRedEdge syntax) $
   do
     time <- getZonedTime
@@ -32,7 +32,7 @@ main = do
     writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5)
     putStrLn ("More output written to " ++ out)
     instances <- giveMeInstances
-    mapM_ (\(i, insta) -> drawOdFromInstance (show i) Pdf insta) (zip [1 :: Integer ..] instances)
+    mapM_ (\(i, insta) -> drawOdFromInstance insta (show i) Pdf) (zip [1 :: Integer ..] instances)
 
 giveMeInstances :: IO [String]
 giveMeInstances = return []
