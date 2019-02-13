@@ -2,8 +2,11 @@ module Main (main) where
 
 import Types
 import Generate
+import Edges
 import Transform (transform)
 import Output
+
+import Control.Monad
 
 import Data.GraphViz
 
@@ -20,5 +23,9 @@ main = do
     }
  let output = "output"
  drawCdFromSyntax output Pdf syntax
- (part1, part2, part3, part4, part5) <- transform syntax ""
- let out = output ++ ".als" in writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5) >> putStrLn ("More output written to " ++ out)
+ unless (anyRedEdge syntax) $
+  do
+    (part1, part2, part3, part4, part5) <- transform syntax ""
+    let out = output ++ ".als"
+    writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5)
+    putStrLn ("More output written to " ++ out)

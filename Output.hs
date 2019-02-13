@@ -2,6 +2,7 @@ module Output where
 
 import Util
 import Types (AssociationType(..), Connection(..), Syntax)
+import Edges
 
 import Data.List
 import Data.Maybe
@@ -48,11 +49,3 @@ drawCdFromSyntax file format syntax = do
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
-
-shouldBeRed :: String -> String -> [(String, [String])] -> [(String, String)] -> Bool
-shouldBeRed a b classesWithSubclasses = any (\(a',b') ->
-                                               (a /= a' || b /= b')
-                                               && let { one = a' `isSubOf` a; two = b' `isSubOf` b }
-                                                  in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
-                                            )
-  where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)

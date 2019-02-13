@@ -5,10 +5,13 @@ module Edges (
   toEdges,
   -- * Checks
   compositionCycles, doubleConnections, inheritanceCycles, multipleInheritances,
-  selfEdges, wrongLimits
+  selfEdges, wrongLimits,
+  anyRedEdge, shouldBeRed
   ) where
 
 import Types (AssociationType (..), Connection (..), Syntax)
+
+import Data.Maybe
 
 type DiagramEdge = (String, String, Connection)
 
@@ -92,3 +95,22 @@ getPaths connectionFilter es =
 filterFirst :: Eq a => a -> [a] -> [a]
 filterFirst _ []     = []
 filterFirst x (y:ys) = if x == y then ys else y : filterFirst x ys
+
+anyRedEdge :: Syntax -> Bool
+anyRedEdge (classes, associations) =
+  let
+    classesWithSubclasses = map (\(name, _) -> (name, subs [] name)) classes
+      where
+        subs seen name
+          | name `elem` seen = []
+          | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
+    assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
+  in any (\(_,_,_,from,to,_) -> shouldBeRed from to classesWithSubclasses assocsBothWays) associations
+
+shouldBeRed :: String -> String -> [(String, [String])] -> [(String, String)] -> Bool
+shouldBeRed a b classesWithSubclasses = any (\(a',b') ->
+                                               (a /= a' || b /= b')
+                                               && let { one = a' `isSubOf` a; two = b' `isSubOf` b }
+                                                  in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
+                                            )
+  where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)
