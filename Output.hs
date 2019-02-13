@@ -5,6 +5,7 @@ import Types (AssociationType(..), Connection(..), Syntax)
 import Edges
 
 import Data.List
+import Data.List.Split
 import Data.Maybe
 import Data.Graph.Inductive
 import Data.GraphViz
@@ -46,6 +47,18 @@ drawCdFromSyntax file format syntax = do
   let assocEdges = map (\(a,_,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a m1 m2 (shouldBeRed from to classesWithSubclasses assocsBothWays))) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [toLabel l, shape BoxShape], fmtEdge = \(_,_,l) -> connectionArrow l }) graph
+  quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
+  output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
+  putStrLn $ "Output written to " ++ output
+
+drawOdFromInstance :: FilePath -> GraphvizOutput -> String -> IO ()
+drawOdFromInstance file format input = do
+  let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
+  let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
+  let theEdges = map ((\[from,_,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), ())) . splitOn "->") $
+                 filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
+  let graph = undir (mkGraph (zip [0..] theNodes) theEdges) :: Gr String ()
+  let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [underlinedLabel (firstLower l ++ " : " ++ takeWhile (/= '$') l), shape BoxShape] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
