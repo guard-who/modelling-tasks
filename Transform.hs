@@ -7,14 +7,14 @@ import Types (Association, AssociationType(..))
 
 import Data.List
 import Data.FileEmbed
-import Data.Time.LocalTime
 
-transform :: ([(String, Maybe String)], [Association]) -> String -> IO (String, String, String, String, String)
-transform (classes, associations) index = getZonedTime >>= \time -> let
+transform :: ([(String, Maybe String)], [Association]) -> String -> String -> (String, String, String, String, String)
+transform (classes, associations) index time =
+ let
  part1 = unlines
     [ "// Alloy Model for CD" ++ index
     , "// Produced by Haskell reimplementation of Eclipse plugin transformation"
-    , "// Generated: " ++ show time
+    , "// Generated: " ++ time
     , ""
     , "module umlp2alloy/CD" ++ index ++ "Module"
     , ""
@@ -50,7 +50,7 @@ transform (classes, associations) index = getZonedTime >>= \time -> let
     , "run cd" ++ index ++ " for 5"
     ]
  in
-   return (part1, part2, part3, part4, part5)
+   (part1, part2, part3, part4, part5)
   where
     classNames = map fst classes
     classesWithDirectSubclasses = map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes

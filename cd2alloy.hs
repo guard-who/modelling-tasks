@@ -5,6 +5,7 @@ import Parser (parser)
 import Transform (transform)
 
 import Control.Monad
+import Data.Time.LocalTime
 import System.Environment (getArgs)
 
 run :: String -> Maybe FilePath -> Bool -> String -> IO ()
@@ -14,7 +15,8 @@ run input output template index = do
   -- putStrLn ("TOKENS:\n\n" ++ show tokens ++ "\n")
   let syntax = parser tokens
   -- putStrLn ("SYNTAX:\n\n" ++ show syntax ++ "\n")
-  (part1, part2, part3, part4, part5) <- transform syntax index
+  time <- getZonedTime
+  let (part1, part2, part3, part4, part5) = transform syntax index (show time)
   case output of
     Just file -> do
       when template $ let out = file ++ ".part1" in writeFile out part1 >> putStrLn ("Some output written to " ++ out)

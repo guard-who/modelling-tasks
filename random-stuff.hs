@@ -7,6 +7,7 @@ import Transform (transform)
 import Output
 
 import Control.Monad
+import Data.Time.LocalTime
 
 import Data.GraphViz
 
@@ -25,7 +26,8 @@ main = do
  drawCdFromSyntax output Pdf syntax
  unless (anyRedEdge syntax) $
   do
-    (part1, part2, part3, part4, part5) <- transform syntax ""
+    time <- getZonedTime
+    let (part1, part2, part3, part4, part5) = transform syntax "" (show time)
     let out = output ++ ".als"
     writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5)
     putStrLn ("More output written to " ++ out)
