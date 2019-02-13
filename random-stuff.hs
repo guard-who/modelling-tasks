@@ -31,3 +31,8 @@ main = do
     let out = output ++ ".als"
     writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5)
     putStrLn ("More output written to " ++ out)
+    instances <- giveMeInstances
+    print $ "I'll do something with " ++ show instances
+
+giveMeInstances :: IO [String]
+giveMeInstances = return []
