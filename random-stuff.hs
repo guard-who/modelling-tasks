@@ -32,16 +32,15 @@ main = do
   unless (anyRedEdge syntax) $ do
     time <- getZonedTime
     let (part1, part2, part3, part4, part5) = transform syntax "" (show time)
-    let out = output config ++ ".als"
-    writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5)
-    putStrLn ("More output written to " ++ out)
-    instances <- giveMeInstances config
+        als = part1 ++ part2 ++ part3 ++ part4 ++ part5
+    instances <- giveMeInstances config als
     mapM_ (\(i, insta) -> drawOdFromInstance insta (show i) Pdf) (zip [1 :: Integer ..] instances)
 
-giveMeInstances :: Config -> IO [String]
-giveMeInstances c = do
-  let callAlloy = proc "java" ["-cp", "Alloy-5.0.0.1.jar", "RunAlloy.java", output c ++ ".als", show $ maxInstances c]
-  (_, Just hout, _, _) <- createProcess callAlloy { std_out = CreatePipe }
+giveMeInstances :: Config -> String -> IO [String]
+giveMeInstances c content = do
+  let callAlloy = proc "java" ["-cp", "Alloy-5.0.0.1.jar", "RunAlloy.java", show $ maxInstances c]
+  (Just hin, Just hout, _, _) <- createProcess callAlloy { std_out = CreatePipe, std_in = CreatePipe }
+  hPutStr hin content
   fmap (intercalate "\n") . drop 1 . splitOn [begin] <$> getWholeOutput hout
   where
     begin = "---INSTANCE---"

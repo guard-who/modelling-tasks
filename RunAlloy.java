@@ -9,19 +9,26 @@ import edu.mit.csail.sdg.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.ast.Command;
 import edu.mit.csail.sdg.parser.CompUtil;
 
+import java.util.Scanner;
+
 public class RunAlloy {
     public static void main(String[] args) throws Err {
 
-        String file = args[0];
         int maxRuns;
-        if (args.length > 1) {
-            maxRuns = Integer.parseInt(args[1]);
+        if (args.length > 0) {
+            maxRuns = Integer.parseInt(args[0]);
         } else {
             maxRuns = -1;
         }
 
+        Scanner scanner = new Scanner(System.in);
+        String content = "";
+        while (scanner.hasNext()) {
+            content = content + scanner.nextLine() + "\n";
+        }
+
         A4Reporter reporter = new A4Reporter();
-        Module module = CompUtil.parseEverything_fromFile(reporter, null, file);
+        Module module = CompUtil.parseEverything_fromString(reporter, content);
 
         A4Options options = new A4Options();
         options.solver = A4Options.SatSolver.SAT4J;
