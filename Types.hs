@@ -23,5 +23,7 @@ data Config = Config {
     associations :: (Maybe Int, Maybe Int),
     compositions :: (Maybe Int, Maybe Int),
     inheritances :: (Maybe Int, Maybe Int),
-    searchSpace  :: Int
-  } deriving (Eq)
+    searchSpace  :: Int,
+    output       :: FilePath,
+    maxInstances :: Int
+  } deriving Eq
