@@ -8,10 +8,9 @@ import Types (Association, AssociationType(..))
 import Data.List
 import Data.FileEmbed
 import Data.Time.LocalTime
-import Control.Monad
 
-transform :: ([(String, Maybe String)], [Association]) -> Maybe FilePath -> Bool -> String -> IO ()
-transform (classes, associations) output template index = getZonedTime >>= \time -> let
+transform :: ([(String, Maybe String)], [Association]) -> String -> IO (String, String, String, String, String)
+transform (classes, associations) index = getZonedTime >>= \time -> let
  part1 = unlines
     [ "// Alloy Model for CD" ++ index
     , "// Produced by Haskell reimplementation of Eclipse plugin transformation"
@@ -51,14 +50,7 @@ transform (classes, associations) output template index = getZonedTime >>= \time
     , "run cd" ++ index ++ " for 5"
     ]
  in
-   case output of
-     Just file -> do
-       when template $ let out = file ++ ".part1" in writeFile out part1 >> putStrLn ("Some output written to " ++ out)
-       let out = file ++ ".part2" in writeFile out part2 >> putStrLn ("Some output written to " ++ out)
-       let out = file ++ ".part3" in writeFile out part3 >> putStrLn ("Some output written to " ++ out)
-       let out = file ++ ".part4" in writeFile out part4 >> putStrLn ("Some output written to " ++ out)
-       when template $ let out = file ++ ".part5" in writeFile out part5 >> putStrLn ("Some output written to " ++ out)
-     Nothing -> putStrLn $ (if template then part1 else "") ++ part2 ++ part3 ++ part4 ++ (if template then part5 else "")
+   return (part1, part2, part3, part4, part5)
   where
     classNames = map fst classes
     classesWithDirectSubclasses = map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
