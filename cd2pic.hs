@@ -9,8 +9,8 @@ import Data.GraphViz
 
 import System.Environment (getArgs)
 
-draw :: FilePath -> GraphvizOutput -> String -> IO ()
-draw file format input = do
+run :: FilePath -> GraphvizOutput -> String -> IO ()
+run file format input = do
   -- putStrLn ("INPUT:\n\n" ++ show input ++ "\n")
   let tokens = lexer input
   -- putStrLn ("TOKENS:\n\n" ++ show tokens ++ "\n")
@@ -22,7 +22,7 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-   [] -> getContents >>= draw "output" Pdf
-   [file] -> readFile file >>= draw file Pdf
-   [file, format] -> readFile file >>= draw file (read (firstUpper format))
+   [] -> getContents >>= run "output" Pdf
+   [file] -> readFile file >>= run file Pdf
+   [file, format] -> readFile file >>= run file (read (firstUpper format))
    _ -> error "zu viele Parameter"
