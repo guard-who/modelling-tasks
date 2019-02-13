@@ -11,6 +11,8 @@ module Edges (
 
 import Types (AssociationType (..), Connection (..), Syntax)
 
+import Util
+
 import Data.Maybe
 
 type DiagramEdge = (String, String, Connection)
@@ -91,10 +93,6 @@ getPaths connectionFilter es =
       let es'' = filter ((s /=) . start) $ filter ((s /=) . end) es'
       in [path | p@(s', e', _) <- es', s' /= e', s' /= e, s == e'
                , path <- getPath s' e (p:ps) es'']
-
-filterFirst :: Eq a => a -> [a] -> [a]
-filterFirst _ []     = []
-filterFirst x (y:ys) = if x == y then ys else y : filterFirst x ys
 
 anyRedEdge :: Syntax -> Bool
 anyRedEdge (classes, associations) =
