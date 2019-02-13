@@ -21,8 +21,4 @@ main = do
  let output = "output"
  drawCdFromSyntax output Pdf syntax
  (part1, part2, part3, part4, part5) <- transform syntax ""
- let out = output ++ ".part1" in writeFile out part1 >> putStrLn ("Some output written to " ++ out)
- let out = output ++ ".part2" in writeFile out part2 >> putStrLn ("Some output written to " ++ out)
- let out = output ++ ".part3" in writeFile out part3 >> putStrLn ("Some output written to " ++ out)
- let out = output ++ ".part4" in writeFile out part4 >> putStrLn ("Some output written to " ++ out)
- let out = output ++ ".part5" in writeFile out part5 >> putStrLn ("Some output written to " ++ out)
+ let out = output ++ ".als" in writeFile out (part1 ++ part2 ++ part3 ++ part4 ++ part5) >> putStrLn ("More output written to " ++ out)
