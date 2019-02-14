@@ -41,6 +41,7 @@ giveMeInstances c content = do
   let callAlloy = proc "java" ["-cp", ".;alloy/Alloy-5.0.0.1.jar", "alloy.RunAlloy", show $ maxInstances c]
   (Just hin, Just hout, _, _) <- createProcess callAlloy { std_out = CreatePipe, std_in = CreatePipe }
   hPutStr hin content
+  hClose hin
   fmap (intercalate "\n") . drop 1 . splitOn [begin] <$> getWholeOutput hout
   where
     begin = "---INSTANCE---"
