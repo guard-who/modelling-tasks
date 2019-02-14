@@ -34,13 +34,13 @@ main = do
     time <- getZonedTime
     let (part1, part2, part3, part4, part5) = transform syntax "" (show time)
         als = part1 ++ part2 ++ part3 ++ part4 ++ part5
-    instances <- giveMeInstances config als
+    instances <- getAlloyInstances (maxInstances config) als
     mapM_ (\(i, insta) -> drawOdFromInstance insta (show i) Pdf) (zip [1 :: Integer ..] instances)
 
-giveMeInstances :: Config -> String -> IO [String]
-giveMeInstances c content = do
+getAlloyInstances :: Int -> String -> IO [String]
+getAlloyInstances maxInsta content = do
   let callAlloy = proc "java" ["-cp", '.' : searchPathSeparator :  "alloy/Alloy-5.0.0.1.jar",
-                               "alloy.RunAlloy", show $ maxInstances c]
+                               "alloy.RunAlloy", show maxInsta]
   (Just hin, Just hout, _, _) <- createProcess callAlloy { std_out = CreatePipe, std_in = CreatePipe }
   hPutStr hin content
   hClose hin
