@@ -12,6 +12,7 @@ import Data.List.Split     (splitOn)
 import Data.GraphViz
 import Data.Time.LocalTime
 
+import System.FilePath (searchPathSeparator)
 import System.IO
 import System.Process
 
@@ -38,7 +39,8 @@ main = do
 
 giveMeInstances :: Config -> String -> IO [String]
 giveMeInstances c content = do
-  let callAlloy = proc "java" ["-cp", ".;alloy/Alloy-5.0.0.1.jar", "alloy.RunAlloy", show $ maxInstances c]
+  let callAlloy = proc "java" ["-cp", '.' : searchPathSeparator :  "alloy/Alloy-5.0.0.1.jar",
+                               "alloy.RunAlloy", show $ maxInstances c]
   (Just hin, Just hout, _, _) <- createProcess callAlloy { std_out = CreatePipe, std_in = CreatePipe }
   hPutStr hin content
   hClose hin
