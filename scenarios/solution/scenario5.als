@@ -36,12 +36,12 @@ pred concurrencyMultiple[ts : set Transition]{
 
 pred maxPlaces[n : one Int]{
   #Place >= 0
-  #Place = n
+  #Place =< n
 }
 
 pred maxTransitions[n : one Int]{
   #Transition >= 0
-  #Transition = n
+  #Transition =< n
 }
 
 pred maxTokens[overall, eachPlace : one Int]{

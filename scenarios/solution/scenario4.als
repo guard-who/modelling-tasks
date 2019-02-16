@@ -68,7 +68,7 @@ pred addOneWeightNoActivatedTrans[]{
 }
 
 //Remove exactly one weight somewhere so that no transitions is activated
-pred addOneWeightNoActivatedTrans[]{
+pred removeOneWeightNoActivatedTrans[]{
   all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
   add[#(Place.inpChange),#(Transition.outChange)] = 1
   add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] = (-1)
@@ -110,7 +110,7 @@ fact {
 
 pred showAddOneWeightOnePairConcurrency[t1,t2 : one Transition]{
   t1 = T1
-  t2 = T2
+  t2 = T3
  addOneWeightOnePairConcurrency[t1,t2]
   
 }
@@ -124,9 +124,12 @@ pred showRemoveOneWeightOnePairConcurrency[t1,t2 : one Transition]{
 }
 run showRemoveOneWeightOnePairConcurrency for 3
 
-pred showAddOneWeightNoActivatedTrans[t1,t2 : one Transition]{
-  t1 = T1
-  t2 = T3
-  addOneWeightNoActivatedTrans[]
+pred showAddOneWeightNoActivatedTrans[]{
+  addOneWeightNoActivatedTrans
 }
 run  showAddOneWeightNoActivatedTrans for 3
+
+pred showRemoveOneWeightNoActivatedTrans[]{
+  removeOneWeightNoActivatedTrans
+}
+run  showRemoveOneWeightNoActivatedTrans for 3
