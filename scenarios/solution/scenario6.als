@@ -46,8 +46,8 @@ sig transitionChange extends Transition{}
 }
 
 fact {
-  all weight : one Place.defaultInp[Transition] | weight > 0
-  all weight : one Transition.defaultOut[Place] | weight > 0
+  all weight : one Place.inp[Transition] | weight >= 0
+  all weight : one Transition.out[Place] | weight >= 0
 }
 
 //default petri net
