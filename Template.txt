@@ -2,13 +2,8 @@
 // Generic Head of CD Model - adapted/simplified
 ///////////////////////////////////////////////////
 
-// Some markers not belonging to the model
-one sig auxilary {}
-
 //Names of fields/associations in classes of the model
-abstract sig FName {
-	is: one auxilary
-}
+abstract sig FName {}
 
 //Parent of all classes relating fields and values
 abstract sig Obj {
