@@ -4,11 +4,10 @@ import Edges
 import Types
 
 import Data.Maybe
-import Data.List
 
 import System.Random
 
-generate :: Config -> IO Syntax
+generate :: Config -> IO ([String], [DiagramEdge])
 generate c = do
   ncls <- oneOfFirst (searchSpace c) $ toAvailable $ classes c
   nins <- oneOfFirst (searchSpace c) $ toAvailable $ inheritances c
@@ -17,19 +16,15 @@ generate c = do
   nags <- oneOfFirst (searchSpace c) $ toAvailable $ aggregations c
   if isPossible ncls nins ncos nass nags
     then do
-      es <- generateEdges (classs ncls) nins ncos nass nags
-      let isInheritance (_, _, Inheritance) = True
-          isInheritance (_, _, _          ) = False
-          (ihs, ass) = partition isInheritance es
-          classes' = (\x -> (x, foldl (\p (s, e, Inheritance) -> if s == x then Just e else p) Nothing ihs)) <$> (classs ncls)
-          assocs   = [(t, s ++ "and" ++ e, m1, s, e, m2) | (s, e, Assoc t m1 m2 False) <- ass]
-      return (classes', assocs)
+      let names = classNames ncls
+      es <- generateEdges names nins ncos nass nags
+      return (names, es)
     else if minimalC == c
          then error "it seems to be impossible to generate such a model; check your configuration"
          else generate minimalC
   where
     minimalC = minimise c
-    classs cla = (:[]) <$> take cla ['A'..]
+    classNames x = (:[]) <$> take x ['A'..]
     toAvailable :: (Maybe Int, Maybe Int) -> [Int]
     toAvailable (mx, Nothing) = [fromMaybe 0 mx..]
     toAvailable (mx, Just  y) = [fromMaybe 0 mx.. y]
@@ -67,7 +62,7 @@ generateEdges classs inh com ass agg =
       e <- oneOf $ filter (s /=) classs
       l <- generateLimits mt
       let c = (s, e, l)
-      if checkConstraints $ c:cs
+      if checkMultiEdge $ c:cs
         then return $ c:cs
         else generateEdge cs mt
     generateLimits :: (Maybe AssociationType) -> IO Connection
@@ -85,13 +80,6 @@ generateEdges classs inh com ass agg =
       l <- randomRIO (0, 2)
       h <- oneOf $ drop (l - 1) [Just 1, Just 2, Nothing]
       return (l, h)
-    checkConstraints cs =
-      null (doubleConnections cs)
-      -- && null (selfEdges cs)
-      && null (multipleInheritances cs)
-      && null (inheritanceCycles cs)
-      && null (compositionCycles cs)
-      -- && null (wrongLimits cs)
 
 minimise :: Config -> Config
 minimise c = c {

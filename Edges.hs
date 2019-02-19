@@ -2,18 +2,21 @@ module Edges (
   -- * Types
   DiagramEdge,
   -- * Transformation
-  toEdges,
+  fromEdges, toEdges,
   -- * Checks
+  -- ** Check sets (reusing single checks)
+  checkMultiEdge, checkObvious,
+  -- ** Single checks
   compositionCycles, doubleConnections, inheritanceCycles, multipleInheritances,
   selfEdges, wrongLimits,
   anyRedEdge, shouldBeRed
   ) where
 
 import Types (AssociationType (..), Connection (..), Syntax)
-
 import Util
 
-import Data.Maybe
+import Data.List  (partition)
+import Data.Maybe (fromJust)
 
 type DiagramEdge = (String, String, Connection)
 
@@ -21,6 +24,18 @@ toEdges :: Syntax -> [DiagramEdge]
 toEdges (is, as) =
   [(s, e, Inheritance) | (s, Just e) <- is]
   ++ [(s, e, Assoc t m1 m2 False) | (t, _, m1, s, e, m2) <- as]
+
+fromEdges :: [String] -> [DiagramEdge] -> Syntax
+fromEdges classNames es =
+  let isInheritance (_, _, Inheritance) = True
+      isInheritance (_, _, _          ) = False
+      getName s e
+        | s <= e    = s ++ "and" ++ e
+        | otherwise = e ++ "and" ++ s
+      (ihs, ass) = partition isInheritance es
+      classes' = (\x -> (x, foldl (\p (s, e, Inheritance) -> if s == x then Just e else p) Nothing ihs)) <$> classNames
+      assocs   = [(t, getName s e, m1, s, e, m2) | (s, e, Assoc t m1 m2 False) <- ass]
+  in (classes', assocs)
 
 selfEdges :: [DiagramEdge] -> [DiagramEdge]
 selfEdges es = [x | x@(s, e, _) <- es, e == s]
@@ -45,19 +60,18 @@ inheritanceCycles = cycles isInheritance
 
 compositionCycles :: [DiagramEdge] -> [[DiagramEdge]]
 compositionCycles = cycles isComposition
-  where
-    isComposition (Assoc Composition _ _ _) = True
-    isComposition _                         = False
+
+isComposition :: Connection -> Bool
+isComposition (Assoc Composition _ _ _) = True
+isComposition _                         = False
 
 wrongLimits :: [DiagramEdge] -> [DiagramEdge]
 wrongLimits es =
-  [c | c@(_, _, Assoc t s@(sl, sh) e _) <- es
+  [c | c@(_, _, t@(Assoc _ s@(sl, sh) e _)) <- es
      , isComposition t && (sh /= Just 1 || sl < 0 || sl > 1)
        || not (inLimit s)
        || not (inLimit e)]
   where
-    isComposition Composition = True
-    isComposition _           = False
     inLimit (l, Nothing)
       | 0 <= l && l <= 2 = True
       | otherwise        = False
@@ -112,3 +126,15 @@ shouldBeRed a b classesWithSubclasses = any (\(a',b') ->
                                                   in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
                                             )
   where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)
+
+checkMultiEdge :: [DiagramEdge] -> Bool
+checkMultiEdge cs =
+     null (doubleConnections cs)
+  && null (multipleInheritances cs)
+  && null (inheritanceCycles cs)
+  && null (compositionCycles cs)
+
+checkObvious :: [DiagramEdge] -> Bool
+checkObvious cs =
+     null (selfEdges cs)
+  && null (wrongLimits cs)
