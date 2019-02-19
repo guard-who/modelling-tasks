@@ -22,3 +22,6 @@ getInstances maxInstances content = do
       if eof
         then return []
         else (:) <$> hGetLine h <*> getWholeOutput h
+
+existInstances :: String -> IO Bool
+existInstances = fmap (not . null) . getInstances 1

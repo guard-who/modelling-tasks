@@ -9,7 +9,7 @@ import Types     (ClassConfig (..))
 
 import qualified Alloy
 
-import Control.Monad       (unless)
+import Control.Monad       (unless, when)
 import Data.List           (union)
 import Data.GraphViz       (GraphvizOutput (Pdf))
 
@@ -33,8 +33,8 @@ main = do
   unless (anyRedEdge cd1) $ do
     let (part1, part2, part3, part4, part5) = transform cd1 "1" ""
         als1 = part1 ++ part2 ++ part3 ++ part4 ++ part5
-    instances1 <- Alloy.getInstances 1 als1
-    unless (null instances1) $ do
+    nonEmpty1 <- Alloy.existInstances als1
+    when nonEmpty1 $ do
       mutations <- shuffleM $ getAllMutationResults names edges
       let cd2 = fromEdges names $ getFirstValid names mutations
           (part1', part2', part3', part4', part5') = transform cd2 "2" ""
@@ -42,8 +42,8 @@ main = do
           als12 = part1 ++ (part2 `unionL` part2') ++ (part3 `unionL` part3')
                   ++ part4 ++ part4' ++ "run { cd1 and (not cd2) } for 5"
       drawCdFromSyntax cd2 (output ++ "2") Pdf
-      instances2  <- Alloy.getInstances 1 als2
-      unless (null instances2) $ do
+      nonEmpty2 <- Alloy.existInstances als2
+      when nonEmpty2 $ do
         instances12 <- Alloy.getInstances maxInstances als12
         mapM_ (\(i, insta) -> drawOdFromInstance insta (show i) Pdf) (zip [1 :: Integer ..] instances12)
   where
