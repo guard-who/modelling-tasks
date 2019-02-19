@@ -7,14 +7,12 @@ import Output    (drawCdFromSyntax, drawOdFromInstance)
 import Transform (transform)
 import Types     (Config (..))
 
+import qualified Alloy
+
 import Control.Monad       (unless)
-import Data.List           (intercalate, union)
-import Data.List.Split     (splitOn)
+import Data.List           (union)
 import Data.GraphViz       (GraphvizOutput (Pdf))
 
-import System.FilePath       (searchPathSeparator)
-import System.IO
-import System.Process
 import System.Random.Shuffle (shuffleM)
 
 main :: IO ()
@@ -35,7 +33,7 @@ main = do
   unless (anyRedEdge cd1) $ do
     let (part1, part2, part3, part4, part5) = transform cd1 "1" ""
         als1 = part1 ++ part2 ++ part3 ++ part4 ++ part5
-    instances1 <- getAlloyInstances (maxInstances config) als1
+    instances1 <- Alloy.getInstances (maxInstances config) als1
     unless (null instances1) $ do
       mutations <- shuffleM $ getAllMutationResults names edges
       let cd2 = fromEdges names $ getFirstValid names mutations
@@ -44,9 +42,9 @@ main = do
           als12 = part1 ++ (part2 `unionL` part2') ++ (part3 `unionL` part3')
                   ++ part4 ++ part4' ++ "run { cd1 and (not cd2) } for 5"
       drawCdFromSyntax cd2 (output config ++ "2") Pdf
-      instances2  <- getAlloyInstances (maxInstances config) als2
+      instances2  <- Alloy.getInstances (maxInstances config) als2
       unless (null instances2) $ do
-        instances12 <- getAlloyInstances (maxInstances config) als12
+        instances12 <- Alloy.getInstances (maxInstances config) als12
         mapM_ (\(i, insta) -> drawOdFromInstance insta (show i) Pdf) (zip [1 :: Integer ..] instances12)
   where
     unionL x y = unlines $ lines x `union` lines y
@@ -59,19 +57,3 @@ getFirstValid names (x:xs)
   = x
   | otherwise
   = getFirstValid names xs
-
-getAlloyInstances :: Int -> String -> IO [String]
-getAlloyInstances maxInsta content = do
-  let callAlloy = proc "java" ["-cp", '.' : searchPathSeparator :  "alloy/Alloy-5.0.0.1.jar",
-                               "alloy.RunAlloy", show maxInsta]
-  (Just hin, Just hout, _, _) <- createProcess callAlloy { std_out = CreatePipe, std_in = CreatePipe }
-  hPutStr hin content
-  hClose hin
-  fmap (intercalate "\n") . drop 1 . splitOn [begin] <$> getWholeOutput hout
-  where
-    begin = "---INSTANCE---"
-    getWholeOutput h = do
-      eof <- hIsEOF h
-      if eof
-        then return []
-        else (:) <$> hGetLine h <*> getWholeOutput h
