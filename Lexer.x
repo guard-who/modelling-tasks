@@ -16,13 +16,13 @@ $letter = [a-zA-Z]
 
 $white+ ;
 
-"package" | "classdiagram" | "class" | "extends" | "association" | "aggregation" | "composition" { \s -> Keyword s }
+"package" | "classdiagram" | "class" | "extends" | "association" | "aggregation" | "composition" { Keyword }
 
-"->" | ".." | ";" | "*" | "[" | "]" | "{" | "}" { \s -> Symbol s }
+"->" | ".." | ";" | "*" | "[" | "]" | "{" | "}" { Symbol }
 
-$letter ($letter | $digit | ".")* { \s -> Id s }
+$letter ($letter | $digit | ".")* { Id }
 
-$digit+ { \s -> Num (read s) }
+$digit+ { Num . read }
 
 {
 
