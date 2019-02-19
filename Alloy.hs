@@ -8,9 +8,9 @@ import System.IO
 import System.Process
 
 getInstances :: Int -> String -> IO [String]
-getInstances maxInsta content = do
+getInstances maxInstances content = do
   let callAlloy = proc "java" ["-cp", '.' : searchPathSeparator : "alloy/Alloy-5.0.0.1.jar",
-                               "alloy.RunAlloy", show maxInsta]
+                               "alloy.RunAlloy", show maxInstances]
   (Just hin, Just hout, _, _) <- createProcess callAlloy { std_out = CreatePipe, std_in = CreatePipe }
   hPutStr hin content
   hClose hin

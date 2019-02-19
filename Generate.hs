@@ -7,7 +7,7 @@ import Data.Maybe
 
 import System.Random
 
-generate :: Config -> IO ([String], [DiagramEdge])
+generate :: ClassConfig -> IO ([String], [DiagramEdge])
 generate c = do
   ncls <- oneOfFirst (searchSpace c) $ toAvailable $ classes c
   nins <- oneOfFirst (searchSpace c) $ toAvailable $ inheritances c
@@ -81,7 +81,7 @@ generateEdges classs inh com ass agg =
       h <- oneOf $ drop (l - 1) [Just 1, Just 2, Nothing]
       return (l, h)
 
-minimise :: Config -> Config
+minimise :: ClassConfig -> ClassConfig
 minimise c = c {
     classes      = increase $ classes c,
     aggregations = decrease $ aggregations c,

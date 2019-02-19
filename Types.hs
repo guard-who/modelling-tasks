@@ -17,13 +17,11 @@ data Connection = Inheritance | Assoc AssociationType (Int, Maybe Int) (Int, May
 
 type Syntax = ([(String, Maybe String)], [Association])
 
-data Config = Config {
+data ClassConfig = ClassConfig {
     classes      :: (Maybe Int, Maybe Int),
     aggregations :: (Maybe Int, Maybe Int),
     associations :: (Maybe Int, Maybe Int),
     compositions :: (Maybe Int, Maybe Int),
     inheritances :: (Maybe Int, Maybe Int),
-    searchSpace  :: Int,
-    output       :: FilePath,
-    maxInstances :: Int
+    searchSpace  :: Int
   } deriving Eq
