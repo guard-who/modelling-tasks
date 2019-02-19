@@ -2,7 +2,6 @@
 
 module Transform (transform) where
 
-import Util
 import Types (Association, AssociationType(..))
 
 import Data.List
@@ -57,7 +56,7 @@ transform (classes, associations) index time =
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
 
 associationSigs :: [Association] -> [String]
-associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ firstLower name ++ " extends FName {}")
+associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ name ++ " extends FName {}")
 
 classSigs :: [String] -> [String]
 classSigs = map (\name -> "sig " ++ name ++ " extends Obj {}")
@@ -77,7 +76,7 @@ fieldNames index associations = concatMap (\(this, super) ->
   in
     [ "fun " ++ this ++ fieldNamesCD ++": set FName {"
     , "  " ++ intercalate " + " (maybe "none" (++ fieldNamesCD) super
-                                  : map (\(_,name,_,_,_,_) -> firstLower name) thisAssociations)
+                                  : map (\(_,name,_,_,_,_) -> name) thisAssociations)
     , "}"
     ])
   where
@@ -93,7 +92,7 @@ compositesAndFieldNames index compositions = concatMap (\(this, super) ->
     , "}"
     , "fun " ++ this ++ compFieldNamesCD ++ ": set FName {"
     , "  " ++ intercalate " + " (maybe "none" (++ compFieldNamesCD) super
-                                  : map (\(_,name,_,_,_,_) -> firstLower name) thisCompositions)
+                                  : map (\(_,name,_,_,_,_) -> name) thisCompositions)
     , "}"
     ])
   where
@@ -117,8 +116,8 @@ predicate index associations classNames =
   ]
   where objFNames = map (\name -> "  ObjFNames[" ++ name ++ ", " ++ name ++ fieldNamesCD ++ "]") classNames
         objAttribs = concatMap (\(_, name, mult1, class1, class2, mult2) -> [makeAssoc "Attrib" class1 name class2 mult2, makeAssoc "" class2 name class1 mult1]) associations
-        makeAssoc att from name to (low, Nothing) = "  ObjL" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ "]"
-        makeAssoc att from name to (low, Just up) = "  ObjLU" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ firstLower name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ ", " ++ show up ++ "]"
+        makeAssoc att from name to (low, Nothing) = "  ObjL" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ "]"
+        makeAssoc att from name to (low, Just up) = "  ObjLU" ++ att ++ "[" ++ from ++ subsCD ++ ", " ++ name ++ ", " ++ to ++ subsCD ++ ", " ++ show low ++ ", " ++ show up ++ "]"
         compositions = map (\name -> "  Composition[" ++ name ++ compositesCD ++ ", " ++ name ++ compFieldNamesCD ++ ", " ++ name ++ "]") classNames
         fieldNamesCD = "FieldNamesCD" ++ index
         compositesCD = "CompositesCD" ++ index
