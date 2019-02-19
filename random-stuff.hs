@@ -11,7 +11,6 @@ import Control.Monad       (unless)
 import Data.List           (intercalate, union)
 import Data.List.Split     (splitOn)
 import Data.GraphViz       (GraphvizOutput (Pdf))
-import Data.Time.LocalTime (getZonedTime)
 
 import System.FilePath       (searchPathSeparator)
 import System.IO
@@ -34,14 +33,13 @@ main = do
   let cd1 = fromEdges names edges
   drawCdFromSyntax cd1 (output config ++ "1") Pdf
   unless (anyRedEdge cd1) $ do
-    time <- getZonedTime
-    let (part1, part2, part3, part4, part5) = transform cd1 "1" (show time)
+    let (part1, part2, part3, part4, part5) = transform cd1 "1" ""
         als1 = part1 ++ part2 ++ part3 ++ part4 ++ part5
     instances1 <- getAlloyInstances (maxInstances config) als1
     unless (null instances1) $ do
       mutations <- shuffleM $ getAllMutationResults names edges
       let cd2 = fromEdges names $ getFirstValid names mutations
-          (part1', part2', part3', part4', part5') = transform cd2 "2" (show time)
+          (part1', part2', part3', part4', part5') = transform cd2 "2" ""
           als2  = part1' ++ part2' ++ part3' ++ part4' ++ part5'
           als12 = part1 ++ (part2 `unionL` part2') ++ (part3 `unionL` part3')
                   ++ part4 ++ part4' ++ "run { cd1 and (not cd2) } for 5"
