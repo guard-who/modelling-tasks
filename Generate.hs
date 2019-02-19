@@ -19,11 +19,11 @@ generate c = do
       let names = classNames ncls
       es <- generateEdges names nins ncos nass nags
       return (names, es)
-    else if minimalC == c
+    else if smallerC == c
          then error "it seems to be impossible to generate such a model; check your configuration"
-         else generate minimalC
+         else generate smallerC
   where
-    minimalC = minimise c
+    smallerC = shrink c
     classNames x = (:[]) <$> take x ['A'..]
     toAvailable :: (Maybe Int, Maybe Int) -> [Int]
     toAvailable (mx, Nothing) = [fromMaybe 0 mx..]
@@ -81,8 +81,8 @@ generateEdges classs inh com ass agg =
       h <- oneOf $ drop (l - 1) [Just 1, Just 2, Nothing]
       return (l, h)
 
-minimise :: ClassConfig -> ClassConfig
-minimise c = c {
+shrink :: ClassConfig -> ClassConfig
+shrink c = c {
     classes      = increase $ classes c,
     aggregations = decrease $ aggregations c,
     associations = decrease $ associations c,
