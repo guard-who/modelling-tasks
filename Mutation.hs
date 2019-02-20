@@ -40,7 +40,7 @@ data Alteration = Increase | Decrease
 
 getMutationResults
   :: ClassConfig -> [String] -> [DiagramEdge] -> Mutation -> [[DiagramEdge]]
-getMutationResults c vs es m = case m of
+getMutationResults c vs es m = newName <$> case m of
   Add                 t -> allAdds c t vs es
   Remove              t -> allRemoves c t es
   Transform         s t -> transform c s t es
@@ -48,6 +48,15 @@ getMutationResults c vs es m = case m of
   LimitRange Decrease t -> allDecreaseLimitsRange c t es
   LimitShift Increase t -> allShiftDownLimitsRange c t es
   LimitShift Decrease t -> allShiftUpLimitsRange c t es
+  where
+    newName xs = case xs of
+      []                           -> []
+      (s,e,Assoc k "" sl se b):xs' ->
+        (s,e,Assoc k (firstFree (allNames xs') $ (:[]) <$> ['z','y'..]) sl se b):xs'
+      xs'                          -> xs'
+    allNames xs = [n | (_, _, Assoc _ n _ _ _) <- xs]
+    firstFree xs (y:ys) =
+      if y `elem` xs then firstFree xs ys else y
 
 transform :: ClassConfig -> Targets -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 transform c s t es =
@@ -66,11 +75,11 @@ transform c s t es =
     sc = delete TComposition si
 
 isTarget :: Connection -> Target -> Bool
-isTarget (Assoc Association _ _ _) TAssociation = True
-isTarget (Assoc Aggregation _ _ _) TAggregation = True
-isTarget (Assoc Composition _ _ _) TComposition = True
-isTarget Inheritance               TInheritance = True
-isTarget _                         _            = False
+isTarget (Assoc Association _ _ _ _) TAssociation = True
+isTarget (Assoc Aggregation _ _ _ _) TAggregation = True
+isTarget (Assoc Composition _ _ _ _) TComposition = True
+isTarget Inheritance                 TInheritance = True
+isTarget _                           _            = False
 
 isTargetEdge :: DiagramEdge -> Target -> Bool
 isTargetEdge (_, _, t) = isTarget t
@@ -134,7 +143,7 @@ allAdds c ts vs es =
     addEdges s e TAssociation sl el = addEdge s e TAssociation sl el
     addEdges s e t            sl el = addEdge s e t sl el ++ addEdge e s t sl el
     addEdge s e t sl el =
-      (\k -> (s, e, Assoc k sl el False)) <$> maybeToList (assocType t)
+      (\k -> (s, e, Assoc k "" sl el False)) <$> maybeToList (assocType t)
 
 assocType :: Target -> Maybe AssociationType
 assocType TAssociation = Just Association
@@ -191,8 +200,8 @@ allLimitsWith
   -> [DiagramEdge]
   -> [[DiagramEdge]]
 allLimitsWith c op ts es =
-  [ (sv, ev, Assoc k sl'  el' False) : filter (e /=) es
-  | e@(sv, ev, Assoc k sl el _) <- targets ts es, t <- toList ts
+  [ (sv, ev, Assoc k n sl' el' False) : filter (e /=) es
+  | e@(sv, ev, Assoc k n sl el _) <- targets ts es, t <- toList ts
   , (sl', el') <- bothLimits sl el t]
   where
     bothLimits s e t = zip (repeat s) (endLimits e t)
@@ -214,12 +223,14 @@ allFlipTransformations _c t es =
                           , e'<- maybeToList $ maybeFlipEdge e]
   where
     maybeFlipEdge (s, e, k)
-      | Assoc Association sl el _ <- k, sl == el = Nothing
-      | otherwise                                = Just (e, s, k)
+      | Assoc Association _ sl el _ <- k, sl == el = Nothing
+      | otherwise                                  = Just (e, s, deleteName k)
+    deleteName Inheritance         = Inheritance
+    deleteName (Assoc k _ sl el b) = Assoc k "" sl el b
 
 allFromInheritances :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 allFromInheritances c ts es =
-  [ (se, ee, Assoc k sl el False) : filter (e /=) es
+  [ (se, ee, Assoc k "" sl el False) : filter (e /=) es
   | isRemovable c TInheritance es, e@(se, ee, Inheritance) <- es
   , t <- toList ts, isAddable c t es
   , sl <- fst $ allLimits c t, el <- snd $ allLimits c t
@@ -233,16 +244,16 @@ allToInheritances c ts es =
 
 allFromCompositions :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 allFromCompositions c ts es =
-  [ (se, ee, Assoc k sl el False) : filter (e /=) es
-  | isRemovable c TComposition es, e@(se, ee, Assoc Composition sl el _) <- es
+  [ (se, ee, Assoc k "" sl el False) : filter (e /=) es
+  | isRemovable c TComposition es, e@(se, ee, Assoc Composition _ sl el _) <- es
   , t <- toList ts, isAddable c t es
   , k <- maybeToList $ assocType t]
 
 allToCompositions :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 allToCompositions c ts es =
-  [ (se, ee, Assoc Composition (reduce sl) el False) : filter (e /=) es
+  [ (se, ee, Assoc Composition "" (reduce sl) el False) : filter (e /=) es
   | isAddable c TComposition es
-  , e@(se, ee, Assoc k sl el _) <- removableTargets c ts es, k /= Composition]
+  , e@(se, ee, Assoc k _ sl el _) <- removableTargets c ts es, k /= Composition]
   where
     reduce (0, _) = (0, Just 1)
     reduce _      = (1, Just 1)
@@ -250,7 +261,7 @@ allToCompositions c ts es =
 allOtherTransformations
   :: ClassConfig -> Target -> Target -> [DiagramEdge] -> [[DiagramEdge]]
 allOtherTransformations c st tt es =
-  [ (se, ee, Assoc k sl el False) : filter (e /=) es
+  [ (se, ee, Assoc k "" sl el False) : filter (e /=) es
   | st /= tt, isRemovable c st es, isAddable c tt es
-  , e@(se, ee, Assoc _ sl el _) <- es, isTargetEdge e st
+  , e@(se, ee, Assoc _ _ sl el _) <- es, isTargetEdge e st
   , k <- maybeToList $ assocType tt]

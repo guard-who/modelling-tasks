@@ -5,7 +5,7 @@ type Association = (AssociationType, String, (Int, Maybe Int), String, String, (
 data AssociationType = Association | Aggregation | Composition
   deriving Eq
 
-data Connection = Inheritance | Assoc AssociationType (Int, Maybe Int) (Int, Maybe Int) Bool
+data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
   deriving Eq
 
 type Syntax = ([(String, Maybe String)], [Association])

@@ -13,7 +13,7 @@ run :: String -> FilePath -> GraphvizOutput -> IO ()
 run input = do
   let tokens = lexer input
   let syntax = parser tokens
-  drawCdFromSyntax syntax
+  drawCdFromSyntax False syntax
 
 main :: IO ()
 main = do

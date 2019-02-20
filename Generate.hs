@@ -18,7 +18,7 @@ generate c searchSpace = do
     then do
       let names = classNames ncls
       es <- generateEdges names nins ncos nass nags
-      return (names, es)
+      return (names, nameEdges es)
     else if smallerC == c
          then error "it seems to be impossible to generate such a model; check your configuration"
          else generate smallerC searchSpace
@@ -43,6 +43,12 @@ generate c searchSpace = do
       | inh >= cla                                      = False
       | cla * (cla - 1) `div` 2 < inh + com + ass + agg = False
       | otherwise                                       = True
+
+nameEdges :: [DiagramEdge] -> [DiagramEdge]
+nameEdges es =
+     [e | e@(_, _, Inheritance) <- es]
+  ++ [(s, e, Assoc k (n:[]) m1 m2 b)
+     | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] es]
 
 generateEdges :: [String] -> Int -> Int -> Int -> Int -> IO [DiagramEdge]
 generateEdges classs inh com ass agg =
@@ -70,11 +76,11 @@ generateEdges classs inh com ass agg =
     generateLimits (Just Composition) = do
       ll1 <- randomRIO (0, 1)
       l2  <- generateLimit
-      return $ Assoc Composition (ll1, Just 1) l2 False
+      return $ Assoc Composition "" (ll1, Just 1) l2 False
     generateLimits (Just t          ) = do
       l1 <- generateLimit
       l2 <- generateLimit
-      return $ Assoc t l1 l2 False
+      return $ Assoc t "" l1 l2 False
     generateLimit :: IO (Int, Maybe Int)
     generateLimit = do
       l <- randomRIO (0, 2)

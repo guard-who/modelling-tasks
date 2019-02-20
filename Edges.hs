@@ -13,7 +13,7 @@ module Edges (
   ) where
 
 import Types (AssociationType (..), Connection (..), Syntax)
-import Util
+import Util  (filterFirst)
 
 import Data.List  (partition)
 import Data.Maybe (fromJust)
@@ -23,18 +23,15 @@ type DiagramEdge = (String, String, Connection)
 toEdges :: Syntax -> [DiagramEdge]
 toEdges (is, as) =
   [(s, e, Inheritance) | (s, Just e) <- is]
-  ++ [(s, e, Assoc t m1 m2 False) | (t, _, m1, s, e, m2) <- as]
+  ++ [(s, e, Assoc t n m1 m2 False) | (t, n, m1, s, e, m2) <- as]
 
 fromEdges :: [String] -> [DiagramEdge] -> Syntax
 fromEdges classNames es =
   let isInheritance (_, _, Inheritance) = True
       isInheritance (_, _, _          ) = False
-      getName s e
-        | s <= e    = s ++ "and" ++ e
-        | otherwise = e ++ "and" ++ s
       (ihs, ass) = partition isInheritance es
       classes' = (\x -> (x, foldl (\p (s, e, Inheritance) -> if s == x then Just e else p) Nothing ihs)) <$> classNames
-      assocs   = [(t, getName s e, m1, s, e, m2) | (s, e, Assoc t m1 m2 False) <- ass]
+      assocs   = [(t, n, m1, s, e, m2) | (s, e, Assoc t n m1 m2 False) <- ass]
   in (classes', assocs)
 
 selfEdges :: [DiagramEdge] -> [DiagramEdge]
@@ -62,12 +59,12 @@ compositionCycles :: [DiagramEdge] -> [[DiagramEdge]]
 compositionCycles = cycles isComposition
 
 isComposition :: Connection -> Bool
-isComposition (Assoc Composition _ _ _) = True
-isComposition _                         = False
+isComposition (Assoc Composition _ _ _ _) = True
+isComposition _                           = False
 
 wrongLimits :: [DiagramEdge] -> [DiagramEdge]
 wrongLimits es =
-  [c | c@(_, _, t@(Assoc _ s@(sl, sh) e _)) <- es
+  [c | c@(_, _, t@(Assoc _ _ s@(sl, sh) e _)) <- es
      , isComposition t && (sh /= Just 1 || sl < 0 || sl > 1)
        || not (inLimit s)
        || not (inLimit e)]

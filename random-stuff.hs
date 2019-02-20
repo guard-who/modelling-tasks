@@ -29,7 +29,7 @@ main = do
   let output = "output"
   let maxInstances = -1
   let cd1 = fromEdges names edges
-  drawCdFromSyntax cd1 (output ++ "1") Pdf
+  drawCdFromSyntax True cd1 (output ++ "1") Pdf
   unless (anyRedEdge cd1) $ do
     let (part1, part2, part3, part4, part5) = transform cd1 "1" ""
         als1 = part1 ++ part2 ++ part3 ++ part4 ++ part5
@@ -41,11 +41,11 @@ main = do
           als2  = part1' ++ part2' ++ part3' ++ part4' ++ part5'
           als12 = part1 ++ (part2 `unionL` part2') ++ (part3 `unionL` part3')
                   ++ part4 ++ part4' ++ "run { cd1 and (not cd2) } for 5"
-      drawCdFromSyntax cd2 (output ++ "2") Pdf
+      drawCdFromSyntax True cd2 (output ++ "2") Pdf
       nonEmpty2 <- Alloy.existInstances als2
       when nonEmpty2 $ do
         instances12 <- Alloy.getInstances maxInstances als12
-        mapM_ (\(i, insta) -> drawOdFromInstance insta (show i) Pdf) (zip [1 :: Integer ..] instances12)
+        mapM_ (\(i, insta) -> drawOdFromInstance True insta (show i) Pdf) (zip [1 :: Integer ..] instances12)
   where
     unionL x y = unlines $ lines x `union` lines y
 
