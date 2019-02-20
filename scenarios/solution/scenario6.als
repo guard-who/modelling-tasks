@@ -75,6 +75,7 @@ fact{
 
   no T3.defaultOut[Place]  
 }
+
 pred activated[t : one Transition]{
   all p : Place | p.tokens >= p.inp[t]
 }
@@ -83,7 +84,7 @@ pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
+  some p : Place | p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrencyMultiple[ts : set Transition]{
