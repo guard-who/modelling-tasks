@@ -22,18 +22,18 @@ fact {
   all weight : Node.flow[Node] | weight > 0
 }
 
-pred activated[t : one Transition]{
+pred activated[t : Transition]{
   all p : Place | p.tokens >= p.inp[t]
 }
 
-pred conflict[t1,t2 : one Transition]{
+pred conflict[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
   some p : Place | p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
-pred concurrency[t1,t2 : one Transition]{
+pred concurrency[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
@@ -41,7 +41,7 @@ pred concurrency[t1,t2 : one Transition]{
 }
 
 //Add exactly one token somewhere so that two transitions are concurrently activated
-pred addOneTokenOnePairConcurrency[t1,t2 : one Transition]{
+pred addOneTokenOnePairConcurrency[t1, t2 : Transition]{
   all p : Place | p.tokenChange >= 0
   (sum p : Place | p.tokenChange) = 1
   concurrency[t1,t2]
@@ -87,7 +87,7 @@ fact {
   no T3.out[Place - S3]
 }
 
-pred showaddOneTokenOnePairConcurrency[t1,t2 : one Transition]{
+pred showaddOneTokenOnePairConcurrency[t1, t2 : Transition]{
   t1 = T1
   t2 = T3
   addOneTokenOnePairConcurrency[t1,t2]

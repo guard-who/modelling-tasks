@@ -18,18 +18,18 @@ fact {
   all weight : Node.flow[Node] | weight > 0
 }
 
-pred activated[t : one Transition]{
+pred activated[t : Transition]{
   all p : Place | p.tokens >= p.inp[t]
 }
 
-pred conflict[t1,t2 : one Transition]{
+pred conflict[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
   some p : Place | p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
-pred concurrency[t1,t2 : one Transition]{
+pred concurrency[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
@@ -41,17 +41,17 @@ pred concurrencyMultiple[ts : set Transition]{
 }
 
 //altogether exactly n tokens should be added
-pred nTokensAdded[n : one Int]{
+pred nTokensAdded[n : Int]{
   n = (sum p : Place | p.tokens)
 } 
 
 //In each place, at most m tokens should be added
-pred mTokensAtMost[m : one Int]{
+pred mTokensAtMost[m : Int]{
   all p : Place | p.tokens =< m
 }
 
 //A certain number k of transitions are activated
-pred kTransitionsActivated[ts : set Transition, k : one Int]{
+pred kTransitionsActivated[ts : set Transition, k : Int]{
   #ts = k
   all t : ts | activated[t]
   no t : (Transition - ts) | activated[t]
@@ -59,7 +59,7 @@ pred kTransitionsActivated[ts : set Transition, k : one Int]{
 
 //there is no concurrently activated transitions
 pred noConcurrency[]{
-  no t1,t2 : Transition | concurrency[t1,t2]
+  no t1, t2 : Transition | concurrency[t1,t2]
 }
 
 //concrete Petri net
@@ -116,7 +116,7 @@ run showAdd3Mostly2and2TransitionActivated for 3
 pred showAdd3Mostly2NoConflict[]{
   nTokensAdded[4]
   mTokensAtMost[2]
-  no t1,t2 : Transition | conflict[t1,t2]
+  no t1, t2 : Transition | conflict[t1,t2]
 }
 run showAdd3Mostly2NoConflict for 3
 

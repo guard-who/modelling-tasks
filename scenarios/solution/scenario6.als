@@ -76,11 +76,11 @@ fact{
   no T3.defaultOut[Place]  
 }
 
-pred activated[t : one Transition]{
+pred activated[t : Transition]{
   all p : Place | p.tokens >= p.inp[t]
 }
 
-pred conflict[t1,t2 : one Transition]{
+pred conflict[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
@@ -92,26 +92,26 @@ pred concurrencyMultiple[ts : set Transition]{
 }
 
 
-pred maxPlacesAdded[n : one Int]{
+pred maxPlacesAdded[n : Int]{
   #placeChange =< n
 }
 
-pred maxTransitionsAdded[n : one Int]{
+pred maxTransitionsAdded[n : Int]{
   #transitionChange =< n
 }
 
-pred maxTokens[overall, eachPlace : one Int]{
+pred maxTokens[overall, eachPlace : Int]{
   all p : Place | p.tokens =< eachPlace
   (sum p : Place | p.tokens) =< overall
 }
 
-pred maxWeightAdded[weight : one Int, flow : one Int]{
+pred maxWeightAdded[weight, flow : Int]{
   all p : Place, t : Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
   plus[#(Place.inpChange), #(Transition.outChange)] =< flow
   plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] =< weight
 }
 
-pred maxWeightRemoved[weight : one Int, flow : one Int]{
+pred maxWeightRemoved[weight, flow : Int]{
   all p : Place, t : Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
   plus[#(Place.inpChange), #(Transition.outChange)] =< flow
   plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] =< weight
@@ -130,7 +130,7 @@ pred presenceSourceTransition[]{
   some t : Transition | (#Place.inp[t]) = 0
 }
 
-pred numberActivatedTransition[n : one Int, ts : set Transition]{
+pred numberActivatedTransition[n : Int, ts : set Transition]{
   #Transition >= n
   #ts = n
   all t : ts | activated[t]

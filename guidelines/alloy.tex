@@ -58,16 +58,16 @@ instead of
     get : FName -> Obj
   }
 \end{lstlisting}
-Likewise, be explicit about what the intended multiplicity of arguments is in predicate definitions.
+Likewise, be explicit about what the intended multiplicity of arguments is in predicate definitions, if it is not \lstinline|one|.
 For example, write
 \begin{lstlisting}
-  pred concurrentlyEnabled(ts : set Transition) {
+  pred concurrentlyEnabled[ts : set Transition] {
     all p : Place | p.tokens >= (sum t : ts | p.flow[t])
   }
 \end{lstlisting}
 instead of
 \begin{lstlisting}
-  pred concurrentlyEnabled(ts : Transition) {
+  pred concurrentlyEnabled[ts : Transition] {
     all p : Place | p.tokens >= (sum t : ts | p.flow[t])
   }
 \end{lstlisting}
@@ -78,13 +78,13 @@ Analogously for function definitions.
 Even though Alloy does not actually check the multiplicities, in particular, scalar vs.\ actual sets, make sure that all uses are consistent with intended multiplicities of arguments in definitions.
 For example, given the definition
 \begin{lstlisting}
-  pred enabled(t : one Transition) {
+  pred enabled[t : Transition] {
     all p : Place | p.tokens >= p.flow[t]
   }
 \end{lstlisting}
 do \emph{not} do something like
 \begin{lstlisting}
-  pred someOtherPRedicate(ts : set Transition) {
+  pred someOtherPredicate[ts : set Transition] {
     enabled[ts] and ...
   }
 \end{lstlisting}
@@ -95,7 +95,7 @@ Do not rely, except in very clear circumstances, on the implicit summing of inte
 That is, in a comparison like \lstinline|a>=b|, where \lstinline|a| or \lstinline|b| might be an actual set (with possibly more than one element), rather write explicitly \lstinline|a.sum>=b.sum|.
 However,
 \begin{lstlisting}
-  pred enabled(t : one Transition) {
+  pred enabled[t : Transition] {
     all p : Place | p.tokens >= p.flow[t]
   }
 \end{lstlisting}
@@ -106,13 +106,13 @@ is okay, if by the definition of \lstinline|flow| we know that \lstinline|p.flow
 Always be as strict as possible.
 For example, write
 \begin{lstlisting}
-  pred outComing(t : one Transition) {
+  pred outComing[t : Transition] {
     (sum p : Place | t.flow[p]) > 0
   }
 \end{lstlisting}
 instead of
 \begin{lstlisting}
-  pred outComing(t : one Transition) {
+  pred outComing[t : Transition] {
     (sum p : Place | t.flow[p]) != 0
   }
 \end{lstlisting}

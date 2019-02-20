@@ -25,18 +25,18 @@ fact {
   all weight : Transition.out[Place] | weight >= 0
 }
 
-pred activated[t : one Transition]{
+pred activated[t : Transition]{
   all p : Place | p.tokens >= p.inp[t]
 }
 
-pred conflict[t1,t2 : one Transition]{
+pred conflict[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
   some p : Place | p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
-pred concurrency[t1,t2 : one Transition]{
+pred concurrency[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
@@ -44,7 +44,7 @@ pred concurrency[t1,t2 : one Transition]{
 }
 
 //Add exactly one weight somewhere so that two transitions are concurrently activated
-pred addOneWeightOnePairConcurrency[t1,t2 : one Transition]{
+pred addOneWeightOnePairConcurrency[t1, t2 : Transition]{
   all p : Place, t : Transition | p.inpChange[t] >= 0 and t.outChange[p] >=0
   plus[#(Place.inpChange), #(Transition.outChange)] = 1
   plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = 1
@@ -52,7 +52,7 @@ pred addOneWeightOnePairConcurrency[t1,t2 : one Transition]{
 }
 
 //Remove exactly one weight somewhere so that two transitions are concurrently activated
-pred removeOneWeightOnePairConcurrency[t1,t2 : one Transition]{
+pred removeOneWeightOnePairConcurrency[t1, t2 : Transition]{
   all p : Place, t : Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
   plus[#(Place.inpChange), #(Transition.outChange)] = 1
   plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = (-1)
@@ -108,15 +108,14 @@ fact {
   no T3.defaultOut[Place - S3]
 }
 
-pred showAddOneWeightOnePairConcurrency[t1,t2 : one Transition]{
+pred showAddOneWeightOnePairConcurrency[t1, t2 : Transition]{
   t1 = T1
   t2 = T3
  addOneWeightOnePairConcurrency[t1,t2]
-  
 }
 run showAddOneWeightOnePairConcurrency for 3
 
-pred showRemoveOneWeightOnePairConcurrency[t1,t2 : one Transition]{
+pred showRemoveOneWeightOnePairConcurrency[t1, t2 : Transition]{
   t1 = T1
   t2 = T3
  removeOneWeightOnePairConcurrency[t1,t2]
