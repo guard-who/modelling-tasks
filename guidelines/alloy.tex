@@ -28,7 +28,7 @@
 
 \section*{Concerning multiplicities}
 
-Make all multiplicities explicit.
+Make multiplicities in signatures explicit.
 For example, write
 \begin{lstlisting}
   abstract sig Place extends Node
@@ -43,38 +43,32 @@ instead of
     tokens : Int
   }
 \end{lstlisting}
-That applies also to relational bounding expressions and in quantifiers.
+That applies also to the ``target side'' of relational bounding expressions.
 For example, write
 \begin{lstlisting}
-  abstract sig Node
+  abstract sig Obj
   {
-    flow : Node set -> lone Int
-  }
-  {
-    all v : one flow[Node] | v > 0
+    get : FName -> set Obj
   }
 \end{lstlisting}
 instead of
 \begin{lstlisting}
-  abstract sig Node
+  abstract sig Obj
   {
-    flow : Node -> lone Int
-  }
-  {
-    all v : flow[Node] | v > 0
+    get : FName -> Obj
   }
 \end{lstlisting}
 Likewise, be explicit about what the intended multiplicity of arguments is in predicate definitions.
 For example, write
 \begin{lstlisting}
   pred concurrentlyEnabled(ts : set Transition) {
-    all p : one Place | p.tokens >= (sum t : ts | p.flow[t])
+    all p : Place | p.tokens >= (sum t : ts | p.flow[t])
   }
 \end{lstlisting}
 instead of
 \begin{lstlisting}
   pred concurrentlyEnabled(ts : Transition) {
-    all p : one Place | p.tokens >= (sum t : ts | p.flow[t])
+    all p : Place | p.tokens >= (sum t : ts | p.flow[t])
   }
 \end{lstlisting}
 Analogously for function definitions.
@@ -85,7 +79,7 @@ Even though Alloy does not actually check the multiplicities, in particular, sca
 For example, given the definition
 \begin{lstlisting}
   pred enabled(t : one Transition) {
-    all p : one Place | p.tokens >= p.flow[t]
+    all p : Place | p.tokens >= p.flow[t]
   }
 \end{lstlisting}
 do \emph{not} do something like
@@ -102,10 +96,10 @@ That is, in a comparison like \lstinline|a>=b|, where \lstinline|a| or \lstinlin
 However,
 \begin{lstlisting}
   pred enabled(t : one Transition) {
-    all p : one Place | p.tokens >= p.flow[t]
+    all p : Place | p.tokens >= p.flow[t]
   }
 \end{lstlisting}
-is okay, since by the definition of \lstinline|flow| we know that \lstinline|p.flow[t]| is empty or a singleton, so we can avoid writing more explicitly \lstinline|p.flow[t].sum|.
+is okay, if by the definition of \lstinline|flow| we know that \lstinline|p.flow[t]| is empty or a singleton, so we can avoid writing more explicitly \lstinline|p.flow[t].sum|.
 
 \section*{Concerning arithmetic comparisons}
 
@@ -113,13 +107,13 @@ Always be as strict as possible.
 For example, write
 \begin{lstlisting}
   pred outComing(t : one Transition) {
-    (sum p : one Place | t.flow[p]) > 0
+    (sum p : Place | t.flow[p]) > 0
   }
 \end{lstlisting}
 instead of
 \begin{lstlisting}
   pred outComing(t : one Transition) {
-    (sum p : one Place | t.flow[p]) != 0
+    (sum p : Place | t.flow[p]) != 0
   }
 \end{lstlisting}
 
@@ -129,13 +123,13 @@ Add extra parentheses even when Alloy's precedence rule ``\lstinline|&| binds ti
 For example, write
 \begin{lstlisting}
   fact {
-    all p : one Place | (p.flow.Int & Place) = none
+    all p : Place | (p.flow.Int & Place) = none
   }
 \end{lstlisting}
 instead of
 \begin{lstlisting}
   fact {
-    all p : one Place | p.flow.Int & Place = none
+    all p : Place | p.flow.Int & Place = none
   }
 \end{lstlisting}
 

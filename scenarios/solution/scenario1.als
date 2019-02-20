@@ -2,7 +2,7 @@ open util/ordering[Transition]
 
 abstract sig Place
 {
-  inp : Transition set -> lone Int,
+  inp : Transition -> lone Int,
   tokens : one Int
 }
 {
@@ -11,24 +11,24 @@ abstract sig Place
 
 abstract sig Transition
 {
-  out : Place set -> lone Int
+  out : Place -> lone Int
 }
 
 fact {
   let Node = Place + Transition |
   let flow = inp + out |
-  all weight : one Node.flow[Node] | weight > 0
+  all weight : Node.flow[Node] | weight > 0
 }
 
 pred activated[t : one Transition]{
-  all p : one Place | p.tokens >= p.inp[t]
+  all p : Place | p.tokens >= p.inp[t]
 }
 
 pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
+  some p : Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrency[t1,t2 : one Transition]{
@@ -39,12 +39,12 @@ pred concurrency[t1,t2 : one Transition]{
 }
 
 pred concurrencyMultiple[ts : set Transition]{
-  all p : one Place | p.tokens >= (sum t : ts | p.inp[t])
+  all p : Place | p.tokens >= (sum t : ts | p.inp[t])
 }
 
 pred isMaxConcurrency[ts : set Transition]{
   concurrencyMultiple[ts]
-  no t : one (Transition - ts) | concurrencyMultiple[ts+t]
+  no t : (Transition - ts) | concurrencyMultiple[ts+t]
 }
 
 

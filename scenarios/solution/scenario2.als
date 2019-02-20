@@ -1,6 +1,6 @@
 abstract sig Place
 {
-  inp : Transition set -> lone Int,
+  inp : Transition -> lone Int,
   tokens : one Int
 }
 {
@@ -9,24 +9,24 @@ abstract sig Place
 
 abstract sig Transition
 {
-  out : Place set -> lone Int
+  out : Place -> lone Int
 }
 
 fact {
   let Node = Place + Transition |
   let flow = inp + out |
-  all weight : one Node.flow[Node] | weight > 0
+  all weight : Node.flow[Node] | weight > 0
 }
 
 pred activated[t : one Transition]{
-  all p : one Place | p.tokens >= p.inp[t]
+  all p : Place | p.tokens >= p.inp[t]
 }
 
 pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
+  some p : Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrency[t1,t2 : one Transition]{
@@ -37,7 +37,7 @@ pred concurrency[t1,t2 : one Transition]{
 }
 
 pred concurrencyMultiple[ts : set Transition]{
-  all p : one Place | p.tokens >= (sum t : ts | p.inp[t])
+  all p : Place | p.tokens >= (sum t : ts | p.inp[t])
 }
 
 //altogether exactly n tokens should be added
@@ -47,19 +47,19 @@ pred nTokensAdded[n : one Int]{
 
 //In each place, at most m tokens should be added
 pred mTokensAtMost[m : one Int]{
-  all p : one Place | p.tokens =< m
+  all p : Place | p.tokens =< m
 }
 
 //A certain number k of transitions are activated
 pred kTransitionsActivated[ts : set Transition, k : one Int]{
   #ts = k
-  all t : one ts | activated[t]
-  no t : one (Transition - ts) | activated[t]
+  all t : ts | activated[t]
+  no t : (Transition - ts) | activated[t]
 }
 
 //there is no concurrently activated transitions
 pred noConcurrency[]{
-  no t1,t2 : one Transition | concurrency[t1,t2]
+  no t1,t2 : Transition | concurrency[t1,t2]
 }
 
 //concrete Petri net
@@ -116,7 +116,7 @@ run showAdd3Mostly2and2TransitionActivated for 3
 pred showAdd3Mostly2NoConflict[]{
   nTokensAdded[4]
   mTokensAtMost[2]
-  no t1,t2 : one Transition | conflict[t1,t2]
+  no t1,t2 : Transition | conflict[t1,t2]
 }
 run showAdd3Mostly2NoConflict for 3
 

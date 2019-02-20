@@ -1,6 +1,6 @@
 abstract sig Place
 {
-  inp : Transition set -> lone Int,
+  inp : Transition -> lone Int,
   defaultTokens : one Int,
   tokenChange : one Int,
   tokens : one Int
@@ -13,24 +13,24 @@ abstract sig Place
 
 abstract sig Transition
 {
-  out : Place set -> lone Int
+  out : Place -> lone Int
 }
 
 fact {
   let Node = Place + Transition |
   let flow = inp + out |
-  all weight : one Node.flow[Node] | weight > 0
+  all weight : Node.flow[Node] | weight > 0
 }
 
 pred activated[t : one Transition]{
-  all p : one Place | p.tokens >= p.inp[t]
+  all p : Place | p.tokens >= p.inp[t]
 }
 
 pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
+  some p : Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrency[t1,t2 : one Transition]{
@@ -42,16 +42,16 @@ pred concurrency[t1,t2 : one Transition]{
 
 //Add exactly one token somewhere so that two transitions are concurrently activated
 pred addOneTokenOnePairConcurrency[t1,t2 : one Transition]{
-  all p : one Place | p.tokenChange >= 0
+  all p : Place | p.tokenChange >= 0
   (sum p : Place | p.tokenChange) = 1
   concurrency[t1,t2]
 }
 
 //Remove a token so that there are no activated transitions.
 pred removeOneTokenNoActivatedTransition[]{
-  all p : one Place | p.tokenChange =< 0
+  all p : Place | p.tokenChange =< 0
   (sum p : Place | p.tokenChange) = (-1)
-  no t : one Transition | activated[t]
+  no t : Transition | activated[t]
 }
 
 //default Petri net

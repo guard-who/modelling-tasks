@@ -1,8 +1,8 @@
 abstract sig Place
 {
-  inp : Transition set -> lone Int,
-  defaultInp : Transition set -> lone Int,
-  inpChange : Transition set -> lone Int,
+  inp : Transition -> lone Int,
+  defaultInp : Transition -> lone Int,
+  inpChange : Transition -> lone Int,
   defaultTokens : one Int,
   tokenChange : one Int,
   tokens : one Int
@@ -16,38 +16,38 @@ abstract sig Place
 abstract sig defaultPlace extends Place{}
 {
   no defaultInp[transitionChange]
-  all t : one Transition | inp[t] = plus[defaultInp[t], inpChange[t]]
+  all t : Transition | inp[t] = plus[defaultInp[t], inpChange[t]]
 }
 
 sig placeChange extends Place{}
 {
   no defaultInp[Transition]
-  all t : one Transition | inp[t] = inpChange[t]
+  all t : Transition | inp[t] = inpChange[t]
   defaultTokens = 0
 }
 
 abstract sig Transition
 {
-  out : Place set -> lone Int,
-  defaultOut : Place set -> lone Int,
-  outChange : Place set -> lone Int
+  out : Place -> lone Int,
+  defaultOut : Place -> lone Int,
+  outChange : Place -> lone Int
 }
 
 abstract sig defaultTransition extends Transition{}
 {
   no defaultOut[placeChange]
-  all p : one Place | out[p] = plus[defaultOut[p], outChange[p]]
+  all p : Place | out[p] = plus[defaultOut[p], outChange[p]]
 }
 
 sig transitionChange extends Transition{}
 {
   no defaultOut[Place]
-  all p : one Place | out[p] = outChange[p]
+  all p : Place | out[p] = outChange[p]
 }
 
 fact {
-  all weight : one Place.inp[Transition] | weight >= 0
-  all weight : one Transition.out[Place] | weight >= 0
+  all weight : Place.inp[Transition] | weight >= 0
+  all weight : Transition.out[Place] | weight >= 0
 }
 
 //default petri net
@@ -76,18 +76,18 @@ fact{
   no T3.defaultOut[Place]  
 }
 pred activated[t : one Transition]{
-  all p : one Place | p.tokens >= p.inp[t]
+  all p : Place | p.tokens >= p.inp[t]
 }
 
 pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
+  some p : Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrencyMultiple[ts : set Transition]{
-  all p : one Place | p.tokens >= (sum t : ts | p.inp[t])
+  all p : Place | p.tokens >= (sum t : ts | p.inp[t])
 }
 
 
@@ -100,29 +100,29 @@ pred maxTransitionsAdded[n : one Int]{
 }
 
 pred maxTokens[overall, eachPlace : one Int]{
-  all p : one Place | p.tokens =< eachPlace
+  all p : Place | p.tokens =< eachPlace
   (sum p : Place | p.tokens) =< overall
 }
 
 pred maxWeightAdded[weight : one Int, flow : one Int]{
-  all p : one Place, t : one Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
+  all p : Place, t : Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
   plus[#(Place.inpChange), #(Transition.outChange)] =< flow
   plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] =< weight
 }
 
 pred maxWeightRemoved[weight : one Int, flow : one Int]{
-  all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
+  all p : Place, t : Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
   plus[#(Place.inpChange), #(Transition.outChange)] =< flow
   plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] =< weight
-  all p : one Place, t : one Transition | p.inp[t] >= 0 and t.out[p] >= 0
+  all p : Place, t : Transition | p.inp[t] >= 0 and t.out[p] >= 0
 }
 
 pred presenceSelfLoop[]{
-  some p : one Place, t : one Transition | p.inp[t] >= 1 and t.out[p] >= 1
+  some p : Place, t : Transition | p.inp[t] >= 1 and t.out[p] >= 1
 }
 
 pred presenceSinkTransition[]{
-  some t : one Transition | t.out[Place] = 0
+  some t : Transition | t.out[Place] = 0
 }
 
 pred presenceSourceTransition[]{
@@ -132,12 +132,12 @@ pred presenceSourceTransition[]{
 pred numberActivatedTransition[n : one Int, ts : set Transition]{
   #Transition >= n
   #ts = n
-  all t : one ts | activated[t]
-  no t : one (Transition - ts) | activated[t]
+  all t : ts | activated[t]
+  no t : (Transition - ts) | activated[t]
 }
 
 pred presenceConflict[]{
-   some t1, t2 : one Transition | (t1 != t2) and conflict[t1,t2]
+   some t1, t2 : Transition | (t1 != t2) and conflict[t1,t2]
 }
 
 pred presenceConcurrency[ts : set Transition]{
