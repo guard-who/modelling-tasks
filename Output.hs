@@ -18,14 +18,14 @@ connectionArrow _          Inheritance =
   [arrowTo emptyArr]
 connectionArrow printNames (Assoc Composition name from to isRed) =
   arrow Composition ++ [HeadLabel (mult to)]
-  ++ [redColor | isRed] ++ [label name | printNames]
+  ++ [redColor | isRed] ++ [toLabel name | printNames]
   ++ case from of
        (1, Just 1) -> []
        (0, Just 1) -> [TailLabel (mult from)]
        _           -> error $ "invalid composition multiplicity"
 connectionArrow printNames (Assoc a name from to isRed) =
   arrow a ++ [TailLabel (mult from), HeadLabel (mult to)]
-  ++ [redColor | isRed] ++ [label name | printNames]
+  ++ [redColor | isRed] ++ [toLabel name | printNames]
 
 arrow :: AssociationType -> [Attribute]
 arrow Association = [ArrowHead noArrow]
@@ -37,9 +37,6 @@ mult (0, Nothing) = toLabelValue ""
 mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
-
-label :: String -> Attribute
-label = Label . toLabelValue
 
 drawCdFromSyntax :: Bool -> Syntax -> FilePath -> GraphvizOutput -> IO ()
 drawCdFromSyntax printNames syntax file format = do
@@ -67,7 +64,7 @@ drawOdFromInstance printNames input file format = do
   let theEdges = map ((\[from,v:"$0",to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), v:[])) . splitOn "->") $
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   let graph = undir (mkGraph (zip [0..] theNodes) theEdges) :: Gr String String
-  let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [underlinedLabel (firstLower l ++ " : " ++ takeWhile (/= '$') l), shape BoxShape], fmtEdge = \(_,_,l) -> [label l | printNames] }) graph
+  let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [underlinedLabel (firstLower l ++ " : " ++ takeWhile (/= '$') l), shape BoxShape], fmtEdge = \(_,_,l) -> [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
