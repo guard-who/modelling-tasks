@@ -1,6 +1,6 @@
 abstract sig Place
 {
-   inp : Transition set -> lone Int,
+  inp : Transition set -> lone Int,
   defaultInp : Transition set -> lone Int,
   inpChange : Transition set -> lone Int,
   defaultTokens : one Int,
@@ -18,6 +18,7 @@ abstract sig defaultPlace extends Place{}
   no defaultInp[transitionChange]
   all t : one Transition |  inp[t] = add[defaultInp[t], inpChange[t]]
 }
+
 sig placeChange extends Place{}
 {
   no defaultInp[Transition]
@@ -31,14 +32,13 @@ abstract sig Transition
   defaultOut : Place set -> lone Int,
   outChange : Place set -> lone Int
 }
-{
-}
 
 abstract sig defaultTransition extends Transition{}
 {
   no defaultOut[placeChange]
   all p : one Place |  out[p] = add[defaultOut[p], outChange[p]]
 }
+
 sig transitionChange extends Transition{}
 {
   no defaultOut[Place]
@@ -87,7 +87,7 @@ pred conflict[t1,t2 : one Transition]{
 }
 
 pred concurrencyMultiple[ts : set Transition]{
-  all p : one Place | p.tokens >= (sum t:ts | p.inp[t])
+  all p : one Place | p.tokens >= (sum t : ts | p.inp[t])
 }
 
 
@@ -105,13 +105,13 @@ pred maxTokens[overall, eachPlace : one Int]{
 }
 
 pred maxWeightAdded[weight : one Int, flow : one Int]{
- all p : one Place, t : one Transition | p.inpChange[t] >= 0 and t.outChange[p] >=0
+  all p : one Place, t : one Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
   add[#(Place.inpChange),#(Transition.outChange)] =< flow
   add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] =< weight
 }
 
 pred maxWeightRemoved[weight : one Int, flow : one Int]{
- all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
+  all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
   add[#(Place.inpChange),#(Transition.outChange)] =<  flow
   add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] =< weight
   all p : one Place, t : one Transition | p.inp[t] >= 0 and t.out[p] >= 0
@@ -128,6 +128,7 @@ pred presenceSinkTransition[]{
 pred presenceSourceTransition[]{
   some t : Transition | (#Place.inp[t]) = 0
 }
+
 pred numberActivatedTransition[n : one Int, ts : set Transition]{
   #Transition >= n
   #ts = n

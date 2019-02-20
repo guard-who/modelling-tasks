@@ -30,9 +30,8 @@ pred conflict[t1,t2 : one Transition]{
 }
 
 pred concurrencyMultiple[ts : set Transition]{
-  all p : one Place | p.tokens >= (sum t:ts | p.inp[t])
+  all p : one Place | p.tokens >= (sum t : ts | p.inp[t])
 }
-
 
 pred maxPlaces[n : one Int]{
   #Place >= 0
@@ -66,6 +65,7 @@ pred presenceSinkTransition[]{
 pred presenceSourceTransition[]{
   some t : one Transition | (#Place.inp[t]) = 0
 }
+
 pred numberActivatedTransition[n : one Int, ts : set Transition]{
   #Transition >= n
   #ts = n

@@ -120,7 +120,6 @@ pred showRemoveOneWeightOnePairConcurrency[t1,t2 : one Transition]{
   t1 = T1
   t2 = T3
  removeOneWeightOnePairConcurrency[t1,t2]
-  
 }
 run showRemoveOneWeightOnePairConcurrency for 3
 

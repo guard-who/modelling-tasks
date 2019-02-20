@@ -3,7 +3,7 @@ abstract sig Place
   inp : Transition set -> lone Int,
   tokens : one Int
 }
-{ 
+{
   tokens >= 0
 }
 
@@ -37,7 +37,7 @@ pred concurrency[t1,t2 : one Transition]{
 }
 
 pred concurrencyMultiple[ts : set Transition]{
-  all p : one Place | p.tokens >= (sum t:ts | p.inp[t])
+  all p : one Place | p.tokens >= (sum t : ts | p.inp[t])
 }
 
 //altogether exactly n tokens should be added
