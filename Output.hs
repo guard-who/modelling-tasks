@@ -63,8 +63,10 @@ drawOdFromInstance printNames input file format = do
   let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
   let theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
-  let graph = undir (mkGraph (zip [0..] theNodes) theEdges) :: Gr String String
-  let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [underlinedLabel (firstLower l ++ " : " ++ takeWhile (/= '$') l), shape BoxShape], fmtEdge = \(_,_,l) -> [toLabel l | printNames] }) graph
+  let numberedNodes = zip [0..] theNodes
+  let graph = undir (mkGraph numberedNodes theEdges) :: Gr String String
+  let objectNames = map (\(i, l) -> (i, firstLower l ++ " ")) numberedNodes
+  let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l), shape BoxShape], fmtEdge = \(_,_,l) -> [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
