@@ -42,16 +42,16 @@ pred concurrency[t1,t2 : one Transition]{
 
 //Add exactly one token somewhere so that two transitions are concurrently activated
 pred addOneTokenOnePairConcurrency[t1,t2 : one Transition]{
-  all p : Place | p.tokenChange >= 0
+  all p : one Place | p.tokenChange >= 0
   (sum p : Place | p.tokenChange) = 1
   concurrency[t1,t2]
 }
 
 //Remove a token so that there are no activated transitions.
 pred removeOneTokenNoActivatedTransition[]{
-  all p : Place | p.tokenChange =< 0
+  all p : one Place | p.tokenChange =< 0
   (sum p : Place | p.tokenChange) = (-1)
-  no t : Transition | activated[t]
+  no t : one Transition | activated[t]
 }
 
 //default Petri net
@@ -92,9 +92,9 @@ pred showaddOneTokenOnePairConcurrency[t1,t2 : one Transition]{
   t2 = T3
   addOneTokenOnePairConcurrency[t1,t2]
 }
-run showaddOneTokenOnePairConcurrency
+run showaddOneTokenOnePairConcurrency for 3
 
 pred showremoveOneTokenNoActivatedTransition[]{
   removeOneTokenNoActivatedTransition[]
 }
-run showremoveOneTokenNoActivatedTransition
+run showremoveOneTokenNoActivatedTransition for 3

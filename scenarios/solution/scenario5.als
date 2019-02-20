@@ -64,7 +64,7 @@ pred presenceSinkTransition[]{
 }
 
 pred presenceSourceTransition[]{
-  some t : Transition | (#Place.inp[t]) = 0
+  some t : one Transition | (#Place.inp[t]) = 0
 }
 pred numberActivatedTransition[n : one Int, ts : set Transition]{
   #Transition >= n

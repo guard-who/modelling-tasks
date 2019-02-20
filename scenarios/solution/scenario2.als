@@ -47,14 +47,14 @@ pred nTokensAdded[n : one Int]{
 
 //In each place, at most m tokens should be added
 pred mTokensAtMost[m : one Int]{
-  all p : Place | p.tokens =< m
+  all p : one Place | p.tokens =< m
 }
 
 //A certain number k of transitions are activated
 pred kTransitionsActivated[ts : set Transition, k : one Int]{
   #ts = k
-  all t : ts | activated[t]
-  no t : (Transition - ts) | activated[t]
+  all t : one ts | activated[t]
+  no t : one (Transition - ts) | activated[t]
 }
 
 //there is no concurrently activated transitions

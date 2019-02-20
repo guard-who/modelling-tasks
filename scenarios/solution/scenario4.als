@@ -53,7 +53,7 @@ pred addOneWeightOnePairConcurrency[t1,t2 : one Transition]{
 
 //Remove exactly one weight somewhere so that two transitions are concurrently activated
 pred removeOneWeightOnePairConcurrency[t1,t2 : one Transition]{
-  all p : Place, t : Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
+  all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
   add[#(Place.inpChange),#(Transition.outChange)] = 1
   add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] = (-1)
   concurrency[t1,t2]
@@ -64,7 +64,7 @@ pred addOneWeightNoActivatedTrans[]{
   all p : one Place, t : one Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
   add[#(Place.inpChange),#(Transition.outChange)] = 1
   add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] = 1
-  all t : Transition | not activated[t]
+  all t : one Transition | not activated[t]
 }
 
 //Remove exactly one weight somewhere so that no transitions is activated
