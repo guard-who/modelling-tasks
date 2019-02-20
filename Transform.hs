@@ -63,7 +63,7 @@ classSigs = map (\name -> "sig " ++ name ++ " extends Obj {}")
 
 subTypes :: String -> [(String, [String])] -> [String]
 subTypes index = concatMap (\(name, directSubclasses) ->
-    [ "fun " ++ name ++ subsCD ++ ": set Obj {"
+    [ "fun " ++ name ++ subsCD ++ " : set Obj {"
     , "  " ++ intercalate " + " (name : map (++ subsCD) directSubclasses)
     , "}"
     ])
@@ -74,7 +74,7 @@ fieldNames :: String -> [Association] -> [(String, Maybe String)] -> [String]
 fieldNames index associations = concatMap (\(this, super) ->
   let thisAssociations = filter (\(_,_,_,from,_,_) -> from == this) associations
   in
-    [ "fun " ++ this ++ fieldNamesCD ++": set FName {"
+    [ "fun " ++ this ++ fieldNamesCD ++" : set FName {"
     , "  " ++ intercalate " + " (maybe "none" (++ fieldNamesCD) super
                                   : map (\(_,name,_,_,_,_) -> name) thisAssociations)
     , "}"
@@ -86,11 +86,11 @@ compositesAndFieldNames :: String -> [Association] -> [(String, Maybe String)] -
 compositesAndFieldNames index compositions = concatMap (\(this, super) ->
   let thisCompositions = filter (\(_,_,_,_,to,_) -> to == this) compositions
   in
-    [ "fun " ++ this ++ compositesCD ++ ": set Obj {"
+    [ "fun " ++ this ++ compositesCD ++ " : set Obj {"
     , "  " ++ intercalate " + " (maybe "none" (++ compositesCD) super
                                   : map (\(_,_,_,from,_,_) -> from ++ subsCD) thisCompositions)
     , "}"
-    , "fun " ++ this ++ compFieldNamesCD ++ ": set FName {"
+    , "fun " ++ this ++ compFieldNamesCD ++ " : set FName {"
     , "  " ++ intercalate " + " (maybe "none" (++ compFieldNamesCD) super
                                   : map (\(_,name,_,_,_,_) -> name) thisCompositions)
     , "}"
