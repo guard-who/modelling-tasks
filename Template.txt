@@ -37,7 +37,7 @@ pred ObjU[objs : set Obj, fName : FName, fType : set Obj, up : Int] {
   all r : objs | #{l : fType | r in l.get[fName]} =< up
 }
 
-pred Composition[left : set Obj, lFName : some FName, right : set Obj] {
+pred Composition[left : set Obj, lFName : set FName, right : set Obj] {
   // all l1, l2 : left | (#{l1.get[lFName] & l2.get[lFName]} > 0) => l1 = l2
   all r : right | #{l : left, lF : lFName | r in l.get[lF]} =< 1
 }
