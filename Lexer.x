@@ -1,8 +1,6 @@
 {
 
-module Lexer (lexer) where
-
-import Types (Token(..))
+module Lexer (lexer, Token(..)) where
 
 }
 
@@ -25,6 +23,12 @@ $letter ($letter | $digit | ".")* { Id }
 $digit+ { Num . read }
 
 {
+
+data Token
+  = Keyword String
+  | Id String
+  | Num Int
+  | Symbol String
 
 lexer = alexScanTokens
 

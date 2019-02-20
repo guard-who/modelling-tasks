@@ -11,11 +11,8 @@ import System.Environment (getArgs)
 
 run :: String -> FilePath -> GraphvizOutput -> IO ()
 run input = do
-  -- putStrLn ("INPUT:\n\n" ++ show input ++ "\n")
   let tokens = lexer input
-  -- putStrLn ("TOKENS:\n\n" ++ show tokens ++ "\n")
   let syntax = parser tokens
-  -- putStrLn ("SYNTAX:\n\n" ++ show syntax ++ "\n")
   drawCdFromSyntax syntax
 
 main :: IO ()

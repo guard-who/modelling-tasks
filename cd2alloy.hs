@@ -10,11 +10,8 @@ import System.Environment (getArgs)
 
 run :: String -> Maybe FilePath -> Bool -> String -> IO ()
 run input output template index = do
-  -- putStrLn ("INPUT:\n\n" ++ show input ++ "\n")
   let tokens = lexer input
-  -- putStrLn ("TOKENS:\n\n" ++ show tokens ++ "\n")
   let syntax = parser tokens
-  -- putStrLn ("SYNTAX:\n\n" ++ show syntax ++ "\n")
   time <- getZonedTime
   let (part1, part2, part3, part4, part5) = transform syntax index (show time)
   case output of

@@ -2,7 +2,8 @@
 
 module Parser (parser) where
 
-import Types
+import Lexer (Token(..))
+import Types (AssociationType(..))
 
 }
 
