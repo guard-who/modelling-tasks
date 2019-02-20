@@ -1,0 +1,67 @@
+name: alloy-cd-od
+build-tools:
+  - alex
+  - happy
+ghc-options:
+  -Wall
+  -Wincomplete-uni-patterns
+  -Wincomplete-record-updates
+  -Widentities
+  -Wredundant-constraints
+dependencies:
+  - base
+  - array
+  - containers
+  - fgl
+  - file-embed
+  - filepath
+  - graphviz
+  - random-shuffle
+  - process
+  - random
+  - split
+  - text
+library:
+  source-dirs: .
+  exposed-modules:
+    - Alloy
+    - Edges
+    - Generate
+    - Lexer
+    - Mutation
+    - Output
+    - Parser
+    - Transform
+    - Types
+    - Util
+executables:
+  cd2alloy:
+    main: cd2alloy.hs
+    dependencies:
+      - alloy-cd-od
+      - time
+    source-dirs: .
+  cd2pic:
+    main: cd2pic.hs
+    dependencies: alloy-cd-od
+    source-dirs: .
+  instance2pic:
+    main: instance2pic.hs
+    dependencies: alloy-cd-od
+    other-modules:
+      - Edges
+      - Output
+      - Types
+      - Util
+  random-stuff:
+    main: random-stuff.hs
+    dependencies: alloy-cd-od
+    other-modules:
+      - Alloy
+      - Edges
+      - Generate
+      - Mutation
+      - Output
+      - Transform
+      - Types
+      - Util

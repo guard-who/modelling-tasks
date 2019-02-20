@@ -2,6 +2,7 @@
 *.dyn_o
 *.hi
 *.o
+.stack-work/
 Lexer.hs
 Lexer.info
 Parser.hs
@@ -11,3 +12,4 @@ instance2pic.exe
 cd2pic.exe
 random-stuff.exe
 alloy/RunAlloy.class
+alloy-cd-od.cabal
