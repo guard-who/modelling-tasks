@@ -15,6 +15,5 @@ data ClassConfig = ClassConfig {
     aggregations :: (Maybe Int, Maybe Int),
     associations :: (Maybe Int, Maybe Int),
     compositions :: (Maybe Int, Maybe Int),
-    inheritances :: (Maybe Int, Maybe Int),
-    searchSpace  :: Int
+    inheritances :: (Maybe Int, Maybe Int)
   } deriving Eq

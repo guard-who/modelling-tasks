@@ -22,10 +22,10 @@ main = do
           aggregations = (Nothing, Nothing),
           associations = (Nothing, Nothing),
           compositions = (Nothing, Nothing),
-          inheritances = (Nothing, Nothing),
-          searchSpace  = 10
+          inheritances = (Nothing, Nothing)
         }
-  (names, edges) <- generate config
+  let searchSpace = 10
+  (names, edges) <- generate config searchSpace
   let output = "output"
   let maxInstances = -1
   let cd1 = fromEdges names edges

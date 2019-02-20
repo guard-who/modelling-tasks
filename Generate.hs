@@ -7,13 +7,13 @@ import Data.Maybe
 
 import System.Random
 
-generate :: ClassConfig -> IO ([String], [DiagramEdge])
-generate c = do
-  ncls <- oneOfFirst (searchSpace c) $ toAvailable $ classes c
-  nins <- oneOfFirst (searchSpace c) $ toAvailable $ inheritances c
-  ncos <- oneOfFirst (searchSpace c) $ toAvailable $ compositions c
-  nass <- oneOfFirst (searchSpace c) $ toAvailable $ associations c
-  nags <- oneOfFirst (searchSpace c) $ toAvailable $ aggregations c
+generate :: ClassConfig -> Int -> IO ([String], [DiagramEdge])
+generate c searchSpace = do
+  ncls <- oneOfFirst searchSpace $ toAvailable $ classes c
+  nins <- oneOfFirst searchSpace $ toAvailable $ inheritances c
+  ncos <- oneOfFirst searchSpace $ toAvailable $ compositions c
+  nass <- oneOfFirst searchSpace $ toAvailable $ associations c
+  nags <- oneOfFirst searchSpace $ toAvailable $ aggregations c
   if isPossible ncls nins ncos nass nags
     then do
       let names = classNames ncls
@@ -21,9 +21,9 @@ generate c = do
       return (names, es)
     else if smallerC == c
          then error "it seems to be impossible to generate such a model; check your configuration"
-         else generate smallerC
+         else generate smallerC searchSpace
   where
-    smallerC = shrink c
+    smallerC = shrink c searchSpace
     classNames x = (:[]) <$> take x ['A'..]
     toAvailable :: (Maybe Int, Maybe Int) -> [Int]
     toAvailable (mx, Nothing) = [fromMaybe 0 mx..]
@@ -81,8 +81,8 @@ generateEdges classs inh com ass agg =
       h <- oneOf $ drop (l - 1) [Just 1, Just 2, Nothing]
       return (l, h)
 
-shrink :: ClassConfig -> ClassConfig
-shrink c = c {
+shrink :: ClassConfig -> Int -> ClassConfig
+shrink c searchSpace = c {
     classes      = increase $ classes c,
     aggregations = decrease $ aggregations c,
     associations = decrease $ associations c,
@@ -96,7 +96,7 @@ shrink c = c {
       | x < y     = (Just $ x + 1, Just y)
       | otherwise = (Just x, Just y)
     decrease (Nothing, my     ) = (Just 0, my)
-    decrease (Just  x, Nothing) = (Just x, Just $ x + searchSpace c)
+    decrease (Just  x, Nothing) = (Just x, Just $ x + searchSpace)
     decrease (Just  x, Just  y)
       | x < y     = (Just x, Just $ y - 1)
       | otherwise = (Just x, Just y)
