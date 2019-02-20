@@ -34,12 +34,10 @@ pred concurrencyMultiple[ts : set Transition]{
 }
 
 pred maxPlaces[n : one Int]{
-  #Place >= 0
   #Place =< n
 }
 
 pred maxTransitions[n : one Int]{
-  #Transition >= 0
   #Transition =< n
 }
 
@@ -67,14 +65,13 @@ pred presenceSourceTransition[]{
 }
 
 pred numberActivatedTransition[n : one Int, ts : set Transition]{
-  #Transition >= n
   #ts = n
   all t : one ts | activated[t]
   no t : one (Transition - ts) | activated[t]
 }
 
 pred presenceConflict[]{
-   some t1, t2 : one Transition | (t1 != t2) and conflict[t1,t2]
+   some t1, t2 : one Transition | conflict[t1,t2]
 }
 
 pred presenceConcurrency[]{
