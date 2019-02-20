@@ -61,7 +61,7 @@ drawOdFromInstance :: Bool -> String -> FilePath -> GraphvizOutput -> IO ()
 drawOdFromInstance printNames input file format = do
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
   let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
-  let theEdges = map ((\[from,v:"$0",to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), v:[])) . splitOn "->") $
+  let theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   let graph = undir (mkGraph (zip [0..] theNodes) theEdges) :: Gr String String
   let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [underlinedLabel (firstLower l ++ " : " ++ takeWhile (/= '$') l), shape BoxShape], fmtEdge = \(_,_,l) -> [toLabel l | printNames] }) graph
