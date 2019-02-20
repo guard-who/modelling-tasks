@@ -35,7 +35,7 @@ main = do
         als1 = part1 ++ part2 ++ part3 ++ part4 ++ part5
     nonEmpty1 <- Alloy.existInstances als1
     when nonEmpty1 $ do
-      mutations <- shuffleM $ getAllMutationResults names edges
+      mutations <- shuffleM $ getAllMutationResults config names edges
       let cd2 = fromEdges names $ getFirstValid names mutations
           (part1', part2', part3', part4', part5') = transform cd2 "2" ""
           als2  = part1' ++ part2' ++ part3' ++ part4' ++ part5'

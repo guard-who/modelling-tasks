@@ -13,14 +13,15 @@ import Data.List     ((\\))
 import Data.Maybe    (maybeToList)
 import Data.Set      (Set, delete, intersection, member, singleton, toList)
 
-getAllMutationResults :: [String] -> [DiagramEdge] -> [[DiagramEdge]]
-getAllMutationResults vs es =
+getAllMutationResults
+  :: ClassConfig -> [String] -> [DiagramEdge] -> [[DiagramEdge]]
+getAllMutationResults c vs es =
   let singleTargets   = [singleton t | t <- [minBound :: Target ..]]
       mutations       = [m | t <- singleTargets, m <- [Add t, Remove t]]
         ++ [Transform t1 t2 | t1 <- singleTargets, t2 <- singleTargets]
         ++ [m | a <- [minBound :: Alteration ..], t <- singleTargets
               , m <- [LimitRange a t, LimitShift a t]]
-  in concatMap (getMutationResults vs es) mutations
+  in concatMap (getMutationResults c vs es) mutations
 
 data Mutation =
     Add       Targets
@@ -30,31 +31,32 @@ data Mutation =
   | LimitShift Alteration Targets
 
 data Target = TAssociation | TAggregation | TComposition | TInheritance
-  deriving (Bounded, Enum, Eq, Ord)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 type Targets = Set Target
 
 data Alteration = Increase | Decrease
   deriving (Bounded, Enum, Eq, Ord)
 
-getMutationResults :: [String] -> [DiagramEdge] -> Mutation -> [[DiagramEdge]]
-getMutationResults vs es m = case m of
-  Add                 t -> allAdds t vs es
-  Remove              t -> allRemoves t es
-  Transform         s t -> transform s t es
-  LimitRange Increase t -> allIncreaseLimitsRange t es
-  LimitRange Decrease t -> allDecreaseLimitsRange t es
-  LimitShift Increase t -> allShiftDownLimitsRange t es
-  LimitShift Decrease t -> allShiftUpLimitsRange t es
+getMutationResults
+  :: ClassConfig -> [String] -> [DiagramEdge] -> Mutation -> [[DiagramEdge]]
+getMutationResults c vs es m = case m of
+  Add                 t -> allAdds c t vs es
+  Remove              t -> allRemoves c t es
+  Transform         s t -> transform c s t es
+  LimitRange Increase t -> allIncreaseLimitsRange c t es
+  LimitRange Decrease t -> allDecreaseLimitsRange c t es
+  LimitShift Increase t -> allShiftDownLimitsRange c t es
+  LimitShift Decrease t -> allShiftUpLimitsRange c t es
 
-transform :: Targets -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
-transform s t es =
-  (concatMap (flip allFlipTransformations es) $ toList (s `intersection` t))
-  ++ addWhen (TInheritance `member` s) (allFromInheritances ti es)
-  ++ addWhen (TInheritance `member` t) (allToInheritances si es)
-  ++ addWhen (TComposition `member` si) (allFromCompositions tc es)
-  ++ addWhen (TComposition `member` ti) (allToCompositions sc es)
-  ++ concat [allOtherTransformations sa ta es
+transform :: ClassConfig -> Targets -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+transform c s t es =
+  (concatMap (flip (allFlipTransformations c) es) $ toList (s `intersection` t))
+  ++ addWhen (TInheritance `member` s) (allFromInheritances c ti es)
+  ++ addWhen (TInheritance `member` t) (allToInheritances c si es)
+  ++ addWhen (TComposition `member` si) (allFromCompositions c tc es)
+  ++ addWhen (TComposition `member` ti) (allToCompositions c sc es)
+  ++ concat [allOtherTransformations c sa ta es
             | sa <- toList sc, ta <- toList tc, sa /= ta]
   where
     addWhen b xs = if b then xs else []
@@ -80,9 +82,40 @@ targets :: Targets -> [DiagramEdge] -> [DiagramEdge]
 targets ts es =
   [e | e <- es, isTargetsEdge e ts]
 
-allRemoves :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allRemoves ts es =
-  [filter (e /=) es | e <- targets ts es]
+targetEdgesCount :: Target -> [DiagramEdge] -> Int
+targetEdgesCount t es = length [e | e <- es, isTargetEdge e t]
+
+configTarget :: Target -> ClassConfig -> (Maybe Int, Maybe Int)
+configTarget t = case t of
+  TAssociation -> associations
+  TAggregation -> aggregations
+  TComposition -> compositions
+  TInheritance -> inheritances
+
+isLessThan :: Int -> (Maybe Int, Maybe Int) -> Bool
+isLessThan _ (Nothing, _) = False
+isLessThan x (Just y , _) = x < y
+
+isGreaterThan :: Int -> (Maybe Int, Maybe Int) -> Bool
+isGreaterThan _ (_, Nothing) = False
+isGreaterThan x (_, Just y ) = x > y
+
+isRemovable :: ClassConfig -> Target -> [DiagramEdge] -> Bool
+isRemovable c t es =
+  not $ (targetEdgesCount t es - 1) `isLessThan` configTarget t c
+
+isAddable :: ClassConfig -> Target -> [DiagramEdge] -> Bool
+isAddable c t es =
+  not $ (targetEdgesCount t es + 1) `isGreaterThan` configTarget t c
+
+removableTargets :: ClassConfig -> Targets -> [DiagramEdge] -> [DiagramEdge]
+removableTargets c ts es =
+  [e | t <- toList ts, isRemovable c t es
+     , e <- es, isTargetEdge e t]
+
+allRemoves :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allRemoves c ts es =
+  [filter (e /=) es | e <- removableTargets c ts es]
 
 nonEdges :: [String] -> [DiagramEdge] -> [(String, String)]
 nonEdges vs es = [(x, y) | x <- vs, y <- vs, x < y] \\ connections
@@ -91,10 +124,10 @@ nonEdges vs es = [(x, y) | x <- vs, y <- vs, x < y] \\ connections
 
 type Limit = (Int, Maybe Int)
 
-allAdds :: Targets -> [String] -> [DiagramEdge] -> [[DiagramEdge]]
-allAdds ts vs es =
-  [x:es | (s, e) <- nonEdges vs es, t <- toList ts
-        , sl <- fst $ allLimits t, el <- snd $ allLimits t
+allAdds :: ClassConfig -> Targets -> [String] -> [DiagramEdge] -> [[DiagramEdge]]
+allAdds c ts vs es =
+  [x:es | (s, e) <- nonEdges vs es, t <- toList ts, isAddable c t es
+        , sl <- fst $ allLimits c t, el <- snd $ allLimits c t
         , x <- addEdges s e t sl el]
   where
     addEdges s e TInheritance _  _  = [(s, e, Inheritance), (e, s, Inheritance)]
@@ -113,9 +146,11 @@ assocType TInheritance = Nothing
 Generates a list of all limits (i.e. multiplicities) for the given target.
 The resulting tuple contains the list of all multiplicities at the edges start
 and the list of all multiplicities at the edges end.
+
+For now: ignores 'ClassConfig' parameter.
 -}
-allLimits :: Target -> ([Limit], [Limit])
-allLimits t = (allStartLimits, allEndLimits)
+allLimits :: ClassConfig -> Target -> ([Limit], [Limit])
+allLimits _ t = (allStartLimits, allEndLimits)
   where
     allStartLimits = case t of
       TInheritance -> []
@@ -127,34 +162,43 @@ allLimits t = (allStartLimits, allEndLimits)
     allPossibleLimits = [(l, h) | l <- [0, 1, 2], h <- [Just 1, Just 2, Nothing]
                                 , maybe True (l <=) h]
 
-allIncreaseLimitsRange :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allIncreaseLimitsRange = allLimitsWith ((>) `on` limitSize)
+allIncreaseLimitsRange
+  :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allIncreaseLimitsRange c = allLimitsWith c ((>) `on` limitSize)
 
-allDecreaseLimitsRange :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allDecreaseLimitsRange = allLimitsWith ((<) `on` limitSize)
+allDecreaseLimitsRange
+  :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allDecreaseLimitsRange c = allLimitsWith c ((<) `on` limitSize)
 
-allShiftDownLimitsRange :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allShiftDownLimitsRange =
-  allLimitsWith (\x y -> limitSize x == limitSize y && fst x > fst y)
+allShiftDownLimitsRange
+  :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allShiftDownLimitsRange c =
+  allLimitsWith c (\x y -> limitSize x == limitSize y && fst x > fst y)
 
-allShiftUpLimitsRange :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allShiftUpLimitsRange =
-  allLimitsWith (\x y -> limitSize x == limitSize y && fst x > fst y)
+allShiftUpLimitsRange
+  :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allShiftUpLimitsRange c =
+  allLimitsWith c (\x y -> limitSize x == limitSize y && fst x > fst y)
 
 {-|
 Returns all possible sets of edges by modifying the limits on one side of one
 edge by the given modification op on applying targets.
 -}
-allLimitsWith :: (Limit -> Limit -> Bool) -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allLimitsWith op ts es =
+allLimitsWith
+  :: ClassConfig
+  -> (Limit -> Limit -> Bool)
+  -> Targets
+  -> [DiagramEdge]
+  -> [[DiagramEdge]]
+allLimitsWith c op ts es =
   [ (sv, ev, Assoc k sl'  el' False) : filter (e /=) es
   | e@(sv, ev, Assoc k sl el _) <- targets ts es, t <- toList ts
   , (sl', el') <- bothLimits sl el t]
   where
     bothLimits s e t = zip (repeat s) (endLimits e t)
                     ++ zip (startLimits s t) (repeat e)
-    startLimits l t = [l' | l' <- fst $ allLimits t, l' `op` l]
-    endLimits   l t = [l' | l' <- snd $ allLimits t, l' `op` l]
+    startLimits l t = [l' | l' <- fst $ allLimits c t, l' `op` l]
+    endLimits   l t = [l' | l' <- snd $ allLimits c t, l' `op` l]
 
 {-|
 Beware! This function just takes a constant value (at the moment 10) to measure
@@ -164,8 +208,8 @@ limitSize :: Limit -> Int
 limitSize (x, Nothing) = 10 - x
 limitSize (x, Just y ) = y - x
 
-allFlipTransformations :: Target -> [DiagramEdge] -> [[DiagramEdge]]
-allFlipTransformations t es =
+allFlipTransformations :: ClassConfig -> Target -> [DiagramEdge] -> [[DiagramEdge]]
+allFlipTransformations _c t es =
   [ e' : filter (e /=) es | e <- es, isTargetEdge e t
                           , e'<- maybeToList $ maybeFlipEdge e]
   where
@@ -173,34 +217,40 @@ allFlipTransformations t es =
       | Assoc Association sl el _ <- k, sl == el = Nothing
       | otherwise                                = Just (e, s, k)
 
-allFromInheritances :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allFromInheritances ts es =
+allFromInheritances :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allFromInheritances c ts es =
   [ (se, ee, Assoc k sl el False) : filter (e /=) es
-  | e@(se, ee, Inheritance) <- es, t <- toList ts
-  , sl <- fst $ allLimits t, el <- snd $ allLimits t
+  | isRemovable c TInheritance es, e@(se, ee, Inheritance) <- es
+  , t <- toList ts, isAddable c t es
+  , sl <- fst $ allLimits c t, el <- snd $ allLimits c t
   , k <- maybeToList $ assocType t]
 
-allToInheritances :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allToInheritances ts es =
+allToInheritances :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allToInheritances c ts es =
   [ (se, ee, Inheritance) : filter (e /=) es
-  | e@(se, ee, Assoc {}) <- targets ts es]
+  | isAddable c TInheritance es
+  , e@(se, ee, Assoc {}) <- removableTargets c ts es]
 
-allFromCompositions :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allFromCompositions ts es =
+allFromCompositions :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allFromCompositions c ts es =
   [ (se, ee, Assoc k sl el False) : filter (e /=) es
-  | e@(se, ee, Assoc Composition sl el _) <- es, t <- toList ts
+  | isRemovable c TComposition es, e@(se, ee, Assoc Composition sl el _) <- es
+  , t <- toList ts, isAddable c t es
   , k <- maybeToList $ assocType t]
 
-allToCompositions :: Targets -> [DiagramEdge] -> [[DiagramEdge]]
-allToCompositions ts es =
+allToCompositions :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allToCompositions c ts es =
   [ (se, ee, Assoc Composition (reduce sl) el False) : filter (e /=) es
-  | e@(se, ee, Assoc k sl el _) <- targets ts es, k /= Composition]
+  | isAddable c TComposition es
+  , e@(se, ee, Assoc k sl el _) <- removableTargets c ts es, k /= Composition]
   where
     reduce (0, _) = (0, Just 1)
     reduce _      = (1, Just 1)
 
-allOtherTransformations :: Target -> Target -> [DiagramEdge] -> [[DiagramEdge]]
-allOtherTransformations st tt es =
+allOtherTransformations
+  :: ClassConfig -> Target -> Target -> [DiagramEdge] -> [[DiagramEdge]]
+allOtherTransformations c st tt es =
   [ (se, ee, Assoc k sl el False) : filter (e /=) es
-  | st /= tt, e@(se, ee, Assoc _ sl el _) <- es, isTargetEdge e st
+  | st /= tt, isRemovable c st es, isAddable c tt es
+  , e@(se, ee, Assoc _ sl el _) <- es, isTargetEdge e st
   , k <- maybeToList $ assocType tt]
