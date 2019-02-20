@@ -7,7 +7,7 @@ abstract sig Place
 }
 {
   tokens >= 0
-  all t : one Transition |  inp[t] = add[defaultInp[t], inpChange[t]]
+  all t : one Transition | inp[t] = plus[defaultInp[t], inpChange[t]]
 }
 
 abstract sig Transition
@@ -17,7 +17,7 @@ abstract sig Transition
   outChange : Place set -> lone Int
 }
 {
-  all p : one Place |  out[p] = add[defaultOut[p], outChange[p]]
+  all p : one Place | out[p] = plus[defaultOut[p], outChange[p]]
 }
 
 fact {
@@ -33,7 +33,7 @@ pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < add[p.inp[t1], p.inp[t2]]
+  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrency[t1,t2 : one Transition]{
@@ -46,32 +46,32 @@ pred concurrency[t1,t2 : one Transition]{
 //Add exactly one weight somewhere so that two transitions are concurrently activated
 pred addOneWeightOnePairConcurrency[t1,t2 : one Transition]{
   all p : one Place, t : one Transition | p.inpChange[t] >= 0 and t.outChange[p] >=0
-  add[#(Place.inpChange),#(Transition.outChange)] = 1
-  add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] = 1
+  plus[#(Place.inpChange), #(Transition.outChange)] = 1
+  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = 1
   concurrency[t1,t2]
 }
 
 //Remove exactly one weight somewhere so that two transitions are concurrently activated
 pred removeOneWeightOnePairConcurrency[t1,t2 : one Transition]{
   all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
-  add[#(Place.inpChange),#(Transition.outChange)] = 1
-  add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] = (-1)
+  plus[#(Place.inpChange), #(Transition.outChange)] = 1
+  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = (-1)
   concurrency[t1,t2]
 }
 
 //Add exactly one weight somewhere so that no transitions is activated
 pred addOneWeightNoActivatedTrans[]{
   all p : one Place, t : one Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
-  add[#(Place.inpChange),#(Transition.outChange)] = 1
-  add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] = 1
+  plus[#(Place.inpChange), #(Transition.outChange)] = 1
+  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = 1
   all t : one Transition | not activated[t]
 }
 
 //Remove exactly one weight somewhere so that no transitions is activated
 pred removeOneWeightNoActivatedTrans[]{
   all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
-  add[#(Place.inpChange),#(Transition.outChange)] = 1
-  add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] = (-1)
+  plus[#(Place.inpChange), #(Transition.outChange)] = 1
+  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = (-1)
   all t : Transition | not activated[t]
 }
 

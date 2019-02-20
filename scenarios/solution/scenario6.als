@@ -9,14 +9,14 @@ abstract sig Place
 }
 {
   defaultTokens >= 0
-  tokens = add[defaultTokens,tokenChange]
+  tokens = plus[defaultTokens, tokenChange]
   tokens >= 0
 }
 
 abstract sig defaultPlace extends Place{}
 {
   no defaultInp[transitionChange]
-  all t : one Transition |  inp[t] = add[defaultInp[t], inpChange[t]]
+  all t : one Transition | inp[t] = plus[defaultInp[t], inpChange[t]]
 }
 
 sig placeChange extends Place{}
@@ -36,7 +36,7 @@ abstract sig Transition
 abstract sig defaultTransition extends Transition{}
 {
   no defaultOut[placeChange]
-  all p : one Place |  out[p] = add[defaultOut[p], outChange[p]]
+  all p : one Place | out[p] = plus[defaultOut[p], outChange[p]]
 }
 
 sig transitionChange extends Transition{}
@@ -83,7 +83,7 @@ pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < add[p.inp[t1] , p.inp[t2]]
+  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrencyMultiple[ts : set Transition]{
@@ -106,14 +106,14 @@ pred maxTokens[overall, eachPlace : one Int]{
 
 pred maxWeightAdded[weight : one Int, flow : one Int]{
   all p : one Place, t : one Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
-  add[#(Place.inpChange),#(Transition.outChange)] =< flow
-  add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] =< weight
+  plus[#(Place.inpChange), #(Transition.outChange)] =< flow
+  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] =< weight
 }
 
 pred maxWeightRemoved[weight : one Int, flow : one Int]{
   all p : one Place, t : one Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
-  add[#(Place.inpChange),#(Transition.outChange)] =<  flow
-  add[(sum p : Place, t : Transition | p.inpChange[t]),(sum t : Transition, p : Place | t.outChange[p])] =< weight
+  plus[#(Place.inpChange), #(Transition.outChange)] =< flow
+  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] =< weight
   all p : one Place, t : one Transition | p.inp[t] >= 0 and t.out[p] >= 0
 }
 

@@ -28,7 +28,7 @@ pred conflict[t1,t2 : one Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < add[p.inp[t1] , p.inp[t2]]
+  some p : one Place | one p.inp[t1] and one p.inp[t2] and p.tokens < plus[p.inp[t1], p.inp[t2]]
 }
 
 pred concurrency[t1,t2 : one Transition]{
