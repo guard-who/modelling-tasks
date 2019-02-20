@@ -10,6 +10,6 @@ Parser.info
 cd2alloy.exe
 instance2pic.exe
 cd2pic.exe
-random-stuff.exe
+random-task.exe
 alloy/RunAlloy.class
 alloy-cd-od.cabal

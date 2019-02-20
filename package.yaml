@@ -53,8 +53,8 @@ executables:
       - Output
       - Types
       - Util
-  random-stuff:
-    main: random-stuff.hs
+  random-task:
+    main: random-task.hs
     dependencies: alloy-cd-od
     other-modules:
       - Alloy
