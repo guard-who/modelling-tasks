@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Transform (transform) where
+module Transform (createRunCommand, transform) where
 
 import Types (Association, AssociationType(..))
 
@@ -41,22 +41,25 @@ transform (classes, associations) index time =
   , "// Properties"
   , unlines (predicate index associations classNames)
   ]
- part5 = unlines
-    [ "///////////////////////////////////////////////////"
-    , "// Run commands"
-    , "///////////////////////////////////////////////////"
-    , ""
-    , "run cd" ++ index ++ " for " ++ show maxObjects ++  " Obj, " ++ show intSize ++ " Int"
-    ]
+ part5 = createRunCommand ("cd" ++ index) (length classes) 5
  in
    (part1, part2, part3, part4, part5)
   where
-    intSize :: Int
-    intSize    = ceiling (logBase 2 $ fromIntegral $ length classes * maxObjects + 1 :: Double)
-    maxObjects = 5
     classNames = map fst classes
     classesWithDirectSubclasses = map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
+
+createRunCommand :: String -> Int -> Int -> String
+createRunCommand command numClasses maxObjects = unlines
+  [ "///////////////////////////////////////////////////"
+  , "// Run commands"
+  , "///////////////////////////////////////////////////"
+  , ""
+  , "run { " ++ command ++ " } for " ++ show maxObjects ++  " Obj, " ++ show intSize ++ " Int"
+  ]
+  where
+    intSize :: Int
+    intSize    = ceiling (logBase 2 $ fromIntegral $ numClasses * maxObjects + 1 :: Double)
 
 associationSigs :: [Association] -> [String]
 associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ name ++ " extends FName {}")

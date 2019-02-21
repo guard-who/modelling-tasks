@@ -4,7 +4,7 @@ import Edges
 import Generate  (generate)
 import Mutation  (getAllMutationResults)
 import Output    (drawCdFromSyntax, drawOdFromInstance)
-import Transform (transform)
+import Transform (createRunCommand, transform)
 import Types     (ClassConfig (..))
 
 import qualified Alloy
@@ -40,7 +40,7 @@ main = do
           (part1', part2', part3', part4', part5') = transform cd2 "2" ""
           als2  = part1' ++ part2' ++ part3' ++ part4' ++ part5'
           als12 = part1 ++ (part2 `unionL` part2') ++ (part3 `unionL` part3')
-                  ++ part4 ++ part4' ++ "run { cd1 and (not cd2) } for 5"
+                  ++ part4 ++ part4' ++ createRunCommand "cd1 and (not cd2)" (length names) 5
       drawCdFromSyntax True cd2 (output ++ "2") Pdf
       nonEmpty2 <- Alloy.existInstances als2
       when nonEmpty2 $ do
