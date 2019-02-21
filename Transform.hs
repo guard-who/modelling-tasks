@@ -59,7 +59,7 @@ createRunCommand command numClasses maxObjects = unlines
   ]
   where
     intSize :: Int
-    intSize    = ceiling (logBase 2 $ fromIntegral $ numClasses * maxObjects + 1 :: Double)
+    intSize = ceiling (logBase 2 $ fromIntegral $ 2 * max (numClasses * maxObjects) (2 * maxObjects) + 1 :: Double)
 
 associationSigs :: [Association] -> [String]
 associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ name ++ " extends FName {}")
