@@ -31,6 +31,7 @@ public class RunAlloy {
         Module module = CompUtil.parseEverything_fromString(reporter, content);
 
         A4Options options = new A4Options();
+        options.noOverflow = true;
         options.solver = A4Options.SatSolver.SAT4J;
 
         for (Command command: module.getAllCommands()) {

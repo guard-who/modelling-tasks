@@ -46,11 +46,14 @@ transform (classes, associations) index time =
     , "// Run commands"
     , "///////////////////////////////////////////////////"
     , ""
-    , "run cd" ++ index ++ " for 5"
+    , "run cd" ++ index ++ " for " ++ show maxObjects ++  " Obj, " ++ show intSize ++ " Int"
     ]
  in
    (part1, part2, part3, part4, part5)
   where
+    intSize :: Int
+    intSize    = ceiling (logBase 2 $ fromIntegral $ length classes * maxObjects + 1 :: Double)
+    maxObjects = 5
     classNames = map fst classes
     classesWithDirectSubclasses = map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
