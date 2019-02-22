@@ -2,7 +2,9 @@ module Mutation (
   -- * Types
   Mutation (..), Targets, Target (..), Alteration (..),
   -- * Perform mutation operations
-  getAllMutationResults, getMutationResults
+  getAllMutationResults, getMutationResults,
+  -- * Utility functions
+  nonTargets
   ) where
 
 import Types
@@ -90,6 +92,10 @@ isTargetsEdge x ts = any (x `isTargetEdge`) ts
 targets :: Targets -> [DiagramEdge] -> [DiagramEdge]
 targets ts es =
   [e | e <- es, isTargetsEdge e ts]
+
+nonTargets :: Targets -> [DiagramEdge] -> [DiagramEdge]
+nonTargets ts es =
+  [e | e <- es, not $ isTargetsEdge e ts]
 
 targetEdgesCount :: Target -> [DiagramEdge] -> Int
 targetEdgesCount t es = length [e | e <- es, isTargetEdge e t]
