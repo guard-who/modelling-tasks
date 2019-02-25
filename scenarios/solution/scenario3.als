@@ -1,9 +1,9 @@
 abstract sig Node
 {
-  flow : Node set -> lone Int
+  flow : Node -> lone Int
 }
 {
-  all v : one flow[Node] | v > 0
+  all v : flow[Node] | v > 0
 }
 
 abstract sig Place extends Node
