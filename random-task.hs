@@ -38,8 +38,8 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
         Just edges3 = getFirstValid names mutations'
         cd2 = fromEdges names edges2
         cd3 = fromEdges names edges3
-        parts2 = transform cd2 "2" ""
-        parts3 = transform cd3 "3" ""
+        parts2 = case transform cd2 "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+        parts3 = case transform cd3 "3" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
         cd2not3 = createRunCommand "cd2 and (not cd3)" (length names) maxObjects
         cd3not2 = createRunCommand "cd3 and (not cd2)" (length names) maxObjects
         cd2and3 = createRunCommand "cd2 and cd3" (length names) maxObjects
@@ -67,9 +67,9 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
     continueIf False _ = getRandomTask config maxObjects output searchSpace maxInstances
     drawOd x y insta   =
       drawOdFromInstance True insta (output ++ '-' : x ++ '-' : show y) Pdf
-    getInstancesOfMerged x y =
-      Alloy.getInstances maxInstances . combineParts . mergeParts x y
-    combineParts (p1, p2, p3, p4, p5) = p1 ++ p2 ++ p3 ++ p4 ++ p5
+    getInstancesOfMerged x y command =
+      Alloy.getInstances maxInstances (combineParts (mergeParts x y) ++ command)
+    combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
 
 getFirstValid :: [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
 getFirstValid _     []
@@ -81,11 +81,10 @@ getFirstValid names (x:xs)
   = getFirstValid names xs
 
 mergeParts
-  :: (String, String, String, String, String)
-  -> (String, String, String, String, String)
-  -> String
-  -> (String, String, String, String, String)
-mergeParts (p1, p2, p3, p4, _) (_, p2', p3', p4', _) command =
-  (p1, p2 `unionL` p2', p3 `unionL` p3', p4 ++ p4', command)
+  :: (String, String, String, String)
+  -> (String, String, String, String)
+  -> (String, String, String, String)
+mergeParts (p1, p2, p3, p4) (_, p2', p3', p4') =
+  (p1, p2 `unionL` p2', p3 `unionL` p3', p4 ++ p4')
   where
     unionL x y = unlines $ (++ [""]) $ filter (not . null) $ lines x `union` lines y
