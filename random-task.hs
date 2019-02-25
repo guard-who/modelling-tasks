@@ -31,47 +31,47 @@ getRandomTask :: ClassConfig -> Int -> String ->  Int -> Int -> IO ()
 getRandomTask config maxObjects output searchSpace maxInstances = do
   (names, edges) <- generate config searchSpace
   mutations <- shuffleM $ getAllMutationResults config names edges
-  let medges2 = getFirstValid names mutations
-  continueIf (isJust medges2) $ do
+  let medges1 = getFirstValid names mutations
+  continueIf (isJust medges1) $ do
     mutations' <- shuffleM mutations
     mutations'' <- shuffleM mutations
-    let Just edges2 = medges2
-        Just edges3 = getFirstValid names mutations'
-        Just edges4 = getFirstValid names mutations''
+    let Just edges1 = medges1
+        Just edges2 = getFirstValid names mutations'
+        Just edges3 = getFirstValid names mutations''
+        cd1 = fromEdges names edges1
         cd2 = fromEdges names edges2
         cd3 = fromEdges names edges3
-        cd4 = fromEdges names edges4
+        parts1 = case transform cd1 "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
         parts2 = case transform cd2 "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+        parts1and2 = mergeParts parts1 parts2
         parts3 = case transform cd3 "3" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-        parts2and3 = mergeParts parts2 parts3
-        parts4 = case transform cd4 "4" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-        cd2not3 = createRunCommand "cd2 and (not cd3)" (length names) maxObjects
-        cd3not2 = createRunCommand "cd3 and (not cd2)" (length names) maxObjects
-        cd2and3 = createRunCommand "cd2 and cd3" (length names) maxObjects
-        cdNot2not3 = createRunCommand "(not cd2) and (not cd3) and cd4" (length names) maxObjects
-    continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges2 ++ edges3) $ do
-      instances2not3 <- Alloy.getInstances maxInstances (combineParts parts2and3 ++ cd2not3)
-      instances3not2 <- Alloy.getInstances maxInstances (combineParts parts2and3 ++ cd3not2)
-      instances2and3 <- Alloy.getInstances maxInstances (combineParts parts2and3 ++ cd2and3)
-      instancesNot2not3 <- Alloy.getInstances maxInstances (combineParts (mergeParts parts2and3 parts4) ++ cdNot2not3)
+        cd1not2 = createRunCommand "cd1 and (not cd2)" (length names) maxObjects
+        cd2not1 = createRunCommand "cd2 and (not cd1)" (length names) maxObjects
+        cd1and2 = createRunCommand "cd1 and cd2" (length names) maxObjects
+        cdNot1not2 = createRunCommand "(not cd1) and (not cd2) and cd3" (length names) maxObjects
+    continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2) $ do
+      instances1not2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1not2)
+      instances2not1 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd2not1)
+      instances1and2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1and2)
+      instancesNot1not2 <- Alloy.getInstances maxInstances (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
       let takes = [ (take x, take y, take z, take u)
-                  | x <- [0 .. min 3 (length instances2not3)]
-                  , y <- [0 .. min 3 (length instances3not2)]
-                  , z <- [0 .. min 2 (length instances2and3)]
-                  , u <- [0 .. min 2 (length instancesNot2not3)]
+                  | x <- [0 .. min 3 (length instances1not2)]
+                  , y <- [0 .. min 3 (length instances2not1)]
+                  , z <- [0 .. min 2 (length instances1and2)]
+                  , u <- [0 .. min 2 (length instancesNot1not2)]
                   , 5 == x + y + z + u ]
       continueIf (not $ null takes) $ do
-        (take2not3, take3not2, take2and3, takeNot2not3) <- head <$> shuffleM takes
-        shuffled2not3 <- take2not3 <$> shuffleM instances2not3
-        shuffled3not2 <- take3not2 <$> shuffleM instances3not2
-        shuffled2and3 <- take2and3 <$> shuffleM instances2and3
-        shuffledNot2not3 <- takeNot2not3 <$> shuffleM instancesNot2not3
+        (take1not2, take2not1, take1and2, takeNot1not2) <- head <$> shuffleM takes
+        shuffled1not2 <- take1not2 <$> shuffleM instances1not2
+        shuffled2not1 <- take2not1 <$> shuffleM instances2not1
+        shuffled1and2 <- take1and2 <$> shuffleM instances1and2
+        shuffledNot1not2 <- takeNot1not2 <$> shuffleM instancesNot1not2
+        drawCdFromSyntax True cd1 (output ++ '-' : "1") Pdf
         drawCdFromSyntax True cd2 (output ++ '-' : "2") Pdf
-        drawCdFromSyntax True cd3 (output ++ '-' : "3") Pdf
-        mapM_ (uncurry $ drawOd "2not3") $ zip [1 :: Integer ..] shuffled2not3
-        mapM_ (uncurry $ drawOd "3not2") $ zip [1 :: Integer ..] shuffled3not2
-        mapM_ (uncurry $ drawOd "2and3") $ zip [1 :: Integer ..] shuffled2and3
-        mapM_ (uncurry $ drawOd "not2not3") $ zip [1 :: Integer ..] shuffledNot2not3
+        mapM_ (uncurry $ drawOd "1not2") $ zip [1 :: Integer ..] shuffled1not2
+        mapM_ (uncurry $ drawOd "2not1") $ zip [1 :: Integer ..] shuffled2not1
+        mapM_ (uncurry $ drawOd "1and2") $ zip [1 :: Integer ..] shuffled1and2
+        mapM_ (uncurry $ drawOd "not1not2") $ zip [1 :: Integer ..] shuffledNot1not2
   where
     continueIf True  m = m
     continueIf False _ = getRandomTask config maxObjects output searchSpace maxInstances
