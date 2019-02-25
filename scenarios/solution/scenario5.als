@@ -3,7 +3,7 @@ abstract sig Node
   flow : Node -> lone Int
 }
 {
-  all v : flow[Node] | v > 0
+  all weight : flow[Node] | weight > 0
 }
 
 abstract sig Place extends Node
@@ -23,7 +23,6 @@ abstract sig Transition extends Node
   //set transition only going to place
   flow.Int in Place
 }
-
 
 pred activated[t : Transition]{
   all p : Place | p.tokens >= p.flow[t]
