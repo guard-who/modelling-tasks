@@ -67,7 +67,7 @@ drawOdFromInstance printNames input file format = do
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   let numberedNodes = zip [0..] theNodes
   let graph = undir (mkGraph numberedNodes theEdges) :: Gr String String
-  objectNames <- map (\(i, l) -> (i, firstLower l ++ " ")) . drop (length theNodes `div` 3) <$> shuffleM numberedNodes
+  objectNames <- map (\(i, l) -> (i, filter (/= '$') (firstLower l) ++ " ")) . drop (length theNodes `div` 3) <$> shuffleM numberedNodes
   let dotGraph = setDirectedness graphToDot (nonClusteredParams { fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l), shape BoxShape], fmtEdge = \(_,_,l) -> [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
