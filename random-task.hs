@@ -19,15 +19,16 @@ main :: IO ()
 main = do
   let config = ClassConfig {
           classes      = (Just 4, Just 4),
-          aggregations = (Nothing, Nothing),
-          associations = (Nothing, Nothing),
-          compositions = (Nothing, Nothing),
-          inheritances = (Nothing, Nothing)
+          aggregations = (Nothing, Just 2),
+          associations = (Nothing, Just 2),
+          compositions = (Nothing, Just 1),
+          inheritances = (Just 1, Just 2)
         }
-  getRandomTask config "output" 10 (-1)
+  let maxObjects = 4
+  getRandomTask config maxObjects "output" 10 (-1)
 
-getRandomTask :: ClassConfig -> String ->  Int -> Int -> IO ()
-getRandomTask config output searchSpace maxInstances = do
+getRandomTask :: ClassConfig -> Int -> String ->  Int -> Int -> IO ()
+getRandomTask config maxObjects output searchSpace maxInstances = do
   (names, edges) <- generate config searchSpace
   mutations <- shuffleM $ getAllMutationResults config names edges
   let medges2 = getFirstValid names mutations
@@ -39,9 +40,9 @@ getRandomTask config output searchSpace maxInstances = do
         cd3 = fromEdges names edges3
         parts2 = transform cd2 "2" ""
         parts3 = transform cd3 "3" ""
-        cd2not3 = createRunCommand "cd2 and (not cd3)" (length names) 5
-        cd3not2 = createRunCommand "cd3 and (not cd2)" (length names) 5
-        cd2and3 = createRunCommand "cd2 and cd3" (length names) 5
+        cd2not3 = createRunCommand "cd2 and (not cd3)" (length names) maxObjects
+        cd3not2 = createRunCommand "cd3 and (not cd2)" (length names) maxObjects
+        cd2and3 = createRunCommand "cd2 and cd3" (length names) maxObjects
     continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges2 ++ edges3) $ do
       instances2not3 <- getInstancesOfMerged parts2 parts3 cd2not3
       instances3not2 <- getInstancesOfMerged parts2 parts3 cd3not2
@@ -63,7 +64,7 @@ getRandomTask config output searchSpace maxInstances = do
         mapM_ (uncurry $ drawOd "2and3") $ zip [1 :: Integer ..] shuffled2and3
   where
     continueIf True  m = m
-    continueIf False _ = getRandomTask config output searchSpace maxInstances
+    continueIf False _ = getRandomTask config maxObjects output searchSpace maxInstances
     drawOd x y insta   =
       drawOdFromInstance True insta (output ++ '-' : x ++ '-' : show y) Pdf
     getInstancesOfMerged x y =
