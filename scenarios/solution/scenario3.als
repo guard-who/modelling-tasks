@@ -1,6 +1,13 @@
-abstract sig Place
+abstract sig Node
 {
-  inp : Transition -> lone Int,
+  flow : Node set -> lone Int
+}
+{
+  all v : one flow[Node] | v > 0
+}
+
+abstract sig Place extends Node
+{
   defaultTokens : one Int,
   tokenChange : one Int,
   tokens : one Int
@@ -9,28 +16,27 @@ abstract sig Place
   defaultTokens >= 0
   tokens = plus[defaultTokens, tokenChange]
   tokens >= 0
+  //set place only going to transition
+  flow.Int in Transition
 }
 
-abstract sig Transition
+abstract sig Transition extends Node
 {
-  out : Place -> lone Int
 }
-
-fact {
-  let Node = Place + Transition |
-  let flow = inp + out |
-  all weight : Node.flow[Node] | weight > 0
+{
+  //set transition only going to place
+  flow.Int in Place
 }
 
 pred activated[t : Transition]{
-  all p : Place | p.tokens >= p.inp[t]
+  all p : Place | p.tokens >= p.flow[t]
 }
 
 pred conflict[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : Place | p.tokens < plus[p.inp[t1], p.inp[t2]]
+  some p : Place | p.tokens < plus[p.flow[t1], p.flow[t2]]
 }
 
 pred concurrency[t1, t2 : Transition]{
@@ -68,23 +74,23 @@ fact {
   S2.defaultTokens = 1
   S3.defaultTokens = 0
 
-  S1.inp[T1] = 1
-  S1.inp[T2] = 1
-  S1.inp[T3] = 1
+  S1.flow[T1] = 1
+  S1.flow[T2] = 1
+  S1.flow[T3] = 1
 
-  S2.inp[T2] = 1
-  no S2.inp[Transition - T2]
+  S2.flow[T2] = 1
+  no S2.flow[Transition - T2]
 
-  S3.inp[T2] = 1
-  no S3.inp[Transition - T2]
+  S3.flow[T2] = 1
+  no S3.flow[Transition - T2]
 
-  T1.out[S2] = 1
-  no T1.out[Place - S2]
+  T1.flow[S2] = 1
+  no T1.flow[Place - S2]
 
-  no T2.out[Place]
+  no T2.flow[Place]
 
-  T3.out[S3] = 1
-  no T3.out[Place - S3]
+  T3.flow[S3] = 1
+  no T3.flow[Place - S3]
 }
 
 pred showaddOneTokenOnePairConcurrency[t1, t2 : Transition]{
