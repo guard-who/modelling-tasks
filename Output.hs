@@ -67,7 +67,10 @@ drawOdFromInstance printNames input file format = do
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   let numberedNodes = zip [0..] theNodes
   let graph = undir (mkGraph numberedNodes theEdges) :: Gr String String
-  objectNames <- map (\(i, l) -> (i, filter (/= '$') (firstLower l) ++ " ")) . drop (length theNodes `div` 3) <$> shuffleM numberedNodes
+  objectNames <-
+    map (\(i, l) -> (i, let [n,z] = splitOn "$" l in firstLower n ++ (if z == "0" then "" else z) ++ " "))
+    <$> drop (length theNodes `div` 3)
+    <$> shuffleM numberedNodes
   let dotGraph = setDirectedness graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
                                         shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0],
