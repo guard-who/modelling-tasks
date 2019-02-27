@@ -1,39 +1,44 @@
-abstract sig Place
+abstract sig Node
 {
-  inp : Transition -> lone Int,
-  defaultInp : Transition -> lone Int,
-  inpChange : Transition -> lone Int,
+  flow : Node -> lone Int,
+  defaultFlow : Node -> lone Int,
+  flowChange : Node -> one Int
+}
+{
+  all default : defaultFlow[Node] | default > 0
+  all n : Node | let newFlow = plus[defaultFlow[n], flowChange[n]] | newFlow = 0 implies  flow[n] = none else flow[n] = newFlow
+  all weight :  flow[Node] | weight > 0 
+}
+
+abstract sig Place extends Node
+{
   tokens : one Int
 }
 {
   tokens >= 0
-  all t : Transition | inp[t] = plus[defaultInp[t], inpChange[t]]
+  //set place only going to transition
+  flow.Int in Transition
+  defaultFlow.Int in Transition
 }
 
-abstract sig Transition
+abstract sig Transition extends Node
 {
-  out : Place -> lone Int,
-  defaultOut : Place -> lone Int,
-  outChange : Place -> lone Int
 }
 {
-  all p : Place | out[p] = plus[defaultOut[p], outChange[p]]
-}
-
-fact {
-  all weight : Place.inp[Transition] | weight >= 0
-  all weight : Transition.out[Place] | weight >= 0
+  //set transition only going to place
+  flow.Int in Place
+  defaultFlow.Int in Place
 }
 
 pred activated[t : Transition]{
-  all p : Place | p.tokens >= p.inp[t]
+  all p : Place | p.tokens >= p.flow[t]
 }
 
 pred conflict[t1, t2 : Transition]{
   t1 != t2
   activated[t1]
   activated[t2]
-  some p : Place | p.tokens < plus[p.inp[t1], p.inp[t2]]
+  some p : Place | p.tokens < plus[p.flow[t1], p.flow[t2]]
 }
 
 pred concurrency[t1, t2 : Transition]{
@@ -45,33 +50,29 @@ pred concurrency[t1, t2 : Transition]{
 
 //Add exactly one weight somewhere so that two transitions are concurrently activated
 pred addOneWeightOnePairConcurrency[t1, t2 : Transition]{
-  all p : Place, t : Transition | p.inpChange[t] >= 0 and t.outChange[p] >=0
-  plus[#(Place.inpChange), #(Transition.outChange)] = 1
-  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = 1
+  all change : Node.flowChange[Node] | change >= 0
+  (sum n, m: Node | n.flowChange[m]) = 1
   concurrency[t1,t2]
 }
 
 //Remove exactly one weight somewhere so that two transitions are concurrently activated
 pred removeOneWeightOnePairConcurrency[t1, t2 : Transition]{
-  all p : Place, t : Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
-  plus[#(Place.inpChange), #(Transition.outChange)] = 1
-  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = (-1)
+  all change : Node.flowChange[Node] | change =< 0
+ (sum n, m: Node | n.flowChange[m]) = (-1)
   concurrency[t1,t2]
 }
 
 //Add exactly one weight somewhere so that no transitions is activated
 pred addOneWeightNoActivatedTrans[]{
-  all p : Place, t : Transition | p.inpChange[t] >= 0 and t.outChange[p] >= 0
-  plus[#(Place.inpChange), #(Transition.outChange)] = 1
-  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = 1
+  all change : Node.flowChange[Node] | change >= 0
+  (sum n, m: Node | n.flowChange[m]) = 1
   all t : Transition | not activated[t]
 }
 
 //Remove exactly one weight somewhere so that no transitions is activated
 pred removeOneWeightNoActivatedTrans[]{
-  all p : Place, t : Transition | p.inpChange[t] =< 0 and t.outChange[p] =< 0
-  plus[#(Place.inpChange), #(Transition.outChange)] = 1
-  plus[(sum p : Place, t : Transition | p.inpChange[t]), (sum t : Transition, p : Place | t.outChange[p])] = (-1)
+  all change : Node.flowChange[Node] | change =< 0
+ (sum n, m: Node | n.flowChange[m])  = (-1)
   all t : Transition | not activated[t]
 }
 
@@ -89,23 +90,23 @@ fact {
   S2.tokens = 1
   S3.tokens = 0
 
-  S1.defaultInp[T1] = 1
-  S1.defaultInp[T2] = 1
-  S1.defaultInp[T3] = 1
+  S1.defaultFlow[T1] = 1
+  S1.defaultFlow[T2] = 1
+  S1.defaultFlow[T3] = 1
 
-  S2.defaultInp[T2] = 1
-  no S2.defaultInp[Transition - T2]
+  S2.defaultFlow[T2] = 1
+  no S2.defaultFlow[Transition - T2]
 
-  S3.defaultInp[T2] = 1
-  no S3.defaultInp[Transition - T2]
+  S3.defaultFlow[T2] = 1
+  no S3.defaultFlow[Transition - T2]
 
-  T1.defaultOut[S2] = 1
-  no T1.defaultOut[Place - S2]
+  T1.defaultFlow[S2] = 1
+  no T1.defaultFlow[Place - S2]
 
-  no T2.defaultOut[Place]
+  no T2.defaultFlow[Place]
 
-  T3.defaultOut[S3] = 1
-  no T3.defaultOut[Place - S3]
+  T3.defaultFlow[S3] = 1
+  no T3.defaultFlow[Place - S3]
 }
 
 pred showAddOneWeightOnePairConcurrency[t1, t2 : Transition]{
