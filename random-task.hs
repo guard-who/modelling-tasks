@@ -5,7 +5,7 @@ import Generate  (generate)
 import Mutation  (Target (..), getAllMutationResults, nonTargets)
 import Output    (drawCdFromSyntax, drawOdFromInstance)
 import Transform (createRunCommand, transform)
-import Types     (ClassConfig (..))
+import Types     (ClassConfig (..), Syntax)
 
 import qualified Alloy (getInstances)
 
@@ -31,13 +31,13 @@ getRandomTask :: ClassConfig -> Int -> String ->  Int -> Int -> IO ()
 getRandomTask config maxObjects output searchSpace maxInstances = do
   (names, edges) <- generate config searchSpace
   mutations <- shuffleM $ getAllMutationResults config names edges
-  let medges1 = getFirstValid names mutations
+  let medges1 = getFirstSatisfying (not . anyRedEdge) names mutations
   continueIf (isJust medges1) $ do
     mutations' <- shuffleM mutations
     mutations'' <- shuffleM mutations
     let Just edges1 = medges1
-        Just edges2 = getFirstValid names mutations'
-        Just edges3 = getFirstValid names mutations''
+        Just edges2 = getFirstSatisfying (not . anyRedEdge) names mutations'
+        Just edges3 = getFirstSatisfying (not . anyRedEdge) names mutations''
         cd1 = fromEdges names edges1
         cd2 = fromEdges names edges2
         cd3 = fromEdges names edges3
@@ -79,14 +79,14 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
       drawOdFromInstance True insta (output ++ '-' : x ++ '-' : show y) Pdf
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
 
-getFirstValid :: [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
-getFirstValid _     []
+getFirstSatisfying :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
+getFirstSatisfying _ _     []
   = Nothing
-getFirstValid names (x:xs)
-  | checkMultiEdge x, not (anyRedEdge $ fromEdges names x)
+getFirstSatisfying p names (x:xs)
+  | checkMultiEdge x, p (fromEdges names x)
   = Just x
   | otherwise
-  = getFirstValid names xs
+  = getFirstSatisfying p names xs
 
 mergeParts
   :: (String, String, String, String)
