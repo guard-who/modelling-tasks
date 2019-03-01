@@ -37,8 +37,7 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
     let Just edges1 = medges1
         Just edges2 = getFirstValidSatisfying (const True) names mutations'
     continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2) $ do
-      let cd1 = fromEdges names edges1
-          cd2 = fromEdges names edges2
+      [cd1, cd2] <- shuffleM [fromEdges names edges1, fromEdges names edges2]
       mutations'' <- shuffleM mutations
       let Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
           cd3 = fromEdges names edges3
@@ -66,7 +65,7 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
         shuffled2not1 <- take2not1 <$> shuffleM instances2not1
         shuffled1and2 <- take1and2 <$> shuffleM instances1and2
         shuffledNot1not2 <- takeNot1not2 <$> shuffleM instancesNot1not2
-        drawCdFromSyntax True True cd1 (output ++ '-' : "1") Pdf
+        drawCdFromSyntax True False cd1 (output ++ '-' : "1") Pdf
         drawCdFromSyntax True False cd2 (output ++ '-' : "2") Pdf
         mapM_ (uncurry $ drawOd "1not2") $ zip [1 :: Integer ..] shuffled1not2
         mapM_ (uncurry $ drawOd "2not1") $ zip [1 :: Integer ..] shuffled2not1
