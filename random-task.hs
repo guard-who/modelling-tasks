@@ -36,7 +36,7 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
     mutations' <- shuffleM mutations
     mutations'' <- shuffleM mutations
     let Just edges1 = medges1
-        Just edges2 = getFirstSatisfying (not . anyRedEdge) names mutations'
+        Just edges2 = getFirstSatisfying (const True) names mutations'
         Just edges3 = getFirstSatisfying (not . anyRedEdge) names mutations''
         cd1 = fromEdges names edges1
         cd2 = fromEdges names edges2
@@ -55,8 +55,8 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
       instances1and2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1and2)
       instancesNot1not2 <- Alloy.getInstances maxInstances (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
       let takes = [ (take x, take y, take z, take u)
-                  | x <- [0 .. min 3 (length instances1not2)]
-                  , y <- [0 .. min 3 (length instances2not1)]
+                  | x <- [0 .. min 2 (length instances1not2)]
+                  , y <- [0 .. min 2 (length instances2not1)]
                   , z <- [0 .. min 2 (length instances1and2)]
                   , u <- [0 .. min 2 (length instancesNot1not2)]
                   , 5 == x + y + z + u ]
@@ -67,7 +67,7 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
         shuffled1and2 <- take1and2 <$> shuffleM instances1and2
         shuffledNot1not2 <- takeNot1not2 <$> shuffleM instancesNot1not2
         drawCdFromSyntax True True cd1 (output ++ '-' : "1") Pdf
-        drawCdFromSyntax True True cd2 (output ++ '-' : "2") Pdf
+        drawCdFromSyntax True False cd2 (output ++ '-' : "2") Pdf
         mapM_ (uncurry $ drawOd "1not2") $ zip [1 :: Integer ..] shuffled1not2
         mapM_ (uncurry $ drawOd "2not1") $ zip [1 :: Integer ..] shuffled2not1
         mapM_ (uncurry $ drawOd "1and2") $ zip [1 :: Integer ..] shuffled1and2
