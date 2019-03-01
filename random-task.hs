@@ -37,19 +37,19 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
     mutations'' <- shuffleM mutations
     let Just edges1 = medges1
         Just edges2 = getFirstValidSatisfying (const True) names mutations'
-        Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
-        cd1 = fromEdges names edges1
-        cd2 = fromEdges names edges2
-        cd3 = fromEdges names edges3
-        parts1 = case transform cd1 "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-        parts2 = case transform cd2 "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-        parts1and2 = mergeParts parts1 parts2
-        parts3 = case transform cd3 "3" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-        cd1not2 = createRunCommand "cd1 and (not cd2)" (length names) maxObjects
-        cd2not1 = createRunCommand "cd2 and (not cd1)" (length names) maxObjects
-        cd1and2 = createRunCommand "cd1 and cd2" (length names) maxObjects
-        cdNot1not2 = createRunCommand "(not cd1) and (not cd2) and cd3" (length names) maxObjects
     continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2) $ do
+      let cd1 = fromEdges names edges1
+          cd2 = fromEdges names edges2
+          Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
+          cd3 = fromEdges names edges3
+          parts1 = case transform cd1 "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+          parts2 = case transform cd2 "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+          parts1and2 = mergeParts parts1 parts2
+          parts3 = case transform cd3 "3" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+          cd1not2 = createRunCommand "cd1 and (not cd2)" (length names) maxObjects
+          cd2not1 = createRunCommand "cd2 and (not cd1)" (length names) maxObjects
+          cd1and2 = createRunCommand "cd1 and cd2" (length names) maxObjects
+          cdNot1not2 = createRunCommand "(not cd1) and (not cd2) and cd3" (length names) maxObjects
       instances1not2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1not2)
       instances2not1 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd2not1)
       instances1and2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1and2)
