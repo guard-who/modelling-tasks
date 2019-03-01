@@ -31,13 +31,13 @@ getRandomTask :: ClassConfig -> Int -> String ->  Int -> Int -> IO ()
 getRandomTask config maxObjects output searchSpace maxInstances = do
   (names, edges) <- generate config searchSpace
   mutations <- shuffleM $ getAllMutationResults config names edges
-  let medges1 = getFirstSatisfying (not . anyRedEdge) names mutations
+  let medges1 = getFirstValidSatisfying (not . anyRedEdge) names mutations
   continueIf (isJust medges1) $ do
     mutations' <- shuffleM mutations
     mutations'' <- shuffleM mutations
     let Just edges1 = medges1
-        Just edges2 = getFirstSatisfying (const True) names mutations'
-        Just edges3 = getFirstSatisfying (not . anyRedEdge) names mutations''
+        Just edges2 = getFirstValidSatisfying (const True) names mutations'
+        Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
         cd1 = fromEdges names edges1
         cd2 = fromEdges names edges2
         cd3 = fromEdges names edges3
@@ -79,14 +79,14 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
       drawOdFromInstance True insta (output ++ '-' : x ++ '-' : show y) Pdf
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
 
-getFirstSatisfying :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
-getFirstSatisfying _ _     []
+getFirstValidSatisfying :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
+getFirstValidSatisfying _ _     []
   = Nothing
-getFirstSatisfying p names (x:xs)
+getFirstValidSatisfying p names (x:xs)
   | checkMultiEdge x, p (fromEdges names x)
   = Just x
   | otherwise
-  = getFirstSatisfying p names xs
+  = getFirstValidSatisfying p names xs
 
 mergeParts
   :: (String, String, String, String)
