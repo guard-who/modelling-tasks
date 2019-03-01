@@ -34,13 +34,13 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
   let medges1 = getFirstValidSatisfying (not . anyRedEdge) names mutations
   continueIf (isJust medges1) $ do
     mutations' <- shuffleM mutations
-    mutations'' <- shuffleM mutations
     let Just edges1 = medges1
         Just edges2 = getFirstValidSatisfying (const True) names mutations'
     continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2) $ do
       let cd1 = fromEdges names edges1
           cd2 = fromEdges names edges2
-          Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
+      mutations'' <- shuffleM mutations
+      let Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
           cd3 = fromEdges names edges3
           parts1 = case transform cd1 "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
           parts2 = case transform cd2 "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
