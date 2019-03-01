@@ -66,8 +66,8 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
         shuffled2not1 <- take2not1 <$> shuffleM instances2not1
         shuffled1and2 <- take1and2 <$> shuffleM instances1and2
         shuffledNot1not2 <- takeNot1not2 <$> shuffleM instancesNot1not2
-        drawCdFromSyntax True cd1 (output ++ '-' : "1") Pdf
-        drawCdFromSyntax True cd2 (output ++ '-' : "2") Pdf
+        drawCdFromSyntax True True cd1 (output ++ '-' : "1") Pdf
+        drawCdFromSyntax True True cd2 (output ++ '-' : "2") Pdf
         mapM_ (uncurry $ drawOd "1not2") $ zip [1 :: Integer ..] shuffled1not2
         mapM_ (uncurry $ drawOd "2not1") $ zip [1 :: Integer ..] shuffled2not1
         mapM_ (uncurry $ drawOd "1and2") $ zip [1 :: Integer ..] shuffled1and2

@@ -40,8 +40,8 @@ mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
-drawCdFromSyntax :: Bool -> Syntax -> FilePath -> GraphvizOutput -> IO ()
-drawCdFromSyntax printNames syntax file format = do
+drawCdFromSyntax :: Bool -> Bool -> Syntax -> FilePath -> GraphvizOutput -> IO ()
+drawCdFromSyntax printNames markRed syntax file format = do
   let (classes, associations) = syntax
   let classNames = map fst classes
   let theNodes = classNames
@@ -52,7 +52,7 @@ drawCdFromSyntax printNames syntax file format = do
             | name `elem` seen = []
             | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
   let assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-  let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (shouldBeRed from to classesWithSubclasses assocsBothWays))) associations
+  let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (markRed && shouldBeRed from to classesWithSubclasses assocsBothWays))) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams { fmtNode = \(_,l) -> [toLabel l, shape BoxShape], fmtEdge = \(_,_,l) -> connectionArrow printNames l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
