@@ -1,7 +1,11 @@
-module moduleScenario1
+module scenario1
 
-open scenario12 as s12
+open global
 open util/ordering[Transition]
+
+fact{
+  all p : Place | p.tokenChange = 0
+}
 
 pred isMaxConcurrency[ts : set Transition]{
   concurrencyMultiple[ts]

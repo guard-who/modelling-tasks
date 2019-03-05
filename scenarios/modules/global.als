@@ -10,9 +10,13 @@ abstract sig Node
 
 abstract sig Place extends Node
 {
+  defaultTokens : one Int,
+  tokenChange : one Int,
   tokens : one Int
 }
 {
+  defaultTokens >= 0
+  tokens = plus[defaultTokens, tokenChange]
   tokens >= 0
   //set place only going to transition
   flow.Int in Transition
@@ -42,4 +46,8 @@ pred concurrency[t1, t2 : Transition]{
   activated[t1]
   activated[t2]
   not conflict[t1,t2]
+}
+
+pred concurrencyMultiple[ts : set Transition]{
+  all p : Place | p.tokens >= (sum t : ts | p.flow[t])
 }

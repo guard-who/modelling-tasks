@@ -1,4 +1,4 @@
-open scenario1 as s1
+open scenario1
 
 //concrete Petri net
 

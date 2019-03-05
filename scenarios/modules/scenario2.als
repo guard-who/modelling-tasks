@@ -1,6 +1,10 @@
 module scenario2
 
-open scenario12
+open global
+
+fact{
+  all p : Place | p.tokenChange = 0
+}
 
 //altogether exactly n tokens should be added
 pred nTokensAdded[n : Int]{
