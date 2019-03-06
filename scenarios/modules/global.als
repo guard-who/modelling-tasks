@@ -11,7 +11,7 @@ abstract sig Node
 abstract sig Place extends Node
 {
   defaultTokens : one Int,
-  tokenChange : one Int,
+  tokenChange : lone (Int - 0),
   tokens : one Int
 }
 {

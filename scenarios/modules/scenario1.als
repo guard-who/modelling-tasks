@@ -4,7 +4,7 @@ open global
 open util/ordering[Transition]
 
 fact{
-  all p : Place | p.tokenChange = 0
+  no Place.tokenChange
 }
 
 pred isMaxConcurrency[ts : set Transition]{
