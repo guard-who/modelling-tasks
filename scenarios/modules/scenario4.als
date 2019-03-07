@@ -30,6 +30,6 @@ pred addOneWeightNoActivatedTrans[]{
 //Remove exactly one weight somewhere so that no transitions is activated
 pred removeOneWeightNoActivatedTrans[]{
   all change : Node.flowChange[Node] | change < 0
-  (sum n, m: Node | n.flowChange[m])  = (-1)
+  (sum n, m: Node | n.flowChange[m]) = (-1)
   all t : Transition | not activated[t]
 }

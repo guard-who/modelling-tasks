@@ -10,7 +10,7 @@ fact{
 //altogether exactly n tokens should be added
 pred nTokensAdded[n : Int]{
   n = (sum p : Place | p.tokens)
-} 
+}
 
 //In each place, at most m tokens should be added
 pred mTokensAtMost[m : Int]{

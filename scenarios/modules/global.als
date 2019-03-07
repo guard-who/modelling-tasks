@@ -33,7 +33,6 @@ abstract sig Transition extends Node
   //set transition only going to place
   flow.Int in Place
   defaultFlow.Int in Place
-
 }
 
 pred activated[t : Transition]{
