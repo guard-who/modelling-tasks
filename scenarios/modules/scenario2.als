@@ -3,18 +3,18 @@ module scenario2
 open global
 
 fact{
-  no tokenChange
+  Place.defaultTokens in 0
   no flowChange
 }
 
 //altogether exactly n tokens should be added
 pred nTokensAdded[n : Int]{
-  n = (sum p : Place | p.tokens)
+  (sum p : Place | p.tokenChange) = n
 }
 
 //In each place, at most m tokens should be added
 pred mTokensAtMost[m : Int]{
-  all p : Place | p.tokens =< m
+  all p : Place | p.tokenChange =< m
 }
 
 //A certain number k of transitions are activated
