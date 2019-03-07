@@ -2,6 +2,10 @@ module scenario3
 
 open global
 
+fact{
+  no flowChange
+}
+
 //Add exactly one token somewhere so that two transitions are concurrently activated
 pred addOneTokenOnePairConcurrency[t1, t2 : Transition]{
   all p : Place | p.tokenChange >= 0

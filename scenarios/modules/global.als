@@ -2,10 +2,13 @@ module global
 
 abstract sig Node
 {
-  flow : Node -> lone Int
+  flow : Node -> lone Int,
+  defaultFlow : Node -> lone Int,
+  flowChange : Node -> lone (Int - 0)
 }
 {
-  all weight : flow[Node] | weight > 0
+  all weight : defaultFlow[Node] + flow[Node] | weight > 0
+  all n : Node | let theFlow = plus[defaultFlow[n], flowChange[n]] | theFlow = 0 implies no flow[n] else flow[n] = theFlow
 }
 
 abstract sig Place extends Node
@@ -20,6 +23,7 @@ abstract sig Place extends Node
   tokens >= 0
   //set place only going to transition
   flow.Int in Transition
+  defaultFlow.Int in Transition
 }
 
 abstract sig Transition extends Node
@@ -28,6 +32,8 @@ abstract sig Transition extends Node
 {
   //set transition only going to place
   flow.Int in Place
+  defaultFlow.Int in Place
+
 }
 
 pred activated[t : Transition]{

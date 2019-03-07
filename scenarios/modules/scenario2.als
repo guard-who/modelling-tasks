@@ -3,7 +3,8 @@ module scenario2
 open global
 
 fact{
-  no Place.tokenChange
+  no tokenChange
+  no flowChange
 }
 
 //altogether exactly n tokens should be added

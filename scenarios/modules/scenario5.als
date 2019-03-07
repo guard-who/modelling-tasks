@@ -3,9 +3,9 @@ module scenario5
 open global
 
 fact{
-  no Place.tokenChange
+  no tokenChange
+  no flowChange
 }
-
 
 pred maxPlaces[n : Int]{
   #Place =< n
