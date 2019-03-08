@@ -30,7 +30,7 @@ run showAdd3Mostly2and2TransitionActivated for 3
 pred showAdd3Mostly2NoConflict[]{
   nTokensAdded[3]
   mTokensAtMost[2]
-  no t1, t2 : Transition | conflict[t1,t2]
+  not presenceConflict
 }
 run showAdd3Mostly2NoConflict for 3
 
