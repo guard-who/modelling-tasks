@@ -29,7 +29,7 @@ pred showConf[t1, t2 : Transition]{
 //multiple transitions concurrently activated
 pred showMultipleCon[ts : set Transition]{
   #ts > 1
-  concurrencyMultiple[ts]
+  concurrent[ts]
 }
 
 //max concurrently activated

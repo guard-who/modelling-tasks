@@ -13,14 +13,7 @@ pred conflict[t1, t2 : Transition]{
   some p : Place | p.tokens < plus[p.flow[t1], p.flow[t2]]
 }
 
-pred concurrency[t1, t2 : Transition]{
-  t1 != t2
-  activated[t1]
-  activated[t2]
-  not conflict[t1,t2]
-}
-
-pred concurrencyMultiple[ts : set Transition]{
+pred concurrent[ts : set Transition]{
   all p : Place | p.tokens >= (sum t : ts | p.flow[t])
 }
 
@@ -43,8 +36,8 @@ pred noActivatedTrans[]{
 //==================scenario1===================
 
 pred isMaxConcurrency[ts : set Transition]{
-  concurrencyMultiple[ts]
-  no t : (Transition - ts) | concurrencyMultiple[ts+t]
+  concurrent[ts]
+  no t : (Transition - ts) | concurrent[ts+t]
 }
 
 //============================================
@@ -65,7 +58,7 @@ pred mTokensAtMost[m : Int]{
 
 //there is no concurrently activated transitions
 pred noConcurrency[]{
-  no t1, t2 : Transition | concurrency[t1,t2]
+  no t1, t2 : Transition | t1 != t2 and concurrent[t1 + t2]
 }
 //============================================
 

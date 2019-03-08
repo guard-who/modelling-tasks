@@ -8,14 +8,14 @@ fact{
 //Add exactly one weight somewhere so that two transitions are concurrently activated
 pred showAddOneWeightOnePairConcurrency[]{
   nWeightAdded[1]
-  concurrency[T1,T3]
+  concurrent[T1 + T3]
 }
 run showAddOneWeightOnePairConcurrency for 3
 
 //Remove exactly one weight somewhere so that two transitions are concurrently activated
 pred showRemoveOneWeightOnePairConcurrency[]{
   nWeightRemoved[1]
-  concurrency[T1,T3]
+  concurrent[T1 + T3]
 }
 run showRemoveOneWeightOnePairConcurrency for 3
 

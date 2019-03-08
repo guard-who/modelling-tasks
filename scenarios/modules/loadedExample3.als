@@ -8,7 +8,7 @@ fact{
 //Remove a token so that there are no activated transitions.
 pred showAddOneTokenOnePairConcurrency[]{
   nTokensAdded[1]
-  concurrency[T1,T3]
+  concurrent[T1 + T3]
 }
 run showAddOneTokenOnePairConcurrency for 3
 
