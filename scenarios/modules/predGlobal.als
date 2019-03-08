@@ -88,7 +88,7 @@ pred weightRemoveOnly[]{
 }
 
 pred weightChangeSum[n : Int]{
-  (sum n, m: Node | n.flowChange[m]) = n
+  (sum k, m: Node | k.flowChange[m]) = n
 }
 
 //altogether exactly n weight should be added
