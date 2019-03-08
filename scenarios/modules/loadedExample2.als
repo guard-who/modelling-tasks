@@ -1,6 +1,9 @@
-open scenario2
+open predGlobal
 
-
+fact{
+  Place.defaultTokens in 0
+  no flowChange
+}
 
 //concrete Petri net
 
@@ -48,7 +51,7 @@ run showAdd3Mostly2T1Activated for 3
 pred showAdd3Mostly2and2TransitionActivated[ts : set Transition]{
   nTokensAdded[3]
   mTokensAtMost[2]
-  kTransitionsActivated[ts,2]
+  numberActivatedTransition[2,ts]
 }
 run showAdd3Mostly2and2TransitionActivated for 3
 

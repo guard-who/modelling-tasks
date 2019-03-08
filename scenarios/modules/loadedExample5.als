@@ -1,4 +1,4 @@
-open scenario5
+open predGlobal
 
 pred showPetr1[ts : set Transition]{
   maxPlaces[3]
@@ -9,7 +9,7 @@ pred showPetr1[ts : set Transition]{
   not presenceSinkTransition
   not presenceSourceTransition
   presenceConflict
-  presenceConcurrency
+  not noConcurrency
   not presenceSelfLoop
 }
 run showPetr1 for 6

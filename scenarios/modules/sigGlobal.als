@@ -1,4 +1,4 @@
-module global
+module sigGlobal
 
 abstract sig Node
 {
@@ -33,26 +33,4 @@ abstract sig Transition extends Node
   //set transition only going to place
   flow.Int in Place
   defaultFlow.Int in Place
-}
-
-pred activated[t : Transition]{
-  all p : Place | p.tokens >= p.flow[t]
-}
-
-pred conflict[t1, t2 : Transition]{
-  t1 != t2
-  activated[t1]
-  activated[t2]
-  some p : Place | p.tokens < plus[p.flow[t1], p.flow[t2]]
-}
-
-pred concurrency[t1, t2 : Transition]{
-  t1 != t2
-  activated[t1]
-  activated[t2]
-  not conflict[t1,t2]
-}
-
-pred concurrencyMultiple[ts : set Transition]{
-  all p : Place | p.tokens >= (sum t : ts | p.flow[t])
 }

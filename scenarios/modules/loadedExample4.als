@@ -1,4 +1,8 @@
-open scenario4
+open predGlobal
+
+fact{
+  no tokenChange
+}
 
 //default Petri net
 
@@ -33,22 +37,30 @@ fact {
   no T3.defaultFlow[Place - S3]
 }
 
+//Add exactly one weight somewhere so that two transitions are concurrently activated
 pred showAddOneWeightOnePairConcurrency[]{
- addOneWeightOnePairConcurrency[T1,T3]
+  nWeightAdded[1]
+  concurrency[T1,T3]
 }
 run showAddOneWeightOnePairConcurrency for 3
 
+//Remove exactly one weight somewhere so that two transitions are concurrently activated
 pred showRemoveOneWeightOnePairConcurrency[]{
- removeOneWeightOnePairConcurrency[T1,T3]
+  nWeightRemoved[1]
+  concurrency[T1,T3]
 }
 run showRemoveOneWeightOnePairConcurrency for 3
 
+//Add exactly one weight somewhere so that no transitions is activated
 pred showAddOneWeightNoActivatedTrans[]{
-  addOneWeightNoActivatedTrans
+  nWeightAdded[1]
+  noActivatedTrans
 }
 run  showAddOneWeightNoActivatedTrans for 3
 
+//Remove exactly one weight somewhere so that no transitions is activated
 pred showRemoveOneWeightNoActivatedTrans[]{
-  removeOneWeightNoActivatedTrans
+  nWeightRemoved[1]
+  noActivatedTrans
 }
 run  showRemoveOneWeightNoActivatedTrans for 3

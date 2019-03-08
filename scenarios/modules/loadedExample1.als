@@ -1,4 +1,10 @@
-open scenario1
+open predGlobal
+open util/ordering[Transition]
+
+fact{
+  no tokenChange
+  no flowChange
+}
 
 //concrete Petri net
 
@@ -39,10 +45,28 @@ fact {
   no T3.next
 }
 
-//show petri net
-pred show[]{
+//which transitions are activated
+pred showActivated[t : Transition]{
+  activated[t]
 }
-run show for 3
+
+//transitions in conflict, duplicated results removed
+pred showConf[t1, t2 : Transition]{
+  gt[t2,t1]
+  conflict[t1,t2]
+}
+
+//multiple transitions concurrently activated
+pred showMultipleCon[ts : set Transition]{
+  #ts > 1
+  concurrencyMultiple[ts]
+}
+
+//max concurrently activated
+pred showMax[ts : set Transition]{
+  isMaxConcurrency[ts]
+}
+
 
 run showActivated for 3
 
