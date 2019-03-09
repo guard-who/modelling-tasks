@@ -1,5 +1,6 @@
 open PetriNetA_Ordered
-open predGlobal
+open PetriConstraints
+
 
 fact{
   no tokenChange
