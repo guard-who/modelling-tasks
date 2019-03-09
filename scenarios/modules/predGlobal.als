@@ -125,11 +125,6 @@ pred maxTransitions[n : Int]{
   #Transition =< n
 }
 
-pred maxTokens[overall, eachPlace : Int]{
-  all p : Place | p.tokens =< eachPlace
-  (sum p : Place | p.tokens) =< overall
-}
-
 pred maxWeight[n : Int]{
   all weight : Node.flow[Node] | weight =< n
 }
