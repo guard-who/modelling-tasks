@@ -117,15 +117,15 @@ pred maxWeight[n : Int]{
 }
 
 pred presenceSelfLoop[]{
-  some p : Place, t : Transition | (#(p.flow[t]) = 1) and (#(t.flow[p]) = 1)
+  some p : Place, t : Transition | (one p.flow[t]) and (one t.flow[p])
 }
 
 pred presenceSinkTransition[]{
-  some t : Transition | (#t.flow[Place]) = 0
+  some t : Transition | no t.flow
 }
 
 pred presenceSourceTransition[]{
-  some t : Transition | (#Place.flow[t]) = 0
+  some t : Transition | no Place.flow[t]
 }
 
 pred numberActivatedTransition[n : Int, ts : set Transition]{
