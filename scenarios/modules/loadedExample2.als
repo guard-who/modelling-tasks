@@ -1,4 +1,4 @@
-open PetriNetC
+open PetriNetC_Ordered
 open predGlobal
 
 fact{

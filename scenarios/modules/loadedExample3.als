@@ -1,4 +1,4 @@
-open PetriNetA
+open PetriNetA_Ordered
 open predGlobal
 
 fact{
@@ -23,6 +23,7 @@ run showRemoveOneTokenNoActivatedTransition for 3
 pred showRemoveOneTokenIntoConflict[t1, t2 : Transition]{
   concurrentDefault[t1 + t2]
   nTokensRemoved[1]
+  gt[t2,t1]
   conflict[t1,t2]
 }
 run showRemoveOneTokenIntoConflict
@@ -35,6 +36,7 @@ run showActivatedDefault for 3
 
 pred showConflictDefault[t1, t2 : Transition]{
   no tokenChange
+  gt[t2,t1]
   conflictDefault[t1,t2]
 }
 run showConflictDefault for 3

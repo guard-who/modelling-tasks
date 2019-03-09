@@ -1,18 +1,9 @@
-open PetriNetB
+open PetriNetB_Ordered
 open predGlobal
-open util/ordering[PetriNetB/Transition]
 
 fact{
   no tokenChange
   no flowChange
-}
-
-fact {
-  //set the order for transitions
-  no T1.prevs
-  T1.next = T2
-  T2.next = T3
-  no T3.next
 }
 
 //which transitions are activated
