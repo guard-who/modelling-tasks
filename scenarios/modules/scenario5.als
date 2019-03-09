@@ -1,4 +1,4 @@
-open predGlobal
+open PetriConstraints
 
 fact{
   Place.defaultTokens in 0

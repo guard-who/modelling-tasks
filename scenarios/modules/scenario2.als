@@ -1,5 +1,5 @@
 open PetriNetC
-open predGlobal
+open PetriConstraints
 
 fact{
   no flowChange

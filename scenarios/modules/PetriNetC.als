@@ -1,5 +1,5 @@
 module PetriNetC
-open sigGlobal
+open PetriSignature
 
 //concrete Petri net
 

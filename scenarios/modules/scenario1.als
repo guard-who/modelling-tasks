@@ -1,5 +1,5 @@
 open PetriNetB
-open predGlobal
+open PetriConstraints
 open util/ordering[PetriNetB/Transition]
 
 fact{
