@@ -1,21 +1,6 @@
-module predGlobal
+module PetriConstraints
 
-open sigGlobal
-
-pred activated[t : Transition]{
-  all p : Place | p.tokens >= p.flow[t]
-}
-
-pred conflict[t1, t2 : Transition]{
-  t1 != t2
-  activated[t1]
-  activated[t2]
-  some p : Place | p.tokens < plus[p.flow[t1], p.flow[t2]]
-}
-
-pred concurrent[ts : set Transition]{
-  all p : Place | p.tokens >= (sum t : ts | p.flow[t])
-}
+open PetriConcepts
 
 pred tokenAddOnly[]{
   all tc : Place.tokenChange | tc > 0
@@ -33,21 +18,21 @@ pred noActivatedTrans[]{
   no t : Transition | activated[t]
 }
 
-//==================scenario1===================
-
 pred isMaxConcurrency[ts : set Transition]{
   concurrent[ts]
   no t : (Transition - ts) | concurrent[ts+t]
 }
 
-//============================================
-
-//==================scenario2===================
-
 //altogether exactly n tokens should be added
 pred nTokensAdded[n : Int]{
   tokenAddOnly
   tokenChangeSum[n]
+}
+
+//altogether exactly n tokens should be removed
+pred nTokensRemoved[n : Int]{
+  tokenRemoveOnly
+  tokenChangeSum[minus[0,n]]
 }
 
 //In each place, at most m tokens should be added
@@ -60,35 +45,6 @@ pred mTokensAtMost[m : Int]{
 pred noConcurrency[]{
   no t1, t2 : Transition | t1 != t2 and concurrent[t1 + t2]
 }
-//============================================
-
-//==================scenario3===================
-//altogether exactly n tokens should be removed
-pred nTokensRemoved[n : Int]{
-  tokenRemoveOnly
-  tokenChangeSum[minus[0,n]]
-}
-
-//check activation under default condition
- pred activatedDefault[t : Transition]{
-    all p : Place | p.defaultTokens >= p.defaultFlow[t]
-}
-
-//check conflict under default condition
-pred conflictDefault[t1, t2 : Transition]{
-  t1 != t2
-  activatedDefault[t1]
-  activatedDefault[t2]
-  some p : Place | p.defaultTokens < plus[p.defaultFlow[t1], p.defaultFlow[t2]]
-}
-
-//check concurrent under default condition
-pred concurrentDefault[ts : set Transition]{
-  all p : Place | p.defaultTokens >= (sum t : ts | p.defaultFlow[t])
-}
-//============================================
-
-//==================scenario4===================
 
 pred weightAddOnly[]{
   all change : Node.flowChange[Node] | change > 0
@@ -114,9 +70,6 @@ pred nWeightRemoved[n : Int]{
   weightChangeSum[minus[0,n]]
 }
 
-//============================================
-
-//==================scenario5===================
 pred maxPlaces[n : Int]{
   #Place =< n
 }
@@ -150,6 +103,3 @@ pred numberActivatedTransition[n : Int, ts : set Transition]{
 pred presenceConflict[]{
    some t1, t2 : Transition | conflict[t1,t2]
 }
-
-//============================================
-

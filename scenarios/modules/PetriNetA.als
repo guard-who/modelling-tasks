@@ -1,5 +1,5 @@
 module PetriNetA
-open sigGlobal
+open PetriSignature
 
 //default Petri net
 
