@@ -1,4 +1,4 @@
-module sigGlobal
+module PetriSignature
 
 abstract sig Node
 {
