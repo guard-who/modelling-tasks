@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Main (main) where
 
 import Edges
@@ -9,11 +10,17 @@ import Types     (ClassConfig (..), Syntax)
 
 import qualified Alloy (getInstances)
 
-import Data.List             (union)
-import Data.GraphViz         (GraphvizOutput (Pdf))
-import Data.Maybe            (isJust)
-import Data.Set              (singleton)
-import System.Random.Shuffle (shuffleM)
+import Control.Monad.Fail         (MonadFail)
+import Control.Monad.Random.Class (MonadRandom)
+import Data.Function              (on)
+import Data.GraphViz              (GraphvizOutput (Pdf))
+import Data.List                  ((\\), groupBy, intercalate, sortBy, union)
+import Data.Map                   (Map)
+import Data.Maybe                 (fromJust, isJust)
+import Data.Set                   (singleton)
+import System.Random.Shuffle      (shuffleM)
+
+import qualified Data.Map as M (fromList, lookup, traverseWithKey)
 
 main :: IO ()
 main = do
@@ -25,10 +32,29 @@ main = do
           inheritances = (Just 1, Just 2)
         }
   let maxObjects = 4
-  getRandomTask config maxObjects "output" 10 (-1)
+  task <- getRandomTask config maxObjects 10 (-1)
+  (\i cd -> drawCdFromSyntax True False cd (output ++ '-' : show i) Pdf) `M.traverseWithKey` fst task
+  uncurry drawOd `mapM_` concat (zip [1 :: Int ..] <$> groupBy ((==) `on` fst) (sortBy (compare `on` fst) $ snd task))
+  where
+    output = "output"
+    drawOd x (y, insta) =
+      drawOdFromInstance True insta (output ++ '-' : toDescription y 2 ++ '-' : show x) Pdf
+    toDescription :: [Int] -> Int -> [Char]
+    toDescription x n =
+      intercalate "and" (show <$> x) ++ foldr ((++) . ("not" ++) . show) [] ([1..n] \\ x)
 
-getRandomTask :: ClassConfig -> Int -> String ->  Int -> Int -> IO ()
-getRandomTask config maxObjects output searchSpace maxInstances = do
+getRandomTask
+  :: ClassConfig
+     -> Int -> Int -> Int -> IO (Map Int Syntax, [([Int], String)])
+getRandomTask config maxObjects searchSpace maxInstances = do
+  (cds, instas) <- getRandomInstances config maxObjects searchSpace maxInstances
+  mrinstas <- takeRandomInstances instas
+  case mrinstas of
+    Nothing      -> getRandomTask config maxObjects searchSpace maxInstances
+    Just rinstas -> return (cds, rinstas)
+
+getRandomInstances :: ClassConfig -> Int -> Int -> Int -> IO (Map Int Syntax, Map [Int] [String])
+getRandomInstances config maxObjects searchSpace maxInstances = do
   (names, edges) <- generate config searchSpace
   mutations <- shuffleM $ getAllMutationResults config names edges
   let medges1 = getFirstValidSatisfying (not . anyRedEdge) names mutations
@@ -53,30 +79,31 @@ getRandomTask config maxObjects output searchSpace maxInstances = do
       instances2not1 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd2not1)
       instances1and2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1and2)
       instancesNot1not2 <- Alloy.getInstances maxInstances (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
-      let takes = [ (take x, take y, take z, take u)
-                  | x <- [0 .. min 2 (length instances1not2)]
-                  , y <- [0 .. min 2 (length instances2not1)]
-                  , z <- [0 .. min 2 (length instances1and2)]
-                  , u <- [0 .. min 2 (length instancesNot1not2)]
-                  , 5 == x + y + z + u ]
-      continueIf (not $ null takes) $ do
-        (take1not2, take2not1, take1and2, takeNot1not2) <- head <$> shuffleM takes
-        shuffled1not2 <- take1not2 <$> shuffleM instances1not2
-        shuffled2not1 <- take2not1 <$> shuffleM instances2not1
-        shuffled1and2 <- take1and2 <$> shuffleM instances1and2
-        shuffledNot1not2 <- takeNot1not2 <$> shuffleM instancesNot1not2
-        drawCdFromSyntax True False cd1 (output ++ '-' : "1") Pdf
-        drawCdFromSyntax True False cd2 (output ++ '-' : "2") Pdf
-        mapM_ (uncurry $ drawOd "1not2") $ zip [1 :: Integer ..] shuffled1not2
-        mapM_ (uncurry $ drawOd "2not1") $ zip [1 :: Integer ..] shuffled2not1
-        mapM_ (uncurry $ drawOd "1and2") $ zip [1 :: Integer ..] shuffled1and2
-        mapM_ (uncurry $ drawOd "not1not2") $ zip [1 :: Integer ..] shuffledNot1not2
+      return $ ((M.fromList [(1, cd1), (2, cd2)]),
+                M.fromList [([1]  , instances1not2),
+                            ([2]  , instances2not1),
+                            ([1,2], instances1and2),
+                            ([]   , instancesNot1not2)])
   where
     continueIf True  m = m
-    continueIf False _ = getRandomTask config maxObjects output searchSpace maxInstances
-    drawOd x y insta   =
-      drawOdFromInstance True insta (output ++ '-' : x ++ '-' : show y) Pdf
+    continueIf False _ = getRandomInstances config maxObjects searchSpace maxInstances
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
+
+takeRandomInstances :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
+takeRandomInstances instas = do
+  let takes = [ [takeL [1] x, takeL [2] y, takeL [1,2] z, takeL [] u]
+              | x <- [0 .. min 2 (length $ fromJust $ M.lookup [1]   instas)]
+              , y <- [0 .. min 2 (length $ fromJust $ M.lookup [2]   instas)]
+              , z <- [0 .. min 2 (length $ fromJust $ M.lookup [1,2] instas)]
+              , u <- [0 .. min 2 (length $ fromJust $ M.lookup []    instas)]
+              , 5 == x + y + z + u ]
+      takeL k n = take n . fmap (k,) . fromJust . M.lookup k
+  case takes of
+    []  -> return Nothing
+    _:_ -> Just <$> do
+      rinstas <- mapM shuffleM instas
+      ts:_    <- shuffleM takes
+      shuffleM $ concat $ fmap ($ rinstas) ts
 
 getFirstValidSatisfying :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
 getFirstValidSatisfying _ _     []

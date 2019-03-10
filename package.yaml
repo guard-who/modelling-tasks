@@ -55,7 +55,9 @@ executables:
       - Util
   random-task:
     main: random-task.hs
-    dependencies: alloy-cd-od
+    dependencies:
+      - alloy-cd-od
+      - MonadRandom
     other-modules:
       - Alloy
       - Edges
