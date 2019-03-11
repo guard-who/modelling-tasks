@@ -24,7 +24,7 @@ pred showRemoveOneTokenIntoConflict[t1, t2 : Transition]{
   concurrentDefault[t1 + t2]
   tokensRemovedOverall[1]
   gt[t2,t1]
-  conflict[t1,t2]
+  some placeConflict : Place | conflict[t1, t2, placeConflict]
 }
 run showRemoveOneTokenIntoConflict
 
@@ -37,6 +37,6 @@ run showActivatedDefault for 3
 pred showConflictDefault[t1, t2 : Transition]{
   no tokenChange
   gt[t2,t1]
-  conflictDefault[t1,t2]
+  some placeConflictDefault : Place | conflictDefault[t1, t2, placeConflictDefault]
 }
 run showConflictDefault for 3

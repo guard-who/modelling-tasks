@@ -14,7 +14,7 @@ pred showActivated[t : Transition]{
 //transitions in conflict, duplicated results removed
 pred showConf[t1, t2 : Transition]{
   gt[t2,t1]
-  conflict[t1,t2]
+  some placeConflict : Place | conflict[t1, t2, placeConflict]
 }
 
 //multiple transitions concurrently activated

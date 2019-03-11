@@ -83,15 +83,15 @@ pred maxWeight[n : Int]{
 }
 
 pred presenceSelfLoop[]{
-  some p : Place, t : Transition | (one p.flow[t]) and (one t.flow[p])
+  some p : Place, t : Transition | selfLoop[p, t]
 }
 
 pred presenceSinkTransition[]{
-  some t : Transition | no t.flow
+  some t : Transition | sinkTransition[t]
 }
 
 pred presenceSourceTransition[]{
-  some t : Transition | no Place.flow[t]
+  some t : Transition | sourceTransition[t]
 }
 
 pred numberActivatedTransition[n : Int, ts : set Transition]{
@@ -101,5 +101,5 @@ pred numberActivatedTransition[n : Int, ts : set Transition]{
 }
 
 pred presenceConflict[]{
-   some t1, t2 : Transition | conflict[t1,t2]
+   some t1, t2 : Transition, p : Place | conflict[t1, t2, p]
 }
