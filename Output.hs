@@ -69,15 +69,15 @@ drawOdFromInstance printNames input file format = do
   let theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   let numberedNodes = zip [0..] theNodes
-  let graph = undir (mkGraph numberedNodes theEdges) :: Gr String String
+  let graph = mkGraph numberedNodes theEdges :: Gr String String
   objectNames <-
     map (\(i, l) -> (i, let [n,z] = splitOn "$" l in firstLower n ++ (if z == "0" then "" else z) ++ " "))
     <$> drop (length theNodes `div` 3)
     <$> shuffleM numberedNodes
-  let dotGraph = setDirectedness graphToDot (nonClusteredParams {
+  let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
                                         shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0],
-                   fmtEdge = \(_,_,l) -> [toLabel l | printNames] }) graph
+                   fmtEdge = \(_,_,l) -> [edgeEnds NoDir] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
-  output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
+  output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
