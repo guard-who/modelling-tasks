@@ -56,8 +56,8 @@ drawCdFromSyntax printNames markRed syntax file format = do
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(_,l) -> [toLabel l,
-                                        shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0],
-                   fmtEdge = \(_,_,l) -> connectionArrow printNames l }) graph
+                                        shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 11],
+                   fmtEdge = \(_,_,l) -> [FontSize 11] ++ connectionArrow printNames l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
@@ -76,8 +76,8 @@ drawOdFromInstance printNames input file format = do
     <$> shuffleM numberedNodes
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
-                                        shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0],
-                   fmtEdge = \(_,_,l) -> [edgeEnds NoDir] ++ [toLabel l | printNames] }) graph
+                                        shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 12],
+                   fmtEdge = \(_,_,l) -> [edgeEnds NoDir, FontSize 12] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
