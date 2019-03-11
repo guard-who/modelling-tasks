@@ -11,7 +11,7 @@ pred tokenRemoveOnly[]{
 }
 
 pred tokenChangeSum[n : Int]{
-  (sum p : Place | p.tokenChange) = n
+  totalTokenChange[Place] = n
 }
 
 pred noActivatedTrans[]{
@@ -55,7 +55,7 @@ pred weightRemoveOnly[]{
 }
 
 pred weightChangeSum[n : Int]{
-  (sum k, m: Node | k.flowChange[m]) = n
+  totalFlowChange[Node,Node] = n
 }
 
 //altogether exactly n weight should be added

@@ -1,6 +1,7 @@
 module PetriConcepts
 
 open PetriSignature
+open Helpers
 
 pred activated[t : Transition]{
   all p : Place | p.tokens >= p.flow[t]
@@ -14,7 +15,7 @@ pred conflict[t1, t2 : Transition, p : Place]{
 }
 
 pred concurrent[ts : set Transition]{
-  all p : Place | p.tokens >= (sum t : ts | p.flow[t])
+  all p : Place | p.tokens >= totalFlow[p, ts]
 }
 
 //check activation under default condition
@@ -32,7 +33,7 @@ pred conflictDefault[t1, t2 : Transition, p : Place]{
 
 //check concurrent under default condition
 pred concurrentDefault[ts : set Transition]{
-  all p : Place | p.defaultTokens >= (sum t : ts | p.defaultFlow[t])
+  all p : Place | p.defaultTokens >= totalDefaultFlow[p, ts]
 }
 
 pred selfLoop[p : Place, t : Transition]{
