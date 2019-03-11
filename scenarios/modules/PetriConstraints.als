@@ -24,19 +24,19 @@ pred isMaxConcurrency[ts : set Transition]{
 }
 
 //altogether exactly n tokens should be added
-pred nTokensAdded[n : Int]{
+pred tokensAddedOverall[n : Int]{
   tokenAddOnly
   tokenChangeSum[n]
 }
 
 //altogether exactly n tokens should be removed
-pred nTokensRemoved[n : Int]{
+pred tokensRemovedOverall[n : Int]{
   tokenRemoveOnly
   tokenChangeSum[minus[0,n]]
 }
 
 //In each place, at most m tokens should be added
-pred mTokensAtMost[m : Int]{
+pred perPlaceTokensAddedAtMost[m : Int]{
   tokenAddOnly
   all p : Place | p.tokenChange =< m
 }
@@ -59,13 +59,13 @@ pred weightChangeSum[n : Int]{
 }
 
 //altogether exactly n weight should be added
-pred nWeightAdded[n : Int]{
+pred weightAddedOverall[n : Int]{
   weightAddOnly
   weightChangeSum[n]
 }
 
 //altogether exactly n weight should be removed
-pred nWeightRemoved[n : Int]{
+pred weightRemovedOverall[n : Int]{
   weightRemoveOnly
   weightChangeSum[minus[0,n]]
 }
