@@ -3,11 +3,10 @@ module Generate where
 import Edges
 import Types
 
-import Data.Maybe
+import Control.Monad.Random (MonadRandom, getRandomR)
+import Data.Maybe           (fromMaybe)
 
-import System.Random
-
-generate :: ClassConfig -> Int -> IO ([String], [DiagramEdge])
+generate :: MonadRandom m => ClassConfig -> Int -> m ([String], [DiagramEdge])
 generate c searchSpace = do
   ncls <- oneOfFirst searchSpace $ toAvailable $ classes c
   nins <- oneOfFirst searchSpace $ toAvailable $ inheritances c
@@ -28,9 +27,9 @@ generate c searchSpace = do
     toAvailable :: (Maybe Int, Maybe Int) -> [Int]
     toAvailable (mx, Nothing) = [fromMaybe 0 mx..]
     toAvailable (mx, Just  y) = [fromMaybe 0 mx.. y]
-    oneOfFirst :: Int -> [a] -> IO a
+    oneOfFirst :: MonadRandom m => Int -> [a] -> m a
     oneOfFirst s xs = do
-      x <- randomRIO (0, maxLength s xs - 1)
+      x <- getRandomR (0, maxLength s xs - 1)
       return $ xs !! x
     -- a size function that terminates on infinite lists
     -- returns the size of the list if it is smaller than @limit@ or limit
@@ -50,7 +49,7 @@ nameEdges es =
   ++ [(s, e, Assoc k (n:[]) m1 m2 b)
      | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] es]
 
-generateEdges :: [String] -> Int -> Int -> Int -> Int -> IO [DiagramEdge]
+generateEdges :: MonadRandom m => [String] -> Int -> Int -> Int -> Int -> m [DiagramEdge]
 generateEdges classs inh com ass agg =
   foldl (\es t -> es >>= flip generateEdge t) (return []) $
     replicate inh Nothing
@@ -58,11 +57,11 @@ generateEdges classs inh com ass agg =
     ++ replicate ass (Just Association)
     ++ replicate agg (Just Aggregation)
   where
-    oneOf :: [a] -> IO a
+    oneOf :: MonadRandom m => [a] -> m a
     oneOf xs = do
-      x <- randomRIO (0, length xs - 1)
+      x <- getRandomR (0, length xs - 1)
       return $ xs !! x
-    generateEdge :: [DiagramEdge] -> Maybe AssociationType -> IO [DiagramEdge]
+    generateEdge :: MonadRandom m => [DiagramEdge] -> Maybe AssociationType -> m [DiagramEdge]
     generateEdge cs mt = do
       s <- oneOf classs
       e <- oneOf $ filter (s /=) classs
@@ -71,19 +70,19 @@ generateEdges classs inh com ass agg =
       if checkMultiEdge $ c:cs
         then return $ c:cs
         else generateEdge cs mt
-    generateLimits :: (Maybe AssociationType) -> IO Connection
+    generateLimits :: MonadRandom m => (Maybe AssociationType) -> m Connection
     generateLimits Nothing            = return Inheritance
     generateLimits (Just Composition) = do
-      ll1 <- randomRIO (0, 1)
+      ll1 <- getRandomR (0, 1)
       l2  <- generateLimit
       return $ Assoc Composition "" (ll1, Just 1) l2 False
     generateLimits (Just t          ) = do
       l1 <- generateLimit
       l2 <- generateLimit
       return $ Assoc t "" l1 l2 False
-    generateLimit :: IO (Int, Maybe Int)
+    generateLimit :: MonadRandom m => m (Int, Maybe Int)
     generateLimit = do
-      l <- randomRIO (0, 2)
+      l <- getRandomR (0, 2)
       h <- oneOf $ drop (l - 1) [Just 1, Just 2, Nothing]
       return (l, h)
 

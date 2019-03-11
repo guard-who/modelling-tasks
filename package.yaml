@@ -16,9 +16,10 @@ dependencies:
   - file-embed
   - filepath
   - graphviz
-  - random-shuffle
+  - MonadRandom
   - process
   - random
+  - random-shuffle
   - split
   - text
 library:
@@ -31,6 +32,7 @@ library:
     - Mutation
     - Output
     - Parser
+    - RandomTask
     - Transform
     - Types
     - Util
@@ -38,16 +40,23 @@ executables:
   cd2alloy:
     main: cd2alloy.hs
     dependencies:
-      - alloy-cd-od
       - time
-    source-dirs: .
+    other-modules:
+      - Lexer
+      - Parser
+      - Transform
+      - Types
   cd2pic:
     main: cd2pic.hs
-    dependencies: alloy-cd-od
-    source-dirs: .
+    other-modules:
+      - Edges
+      - Lexer
+      - Output
+      - Parser
+      - Types
+      - Util
   instance2pic:
     main: instance2pic.hs
-    dependencies: alloy-cd-od
     other-modules:
       - Edges
       - Output
@@ -55,15 +64,13 @@ executables:
       - Util
   random-task:
     main: random-task.hs
-    dependencies:
-      - alloy-cd-od
-      - MonadRandom
     other-modules:
       - Alloy
       - Edges
       - Generate
       - Mutation
       - Output
+      - RandomTask
       - Transform
       - Types
       - Util
