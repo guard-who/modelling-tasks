@@ -39,7 +39,7 @@ main = do
     output = "output"
     drawOd x (y, insta) =
       drawOdFromInstance True insta (output ++ '-' : toDescription y 2 ++ '-' : show x) Pdf
-    toDescription :: [Int] -> Int -> [Char]
+    toDescription :: [Int] -> Int -> String
     toDescription x n =
       intercalate "and" (show <$> x) ++ foldr ((++) . ("not" ++) . show) [] ([1..n] \\ x)
 
