@@ -41,20 +41,16 @@ pred weightRemoveOnly[]{
   all change : Node.flowChange[Node] | change < 0
 }
 
-pred weightChangeSum[n : Int]{
-  totalFlowChange[Node,Node] = n
-}
-
 //altogether exactly n weight should be added
 pred weightAddedOverall[n : Int]{
   weightAddOnly
-  weightChangeSum[n]
+  totalFlowChange[Node,Node] = n
 }
 
 //altogether exactly n weight should be removed
 pred weightRemovedOverall[n : Int]{
   weightRemoveOnly
-  weightChangeSum[minus[0,n]]
+  totalFlowChange[Node,Node] = minus[0,n]
 }
 
 pred numberActivatedTransition[n : Int, ts : set Transition]{

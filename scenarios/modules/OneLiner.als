@@ -27,6 +27,10 @@ pred maxWeight[n : Int]{
   all weight : Node.flow[Node] | weight =< n
 }
 
+pred weightChangeSum[n : Int]{
+  totalFlowChange[Node,Node] = n
+}
+
 pred presenceSelfLoop[]{
   some p : Place, t : Transition | selfLoop[p, t]
 }
