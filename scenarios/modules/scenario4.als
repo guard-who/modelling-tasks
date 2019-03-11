@@ -1,6 +1,6 @@
 open PetriNetA_Ordered
 open PetriConstraints
-
+open OneLiner
 
 fact{
   no tokenChange

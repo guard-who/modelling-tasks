@@ -1,4 +1,5 @@
 module scenario6
+open OneLiner
 
 open PetriNetD
 open PetriConstraints

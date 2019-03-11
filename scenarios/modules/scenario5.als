@@ -1,4 +1,5 @@
 open PetriConstraints
+open OneLiner
 
 fact{
   Place.defaultTokens in 0
