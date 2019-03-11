@@ -18,7 +18,7 @@ import Data.Maybe             (fromJust, isJust)
 import Data.Set               (singleton)
 import System.Random.Shuffle  (shuffleM)
 
-import qualified Data.Map as M (delete, fromList, insert, lookup)
+import qualified Data.Map as M (fromList, lookup)
 
 getRandomTask
   :: RandomGen g
@@ -28,14 +28,14 @@ getRandomTask
   -> Int
   -> RandT g IO (Map Int Syntax, [([Int], String)])
 getRandomTask config maxObjects searchSpace maxInstances = do
-  randomCDs     <- getRandomCDs config searchSpace
-  (cds, instas) <- liftIO $ uncurry (getODInstances maxObjects maxInstances) randomCDs
-  mrinstas      <- takeRandomInstances instas
+  (cd1, cd2, cd3, numClasses) <- getRandomCDs config searchSpace
+  instas <- liftIO $ getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses
+  mrinstas <- takeRandomInstances instas
   case mrinstas of
     Nothing      -> getRandomTask config maxObjects searchSpace maxInstances
-    Just rinstas -> return (cds, rinstas)
+    Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], rinstas)
 
-getRandomCDs :: (MonadFail m, MonadRandom m) => ClassConfig -> Int -> m (Map Int Syntax, Int)
+getRandomCDs :: (MonadFail m, MonadRandom m) => ClassConfig -> Int -> m (Syntax, Syntax, Syntax, Int)
 getRandomCDs config searchSpace = do
   (names, edges) <- generate config searchSpace
   mutations <- shuffleM $ getAllMutationResults config names edges
@@ -45,12 +45,11 @@ getRandomCDs config searchSpace = do
     let Just edges1 = medges1
         Just edges2 = getFirstValidSatisfying (const True) names mutations'
     continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2) $ do
-      [cd1, cd2]  <- shuffleM [fromEdges names edges1, fromEdges names edges2]
-      let cds = M.fromList [(1, cd1), (2, cd2)]
+      [cd1, cd2] <- shuffleM [fromEdges names edges1, fromEdges names edges2]
       mutations'' <- shuffleM mutations
       let Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
           cd3         = fromEdges names edges3
-      return (M.insert 3 cd3 cds, length names)
+      return (cd1, cd2, cd3, length names)
   where
     continueIf True  m = m
     continueIf False _ = getRandomCDs config searchSpace
@@ -58,10 +57,12 @@ getRandomCDs config searchSpace = do
 getODInstances
   :: Int
   -> Int
-  -> Map Int Syntax
+  -> Syntax
+  -> Syntax
+  -> Syntax
   -> Int
-  -> IO (Map Int Syntax, Map [Int] [String])
-getODInstances maxObjects maxInstances cds numClasses = do
+  -> IO (Map [Int] [String])
+getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses = do
   let parts1 = case transform cd1 "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
       parts2 = case transform cd2 "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
       parts1and2 = mergeParts parts1 parts2
@@ -74,15 +75,11 @@ getODInstances maxObjects maxInstances cds numClasses = do
   instances2not1 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd2not1)
   instances1and2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1and2)
   instancesNot1not2 <- Alloy.getInstances maxInstances (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
-  return $ (M.delete 3 cds,
-            M.fromList [([1]  , instances1not2),
+  return $ (M.fromList [([1]  , instances1not2),
                         ([2]  , instances2not1),
                         ([1,2], instances1and2),
                         ([]   , instancesNot1not2)])
   where
-    Just cd1 = M.lookup 1 cds
-    Just cd2 = M.lookup 2 cds
-    Just cd3 = M.lookup 3 cds
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
 
 takeRandomInstances :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
