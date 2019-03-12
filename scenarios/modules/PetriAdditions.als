@@ -10,12 +10,12 @@ module PetriAdditions
 open PetriSignature
 
 //Place and Transition to be added
-sig addedPlace extends Places{}
+sig addedPlaces extends Places{}
 {
   defaultTokens in 0
   no defaultFlow
 }
-sig addedTransition extends Transitions{}
+sig addedTransitions extends Transitions{}
 {
   no defaultFlow
 }
