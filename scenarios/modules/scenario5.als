@@ -2,11 +2,11 @@ open PetriConstraints
 open OneLiner
 
 fact{
-  Place.defaultTokens in 0
+  Places.defaultTokens in 0
   no defaultFlow
 }
 
-pred showPetr1[ts : set Transition]{
+pred showPetr1[ts : set Transitions]{
   maxPlaces[3]
   tokensAddedOverall[3]
   perPlaceTokensAddedAtMost[2]

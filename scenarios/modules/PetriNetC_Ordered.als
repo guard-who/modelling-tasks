@@ -1,7 +1,7 @@
 module PetriNetC_Ordered
 
 open PetriNetC
-open util/ordering[Node]
+open util/ordering[Nodes]
 
 fact {
   //ser order

@@ -20,7 +20,7 @@ pred showAdd3Mostly2T1Activated[]{
 run showAdd3Mostly2T1Activated for 3
 
 //exactly 3 tokens added in total, at most 2 for each place, and exactly 2 transitions activated
-pred showAdd3Mostly2and2TransitionActivated[ts : set Transition]{
+pred showAdd3Mostly2and2TransitionActivated[ts : set Transitions]{
   tokensAddedOverall[3]
   perPlaceTokensAddedAtMost[2]
   numberActivatedTransition[2,ts]

@@ -3,12 +3,12 @@ open PetriSignature
 
 //concrete Petri net
 
-one sig S1 extends givenPlace{}
-one sig S2 extends givenPlace{}
-one sig S3 extends givenPlace{}
-one sig T1 extends givenTransition{}
-one sig T2 extends givenTransition{}
-one sig T3 extends givenTransition{}
+one sig S1 extends givenPlaces{}
+one sig S2 extends givenPlaces{}
+one sig S3 extends givenPlaces{}
+one sig T1 extends givenTransitions{}
+one sig T2 extends givenTransitions{}
+one sig T3 extends givenTransitions{}
 
 fact {
   S1.defaultTokens = 2
@@ -20,16 +20,16 @@ fact {
   S1.defaultFlow[T3] = 1
 
   S2.defaultFlow[T2] = 1
-  no S2.defaultFlow[Transition - T2]
+  no S2.defaultFlow[Transitions - T2]
 
   S3.defaultFlow[T2] = 1
-  no S3.defaultFlow[Transition - T2]
+  no S3.defaultFlow[Transitions - T2]
 
   T1.defaultFlow[S2] = 1
-  no T1.defaultFlow[Place - S2]
+  no T1.defaultFlow[Places - S2]
 
-  no T2.defaultFlow[Place]
+  no T2.defaultFlow[Places]
 
   T3.defaultFlow[S3] = 1
-  no T3.defaultFlow[Place - S3]
+  no T3.defaultFlow[Places - S3]
 }

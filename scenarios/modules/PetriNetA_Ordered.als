@@ -1,7 +1,7 @@
 module PetriNetA_Ordered
 
 open PetriNetA
-open util/ordering[Node]
+open util/ordering[Nodes]
 
 fact {
   //ser order

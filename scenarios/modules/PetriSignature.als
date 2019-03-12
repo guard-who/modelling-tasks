@@ -1,17 +1,17 @@
 module PetriSignature
 
-abstract sig Node
+abstract sig Nodes
 {
-  flow : Node -> lone Int,
-  defaultFlow : Node -> lone Int,
-  flowChange : Node -> lone (Int - 0)
+  flow : Nodes -> lone Int,
+  defaultFlow : Nodes -> lone Int,
+  flowChange : Nodes -> lone (Int - 0)
 }
 {
-  all weight : defaultFlow[Node] + flow[Node] | weight > 0
-  all n : Node | let theFlow = plus[defaultFlow[n], flowChange[n]] | theFlow = 0 implies no flow[n] else flow[n] = theFlow
+  all weight : defaultFlow[Nodes] + flow[Nodes] | weight > 0
+  all n : Nodes | let theFlow = plus[defaultFlow[n], flowChange[n]] | theFlow = 0 implies no flow[n] else flow[n] = theFlow
 }
 
-abstract sig Place extends Node
+abstract sig Places extends Nodes
 {
   defaultTokens : one Int,
   tokenChange : lone (Int - 0),
@@ -22,19 +22,19 @@ abstract sig Place extends Node
   tokens = plus[defaultTokens, tokenChange]
   tokens >= 0
   //set place only going to transition
-  flow.Int in Transition
-  defaultFlow.Int in Transition
+  flow.Int in Transitions
+  defaultFlow.Int in Transitions
 }
 
-abstract sig Transition extends Node
+abstract sig Transitions extends Nodes
 {
 }
 {
   //set transition only going to place
-  flow.Int in Place
-  defaultFlow.Int in Place
+  flow.Int in Places
+  defaultFlow.Int in Places
 }
 
 //set default places and transitions
-abstract sig givenPlace extends Place{}
-abstract sig givenTransition extends Transition{}
+abstract sig givenPlaces extends Places{}
+abstract sig givenTransitions extends Transitions{}

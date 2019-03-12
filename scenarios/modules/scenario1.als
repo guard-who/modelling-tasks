@@ -7,24 +7,24 @@ fact{
 }
 
 //which transitions are activated
-pred showActivated[t : Transition]{
+pred showActivated[t : Transitions]{
   activated[t]
 }
 
 //transitions in conflict, duplicated results removed
-pred showConf[t1, t2 : Transition]{
+pred showConf[t1, t2 : Transitions]{
   gt[t2,t1]
-  some placeConflict : Place | conflict[t1, t2, placeConflict]
+  some placeConflict : Places | conflict[t1, t2, placeConflict]
 }
 
 //multiple transitions concurrently activated
-pred showMultipleCon[ts : set Transition]{
+pred showMultipleCon[ts : set Transitions]{
   #ts > 1
   concurrent[ts]
 }
 
 //max concurrently activated
-pred showMax[ts : set Transition]{
+pred showMax[ts : set Transitions]{
   isMaxConcurrency[ts]
 }
 

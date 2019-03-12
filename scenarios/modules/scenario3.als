@@ -21,23 +21,23 @@ pred showRemoveOneTokenNoActivatedTransition[]{
 run showRemoveOneTokenNoActivatedTransition for 3
 
 //Remove a token so that 2 previously concurrently activated transitions get into conflict
-pred showRemoveOneTokenIntoConflict[t1, t2 : Transition]{
+pred showRemoveOneTokenIntoConflict[t1, t2 : Transitions]{
   concurrentDefault[t1 + t2]
   tokensRemovedOverall[1]
   gt[t2,t1]
-  some placeConflict : Place | conflict[t1, t2, placeConflict]
+  some placeConflict : Places | conflict[t1, t2, placeConflict]
 }
 run showRemoveOneTokenIntoConflict
 
-pred showActivatedDefault[t : Transition]{
+pred showActivatedDefault[t : Transitions]{
   no tokenChange
   activatedDefault[t]
 }
 run showActivatedDefault for 3
 
-pred showConflictDefault[t1, t2 : Transition]{
+pred showConflictDefault[t1, t2 : Transitions]{
   no tokenChange
   gt[t2,t1]
-  some placeConflictDefault : Place | conflictDefault[t1, t2, placeConflictDefault]
+  some placeConflictDefault : Places | conflictDefault[t1, t2, placeConflictDefault]
 }
 run showConflictDefault for 3
