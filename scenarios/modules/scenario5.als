@@ -1,9 +1,10 @@
 open PetriConstraints
+open PetriAdditions
 open OneLiner
 
 fact{
-  Places.defaultTokens in 0
-  no defaultFlow
+ no givenPlaces
+  no givenTransitions
 }
 
 pred showPetr1[ts : set Transitions]{
