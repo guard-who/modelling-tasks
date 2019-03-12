@@ -33,3 +33,11 @@ pred showRemoveOneWeightNoActivatedTrans[]{
   noActivatedTrans
 }
 run  showRemoveOneWeightNoActivatedTrans for 3
+
+//Add exactly one weight somewhere so that two previously concurrently activated transitions get into conflict
+pred showAddOneWeightConcurrentTransIntoConflict[]{
+  concurrentDefault[T1 + T3]
+  weightAddedOverall[1]
+  some placeConflict : Places | conflict[T1, T3, placeConflict]
+}
+run showAddOneWeightConcurrentTransIntoConflict for 3
