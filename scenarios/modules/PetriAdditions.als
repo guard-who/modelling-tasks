@@ -12,3 +12,9 @@ sig addedTransition extends Transition{}
 {
   no defaultFlow
 }
+
+pred fineGrained[]{
+  givenPlace.tokenChange in 0
+  no givenPlace.flowChange[givenTransition]
+  no givenTransition.flowChange[givenPlace]
+}

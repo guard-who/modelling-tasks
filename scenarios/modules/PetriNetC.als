@@ -3,12 +3,12 @@ open PetriSignature
 
 //concrete Petri net
 
-one sig S1 extends Place{}
-one sig S2 extends Place{}
-one sig S3 extends Place{}
-one sig T1 extends Transition{}
-one sig T2 extends Transition{}
-one sig T3 extends Transition{}
+one sig S1 extends givenPlace{}
+one sig S2 extends givenPlace{}
+one sig S3 extends givenPlace{}
+one sig T1 extends givenTransition{}
+one sig T2 extends givenTransition{}
+one sig T3 extends givenTransition{}
 
 fact {
   Place.defaultTokens = 0

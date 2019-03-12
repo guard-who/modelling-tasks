@@ -3,11 +3,11 @@ module PetriNetD
 open PetriSignature
 
 //default petri net
-one sig S1 extends Place{}
-one sig S2 extends Place{}
-one sig T1 extends Transition{}
-one sig T2 extends Transition{}
-one sig T3 extends Transition{}
+one sig S1 extends givenPlace{}
+one sig S2 extends givenPlace{}
+one sig T1 extends givenTransition{}
+one sig T2 extends givenTransition{}
+one sig T3 extends givenTransition{}
 
 fact{
   S1.defaultTokens = 0
@@ -25,5 +25,5 @@ fact{
 
   no T2.defaultFlow[Place]
 
-  no T3.defaultFlow[Place]  
+  no T3.defaultFlow[Place] 
 }

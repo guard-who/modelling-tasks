@@ -34,3 +34,7 @@ abstract sig Transition extends Node
   flow.Int in Place
   defaultFlow.Int in Place
 }
+
+//set default places and transitions
+abstract sig givenPlace extends Place{}
+abstract sig givenTransition extends Transition{}
