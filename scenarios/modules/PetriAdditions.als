@@ -9,19 +9,20 @@ module PetriAdditions
 
 open PetriSignature
 
-//Place and Transition to be added
+//Places and Transitions to be added
 sig addedPlaces extends Places{}
 {
-  defaultTokens in 0
+  defaultTokens = 0
   no defaultFlow
 }
+
 sig addedTransitions extends Transitions{}
 {
   no defaultFlow
 }
 
 pred fineGrained[]{
-  givenPlaces.tokenChange in 0
+  no givenPlaces.tokenChange
   no givenPlaces.flowChange[givenTransitions]
   no givenTransitions.flowChange[givenPlaces]
 }
