@@ -23,6 +23,5 @@ sig addedTransitions extends Transitions{}
 
 pred fineGrained[]{
   no givenPlaces.tokenChange
-  no givenPlaces.flowChange[givenTransitions]
-  no givenTransitions.flowChange[givenPlaces]
+  let givenNodes = givenPlaces + givenTransitions | no givenNodes.flowChange[givenNodes]
 }
