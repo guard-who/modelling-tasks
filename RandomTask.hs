@@ -38,6 +38,7 @@ getRandomTask config maxObjects searchSpace maxInstances = do
 getRandomCDs :: (MonadFail m, MonadRandom m) => ClassConfig -> Int -> m (Syntax, Syntax, Syntax, Int)
 getRandomCDs config searchSpace = do
   (names, edges) <- generate config searchSpace
+  -- let cd0 = fromEdges names edges
   mutations <- shuffleM $ getAllMutationResults config names edges
   let medges1 = getFirstValidSatisfying (not . anyRedEdge) names mutations
   continueIf (isJust medges1) $ do
