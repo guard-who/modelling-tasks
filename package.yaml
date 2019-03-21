@@ -74,3 +74,18 @@ executables:
       - Transform
       - Types
       - Util
+  reproduce-task:
+    main: reproduce-task.hs
+    dependencies:
+      - bytestring
+      - digest
+    other-modules:
+      - Alloy
+      - Edges
+      - Generate
+      - Mutation
+      - Output
+      - RandomTask
+      - Transform
+      - Types
+      - Util
