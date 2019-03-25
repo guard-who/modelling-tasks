@@ -1,7 +1,7 @@
 module scenarios/scenario4
 open scenarios/examples/PetriNetA_Ordered
 open lib/PetriConstraints
-open lib/OneLiners
+open scenarios/OneLiners
 
 fact{
   no tokenChange

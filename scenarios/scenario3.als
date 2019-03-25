@@ -1,20 +1,20 @@
 module scenarios/scenario3
 open scenarios/examples/PetriNetA_Ordered
 open lib/PetriConstraints
-open lib/OneLiners
+open scenarios/OneLiners
 
 fact{
   no flowChange
 }
 
-//Remove a token so that there are no activated transitions.
+//Add a token so that there is conccurency relation between two transitions
 pred showAddOneTokenOnePairConcurrency[]{
   tokensAddedOverall[1]
   concurrent[T1 + T3]
 }
 run showAddOneTokenOnePairConcurrency for 3
 
-//Remove a token so that there are no activated transitions.
+//Remove a token so that there is no activated transition.
 pred showRemoveOneTokenNoActivatedTransition[]{
   tokensRemovedOverall[1]
   noActivatedTrans

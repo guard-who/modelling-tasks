@@ -1,7 +1,7 @@
 module scenarios/scenario5
 open lib/PetriConstraints
 open lib/PetriAdditions
-open lib/OneLiners
+open scenarios/OneLiners
 
 fact{
  no givenPlaces
@@ -9,10 +9,10 @@ fact{
 }
 
 pred showPetr1[ts : set Transitions]{
-  maxPlaces[3]
+  #Places =< 3
   tokensAddedOverall[3]
   perPlaceTokensAddedAtMost[2]
-  maxTransitions[3]
+  #Transitions =< 3
   maxWeight[1]
   numberActivatedTransition[3,ts]
   not presenceSinkTransition

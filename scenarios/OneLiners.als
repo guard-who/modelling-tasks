@@ -1,10 +1,6 @@
-module OneLiner
+module scenarios/OneLiners
 
-open PetriConstraints
-
-pred tokenChangeSum[n : Int]{
-  totalTokenChange[Places] = n
-}
+open lib/PetriConstraints
 
 pred noActivatedTrans[]{
   no t : Transitions | activated[t]
@@ -15,20 +11,12 @@ pred noConcurrency[]{
   no t1, t2 : Transitions | t1 != t2 and concurrent[t1 + t2]
 }
 
-pred maxPlaces[n : Int]{
-  #Places =< n
-}
-
-pred maxTransitions[n : Int]{
-  #Transitions =< n
-}
-
 pred maxWeight[n : Int]{
   all weight : Nodes.flow[Nodes] | weight =< n
 }
 
 pred weightChangeSum[n : Int]{
-  totalFlowChange[Nodes, Nodes] = n
+  flowChangeSum[Nodes, Nodes] = n
 }
 
 pred presenceSelfLoop[]{
@@ -36,11 +24,11 @@ pred presenceSelfLoop[]{
 }
 
 pred presenceSinkTransition[]{
-  some t : Transitions | sinkTransition[t]
+  some t : Transitions | sinkTransitions[t]
 }
 
 pred presenceSourceTransition[]{
-  some t : Transitions | sourceTransition[t]
+  some t : Transitions | sourceTransitions[t]
 }
 
 pred presenceConflict[]{
