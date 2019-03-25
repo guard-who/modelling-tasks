@@ -1,6 +1,6 @@
-module PetriNetD
+module scenarios/examples/PetriNetD
 
-open PetriSignature
+open lib/PetriSignature
 
 //default petri net
 one sig S1 extends givenPlaces{}

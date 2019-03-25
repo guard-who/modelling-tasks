@@ -1,6 +1,7 @@
-open PetriNetA_Ordered
-open PetriConstraints
-open OneLiner
+module scenarios/scenario3
+open scenarios/examples/PetriNetA_Ordered
+open lib/PetriConstraints
+open lib/OneLiners
 
 fact{
   no flowChange

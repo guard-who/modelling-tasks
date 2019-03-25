@@ -1,5 +1,6 @@
-open PetriNetB_Ordered
-open PetriConstraints
+module scenarios/scenario1
+open scenarios/examples/PetriNetB_Ordered
+open lib/PetriConstraints
 
 fact{
   no tokenChange

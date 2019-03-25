@@ -1,6 +1,7 @@
-open PetriConstraints
-open PetriAdditions
-open OneLiner
+module scenarios/scenario5
+open lib/PetriConstraints
+open lib/PetriAdditions
+open lib/OneLiners
 
 fact{
  no givenPlaces

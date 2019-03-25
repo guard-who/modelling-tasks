@@ -1,9 +1,9 @@
-module scenario6
-open OneLiner
+module scenarios/scenario6
+open lib/OneLiners
 
-open PetriNetD
-open PetriConstraints
-open PetriAdditions
+open scenarios/examples/PetriNetD
+open lib/PetriConstraints
+open lib/PetriAdditions
 
 pred show3Place4Transition[]{
   maxPlaces[3]

@@ -1,5 +1,5 @@
-module PetriNetC
-open PetriSignature
+module scenarios/examples/PetriNetB
+open lib/PetriSignature
 
 //concrete Petri net
 
@@ -11,7 +11,9 @@ one sig T2 extends givenTransitions{}
 one sig T3 extends givenTransitions{}
 
 fact {
-  Place.defaultTokens = 0
+  S1.defaultTokens = 2
+  S2.defaultTokens = 0
+  S3.defaultTokens = 1
 
   S1.defaultFlow[T1] = 1
   S1.defaultFlow[T2] = 1
