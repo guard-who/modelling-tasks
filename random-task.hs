@@ -24,7 +24,7 @@ main = do
   let maxObjects = 4
   g    <- getStdGen
   (cds, instas) <- evalRandT (getRandomTask config maxObjects 10 (-1)) g
-  (\i cd -> drawCdFromSyntax True False cd (output ++ '-' : show i) Pdf) `M.traverseWithKey` cds
+  (\i cd -> drawCdFromSyntax True False Nothing cd (output ++ '-' : show i) Pdf) `M.traverseWithKey` cds
   uncurry drawOd `mapM_` concat (zip [1 :: Int ..] <$> groupBy ((==) `on` fst) (sortBy (compare `on` fst) instas))
   where
     output = "output"

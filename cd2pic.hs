@@ -9,17 +9,21 @@ import Data.GraphViz
 
 import System.Environment (getArgs)
 
-run :: String -> FilePath -> GraphvizOutput -> IO ()
-run input = do
+run :: Maybe Style -> String -> FilePath -> GraphvizOutput -> IO ()
+run how input = do
   let tokens = lexer input
   let syntax = parser tokens
-  drawCdFromSyntax False True syntax
+  drawCdFromSyntax False True how syntax
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-   [] -> getContents >>= \contents -> run contents "output" Pdf
-   [file] -> readFile file >>= \contents -> run contents file Pdf
-   [file, format] -> readFile file >>= \contents -> run contents file (read (firstUpper format))
+   [] -> getContents >>= \contents -> run Nothing contents "output" Pdf
+   [file] -> readFile file >>= \contents -> run Nothing contents file Pdf
+   [file, format] -> readFile file >>= \contents -> run Nothing contents file (read (firstUpper format))
+   [file, format, x] -> readFile file >>= \contents -> run (Just $ specialStyle !! read x) contents file (read (firstUpper format))
    _ -> error "zu viele Parameter"
+
+specialStyle :: [Style]
+specialStyle = [dashed, dotted, bold]
