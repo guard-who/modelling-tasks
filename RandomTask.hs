@@ -46,6 +46,7 @@ getRandomCDs :: RandomGen g => ClassConfig -> Int -> RandT g IO (Syntax, Syntax,
 getRandomCDs config searchSpace = do
   (names, edges) <- generate config searchSpace
   let cd0 = fromEdges names edges
+  -- continueIf (not (anyRedEdge cd0)) $ do
   when debug . void . liftIO $ (\i cd -> drawCdFromSyntax True True Nothing cd ("debug-" ++ show i) Pdf) `M.traverseWithKey` M.fromList [(0 :: Int, cd0)]
   mutations <- shuffleM $ getAllMutationResults config names edges
   let medges1 = getFirstValidSatisfying (not . anyRedEdge) names mutations
