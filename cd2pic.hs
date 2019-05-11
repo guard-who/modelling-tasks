@@ -10,10 +10,10 @@ import Data.GraphViz
 import System.Environment (getArgs)
 
 run :: Attribute -> String -> FilePath -> GraphvizOutput -> IO ()
-run how input = do
+run howToMark input = do
   let tokens = lexer input
   let syntax = parser tokens
-  drawCdFromSyntax False (Just how) syntax
+  drawCdFromSyntax False (Just howToMark) syntax
 
 main :: IO ()
 main = do

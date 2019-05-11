@@ -9,7 +9,7 @@ module Edges (
   -- ** Single checks
   compositionCycles, doubleConnections, inheritanceCycles, multipleInheritances,
   selfEdges, wrongLimits,
-  anyRedEdge, shouldBeRed
+  anyMarkedEdge, shouldBeMarked
   ) where
 
 import Types (AssociationType (..), Connection (..), Syntax)
@@ -105,8 +105,8 @@ getPaths connectionFilter es =
       in [path | p@(s', e', _) <- es', s' /= e', s' /= e, s == e'
                , path <- getPath s' e (p:ps) es'']
 
-anyRedEdge :: Syntax -> Bool
-anyRedEdge (classes, associations) =
+anyMarkedEdge :: Syntax -> Bool
+anyMarkedEdge (classes, associations) =
   let
     classesWithSubclasses = map (\(name, _) -> (name, subs [] name)) classes
       where
@@ -114,10 +114,11 @@ anyRedEdge (classes, associations) =
           | name `elem` seen = []
           | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
     assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-  in any (\(_,_,_,from,to,_) -> shouldBeRed from to classesWithSubclasses assocsBothWays) associations
+  in any (\(_,_,_,from,to,_) -> shouldBeMarked from to classesWithSubclasses assocsBothWays) associations
 
-shouldBeRed :: String -> String -> [(String, [String])] -> [(String, String)] -> Bool
-shouldBeRed a b classesWithSubclasses = any (\(a',b') ->
+shouldBeMarked :: String -> String -> [(String, [String])] -> [(String, String)] -> Bool
+shouldBeMarked a b classesWithSubclasses =
+                                        any (\(a',b') ->
                                                (a /= a' || b /= b')
                                                && let { one = a' `isSubOf` a; two = b' `isSubOf` b }
                                                   in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))

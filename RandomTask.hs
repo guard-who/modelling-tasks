@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 module RandomTask where
 
-import Edges     (DiagramEdge, anyRedEdge, checkMultiEdge, fromEdges)
+import Edges     (DiagramEdge, anyMarkedEdge, checkMultiEdge, fromEdges)
 import Generate  (generate)
 import Mutation  (Target (..), getAllMutationResults, nonTargets)
 import Transform (createRunCommand, transform)
@@ -47,10 +47,10 @@ getRandomCDs :: RandomGen g => ClassConfig -> Int -> RandT g IO (Syntax, Syntax,
 getRandomCDs config searchSpace = do
   (names, edges) <- generate config searchSpace
   let cd0 = fromEdges names edges
-  -- continueIf (not (anyRedEdge cd0)) $ do
+  -- continueIf (not (anyMarkedEdge cd0)) $ do
   when debug . liftIO $ drawCdFromSyntax True (Just redColor) cd0 "debug-0" Pdf
   mutations <- shuffleM $ getAllMutationResults config names edges
-  let medges1 = getFirstValidSatisfying (not . anyRedEdge) names mutations
+  let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
   continueIf (isJust medges1) $ do
     mutations' <- shuffleM mutations
     let Just edges1 = medges1
@@ -58,7 +58,7 @@ getRandomCDs config searchSpace = do
     continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2) $ do
       [cd1, cd2] <- shuffleM [fromEdges names edges1, fromEdges names edges2]
       mutations'' <- shuffleM mutations
-      let Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
+      let Just edges3 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations''
           cd3         = fromEdges names edges3
       when debug . liftIO $ drawCdFromSyntax True (Just redColor) cd3 "debug-3" Pdf
       return (cd1, cd2, cd3, length names)

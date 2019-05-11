@@ -18,16 +18,16 @@ import System.FilePath (dropExtension)
 connectionArrow :: Bool -> Attribute -> Connection -> [Attribute]
 connectionArrow _          _   Inheritance =
   [arrowTo emptyArr]
-connectionArrow printNames how (Assoc Composition name from to isRed) =
+connectionArrow printNames howToMark (Assoc Composition name from to isMarked) =
   arrow Composition ++ [HeadLabel (mult to)]
-  ++ [how | isRed] ++ [toLabel name | printNames]
+  ++ [howToMark | isMarked] ++ [toLabel name | printNames]
   ++ case from of
        (1, Just 1) -> []
        (0, Just 1) -> [TailLabel (mult from)]
        _           -> error $ "invalid composition multiplicity"
-connectionArrow printNames how (Assoc a name from to isRed) =
+connectionArrow printNames howToMark (Assoc a name from to isMarked) =
   arrow a ++ [TailLabel (mult from), HeadLabel (mult to)]
-  ++ [how | isRed] ++ [toLabel name | printNames]
+  ++ [howToMark | isMarked] ++ [toLabel name | printNames]
 
 arrow :: AssociationType -> [Attribute]
 arrow Association = [ArrowHead noArrow]
@@ -52,7 +52,7 @@ drawCdFromSyntax printNames marking syntax file format = do
             | name `elem` seen = []
             | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
   let assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-  let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (isJust marking && shouldBeRed from to classesWithSubclasses assocsBothWays))) associations
+  let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (isJust marking && shouldBeMarked from to classesWithSubclasses assocsBothWays))) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(_,l) -> [toLabel l,
