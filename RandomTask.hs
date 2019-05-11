@@ -9,7 +9,7 @@ import Types     (ClassConfig (..), Syntax)
 
 import qualified Alloy (getInstances)
 
-import Control.Monad          (when, void)
+import Control.Monad          (when)
 import Control.Monad.Fail     (MonadFail)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
@@ -19,7 +19,7 @@ import Data.Maybe             (fromJust, isJust)
 import Data.Set               (singleton)
 import System.Random.Shuffle  (shuffleM)
 
-import qualified Data.Map as M (fromList, lookup, traverseWithKey)
+import qualified Data.Map as M (fromList, lookup)
 
 import Output        (drawCdFromSyntax)
 import Data.GraphViz (GraphvizOutput (Pdf))
@@ -47,7 +47,7 @@ getRandomCDs config searchSpace = do
   (names, edges) <- generate config searchSpace
   let cd0 = fromEdges names edges
   -- continueIf (not (anyRedEdge cd0)) $ do
-  when debug . void . liftIO $ (\i cd -> drawCdFromSyntax True True Nothing cd ("debug-" ++ show i) Pdf) `M.traverseWithKey` M.fromList [(0 :: Int, cd0)]
+  when debug . liftIO $ drawCdFromSyntax True True Nothing cd0 "debug-0" Pdf
   mutations <- shuffleM $ getAllMutationResults config names edges
   let medges1 = getFirstValidSatisfying (not . anyRedEdge) names mutations
   continueIf (isJust medges1) $ do
@@ -59,7 +59,7 @@ getRandomCDs config searchSpace = do
       mutations'' <- shuffleM mutations
       let Just edges3 = getFirstValidSatisfying (not . anyRedEdge) names mutations''
           cd3         = fromEdges names edges3
-      when debug . void . liftIO $ (\i cd -> drawCdFromSyntax True True Nothing cd ("debug-" ++ show i) Pdf) `M.traverseWithKey` M.fromList [(3 :: Int, cd3)]
+      when debug . liftIO $ drawCdFromSyntax True True Nothing cd3 "debug-3" Pdf
       return (cd1, cd2, cd3, length names)
   where
     continueIf True  m = m
