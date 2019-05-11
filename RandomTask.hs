@@ -86,10 +86,10 @@ getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses = do
   instances2not1 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd2not1)
   instances1and2 <- Alloy.getInstances maxInstances (combineParts parts1and2 ++ cd1and2)
   instancesNot1not2 <- Alloy.getInstances maxInstances (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
-  when debug . print . length $ instances1not2
-  when debug . print . length $ instances2not1
-  when debug . print . length $ instances1and2
-  when debug . print . length $ instancesNot1not2
+  when debug . print $ length instances1not2
+  when debug . print $ length instances2not1
+  when debug . print $ length instances1and2
+  when debug . print $ length instancesNot1not2
   return $ (M.fromList [([1]  , instances1not2),
                         ([2]  , instances2not1),
                         ([1,2], instances1and2),
