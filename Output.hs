@@ -15,19 +15,19 @@ import System.Random.Shuffle (shuffleM)
 
 import System.FilePath (dropExtension)
 
-connectionArrow :: Bool -> Attribute -> Connection -> [Attribute]
+connectionArrow :: Bool -> Maybe Attribute -> Connection -> [Attribute]
 connectionArrow _          _   Inheritance =
   [arrowTo emptyArr]
-connectionArrow printNames howToMark (Assoc Composition name from to isMarked) =
+connectionArrow printNames marking (Assoc Composition name from to isMarked) =
   arrow Composition ++ [HeadLabel (mult to)]
-  ++ [howToMark | isMarked] ++ [toLabel name | printNames]
+  ++ concat [maybe [] (:[]) marking | isMarked] ++ [toLabel name | printNames]
   ++ case from of
        (1, Just 1) -> []
        (0, Just 1) -> [TailLabel (mult from)]
        _           -> error $ "invalid composition multiplicity"
-connectionArrow printNames howToMark (Assoc a name from to isMarked) =
+connectionArrow printNames marking (Assoc a name from to isMarked) =
   arrow a ++ [TailLabel (mult from), HeadLabel (mult to)]
-  ++ [howToMark | isMarked] ++ [toLabel name | printNames]
+  ++ concat [maybe [] (:[]) marking | isMarked] ++ [toLabel name | printNames]
 
 arrow :: AssociationType -> [Attribute]
 arrow Association = [ArrowHead noArrow]
@@ -52,12 +52,12 @@ drawCdFromSyntax printNames marking syntax file format = do
             | name `elem` seen = []
             | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
   let assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-  let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (isJust marking && shouldBeMarked from to classesWithSubclasses assocsBothWays))) associations
+  let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (shouldBeMarked from to classesWithSubclasses assocsBothWays))) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(_,l) -> [toLabel l,
                                         shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 11],
-                   fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNames (fromJust marking) l }) graph
+                   fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNames marking l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
