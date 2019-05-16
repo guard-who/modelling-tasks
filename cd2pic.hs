@@ -9,21 +9,25 @@ import Data.GraphViz
 
 import System.Environment (getArgs)
 
-run :: Attribute -> String -> FilePath -> GraphvizOutput -> IO ()
-run howToMark input = do
+run :: Bool -> Attribute -> String -> FilePath -> GraphvizOutput -> IO ()
+run printNames howToMark input = do
   let tokens = lexer input
   let syntax = parser tokens
-  drawCdFromSyntax False (Just howToMark) syntax
+  drawCdFromSyntax printNames (Just howToMark) syntax
 
 main :: IO ()
 main = do
   args <- getArgs
-  case args of
-   [] -> getContents >>= \contents -> run redColor contents "output" Pdf
-   [file] -> readFile file >>= \contents -> run redColor contents file Pdf
-   [file, format] -> readFile file >>= \contents -> run redColor contents file (read (firstUpper format))
-   [file, format, x] -> readFile file >>= \contents -> run (specialStyle !! read x) contents file (read (firstUpper format))
-   _ -> error "zu viele Parameter"
+  let (printNames, args') = stripPrintNamesArg args
+  case args' of
+    [] -> getContents >>= \contents -> run printNames redColor contents "output" Pdf
+    [file] -> readFile file >>= \contents -> run printNames redColor contents file Pdf
+    [file, format] -> readFile file >>= \contents -> run printNames redColor contents file (read (firstUpper format))
+    [file, format, x] -> readFile file >>= \contents -> run printNames (specialStyle !! read x) contents file (read (firstUpper format))
+    _ -> error "zu viele Parameter"
+  where
+    stripPrintNamesArg ("-p":args) = (True, args)
+    stripPrintNamesArg args        = (False, args)
 
 specialStyle :: [Attribute]
 specialStyle = map style [dashed, dotted, bold]
