@@ -2,7 +2,10 @@
 *.dyn_o
 *.hi
 *.o
+*.pdf
+*.DS_Store
 .stack-work/
+stack.yaml.lock
 Lexer.hs
 Lexer.info
 Parser.hs
