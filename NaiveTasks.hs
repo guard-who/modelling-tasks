@@ -7,7 +7,7 @@ import qualified Data.Bimap as BM (fromList)
 import Edges     (fromEdges, renameEdges)
 import Generate  (generate)
 import Output    (drawCdFromSyntax)
-import Transform (transform)
+import Transform (createRunCommand, mergeParts, transform)
 import Types     (ClassConfig (..), Syntax)
 import Util
 
@@ -16,6 +16,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
 import Data.Bimap             (Bimap)
 import Data.GraphViz          (GraphvizOutput (Pdf))
+import Data.List              (permutations)
 import Data.Maybe             (fromMaybe)
 import System.Random.Shuffle  (shuffleM)
 
@@ -30,28 +31,44 @@ getDifferentNamesTask
   -> Int
   -> RandT g IO (Syntax, String, Bimap String String)
 getDifferentNamesTask config maxObjects searchSpace maxInstances = do
-  config' <- withMinimalLabels 2 config
-  (names, edges) <- generate config' searchSpace
-  let cd0    = fromEdges names edges
-      parts1 = transform cd0 "0" ""
-      labels = [l | (_, l, _, _, _, _) <- snd cd0]
-  when debug . liftIO $ drawCdFromSyntax True (Just redColor) cd0 "debug-0" Pdf
-  instances  <- liftIO $ Alloy.getInstances maxInstances (combineParts parts1)
-  instances' <- shuffleM instances
-  case instances' of
-    []      -> getDifferentNamesTask config maxObjects searchSpace maxInstances
-    (od1:_) -> do
+  configs <- withMinimalLabels 3 config
+  continueWithHead configs $ \config' -> do
+    (names, edges) <- generate config' searchSpace
+    let cd0    = (0 :: Integer, fromEdges names edges)
+        parts0 = extractFourParts cd0
+        labels = [l | (_, l, _, _, _, _) <- snd $ snd cd0]
+        cds    = fromEdges names
+          . flip renameEdges edges . BM.fromList . zip labels
+          <$> drop 1 (permutations labels)
+        cds'   = zip [1 :: Integer ..] cds
+        partss = extractFourParts <$> cds'
+        runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
+        onlyCd0 = createRunCommand runCmd (length names) maxObjects
+        partss' = foldr mergeParts parts0 partss
+    when debug . liftIO $ drawCd cd0
+    when debug . liftIO $ drawCd `mapM_` cds'
+    instances  <- liftIO
+      $ Alloy.getInstances maxInstances (combineParts partss' ++ onlyCd0)
+    instances' <- shuffleM instances
+    continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
       let bm  = BM.fromList $ zip labels' $ (:[]) <$> ['a', 'b' ..]
           cd1 = fromEdges names $ renameEdges bm edges
       return (cd1, od1, bm)
   where
-    combineParts (p1, p2, p3, p4, p5) = p1 ++ p2 ++ p3 ++ p4 ++ p5
+    extractFourParts (n, cd) = case transform cd (show n) "" of
+      (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+    combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
+    drawCd (n, cd) =
+      drawCdFromSyntax True (Just redColor) cd ("debug-" ++ show n) Pdf
+    continueWithHead []    _ =
+      getDifferentNamesTask config maxObjects searchSpace maxInstances
+    continueWithHead (x:_) f = f x
 
-withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m ClassConfig
+withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
 withMinimalLabels n config
-  | n <= lowerLimit = return config
-  | otherwise       = head <$> shuffleM
+  | n <= lowerLimit = return [config]
+  | otherwise       = shuffleM
     [ config {
         aggregations = (Just aggrs, snd (aggregations config)),
         associations = (Just assos, snd (associations config)),
