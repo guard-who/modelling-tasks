@@ -3,6 +3,7 @@ module Edges (
   DiagramEdge,
   -- * Transformation
   fromEdges, toEdges,
+  renameEdges,
   -- * Checks
   -- ** Check sets (reusing single checks)
   checkMultiEdge, checkObvious,
@@ -12,9 +13,12 @@ module Edges (
   anyMarkedEdge, shouldBeMarked
   ) where
 
+import qualified Data.Bimap as BM (lookup)
+
 import Types (AssociationType (..), Connection (..), Syntax)
 import Util  (filterFirst)
 
+import Data.Bimap (Bimap)
 import Data.List  (partition)
 import Data.Maybe (fromJust)
 
@@ -33,6 +37,14 @@ fromEdges classNames es =
       classes' = (\x -> (x, foldl (\p (s, e, Inheritance) -> if s == x then Just e else p) Nothing ihs)) <$> classNames
       assocs   = [(t, n, m1, s, e, m2) | (s, e, Assoc t n m1 m2 False) <- ass]
   in (classes', assocs)
+
+renameEdges :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
+renameEdges bm es =
+  [ (from, to, e')
+  | (from, to, e) <- es, e' <- rename e]
+  where
+    rename (Assoc t n m1 m2 b) = [Assoc t n' m1 m2 b | n' <- BM.lookup n bm]
+    rename e@Inheritance       = [e]
 
 selfEdges :: [DiagramEdge] -> [DiagramEdge]
 selfEdges es = [x | x@(s, e, _) <- es, e == s]

@@ -11,6 +11,7 @@ ghc-options:
 dependencies:
   - base
   - array
+  - bimap
   - containers
   - fgl
   - file-embed
@@ -53,6 +54,17 @@ executables:
       - Lexer
       - Output
       - Parser
+      - Types
+      - Util
+  different-names:
+    main: different-names.hs
+    other-modules:
+      - Alloy
+      - Edges
+      - Generate
+      - NaiveTasks
+      - Output
+      - Transform
       - Types
       - Util
   instance2pic:
