@@ -5,7 +5,7 @@ import Output     (drawCdFromSyntax, drawOdFromInstance)
 import Types      (ClassConfig (..))
 import RandomTask (getRandomTask)
 
-import Control.Monad.Random (StdGen, evalRandT, getStdGen, mkStdGen)
+import Control.Monad.Random (evalRandT, mkStdGen)
 import Data.ByteString      (ByteString)
 import Data.Digest.CRC32    (crc32)
 import Data.Function        (on)
@@ -18,15 +18,11 @@ import qualified Data.Map as M (traverseWithKey)
 
 main :: IO ()
 main = do
-  args <- getArgs
-  g <- case args of
-    []     -> getStdGen
-    [task] -> return $ mkStdGen $ fromIntegral $ crc32 (fromString task :: ByteString)
-    _      -> error "Too many arguments"
-  reproduceTask g
+  [task] <- getArgs
+  reproduceTask task
 
-reproduceTask :: StdGen -> IO ()
-reproduceTask g = do
+reproduceTask :: String -> IO ()
+reproduceTask task = do
   let config = ClassConfig {
           classes      = (Just 4, Just 4),
           aggregations = (Nothing, Just 2),
@@ -35,6 +31,7 @@ reproduceTask g = do
           inheritances = (Just 1, Just 2)
         }
   let maxObjects = 4
+  let g = mkStdGen $ fromIntegral $ crc32 (fromString task :: ByteString)
   (cds, instas) <- evalRandT (getRandomTask config maxObjects 10 (-1)) g
   (\i cd -> drawCdFromSyntax True Nothing cd (output ++ '-' : show i) Pdf) `M.traverseWithKey` cds
   uncurry drawOd `mapM_` concat (zip [1 :: Int ..] <$> groupBy ((==) `on` fst) (sortBy (compare `on` fst) instas))
@@ -44,4 +41,4 @@ reproduceTask g = do
       drawOdFromInstance False True insta (output ++ '-' : toDescription y 2 ++ '-' : show x) Pdf
     toDescription :: [Int] -> Int -> String
     toDescription x n =
-      intercalate "and" (show <$> x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)
+      intercalate "and" (show <$> x) ++ foldr ((++) . ("not" ++) . show) [] ([1..n] \\ x)

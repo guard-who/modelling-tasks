@@ -11,7 +11,7 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-   [] -> getContents >>= \contents -> drawOdFromInstance False contents "output" Pdf
-   [file] -> readFile file >>= \contents -> drawOdFromInstance False contents file Pdf
-   [file, format] -> readFile file >>= \contents -> drawOdFromInstance False contents file (read (firstUpper format))
+   [] -> getContents >>= \contents -> drawOdFromInstance False False contents "output" Pdf
+   [file] -> readFile file >>= \contents -> drawOdFromInstance False False contents file Pdf
+   [file, format] -> readFile file >>= \contents -> drawOdFromInstance False False contents file (read (firstUpper format))
    _ -> error "zu viele Parameter"

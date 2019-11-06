@@ -62,8 +62,8 @@ drawCdFromSyntax printNames marking syntax file format = do
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
 
-drawOdFromInstance :: Bool -> String -> FilePath -> GraphvizOutput -> IO ()
-drawOdFromInstance printNames input file format = do
+drawOdFromInstance :: Bool -> Bool -> String -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromInstance printArrows printNames input file format = do
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
   let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
   let theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
@@ -77,7 +77,7 @@ drawOdFromInstance printNames input file format = do
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
                                         shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 12],
-                   fmtEdge = \(_,_,l) -> [edgeEnds NoDir, FontSize 12] ++ [toLabel l | printNames] }) graph
+                   fmtEdge = \(_,_,l) -> [edgeEnds NoDir | not printArrows] ++ [FontSize 12] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
