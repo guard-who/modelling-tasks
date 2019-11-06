@@ -4,7 +4,7 @@ module RandomTask where
 import Edges     (DiagramEdge, anyMarkedEdge, checkMultiEdge, fromEdges)
 import Generate  (generate)
 import Mutation  (Target (..), getAllMutationResults, nonTargets)
-import Transform (createRunCommand, transform)
+import Transform (createRunCommand, mergeParts, transform)
 import Types     (ClassConfig (..), Syntax)
 
 import qualified Alloy (getInstances)
@@ -13,7 +13,6 @@ import Control.Monad          (when)
 import Control.Monad.Fail     (MonadFail)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
-import Data.List              (union)
 import Data.Map               (Map)
 import Data.Maybe             (fromJust, isJust)
 import Data.Set               (singleton)
@@ -122,12 +121,3 @@ getFirstValidSatisfying p names (x:xs)
   = Just x
   | otherwise
   = getFirstValidSatisfying p names xs
-
-mergeParts
-  :: (String, String, String, String)
-  -> (String, String, String, String)
-  -> (String, String, String, String)
-mergeParts (p1, p2, p3, p4) (_, p2', p3', p4') =
-  (p1, p2 `unionL` p2', p3 `unionL` p3', p4 ++ p4')
-  where
-    unionL x y = unlines $ (++ [""]) $ filter (not . null) $ lines x `union` lines y

@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Transform (createRunCommand, transform) where
+module Transform (createRunCommand, mergeParts, transform) where
 
 import Types (Association, AssociationType(..))
 
@@ -129,3 +129,12 @@ predicate index associations classNames =
         compositesCD = "CompositesCD" ++ index
         compFieldNamesCD = "CompFieldNamesCD" ++ index
         subsCD = "SubsCD" ++ index
+
+mergeParts
+  :: (String, String, String, String)
+  -> (String, String, String, String)
+  -> (String, String, String, String)
+mergeParts (p1, p2, p3, p4) (_, p2', p3', p4') =
+  (p1, p2 `unionL` p2', p3 `unionL` p3', p4 ++ p4')
+  where
+    unionL x y = unlines $ (++ [""]) $ filter (not . null) $ lines x `union` lines y
