@@ -57,9 +57,9 @@ withMinimalLabels n config
         associations = (Just assos, snd (associations config)),
         compositions = (Just comps, snd (compositions config))
       }
-    | aggrs <- range aggregations  0                   n
-    , assos <- range associations (0 + aggrs)         (n - aggrs)
-    , comps <- range compositions (0 + aggrs + assos) (n - aggrs - assos)]
+    | aggrs <- range aggregations  0                           n
+    , assos <- range associations  0                          (n - aggrs)
+    , comps <- range compositions (max 0 $ n - aggrs - assos) (n - aggrs - assos)]
   where
     lowerLimit = 0
       +. fst (aggregations config)
