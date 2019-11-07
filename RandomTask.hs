@@ -47,7 +47,7 @@ getRandomCDs config searchSpace = do
   (names, edges) <- generate config searchSpace
   let cd0 = fromEdges names edges
   -- continueIf (not (anyMarkedEdge cd0)) $ do
-  when debug . liftIO $ drawCdFromSyntax True (Just redColor) cd0 "debug-0" Pdf
+  when debug . liftIO $ drawCdFromSyntax False True (Just redColor) cd0 "debug-0" Pdf
   mutations <- shuffleM $ getAllMutationResults config names edges
   let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
   continueIf (isJust medges1) $ do
@@ -59,7 +59,7 @@ getRandomCDs config searchSpace = do
       mutations'' <- shuffleM mutations
       let Just edges3 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations''
           cd3         = fromEdges names edges3
-      when debug . liftIO $ drawCdFromSyntax True (Just redColor) cd3 "debug-3" Pdf
+      when debug . liftIO $ drawCdFromSyntax False True (Just redColor) cd3 "debug-3" Pdf
       return (cd1, cd2, cd3, length names)
   where
     continueIf True  m = m

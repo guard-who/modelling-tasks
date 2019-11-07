@@ -19,7 +19,7 @@ main = do
   let maxObjects = 4
   g    <- getStdGen
   (cd, od, bm) <- evalRandT (getDifferentNamesTask config maxObjects 10 (-1)) g
-  drawCdFromSyntax True Nothing cd (output ++ "-cd") Pdf
+  drawCdFromSyntax True True Nothing cd (output ++ "-cd") Pdf
   drawOdFromInstance True True od (output ++ "-od") Pdf
   print bm
   where

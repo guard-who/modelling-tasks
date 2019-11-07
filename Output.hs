@@ -1,4 +1,4 @@
-module Output where
+module Output (drawCdFromSyntax, drawOdFromInstance) where
 
 import Util
 import Types (AssociationType(..), Connection(..), Syntax)
@@ -15,19 +15,28 @@ import System.Random.Shuffle (shuffleM)
 
 import System.FilePath (dropExtension)
 
-connectionArrow :: Bool -> Maybe Attribute -> Connection -> [Attribute]
-connectionArrow _          _   Inheritance =
+connectionArrow :: Bool -> Bool -> Maybe Attribute -> Connection -> [Attribute]
+connectionArrow _ _ _ Inheritance =
   [arrowTo emptyArr]
-connectionArrow printNames marking (Assoc Composition name from to isMarked) =
+connectionArrow _ printNames marking (Assoc Composition name from to isMarked) =
   arrow Composition ++ [HeadLabel (mult to)]
-  ++ concat [maybe [] (:[]) marking | isMarked] ++ [toLabel name | printNames]
+  ++ concat [maybeToList marking | isMarked] ++ [toLabel name | printNames]
   ++ case from of
        (1, Just 1) -> []
        (0, Just 1) -> [TailLabel (mult from)]
-       _           -> error $ "invalid composition multiplicity"
-connectionArrow printNames marking (Assoc a name from to isMarked) =
-  arrow a ++ [TailLabel (mult from), HeadLabel (mult to)]
-  ++ concat [maybe [] (:[]) marking | isMarked] ++ [toLabel name | printNames]
+       _           -> error "invalid composition multiplicity"
+connectionArrow printNavigations printNames marking (Assoc a name from to isMarked) =
+  printArrow a
+  ++ [TailLabel (mult from), HeadLabel (mult to)]
+  ++ concat [maybeToList marking | isMarked] ++ [toLabel name | printNames]
+  where
+    printArrow
+      | printNavigations = arrowDirected
+      | otherwise        = arrow
+
+arrowDirected :: AssociationType -> [Attribute]
+arrowDirected Association = []
+arrowDirected a           = arrow a
 
 arrow :: AssociationType -> [Attribute]
 arrow Association = [ArrowHead noArrow]
@@ -40,8 +49,8 @@ mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
-drawCdFromSyntax :: Bool -> Maybe Attribute -> Syntax -> FilePath -> GraphvizOutput -> IO ()
-drawCdFromSyntax printNames marking syntax file format = do
+drawCdFromSyntax :: Bool -> Bool -> Maybe Attribute -> Syntax -> FilePath -> GraphvizOutput -> IO ()
+drawCdFromSyntax printNavigations printNames marking syntax file format = do
   let (classes, associations) = syntax
   let classNames = map fst classes
   let theNodes = classNames
@@ -57,13 +66,13 @@ drawCdFromSyntax printNames marking syntax file format = do
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(_,l) -> [toLabel l,
                                         shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 11],
-                   fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNames marking l }) graph
+                   fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNavigations printNames marking l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
 
 drawOdFromInstance :: Bool -> Bool -> String -> FilePath -> GraphvizOutput -> IO ()
-drawOdFromInstance printArrows printNames input file format = do
+drawOdFromInstance printNavigations printNames input file format = do
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
   let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
   let theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
@@ -77,7 +86,7 @@ drawOdFromInstance printArrows printNames input file format = do
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
                                         shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 12],
-                   fmtEdge = \(_,_,l) -> [edgeEnds NoDir | not printArrows] ++ [FontSize 12] ++ [toLabel l | printNames] }) graph
+                   fmtEdge = \(_,_,l) -> [edgeEnds NoDir | not printNavigations] ++ [FontSize 12] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output

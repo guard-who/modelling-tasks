@@ -60,7 +60,7 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
-      drawCdFromSyntax True (Just redColor) cd ("debug-" ++ show n) Pdf
+      drawCdFromSyntax True True (Just redColor) cd ("debug-" ++ show n) Pdf
     continueWithHead []    _ =
       getDifferentNamesTask config maxObjects searchSpace maxInstances
     continueWithHead (x:_) f = f x

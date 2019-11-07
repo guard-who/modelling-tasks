@@ -13,7 +13,7 @@ run :: Bool -> Attribute -> String -> FilePath -> GraphvizOutput -> IO ()
 run printNames howToMark input = do
   let tokens = lexer input
   let syntax = parser tokens
-  drawCdFromSyntax printNames (Just howToMark) syntax
+  drawCdFromSyntax False printNames (Just howToMark) syntax
 
 main :: IO ()
 main = do
