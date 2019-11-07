@@ -6,6 +6,7 @@ import Types      (ClassConfig (..))
 
 import Control.Monad.Random (evalRandT, getStdGen)
 import Data.GraphViz        (GraphvizOutput (Pdf))
+import System.Environment   (getArgs)
 
 main :: IO ()
 main = do
@@ -17,7 +18,12 @@ main = do
           inheritances = (Just 1, Just 2)
         }
   let maxObjects = 4
-  g    <- getStdGen
+  args <- getArgs
+  g    <- case args of
+    []   -> getStdGen
+    [g'] -> return $ read g'
+    _    -> error "Too many arguments"
+  putStrLn $ "Seed: " ++ show (show g)
   (cd, od, bm) <- evalRandT (getDifferentNamesTask config maxObjects 10 (-1)) g
   drawCdFromSyntax True True Nothing cd (output ++ "-cd") Pdf
   drawOdFromInstance True True od (output ++ "-od") Pdf
