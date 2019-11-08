@@ -9,4 +9,5 @@ cabal install random-shuffle
 cabal install graphviz
 cabal install file-embed
 cabal install split
+cabal install bimap
 ```
