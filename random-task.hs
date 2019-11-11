@@ -11,6 +11,7 @@ import Data.Digest.CRC32    (crc32)
 import Data.Function        (on)
 import Data.GraphViz        (GraphvizOutput (Pdf))
 import Data.List            ((\\), groupBy, intercalate, sortBy)
+import Data.Map             (empty)
 import Data.String          (fromString)
 import System.Environment   (getArgs)
 
@@ -41,7 +42,7 @@ reproduceTask g = do
   where
     output = "output"
     drawOd x (y, insta) =
-      drawOdFromInstance False True insta (output ++ '-' : toDescription y 2 ++ '-' : show x) Pdf
+      drawOdFromInstance empty True insta (output ++ '-' : toDescription y 2 ++ '-' : show x) Pdf
     toDescription :: [Int] -> Int -> String
     toDescription x n =
       intercalate "and" (show <$> x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)

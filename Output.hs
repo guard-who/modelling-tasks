@@ -1,11 +1,14 @@
 module Output (drawCdFromSyntax, drawOdFromInstance) where
 
+import qualified Data.Map as M (lookup)
+
 import Util
 import Types (AssociationType(..), Connection(..), Syntax)
 import Edges
 
 import Data.List
 import Data.List.Split
+import Data.Map                          (Map)
 import Data.Maybe
 import Data.Graph.Inductive
 import Data.GraphViz
@@ -71,8 +74,8 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
 
-drawOdFromInstance :: Bool -> Bool -> String -> FilePath -> GraphvizOutput -> IO ()
-drawOdFromInstance printNavigations printNames input file format = do
+drawOdFromInstance :: Map String DirType -> Bool -> String -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromInstance navigations printNames input file format = do
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
   let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
   let theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
@@ -86,11 +89,11 @@ drawOdFromInstance printNavigations printNames input file format = do
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
                                         shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 12],
-                   fmtEdge = \(_,_,l) -> arrowHeads ++ [ArrowSize 0.4, FontSize 12] ++ [toLabel l | printNames] }) graph
+                   fmtEdge = \(_,_,l) -> arrowHeads l ++ [ArrowSize 0.4, FontSize 12] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
   where
-    arrowHeads
-      | printNavigations = [arrowTo vee]
-      | otherwise        = [edgeEnds NoDir]
+    arrowHeads l = case M.lookup l navigations of
+      Nothing  -> [edgeEnds NoDir]
+      Just dir -> [edgeEnds dir, arrowFrom vee, arrowTo vee]
