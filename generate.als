@@ -15,19 +15,21 @@ pred smallerOrSame (l, l' : Limit) {
 
 abstract sig Connection {
   from : one Class,
-  to : one Class,
-  next : set Connection
+  to : one Class
 }
 
-fact validLimitsConnection {
-  all c : Connection | smallerOrSame [c.fromLower, c.fromUpper]
-  all c : Connection | smallerOrSame [c.toLower, c.toUpper]
+fact validLimitsAssoc {
+  all a : Assoc | smallerOrSame [a.fromLower, a.fromUpper]
+  all a : Assoc | smallerOrSame [a.toLower, a.toUpper]
 }
 
-sig Inheritance extends Connection {
-  nextInheritance : set Inheritance
+fact validLimitsComposition {
+  all c : Composition | (c.toLower = Zero or c.toLower = One) and c.toUpper = One
 }
-sig Assoc extends Connection {
+
+sig Inheritance extends Connection {}
+
+abstract sig Assoc extends Connection {
   fromLower : one Limit,
   fromUpper : one Limit,
   toLower : one Limit,
@@ -36,9 +38,7 @@ sig Assoc extends Connection {
 
 sig Aggregation extends Assoc {}
 sig Association extends Assoc {}
-sig Composition extends Assoc {
-  nextComposition : set (Composition + Inheritance)
-}
+sig Composition extends Assoc {}
 
 fact noSelfConnection {
   all c: Connection | c.from != c.to
@@ -52,34 +52,36 @@ fact noReverseConnection {
   all c, c' : Connection | c != c' implies c.to = c'.from implies c.from != c'.to
 }
 
-fact nextConnection {
-  all c, c' : Connection | not (c in c.next) and (c' in c.next iff c.to = c'.from)
-}
-
-fact nextInheritanceValues {
-  all i : Inheritance | i.nextInheritance = i.next & Inheritance
-}
-
-fact nextCompositionValues {
-  all c : Composition | c.nextComposition = c.next & (Composition + Inheritance)
-}
-
 fact noDoubleInheritance {
   all i, i' :  Inheritance | i != i' implies i.to != i'.to
 }
 
-fact noInheritanceCycles {
-  all i : Inheritance | not i.from in (i.*nextInheritance).to
+fun connection (restriction : set Connection) : Class -> Class {
+  ((~from :> restriction) . (restriction <: to))
 }
 
-fact noCopositionCycles {
-  all c : Composition | not c.from in (c.*nextComposition).to
+fact noInheritanceCycles {
+  let inheritance = connection [Inheritance] |
+  all c : Class | not c in c.^inheritance
+}
+
+fact noCompositionCycles {
+  let inheritance = connection [Inheritance],
+      composition = connection [Composition] |
+  all c : Class | not c in c.^(*inheritance.composition).*~inheritance
 }
 
 fact nonEmptyInstancesOnly {
-  some Inheritance
+  some Connection
 }
 
-pred show {}
+pred cd {
+  0 <= #{ Association } and #{ Association } <= 2
+  0 <= #{ Aggregation } and #{ Aggregation } <= 2
+  0 <= #{ Composition } and #{ Composition } <= 2
+  1 <= #{ Inheritance } and #{ Inheritance } <= 2
+  4 <= #{ Class }
+  3 <= #{ Connection }
+}
 
-run show for 4
+run cd for 5 Connection, 4 Class
