@@ -18,13 +18,13 @@ abstract sig Connection {
   to : one Class
 }
 
-fact validLimitsAssoc {
-  all a : Assoc | smallerOrSame [a.fromLower, a.fromUpper]
-  all a : Assoc | smallerOrSame [a.toLower, a.toUpper]
+pred validLimitsAssoc [a : Assoc] {
+  smallerOrSame [a.fromLower, a.fromUpper]
+  smallerOrSame [a.toLower, a.toUpper]
 }
 
-fact validLimitsComposition {
-  all c : Composition | (c.toLower = Zero or c.toLower = One) and c.toUpper = One
+pred validLimitsComposition [c : Composition] {
+  (c.toLower = Zero or c.toLower = One) and c.toUpper = One
 }
 
 sig Inheritance extends Connection {}
@@ -40,32 +40,32 @@ sig Aggregation extends Assoc {}
 sig Association extends Assoc {}
 sig Composition extends Assoc {}
 
-fact noSelfConnection {
-  all c: Connection | c.from != c.to
+pred noSelfConnection [c : Connection] {
+  c.from != c.to
 }
 
-fact noDoubleConnection {
-  all c, c' : Connection | c != c' implies c.from = c'.from implies c.to != c'.to
+pred noDoubleConnection [c, c' : Connection] {
+  c != c' implies c.from = c'.from implies c.to != c'.to
 }
 
-fact noReverseConnection {
-  all c, c' : Connection | c != c' implies c.to = c'.from implies c.from != c'.to
+pred noReverseConnection [c, c' : Connection] {
+  c != c' implies c.to = c'.from implies c.from != c'.to
 }
 
-fact noDoubleInheritance {
-  all i, i' :  Inheritance | i != i' implies i.to != i'.to
+pred noDoubleInheritance [i, i' : Inheritance] {
+  i != i' implies i.to != i'.to
 }
 
 fun connection (restriction : set Connection) : Class -> Class {
   ((~from :> restriction) . (restriction <: to))
 }
 
-fact noInheritanceCycles {
+pred noInheritanceCycles {
   let inheritance = connection [Inheritance] |
   all c : Class | not c in c.^inheritance
 }
 
-fact noCompositionCycles {
+pred noCompositionCycles {
   let inheritance = connection [Inheritance],
       composition = connection [Composition] |
   all c : Class | not c in c.^(*inheritance.composition).*~inheritance
@@ -76,6 +76,14 @@ fact nonEmptyInstancesOnly {
 }
 
 pred cd {
+  all c : Assoc | validLimitsAssoc [c]
+  all c : Composition | validLimitsComposition [c]
+  all c : Connection | noSelfConnection [c]
+  all c, c' : Connection | noDoubleConnection [c, c']
+  all c, c' : Connection | noReverseConnection [c, c']
+  all i, i' : Inheritance | noDoubleInheritance [i, i']
+  noInheritanceCycles
+  noCompositionCycles
   0 <= #{ Association } and #{ Association } <= 2
   0 <= #{ Aggregation } and #{ Aggregation } <= 2
   0 <= #{ Composition } and #{ Composition } <= 2
