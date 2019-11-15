@@ -77,11 +77,18 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
   all c : Class | not c in c.^(*inheritance.composition).*~inheritance
 }
 
+pred isRedEdge [r : Relationship, rs : set Relationship, is : set Inheritance] {
+  let subs = relationship [is] |
+  some r' : rs - Inheritance | (r.from != r'.from or r.to != r'.to)
+    and (r'.from in r.from.^subs and (r'.to in r.to.^subs or r.to in r'.to.^subs)
+      or r'.to in r.to.^subs and (r'.from in r.from.^subs or r.from in r'.from.^subs))
+}
+
 fact nonEmptyInstancesOnly {
   some Relationship
 }
 
-one sig Change {
+lone sig Change {
   add : lone Relationship,
   remove : lone Relationship
 }
@@ -192,7 +199,7 @@ one sig A extends Class {}
 one sig B extends Class {}
 one sig C extends Class {}
 one sig D extends Class {}
-
+/*
 one sig x extends Association {}
 one sig y extends Association {}
 one sig z extends Composition {}
@@ -235,6 +242,26 @@ pred cd {
     noInheritanceCycles [Inheritance']
     noCompositionCycles [Inheritance', Composition']
   }
+}
+*/
+
+pred cd {
+  all c : Assoc | validLimitsAssoc [c]
+  all c : Composition | validLimitsComposition [c]
+  all c : Relationship | noSelfRelationship [c]
+  all c, c' : Relationship | noDoubleRelationship [c, c']
+  all c, c' : Relationship | noReverseRelationship [c, c']
+  all i, i' : Inheritance | noDoubleInheritance [i, i']
+  noInheritanceCycles [Inheritance]
+  noCompositionCycles [Inheritance, Composition]
+  some r : Relationship - Inheritance | isRedEdge [r, Relationship, Inheritance]
+  0 <= #Association and #Association <= 2
+  0 <= #Aggregation and #Aggregation <= 2
+  0 <= #Composition and #Composition <= 2
+  1 <= #Inheritance and #Inheritance <= 2
+  4 <= #Class
+  3 <= #Relationship
+  no Change
 }
 
 run cd for 6 Relationship, 4 Class
