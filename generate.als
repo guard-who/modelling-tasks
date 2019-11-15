@@ -21,6 +21,8 @@ abstract sig Relationship {
 pred validLimitsAssoc [a : Assoc] {
   smallerOrSame [a.fromLower, a.fromUpper]
   smallerOrSame [a.toLower, a.toUpper]
+  a.fromLower = Zero implies a.fromUpper != Zero
+  a.toLower = Zero implies a.toUpper != Zero
 }
 
 pred validLimitsComposition [a : Assoc] {
@@ -118,8 +120,8 @@ pred changeKind [c : Change] {
 }
 
 pred change [c : Change] {
-  some (c.add + c.remove)
-  c.add != c.remove
+  some c.add + c.remove
+  no c.add or not c.add in Relationship - Change.add
   c.remove in Relationship - Change.add
   one c.add and one c.remove iff changeKind [c] or flip [c] // Limit change missing
 }
@@ -146,7 +148,7 @@ pred cd {
   y.fromLower = Zero
   y.fromUpper = One
   y.toLower = Zero
-  y.toUpper = Zero
+  y.toUpper = One
   z.from = C
   z.to = B
   z.fromLower = Two
@@ -155,7 +157,8 @@ pred cd {
   z.toUpper = One
   i0.from = D
   i0.to = B
-  Relationship = x + y + z + i0 + Change.add
+  Class = A + B + C + D
+  Relationship - Change.add = x + y + z + i0
   change [Change]
   let Assoc' = Assoc - Change.remove,
       Composition' = Composition - Change.remove,
