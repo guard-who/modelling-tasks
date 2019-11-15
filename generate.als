@@ -13,6 +13,10 @@ pred smallerOrSame (l, l' : Limit) {
   and (l = One implies not l' = Zero)
 }
 
+pred smaller (l, l' : Limit) {
+  not l = l' and smallerOrSame [l, l']
+}
+
 abstract sig Relationship {
   from : one Class,
   to : one Class
@@ -98,10 +102,14 @@ pred sameFromLimits [a, a' : Assoc] {
   a.fromUpper = a'.fromUpper
 }
 
-pred sameLimits [a, a' : Assoc] {
-  sameFromLimits [a, a']
+pred sameToLimits [a, a' : Assoc] {
   a.toLower = a'.toLower
   a.toUpper = a'.toUpper
+}
+
+pred sameLimits [a, a' : Assoc] {
+  sameFromLimits [a, a']
+  sameToLimits [a, a']
 }
 
 pred flip [c : Change] {
@@ -110,7 +118,7 @@ pred flip [c : Change] {
   c.add in Assoc implies sameLimits [c.add, c.remove]
 }
 
-pred changeKind [c : Change] {
+pred changedKind [c : Change] {
   sameDirection [c.add, c.remove]
   not sameKind [c.add, c.remove]
   c.add in Assoc and c.remove in Assoc implies sameFromLimits [c.add, c.remove]
@@ -119,11 +127,65 @@ pred changeKind [c : Change] {
     implies sameLimits [c.add, c.remove]
 }
 
+pred increasedFromRange [a, a' : Assoc] {
+  smaller [a'.fromLower, a.fromLower] or smaller [a.fromUpper, a'.fromUpper]
+  sameToLimits [a, a']
+}
+
+pred increasedToRange [a, a' : Assoc] {
+  smaller [a'.toLower, a.toLower] or smaller [a.toUpper, a'.toUpper]
+  sameFromLimits [a, a']
+}
+
+pred increasedRange [a, a' : Assoc] {
+  increasedFromRange [a, a'] iff not increasedToRange [a, a']
+}
+
+pred changedRange [a, a' : Assoc] {
+  increasedRange [a, a'] iff not increasedRange [a', a]
+}
+
+fun shiftBy [l, shift : Limit] : lone Limit {
+  shift = Zero implies l
+  else shift = One implies (l = Zero implies One else l = One implies Two else l = Two implies Star else none)
+  else shift = Two implies (l = Zero implies Two else l = One implies Star else none)
+  else shift = Star implies (l = Zero implies Star else none)
+  else none
+}
+
+pred shiftLimits [l1, l1', l2, l2' : Limit] {
+  one shift : Limit {
+    shift != Zero
+    l1 = shiftBy [l2, shift]
+    l1' = shiftBy [l2', shift]
+  }
+}
+
+pred shiftedRangeUp [a, a' : Assoc] {
+  shiftLimits [a.fromLower, a.fromUpper, a'.fromLower, a'.fromUpper] and sameToLimits [a, a']
+  iff not (shiftLimits [a.toLower, a.toUpper, a'.toLower, a'.toUpper] and sameFromLimits [a, a'])
+}
+
+pred shiftedRange [a, a' : Assoc] {
+  shiftedRangeUp [a, a'] iff not shiftedRangeUp [a', a]
+}
+
+pred changedLimit [c : Change] {
+  sameDirection [c.add, c.remove]
+  sameKind [c.add, c.remove]
+  validLimitsAssoc [c.add]
+  c.add in Composition implies validLimitsComposition [c.add]
+  shiftedRange [c.add, c.remove] iff not changedRange [c.add, c.remove]
+}
+
 pred change [c : Change] {
   some c.add + c.remove
   no c.add or not c.add in Relationship - Change.add
   c.remove in Relationship - Change.add
-  one c.add and one c.remove iff changeKind [c] or flip [c] // Limit change missing
+  let c1 = changedLimit [c],
+      c2 = changedKind [c],
+      c3 = flip [c] |
+    one c.add and one c.remove iff c1 implies not c2 and not c3 else c2 iff not c3
 }
 
 one sig A extends Class {}
