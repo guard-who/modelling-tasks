@@ -78,10 +78,14 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
 }
 
 pred isRedEdge [r : Relationship, rs : set Relationship, is : set Inheritance] {
-  let subs = relationship [is] |
-  some r' : rs - Inheritance | (r.from != r'.from or r.to != r'.to)
-    and (r'.from in r.from.^subs and (r'.to in r.to.^subs or r.to in r'.to.^subs)
-      or r'.to in r.to.^subs and (r'.from in r.from.^subs or r.from in r'.from.^subs))
+  let subs = ~(relationship [is]) |
+  some r' : rs - Inheritance |
+    (r.from != r'.from or r.to != r'.to)
+      and (r'.from in r.from.*subs and (r'.to in r.to.*subs or r.to in r'.to.*subs)
+        or r'.to in r.to.*subs and (r'.from in r.from.*subs or r.from in r'.from.*subs))
+    or (r.from != r'.to or r.to != r'.from)
+      and (r'.to in r.from.*subs and (r'.from in r.to.*subs or r.from in r'.from.*subs)
+        or r'.from in r.to.*subs and (r'.to in r.from.*subs or r.from in r'.to.*subs))
 }
 
 fact nonEmptyInstancesOnly {
