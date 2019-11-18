@@ -77,15 +77,17 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
   all c : Class | not c in c.^(*inheritance.composition).*~inheritance
 }
 
-pred isRedEdge [r : Relationship, rs : set Relationship, is : set Inheritance] {
+pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
   let subs = ~(relationship [is]) |
+    (xFrom != yFrom or xTo != yTo)
+      and (yFrom in xFrom.*subs and (yTo in xTo.*subs or xTo in yTo.*subs)
+        or yTo in xTo.*subs and (yFrom in xFrom.*subs or xFrom in yFrom.*subs))
+}
+
+pred isMarkedEdge [r : Relationship, rs : set Relationship, is : set Inheritance] {
   some r' : rs - Inheritance |
-    (r.from != r'.from or r.to != r'.to)
-      and (r'.from in r.from.*subs and (r'.to in r.to.*subs or r.to in r'.to.*subs)
-        or r'.to in r.to.*subs and (r'.from in r.from.*subs or r.from in r'.from.*subs))
-    or (r.from != r'.to or r.to != r'.from)
-      and (r'.to in r.from.*subs and (r'.from in r.to.*subs or r.from in r'.from.*subs)
-        or r'.from in r.to.*subs and (r'.to in r.from.*subs or r.from in r'.to.*subs))
+    markedEdgeCriterion [r.from, r.to, r'.from, r'.to, is]
+    or markedEdgeCriterion [r.to, r.from, r'.from, r'.to, is]
 }
 
 fact nonEmptyInstancesOnly {
@@ -258,7 +260,7 @@ pred cd {
   all i, i' : Inheritance | noDoubleInheritance [i, i']
   noInheritanceCycles [Inheritance]
   noCompositionCycles [Inheritance, Composition]
-  some r : Relationship - Inheritance | isRedEdge [r, Relationship, Inheritance]
+  some r : Relationship - Inheritance | isMarkedEdge [r, Relationship, Inheritance]
   0 <= #Association and #Association <= 2
   0 <= #Aggregation and #Aggregation <= 2
   0 <= #Composition and #Composition <= 2
