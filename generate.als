@@ -54,16 +54,16 @@ sig Aggregation extends Assoc {}
 sig Association extends Assoc {}
 sig Composition extends Assoc {}
 
-pred noSelfRelationship [c : Relationship] {
-  c.from != c.to
+pred noSelfRelationship [r : Relationship] {
+  r.from != r.to
 }
 
-pred noDoubleRelationship [c, c' : Relationship] {
-  c != c' implies c.from = c'.from implies c.to != c'.to
+pred noDoubleRelationship [r, r' : Relationship] {
+  r != r' implies r.from = r'.from implies r.to != r'.to
 }
 
-pred noReverseRelationship [c, c' : Relationship] {
-  c != c' implies c.to = c'.from implies c.from != c'.to
+pred noReverseRelationship [r, r' : Relationship] {
+  r != r' implies r.to = r'.from implies r.from != r'.to
 }
 
 pred noDoubleInheritance [i, i' : Inheritance] {
