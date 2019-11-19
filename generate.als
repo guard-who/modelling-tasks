@@ -22,11 +22,19 @@ abstract sig Relationship {
   to : one Class
 }
 
-pred validLimitsAssoc [a : Assoc] {
+pred validFromLimitsAssoc [a : Assoc] {
   smallerOrSame [a.fromLower, a.fromUpper]
-  smallerOrSame [a.toLower, a.toUpper]
   a.fromLower = Zero implies a.fromUpper != Zero
+}
+
+pred validToLimitsAssoc [a : Assoc] {
+  smallerOrSame [a.toLower, a.toUpper]
   a.toLower = Zero implies a.toUpper != Zero
+}
+
+pred validLimitsAssoc [a : Assoc] {
+  validFromLimitsAssoc [a]
+  validToLimitsAssoc [a]
 }
 
 pred validLimitsComposition [a : Assoc] {
@@ -90,11 +98,27 @@ pred isMarkedEdge [r : Relationship, rs : set Relationship, is : set Inheritance
     or markedEdgeCriterion [r.to, r.from, r'.from, r'.to, is]
 }
 
+pred noMarkedEdges [rs : set Relationship, is : set Inheritance] {
+  all r : rs - is | not isMarkedEdge [r, rs, is]
+}
+
+pred noDoubleRelationships [rs : set Relationship] {
+  all r, r' : rs | noDoubleRelationship [r, r']
+}
+
+pred noReverseRelationships [rs : set Relationship] {
+  all r, r' : Relationship | noReverseRelationship [r, r']
+}
+
+pred noDoubleInheritances [is : set Inheritance] {
+  all i, i' : Inheritance | noDoubleInheritance [i, i']
+}
+
 fact nonEmptyInstancesOnly {
   some Relationship
 }
 
-lone sig Change {
+sig Change {
   add : lone Relationship,
   remove : lone Relationship
 }
@@ -191,83 +215,121 @@ pred changedLimit [c : Change] {
   shiftedRange [c.add, c.remove] iff not changedRange [c.add, c.remove]
 }
 
-pred change [c : Change] {
+pred change [c : Change, rs : set Relationship] {
   some c.add + c.remove
-  no c.add or not c.add in Relationship - Change.add
-  c.remove in Relationship - Change.add
+  no c.add or not c.add in rs
+  c.remove in rs
   let c1 = changedLimit [c],
       c2 = changedKind [c],
       c3 = flip [c] |
     one c.add and one c.remove iff c1 implies not c2 and not c3 else c2 iff not c3
 }
 
-one sig A extends Class {}
-one sig B extends Class {}
-one sig C extends Class {}
-one sig D extends Class {}
-/*
-one sig x extends Association {}
-one sig y extends Association {}
-one sig z extends Composition {}
-one sig i0 extends Inheritance {}
+fact changesAreUnique {
+  all c, c' : Change | c != c' implies (c.add = c'.add implies c.remove != c'.remove)
+    and (c.remove = c'.remove implies c.add != c'.add)
+}
 
-pred cd {
-  x.from = C
-  x.to = D
-  x.fromLower = Two
-  x.fromUpper = Star
-  x.toLower = Two
-  x.toUpper = Star
-  y.from = D
-  y.to = A
-  y.fromLower = Zero
-  y.fromUpper = One
-  y.toLower = Zero
-  y.toUpper = One
-  z.from = C
-  z.to = B
-  z.fromLower = Two
-  z.fromUpper = Two
-  z.toLower = One
-  z.toUpper = One
-  i0.from = D
-  i0.to = B
-  Class = A + B + C + D
-  Relationship - Change.add = x + y + z + i0
-  change [Change]
-  let Assoc' = Assoc - Change.remove,
-      Composition' = Composition - Change.remove,
-      Relationship' = Relationship - Change.remove,
-      Inheritance' = Inheritance - Change.remove {
-    all c : Assoc' | validLimitsAssoc [c]
-    all c : Composition' | validLimitsComposition [c]
-    all c : Relationship' | noSelfRelationship [c]
-    all c, c' : Relationship' | noDoubleRelationship [c, c']
-    all c, c' : Relationship' | noReverseRelationship [c, c']
-    all i, i' : Inheritance' | noDoubleInheritance [i, i']
-    noInheritanceCycles [Inheritance']
-    noCompositionCycles [Inheritance', Composition']
+fact preventSaneErrors {
+  all a : Assoc | (a.fromLower = Star implies a.toLower != Star)
+    and (a.toLower = Star implies a.toUpper != Star)
+}
+
+abstract sig Boolean {}
+one sig True, False extends Boolean {}
+
+pred classDiagram [
+  assocs : set Assoc,
+  compositions : set Composition,
+  inheritances : set Inheritance,
+  relationships : set Relationship,
+  wrongAssocs : one Int,
+  wrongCompositions : one Int,
+  selfRelationships : one Int,
+  hasDoubleRelationships : one Boolean,
+  hasReverseRelationships : one Boolean,
+  hasDoubleInheritances : one Boolean,
+  hasInheritanceCycles : one Boolean,
+  hasCompositionCycles : one Boolean,
+  hasMarkedEdges : lone Boolean] {
+  #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
+  #{ a : assocs | not validFromLimitsAssoc [a]} + #{ a : assocs | not validToLimitsAssoc [a]} = wrongAssocs
+  #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
+  #{ r : relationships | not noSelfRelationship [r]} = selfRelationships
+  hasDoubleRelationships = True
+    implies not noDoubleRelationships [relationships]
+    else noDoubleRelationships [relationships]
+  hasReverseRelationships = True
+    implies not noReverseRelationships [relationships]
+    else noReverseRelationships [relationships]
+  hasDoubleInheritances = True
+     implies not noDoubleInheritances [inheritances]
+     else noDoubleInheritances [inheritances]
+  hasInheritanceCycles = True
+    implies not noInheritanceCycles [inheritances]
+    else noInheritanceCycles [inheritances]
+  hasCompositionCycles = True
+    implies not noCompositionCycles [inheritances, compositions]
+    else noCompositionCycles [inheritances, compositions]
+  hasMarkedEdges = True
+    implies not noMarkedEdges[relationships, inheritances]
+    else hasMarkedEdges = False implies noMarkedEdges[relationships, inheritances]
+}
+
+pred changeOfFirstCD [
+  c : one Change,
+  wrongAssocs : one Int,
+  wrongCompositions : one Int,
+  selfRelationships : one Int,
+  hasDoubleRelationships : one Boolean,
+  hasReverseRelationships : one Boolean,
+  hasDoubleInheritances : one Boolean,
+  hasInheritanceCycles : one Boolean,
+  hasCompositionCycles : one Boolean,
+  hasMarkedEdges : lone Boolean] {
+    let Assoc' = Assoc - (Change.add - c.add) - c.remove,
+        Composition' = Composition - (Change.add - c.add) - c.remove,
+        Relationship' = Relationship - (Change.add - c.add) - c.remove,
+        Inheritance' = Inheritance - (Change.add - c.add) - c.remove {
+      change[c, Relationship - Change.add]
+      classDiagram [Assoc', Composition', Relationship', Inheritance',
+        wrongAssocs, wrongCompositions, selfRelationships,
+        hasDoubleRelationships, hasReverseRelationships,
+        hasDoubleInheritances, hasInheritanceCycles, hasCompositionCycles,
+        hasMarkedEdges]
   }
 }
-*/
 
 pred cd {
-  all c : Assoc | validLimitsAssoc [c]
-  all c : Composition | validLimitsComposition [c]
-  all c : Relationship | noSelfRelationship [c]
-  all c, c' : Relationship | noDoubleRelationship [c, c']
-  all c, c' : Relationship | noReverseRelationship [c, c']
-  all i, i' : Inheritance | noDoubleInheritance [i, i']
-  noInheritanceCycles [Inheritance]
-  noCompositionCycles [Inheritance, Composition]
-  some r : Relationship - Inheritance | isMarkedEdge [r, Relationship, Inheritance]
-  0 <= #Association and #Association <= 2
-  0 <= #Aggregation and #Aggregation <= 2
-  0 <= #Composition and #Composition <= 2
-  1 <= #Inheritance and #Inheritance <= 2
-  4 <= #Class
-  3 <= #Relationship
-  no Change
+  let Assoc' = Assoc - Change.add,
+      Association' = Association - Change.add,
+      Aggregation' = Aggregation - Change.add,
+      Composition' = Composition - Change.add,
+      Relationship' = Relationship - Change.add,
+      Inheritance' = Inheritance - Change.add {
+    classDiagram [Assoc', Composition', Inheritance', Relationship', 0, 0, 0,
+      False, False, False, False, False, none]
+    0 <= #Association' and #Association' <= 2
+    0 <= #Aggregation' and #Aggregation' <= 2
+    0 <= #Composition' and #Composition' <= 2
+    1 <= #Inheritance' and #Inheritance' <= 2
+    4 <= #Class
+    3 <= #Relationship'
+  }
 }
 
-run cd for 6 Relationship, 4 Class
+sig c1, c2, c3 extends Change {}
+
+pred changes {
+  one m1, m2 : Boolean {
+    m1 = False or m2 = False
+    let c1Assocs = Assoc - (Change.add - Assoc <: c1.add) - c1.remove,
+        c2Assocs = Assoc - (Change.add - Assoc <: c2.add) - c2.remove |
+      some c1Assocs or some c2Assocs
+    changeOfFirstCD [c1, 0, 0, 0, False, False, False, False, False, m1]
+    changeOfFirstCD [c2, 0, 0, 0, False, False, False, False, False, m2]
+    changeOfFirstCD [c3, 0, 0, 0, False, False, False, False, False, False]
+  }
+}
+
+run { cd and changes } for 12 Relationship, 4 Class, 3 Change
