@@ -112,3 +112,27 @@ pred shiftedRangeUp [a, a' : Assoc] {
 pred shiftedRange [a, a' : Assoc] {
   shiftedRangeUp [a, a'] iff not shiftedRangeUp [a', a]
 }
+
+assert sameLimits {
+  all a, a' : Assoc | sameLimits [a, a'] iff sameFromLimits [a, a'] and sameToLimits [a, a']
+}
+
+assert shiftingLimit {
+  all l : Limit | shiftBy [l, Zero] = l
+}
+
+assert shiftingUp {
+  all l, l' : Limit | l' != Zero and one shiftBy [l, l'] implies smaller [l, shiftBy [l, l']]
+}
+
+assert shiftingEqually {
+  all l, l', l'', l''' : Limit | shiftLimits [l, l', l'', l'''] implies (l = l'' iff l' = l''')
+}
+
+assert shiftedUpIsValid {
+  all a, a' : Assoc | a != a' and shiftedRangeUp [a, a'] and validLimitsAssoc [a] implies validLimitsAssoc [a']
+}
+
+assert increasedRangeIsValid {
+  all a, a' : Assoc | a != a' and increasedRange [a, a'] and validLimitsAssoc [a] implies validLimitsAssoc [a']
+}
