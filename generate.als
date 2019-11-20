@@ -54,20 +54,20 @@ sig Aggregation extends Assoc {}
 sig Association extends Assoc {}
 sig Composition extends Assoc {}
 
-pred noSelfRelationship [r : Relationship] {
-  r.from != r.to
+pred selfRelationship [r : Relationship] {
+  r.from = r.to
 }
 
-pred noDoubleRelationship [r, r' : Relationship] {
-  r != r' implies r.from = r'.from implies r.to != r'.to
+pred doubleRelationship [r, r' : Relationship] {
+  r != r' and r.from = r'.from and r.to = r'.to
 }
 
-pred noReverseRelationship [r, r' : Relationship] {
-  r != r' implies r.to = r'.from implies r.from != r'.to
+pred reverseRelationship [r, r' : Relationship] {
+  r != r' and r.to = r'.from and r.from = r'.to
 }
 
-pred noMultipleInheritance [i, i' : Inheritance] {
-  i != i' implies i.to != i'.to
+pred multipleInheritance [i, i' : Inheritance] {
+  i != i' and i.from = i'.from
 }
 
 fun relationship [restriction : set Relationship] : Class -> Class {
@@ -76,13 +76,13 @@ fun relationship [restriction : set Relationship] : Class -> Class {
 
 pred noInheritanceCycles [is : set Inheritance] {
   let inheritance = relationship [is] |
-  all c : Class | not c in c.^inheritance
+  no c : Class | c in c.^inheritance
 }
 
 pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
   let inheritance = relationship [is],
       composition = relationship [cs] |
-  all c : Class | not c in c.^(*inheritance.composition).*~inheritance
+  no c : Class | c in c.^(*inheritance.composition).*~inheritance
 }
 
 pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
@@ -92,26 +92,26 @@ pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] 
         or yTo in xTo.*subs and (yFrom in xFrom.*subs or xFrom in yFrom.*subs))
 }
 
-pred isMarkedEdge [r : Relationship, rs : set Relationship, is : set Inheritance] {
+pred markedEdge [r : Relationship, rs : set Relationship, is : set Inheritance] {
   some r' : rs - Inheritance |
     markedEdgeCriterion [r.from, r.to, r'.from, r'.to, is]
     or markedEdgeCriterion [r.to, r.from, r'.from, r'.to, is]
 }
 
 pred noMarkedEdges [rs : set Relationship, is : set Inheritance] {
-  all r : rs - is | not isMarkedEdge [r, rs, is]
+  no r : rs - is | markedEdge [r, rs, is]
 }
 
 pred noDoubleRelationships [rs : set Relationship] {
-  all r, r' : rs | noDoubleRelationship [r, r']
+  no r, r' : rs | doubleRelationship [r, r']
 }
 
 pred noReverseRelationships [rs : set Relationship] {
-  all r, r' : Relationship | noReverseRelationship [r, r']
+  no r, r' : rs | reverseRelationship [r, r']
 }
 
 pred noMultipleInheritances [is : set Inheritance] {
-  all i, i' : Inheritance | noMultipleInheritance [i, i']
+  no i, i' : is | multipleInheritance [i, i']
 }
 
 fact nonEmptyInstancesOnly {
@@ -255,7 +255,7 @@ pred classDiagram [
   #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
   #{ a : assocs | not validFromLimitsAssoc [a]} + #{ a : assocs | not validToLimitsAssoc [a]} = wrongAssocs
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
-  #{ r : relationships | not noSelfRelationship [r]} = selfRelationships
+  #{ r : relationships | selfRelationship [r]} = selfRelationships
   hasDoubleRelationships = True
     implies not noDoubleRelationships [relationships]
     else noDoubleRelationships [relationships]
