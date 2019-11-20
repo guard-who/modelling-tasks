@@ -48,6 +48,9 @@ abstract sig Assoc extends Relationship {
   fromUpper : one Limit,
   toLower : one Limit,
   toUpper : one Limit
+} {
+  fromLower != Star or toLower != Star
+  toLower != Star or toUpper != Star
 }
 
 sig Aggregation extends Assoc {}
@@ -229,11 +232,6 @@ pred change [c : Change, rs : set Relationship] {
 fact changesAreUnique {
   all c, c' : Change | c != c' implies (c.add = c'.add implies c.remove != c'.remove)
     and (c.remove = c'.remove implies c.add != c'.add)
-}
-
-fact preventSaneErrors {
-  all a : Assoc | (a.fromLower = Star implies a.toLower != Star)
-    and (a.toLower = Star implies a.toUpper != Star)
 }
 
 abstract sig Boolean {}
