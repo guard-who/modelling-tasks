@@ -92,14 +92,14 @@ pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] 
         or yTo in xTo.*subs and (yFrom in xFrom.*subs or xFrom in yFrom.*subs))
 }
 
-pred markedEdge [r : Relationship, rs : set Relationship, is : set Inheritance] {
-  some r' : rs - Inheritance |
-    markedEdgeCriterion [r.from, r.to, r'.from, r'.to, is]
-    or markedEdgeCriterion [r.to, r.from, r'.from, r'.to, is]
+pred markedEdge [a : Assoc, assocs : set Assoc, is : set Inheritance] {
+  some a' : assocs |
+    markedEdgeCriterion [a.from, a.to, a'.from, a'.to, is]
+    or markedEdgeCriterion [a.to, a.from, a'.from, a'.to, is]
 }
 
-pred noMarkedEdges [rs : set Relationship, is : set Inheritance] {
-  no r : rs - is | markedEdge [r, rs, is]
+pred noMarkedEdges [assocs : set Assoc, is : set Inheritance] {
+  no a : assocs | markedEdge [a, assocs, is]
 }
 
 pred noDoubleRelationships [rs : set Relationship] {
@@ -272,8 +272,8 @@ pred classDiagram [
     implies not noCompositionCycles [inheritances, compositions]
     else noCompositionCycles [inheritances, compositions]
   hasMarkedEdges = True
-    implies not noMarkedEdges[relationships, inheritances]
-    else hasMarkedEdges = False implies noMarkedEdges[relationships, inheritances]
+    implies not noMarkedEdges[assocs, inheritances]
+    else hasMarkedEdges = False implies noMarkedEdges[assocs, inheritances]
 }
 
 pred changeOfFirstCD [
