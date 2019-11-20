@@ -230,8 +230,7 @@ pred change [c : Change, rs : set Relationship] {
 }
 
 fact changesAreUnique {
-  all c, c' : Change | c != c' implies (c.add = c'.add implies c.remove != c'.remove)
-    and (c.remove = c'.remove implies c.add != c'.add)
+  all c, c' : Change | c = c' or c.add != c'.add or c.remove != c'.remove
 }
 
 abstract sig Boolean {}
