@@ -7,13 +7,13 @@ one sig One extends Limit {}
 one sig Two extends Limit {}
 one sig Star extends Limit {}
 
-pred smallerOrSame (l, l' : Limit) {
+pred smallerOrSame [l, l' : Limit] {
   not (l = Star)
   and (l = Two implies (l' = Two or l' = Star))
   and (l = One implies not l' = Zero)
 }
 
-pred smaller (l, l' : Limit) {
+pred smaller [l, l' : Limit] {
   not l = l' and smallerOrSame [l, l']
 }
 
@@ -70,7 +70,7 @@ pred noDoubleInheritance [i, i' : Inheritance] {
   i != i' implies i.to != i'.to
 }
 
-fun relationship (restriction : set Relationship) : Class -> Class {
+fun relationship [restriction : set Relationship] : Class -> Class {
   ((~from :> restriction) . (restriction <: to))
 }
 
