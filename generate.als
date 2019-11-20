@@ -208,6 +208,7 @@ pred shiftedRange [a, a' : Assoc] {
 }
 
 pred changedLimit [c : Change] {
+  c.add in Assoc
   sameDirection [c.add, c.remove]
   sameKind [c.add, c.remove]
   validLimitsAssoc [c.add]
