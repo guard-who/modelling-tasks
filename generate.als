@@ -223,7 +223,7 @@ pred change [c : Change, rs : set Relationship] {
   let c1 = changedLimit [c],
       c2 = changedKind [c],
       c3 = flip [c] |
-    one c.add and one c.remove iff c1 implies not c2 and not c3 else c2 iff not c3
+    one c.add and one c.remove iff c1 or c2 or c3
 }
 
 fact changesAreUnique {
