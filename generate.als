@@ -66,7 +66,7 @@ pred noReverseRelationship [r, r' : Relationship] {
   r != r' implies r.to = r'.from implies r.from != r'.to
 }
 
-pred noDoubleInheritance [i, i' : Inheritance] {
+pred noMultipleInheritance [i, i' : Inheritance] {
   i != i' implies i.to != i'.to
 }
 
@@ -110,8 +110,8 @@ pred noReverseRelationships [rs : set Relationship] {
   all r, r' : Relationship | noReverseRelationship [r, r']
 }
 
-pred noDoubleInheritances [is : set Inheritance] {
-  all i, i' : Inheritance | noDoubleInheritance [i, i']
+pred noMultipleInheritances [is : set Inheritance] {
+  all i, i' : Inheritance | noMultipleInheritance [i, i']
 }
 
 fact nonEmptyInstancesOnly {
@@ -248,7 +248,7 @@ pred classDiagram [
   selfRelationships : one Int,
   hasDoubleRelationships : one Boolean,
   hasReverseRelationships : one Boolean,
-  hasDoubleInheritances : one Boolean,
+  hasMultipleInheritances : one Boolean,
   hasInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
   hasMarkedEdges : lone Boolean] {
@@ -262,9 +262,9 @@ pred classDiagram [
   hasReverseRelationships = True
     implies not noReverseRelationships [relationships]
     else noReverseRelationships [relationships]
-  hasDoubleInheritances = True
-     implies not noDoubleInheritances [inheritances]
-     else noDoubleInheritances [inheritances]
+  hasMultipleInheritances = True
+     implies not noMultipleInheritances [inheritances]
+     else noMultipleInheritances [inheritances]
   hasInheritanceCycles = True
     implies not noInheritanceCycles [inheritances]
     else noInheritanceCycles [inheritances]
@@ -283,7 +283,7 @@ pred changeOfFirstCD [
   selfRelationships : one Int,
   hasDoubleRelationships : one Boolean,
   hasReverseRelationships : one Boolean,
-  hasDoubleInheritances : one Boolean,
+  hasMultipleInheritances : one Boolean,
   hasInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
   hasMarkedEdges : lone Boolean] {
@@ -295,7 +295,7 @@ pred changeOfFirstCD [
       classDiagram [Assoc', Composition', Inheritance', Relationship',
         wrongAssocs, wrongCompositions, selfRelationships,
         hasDoubleRelationships, hasReverseRelationships,
-        hasDoubleInheritances, hasInheritanceCycles, hasCompositionCycles,
+        hasMultipleInheritances, hasInheritanceCycles, hasCompositionCycles,
         hasMarkedEdges]
   }
 }
