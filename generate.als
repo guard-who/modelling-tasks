@@ -292,7 +292,7 @@ pred changeOfFirstCD [
         Relationship' = Relationship - (Change.add - c.add) - c.remove,
         Inheritance' = Inheritance - (Change.add - c.add) - c.remove {
       change[c, Relationship - Change.add]
-      classDiagram [Assoc', Composition', Relationship', Inheritance',
+      classDiagram [Assoc', Composition', Inheritance', Relationship',
         wrongAssocs, wrongCompositions, selfRelationships,
         hasDoubleRelationships, hasReverseRelationships,
         hasDoubleInheritances, hasInheritanceCycles, hasCompositionCycles,
