@@ -58,8 +58,12 @@ pred selfRelationship [r : Relationship] {
   r.from = r.to
 }
 
+pred sameDirection [r, r' : Relationship] {
+  r.from = r'.from and r.to = r'.to
+}
+
 pred doubleRelationship [r, r' : Relationship] {
-  r != r' and r.from = r'.from and r.to = r'.to
+  r != r' and sameDirection [r, r']
 }
 
 pred reverseRelationship [r, r' : Relationship] {
@@ -121,10 +125,6 @@ fact nonEmptyInstancesOnly {
 sig Change {
   add : lone Relationship,
   remove : lone Relationship
-}
-
-pred sameDirection [r, r' : Relationship] {
-  r.from = r'.from and r.to = r'.to
 }
 
 pred sameKind [r, r' : Relationship] {
