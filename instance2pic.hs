@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Util
+import Auxiliary.Util
 import Output
 
 import Data.GraphViz

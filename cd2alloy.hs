@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Lexer (lexer)
-import Parser (parser)
-import Transform (transform)
+import Auxiliary.Lexer (lexer)
+import Auxiliary.Parser (parser)
+import CD2Alloy.Transform (transform)
 
 import Control.Monad
 import Data.Time.LocalTime

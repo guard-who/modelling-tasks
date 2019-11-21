@@ -7,9 +7,9 @@ import qualified Data.Bimap as BM (fromList)
 import Edges     (fromEdges, renameEdges)
 import Generate  (generate)
 import Output    (drawCdFromSyntax)
-import Transform (createRunCommand, mergeParts, transform)
+import CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Types     (ClassConfig (..), Syntax)
-import Util
+import Auxiliary.Util
 
 import Control.Monad          (when)
 import Control.Monad.IO.Class (liftIO)

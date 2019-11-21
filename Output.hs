@@ -2,7 +2,7 @@ module Output (drawCdFromSyntax, drawOdFromInstance) where
 
 import qualified Data.Map as M (lookup)
 
-import Util
+import Auxiliary.Util
 import Types (AssociationType(..), Connection(..), Syntax)
 import Edges
 

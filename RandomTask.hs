@@ -4,7 +4,7 @@ module RandomTask where
 import Edges     (DiagramEdge, anyMarkedEdge, checkMultiEdge, fromEdges)
 import Generate  (generate)
 import Mutation  (Target (..), getAllMutationResults, nonTargets)
-import Transform (createRunCommand, mergeParts, transform)
+import CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Types     (ClassConfig (..), Syntax)
 
 import qualified Alloy (getInstances)
@@ -20,7 +20,7 @@ import System.Random.Shuffle  (shuffleM)
 
 import qualified Data.Map as M (fromList, lookup)
 
-import Util
+import Auxiliary.Util
 import Output        (drawCdFromSyntax)
 import Data.GraphViz (GraphvizOutput (Pdf))
 

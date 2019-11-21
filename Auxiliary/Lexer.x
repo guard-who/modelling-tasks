@@ -1,6 +1,6 @@
 {
 
-module Lexer (lexer, Token(..)) where
+module Auxiliary.Lexer (lexer, Token(..)) where
 
 }
 

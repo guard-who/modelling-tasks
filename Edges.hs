@@ -16,7 +16,7 @@ module Edges (
 import qualified Data.Bimap as BM (lookup)
 
 import Types (AssociationType (..), Connection (..), Syntax)
-import Util  (filterFirst)
+import Auxiliary.Util  (filterFirst)
 
 import Data.Bimap (Bimap)
 import Data.List  (partition)

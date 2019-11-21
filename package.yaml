@@ -29,33 +29,33 @@ library:
     - Alloy
     - Edges
     - Generate
-    - Lexer
+    - Auxiliary.Lexer
     - Mutation
     - Output
-    - Parser
+    - Auxiliary.Parser
     - RandomTask
-    - Transform
+    - CD2Alloy.Transform
     - Types
-    - Util
+    - Auxiliary.Util
 executables:
   cd2alloy:
     main: cd2alloy.hs
     dependencies:
       - time
     other-modules:
-      - Lexer
-      - Parser
-      - Transform
+      - Auxiliary.Lexer
+      - Auxiliary.Parser
+      - CD2Alloy.Transform
       - Types
   cd2pic:
     main: cd2pic.hs
     other-modules:
       - Edges
-      - Lexer
+      - Auxiliary.Lexer
       - Output
-      - Parser
+      - Auxiliary.Parser
       - Types
-      - Util
+      - Auxiliary.Util
   different-names:
     main: different-names.hs
     other-modules:
@@ -64,16 +64,16 @@ executables:
       - Generate
       - NaiveTasks
       - Output
-      - Transform
+      - CD2Alloy.Transform
       - Types
-      - Util
+      - Auxiliary.Util
   instance2pic:
     main: instance2pic.hs
     other-modules:
       - Edges
       - Output
       - Types
-      - Util
+      - Auxiliary.Util
   random-task:
     main: random-task.hs
     dependencies:
@@ -86,6 +86,6 @@ executables:
       - Mutation
       - Output
       - RandomTask
-      - Transform
+      - CD2Alloy.Transform
       - Types
-      - Util
+      - Auxiliary.Util

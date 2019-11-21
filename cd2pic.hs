@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Util
-import Lexer (lexer)
-import Parser (parser)
+import Auxiliary.Util
+import Auxiliary.Lexer (lexer)
+import Auxiliary.Parser (parser)
 import Output
 
 import Data.GraphViz

@@ -1,4 +1,4 @@
-module Util where
+module Auxiliary.Util where
 
 import Data.Char
 import Data.GraphViz

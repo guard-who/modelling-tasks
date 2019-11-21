@@ -1,8 +1,8 @@
 {
 
-module Parser (parser) where
+module Auxiliary.Parser (parser) where
 
-import Lexer (Token(..))
+import Auxiliary.Lexer (Token(..))
 import Types (AssociationType(..))
 
 }

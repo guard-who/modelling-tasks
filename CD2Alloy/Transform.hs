@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Transform (createRunCommand, mergeParts, transform) where
+module CD2Alloy.Transform (createRunCommand, mergeParts, transform) where
 
 import Types (Association, AssociationType(..))
 
