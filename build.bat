@@ -6,3 +6,4 @@ cabal exec -- ghc -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -W
 cabal exec -- ghc -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -isrc:app app/match-cd-od.hs
 cabal exec -- ghc -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -isrc:app app/different-names.hs
 javac -cp alloy/Alloy-5.0.0.1.jar RunAlloy.java -d .
+copy alloy app\alloy /y
