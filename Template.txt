@@ -42,9 +42,11 @@ pred Composition[left : set Obj, lFName : set FName, right : set Obj] {
   all r : right | #{l : left, lF : lFName | r in l.get[lF]} =< 1
 }
 
-fact NonEmptyInstancesOnly {
-  some Obj
-}
+// This fact is subsumed by LimitIsolatedObjects below.
+//
+// fact NonEmptyInstancesOnly {
+//   some Obj
+// }
 
 fact LimitIsolatedObjects {
   #Obj > mul[2, #{o : Obj | no o.get and no get.o}]
