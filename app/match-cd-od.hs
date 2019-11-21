@@ -1,9 +1,9 @@
 {-# LANGUAGE TupleSections #-}
 module Main (main) where
 
-import Output     (drawCdFromSyntax, drawOdFromInstance)
-import Types      (ClassConfig (..))
-import RandomTask (getRandomTask)
+import Output    (drawCdFromSyntax, drawOdFromInstance)
+import Types     (ClassConfig (..))
+import MatchCdOd (getRandomTask)
 
 import Control.Monad.Random (StdGen, evalRandT, getStdGen, mkStdGen)
 import Data.ByteString      (ByteString)

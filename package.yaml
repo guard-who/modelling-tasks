@@ -24,68 +24,52 @@ dependencies:
   - split
   - text
 library:
-  source-dirs: .
+  source-dirs: src
   exposed-modules:
     - Alloy
     - Edges
     - Generate
-    - Auxiliary.Lexer
     - Mutation
     - Output
-    - Auxiliary.Parser
-    - RandomTask
     - CD2Alloy.Transform
     - Types
     - Auxiliary.Util
 executables:
   cd2alloy:
     main: cd2alloy.hs
+    source-dirs: legacy-app
     dependencies:
+      - alloy-cd-od
       - time
     other-modules:
       - Auxiliary.Lexer
       - Auxiliary.Parser
-      - CD2Alloy.Transform
-      - Types
   cd2pic:
     main: cd2pic.hs
+    source-dirs: legacy-app
+    dependencies:
+      - alloy-cd-od
     other-modules:
-      - Edges
       - Auxiliary.Lexer
-      - Output
       - Auxiliary.Parser
-      - Types
-      - Auxiliary.Util
   different-names:
     main: different-names.hs
+    source-dirs: app
+    dependencies:
+      - alloy-cd-od
     other-modules:
-      - Alloy
-      - Edges
-      - Generate
       - NaiveTasks
-      - Output
-      - CD2Alloy.Transform
-      - Types
-      - Auxiliary.Util
   instance2pic:
     main: instance2pic.hs
-    other-modules:
-      - Edges
-      - Output
-      - Types
-      - Auxiliary.Util
-  random-task:
-    main: random-task.hs
+    source-dirs: legacy-app
     dependencies:
+      - alloy-cd-od
+  match-cd-od:
+    main: match-cd-od.hs
+    source-dirs: app
+    dependencies:
+      - alloy-cd-od
       - bytestring
       - digest
     other-modules:
-      - Alloy
-      - Edges
-      - Generate
-      - Mutation
-      - Output
-      - RandomTask
-      - CD2Alloy.Transform
-      - Types
-      - Auxiliary.Util
+      - MatchCdOd

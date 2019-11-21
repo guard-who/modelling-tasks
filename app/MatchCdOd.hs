@@ -1,5 +1,5 @@
 {-# LANGUAGE TupleSections #-}
-module RandomTask where
+module MatchCdOd where
 
 import Edges     (DiagramEdge, anyMarkedEdge, checkMultiEdge, fromEdges)
 import Generate  (generate)
