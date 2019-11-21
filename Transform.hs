@@ -17,7 +17,7 @@ transform (classes, associations) index time =
     , ""
     , "module umlp2alloy/CD" ++ index ++ "Module"
     , ""
-    , $(embedStringFile "Template.txt")
+    , $(embedStringFile "od/template.als")
     ]
  part2 = unlines
   [ "// Concrete names of fields"
