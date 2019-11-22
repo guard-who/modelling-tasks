@@ -11,9 +11,9 @@ data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (I
 type Syntax = ([(String, Maybe String)], [Association])
 
 data ClassConfig = ClassConfig {
-    classes      :: (Maybe Int, Maybe Int),
-    aggregations :: (Maybe Int, Maybe Int),
-    associations :: (Maybe Int, Maybe Int),
-    compositions :: (Maybe Int, Maybe Int),
-    inheritances :: (Maybe Int, Maybe Int)
+    classes      :: (Int, Int),
+    aggregations :: (Int, Maybe Int),
+    associations :: (Int, Maybe Int),
+    compositions :: (Int, Maybe Int),
+    inheritances :: (Int, Maybe Int)
   } deriving Eq

@@ -1,4 +1,3 @@
-{-# LANGUAGE TupleSections #-}
 module Main (main) where
 
 import Output    (drawCdFromSyntax, drawOdFromInstance)
@@ -29,11 +28,11 @@ main = do
 reproduceTask :: StdGen -> IO ()
 reproduceTask g = do
   let config = ClassConfig {
-          classes      = (Just 4, Just 4),
-          aggregations = (Nothing, Just 2),
-          associations = (Nothing, Just 2),
-          compositions = (Nothing, Just 1),
-          inheritances = (Just 1, Just 2)
+          classes      = (4, 4),
+          aggregations = (0, Just 2),
+          associations = (0, Just 2),
+          compositions = (0, Just 1),
+          inheritances = (1, Just 2)
         }
   let maxObjects = 4
   (cds, instas) <- evalRandT (getRandomTask config maxObjects 10 (-1)) g

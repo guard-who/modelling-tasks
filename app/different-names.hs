@@ -15,11 +15,11 @@ import System.Environment   (getArgs)
 main :: IO ()
 main = do
   let config = ClassConfig {
-          classes      = (Just 4, Just 4),
-          aggregations = (Nothing, Just 2),
-          associations = (Nothing, Just 2),
-          compositions = (Nothing, Just 2),
-          inheritances = (Just 1, Just 2)
+          classes      = (4, 4),
+          aggregations = (0, Just 2),
+          associations = (0, Just 2),
+          compositions = (0, Just 2),
+          inheritances = (1, Just 2)
         }
   let maxObjects = 4
   args <- getArgs

@@ -3,12 +3,12 @@ module Generate where
 import Edges
 import Types
 
-import Control.Monad.Random (MonadRandom, getRandomR)
-import Data.Maybe           (fromMaybe)
+import Control.Arrow                    (second)
+import Control.Monad.Random             (MonadRandom, getRandomR)
 
 generate :: MonadRandom m => ClassConfig -> Int -> m ([String], [DiagramEdge])
 generate c searchSpace = do
-  ncls <- oneOfFirst searchSpace $ toAvailable $ classes c
+  ncls <- oneOfFirst searchSpace $ toAvailable $ second Just $ classes c
   nins <- oneOfFirst searchSpace $ toAvailable $ inheritances c
   ncos <- oneOfFirst searchSpace $ toAvailable $ compositions c
   nass <- oneOfFirst searchSpace $ toAvailable $ associations c
@@ -24,9 +24,9 @@ generate c searchSpace = do
   where
     smallerC = shrink c searchSpace
     classNames x = (:[]) <$> take x ['A'..]
-    toAvailable :: (Maybe Int, Maybe Int) -> [Int]
-    toAvailable (mx, Nothing) = [fromMaybe 0 mx..]
-    toAvailable (mx, Just  y) = [fromMaybe 0 mx.. y]
+    toAvailable :: (Int, Maybe Int) -> [Int]
+    toAvailable (x, Nothing) = [x ..]
+    toAvailable (x, Just  y) = [x .. y]
     oneOfFirst :: MonadRandom m => Int -> [a] -> m a
     oneOfFirst s xs = do
       x <- getRandomR (0, maxLength s xs - 1)
@@ -95,13 +95,10 @@ shrink c searchSpace = c {
     inheritances = decrease $ inheritances c
   }
   where
-    increase (Nothing, my     ) = (Just 1, my)
-    increase (Just  x, Nothing) = (Just $ x + 1, Nothing)
-    increase (Just  x, Just  y)
-      | x < y     = (Just $ x + 1, Just y)
-      | otherwise = (Just x, Just y)
-    decrease (Nothing, my     ) = (Just 0, my)
-    decrease (Just  x, Nothing) = (Just x, Just $ x + searchSpace)
-    decrease (Just  x, Just  y)
-      | x < y     = (Just x, Just $ y - 1)
-      | otherwise = (Just x, Just y)
+    increase (x, y)
+      | x < y     = (x + 1, y)
+      | otherwise = (x, y)
+    decrease (x, Nothing) = (x, Just $ x + searchSpace)
+    decrease (x, Just  y)
+      | x < y     = (x, Just $ y - 1)
+      | otherwise = (x, Just y)

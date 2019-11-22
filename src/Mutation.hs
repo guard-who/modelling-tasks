@@ -100,18 +100,17 @@ nonTargets ts es =
 targetEdgesCount :: Target -> [DiagramEdge] -> Int
 targetEdgesCount t es = length [e | e <- es, isTargetEdge e t]
 
-configTarget :: Target -> ClassConfig -> (Maybe Int, Maybe Int)
+configTarget :: Target -> ClassConfig -> (Int, Maybe Int)
 configTarget t = case t of
   TAssociation -> associations
   TAggregation -> aggregations
   TComposition -> compositions
   TInheritance -> inheritances
 
-isLessThan :: Int -> (Maybe Int, Maybe Int) -> Bool
-isLessThan _ (Nothing, _) = False
-isLessThan x (Just y , _) = x < y
+isLessThan :: Int -> (Int, a) -> Bool
+isLessThan x (y , _) = x < y
 
-isGreaterThan :: Int -> (Maybe Int, Maybe Int) -> Bool
+isGreaterThan :: Int -> (a, Maybe Int) -> Bool
 isGreaterThan _ (_, Nothing) = False
 isGreaterThan x (_, Just y ) = x > y
 

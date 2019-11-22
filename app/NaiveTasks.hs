@@ -17,7 +17,6 @@ import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
 import Data.Bimap             (Bimap)
 import Data.GraphViz          (GraphvizOutput (Pdf))
 import Data.List              (permutations)
-import Data.Maybe             (fromMaybe)
 import System.Random.Shuffle  (shuffleM)
 
 debug :: Bool
@@ -70,20 +69,19 @@ withMinimalLabels n config
   | n <= lowerLimit = return [config]
   | otherwise       = shuffleM
     [ config {
-        aggregations = (Just aggrs, snd (aggregations config)),
-        associations = (Just assos, snd (associations config)),
-        compositions = (Just comps, snd (compositions config))
+        aggregations = (aggrs, snd (aggregations config)),
+        associations = (assos, snd (associations config)),
+        compositions = (comps, snd (compositions config))
       }
     | aggrs <- range aggregations  0                           n
     , assos <- range associations  0                          (n - aggrs)
     , comps <- range compositions (max 0 $ n - aggrs - assos) (n - aggrs - assos)]
   where
     lowerLimit = 0
-      +. fst (aggregations config)
-      +. fst (associations config)
-      +. fst (compositions config)
-    x +. y = x + fromMaybe 0 y
+      + fst (aggregations config)
+      + fst (associations config)
+      + fst (compositions config)
     min' l1 Nothing   = l1
     min' l1 (Just l2) = min l1 l2
-    range f low high  = [low +. fst (f config) .. min' high (snd $ f config)]
+    range f low high  = [low + fst (f config) .. min' high (snd $ f config)]
   
