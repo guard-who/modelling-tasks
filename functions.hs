@@ -1,3 +1,5 @@
+import Data.List
+
 type Mark = [Int]
 type Trans = (Mark,Mark)
 type TGNode = (Mark,[Mark])
@@ -54,14 +56,11 @@ convertList (a:[]) = show a
 convertList (a:rs) = show a ++"," ++ convertList rs
 
 --TGNode = (Mark,[Mark])
-getTransitionGraph :: [TGNode] -> [Trans] -> [TGNode]
-getTransitionGraph _ [] = []
---getTransitionGraph ((m,lm):_) (t:rt)
---  | checkMark m t == True = (m,
+getTransitionGraph :: [Mark] -> [Mark] -> [Trans] -> [TGNode]
+getTransitionGraph _ [] _ = []
+getTransitionGraph um (m:rm) t = ((m,calcM m t) : getTransitionGraph (m:um) (union rm (cutList (m:um) (calcM m t))) t)
 
---linkMark :: Mark -> Trans -> [Mark]
---linkMark
-
+--Getting all Links for a Mark in TG
 calcM :: Mark -> [Trans] -> [Mark]
 calcM _ [] = []
 calcM m ((pr,po):rs) 
@@ -73,4 +72,11 @@ checkMark [] _ = True
 checkMark (m:rm) (pr:rpr)
   | m >= pr = checkMark rm rpr
   | otherwise = False
+
+cutList :: [Mark] -> [Mark] -> [Mark]
+cutList _ [] = []
+cutList l1 (h:rs)
+  | elem h l1 == False = (h:cutList l1 rs)
+  | otherwise          =  cutList l1 rs
+
   
