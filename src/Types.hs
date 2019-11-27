@@ -17,3 +17,28 @@ data ClassConfig = ClassConfig {
     compositions :: (Int, Maybe Int),
     inheritances :: (Int, Maybe Int)
   } deriving Eq
+
+data RelationshipProperties = RelationshipProperties {
+    wrongAssocs             :: Int,
+    wrongComposistions      :: Int,
+    selfRelationships       :: Int,
+    hasDoubleRelationships  :: Bool,
+    hasReverseRelationships :: Bool,
+    hasMultipleInheritances :: Bool,
+    hasInheritanceCycles    :: Bool,
+    hasCompositionCycles    :: Bool,
+    hasMarkedEdges          :: Maybe Bool
+  }
+
+defaultProperties :: RelationshipProperties
+defaultProperties = RelationshipProperties {
+    wrongAssocs             = 0,
+    wrongComposistions      = 0,
+    selfRelationships       = 0,
+    hasDoubleRelationships  = False,
+    hasReverseRelationships = False,
+    hasMultipleInheritances = False,
+    hasInheritanceCycles    = False,
+    hasCompositionCycles    = False,
+    hasMarkedEdges          = Nothing
+  }

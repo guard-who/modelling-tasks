@@ -1,3 +1,5 @@
 resolver: nightly-2019-02-20
 packages:
 - .
+extra-deps:
+- string-interpolate-0.1.0.1

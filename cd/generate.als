@@ -191,36 +191,6 @@ pred changeOfFirstCD [
   }
 }
 
-pred cd {
-  let Assoc' = Assoc - Change.add,
-      Association' = Association - Change.add,
-      Aggregation' = Aggregation - Change.add,
-      Composition' = Composition - Change.add,
-      Relationship' = Relationship - Change.add,
-      Inheritance' = Inheritance - Change.add {
-    classDiagram [Assoc', Composition', Inheritance', Relationship', 0, 0, 0,
-      False, False, False, False, False, none]
-    0 <= #Association' and #Association' <= 2
-    0 <= #Aggregation' and #Aggregation' <= 2
-    0 <= #Composition' and #Composition' <= 2
-    1 <= #Inheritance' and #Inheritance' <= 2
-    4 <= #Class
-    3 <= #Relationship'
   }
 }
 
-sig c1, c2, c3 extends Change {}
-
-pred changes {
-  one m1, m2 : Boolean {
-    m1 = False or m2 = False
-    let c1Assocs = Assoc - (Change.add - Assoc <: c1.add) - c1.remove,
-        c2Assocs = Assoc - (Change.add - Assoc <: c2.add) - c2.remove |
-      some c1Assocs or some c2Assocs
-    changeOfFirstCD [c1, 0, 0, 0, False, False, False, False, False, m1]
-    changeOfFirstCD [c2, 0, 0, 0, False, False, False, False, False, m2]
-    changeOfFirstCD [c3, 0, 0, 0, False, False, False, False, False, False]
-  }
-}
-
-run { cd and changes } for 12 Relationship, 4 Class, 3 Change

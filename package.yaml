@@ -23,16 +23,18 @@ dependencies:
   - random
   - random-shuffle
   - split
+  - string-interpolate
   - text
 library:
   source-dirs: src
   exposed-modules:
     - Alloy
+    - CD2Alloy.Transform
+    - CdAndChanges.Transform
     - Edges
     - Generate
     - Mutation
     - Output
-    - CD2Alloy.Transform
     - Parser
     - Types
     - Auxiliary.Util
