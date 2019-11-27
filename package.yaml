@@ -30,6 +30,7 @@ library:
   exposed-modules:
     - Alloy
     - CD2Alloy.Transform
+    - CdAndChanges.Instance
     - CdAndChanges.Transform
     - Edges
     - Generate
