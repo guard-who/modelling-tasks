@@ -1,28 +1,40 @@
 {-# LANGUAGE TupleSections #-}
 module MatchCdOd where
 
-import Edges     (DiagramEdge, anyMarkedEdge, checkMultiEdge, fromEdges)
-import Generate  (generate)
-import Mutation  (Target (..), getAllMutationResults, nonTargets)
-import CD2Alloy.Transform (createRunCommand, mergeParts, transform)
-import Types     (ClassConfig (..), Syntax)
+import qualified CdAndChanges.Transform           as Changes (transform)
+import qualified Alloy                            (getInstances)
 
-import qualified Alloy (getInstances)
+import qualified Data.Bimap                       as BM (fromList, keysR, size)
+import qualified Data.Map                         as M (fromList, lookup)
+
+import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
+import CdAndChanges.Instance            (fromInstance)
+import Auxiliary.Util                   (redColor)
+import Edges (
+  DiagramEdge,
+  anyMarkedEdge,
+  checkMultiEdge,
+  fromEdges,
+  renameClasses,
+  renameEdges,
+  )
+import Generate                         (generate)
+import Mutation
+  (Target (..), getAllMutationResults, nonTargets)
+import Output                           (drawCdFromSyntax)
+import Types
+  (ClassConfig (..), Change (..), Connection (..), Syntax, defaultProperties)
 
 import Control.Monad          (when)
 import Control.Monad.Fail     (MonadFail)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
+import Data.GraphViz          (GraphvizOutput (Pdf))
+import Data.List              (delete)
 import Data.Map               (Map)
 import Data.Maybe             (fromJust, isJust)
 import Data.Set               (singleton)
 import System.Random.Shuffle  (shuffleM)
-
-import qualified Data.Map as M (fromList, lookup)
-
-import Auxiliary.Util
-import Output        (drawCdFromSyntax)
-import Data.GraphViz (GraphvizOutput (Pdf))
 
 debug :: Bool
 debug = False
@@ -41,6 +53,54 @@ getRandomTask config maxObjects searchSpace maxInstances = do
   case mrinstas of
     Nothing      -> getRandomTask config maxObjects searchSpace maxInstances
     Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], rinstas)
+
+getRandomTask'
+  :: RandomGen g
+  => ClassConfig
+  -> Int
+  -> Int
+  -> Int
+  -> RandT g IO (Map Int Syntax, [([Int], String)])
+getRandomTask' config maxObjects searchSpace maxInstances = do
+  let code = Changes.transform config defaultProperties
+  instas <- liftIO $ Alloy.getInstances 6000 code
+  liftIO $ print $ length instas
+  rinstas <- shuffleM instas
+  liftIO $ print $ head rinstas
+  ods <- getODsFor maxObjects maxInstances rinstas
+  maybe (getRandomTask' config maxObjects searchSpace maxInstances) return ods
+
+getODsFor :: RandomGen g => Int -> Int -> [String] -> RandT g IO (Maybe (Map Int Syntax, [([Int], String)]))
+getODsFor _          _            []       = return Nothing
+getODsFor maxObjects maxInstances (cd:cds) = do
+  (cd1, cd2, cd3, numClasses) <- applyChanges cd
+  instas <- liftIO $ getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses
+  mrinstas <- takeRandomInstances instas
+  case mrinstas of
+    Nothing      -> getODsFor maxObjects maxInstances cds
+    Just rinstas -> return $ Just (M.fromList [(1, cd1), (2, cd2)], rinstas)
+
+applyChanges :: RandomGen g => String -> RandT g IO (Syntax, Syntax, Syntax, Int)
+applyChanges insta = do
+  (names, edges0, changes) <- either error return $ fromInstance insta
+  let (cs, es) = names
+  cs' <- shuffleM cs
+  es' <- shuffleM es
+  let bme = BM.fromList $ zip es' $ (:[]) <$> ['z', 'y' ..]
+      bmc = BM.fromList $ zip cs' $ (:[]) <$> ['A' ..]
+  let [cd1, cd2, cd3] = getSyntax bmc bme edges0 <$> changes
+  return (cd1, cd2, cd3, BM.size bmc)
+  where
+    getSyntax bmc bme es c =
+      fromEdges (BM.keysR bmc) $ renameClasses bmc $ renameEdges bme $ performChange c es
+    performChange c es =
+      let rs = maybe es (`delete` es) $ remove c
+          add' = case (remove c, add c) of
+            (Just (from, to, Assoc t n _ _ _), Just (from', to', Assoc t' _ m1 m2 b))
+              | t == t', from == from' && to == to' || from == to' && to == from' ->
+                Just (from', to', Assoc t' n m1 m2 b)
+            _ -> add c
+      in maybe rs (: rs) add'
 
 getRandomCDs :: RandomGen g => ClassConfig -> Int -> RandT g IO (Syntax, Syntax, Syntax, Int)
 getRandomCDs config searchSpace = do

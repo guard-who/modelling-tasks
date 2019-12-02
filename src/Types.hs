@@ -10,6 +10,13 @@ data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (I
 
 type Syntax = ([(String, Maybe String)], [Association])
 
+type DiagramEdge = (String, String, Connection)
+
+data Change a = Change {
+    add    :: Maybe a,
+    remove :: Maybe a
+  } deriving Show
+
 data ClassConfig = ClassConfig {
     classes      :: (Int, Int),
     aggregations :: (Int, Maybe Int),

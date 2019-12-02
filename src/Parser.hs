@@ -21,7 +21,7 @@ data Signature = Signature {
 
 data Object =
     Object {
-      objSig     :: Signature,
+      objSig     :: String,
       identifier :: Int
     }
   | NumberObject {
@@ -45,6 +45,13 @@ data Entry a b = Entry {
     annotation :: Maybe Annotation,
     relation   :: a String (Relation b)
   }
+
+objectName :: Object -> String
+objectName o = case o of
+  Object s n     -> s ++ '$' : show n
+  NumberObject n -> show n
+  NamedObject n  -> n
+
 
 single :: Monoid (a Object) => Relation a -> Either String (a Object)
 single EmptyRelation = Right mempty
@@ -110,7 +117,7 @@ parseRelations = char '='
 
 object :: Parser Object
 object =
-  try (Object <$> sig <* char '$' <*> (read <$> many1 digit))
+  try (Object <$> word <* char '$' <*> (read <$> many1 digit))
   <|> try (NumberObject <$> int)
   <|> NamedObject <$> word
 
@@ -122,4 +129,4 @@ int = fmap read $ (++)
 word :: Parser String
 word = (:)
   <$> (letter <|> char '$')
-  <*> many1 (letter <|> digit <|> char '_')
+  <*> many (letter <|> digit <|> char '_')

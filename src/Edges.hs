@@ -3,7 +3,7 @@ module Edges (
   DiagramEdge,
   -- * Transformation
   fromEdges, toEdges,
-  renameEdges,
+  renameClasses, renameEdges,
   -- * Checks
   -- ** Check sets (reusing single checks)
   checkMultiEdge, checkObvious,
@@ -15,14 +15,12 @@ module Edges (
 
 import qualified Data.Bimap as BM (lookup)
 
-import Types (AssociationType (..), Connection (..), Syntax)
+import Types (AssociationType (..), Connection (..), DiagramEdge, Syntax)
 import Auxiliary.Util  (filterFirst)
 
 import Data.Bimap (Bimap)
 import Data.List  (partition)
 import Data.Maybe (fromJust)
-
-type DiagramEdge = (String, String, Connection)
 
 toEdges :: Syntax -> [DiagramEdge]
 toEdges (is, as) =
@@ -45,6 +43,11 @@ renameEdges bm es =
   where
     rename (Assoc t n m1 m2 b) = [Assoc t n' m1 m2 b | n' <- BM.lookup n bm]
     rename e@Inheritance       = [e]
+
+renameClasses :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
+renameClasses bm es =
+  [ (from', to', e)
+  | (from, to, e) <- es, from' <- BM.lookup from bm, to' <- BM.lookup to bm]
 
 selfEdges :: [DiagramEdge] -> [DiagramEdge]
 selfEdges es = [x | x@(s, e, _) <- es, e == s]

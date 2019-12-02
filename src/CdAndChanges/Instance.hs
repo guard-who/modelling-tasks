@@ -12,10 +12,11 @@ import Parser (
   alloyInstance,
   combineEntries,
   double,
+  objectName,
   single,
   )
 import Types
-  (AssociationType (..), Connection (..), DiagramEdge)
+  (AssociationType (..), Change (..), Connection (..), DiagramEdge)
 
 import Data.Bifunctor                   (first)
 import Data.Map                         (Map)
@@ -29,13 +30,17 @@ scoped = Signature . Just
 relToMap :: Relation Set -> Either String (Map Object Object)
 relToMap = fmap (M.fromList . S.toList) . double
 
-fromInstance :: String -> Either String ([DiagramEdge], [Change DiagramEdge])
+fromInstance
+  :: String
+  -> Either String (([String], [String]), [DiagramEdge], [Change DiagramEdge])
 fromInstance output = do
-  insta      <-
+  insta <-
     first show $ combineEntries <$> parse alloyInstance "Alloy" output
   es <- instanceToEdges insta
   cs <- instanceToChanges insta
-  return ([e | (o, e) <- es, o `notElem` catMaybes (add <$> cs)],
+  ns <- instanceToNames insta
+  return (ns,
+          [e | (o, e) <- es, o `notElem` catMaybes (add <$> cs)],
           [Change a r | c <- cs
                       , a <- lookupM (add c) es
                       , r <- lookupM (remove c) es])
@@ -44,10 +49,14 @@ fromInstance output = do
     lookupM Nothing  _  = [Nothing]
     lookupM (Just k) ms = [v | let v = lookup k ms, isJust v]
 
-data Change a = Change {
-    add    :: Maybe a,
-    remove :: Maybe a
-  }
+instanceToNames
+  :: Map Signature (Entry Map Set) -> Either String ([String], [String])
+instanceToNames insta = do
+  c' <- lookupEntry (scoped "this" "Class") insta
+  cs <- fmap objectName . S.toList <$> lookupRel single "" c'
+  a' <- lookupEntry (scoped "this" "Assoc") insta
+  as <- fmap objectName . S.toList <$> lookupRel single "" a'
+  return (cs, as)
 
 instanceToChanges
   :: Map Signature (Entry Map Set)
@@ -88,7 +97,7 @@ instanceToEdges'
 instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
   inh' <- lookupEntry (scoped "this" "Inheritance") insta
   inh  <- S.toList <$> lookupRel single "" inh'
-  inhs <- (\i -> (i,) <$> rel True i Inheritance) `mapM` inh
+  inhs <- (\i -> (i,) <$> rel False i Inheritance) `mapM` inh
   coms <- lookupAssocs True Composition "Composition"
   asss <- lookupAssocs False Association "Association"
   aggs <- lookupAssocs True Aggregation "Aggregation"
@@ -99,7 +108,7 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
       Just v  -> Right $ objectName v
     lookupLimit k m = case M.lookup k m of
       Nothing -> Left "Missing limit"
-      Just (Object sig _) -> case sigName sig of
+      Just (Object n _) -> case n of
         "Star" -> Right Nothing
         "Zero" -> Right $ Just 0
         "One"  -> Right $ Just 1
@@ -110,17 +119,18 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
       rFrom' <- lookupObj r rFrom
       rTo'   <- lookupObj r rTo
       if flipRel
-        then return (rFrom', rTo', c)
-        else return (rTo', rFrom', c)
+        then return (rTo', rFrom', c)
+        else return (rFrom', rTo', c)
     assoc flipRel t a = do
       aFromLower' <- lookupLimit a aFromLower
       aFromUpper' <- lookupLimit a aFromUpper
       aToLower'   <- lookupLimit a aToLower
       aToUpper'   <- lookupLimit a aToUpper
+      let lower = (fromJust aFromLower', aFromUpper')
+          upper = (fromJust aToLower', aToUpper')
+          (l, h) = if flipRel then (upper, lower) else (lower, upper)
       fmap (a,) $ rel flipRel a
-        $ Assoc t (objectName a)
-          (fromJust aFromLower', aFromUpper')
-          (fromJust aToLower', aToUpper') False
+        $ Assoc t (objectName a) l h False
     lookupAssocs flipRel t n = do
       a' <- lookupEntry (scoped "this" n) insta
       a  <- S.toList <$> lookupRel single "" a'
@@ -141,9 +151,3 @@ lookupEntry sig insta = case M.lookup sig insta of
   Nothing -> Left $ maybe "" (++ "/") (scope sig) ++ sigName sig
     ++ " is missing in your Alloy instance"
   Just e  -> Right e
-
-objectName :: Object -> String
-objectName o = case o of
-  Object sig n   -> sigName sig ++ show n
-  NumberObject n -> show n
-  NamedObject n  -> n

@@ -18,7 +18,7 @@ transform config properties=
   ++ part
   ++ createRunCommand config predicates changes
   where
-    (changes, predicates, part) = matchCdOdChanges
+    (changes, predicates, part) = matchCdOdChanges config
 
 maxRels :: ClassConfig -> Int
 maxRels config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2) $ sumOf4
@@ -64,8 +64,8 @@ pred cd {
     upper = fromMaybe (maxRels config) . snd
     maybeToAlloySet = maybe "none" show
 
-matchCdOdChanges :: (Int, [String], String)
-matchCdOdChanges = (3, ["changes"],) [i|
+matchCdOdChanges :: ClassConfig -> (Int, [String], String)
+matchCdOdChanges config = (3, ["changes", "changeLimits"],) $ [i|
 //////////////////////////////////////////////////
 // Changes
 //////////////////////////////////////////////////
@@ -82,7 +82,30 @@ pred changes {
     changeOfFirstCD [C3, 0, 0, 0, False, False, False, False, False, False]
   }
 }
+|] ++ changeLimits config
+
+changeLimits :: ClassConfig -> String
+changeLimits config = [i|
+pred changeLimits {
+  all c : Change {
+    let Association' = Association - (Change.add - c.add) - c.remove,
+        Composition' = Composition - (Change.add - c.add) - c.remove,
+        Aggregation' = Aggregation - (Change.add - c.add) - c.remove,
+        Inheritance' = Inheritance - (Change.add - c.add) - c.remove {
+      #{fst $ associations config} <= #Association'
+      #Association' <= #{upper $ associations config}
+      #{fst $ aggregations config} <= #Aggregation'
+      #Aggregation' <= #{upper $ aggregations config}
+      #{fst $ compositions config} <= #Composition'
+      #Composition' <= #{upper $ compositions config}
+      #{fst $ inheritances config} <= #Inheritance'
+      #Inheritance' <= #{upper $ inheritances config}
+    }
+  }
+}
 |]
+  where
+    upper = fromMaybe (maxRels config) . snd
 
 createRunCommand :: ClassConfig -> [String] -> Int ->  String
 createRunCommand config predicates changes = [i|
