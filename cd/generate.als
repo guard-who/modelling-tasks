@@ -112,6 +112,14 @@ pred changedLimit [c : Change] {
   shiftedRange [c.add, c.remove] iff not changedRange [c.add, c.remove]
 }
 
+pred sameRelationship [r, r' : Relationship] {
+  r != r'
+  r.from = r'.from
+  sameKind [r, r']
+  sameDirection [r, r']
+  r in Assoc implies sameLimits [r, r']
+}
+
 pred change [c : Change, rs : set Relationship] {
   some c.add + c.remove
   no c.add or not c.add in rs
@@ -123,7 +131,9 @@ pred change [c : Change, rs : set Relationship] {
 }
 
 fact changesAreUnique {
-  all c, c' : Change | c = c' or c.add != c'.add or c.remove != c'.remove
+  all c, c' : Change | c = c'
+    or c.add != c'.add and not sameRelationship [c.add, c'.add]
+    or c.remove != c'.remove and not sameRelationship [c.remove, c'.remove]
 }
 
 abstract sig Boolean {}
