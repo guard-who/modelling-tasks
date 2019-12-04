@@ -17,6 +17,7 @@ import Data.GraphViz.Attributes.Complete
 import System.Random.Shuffle (shuffleM)
 
 import System.FilePath (dropExtension)
+import System.IO.Unsafe (unsafePerformIO)
 
 connectionArrow :: Bool -> Bool -> Maybe Attribute -> Connection -> [Attribute]
 connectionArrow _ _ _ Inheritance =
@@ -27,7 +28,9 @@ connectionArrow _ printNames marking (Assoc Composition name from to isMarked) =
   ++ case from of
        (1, Just 1) -> []
        (0, Just 1) -> [TailLabel (mult from)]
-       _           -> error "invalid composition multiplicity"
+       (_, _)      -> unsafePerformIO $ do
+         putStrLn "invalid composition multiplicity"
+         return [TailLabel (mult from), HeadLabel (mult to)]
 connectionArrow printNavigations printNames marking (Assoc a name from to isMarked) =
   printArrow a
   ++ [TailLabel (mult from), HeadLabel (mult to)]
@@ -47,6 +50,7 @@ arrow Aggregation = [arrowFrom oDiamond, edgeEnds Back]
 arrow Composition = [arrowFrom diamond, edgeEnds Back]
 
 mult :: (Int, Maybe Int) -> Label
+mult (-1, Just u) = toLabelValue $ "*.." ++ show u
 mult (0, Nothing) = toLabelValue ""
 mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l

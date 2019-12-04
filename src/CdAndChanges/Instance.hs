@@ -20,7 +20,7 @@ import Types
 
 import Data.Bifunctor                   (first)
 import Data.Map                         (Map)
-import Data.Maybe                       (catMaybes, fromJust, isJust)
+import Data.Maybe                       (catMaybes, fromMaybe, isJust)
 import Data.Set                         (Set)
 import Text.Parsec                      (parse)
 
@@ -126,8 +126,8 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
       aFromUpper' <- lookupLimit a aFromUpper
       aToLower'   <- lookupLimit a aToLower
       aToUpper'   <- lookupLimit a aToUpper
-      let lower = (fromJust aFromLower', aFromUpper')
-          upper = (fromJust aToLower', aToUpper')
+      let lower = (fromMaybe (-1) aFromLower', aFromUpper')
+          upper = (fromMaybe (-1) aToLower', aToUpper')
           (l, h) = if flipRel then (upper, lower) else (lower, upper)
       fmap (a,) $ rel flipRel a
         $ Assoc t (objectName a) l h False
