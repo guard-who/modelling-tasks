@@ -5,7 +5,9 @@ import Auxiliary.Lexer (lexer)
 import Auxiliary.Parser (parser)
 import Output
 
+import Control.Arrow (first, second)
 import Data.GraphViz
+import Data.Maybe    (maybeToList)
 
 import System.Environment (getArgs)
 
@@ -13,7 +15,7 @@ run :: Bool -> Attribute -> String -> FilePath -> GraphvizOutput -> IO ()
 run printNames howToMark input = do
   let tokens = lexer input
   let syntax = parser tokens
-  drawCdFromSyntax False printNames (Just howToMark) syntax
+  drawCdFromSyntax False printNames (Just howToMark) $ first (second maybeToList <$>) syntax
 
 main :: IO ()
 main = do

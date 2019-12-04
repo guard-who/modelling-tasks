@@ -57,18 +57,21 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
   let (classes, associations) = syntax
   let classNames = map fst classes
   let theNodes = classNames
-  let inhEdges = mapMaybe (\(from,mto) -> fmap (\to -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Inheritance)) mto) classes
+  let inhEdges = [( fromJust (elemIndex from theNodes)
+                  , fromJust (elemIndex to theNodes)
+                  , Inheritance)
+                 | (from, tos) <- classes, to <- tos]
   let classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
         where
           subs seen name
             | name `elem` seen = []
-            | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
+            | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((name `elem`) . snd) classes)
   let assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
   let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (shouldBeMarked from to classesWithSubclasses assocsBothWays))) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(_,l) -> [toLabel l,
-                                        shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 11],
+                                        shape BoxShape, Margin $ DVal 0.04, Width 0, Height 0, FontSize 11],
                    fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNavigations printNames marking l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)

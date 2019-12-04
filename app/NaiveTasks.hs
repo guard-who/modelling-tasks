@@ -14,9 +14,11 @@ import Auxiliary.Util
 import Control.Monad          (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
+import Data.Bifunctor         (first, second)
 import Data.Bimap             (Bimap)
 import Data.GraphViz          (GraphvizOutput (Pdf))
 import Data.List              (permutations)
+import Data.Maybe             (listToMaybe)
 import System.Random.Shuffle  (shuffleM)
 
 debug :: Bool
@@ -55,7 +57,8 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
           cd1 = fromEdges names $ renameEdges bm edges
       return (cd1, od1, bm)
   where
-    extractFourParts (n, cd) = case transform cd (show n) "" of
+    toOldSyntax = first (second listToMaybe <$>)
+    extractFourParts (n, cd) = case transform (toOldSyntax cd) (show n) "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =

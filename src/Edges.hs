@@ -24,7 +24,7 @@ import Data.Maybe (fromJust)
 
 toEdges :: Syntax -> [DiagramEdge]
 toEdges (is, as) =
-  [(s, e, Inheritance) | (s, Just e) <- is]
+  [(s, e, Inheritance) | (s, es) <- is, e <- es]
   ++ [(s, e, Assoc t n m1 m2 False) | (t, n, m1, s, e, m2) <- as]
 
 fromEdges :: [String] -> [DiagramEdge] -> Syntax
@@ -32,7 +32,7 @@ fromEdges classNames es =
   let isInheritance (_, _, Inheritance) = True
       isInheritance (_, _, _          ) = False
       (ihs, ass) = partition isInheritance es
-      classes' = (\x -> (x, foldl (\p (s, e, Inheritance) -> if s == x then Just e else p) Nothing ihs)) <$> classNames
+      classes' = (\x -> (x, [e | (s, e, Inheritance) <- ihs, s == x])) <$> classNames
       assocs   = [(t, n, m1, s, e, m2) | (s, e, Assoc t n m1 m2 False) <- ass]
   in (classes', assocs)
 
@@ -127,7 +127,7 @@ anyMarkedEdge (classes, associations) =
       where
         subs seen name
           | name `elem` seen = []
-          | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((== Just name) . snd) classes)
+          | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((name `elem`) . snd) classes)
     assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
   in any (\(_,_,_,from,to,_) -> shouldBeMarked from to classesWithSubclasses assocsBothWays) associations
 

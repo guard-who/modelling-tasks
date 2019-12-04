@@ -8,7 +8,7 @@ data AssociationType = Association | Aggregation | Composition
 data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
   deriving Eq
 
-type Syntax = ([(String, Maybe String)], [Association])
+type Syntax = ([(String, [String])], [Association])
 
 type DiagramEdge = (String, String, Connection)
 

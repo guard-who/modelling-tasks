@@ -25,6 +25,7 @@ import Output                           (drawCdFromSyntax)
 import Types
   (ClassConfig (..), Change (..), Connection (..), Syntax, defaultProperties)
 
+import Control.Arrow          (first, second)
 import Control.Monad          (when)
 import Control.Monad.Fail     (MonadFail)
 import Control.Monad.IO.Class (liftIO)
@@ -32,7 +33,7 @@ import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
 import Data.GraphViz          (GraphvizOutput (Pdf))
 import Data.List              (delete)
 import Data.Map               (Map)
-import Data.Maybe             (fromJust, isJust)
+import Data.Maybe             (fromJust, isJust, listToMaybe)
 import Data.Set               (singleton)
 import System.Random.Shuffle  (shuffleM)
 
@@ -134,10 +135,11 @@ getODInstances
   -> Int
   -> IO (Map [Int] [String])
 getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses = do
-  let parts1 = case transform cd1 "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-      parts2 = case transform cd2 "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+  -- TODO remove `toOldSyntax`
+  let parts1 = case transform (toOldSyntax cd1) "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+      parts2 = case transform (toOldSyntax cd2) "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
       parts1and2 = mergeParts parts1 parts2
-      parts3 = case transform cd3 "3" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
+      parts3 = case transform (toOldSyntax cd3) "3" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
       cd1not2 = createRunCommand "cd1 and (not cd2)" numClasses maxObjects
       cd2not1 = createRunCommand "cd2 and (not cd1)" numClasses maxObjects
       cd1and2 = createRunCommand "cd1 and cd2" numClasses maxObjects
@@ -156,6 +158,7 @@ getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses = do
                         ([]   , instancesNot1not2)])
   where
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
+    toOldSyntax = first (second listToMaybe <$>)
 
 takeRandomInstances :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
 takeRandomInstances instas = do
