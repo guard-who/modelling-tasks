@@ -43,7 +43,7 @@ pred cd {
       Relationship' = Relationship - Change.add,
       Inheritance' = Inheritance - Change.add {
     classDiagram [Assoc', Composition', Inheritance', Relationship',
-      #{wrongAssocs props}, #{wrongComposistions props}, #{selfRelationships props},
+      #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
       #{hasDoubleRelationships props}, #{hasReverseRelationships props},
       #{hasMultipleInheritances props}, #{hasInheritanceCycles props},
       #{hasCompositionCycles props}, #{maybeToAlloySet $ hasMarkedEdges props}]

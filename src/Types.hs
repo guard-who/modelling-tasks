@@ -27,7 +27,7 @@ data ClassConfig = ClassConfig {
 
 data RelationshipProperties = RelationshipProperties {
     wrongAssocs             :: Int,
-    wrongComposistions      :: Int,
+    wrongCompositions       :: Int,
     selfRelationships       :: Int,
     hasDoubleRelationships  :: Bool,
     hasReverseRelationships :: Bool,
@@ -40,7 +40,7 @@ data RelationshipProperties = RelationshipProperties {
 defaultProperties :: RelationshipProperties
 defaultProperties = RelationshipProperties {
     wrongAssocs             = 0,
-    wrongComposistions      = 0,
+    wrongCompositions       = 0,
     selfRelationships       = 0,
     hasDoubleRelationships  = False,
     hasReverseRelationships = False,
