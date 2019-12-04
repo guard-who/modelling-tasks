@@ -63,6 +63,7 @@ executables:
     dependencies:
       - alloy-cd-od
     other-modules:
+      - MatchCdOd
       - NaiveTasks
   instance2pic:
     main: instance2pic.hs
@@ -78,3 +79,11 @@ executables:
       - digest
     other-modules:
       - MatchCdOd
+  repair-incorrect:
+    main: repair-incorrect.hs
+    source-dirs: app
+    dependencies:
+      - alloy-cd-od
+    other-modules:
+      - MatchCdOd
+      - NaiveTasks

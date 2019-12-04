@@ -26,6 +26,15 @@ transform :: ClassConfig -> RelationshipProperties -> String
 transform config props =
   transformWith config props $ matchCdOdChanges config
 
+transformChanges
+  :: ClassConfig
+  -> RelationshipProperties
+  -> Maybe ClassConfig
+  -> [RelationshipProperties]
+  -> String
+transformChanges config props mconfig propss =
+  transformWith config props $ changes mconfig propss
+
 maxRels :: ClassConfig -> Int
 maxRels config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2) $ sumOf4
   <$> snd (aggregations config)
@@ -68,7 +77,38 @@ pred cd {
 |]
   where
     upper = fromMaybe (maxRels config) . snd
-    maybeToAlloySet = maybe "none" show
+
+maybeToAlloySet :: Show a => Maybe a -> String
+maybeToAlloySet = maybe "none" show
+
+changes :: Maybe ClassConfig -> [RelationshipProperties] -> (Int, [String], String)
+changes config propss = uncurry (length propss,,)
+  $ snd $ foldl change (1, limits) propss
+  where
+    change (n, (cs, code)) p =
+      let (c, code') = changeWithProperties p n
+      in (n + 1, (c:cs, code ++ code'))
+    limits = maybe ([], header) ((["changeLimits"],) . changeLimits) config
+    header = [i|
+//////////////////////////////////////////////////
+// Changes
+//////////////////////////////////////////////////
+|]
+
+changeWithProperties :: RelationshipProperties -> Int -> (String, String)
+changeWithProperties props n = (change,) [i|
+sig C#{n} extends Change {}
+
+pred #{change} {
+  changeOfFirstCD [C#{n},
+    #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
+    #{hasDoubleRelationships props}, #{hasReverseRelationships props},
+    #{hasMultipleInheritances props}, #{hasInheritanceCycles props},
+    #{hasCompositionCycles props}, #{maybeToAlloySet $ hasMarkedEdges props}]
+}
+|]
+  where
+    change = [i|change#{n}|]
 
 matchCdOdChanges :: ClassConfig -> (Int, [String], String)
 matchCdOdChanges config = (3, ["changes", "changeLimits"],) $ [i|
@@ -114,9 +154,9 @@ pred changeLimits {
     upper = fromMaybe (maxRels config) . snd
 
 createRunCommand :: ClassConfig -> [String] -> Int ->  String
-createRunCommand config predicates changes = [i|
-run { #{command} } for #{maxRels config + changes} Relationship,
-  #{snd $ classes config} Class, #{changes} Change
+createRunCommand config predicates cs = [i|
+run { #{command} } for #{maxRels config + cs} Relationship,
+  #{snd $ classes config} Class, #{cs} Change
 |]
   where
     command :: String

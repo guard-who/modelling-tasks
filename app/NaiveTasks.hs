@@ -1,28 +1,130 @@
+{-# LANGUAGE RecordWildCards #-}
 module NaiveTasks where
 
-import qualified Alloy (getInstances)
+import qualified CdAndChanges.Transform           as Changes (transformChanges)
+import qualified Alloy                            (getInstances)
 
-import qualified Data.Bimap as BM (fromList)
+import qualified Data.Bimap                       as BM (fromList)
 
-import Edges     (fromEdges, renameEdges)
-import Generate  (generate)
-import Output    (drawCdFromSyntax)
-import CD2Alloy.Transform (createRunCommand, mergeParts, transform)
-import Types     (ClassConfig (..), Syntax)
+import Edges                            (fromEdges, renameEdges)
+import Generate                         (generate)
+import Output                           (drawCdFromSyntax)
+import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
+import Types
+  (ClassConfig (..), RelationshipProperties (..), Syntax, defaultProperties)
 import Auxiliary.Util
 
-import Control.Monad          (when)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
-import Data.Bifunctor         (first, second)
-import Data.Bimap             (Bimap)
-import Data.GraphViz          (GraphvizOutput (Pdf))
-import Data.List              (permutations)
-import Data.Maybe             (listToMaybe)
-import System.Random.Shuffle  (shuffleM)
+import Control.Monad                    (when)
+import Control.Monad.IO.Class           (liftIO)
+import Control.Monad.Random             (MonadRandom, RandomGen, RandT)
+import Data.Bifunctor                   (first, second)
+import Data.Bimap                       (Bimap)
+import Data.GraphViz                    (GraphvizOutput (Pdf))
+import Data.List                        (permutations)
+import Data.Maybe                       (listToMaybe)
+import MatchCdOd                        (applyChanges)
+import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
 debug = False
+
+data PropertyChange = PropertyChange {
+    changeName     :: String,
+    operation      :: RelationshipProperties -> RelationshipProperties,
+    validityChange :: Bool -> Bool
+  }
+
+toProperty :: PropertyChange -> RelationshipProperties
+toProperty p = operation p defaultProperties
+
+isValid :: PropertyChange -> Bool
+isValid p = validityChange p True
+
+repairIncorrect
+  :: RandomGen g
+  => ClassConfig
+  -> RandT g IO (Syntax, [(Bool, Syntax)])
+repairIncorrect config = do
+  e0:_    <- shuffleM illegalChanges
+  l0:l1:_ <- shuffleM legalChanges
+  c0:_    <- shuffleM changes
+  csm     <- shuffleM $ c0 : noChange : l1 .&. noChange : l1 : [e0]
+  cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
+  let code = Changes.transformChanges config (toProperty e0) (Just config)
+        $ toProperty <$> cs
+  when debug $ do
+    liftIO $ putStrLn $ changeName e0
+    liftIO $ print $ changeName <$> cs
+    liftIO $ writeFile "repair.als" code
+  instas <- liftIO $ Alloy.getInstances 200 code
+  if null instas then liftIO (putStr ".") >> repairIncorrect config
+    else do
+    rinsta       <- head <$> shuffleM instas
+    (cd, chs, _) <- applyChanges rinsta
+    let cds' = zip (isValid <$> cs) (snd <$> chs)
+    when debug $ do
+      liftIO $ drawCd cd 0
+      liftIO $ uncurry drawCd `mapM_` zip (snd <$> chs) [1 ..]
+    return (cd, cds')
+  where
+    drawCd :: Syntax -> Integer -> IO ()
+    drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
+
+changes :: [PropertyChange]
+changes = legalChanges ++ illegalChanges
+
+noChange :: PropertyChange
+noChange = PropertyChange "none" id id
+
+infixl 9 .&.
+(.&.) :: PropertyChange -> PropertyChange -> PropertyChange
+PropertyChange n1 o1 v1 .&. PropertyChange n2 o2 v2 = PropertyChange
+  (n1 ++ " + " ++ n2)
+  (o1 . o2)
+  (v1 . v2)
+
+legalChanges :: [PropertyChange]
+legalChanges = [
+    noChange,
+    PropertyChange "add one self relationship" addSelfRelationships id,
+    PropertyChange "force double relationships" withDoubleRelationships id,
+    PropertyChange "force reverse relationships" withReverseRelationships id
+--    PropertyChange "force multiple inheritances" withMultipleInheritances id
+  ]
+  where
+    addSelfRelationships :: RelationshipProperties -> RelationshipProperties
+    addSelfRelationships config@RelationshipProperties {..}
+      = config { selfRelationships = selfRelationships + 1 }
+    withDoubleRelationships :: RelationshipProperties -> RelationshipProperties
+    withDoubleRelationships config
+      = config { hasDoubleRelationships = True }
+    withReverseRelationships :: RelationshipProperties -> RelationshipProperties
+    withReverseRelationships config
+      = config { hasReverseRelationships = True }
+    withMultipleInheritances :: RelationshipProperties -> RelationshipProperties
+    withMultipleInheritances config
+      = config { hasMultipleInheritances = True }
+
+illegalChanges :: [PropertyChange]
+illegalChanges = ($ const False) <$> [
+    PropertyChange "add wrong association" addWrongAssocs,
+    PropertyChange "add wrong composition" addWrongCompositions,
+    PropertyChange "force inheritance cycles" withInheritanceCycles,
+    PropertyChange "force composition cycles" withCompositionCycles
+  ]
+  where
+    addWrongAssocs :: RelationshipProperties -> RelationshipProperties
+    addWrongAssocs config@RelationshipProperties {..}
+      = config { wrongAssocs = wrongAssocs + 1 }
+    addWrongCompositions :: RelationshipProperties -> RelationshipProperties
+    addWrongCompositions config@RelationshipProperties {..}
+      = config { wrongCompositions = wrongCompositions + 1 }
+    withInheritanceCycles :: RelationshipProperties -> RelationshipProperties
+    withInheritanceCycles config
+      = config { hasInheritanceCycles = True }
+    withCompositionCycles :: RelationshipProperties -> RelationshipProperties
+    withCompositionCycles config
+      = config { hasCompositionCycles = True }
 
 getDifferentNamesTask
   :: RandomGen g
