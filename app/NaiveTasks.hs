@@ -10,8 +10,16 @@ import Edges                            (fromEdges, renameEdges)
 import Generate                         (generate)
 import Output                           (drawCdFromSyntax)
 import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
-import Types
-  (ClassConfig (..), RelationshipProperties (..), Syntax, defaultProperties)
+import Types (
+  AssociationType (..),
+  ClassConfig (..),
+  Change (..),
+  Connection (..),
+  DiagramEdge,
+  RelationshipProperties (..),
+  Syntax,
+  defaultProperties,
+  )
 import Auxiliary.Util
 
 import Control.Monad                    (when)
@@ -28,6 +36,29 @@ import System.Random.Shuffle            (shuffleM)
 debug :: Bool
 debug = False
 
+phraseChange :: Change DiagramEdge -> String
+phraseChange c = case (add c, remove c) of
+  (Nothing, Nothing) -> "change nothing"
+  (Just e,  Nothing) -> "add " ++ phraseRelation e
+  (Nothing, Just e ) -> "remove " ++ phraseRelation e
+  (Just e1, Just e2) -> "replace " ++ phraseRelation e1 ++ " by " ++ phraseRelation e2
+
+phraseRelation :: DiagramEdge -> String
+phraseRelation (from, to, Inheritance) =
+  "an inheritance where " ++ from ++ " inherits from " ++ to
+phraseRelation (from, to, Assoc t _ l h _) = (++ participations) $ case t of
+  Association -> "an association from " ++ from ++ " to " ++ to
+  Aggregation -> "an aggregation for " ++ from ++ " of " ++ to
+  Composition -> "an composition for " ++ from ++ " of " ++ to
+  where
+    participations = " where " ++ participates l from ++ " and " ++ participates h to
+    participates r c = c ++ " participates " ++ phraseLimit r ++ " times"
+
+phraseLimit :: (Int, Maybe Int) -> [Char]
+phraseLimit (-1, Just n) = "*.." ++ show n
+phraseLimit (m, Nothing) = show m ++ "..*"
+phraseLimit (m, Just n)  = show m ++ ".." ++ show n
+
 data PropertyChange = PropertyChange {
     changeName     :: String,
     operation      :: RelationshipProperties -> RelationshipProperties,
@@ -43,7 +74,7 @@ isValid p = validityChange p True
 repairIncorrect
   :: RandomGen g
   => ClassConfig
-  -> RandT g IO (Syntax, [(Bool, Syntax)])
+  -> RandT g IO (Syntax, [(Bool, Change DiagramEdge)])
 repairIncorrect config = do
   e0:_    <- shuffleM illegalChanges
   l0:l1:_ <- shuffleM legalChanges
@@ -52,20 +83,20 @@ repairIncorrect config = do
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
   let code = Changes.transformChanges config (toProperty e0) (Just config)
         $ toProperty <$> cs
-  when debug $ do
-    liftIO $ putStrLn $ changeName e0
-    liftIO $ print $ changeName <$> cs
-    liftIO $ writeFile "repair.als" code
+  when debug $ liftIO $ do
+    putStrLn $ changeName e0
+    print $ changeName <$> cs
+    writeFile "repair.als" code
   instas <- liftIO $ Alloy.getInstances 200 code
   if null instas then liftIO (putStr ".") >> repairIncorrect config
     else do
     rinsta       <- head <$> shuffleM instas
     (cd, chs, _) <- applyChanges rinsta
-    let cds' = zip (isValid <$> cs) (snd <$> chs)
-    when debug $ do
-      liftIO $ drawCd cd 0
-      liftIO $ uncurry drawCd `mapM_` zip (snd <$> chs) [1 ..]
-    return (cd, cds')
+    let chs' = zip (isValid <$> cs) (fst <$> chs)
+    when debug $ liftIO $ do
+      drawCd cd 0
+      uncurry drawCd `mapM_` zip (snd <$> chs) [1 ..]
+    return (cd, chs')
   where
     drawCd :: Syntax -> Integer -> IO ()
     drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf

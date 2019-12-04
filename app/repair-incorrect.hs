@@ -1,6 +1,6 @@
 module Main where
 
-import NaiveTasks                       (repairIncorrect)
+import NaiveTasks                       (phraseChange, repairIncorrect)
 import Output                           (drawCdFromSyntax)
 import Types                            (ClassConfig (..))
 
@@ -23,6 +23,7 @@ main = do
     [g'] -> return $ read g'
     _    -> error "Too many arguments"
   putStrLn $ "Seed: " ++ show (show g)
-  (cd, cds) <- evalRandT (repairIncorrect config) g
+  (cd, chs) <- evalRandT (repairIncorrect config) g
   drawCdFromSyntax True True Nothing cd "cd" Pdf
-  print $ fst <$> cds
+  print $ fst <$> chs
+  print $ phraseChange . snd <$> chs
