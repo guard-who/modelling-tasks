@@ -187,7 +187,7 @@ allDecreaseLimitsRange c = allLimitsWith c ((<) `on` limitSize)
 allShiftDownLimitsRange
   :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 allShiftDownLimitsRange c =
-  allLimitsWith c (\x y -> limitSize x == limitSize y && fst x > fst y)
+  allLimitsWith c (\x y -> limitSize x == limitSize y && fst x < fst y)
 
 allShiftUpLimitsRange
   :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
