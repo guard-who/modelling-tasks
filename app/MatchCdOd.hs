@@ -65,23 +65,25 @@ getRandomTask'
 getRandomTask' config maxObjects searchSpace maxInstances = do
   let code = Changes.transform config defaultProperties
   instas <- liftIO $ Alloy.getInstances 6000 code
-  liftIO $ print $ length instas
+  when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
-  liftIO $ print $ head rinstas
   ods <- getODsFor maxObjects maxInstances rinstas
   maybe (getRandomTask' config maxObjects searchSpace maxInstances) return ods
 
 getODsFor :: RandomGen g => Int -> Int -> [String] -> RandT g IO (Maybe (Map Int Syntax, [([Int], String)]))
 getODsFor _          _            []       = return Nothing
 getODsFor maxObjects maxInstances (cd:cds) = do
-  (cd1, cd2, cd3, numClasses) <- applyChanges cd
+  (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
   instas <- liftIO $ getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
     Nothing      -> getODsFor maxObjects maxInstances cds
     Just rinstas -> return $ Just (M.fromList [(1, cd1), (2, cd2)], rinstas)
 
-applyChanges :: RandomGen g => String -> RandT g IO (Syntax, Syntax, Syntax, Int)
+applyChanges
+  :: RandomGen g
+  => String
+  -> RandT g IO (Syntax, [(Change DiagramEdge, Syntax)], Int)
 applyChanges insta = do
   (names, edges0, changes) <- either error return $ fromInstance insta
   let (cs, es) = names
@@ -89,8 +91,10 @@ applyChanges insta = do
   es' <- shuffleM es
   let bme = BM.fromList $ zip es' $ (:[]) <$> ['z', 'y' ..]
       bmc = BM.fromList $ zip cs' $ (:[]) <$> ['A' ..]
-  let [cd1, cd2, cd3] = getSyntax bmc bme edges0 <$> changes
-  return (cd1, cd2, cd3, BM.size bmc)
+      cd  = getSyntax bmc bme edges0 $ Change Nothing Nothing
+      cds = getSyntax bmc bme edges0 <$> changes
+  let changes' = fmap (head . renameClasses bmc . renameEdges bme . (:[])) <$> changes
+  return (cd, zip changes' cds, BM.size bmc)
   where
     getSyntax bmc bme es c =
       fromEdges (BM.keysR bmc) $ renameClasses bmc $ renameEdges bme $ performChange c es

@@ -15,7 +15,7 @@ type DiagramEdge = (String, String, Connection)
 data Change a = Change {
     add    :: Maybe a,
     remove :: Maybe a
-  } deriving Show
+  } deriving Functor
 
 data ClassConfig = ClassConfig {
     classes      :: (Int, Int),

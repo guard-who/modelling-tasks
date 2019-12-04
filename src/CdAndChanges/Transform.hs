@@ -10,15 +10,21 @@ import Data.FileEmbed                   (embedStringFile)
 import Data.Maybe                       (fromMaybe)
 import Data.String.Interpolate          (i)
 
-transform :: ClassConfig -> RelationshipProperties -> String
-transform config properties=
+transformWith
+  :: ClassConfig
+  -> RelationshipProperties
+  -> (Int, [String], String)
+  -> String
+transformWith config properties (cs, predicates, part) =
   removeLine $(embedStringFile "cd/assoclimits.als")
   ++ removeLines 3 $(embedStringFile "cd/generate.als")
   ++ classDiagram config properties
   ++ part
-  ++ createRunCommand config predicates changes
-  where
-    (changes, predicates, part) = matchCdOdChanges config
+  ++ createRunCommand config predicates cs
+
+transform :: ClassConfig -> RelationshipProperties -> String
+transform config props =
+  transformWith config props $ matchCdOdChanges config
 
 maxRels :: ClassConfig -> Int
 maxRels config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2) $ sumOf4
