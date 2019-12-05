@@ -200,7 +200,3 @@ pred changeOfFirstCD [
         hasMarkedEdges]
   }
 }
-
-  }
-}
-
