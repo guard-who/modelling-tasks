@@ -41,7 +41,7 @@ phraseChange c = case (add c, remove c) of
   (Nothing, Nothing) -> "change nothing"
   (Just e,  Nothing) -> "add " ++ phraseRelation e
   (Nothing, Just e ) -> "remove " ++ phraseRelation e
-  (Just e1, Just e2) -> "replace " ++ phraseRelation e1 ++ " by " ++ phraseRelation e2
+  (Just e1, Just e2) -> "replace " ++ phraseRelation e2 ++ " by " ++ phraseRelation e1
 
 phraseRelation :: DiagramEdge -> String
 phraseRelation (from, to, Inheritance) =
@@ -54,7 +54,7 @@ phraseRelation (from, to, Assoc t _ l h _) = (++ participations) $ case t of
     participations = " where " ++ participates l from ++ " and " ++ participates h to
     participates r c = c ++ " participates " ++ phraseLimit r ++ " times"
 
-phraseLimit :: (Int, Maybe Int) -> [Char]
+phraseLimit :: (Int, Maybe Int) -> String
 phraseLimit (-1, Just n) = "*.." ++ show n
 phraseLimit (m, Nothing) = show m ++ "..*"
 phraseLimit (m, Just n)  = show m ++ ".." ++ show n
