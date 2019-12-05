@@ -1,33 +1,35 @@
 {-# LANGUAGE RecordWildCards #-}
 module NaiveTasks where
 
-import qualified CdAndChanges.Transform           as Changes (transformChanges)
 import qualified Alloy                            (getInstances)
+import qualified CdAndChanges.Transform           as Changes (transformChanges)
 
 import qualified Data.Bimap                       as BM (fromList)
+import qualified Data.Map                         as M (empty, insert)
 
-import Edges                            (fromEdges, renameEdges)
-import Generate                         (generate)
-import Output                           (drawCdFromSyntax)
+import Auxiliary.Util
 import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
+import Edges                            (fromEdges, renameEdges, toEdges)
+import Generate                         (generate)
+import Output                           (drawCdFromSyntax, drawOdFromInstance)
 import Types (
+  Association,
   AssociationType (..),
-  ClassConfig (..),
   Change (..),
+  ClassConfig (..),
   Connection (..),
   DiagramEdge,
   RelationshipProperties (..),
   Syntax,
   defaultProperties,
   )
-import Auxiliary.Util
 
 import Control.Monad                    (when)
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Random             (MonadRandom, RandomGen, RandT)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
-import Data.GraphViz                    (GraphvizOutput (Pdf))
+import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
 import Data.List                        (permutations)
 import Data.Maybe                       (listToMaybe)
 import MatchCdOd                        (applyChanges)
@@ -87,19 +89,43 @@ repairIncorrect config = do
     putStrLn $ changeName e0
     print $ changeName <$> cs
     writeFile "repair.als" code
-  instas <- liftIO $ Alloy.getInstances 200 code
-  if null instas then liftIO (putStr ".") >> repairIncorrect config
-    else do
-    rinsta       <- head <$> shuffleM instas
-    (cd, chs, _) <- applyChanges rinsta
-    let chs' = zip (isValid <$> cs) (fst <$> chs)
-    when debug $ liftIO $ do
-      drawCd cd 0
-      uncurry drawCd `mapM_` zip (snd <$> chs) [1 ..]
-    return (cd, chs')
+  instas  <- liftIO $ Alloy.getInstances 200 code
+  rinstas <- shuffleM instas
+  getInstanceWithODs (isValid <$> cs) rinstas
   where
     drawCd :: Syntax -> Integer -> IO ()
     drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
+    drawOd :: Syntax -> String -> Integer -> IO ()
+    drawOd cd od x =
+      let backwards   = [n | (_, _, Assoc t n _ _ _) <- toEdges cd
+                           , t /= Association]
+          forwards    = [n | (_, _, Assoc t n _ _ _) <- toEdges cd
+                           , t == Association]
+          navigations = foldr (`M.insert` Back)
+                              (foldr (`M.insert` Forward) M.empty forwards)
+                              backwards
+      in drawOdFromInstance navigations True od ("od-" ++ show x) Pdf
+    getInstanceWithODs _  [] = do
+      when debug $ liftIO (putStr ".")
+      repairIncorrect config
+    getInstanceWithODs vs (rinsta:rinstas) = do
+      (cd, chs, _) <- applyChanges rinsta
+      let cds  = zip vs (snd <$> chs)
+          chs' = zip vs (fst <$> chs)
+      ods <- (liftIO . getOD . snd) `mapM` filter fst cds
+      if and $ not . null <$> ods
+        then do
+        when debug $ liftIO $ do
+          drawCd cd 0
+          uncurry drawCd `mapM_` zip (snd <$> chs) [1 ..]
+          uncurry (drawOd cd . head) `mapM_` zip ods [1 ..]
+        return (cd, chs')
+        else do
+        when debug $ liftIO (putStr ":")
+        getInstanceWithODs vs rinstas
+    getOD cd = do
+      let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) "" ""
+      Alloy.getInstances 1 (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
 changes :: [PropertyChange]
 changes = legalChanges ++ illegalChanges
@@ -190,7 +216,6 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
           cd1 = fromEdges names $ renameEdges bm edges
       return (cd1, od1, bm)
   where
-    toOldSyntax = first (second listToMaybe <$>)
     extractFourParts (n, cd) = case transform (toOldSyntax cd) (show n) "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
@@ -199,6 +224,9 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
     continueWithHead []    _ =
       getDifferentNamesTask config maxObjects searchSpace maxInstances
     continueWithHead (x:_) f = f x
+
+toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
+toOldSyntax = first (second listToMaybe <$>)
 
 withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
 withMinimalLabels n config
