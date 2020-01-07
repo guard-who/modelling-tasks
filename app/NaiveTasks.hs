@@ -54,12 +54,15 @@ phraseRelation (from, to, Assoc t _ l h _) = (++ participations) $ case t of
   Composition -> "an composition for " ++ from ++ " of " ++ to
   where
     participations = " where " ++ participates l from ++ " and " ++ participates h to
-    participates r c = c ++ " participates " ++ phraseLimit r ++ " times"
+    participates r c = c ++ " participates " ++ phraseLimit r
 
 phraseLimit :: (Int, Maybe Int) -> String
-phraseLimit (-1, Just n) = "*.." ++ show n
-phraseLimit (m, Nothing) = show m ++ "..*"
-phraseLimit (m, Just n)  = show m ++ ".." ++ show n
+phraseLimit (0, Just 0)  = "not at all"
+phraseLimit (1, Just 1)  = "exactly once"
+phraseLimit (2, Just 2)  = "exactly twice"
+phraseLimit (-1, Just n) = "*.." ++ show n ++ " times"
+phraseLimit (m, Nothing) = show m ++ "..*" ++ " times"
+phraseLimit (m, Just n)  = show m ++ ".." ++ show n ++ " times"
 
 data PropertyChange = PropertyChange {
     changeName     :: String,
