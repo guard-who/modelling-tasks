@@ -11,4 +11,5 @@ cabal install file-embed
 cabal install split
 cabal install bimap
 cabal install string-interpolate
+cabal install call-alloy
 ```
