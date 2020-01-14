@@ -28,7 +28,7 @@ main = do
     [g'] -> return $ read g'
     _    -> error "Too many arguments"
   putStrLn $ "Seed: " ++ show (show g)
-  (cd, od, bm) <- evalRandT (getDifferentNamesTask config maxObjects 10 (-1)) g
+  (cd, od, bm) <- evalRandT (getDifferentNamesTask config maxObjects 10 Nothing) g
   let backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
                        , t /= Association
                        , n <- BM.lookupR n' bm]
@@ -39,7 +39,7 @@ main = do
                           (foldr (`insert` Forward) empty forwards)
                           backwards
   drawCdFromSyntax True True Nothing cd (output ++ "-cd") Pdf
-  drawOdFromInstance navigations True od (output ++ "-od") Pdf
+  drawOdFromInstance od navigations True (output ++ "-od") Pdf
   print bm
   where
     output = "output"

@@ -1,23 +1,28 @@
-module Output (drawCdFromSyntax, drawOdFromInstance) where
+module Output (
+  drawCdFromSyntax,
+  drawOdFromInstance,
+  drawOdFromRawInstance,
+  ) where
 
 import qualified Data.Map as M (lookup)
+import qualified Data.Set as S (toList)
 
 import Auxiliary.Util
 import Types (AssociationType(..), Connection(..), Syntax)
 import Edges
 
-import Data.List
-import Data.List.Split
-import Data.Map                          (Map)
-import Data.Maybe
-import Data.Graph.Inductive
+import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
-
-import System.Random.Shuffle (shuffleM)
-
-import System.FilePath (dropExtension)
-import System.IO.Unsafe (unsafePerformIO)
+import Data.List                        (elemIndex, isPrefixOf, stripPrefix)
+import Data.List.Split                  (splitOn)
+import Data.Map                         (Map)
+import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
+import Language.Alloy.Call
+  (AlloyInstance, getSingle, getTriple, lookupSig, objectName, scoped)
+import System.FilePath                  (dropExtension)
+import System.IO.Unsafe                 (unsafePerformIO)
+import System.Random.Shuffle            (shuffleM)
 
 connectionArrow :: Bool -> Bool -> Maybe Attribute -> Connection -> [Attribute]
 connectionArrow _ _ _ Inheritance =
@@ -82,12 +87,30 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   putStrLn $ "Output written to " ++ output
 
-drawOdFromInstance :: Map String DirType -> Bool -> String -> FilePath -> GraphvizOutput -> IO ()
-drawOdFromInstance navigations printNames input file format = do
+drawOdFromInstance :: AlloyInstance -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromInstance i =
+  let g = either error id $ do
+        os    <- lookupSig (scoped "this" "Obj") i
+        objs  <- fmap objectName . S.toList <$> getSingle "" os
+        links <- fmap (linkOf objs) . S.toList <$> getTriple "get" os
+        return (objs, links)
+  in uncurry drawOdFromNodesAndEdges g
+  where
+    nameOf   = takeWhile (/= '$') . objectName
+    linkOf objs (x, l, y) =
+      let indexOf z = fromJust $ elemIndex (objectName z) objs
+      in (indexOf x, indexOf y, nameOf l)
+
+drawOdFromRawInstance :: String -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromRawInstance input =
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
-  let theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
-  let theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
+      theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
+      theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
+  in drawOdFromNodesAndEdges theNodes theEdges
+
+drawOdFromNodesAndEdges :: [String] -> [(Int, Int, String)] -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromNodesAndEdges theNodes theEdges navigations printNames file format = do
   let numberedNodes = zip [0..] theNodes
   let graph = mkGraph numberedNodes theEdges :: Gr String String
   objectNames <-

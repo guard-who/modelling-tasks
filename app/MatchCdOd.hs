@@ -2,10 +2,10 @@
 module MatchCdOd where
 
 import qualified CdAndChanges.Transform           as Changes (transform)
-import qualified Alloy                            (getInstances)
 
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M (fromList, lookup)
+import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
 import CdAndChanges.Instance            (fromInstance)
@@ -25,17 +25,18 @@ import Output                           (drawCdFromSyntax)
 import Types
   (ClassConfig (..), Change (..), Connection (..), Syntax, defaultProperties)
 
-import Control.Arrow          (first, second)
-import Control.Monad          (when)
-import Control.Monad.Fail     (MonadFail)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Random   (MonadRandom, RandomGen, RandT)
-import Data.GraphViz          (GraphvizOutput (Pdf))
-import Data.List              (delete)
-import Data.Map               (Map)
-import Data.Maybe             (fromJust, isJust, listToMaybe)
-import Data.Set               (singleton)
-import System.Random.Shuffle  (shuffleM)
+import Control.Arrow                    (first, second)
+import Control.Monad                    (when)
+import Control.Monad.Fail               (MonadFail)
+import Control.Monad.IO.Class           (liftIO)
+import Control.Monad.Random             (MonadRandom, RandomGen, RandT)
+import Data.GraphViz                    (GraphvizOutput (Pdf))
+import Data.List                        (delete)
+import Data.Map                         (Map)
+import Data.Maybe                       (fromJust, isJust, listToMaybe)
+import Data.Set                         (singleton)
+import Language.Alloy.Call              (AlloyInstance)
+import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
 debug = False
@@ -45,8 +46,8 @@ getRandomTask
   => ClassConfig
   -> Int
   -> Int
-  -> Int
-  -> RandT g IO (Map Int Syntax, [([Int], String)])
+  -> Maybe Integer
+  -> RandT g IO (Map Int Syntax, [([Int], AlloyInstance)])
 getRandomTask config maxObjects searchSpace maxInstances = do
   (cd1, cd2, cd3, numClasses) <- getRandomCDs config searchSpace
   instas <- liftIO $ getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses
@@ -60,17 +61,22 @@ getRandomTask'
   => ClassConfig
   -> Int
   -> Int
-  -> Int
-  -> RandT g IO (Map Int Syntax, [([Int], String)])
+  -> Maybe Integer
+  -> RandT g IO (Map Int Syntax, [([Int], AlloyInstance)])
 getRandomTask' config maxObjects searchSpace maxInstances = do
   let code = Changes.transform config defaultProperties
-  instas <- liftIO $ Alloy.getInstances 6000 code
+  instas <- liftIO $ Alloy.getInstances (Just 6000) code
   when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
   ods <- getODsFor maxObjects maxInstances rinstas
   maybe (getRandomTask' config maxObjects searchSpace maxInstances) return ods
 
-getODsFor :: RandomGen g => Int -> Int -> [String] -> RandT g IO (Maybe (Map Int Syntax, [([Int], String)]))
+getODsFor
+  :: RandomGen g
+  => Int
+  -> Maybe Integer
+  -> [AlloyInstance]
+  -> RandT g IO (Maybe (Map Int Syntax, [([Int], AlloyInstance)]))
 getODsFor _          _            []       = return Nothing
 getODsFor maxObjects maxInstances (cd:cds) = do
   (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
@@ -82,7 +88,7 @@ getODsFor maxObjects maxInstances (cd:cds) = do
 
 applyChanges
   :: RandomGen g
-  => String
+  => AlloyInstance
   -> RandT g IO (Syntax, [(Change DiagramEdge, Syntax)], Int)
 applyChanges insta = do
   (names, edges0, changes) <- either error return $ fromInstance insta
@@ -132,12 +138,12 @@ getRandomCDs config searchSpace = do
 
 getODInstances
   :: Int
-  -> Int
+  -> Maybe Integer
   -> Syntax
   -> Syntax
   -> Syntax
   -> Int
-  -> IO (Map [Int] [String])
+  -> IO (Map [Int] [AlloyInstance])
 getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses = do
   -- TODO remove `toOldSyntax`
   let parts1 = case transform (toOldSyntax cd1) "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)

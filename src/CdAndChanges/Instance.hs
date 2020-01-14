@@ -1,41 +1,22 @@
 {-# LANGUAGE TupleSections #-}
 module CdAndChanges.Instance where
 
-import qualified Data.Map                         as M (fromList, lookup)
-import qualified Data.Set                         as S (toList)
+import qualified Data.Map                         as M (lookup)
+import qualified Data.Set                         as S (findMin, null, size, toList)
 
-import Parser (
-  Entry (..),
-  Object (..),
-  Relation,
-  Signature (..),
-  alloyInstance,
-  combineEntries,
-  double,
-  objectName,
-  single,
-  )
 import Types
   (AssociationType (..), Change (..), Connection (..), DiagramEdge)
 
-import Data.Bifunctor                   (first)
+import Data.List                        (stripPrefix)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
 import Data.Set                         (Set)
-import Text.Parsec                      (parse)
-
-scoped :: String -> String -> Signature
-scoped = Signature . Just
-
-relToMap :: Relation Set -> Either String (Map Object Object)
-relToMap = fmap (M.fromList . S.toList) . double
+import Language.Alloy.Call
 
 fromInstance
-  :: String
+  :: AlloyInstance
   -> Either String (([String], [String]), [DiagramEdge], [Change DiagramEdge])
-fromInstance output = do
-  insta <-
-    first show $ combineEntries <$> parse alloyInstance "Alloy" output
+fromInstance insta = do
   es <- instanceToEdges insta
   cs <- instanceToChanges insta
   ns <- instanceToNames insta
@@ -50,43 +31,50 @@ fromInstance output = do
     lookupM (Just k) ms = [v | let v = lookup k ms, isJust v]
 
 instanceToNames
-  :: Map Signature (Entry Map Set) -> Either String ([String], [String])
+  :: AlloyInstance -> Either String ([String], [String])
 instanceToNames insta = do
-  c' <- lookupEntry (scoped "this" "Class") insta
-  cs <- fmap objectName . S.toList <$> lookupRel single "" c'
-  a' <- lookupEntry (scoped "this" "Assoc") insta
-  as <- fmap objectName . S.toList <$> lookupRel single "" a'
+  c' <- lookupSig (scoped "this" "Class") insta
+  cs <- fmap objectName . S.toList <$> getSingle "" c'
+  a' <- lookupSig (scoped "this" "Assoc") insta
+  as <- fmap objectName . S.toList <$> getSingle "" a'
   return (cs, as)
 
 instanceToChanges
-  :: Map Signature (Entry Map Set)
+  :: AlloyInstance
   -> Either String [Change Object]
 instanceToChanges insta = do
-  c'      <- lookupEntry (scoped "this" "Change") insta
-  cs      <- S.toList <$> lookupRel single "" c'
-  cAdd    <- lookupRel relToMap "add" c'
-  cRemove <- lookupRel relToMap "remove" c'
+  c'      <- lookupSig (scoped "this" "Change") insta
+  cs      <- S.toList <$> getSingle "" c'
+  cAdd    <- getRelation "add" c'
+  cRemove <- getRelation "remove" c'
   return $ change cAdd cRemove <$> cs
   where
     change cAdd cRemove c =
       Change (M.lookup c cAdd) (M.lookup c cRemove)
 
+getRelation n i = getDouble n i >>= relToMap id >>= mapM single
+  where
+    single x
+      | S.size x == 1 = return $ S.findMin x
+      | otherwise     = fail $ "Relation " ++ n ++ " matches at least one"
+        ++ "member of its domain to multiple values of the codomain."
+
 instanceToEdges ::
-  Map Signature (Entry Map Set)
+  AlloyInstance
   -> Either String [(Object, DiagramEdge)]
 instanceToEdges insta = do
-  r'         <- lookupEntry (scoped "this" "Relationship") insta
-  rFrom      <- lookupRel relToMap "from" r'
-  rTo        <- lookupRel relToMap "to" r'
-  a'         <- lookupEntry (scoped "this" "Assoc") insta
-  aFromLower <- lookupRel relToMap "fromLower" a'
-  aFromUpper <- lookupRel relToMap "fromUpper" a'
-  aToLower   <- lookupRel relToMap "toLower" a'
-  aToUpper   <- lookupRel relToMap "toUpper" a'
+  r'         <- lookupSig (scoped "this" "Relationship") insta
+  rFrom      <- getRelation "from" r'
+  rTo        <- getRelation "to" r'
+  a'         <- lookupSig (scoped "this" "Assoc") insta
+  aFromLower <- getRelation "fromLower" a'
+  aFromUpper <- getRelation "fromUpper" a'
+  aToLower   <- getRelation "toLower" a'
+  aToUpper   <- getRelation "toUpper" a'
   instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper
 
 instanceToEdges'
-  :: Map Signature (Entry Map Set)
+  :: AlloyInstance
   -> Map Object Object
   -> Map Object Object
   -> Map Object Object
@@ -95,8 +83,8 @@ instanceToEdges'
   -> Map Object Object
   -> Either String [(Object, DiagramEdge)]
 instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
-  inh' <- lookupEntry (scoped "this" "Inheritance") insta
-  inh  <- S.toList <$> lookupRel single "" inh'
+  inh' <- lookupSig (scoped "this" "Inheritance") insta
+  inh  <- S.toList <$> getSingle "" inh'
   inhs <- (\i -> (i,) <$> rel False i Inheritance) `mapM` inh
   coms <- lookupAssocs True Composition "Composition"
   asss <- lookupAssocs False Association "Association"
@@ -108,11 +96,11 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
       Just v  -> Right $ objectName v
     lookupLimit k m = case M.lookup k m of
       Nothing -> Left "Missing limit"
-      Just (Object n _) -> case n of
-        "Star" -> Right Nothing
-        "Zero" -> Right $ Just 0
-        "One"  -> Right $ Just 1
-        "Two"  -> Right $ Just 2
+      Just o -> case objectName o of
+        n | Just _ <- stripPrefix "Star" n -> Right Nothing
+          | Just _ <- stripPrefix "Zero" n -> Right $ Just 0
+          | Just _ <- stripPrefix "One"  n -> Right $ Just 1
+          | Just _ <- stripPrefix "Two"  n -> Right $ Just 2
         l      -> Left $ "Unknown limit " ++ l
       Just o -> Left $ "Unknown object name " ++ objectName o
     rel flipRel r c = do
@@ -132,22 +120,6 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
       fmap (a,) $ rel flipRel a
         $ Assoc t (objectName a) l h False
     lookupAssocs flipRel t n = do
-      a' <- lookupEntry (scoped "this" n) insta
-      a  <- S.toList <$> lookupRel single "" a'
+      a' <- lookupSig (scoped "this" n) insta
+      a  <- S.toList <$> getSingle "" a'
       assoc flipRel t `mapM` a
-
-lookupRel
-  :: (Relation a -> Either String b)
-  -> String
-  -> Entry Map a
-  -> Either String b
-lookupRel kind rel e = case M.lookup rel (relation e) of
-  Nothing -> Left $ "relation " ++ rel
-    ++ " is missing in your Alloy instance"
-  Just r -> kind r
-
-lookupEntry :: Signature -> Map Signature e -> Either String e
-lookupEntry sig insta = case M.lookup sig insta of
-  Nothing -> Left $ maybe "" (++ "/") (scope sig) ++ sigName sig
-    ++ " is missing in your Alloy instance"
-  Just e  -> Right e

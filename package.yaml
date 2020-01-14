@@ -12,14 +12,13 @@ dependencies:
   - base
   - array
   - bimap
+  - call-alloy >= 0.2.0.3 && < 0.3
   - containers
   - fgl
   - file-embed
   - filepath
   - graphviz
   - MonadRandom
-  - parsec
-  - process
   - random
   - random-shuffle
   - split
@@ -28,7 +27,6 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-    - Alloy
     - CD2Alloy.Transform
     - CdAndChanges.Instance
     - CdAndChanges.Transform
@@ -36,7 +34,6 @@ library:
     - Generate
     - Mutation
     - Output
-    - Parser
     - Types
     - Auxiliary.Util
 executables:

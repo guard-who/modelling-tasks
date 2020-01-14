@@ -2,4 +2,5 @@ resolver: nightly-2019-02-20
 packages:
 - .
 extra-deps:
-- string-interpolate-0.1.0.1
+- call-alloy-0.2.0.3
+- string-interpolate-0.2.0.0@sha256:a96f7e744f49d795887236319f74b2797fe2cdaadf2d5c4b06845d7a6ba4dbff,2527

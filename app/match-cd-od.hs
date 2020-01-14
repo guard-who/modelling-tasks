@@ -35,13 +35,13 @@ reproduceTask g = do
           inheritances = (1, Just 2)
         }
   let maxObjects = 4
-  (cds, instas) <- evalRandT (getRandomTask config maxObjects 10 (-1)) g
+  (cds, instas) <- evalRandT (getRandomTask config maxObjects 10 Nothing) g
   (\i cd -> drawCdFromSyntax False True Nothing cd (output ++ '-' : show i) Pdf) `M.traverseWithKey` cds
   uncurry drawOd `mapM_` concat (zip [1 :: Int ..] <$> groupBy ((==) `on` fst) (sortBy (compare `on` fst) instas))
   where
     output = "output"
     drawOd x (y, insta) =
-      drawOdFromInstance empty True insta (output ++ '-' : toDescription y 2 ++ '-' : show x) Pdf
+      drawOdFromInstance insta empty True (output ++ '-' : toDescription y 2 ++ '-' : show x) Pdf
     toDescription :: [Int] -> Int -> String
     toDescription x n =
       intercalate "and" (show <$> x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)

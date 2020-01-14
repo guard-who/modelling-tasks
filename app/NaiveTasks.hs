@@ -1,11 +1,11 @@
 {-# LANGUAGE RecordWildCards #-}
 module NaiveTasks where
 
-import qualified Alloy                            (getInstances)
 import qualified CdAndChanges.Transform           as Changes (transformChanges)
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (empty, insert)
+import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Auxiliary.Util
 import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
@@ -32,6 +32,7 @@ import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
 import Data.List                        (permutations)
 import Data.Maybe                       (listToMaybe)
+import Language.Alloy.Call              (AlloyInstance)
 import MatchCdOd                        (applyChanges)
 import System.Random.Shuffle            (shuffleM)
 
@@ -92,13 +93,13 @@ repairIncorrect config = do
     putStrLn $ changeName e0
     print $ changeName <$> cs
     writeFile "repair.als" code
-  instas  <- liftIO $ Alloy.getInstances 200 code
+  instas  <- liftIO $ Alloy.getInstances (Just 200) code
   rinstas <- shuffleM instas
   getInstanceWithODs (isValid <$> cs) rinstas
   where
     drawCd :: Syntax -> Integer -> IO ()
     drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
-    drawOd :: Syntax -> String -> Integer -> IO ()
+    drawOd :: Syntax -> AlloyInstance -> Integer -> IO ()
     drawOd cd od x =
       let backwards   = [n | (_, _, Assoc t n _ _ _) <- toEdges cd
                            , t /= Association]
@@ -107,7 +108,7 @@ repairIncorrect config = do
           navigations = foldr (`M.insert` Back)
                               (foldr (`M.insert` Forward) M.empty forwards)
                               backwards
-      in drawOdFromInstance navigations True od ("od-" ++ show x) Pdf
+      in drawOdFromInstance od navigations True ("od-" ++ show x) Pdf
     getInstanceWithODs _  [] = do
       when debug $ liftIO (putStr ".")
       repairIncorrect config
@@ -128,7 +129,7 @@ repairIncorrect config = do
         getInstanceWithODs vs rinstas
     getOD cd = do
       let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) "" ""
-      Alloy.getInstances 1 (p1 ++ p2 ++ p3 ++ p4 ++ p5)
+      Alloy.getInstances (Just 1) (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
 changes :: [PropertyChange]
 changes = legalChanges ++ illegalChanges
@@ -191,8 +192,8 @@ getDifferentNamesTask
   => ClassConfig
   -> Int
   -> Int
-  -> Int
-  -> RandT g IO (Syntax, String, Bimap String String)
+  -> Maybe Integer
+  -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
 getDifferentNamesTask config maxObjects searchSpace maxInstances = do
   configs <- withMinimalLabels 3 config
   continueWithHead configs $ \config' -> do
