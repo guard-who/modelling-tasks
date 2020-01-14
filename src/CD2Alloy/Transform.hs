@@ -55,7 +55,7 @@ createRunCommand command numClasses maxObjects = unlines
   , "// Run commands"
   , "///////////////////////////////////////////////////"
   , ""
-  , "run { " ++ command ++ " } for " ++ show maxObjects ++ " Obj, " ++ show intSize ++ " Int"
+  , "run { " ++ command ++ " } for " ++ show maxObjects ++ " Obj, " ++ show intSize ++ " FName, " ++ show intSize ++ " Int"
   ]
   where
     intSize :: Int

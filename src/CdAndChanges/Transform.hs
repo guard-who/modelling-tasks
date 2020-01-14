@@ -50,6 +50,7 @@ classDiagram config props = [i|
 //////////////////////////////////////////////////
 // Basic CD
 //////////////////////////////////////////////////
+
 pred cd {
   let Assoc' = Assoc - Change.add,
       Association' = Association - Change.add,
