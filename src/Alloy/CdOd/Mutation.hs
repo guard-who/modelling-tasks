@@ -1,4 +1,4 @@
-module Mutation (
+module Alloy.CdOd.Mutation (
   -- * Types
   Mutation (..), Targets, Target (..), Alteration (..),
   -- * Perform mutation operations
@@ -7,8 +7,8 @@ module Mutation (
   nonTargets
   ) where
 
-import Types
-import Edges
+import Alloy.CdOd.Types
+import Alloy.CdOd.Edges
 
 import Data.Function (on)
 import Data.List     ((\\))

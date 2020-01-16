@@ -1,8 +1,8 @@
 module Main where
 
-import NaiveTasks                       (phraseChange, repairIncorrect)
-import Output                           (drawCdFromSyntax)
-import Types                            (ClassConfig (..))
+import Alloy.CdOd.NaiveTasks            (phraseChange, repairIncorrect)
+import Alloy.CdOd.Output                (drawCdFromSyntax)
+import Alloy.CdOd.Types                 (ClassConfig (..))
 
 import Control.Monad.Random             (evalRandT, getStdGen)
 import Data.GraphViz                    (GraphvizOutput (Pdf))

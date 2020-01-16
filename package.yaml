@@ -27,15 +27,15 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-    - CD2Alloy.Transform
-    - CdAndChanges.Instance
-    - CdAndChanges.Transform
-    - Edges
-    - Generate
-    - Mutation
-    - Output
-    - Types
-    - Auxiliary.Util
+    - Alloy.CdOd.Auxiliary.Util
+    - Alloy.CdOd.CD2Alloy.Transform
+    - Alloy.CdOd.CdAndChanges.Instance
+    - Alloy.CdOd.CdAndChanges.Transform
+    - Alloy.CdOd.Edges
+    - Alloy.CdOd.Generate
+    - Alloy.CdOd.Mutation
+    - Alloy.CdOd.Output
+    - Alloy.CdOd.Types
 executables:
   cd2alloy:
     main: cd2alloy.hs
@@ -44,24 +44,24 @@ executables:
       - alloy-cd-od
       - time
     other-modules:
-      - Auxiliary.Lexer
-      - Auxiliary.Parser
+      - Alloy.CdOd.Auxiliary.Lexer
+      - Alloy.CdOd.Auxiliary.Parser
   cd2pic:
     main: cd2pic.hs
     source-dirs: legacy-app
     dependencies:
       - alloy-cd-od
     other-modules:
-      - Auxiliary.Lexer
-      - Auxiliary.Parser
+      - Alloy.CdOd.Auxiliary.Lexer
+      - Alloy.CdOd.Auxiliary.Parser
   different-names:
     main: different-names.hs
     source-dirs: app
     dependencies:
       - alloy-cd-od
     other-modules:
-      - MatchCdOd
-      - NaiveTasks
+      - Alloy.CdOd.MatchCdOd
+      - Alloy.CdOd.NaiveTasks
   instance2pic:
     main: instance2pic.hs
     source-dirs: legacy-app
@@ -75,12 +75,12 @@ executables:
       - bytestring
       - digest
     other-modules:
-      - MatchCdOd
+      - Alloy.CdOd.MatchCdOd
   repair-incorrect:
     main: repair-incorrect.hs
     source-dirs: app
     dependencies:
       - alloy-cd-od
     other-modules:
-      - MatchCdOd
-      - NaiveTasks
+      - Alloy.CdOd.MatchCdOd
+      - Alloy.CdOd.NaiveTasks

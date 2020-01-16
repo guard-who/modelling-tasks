@@ -1,7 +1,7 @@
-module Generate where
+module Alloy.CdOd.Generate where
 
-import Edges
-import Types
+import Alloy.CdOd.Edges
+import Alloy.CdOd.Types
 
 import Control.Arrow                    (second)
 import Control.Monad.Random             (MonadRandom, getRandomR)

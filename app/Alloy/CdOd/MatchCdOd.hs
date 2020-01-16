@@ -1,16 +1,16 @@
 {-# LANGUAGE TupleSections #-}
-module MatchCdOd where
+module Alloy.CdOd.MatchCdOd where
 
-import qualified CdAndChanges.Transform           as Changes (transform)
+import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transform)
 
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M (fromList, lookup)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
-import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
-import CdAndChanges.Instance            (fromInstance)
-import Auxiliary.Util                   (redColor)
-import Edges (
+import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
+import Alloy.CdOd.CdAndChanges.Instance (fromInstance)
+import Alloy.CdOd.Auxiliary.Util        (redColor)
+import Alloy.CdOd.Edges (
   DiagramEdge,
   anyMarkedEdge,
   checkMultiEdge,
@@ -18,11 +18,11 @@ import Edges (
   renameClasses,
   renameEdges,
   )
-import Generate                         (generate)
-import Mutation
+import Alloy.CdOd.Generate              (generate)
+import Alloy.CdOd.Mutation
   (Target (..), getAllMutationResults, nonTargets)
-import Output                           (drawCdFromSyntax)
-import Types
+import Alloy.CdOd.Output                (drawCdFromSyntax)
+import Alloy.CdOd.Types
   (ClassConfig (..), Change (..), Connection (..), Syntax, defaultProperties)
 
 import Control.Arrow                    (first, second)

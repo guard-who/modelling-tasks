@@ -2,10 +2,10 @@ module Main (main) where
 
 import qualified Data.Bimap as BM (lookupR)
 
-import Edges      (toEdges)
-import NaiveTasks (getDifferentNamesTask)
-import Output     (drawCdFromSyntax, drawOdFromInstance)
-import Types      (AssociationType (..), ClassConfig (..), Connection (..))
+import Alloy.CdOd.Edges      (toEdges)
+import Alloy.CdOd.NaiveTasks (getDifferentNamesTask)
+import Alloy.CdOd.Output     (drawCdFromSyntax, drawOdFromInstance)
+import Alloy.CdOd.Types      (AssociationType (..), ClassConfig (..), Connection (..))
 
 import Control.Monad.Random (evalRandT, getStdGen)
 import Data.GraphViz        (DirType (..), GraphvizOutput (Pdf))

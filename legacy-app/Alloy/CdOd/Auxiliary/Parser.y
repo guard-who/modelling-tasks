@@ -1,9 +1,9 @@
 {
 
-module Auxiliary.Parser (parser) where
+module Alloy.CdOd.Auxiliary.Parser (parser) where
 
-import Auxiliary.Lexer (Token(..))
-import Types (AssociationType(..))
+import Alloy.CdOd.Auxiliary.Lexer (Token(..))
+import Alloy.CdOd.Types (AssociationType(..))
 
 }
 

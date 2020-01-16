@@ -1,9 +1,9 @@
 module Main (main) where
 
-import Auxiliary.Util
-import Auxiliary.Lexer (lexer)
-import Auxiliary.Parser (parser)
-import Output
+import Alloy.CdOd.Auxiliary.Util
+import Alloy.CdOd.Auxiliary.Lexer (lexer)
+import Alloy.CdOd.Auxiliary.Parser (parser)
+import Alloy.CdOd.Output
 
 import Control.Arrow (first, second)
 import Data.GraphViz

@@ -1,8 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module CD2Alloy.Transform (createRunCommand, mergeParts, transform) where
+module Alloy.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform) where
 
-import Types (Association, AssociationType(..))
+import Alloy.CdOd.Types (Association, AssociationType(..))
 
 import Data.List
 import Data.FileEmbed

@@ -1,4 +1,4 @@
-module Edges (
+module Alloy.CdOd.Edges (
   -- * Types
   DiagramEdge,
   -- * Transformation
@@ -15,8 +15,8 @@ module Edges (
 
 import qualified Data.Bimap as BM (lookup)
 
-import Types (AssociationType (..), Connection (..), DiagramEdge, Syntax)
-import Auxiliary.Util  (filterFirst)
+import Alloy.CdOd.Types (AssociationType (..), Connection (..), DiagramEdge, Syntax)
+import Alloy.CdOd.Auxiliary.Util  (filterFirst)
 
 import Data.Bimap (Bimap)
 import Data.List  (partition)

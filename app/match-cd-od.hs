@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Output    (drawCdFromSyntax, drawOdFromInstance)
-import Types     (ClassConfig (..))
-import MatchCdOd (getRandomTask)
+import Alloy.CdOd.Output    (drawCdFromSyntax, drawOdFromInstance)
+import Alloy.CdOd.Types     (ClassConfig (..))
+import Alloy.CdOd.MatchCdOd (getRandomTask)
 
 import Control.Monad.Random (StdGen, evalRandT, getStdGen, mkStdGen)
 import Data.ByteString      (ByteString)

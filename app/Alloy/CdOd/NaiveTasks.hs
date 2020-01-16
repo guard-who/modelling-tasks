@@ -1,18 +1,19 @@
 {-# LANGUAGE RecordWildCards #-}
-module NaiveTasks where
+module Alloy.CdOd.NaiveTasks where
 
-import qualified CdAndChanges.Transform           as Changes (transformChanges)
+import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transformChanges)
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (empty, insert)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
-import Auxiliary.Util
-import CD2Alloy.Transform               (createRunCommand, mergeParts, transform)
-import Edges                            (fromEdges, renameEdges, toEdges)
-import Generate                         (generate)
-import Output                           (drawCdFromSyntax, drawOdFromInstance)
-import Types (
+import Alloy.CdOd.Auxiliary.Util
+import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
+import Alloy.CdOd.Edges                 (fromEdges, renameEdges, toEdges)
+import Alloy.CdOd.Generate              (generate)
+import Alloy.CdOd.MatchCdOd             (applyChanges)
+import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
+import Alloy.CdOd.Types (
   Association,
   AssociationType (..),
   Change (..),
@@ -33,7 +34,6 @@ import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
 import Data.List                        (permutations)
 import Data.Maybe                       (listToMaybe)
 import Language.Alloy.Call              (AlloyInstance)
-import MatchCdOd                        (applyChanges)
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool

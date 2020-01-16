@@ -1,10 +1,10 @@
 {-# LANGUAGE TupleSections #-}
-module CdAndChanges.Instance where
+module Alloy.CdOd.CdAndChanges.Instance where
 
 import qualified Data.Map                         as M (lookup)
 import qualified Data.Set                         as S (findMin, null, size, toList)
 
-import Types
+import Alloy.CdOd.Types
   (AssociationType (..), Change (..), Connection (..), DiagramEdge)
 
 import Data.List                        (stripPrefix)

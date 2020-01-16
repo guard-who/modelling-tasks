@@ -1,7 +1,7 @@
 module Main (main) where
 
-import Auxiliary.Util
-import Output
+import Alloy.CdOd.Auxiliary.Util
+import Alloy.CdOd.Output
 
 import Data.GraphViz
 import Data.Map      (empty)

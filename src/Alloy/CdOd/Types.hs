@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-
-module Types where
+module Alloy.CdOd.Types where
 
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
 

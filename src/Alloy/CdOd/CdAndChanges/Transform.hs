@@ -1,9 +1,9 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
-module CdAndChanges.Transform where
+module Alloy.CdOd.CdAndChanges.Transform where
 
-import Types
+import Alloy.CdOd.Types
   (ClassConfig (..), RelationshipProperties (..))
 
 import Data.FileEmbed                   (embedStringFile)

@@ -1,4 +1,4 @@
-module Auxiliary.Util where
+module Alloy.CdOd.Auxiliary.Util where
 
 import Data.Char
 import Data.GraphViz
