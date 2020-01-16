@@ -12,7 +12,7 @@ dependencies:
   - base
   - array
   - bimap
-  - call-alloy >= 0.2.0.3 && < 0.3
+  - call-alloy >= 0.2.0.4 && < 0.3
   - containers
   - fgl
   - file-embed
