@@ -1,8 +1,10 @@
 {-# LANGUAGE TupleSections #-}
-module Alloy.CdOd.CdAndChanges.Instance where
+module Alloy.CdOd.CdAndChanges.Instance (
+  fromInstance,
+  ) where
 
 import qualified Data.Map                         as M (lookup)
-import qualified Data.Set                         as S (findMin, null, size, toList)
+import qualified Data.Set                         as S (findMin, size, toList)
 
 import Alloy.CdOd.Types
   (AssociationType (..), Change (..), Connection (..), DiagramEdge)
@@ -10,7 +12,6 @@ import Alloy.CdOd.Types
 import Data.List                        (stripPrefix)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
-import Data.Set                         (Set)
 import Language.Alloy.Call
 
 fromInstance
@@ -52,6 +53,7 @@ instanceToChanges insta = do
     change cAdd cRemove c =
       Change (M.lookup c cAdd) (M.lookup c cRemove)
 
+getRelation :: String -> AlloySig -> Either String (Map Object Object)
 getRelation n i = getDouble n i >>= relToMap id >>= mapM single
   where
     single x
@@ -102,7 +104,6 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
           | Just _ <- stripPrefix "One"  n -> Right $ Just 1
           | Just _ <- stripPrefix "Two"  n -> Right $ Just 2
         l      -> Left $ "Unknown limit " ++ l
-      Just o -> Left $ "Unknown object name " ++ objectName o
     rel flipRel r c = do
       rFrom' <- lookupObj r rFrom
       rTo'   <- lookupObj r rTo

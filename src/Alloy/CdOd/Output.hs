@@ -4,12 +4,13 @@ module Alloy.CdOd.Output (
   drawOdFromRawInstance,
   ) where
 
-import qualified Data.Map as M (lookup)
-import qualified Data.Set as S (toList)
+import qualified Data.Map               as M (lookup)
+import qualified Data.Set               as S (toList)
 
-import Alloy.CdOd.Auxiliary.Util
-import Alloy.CdOd.Types (AssociationType(..), Connection(..), Syntax)
-import Alloy.CdOd.Edges
+import Alloy.CdOd.Auxiliary.Util        (emptyArr, firstLower, underlinedLabel)
+import Alloy.CdOd.Types
+  (AssociationType(..), Connection(..), Syntax)
+import Alloy.CdOd.Edges                 (shouldBeMarked)
 
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz
@@ -115,11 +116,11 @@ drawOdFromNodesAndEdges theNodes theEdges navigations printNames file format = d
   let graph = mkGraph numberedNodes theEdges :: Gr String String
   objectNames <-
     map (\(i, l) -> (i, let [n,z] = splitOn "$" l in firstLower n ++ (if z == "0" then "" else z) ++ " "))
-    <$> drop (length theNodes `div` 3)
+    . drop (length theNodes `div` 3)
     <$> shuffleM numberedNodes
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
-                                        shape BoxShape, Margin $ DVal $ 0.04, Width 0, Height 0, FontSize 12],
+                                        shape BoxShape, Margin $ DVal 0.04, Width 0, Height 0, FontSize 12],
                    fmtEdge = \(_,_,l) -> arrowHeads l ++ [ArrowSize 0.4, FontSize 12] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)

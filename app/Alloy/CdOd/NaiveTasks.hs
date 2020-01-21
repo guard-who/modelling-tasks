@@ -252,4 +252,3 @@ withMinimalLabels n config
     min' l1 Nothing   = l1
     min' l1 (Just l2) = min l1 l2
     range f low high  = [low + fst (f config) .. min' high (snd $ f config)]
-  

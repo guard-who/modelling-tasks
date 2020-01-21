@@ -13,14 +13,15 @@ module Alloy.CdOd.Edges (
   anyMarkedEdge, shouldBeMarked
   ) where
 
-import qualified Data.Bimap as BM (lookup)
+import qualified Data.Bimap                       as BM (lookup)
 
-import Alloy.CdOd.Types (AssociationType (..), Connection (..), DiagramEdge, Syntax)
-import Alloy.CdOd.Auxiliary.Util  (filterFirst)
+import Alloy.CdOd.Types
+  (AssociationType (..), Connection (..), DiagramEdge, Syntax)
+import Alloy.CdOd.Auxiliary.Util        (filterFirst)
 
-import Data.Bimap (Bimap)
-import Data.List  (partition)
-import Data.Maybe (fromJust)
+import Data.Bimap                       (Bimap)
+import Data.List                        (partition)
+import Data.Maybe                       (fromJust)
 
 toEdges :: Syntax -> [DiagramEdge]
 toEdges (is, as) =
@@ -32,7 +33,8 @@ fromEdges classNames es =
   let isInheritance (_, _, Inheritance) = True
       isInheritance (_, _, _          ) = False
       (ihs, ass) = partition isInheritance es
-      classes' = (\x -> (x, [e | (s, e, Inheritance) <- ihs, s == x])) <$> classNames
+      classes' = (\x -> (x, [e | (s, e, Inheritance) <- ihs, s == x]))
+        <$> classNames
       assocs   = [(t, n, m1, s, e, m2) | (s, e, Assoc t n m1 m2 False) <- ass]
   in (classes', assocs)
 
@@ -133,11 +135,11 @@ anyMarkedEdge (classes, associations) =
 
 shouldBeMarked :: String -> String -> [(String, [String])] -> [(String, String)] -> Bool
 shouldBeMarked a b classesWithSubclasses =
-                                        any (\(a',b') ->
-                                               (a /= a' || b /= b')
-                                               && let { one = a' `isSubOf` a; two = b' `isSubOf` b }
-                                                  in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
-                                            )
+  any (\(a',b') ->
+         (a /= a' || b /= b')
+         && let { one = a' `isSubOf` a; two = b' `isSubOf` b }
+            in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
+      )
   where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)
 
 checkMultiEdge :: [DiagramEdge] -> Bool

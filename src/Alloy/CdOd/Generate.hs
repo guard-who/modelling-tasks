@@ -1,7 +1,10 @@
-module Alloy.CdOd.Generate where
+module Alloy.CdOd.Generate (
+  generate,
+  ) where
 
-import Alloy.CdOd.Edges
+import Alloy.CdOd.Edges                 (checkMultiEdge)
 import Alloy.CdOd.Types
+  (AssociationType (..), ClassConfig (..), Connection (..), DiagramEdge)
 
 import Control.Arrow                    (second)
 import Control.Monad.Random             (MonadRandom, getRandomR)
@@ -19,7 +22,8 @@ generate c searchSpace = do
       es <- generateEdges names nins ncos nass nags
       return (names, nameEdges es)
     else if smallerC == c
-         then error "it seems to be impossible to generate such a model; check your configuration"
+         then error $ "it seems to be impossible to generate such a model"
+              ++ "; check your configuration"
          else generate smallerC searchSpace
   where
     smallerC = shrink c searchSpace
@@ -46,10 +50,17 @@ generate c searchSpace = do
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
 nameEdges es =
      [e | e@(_, _, Inheritance) <- es]
-  ++ [(s, e, Assoc k (n:[]) m1 m2 b)
+  ++ [(s, e, Assoc k [n] m1 m2 b)
      | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] es]
 
-generateEdges :: MonadRandom m => [String] -> Int -> Int -> Int -> Int -> m [DiagramEdge]
+generateEdges
+  :: MonadRandom m
+  => [String]
+  -> Int
+  -> Int
+  -> Int
+  -> Int
+  -> m [DiagramEdge]
 generateEdges classs inh com ass agg =
   foldl (\es t -> es >>= flip generateEdge t) (return []) $
     replicate inh Nothing
@@ -61,7 +72,11 @@ generateEdges classs inh com ass agg =
     oneOf xs = do
       x <- getRandomR (0, length xs - 1)
       return $ xs !! x
-    generateEdge :: MonadRandom m => [DiagramEdge] -> Maybe AssociationType -> m [DiagramEdge]
+    generateEdge
+      :: MonadRandom m
+      => [DiagramEdge]
+      -> Maybe AssociationType
+      -> m [DiagramEdge]
     generateEdge cs mt = do
       s <- oneOf classs
       e <- oneOf $ filter (s /=) classs
@@ -70,7 +85,7 @@ generateEdges classs inh com ass agg =
       if checkMultiEdge $ c:cs
         then return $ c:cs
         else generateEdge cs mt
-    generateLimits :: MonadRandom m => (Maybe AssociationType) -> m Connection
+    generateLimits :: MonadRandom m => Maybe AssociationType -> m Connection
     generateLimits Nothing            = return Inheritance
     generateLimits (Just Composition) = do
       ll1 <- getRandomR (0, 1)

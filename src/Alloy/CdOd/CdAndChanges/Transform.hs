@@ -1,7 +1,10 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Alloy.CdOd.CdAndChanges.Transform where
+{-# LANGUAGE TupleSections #-}
+module Alloy.CdOd.CdAndChanges.Transform (
+  transform,
+  transformChanges,
+  ) where
 
 import Alloy.CdOd.Types
   (ClassConfig (..), RelationshipProperties (..))

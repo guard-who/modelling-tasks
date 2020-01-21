@@ -124,8 +124,10 @@ getRandomCDs config searchSpace = do
   continueIf (isJust medges1) $ do
     mutations' <- shuffleM mutations
     let Just edges1 = medges1
-        Just edges2 = getFirstValidSatisfying (const True) names mutations'
-    continueIf (not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2) $ do
+        medges2     = getFirstValidSatisfying (const True) names mutations'
+        Just edges2 = medges2
+        notOnlyInhs = not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2
+    continueIf (isJust medges2 && notOnlyInhs) $ do
       [cd1, cd2] <- shuffleM [fromEdges names edges1, fromEdges names edges2]
       mutations'' <- shuffleM mutations
       let Just edges3 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations''
@@ -162,15 +164,16 @@ getODInstances maxObjects maxInstances cd1 cd2 cd3 numClasses = do
   when debug . print $ length instances2not1
   when debug . print $ length instances1and2
   when debug . print $ length instancesNot1not2
-  return $ (M.fromList [([1]  , instances1not2),
-                        ([2]  , instances2not1),
-                        ([1,2], instances1and2),
-                        ([]   , instancesNot1not2)])
+  return $ M.fromList [([1]  , instances1not2),
+                       ([2]  , instances2not1),
+                       ([1,2], instances1and2),
+                       ([]   , instancesNot1not2)]
   where
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     toOldSyntax = first (second listToMaybe <$>)
 
-takeRandomInstances :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
+takeRandomInstances
+  :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
 takeRandomInstances instas = do
   let takes = [ [takeL [1] x, takeL [2] y, takeL [1,2] z, takeL [] u]
               | x <- [0 .. min 2 (length $ fromJust $ M.lookup [1]   instas)]
@@ -184,9 +187,10 @@ takeRandomInstances instas = do
     _:_ -> Just <$> do
       rinstas <- mapM shuffleM instas
       ts:_    <- shuffleM takes
-      shuffleM $ concat $ fmap ($ rinstas) ts
+      shuffleM $ concatMap ($ rinstas) ts
 
-getFirstValidSatisfying :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
+getFirstValidSatisfying
+  :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
 getFirstValidSatisfying _ _     []
   = Nothing
 getFirstValidSatisfying p names (x:xs)

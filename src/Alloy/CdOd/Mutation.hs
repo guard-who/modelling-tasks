@@ -4,16 +4,18 @@ module Alloy.CdOd.Mutation (
   -- * Perform mutation operations
   getAllMutationResults, getMutationResults,
   -- * Utility functions
-  nonTargets
+  nonTargets,
   ) where
 
 import Alloy.CdOd.Types
-import Alloy.CdOd.Edges
+  (AssociationType (..), ClassConfig (..), Connection (..))
+import Alloy.CdOd.Edges                 (DiagramEdge)
 
-import Data.Function (on)
-import Data.List     ((\\))
-import Data.Maybe    (maybeToList)
-import Data.Set      (Set, delete, intersection, member, singleton, toList)
+import Data.Function                    (on)
+import Data.List                        ((\\))
+import Data.Maybe                       (maybeToList)
+import Data.Set
+  (Set, delete, intersection, member, singleton, toList)
 
 getAllMutationResults
   :: ClassConfig -> [String] -> [DiagramEdge] -> [[DiagramEdge]]
@@ -57,12 +59,14 @@ getMutationResults c vs es m = newName <$> case m of
         (s,e,Assoc k (firstFree (allNames xs') $ (:[]) <$> ['z','y'..]) sl se b):xs'
       xs'                          -> xs'
     allNames xs = [n | (_, _, Assoc _ n _ _ _) <- xs]
+    firstFree _  []     = error "There are no free variables left"
     firstFree xs (y:ys) =
       if y `elem` xs then firstFree xs ys else y
 
-transform :: ClassConfig -> Targets -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+transform
+  :: ClassConfig -> Targets -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 transform c s t es =
-  (concatMap (flip (allFlipTransformations c) es) $ toList (s `intersection` t))
+  concatMap (flip (allFlipTransformations c) es) (toList (s `intersection` t))
   ++ addWhen (TInheritance `member` s) (allFromInheritances c ti es)
   ++ addWhen (TInheritance `member` t) (allToInheritances c si es)
   ++ addWhen (TComposition `member` si) (allFromCompositions c tc es)
@@ -87,7 +91,7 @@ isTargetEdge :: DiagramEdge -> Target -> Bool
 isTargetEdge (_, _, t) = isTarget t
 
 isTargetsEdge :: DiagramEdge -> Targets -> Bool
-isTargetsEdge x ts = any (x `isTargetEdge`) ts
+isTargetsEdge x = any (x `isTargetEdge`)
 
 targets :: Targets -> [DiagramEdge] -> [DiagramEdge]
 targets ts es =
@@ -138,7 +142,8 @@ nonEdges vs es = [(x, y) | x <- vs, y <- vs, x < y] \\ connections
 
 type Limit = (Int, Maybe Int)
 
-allAdds :: ClassConfig -> Targets -> [String] -> [DiagramEdge] -> [[DiagramEdge]]
+allAdds
+  :: ClassConfig -> Targets -> [String] -> [DiagramEdge] -> [[DiagramEdge]]
 allAdds c ts vs es =
   [x:es | (s, e) <- nonEdges vs es, t <- toList ts, isAddable c t es
         , sl <- fst $ allLimits c t, el <- snd $ allLimits c t
@@ -173,7 +178,8 @@ allLimits _ t = (allStartLimits, allEndLimits)
     allEndLimits   = case t of
       TInheritance -> []
       _            -> allPossibleLimits
-    allPossibleLimits = [(l, h) | l <- [0, 1, 2], h <- [Just 1, Just 2, Nothing]
+    allPossibleLimits = [(l, h) | l <- [0, 1, 2]
+                                , h <- [Just 1, Just 2, Nothing]
                                 , maybe True (l <=) h]
 
 allIncreaseLimitsRange
@@ -222,7 +228,8 @@ limitSize :: Limit -> Int
 limitSize (x, Nothing) = 10 - x
 limitSize (x, Just y ) = y - x
 
-allFlipTransformations :: ClassConfig -> Target -> [DiagramEdge] -> [[DiagramEdge]]
+allFlipTransformations
+  :: ClassConfig -> Target -> [DiagramEdge] -> [[DiagramEdge]]
 allFlipTransformations _c t es =
   [ e' : filter (e /=) es | e <- es, isTargetEdge e t
                           , e'<- maybeToList $ maybeFlipEdge e]
@@ -233,7 +240,8 @@ allFlipTransformations _c t es =
     deleteName Inheritance         = Inheritance
     deleteName (Assoc k _ sl el b) = Assoc k "" sl el b
 
-allFromInheritances :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allFromInheritances
+  :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 allFromInheritances c ts es =
   [ (se, ee, Assoc k "" sl el False) : filter (e /=) es
   | isRemovable c TInheritance es, e@(se, ee, Inheritance) <- es
@@ -247,7 +255,8 @@ allToInheritances c ts es =
   | isAddable c TInheritance es
   , e@(se, ee, Assoc {}) <- removableTargets c ts es]
 
-allFromCompositions :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
+allFromCompositions
+  :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
 allFromCompositions c ts es =
   [ (se, ee, Assoc k "" sl el False) : filter (e /=) es
   | isRemovable c TComposition es, e@(se, ee, Assoc Composition _ sl el _) <- es
