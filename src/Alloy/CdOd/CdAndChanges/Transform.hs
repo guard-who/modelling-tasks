@@ -19,8 +19,8 @@ transformWith
   -> (Int, [String], String)
   -> String
 transformWith config properties (cs, predicates, part) =
-  removeLine $(embedStringFile "cd/assoclimits.als")
-  ++ removeLines 3 $(embedStringFile "cd/generate.als")
+  removeLine $(embedStringFile "alloy/cd/assoclimits.als")
+  ++ removeLines 3 $(embedStringFile "alloy/cd/generate.als")
   ++ classDiagram config properties
   ++ part
   ++ createRunCommand config predicates cs

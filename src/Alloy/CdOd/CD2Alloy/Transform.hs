@@ -19,7 +19,7 @@ transform (classes, associations) index time =
   (part1, part2, part3, part4, part5)
   where
     template :: String
-    template = $(embedStringFile "od/template.als")
+    template = $(embedStringFile "alloy/od/template.als")
     part1 :: String
     part1 = [i|
 // Alloy Model for CD#{index}
