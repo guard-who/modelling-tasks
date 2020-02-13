@@ -84,3 +84,8 @@ executables:
     other-modules:
       - Alloy.CdOd.MatchCdOd
       - Alloy.CdOd.NaiveTasks
+  check-cds:
+    main: check-cds.hs
+    source-dirs: app
+    dependencies:
+      - alloy-cd-od
