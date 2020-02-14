@@ -1,17 +1,20 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Alloy.CdOd.NaiveTasks where
 
 import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transformChanges)
 
-import qualified Data.Bimap                       as BM (fromList)
-import qualified Data.Map                         as M (empty, insert)
+import qualified Data.Bimap                       as BM (fromList, lookupR)
+import qualified Data.Map                         as M (empty, insert, fromList)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Alloy.CdOd.Auxiliary.Util
 import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
 import Alloy.CdOd.Edges                 (fromEdges, renameEdges, toEdges)
 import Alloy.CdOd.Generate              (generate)
-import Alloy.CdOd.MatchCdOd             (applyChanges)
+import Alloy.CdOd.MatchCdOd             (MatchCdOdConfig (..), applyChanges)
 import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
 import Alloy.CdOd.Types (
   Association,
@@ -25,14 +28,18 @@ import Alloy.CdOd.Types (
   defaultProperties,
   )
 
-import Control.Monad                    (when)
+import Control.Monad                    (void, when)
 import Control.Monad.IO.Class           (liftIO)
-import Control.Monad.Random             (MonadRandom, RandomGen, RandT)
+import Control.Monad.Random
+  (MonadRandom, RandomGen, RandT, evalRandT, getRandomR, mkStdGen)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
-import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
+import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (permutations)
-import Data.Maybe                       (listToMaybe)
+import Data.Map                         (Map)
+import Data.Maybe                       (fromMaybe, listToMaybe)
+import Data.String.Interpolate          (i)
+import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
@@ -77,14 +84,62 @@ toProperty p = operation p defaultProperties
 isValid :: PropertyChange -> Bool
 isValid p = validityChange p True
 
+defaultRepairCdConfig :: ClassConfig
+defaultRepairCdConfig = ClassConfig {
+    classes      = (4, 4),
+    aggregations = (0, Just 2),
+    associations = (0, Just 2),
+    compositions = (0, Just 3),
+    inheritances = (1, Just 3)
+  }
+
+data SelectValidCdInstance = SelectValidCdInstance {
+    classDiagrams :: Map Int (Bool, FilePath)
+  } deriving (Generic, Show)
+
+selectValidCd
+  :: ClassConfig
+  -> FilePath
+  -> Int
+  -> Int
+  -> IO SelectValidCdInstance
+selectValidCd config path segment seed = do
+  let g = mkStdGen $ (segment +) $ (4 *) seed
+  (cd, chs) <- evalRandT (repairIncorrect config) g
+  let cds = (False, cd) : (second snd <$> chs)
+  cds'      <- foldl drawCd (return []) $ zip [1 ..] cds
+  return $ SelectValidCdInstance $ M.fromList cds'
+  where
+    drawCd cds (x, (b, cd)) = do
+      f <- drawCdFromSyntax True False Nothing cd [i|#{path}-#{x}|] Svg
+      ((x, (b, f)) :) <$> cds
+
+data RepairCdInstance = RepairCdInstance {
+    classDiagram :: FilePath,
+    changes      :: Map Int (Bool, Change DiagramEdge)
+  } deriving (Generic, Show)
+
+repairCd
+  :: ClassConfig
+  -> FilePath
+  -> Int
+  -> Int
+  -> IO RepairCdInstance
+repairCd config path segment seed = do
+  let g = mkStdGen $ (segment +) $ (4 *) seed
+  (cd, chs) <- evalRandT (repairIncorrect config) g
+  let chs' = second fst <$> chs
+  cd'       <- drawCdFromSyntax True False Nothing cd path Svg
+  return $ RepairCdInstance cd' $ M.fromList $ zip [1..] chs'
+
 repairIncorrect
   :: RandomGen g
   => ClassConfig
-  -> RandT g IO (Syntax, [(Bool, Change DiagramEdge)])
+  -> RandT g IO (Syntax, [(Bool, (Change DiagramEdge, Syntax))])
 repairIncorrect config = do
   e0:_    <- shuffleM illegalChanges
   l0:l1:_ <- shuffleM legalChanges
-  c0:_    <- shuffleM changes
+  c0:_    <- shuffleM allChanges
   csm     <- shuffleM $ c0 : noChange : l1 .&. noChange : l1 : [e0]
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
   let code = Changes.transformChanges config (toProperty e0) (Just config)
@@ -97,9 +152,9 @@ repairIncorrect config = do
   rinstas <- shuffleM instas
   getInstanceWithODs (isValid <$> cs) rinstas
   where
-    drawCd :: Syntax -> Integer -> IO ()
+    drawCd :: Syntax -> Integer -> IO FilePath
     drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
-    drawOd :: Syntax -> AlloyInstance -> Integer -> IO ()
+    drawOd :: Syntax -> AlloyInstance -> Integer -> IO FilePath
     drawOd cd od x =
       let backwards   = [n | (_, _, Assoc t n _ _ _) <- toEdges cd
                            , t /= Association]
@@ -110,29 +165,27 @@ repairIncorrect config = do
                               backwards
       in drawOdFromInstance od navigations True ("od-" ++ show x) Pdf
     getInstanceWithODs _  [] = do
-      when debug $ liftIO (putStr ".")
       repairIncorrect config
     getInstanceWithODs vs (rinsta:rinstas) = do
       (cd, chs, _) <- applyChanges rinsta
       let cds  = zip vs (snd <$> chs)
-          chs' = zip vs (fst <$> chs)
+          chs' = zip vs chs
       ods <- (liftIO . getOD . snd) `mapM` filter fst cds
       if and $ not . null <$> ods
         then do
         when debug $ liftIO $ do
-          drawCd cd 0
+          void $ drawCd cd 0
           uncurry drawCd `mapM_` zip (snd <$> chs) [1 ..]
           uncurry (drawOd cd . head) `mapM_` zip ods [1 ..]
         return (cd, chs')
         else do
-        when debug $ liftIO (putStr ":")
         getInstanceWithODs vs rinstas
     getOD cd = do
       let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) "" ""
       Alloy.getInstances (Just 1) (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
-changes :: [PropertyChange]
-changes = legalChanges ++ illegalChanges
+allChanges :: [PropertyChange]
+allChanges = legalChanges ++ illegalChanges
 
 noChange :: PropertyChange
 noChange = PropertyChange "none" id id
@@ -187,6 +240,35 @@ illegalChanges = ($ const False) <$> [
     withCompositionCycles config
       = config { hasCompositionCycles = True }
 
+data DifferentNamesInstance = DifferentNamesInstance {
+    cDiagram :: FilePath,
+    oDiagram :: FilePath,
+    mapping  :: Bimap String String
+  } deriving (Generic, Show)
+
+differentNames
+  :: MatchCdOdConfig
+  -> [Char]
+  -> Int
+  -> Int
+  -> IO DifferentNamesInstance
+differentNames config path segment seed = do
+  let g = mkStdGen $ (segment +) $ (4 *) seed
+  (cd, od, bm) <-
+    evalRandT (getDifferentNamesTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config)) g
+  let backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
+                       , t /= Association
+                       , n <- BM.lookupR n' bm]
+      forwards    = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
+                       , t == Association
+                       , n <- BM.lookupR n' bm]
+      navigations = foldr (`M.insert` Back)
+                          (foldr (`M.insert` Forward) M.empty forwards)
+                          backwards
+  cd' <- drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
+  od' <- drawOdFromInstance od navigations True (path ++ "-od") Svg
+  return $ DifferentNamesInstance cd' od' bm
+
 getDifferentNamesTask
   :: RandomGen g
   => ClassConfig
@@ -209,11 +291,11 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand runCmd (length names) maxObjects
         partss' = foldr mergeParts parts0 partss
-    when debug . liftIO $ drawCd cd0
-    when debug . liftIO $ drawCd `mapM_` cds'
+    when debug . liftIO . void $ drawCd cd0
+    when debug . liftIO . void $ drawCd `mapM_` cds'
     instances  <- liftIO
       $ Alloy.getInstances maxInstances (combineParts partss' ++ onlyCd0)
-    instances' <- shuffleM instances
+    instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
       let bm  = BM.fromList $ zip labels' $ (:[]) <$> ['a', 'b' ..]
@@ -225,6 +307,11 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
       drawCdFromSyntax True True (Just redColor) cd ("debug-" ++ show n) Pdf
+    continueWithHead
+      :: RandomGen g
+      => [a]
+      -> (a -> RandT g IO (Syntax, AlloyInstance, Bimap String String))
+      -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
     continueWithHead []    _ =
       getDifferentNamesTask config maxObjects searchSpace maxInstances
     continueWithHead (x:_) f = f x

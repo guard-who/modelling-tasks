@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Alloy.CdOd.Types (
   Association,
   AssociationType (..),
@@ -11,13 +12,15 @@ module Alloy.CdOd.Types (
   defaultProperties,
   ) where
 
+import GHC.Generics                     (Generic)
+
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
 
 data AssociationType = Association | Aggregation | Composition
-  deriving Eq
+  deriving (Eq, Generic, Show)
 
 data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
-  deriving Eq
+  deriving (Eq, Generic, Show)
 
 type Syntax = ([(String, [String])], [Association])
 
@@ -26,7 +29,7 @@ type DiagramEdge = (String, String, Connection)
 data Change a = Change {
     add    :: Maybe a,
     remove :: Maybe a
-  } deriving Functor
+  } deriving (Functor, Generic, Show)
 
 data ClassConfig = ClassConfig {
     classes      :: (Int, Int),
@@ -34,7 +37,7 @@ data ClassConfig = ClassConfig {
     associations :: (Int, Maybe Int),
     compositions :: (Int, Maybe Int),
     inheritances :: (Int, Maybe Int)
-  } deriving Eq
+  } deriving (Eq, Generic)
 
 data RelationshipProperties = RelationshipProperties {
     wrongAssocs             :: Int,
@@ -46,7 +49,7 @@ data RelationshipProperties = RelationshipProperties {
     hasInheritanceCycles    :: Bool,
     hasCompositionCycles    :: Bool,
     hasMarkedEdges          :: Maybe Bool
-  }
+  } deriving Generic
 
 defaultProperties :: RelationshipProperties
 defaultProperties = RelationshipProperties {

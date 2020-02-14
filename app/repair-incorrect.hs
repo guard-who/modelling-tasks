@@ -1,11 +1,10 @@
 module Main where
 
-import Alloy.CdOd.NaiveTasks            (phraseChange, repairIncorrect)
-import Alloy.CdOd.Output                (drawCdFromSyntax)
+import Alloy.CdOd.NaiveTasks            (RepairCdInstance (..), phraseChange, repairCd, selectValidCd)
 import Alloy.CdOd.Types                 (ClassConfig (..))
+import EvaluateArgs                     (evaluateArgs)
 
-import Control.Monad.Random             (evalRandT, getStdGen)
-import Data.GraphViz                    (GraphvizOutput (Pdf))
+import Control.Arrow                    (second)
 import System.Environment               (getArgs)
 
 main :: IO ()
@@ -17,13 +16,13 @@ main = do
           compositions = (0, Just 3),
           inheritances = (1, Just 3)
         }
-  args <- getArgs
-  g    <- case args of
-    []   -> getStdGen
-    [g'] -> return $ read g'
-    _    -> error "Too many arguments"
-  putStrLn $ "Seed: " ++ show (show g)
-  (cd, chs) <- evalRandT (repairIncorrect config) g
-  drawCdFromSyntax True True Nothing cd "cd" Pdf
-  print $ fst <$> chs
-  print $ phraseChange . snd <$> chs
+  repair:args <- getArgs
+  (s, seed)   <- evaluateArgs args
+  putStrLn $ "Seed: " ++ show seed
+  putStrLn $ "Segment: " ++ show s
+  if read repair
+    then do
+    task <- repairCd config "repair" s seed
+    print $ second phraseChange <$> changes task
+    print task
+    else selectValidCd config "select" s seed >>= print

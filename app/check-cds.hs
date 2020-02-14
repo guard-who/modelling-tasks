@@ -10,6 +10,7 @@ import Alloy.CdOd.Types
   (AssociationType (..), Connection (..), DiagramEdge, Syntax)
 
 import Control.Arrow                    (first, second)
+import Control.Monad                    (void)
 import Data.GraphViz                    (GraphvizOutput (Pdf))
 import Data.Maybe                       (listToMaybe)
 
@@ -65,9 +66,9 @@ drawCdsAndOds c y z =
 
 drawCdAndOdFor :: String -> Syntax -> Int -> IO ()
 drawCdAndOdFor c cd n' = do
-  drawCdFromSyntax True True Nothing cd (c ++ "-limits-cd" ++ n) Pdf
+  void $ drawCdFromSyntax True True Nothing cd (c ++ "-limits-cd" ++ n) Pdf
   (od0:_) <- Alloy.getInstances (Just 1) (combineParts $ transform (toOldSyntax cd) n "")
-  drawOdFromInstance od0 M.empty True (c ++ "-limits-od" ++ n) Pdf
+  void $ drawOdFromInstance od0 M.empty True (c ++ "-limits-od" ++ n) Pdf
   where
     n = show n'
     combineParts (p1, p2, p3, p4, p5) =

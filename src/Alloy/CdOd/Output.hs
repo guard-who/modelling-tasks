@@ -63,7 +63,7 @@ mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
-drawCdFromSyntax :: Bool -> Bool -> Maybe Attribute -> Syntax -> FilePath -> GraphvizOutput -> IO ()
+drawCdFromSyntax :: Bool -> Bool -> Maybe Attribute -> Syntax -> FilePath -> GraphvizOutput -> IO FilePath
 drawCdFromSyntax printNavigations printNames marking syntax file format = do
   let (classes, associations) = syntax
   let classNames = map fst classes
@@ -86,9 +86,9 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
                    fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNavigations printNames marking l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
-  putStrLn $ "Output written to " ++ output
+  return output
 
-drawOdFromInstance :: AlloyInstance -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromInstance :: AlloyInstance -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
 drawOdFromInstance i =
   let g = either error id $ do
         os    <- lookupSig (scoped "this" "Obj") i
@@ -102,7 +102,7 @@ drawOdFromInstance i =
       let indexOf z = fromJust $ elemIndex (objectName z) objs
       in (indexOf x, indexOf y, nameOf l)
 
-drawOdFromRawInstance :: String -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromRawInstance :: String -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
 drawOdFromRawInstance input =
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
       theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
@@ -110,7 +110,7 @@ drawOdFromRawInstance input =
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   in drawOdFromNodesAndEdges theNodes theEdges
 
-drawOdFromNodesAndEdges :: [String] -> [(Int, Int, String)] -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO ()
+drawOdFromNodesAndEdges :: [String] -> [(Int, Int, String)] -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
 drawOdFromNodesAndEdges theNodes theEdges navigations printNames file format = do
   let numberedNodes = zip [0..] theNodes
   let graph = mkGraph numberedNodes theEdges :: Gr String String
@@ -124,7 +124,7 @@ drawOdFromNodesAndEdges theNodes theEdges navigations printNames file format = d
                    fmtEdge = \(_,_,l) -> arrowHeads l ++ [ArrowSize 0.4, FontSize 12] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
-  putStrLn $ "Output written to " ++ output
+  return output
   where
     arrowHeads l = case M.lookup l navigations of
       Nothing  -> [edgeEnds NoDir]

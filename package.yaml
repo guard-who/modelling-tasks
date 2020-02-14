@@ -59,9 +59,12 @@ executables:
     source-dirs: app
     dependencies:
       - alloy-cd-od
+      - bytestring
+      - digest
     other-modules:
       - Alloy.CdOd.MatchCdOd
       - Alloy.CdOd.NaiveTasks
+      - EvaluateArgs
   instance2pic:
     main: instance2pic.hs
     source-dirs: legacy-app
@@ -76,16 +79,22 @@ executables:
       - digest
     other-modules:
       - Alloy.CdOd.MatchCdOd
+      - EvaluateArgs
   repair-incorrect:
     main: repair-incorrect.hs
     source-dirs: app
     dependencies:
       - alloy-cd-od
+      - bytestring
+      - digest
     other-modules:
       - Alloy.CdOd.MatchCdOd
       - Alloy.CdOd.NaiveTasks
+      - EvaluateArgs
   check-cds:
     main: check-cds.hs
     source-dirs: app
     dependencies:
       - alloy-cd-od
+      - bytestring
+      - digest
