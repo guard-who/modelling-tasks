@@ -1,9 +1,10 @@
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 module Main where
 
-import qualified Data.Map                         as M (empty)
+import qualified Data.Map                         as M (empty, insert)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
-import Alloy.CdOd.CD2Alloy.Transform    (transform)
+import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
 import Alloy.CdOd.Edges                 (fromEdges)
 import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
 import Alloy.CdOd.Types
@@ -11,7 +12,8 @@ import Alloy.CdOd.Types
 
 import Control.Arrow                    (first, second)
 import Control.Monad                    (void)
-import Data.GraphViz                    (GraphvizOutput (Pdf))
+import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
+import Data.Map                         (Map)
 import Data.Maybe                       (listToMaybe)
 
 v :: DiagramEdge
@@ -44,10 +46,27 @@ inh2 = ("B", "A", Inheritance)
 inh3 :: DiagramEdge
 inh3 = ("C", "A", Inheritance)
 
+a :: DiagramEdge
+a = ("A", "B", Assoc Association "a" (1, Just 1) (1, Just 1) False)
+
+b :: DiagramEdge
+b = ("C", "B", Assoc Association "b" (1, Just 1) (1, Just 1) False)
+
+
 main :: IO ()
 main = do
-  drawCdsAndOds "y" y' z'
-  drawCdsAndOds "z" y'' z''
+  -- names are required
+  let cd0 = fromEdges ["A", "B", "C"] [a, b, inh1]
+      cd1 = fromEdges ["A", "B", "C"] [a, inh1]
+      cd2 = fromEdges ["A", "B", "C"] [b, inh1]
+      dirs = M.insert "a" Forward $ M.insert "b" Forward M.empty
+  drawCdAndOdsFor Nothing "names" dirs [cd0, cd1, cd2] "cd1 and cd2"
+  drawCdAndOdsFor Nothing "names" dirs [cd0, cd1, cd2] "cd1 and not cd2"
+  drawCdAndOdsFor Nothing "names" dirs [cd0, cd1, cd2] "cd2 and not cd1"
+  drawCdAndOdsFor Nothing "names" dirs [cd0, cd1, cd2] "cd0 and not cd1 and not cd2"
+  -- no matter where limits
+  drawCdsAndOds "y-limits-" y' z'
+  drawCdsAndOds "z-limits-" y'' z''
 
 drawCdsAndOds
   :: String
@@ -60,17 +79,33 @@ drawCdsAndOds c y z =
              fromEdges classes [x, y, z, inh2],
              fromEdges classes [x, y, z, inh3, inh2],
              fromEdges classes [w, x, y, z, inh2]]
-  in foldr (id . (>>) . uncurry (drawCdAndOdFor c)) (return ()) $ zip cds [0..]
+  in foldr (id . (>>) . (\(i, cd) -> drawCdAndOdsFor (Just 1) (c ++ show i) M.empty [cd] "cd0")) (return ()) $ zip [0..] cds
   where
     classes = ((:[]) <$> ['A' .. 'D'])
 
-drawCdAndOdFor :: String -> Syntax -> Int -> IO ()
-drawCdAndOdFor c cd n' = do
-  void $ drawCdFromSyntax True True Nothing cd (c ++ "-limits-cd" ++ n) Pdf
-  (od0:_) <- Alloy.getInstances (Just 1) (combineParts $ transform (toOldSyntax cd) n "")
-  void $ drawOdFromInstance od0 M.empty True (c ++ "-limits-od" ++ n) Pdf
+drawCdAndOdsFor
+  :: Maybe Integer
+  -> String
+  -> Map String DirType
+  -> [Syntax]
+  -> String
+  -> IO ()
+drawCdAndOdsFor is c dirs cds cmd = do
+  void $ (\(cd, i) -> drawCdFromSyntax True True Nothing cd (c ++ "-cd" ++ show i) Pdf >>= print) `mapM` zip cds [0..]
+  let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
+        ++ createRunCommand cmd 3 3
+  ods <- Alloy.getInstances is parts'
+  void $ (\(od, i) -> drawOdFromInstance od dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= print)
+    `mapM` zip (maybe id (take . fromInteger) is ods) [1..]
   where
-    n = show n'
-    combineParts (p1, p2, p3, p4, p5) =
-      p1 ++ p2 ++ p3 ++ p4 ++ p5
+    parts = (\(cd, i) -> getFour $ transform (toOldSyntax cd) (show i) "") <$> zip cds [0..]
+    getFour (p1, p2, p3, p4, _) = (p1, p2, p3, p4)
+    combineParts (p1, p2, p3, p4) =
+      p1 ++ p2 ++ p3 ++ p4
     toOldSyntax = first (second listToMaybe <$>)
+    shorten (' ':'a':'n':'d':' ':'c':'d':ys) =
+      "and" ++ shorten ys
+    shorten (' ':'a':'n':'d':' ':'n':'o':'t':' ':'c':'d':ys) =
+      "not" ++ shorten ys
+    shorten (y:ys) = y : shorten ys
+    shorten []     = []
