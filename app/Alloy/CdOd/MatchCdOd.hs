@@ -8,7 +8,7 @@ import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transform)
 
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M
-  (alter, empty, foldrWithKey, fromList, lookup, traverseWithKey)
+  (alter, empty, foldrWithKey, fromList, lookup, traverseWithKey, union)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
@@ -21,11 +21,13 @@ import Alloy.CdOd.Edges (
   fromEdges,
   renameClasses,
   renameEdges,
+  toEdges,
   )
 import Alloy.CdOd.Generate              (generate)
 import Alloy.CdOd.Mutation
   (Target (..), getAllMutationResults, nonTargets)
-import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
+import Alloy.CdOd.Output
+  (drawCdFromSyntax, drawOdFromInstance, getDirs)
 import Alloy.CdOd.Types
   (ClassConfig (..), Change (..), Connection (..), Syntax, defaultProperties)
 
@@ -50,15 +52,17 @@ debug :: Bool
 debug = False
 
 data MatchCdOdInstance = MatchCdOdInstance {
-    diagrams  :: Map Int FilePath,
-    instances :: Map Char ([Int], FilePath)
+    diagrams       :: Map Int FilePath,
+    hasNavigations :: Bool,
+    instances      :: Map Char ([Int], FilePath)
   } deriving (Generic, Show)
 
 data MatchCdOdConfig = MatchCdOdConfig {
-    classConfig  :: ClassConfig,
-    maxObjects   :: Int,
-    maxInstances :: Maybe Integer,
-    searchSpace  :: Int
+    classConfig      :: ClassConfig,
+    maxObjects       :: Int,
+    maxInstances     :: Maybe Integer,
+    searchSpace      :: Int,
+    printNavigations :: Bool
   } deriving Generic
 
 defaultMatchCdOdConfig :: MatchCdOdConfig
@@ -70,9 +74,10 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
         compositions = (0, Just 1),
         inheritances = (1, Just 2)
       },
-    maxObjects   = 4,
-    maxInstances = Nothing,
-    searchSpace  = 10
+    maxObjects       = 4,
+    maxInstances     = Nothing,
+    searchSpace      = 10,
+    printNavigations = False
   }
 
 instancesOfMatch :: MatchCdOdInstance -> Map Int String
@@ -86,9 +91,14 @@ matchCdOd :: MatchCdOdConfig -> FilePath -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config path segment seed = do
   let g = mkStdGen $ (segment +) $ (4 *) seed
   (cds, ods) <- evalRandT (getRandomTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config)) g
-  cds' <- (\k c -> drawCdFromSyntax True False Nothing c (cdFilename k) Svg) `M.traverseWithKey` cds
-  ods' <- (\k (is,o) -> (is,) <$> drawOdFromInstance o M.empty True (odFilename k is) Svg) `M.traverseWithKey` ods
-  return $ MatchCdOdInstance cds' ods'
+  let dirs
+        | printNavigations config =
+          foldr (M.union . getDirs . toEdges) M.empty cds
+        | otherwise               =
+          M.empty
+  cds' <- (\k c -> drawCdFromSyntax (printNavigations config) True Nothing c (cdFilename k) Svg) `M.traverseWithKey` cds
+  ods' <- (\k (is,o) -> (is,) <$> drawOdFromInstance o dirs True (odFilename k is) Svg) `M.traverseWithKey` ods
+  return $ MatchCdOdInstance cds' (printNavigations config) ods'
   where
     cdFilename :: Int -> String
     cdFilename n    = [i|#{path}output-cd#{n}|]

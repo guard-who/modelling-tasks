@@ -2,14 +2,15 @@ module Alloy.CdOd.Output (
   drawCdFromSyntax,
   drawOdFromInstance,
   drawOdFromRawInstance,
+  getDirs,
   ) where
 
-import qualified Data.Map               as M (lookup)
+import qualified Data.Map               as M (empty, insert, lookup)
 import qualified Data.Set               as S (toList)
 
 import Alloy.CdOd.Auxiliary.Util        (emptyArr, firstLower, underlinedLabel)
 import Alloy.CdOd.Types
-  (AssociationType(..), Connection(..), Syntax)
+  (AssociationType(..), Connection(..), DiagramEdge, Syntax)
 import Alloy.CdOd.Edges                 (shouldBeMarked)
 
 import Data.Graph.Inductive             (Gr, mkGraph)
@@ -129,3 +130,13 @@ drawOdFromNodesAndEdges theNodes theEdges navigations printNames file format = d
     arrowHeads l = case M.lookup l navigations of
       Nothing  -> [edgeEnds NoDir]
       Just dir -> [edgeEnds dir, arrowFrom vee, arrowTo vee]
+
+getDirs :: [DiagramEdge] -> Map String DirType
+getDirs es =
+  let backwards   = [n | (_, _, Assoc t n _ _ _) <-es
+                       , t /= Association]
+      forwards    = [n | (_, _, Assoc t n _ _ _) <- es
+                       , t == Association]
+   in foldr (`M.insert` Back)
+            (foldr (`M.insert` Forward) M.empty forwards)
+             backwards

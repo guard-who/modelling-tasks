@@ -17,9 +17,10 @@ main = do
               compositions = (0, Just 1),
               inheritances = (1, Just 2)
             },
-          maxObjects   = 4,
-          maxInstances = Nothing,
-          searchSpace  = 10
+          maxObjects       = 4,
+          maxInstances     = Nothing,
+          printNavigations = False,
+          searchSpace      = 10
         }
   putStrLn $ "Seed: " ++ show seed
   putStrLn $ "Segment: " ++ show s
