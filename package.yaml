@@ -31,10 +31,14 @@ library:
     - Alloy.CdOd.CD2Alloy.Transform
     - Alloy.CdOd.CdAndChanges.Instance
     - Alloy.CdOd.CdAndChanges.Transform
+    - Alloy.CdOd.DifferentNames
     - Alloy.CdOd.Edges
     - Alloy.CdOd.Generate
+    - Alloy.CdOd.MatchCdOd
     - Alloy.CdOd.Mutation
     - Alloy.CdOd.Output
+    - Alloy.CdOd.RepairCd
+    - Alloy.CdOd.SelectValidCd
     - Alloy.CdOd.Types
 executables:
   cd2alloy:
@@ -62,8 +66,6 @@ executables:
       - bytestring
       - digest
     other-modules:
-      - Alloy.CdOd.MatchCdOd
-      - Alloy.CdOd.NaiveTasks
       - EvaluateArgs
   instance2pic:
     main: instance2pic.hs
@@ -78,7 +80,6 @@ executables:
       - bytestring
       - digest
     other-modules:
-      - Alloy.CdOd.MatchCdOd
       - EvaluateArgs
   repair-incorrect:
     main: repair-incorrect.hs
@@ -88,8 +89,6 @@ executables:
       - bytestring
       - digest
     other-modules:
-      - Alloy.CdOd.MatchCdOd
-      - Alloy.CdOd.NaiveTasks
       - EvaluateArgs
   check-cds:
     main: check-cds.hs

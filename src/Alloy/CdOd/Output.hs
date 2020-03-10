@@ -89,14 +89,14 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
   output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
   return output
 
-drawOdFromInstance :: AlloyInstance -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
-drawOdFromInstance i =
+drawOdFromInstance :: AlloyInstance -> Maybe Int -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
+drawOdFromInstance i anonymous =
   let g = either error id $ do
         os    <- lookupSig (scoped "this" "Obj") i
         objs  <- fmap objectName . S.toList <$> getSingle "" os
         links <- fmap (linkOf objs) . S.toList <$> getTriple "get" os
         return (objs, links)
-  in uncurry drawOdFromNodesAndEdges g
+  in uncurry drawOdFromNodesAndEdges g $ maybe (length (fst g) `div` 3) id anonymous
   where
     nameOf   = takeWhile (/= '$') . objectName
     linkOf objs (x, l, y) =
@@ -109,15 +109,15 @@ drawOdFromRawInstance input =
       theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
       theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
-  in drawOdFromNodesAndEdges theNodes theEdges
+  in drawOdFromNodesAndEdges theNodes theEdges (length theNodes `div` 3)
 
-drawOdFromNodesAndEdges :: [String] -> [(Int, Int, String)] -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
-drawOdFromNodesAndEdges theNodes theEdges navigations printNames file format = do
+drawOdFromNodesAndEdges :: [String] -> [(Int, Int, String)] -> Int -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
+drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file format = do
   let numberedNodes = zip [0..] theNodes
   let graph = mkGraph numberedNodes theEdges :: Gr String String
   objectNames <-
     map (\(i, l) -> (i, let [n,z] = splitOn "$" l in firstLower n ++ (if z == "0" then "" else z) ++ " "))
-    . drop (length theNodes `div` 3)
+    . drop anonymous
     <$> shuffleM numberedNodes
   let dotGraph = graphToDot (nonClusteredParams {
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),

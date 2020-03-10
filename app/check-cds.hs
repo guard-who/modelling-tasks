@@ -95,7 +95,7 @@ drawCdAndOdsFor is c dirs cds cmd = do
   let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
         ++ createRunCommand cmd 3 3
   ods <- Alloy.getInstances is parts'
-  void $ (\(od, i) -> drawOdFromInstance od dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= print)
+  void $ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= print)
     `mapM` zip (maybe id (take . fromInteger) is ods) [1..]
   where
     parts = (\(cd, i) -> getFour $ transform (toOldSyntax cd) (show i) "") <$> zip cds [0..]

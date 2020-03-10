@@ -97,7 +97,7 @@ matchCdOd config path segment seed = do
         | otherwise               =
           M.empty
   cds' <- (\k c -> drawCdFromSyntax (printNavigations config) True Nothing c (cdFilename k) Svg) `M.traverseWithKey` cds
-  ods' <- (\k (is,o) -> (is,) <$> drawOdFromInstance o dirs True (odFilename k is) Svg) `M.traverseWithKey` ods
+  ods' <- (\k (is,o) -> (is,) <$> drawOdFromInstance o Nothing dirs True (odFilename k is) Svg) `M.traverseWithKey` ods
   return $ MatchCdOdInstance cds' (printNavigations config) ods'
   where
     cdFilename :: Int -> String

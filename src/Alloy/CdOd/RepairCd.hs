@@ -1,20 +1,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-module Alloy.CdOd.NaiveTasks where
+module Alloy.CdOd.RepairCd where
 
 import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transformChanges)
 
-import qualified Data.Bimap                       as BM (fromList, lookupR)
 import qualified Data.Map                         as M (empty, insert, fromList)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
-import Alloy.CdOd.Auxiliary.Util
-import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
-import Alloy.CdOd.Edges                 (fromEdges, renameEdges, toEdges)
-import Alloy.CdOd.Generate              (generate)
-import Alloy.CdOd.MatchCdOd             (MatchCdOdConfig (..), applyChanges)
+import Alloy.CdOd.CD2Alloy.Transform    (transform)
+import Alloy.CdOd.Edges                 (toEdges)
+import Alloy.CdOd.MatchCdOd             (applyChanges)
 import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
 import Alloy.CdOd.Types (
   Association,
@@ -31,14 +27,11 @@ import Alloy.CdOd.Types (
 import Control.Monad                    (void, when)
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Random
-  (MonadRandom, RandomGen, RandT, evalRandT, getRandomR, mkStdGen)
+  (RandomGen, RandT, evalRandT, getRandomR, mkStdGen)
 import Data.Bifunctor                   (first, second)
-import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
-import Data.List                        (permutations)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe, listToMaybe)
-import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -46,23 +39,42 @@ import System.Random.Shuffle            (shuffleM)
 debug :: Bool
 debug = False
 
-phraseChange :: Change DiagramEdge -> String
-phraseChange c = case (add c, remove c) of
+phraseChange :: Bool -> Bool -> Change DiagramEdge -> String
+phraseChange byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "change nothing"
-  (Just e,  Nothing) -> "add " ++ phraseRelation e
-  (Nothing, Just e ) -> "remove " ++ phraseRelation e
-  (Just e1, Just e2) -> "replace " ++ phraseRelation e2 ++ " by " ++ phraseRelation e1
+  (Just e,  Nothing) -> "add " ++ phraseRelation False withDir e
+  (Nothing, Just e ) -> "remove " ++ phraseRelation byName withDir e
+  (Just e1, Just e2) ->
+    "replace " ++ phraseRelation byName withDir e2
+    ++ " by " ++ phraseRelation False withDir e1
 
-phraseRelation :: DiagramEdge -> String
-phraseRelation (from, to, Inheritance) =
+phraseRelation :: Bool -> Bool -> DiagramEdge -> String
+phraseRelation _ _ (from, to, Inheritance) =
   "an inheritance where " ++ from ++ " inherits from " ++ to
-phraseRelation (from, to, Assoc t _ l h _) = (++ participations) $ case t of
-  Association -> "an association from " ++ from ++ " to " ++ to
-  Aggregation -> "an aggregation for " ++ from ++ " of " ++ to
-  Composition -> "an composition for " ++ from ++ " of " ++ to
-  where
-    participations = " where " ++ participates l from ++ " and " ++ participates h to
-    participates r c = c ++ " participates " ++ phraseLimit r
+phraseRelation True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
+  Association -> "association "
+  Aggregation -> "aggregation "
+  Composition -> "composition "
+phraseRelation _ False (from, to, Assoc Association _ l h _) =
+  "an association where " ++ participations l from h to
+phraseRelation _ _ (from, to, Assoc t _ l h _) = (++ participations l from h to) $
+  case t of
+    Association -> "an association from " ++ from ++ " to " ++ to
+    Aggregation -> "a relationship that makes " ++ from
+      ++ " an aggregation of " ++ to ++ "'s"
+    Composition -> "a relationship that makes " ++ from
+      ++ " a composition of " ++ to ++ "'s"
+participations
+  :: (Int, Maybe Int)
+  -> String
+  -> (Int, Maybe Int)
+  -> String
+  -> String
+participations l from h to =
+  " where " ++ participates l from ++ " and " ++ participates h to
+
+participates :: (Int, Maybe Int) -> String -> String
+participates r c = c ++ " participates " ++ phraseLimit r
 
 phraseLimit :: (Int, Maybe Int) -> String
 phraseLimit (0, Just 0)  = "not at all"
@@ -84,53 +96,66 @@ toProperty p = operation p defaultProperties
 isValid :: PropertyChange -> Bool
 isValid p = validityChange p True
 
-defaultRepairCdConfig :: ClassConfig
-defaultRepairCdConfig = ClassConfig {
-    classes      = (4, 4),
-    aggregations = (0, Just 2),
-    associations = (0, Just 2),
-    compositions = (0, Just 3),
-    inheritances = (1, Just 3)
+data RepairCdConfig = RepairCdConfig {
+    classConfig      :: ClassConfig,
+    printNames       :: Bool,
+    printNavigations :: Bool,
+    useNames         :: Bool
+  } deriving Generic
+
+defaultRepairCdConfig :: RepairCdConfig
+defaultRepairCdConfig = RepairCdConfig {
+    classConfig = ClassConfig {
+        classes      = (4, 4),
+        aggregations = (0, Just 2),
+        associations = (0, Just 2),
+        compositions = (0, Just 3),
+        inheritances = (1, Just 3)
+      },
+    printNames       = True,
+    printNavigations = True,
+    useNames         = False
   }
 
-data SelectValidCdInstance = SelectValidCdInstance {
-    classDiagrams :: Map Int (Bool, FilePath)
-  } deriving (Generic, Show)
-
-selectValidCd
-  :: ClassConfig
-  -> FilePath
-  -> Int
-  -> Int
-  -> IO SelectValidCdInstance
-selectValidCd config path segment seed = do
-  let g = mkStdGen $ (segment +) $ (4 *) seed
-  (cd, chs) <- evalRandT (repairIncorrect config) g
-  let cds = (False, cd) : (second snd <$> chs)
-  cds'      <- foldl drawCd (return []) $ zip [1 ..] cds
-  return $ SelectValidCdInstance $ M.fromList cds'
-  where
-    drawCd cds (x, (b, cd)) = do
-      f <- drawCdFromSyntax True False Nothing cd [i|#{path}-#{x}|] Svg
-      ((x, (b, f)) :) <$> cds
-
 data RepairCdInstance = RepairCdInstance {
-    classDiagram :: FilePath,
-    changes      :: Map Int (Bool, Change DiagramEdge)
+    changes        :: Map Int (Bool, Change DiagramEdge),
+    classDiagram   :: FilePath,
+    withDirections :: Bool,
+    withNames      :: Bool
   } deriving (Generic, Show)
 
 repairCd
-  :: ClassConfig
+  :: RepairCdConfig
   -> FilePath
   -> Int
   -> Int
   -> IO RepairCdInstance
 repairCd config path segment seed = do
   let g = mkStdGen $ (segment +) $ (4 *) seed
-  (cd, chs) <- evalRandT (repairIncorrect config) g
+  (cd, chs) <- evalRandT (repairIncorrect $ classConfig config) g
   let chs' = second fst <$> chs
-  cd'       <- drawCdFromSyntax True False Nothing cd path Svg
-  return $ RepairCdInstance cd' $ M.fromList $ zip [1..] chs'
+  cd'       <- drawCdFromSyntax (printNavigations config) (printNames config) Nothing cd path Svg
+  return $ RepairCdInstance
+    (M.fromList $ zip [1..] chs')
+    cd'
+    (printNavigations config)
+    (printNames config == useNames config)
+
+constrainConfig :: RandomGen g => Int -> ClassConfig -> RandT g IO ClassConfig
+constrainConfig n config = do
+  clas <- getRandomR $ classes config
+  let maxAg  = ((clas * (clas - 1)) `div` 2)
+        + n - sum (fst . ($ config) <$> edges)
+  (maxAs, aggs) <- randOf aggregations maxAg
+  (maxCo, asss) <- randOf associations maxAs
+  (maxIn, coms) <- randOf compositions maxCo
+  (_    , inhs) <- randOf inheritances maxIn
+  return $ ClassConfig (clas, clas) aggs asss coms inhs
+  where
+    edges = [aggregations, associations, compositions, inheritances]
+    randOf f maxF = do
+      x <- getRandomR (fst $ f config, fromMaybe maxF $ snd $ f config)
+      return (maxF - x, (x, Just x))
 
 repairIncorrect
   :: RandomGen g
@@ -142,6 +167,7 @@ repairIncorrect config = do
   c0:_    <- shuffleM allChanges
   csm     <- shuffleM $ c0 : noChange : l1 .&. noChange : l1 : [e0]
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
+--  config' <- constrainConfig 5 config
   let code = Changes.transformChanges config (toProperty e0) (Just config)
         $ toProperty <$> cs
   when debug $ liftIO $ do
@@ -163,7 +189,7 @@ repairIncorrect config = do
           navigations = foldr (`M.insert` Back)
                               (foldr (`M.insert` Forward) M.empty forwards)
                               backwards
-      in drawOdFromInstance od navigations True ("od-" ++ show x) Pdf
+      in drawOdFromInstance od Nothing navigations True ("od-" ++ show x) Pdf
     getInstanceWithODs _  [] = do
       repairIncorrect config
     getInstanceWithODs vs (rinsta:rinstas) = do
@@ -240,102 +266,6 @@ illegalChanges = ($ const False) <$> [
     withCompositionCycles config
       = config { hasCompositionCycles = True }
 
-data DifferentNamesInstance = DifferentNamesInstance {
-    cDiagram :: FilePath,
-    oDiagram :: FilePath,
-    mapping  :: Bimap String String
-  } deriving (Generic, Show)
-
-differentNames
-  :: MatchCdOdConfig
-  -> [Char]
-  -> Int
-  -> Int
-  -> IO DifferentNamesInstance
-differentNames config path segment seed = do
-  let g = mkStdGen $ (segment +) $ (4 *) seed
-  (cd, od, bm) <-
-    evalRandT (getDifferentNamesTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config)) g
-  let backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
-                       , t /= Association
-                       , n <- BM.lookupR n' bm]
-      forwards    = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
-                       , t == Association
-                       , n <- BM.lookupR n' bm]
-      navigations = foldr (`M.insert` Back)
-                          (foldr (`M.insert` Forward) M.empty forwards)
-                          backwards
-  cd' <- drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
-  od' <- drawOdFromInstance od navigations True (path ++ "-od") Svg
-  return $ DifferentNamesInstance cd' od' bm
-
-getDifferentNamesTask
-  :: RandomGen g
-  => ClassConfig
-  -> Int
-  -> Int
-  -> Maybe Integer
-  -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
-getDifferentNamesTask config maxObjects searchSpace maxInstances = do
-  configs <- withMinimalLabels 3 config
-  continueWithHead configs $ \config' -> do
-    (names, edges) <- generate config' searchSpace
-    let cd0    = (0 :: Integer, fromEdges names edges)
-        parts0 = extractFourParts cd0
-        labels = [l | (_, l, _, _, _, _) <- snd $ snd cd0]
-        cds    = fromEdges names
-          . flip renameEdges edges . BM.fromList . zip labels
-          <$> drop 1 (permutations labels)
-        cds'   = zip [1 :: Integer ..] cds
-        partss = extractFourParts <$> cds'
-        runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
-        onlyCd0 = createRunCommand runCmd (length names) maxObjects
-        partss' = foldr mergeParts parts0 partss
-    when debug . liftIO . void $ drawCd cd0
-    when debug . liftIO . void $ drawCd `mapM_` cds'
-    instances  <- liftIO
-      $ Alloy.getInstances maxInstances (combineParts partss' ++ onlyCd0)
-    instances' <- shuffleM (instances :: [AlloyInstance])
-    continueWithHead instances' $ \od1 -> do
-      labels' <- shuffleM labels
-      let bm  = BM.fromList $ zip labels' $ (:[]) <$> ['a', 'b' ..]
-          cd1 = fromEdges names $ renameEdges bm edges
-      return (cd1, od1, bm)
-  where
-    extractFourParts (n, cd) = case transform (toOldSyntax cd) (show n) "" of
-      (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-    combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
-    drawCd (n, cd) =
-      drawCdFromSyntax True True (Just redColor) cd ("debug-" ++ show n) Pdf
-    continueWithHead
-      :: RandomGen g
-      => [a]
-      -> (a -> RandT g IO (Syntax, AlloyInstance, Bimap String String))
-      -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
-    continueWithHead []    _ =
-      getDifferentNamesTask config maxObjects searchSpace maxInstances
-    continueWithHead (x:_) f = f x
-
 toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
 toOldSyntax = first (second listToMaybe <$>)
 
-withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
-withMinimalLabels n config
-  | n <= lowerLimit = return [config]
-  | otherwise       = shuffleM
-    [ config {
-        aggregations = (aggrs, snd (aggregations config)),
-        associations = (assos, snd (associations config)),
-        compositions = (comps, snd (compositions config))
-      }
-    | aggrs <- range aggregations  0                           n
-    , assos <- range associations  0                          (n - aggrs)
-    , comps <- range compositions (max 0 $ n - aggrs - assos) (n - aggrs - assos)]
-  where
-    lowerLimit = 0
-      + fst (aggregations config)
-      + fst (associations config)
-      + fst (compositions config)
-    min' l1 Nothing   = l1
-    min' l1 (Just l2) = min l1 l2
-    range f low high  = [low + fst (f config) .. min' high (snd $ f config)]
