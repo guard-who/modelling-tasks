@@ -113,7 +113,6 @@ pred changedLimit [c : Change] {
 }
 
 pred sameRelationship [r, r' : Relationship] {
-  r != r'
   r.from = r'.from
   sameKind [r, r']
   sameDirection [r, r']
