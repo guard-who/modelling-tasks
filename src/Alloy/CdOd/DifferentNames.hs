@@ -95,10 +95,10 @@ getDifferentNamesTask
   -> Int
   -> Maybe Integer
   -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
-getDifferentNamesTask config maxObjects searchSpace maxInstances = do
+getDifferentNamesTask config maxObs sSpace maxIs = do
   configs <- withMinimalLabels 3 config
   continueWithHead configs $ \config' -> do
-    (names, edges) <- generate config' searchSpace
+    (names, edges) <- generate config' sSpace
     let cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = extractFourParts cd0
         labels = [l | (_, l, _, _, _, _) <- snd $ snd cd0]
@@ -108,12 +108,12 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
         cds'   = zip [1 :: Integer ..] cds
         partss = map extractFourParts cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
-        onlyCd0 = createRunCommand runCmd (length names) maxObjects
+        onlyCd0 = createRunCommand runCmd (length names) maxObs
         partss' = foldr mergeParts parts0 partss
     when debug . liftIO . void $ drawCd cd0
     when debug . liftIO . void $ drawCd `mapM_` cds'
     instances  <- liftIO
-      $ Alloy.getInstances maxInstances (combineParts partss' ++ onlyCd0)
+      $ Alloy.getInstances maxIs (combineParts partss' ++ onlyCd0)
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
@@ -133,7 +133,7 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
       -> (a -> RandT g IO (Syntax, AlloyInstance, Bimap String String))
       -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
     continueWithHead []    _ =
-      getDifferentNamesTask config maxObjects searchSpace maxInstances
+      getDifferentNamesTask config maxObs sSpace maxIs
     continueWithHead (x:_) f = f x
     usedLabels :: AlloyInstance -> [String]
     usedLabels inst = either error id $ do
