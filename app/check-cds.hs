@@ -8,13 +8,11 @@ import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform
 import Alloy.CdOd.Edges                 (fromEdges)
 import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
 import Alloy.CdOd.Types
-  (AssociationType (..), Connection (..), DiagramEdge, Syntax)
+  (AssociationType (..), Connection (..), DiagramEdge, Syntax, toOldSyntax)
 
-import Control.Arrow                    (first, second)
 import Control.Monad                    (void)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
 import Data.Map                         (Map)
-import Data.Maybe                       (listToMaybe)
 
 v :: DiagramEdge
 v = ("C", "B", Assoc Aggregation "v" (0, Nothing) (1, Just 1) False)
@@ -102,7 +100,6 @@ drawCdAndOdsFor is c dirs cds cmd = do
     getFour (p1, p2, p3, p4, _) = (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) =
       p1 ++ p2 ++ p3 ++ p4
-    toOldSyntax = first (map $ second listToMaybe)
     shorten (' ':'a':'n':'d':' ':'c':'d':ys) =
       "and" ++ shorten ys
     shorten (' ':'a':'n':'d':' ':'n':'o':'t':' ':'c':'d':ys) =

@@ -28,10 +28,15 @@ import Alloy.CdOd.Mutation
   (Target (..), getAllMutationResults, nonTargets)
 import Alloy.CdOd.Output
   (drawCdFromSyntax, drawOdFromInstance, getDirs)
-import Alloy.CdOd.Types
-  (ClassConfig (..), Change (..), Connection (..), Syntax, defaultProperties)
+import Alloy.CdOd.Types (
+  ClassConfig (..),
+  Change (..),
+  Connection (..),
+  Syntax,
+  defaultProperties,
+  toOldSyntax,
+  )
 
-import Control.Arrow                    (first, second)
 import Control.Monad                    (void, when)
 import Control.Monad.Fail               (MonadFail)
 import Control.Monad.IO.Class           (liftIO)
@@ -41,7 +46,7 @@ import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
 import Data.List                        ((\\), intercalate, nub, sort)
 import Data.List                        (delete)
 import Data.Map                         (Map)
-import Data.Maybe                       (fromJust, isJust, listToMaybe)
+import Data.Maybe                       (fromJust, isJust)
 import Data.Set                         (singleton)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
@@ -236,7 +241,6 @@ getODInstances maxObs maxIs cd1 cd2 cd3 numClasses = do
                        ([]   , instancesNot1not2)]
   where
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
-    toOldSyntax = first (map $ second listToMaybe)
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])

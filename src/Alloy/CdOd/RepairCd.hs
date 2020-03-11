@@ -13,7 +13,6 @@ import Alloy.CdOd.Edges                 (toEdges)
 import Alloy.CdOd.MatchCdOd             (applyChanges)
 import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
 import Alloy.CdOd.Types (
-  Association,
   AssociationType (..),
   Change (..),
   ClassConfig (..),
@@ -22,16 +21,17 @@ import Alloy.CdOd.Types (
   RelationshipProperties (..),
   Syntax,
   defaultProperties,
+  toOldSyntax,
   )
 
 import Control.Monad                    (void, when)
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Random
   (RandomGen, RandT, evalRandT, getRandomR, mkStdGen)
-import Data.Bifunctor                   (first, second)
+import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.Map                         (Map)
-import Data.Maybe                       (fromMaybe, listToMaybe)
+import Data.Maybe                       (fromMaybe)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -265,7 +265,3 @@ illegalChanges = map ($ const False) [
     withCompositionCycles :: RelationshipProperties -> RelationshipProperties
     withCompositionCycles config
       = config { hasCompositionCycles = True }
-
-toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
-toOldSyntax = first (map $ second listToMaybe)
-

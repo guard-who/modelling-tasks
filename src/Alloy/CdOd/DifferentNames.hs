@@ -14,22 +14,20 @@ import Alloy.CdOd.Edges                 (fromEdges, renameEdges, toEdges)
 import Alloy.CdOd.Generate              (generate)
 import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
 import Alloy.CdOd.Types (
-  Association,
   AssociationType (..),
   ClassConfig (..),
   Connection (..),
   Syntax,
+  toOldSyntax,
   )
 
 import Control.Monad                    (void, when)
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
-import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (nub, permutations)
-import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call
   (AlloyInstance, getTriple, lookupSig, objectName, scoped)
@@ -141,9 +139,6 @@ getDifferentNamesTask config maxObs sSpace maxIs = do
       links <- map nameOf . S.toList <$> getTriple "get" os
       return $ nub links
     nameOf (_,l,_) = takeWhile (/= '$') $ objectName l
-
-toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
-toOldSyntax = first (map $ second listToMaybe)
 
 withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
 withMinimalLabels n config

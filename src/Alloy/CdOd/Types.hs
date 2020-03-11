@@ -10,8 +10,11 @@ module Alloy.CdOd.Types (
   RelationshipProperties (..),
   Syntax,
   defaultProperties,
+  toOldSyntax,
   ) where
 
+import Data.Bifunctor                   (first, second)
+import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
 
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
@@ -63,3 +66,6 @@ defaultProperties = RelationshipProperties {
     hasCompositionCycles    = False,
     hasMarkedEdges          = Nothing
   }
+
+toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
+toOldSyntax = first (map $ second listToMaybe)
