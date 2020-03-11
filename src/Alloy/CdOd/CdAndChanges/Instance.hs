@@ -22,7 +22,7 @@ fromInstance insta = do
   cs <- instanceToChanges insta
   ns <- instanceToNames insta
   return (ns,
-          [e | (o, e) <- es, o `notElem` catMaybes (add <$> cs)],
+          [e | (o, e) <- es, o `notElem` catMaybes (map add cs)],
           [Change a r | c <- cs
                       , a <- lookupM (add c) es
                       , r <- lookupM (remove c) es])
@@ -35,9 +35,9 @@ instanceToNames
   :: AlloyInstance -> Either String ([String], [String])
 instanceToNames insta = do
   c' <- lookupSig (scoped "this" "Class") insta
-  cs <- fmap objectName . S.toList <$> getSingle "" c'
+  cs <- map objectName . S.toList <$> getSingle "" c'
   a' <- lookupSig (scoped "this" "Assoc") insta
-  as <- fmap objectName . S.toList <$> getSingle "" a'
+  as <- map objectName . S.toList <$> getSingle "" a'
   return (cs, as)
 
 instanceToChanges
@@ -48,7 +48,7 @@ instanceToChanges insta = do
   cs      <- S.toList <$> getSingle "" c'
   cAdd    <- getRelation "add" c'
   cRemove <- getRelation "remove" c'
-  return $ change cAdd cRemove <$> cs
+  return $ map (change cAdd cRemove) $ cs
   where
     change cAdd cRemove c =
       Change (M.lookup c cAdd) (M.lookup c cRemove)

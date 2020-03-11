@@ -44,7 +44,7 @@ data Alteration = Increase | Decrease
 
 getMutationResults
   :: ClassConfig -> [String] -> [DiagramEdge] -> Mutation -> [[DiagramEdge]]
-getMutationResults c vs es m = newName <$> case m of
+getMutationResults c vs es m = map newName $ case m of
   Add                 t -> allAdds c t vs es
   Remove              t -> allRemoves c t es
   Transform         s t -> transform c s t es
@@ -56,7 +56,7 @@ getMutationResults c vs es m = newName <$> case m of
     newName xs = case xs of
       []                           -> []
       (s,e,Assoc k "" sl se b):xs' ->
-        (s,e,Assoc k (firstFree (allNames xs') $ (:[]) <$> ['z','y'..]) sl se b):xs'
+        (s,e,Assoc k (firstFree (allNames xs') $ map (:[]) ['z','y'..]) sl se b):xs'
       xs'                          -> xs'
     allNames xs = [n | (_, _, Assoc _ n _ _ _) <- xs]
     firstFree _  []     = error "There are no free variables left"
@@ -153,7 +153,7 @@ allAdds c ts vs es =
     addEdges s e TAssociation sl el = addEdge s e TAssociation sl el
     addEdges s e t            sl el = addEdge s e t sl el ++ addEdge e s t sl el
     addEdge s e t sl el =
-      (\k -> (s, e, Assoc k "" sl el False)) <$> maybeToList (assocType t)
+      map (\k -> (s, e, Assoc k "" sl el False)) $ maybeToList (assocType t)
 
 assocType :: Target -> Maybe AssociationType
 assocType TAssociation = Just Association

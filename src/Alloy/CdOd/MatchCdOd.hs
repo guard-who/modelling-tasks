@@ -105,7 +105,7 @@ matchCdOd config path segment seed = do
     odFilename :: Char -> [Int] -> String
     odFilename n is = [i|#{path}output-od-#{n}-#{toDescription is 2}|]
     toDescription x n =
-      intercalate "and" (show <$> x) ++ foldr ((++) . ("not" ++) . show) [] ([1..n] \\ x)
+      intercalate "and" (map show x) ++ foldr ((++) . ("not" ++) . show) [] ([1..n] \\ x)
 
 getRandomTask
   :: RandomGen g
@@ -161,11 +161,11 @@ applyChanges insta = do
   let (cs, es) = names
   cs' <- shuffleM cs
   es' <- shuffleM es
-  let bme = BM.fromList $ zip es' $ (:[]) <$> ['z', 'y' ..]
-      bmc = BM.fromList $ zip cs' $ (:[]) <$> ['A' ..]
+  let bme = BM.fromList $ zip es' $ map (:[]) ['z', 'y' ..]
+      bmc = BM.fromList $ zip cs' $ map (:[]) ['A' ..]
       cd  = getSyntax bmc bme edges0 $ Change Nothing Nothing
-      cds = getSyntax bmc bme edges0 <$> changes
-  let changes' = fmap (head . renameClasses bmc . renameEdges bme . (:[])) <$> changes
+      cds = map (getSyntax bmc bme edges0) changes
+  let changes' = map (fmap $ head . renameClasses bmc . renameEdges bme . (:[])) changes
   return (cd, zip changes' cds, BM.size bmc)
   where
     getSyntax bmc bme es c =
@@ -236,7 +236,7 @@ getODInstances maxObs maxIs cd1 cd2 cd3 numClasses = do
                        ([]   , instancesNot1not2)]
   where
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
-    toOldSyntax = first (second listToMaybe <$>)
+    toOldSyntax = first (map $ second listToMaybe)
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])

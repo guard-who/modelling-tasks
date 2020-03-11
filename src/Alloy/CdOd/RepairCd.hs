@@ -133,7 +133,7 @@ repairCd
 repairCd config path segment seed = do
   let g = mkStdGen $ (segment +) $ (4 *) seed
   (cd, chs) <- evalRandT (repairIncorrect $ classConfig config) g
-  let chs' = second fst <$> chs
+  let chs' = map (second fst) $ chs
   cd'       <- drawCdFromSyntax (printNavigations config) (printNames config) Nothing cd path Svg
   return $ RepairCdInstance
     (M.fromList $ zip [1..] chs')
@@ -145,7 +145,7 @@ constrainConfig :: RandomGen g => Int -> ClassConfig -> RandT g IO ClassConfig
 constrainConfig n config = do
   clas <- getRandomR $ classes config
   let maxAg  = ((clas * (clas - 1)) `div` 2)
-        + n - sum (fst . ($ config) <$> edges)
+        + n - sum (map (fst . ($ config)) edges)
   (maxAs, aggs) <- randOf aggregations maxAg
   (maxCo, asss) <- randOf associations maxAs
   (maxIn, coms) <- randOf compositions maxCo
@@ -169,14 +169,14 @@ repairIncorrect config = do
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
 --  config' <- constrainConfig 5 config
   let code = Changes.transformChanges config (toProperty e0) (Just config)
-        $ toProperty <$> cs
+        $ map toProperty cs
   when debug $ liftIO $ do
     putStrLn $ changeName e0
-    print $ changeName <$> cs
+    print $ map changeName cs
     writeFile "repair.als" code
   instas  <- liftIO $ Alloy.getInstances (Just 200) code
   rinstas <- shuffleM instas
-  getInstanceWithODs (isValid <$> cs) rinstas
+  getInstanceWithODs (map isValid cs) rinstas
   where
     drawCd :: Syntax -> Integer -> IO FilePath
     drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
@@ -194,14 +194,14 @@ repairIncorrect config = do
       repairIncorrect config
     getInstanceWithODs vs (rinsta:rinstas) = do
       (cd, chs, _) <- applyChanges rinsta
-      let cds  = zip vs (snd <$> chs)
+      let cds  = zip vs (map snd chs)
           chs' = zip vs chs
       ods <- (liftIO . getOD . snd) `mapM` filter fst cds
-      if and $ not . null <$> ods
+      if and $ map (not . null) ods
         then do
         when debug $ liftIO $ do
           void $ drawCd cd 0
-          uncurry drawCd `mapM_` zip (snd <$> chs) [1 ..]
+          uncurry drawCd `mapM_` zip (map snd chs) [1 ..]
           uncurry (drawOd cd . head) `mapM_` zip ods [1 ..]
         return (cd, chs')
         else do
@@ -246,7 +246,7 @@ legalChanges = [
       = config { hasMultipleInheritances = True }
 
 illegalChanges :: [PropertyChange]
-illegalChanges = ($ const False) <$> [
+illegalChanges = map ($ const False) [
     PropertyChange "add wrong association" addWrongAssocs,
     PropertyChange "add wrong composition" addWrongCompositions,
     PropertyChange "force inheritance cycles" withInheritanceCycles,
@@ -267,5 +267,5 @@ illegalChanges = ($ const False) <$> [
       = config { hasCompositionCycles = True }
 
 toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
-toOldSyntax = first (second listToMaybe <$>)
+toOldSyntax = first (map $ second listToMaybe)
 

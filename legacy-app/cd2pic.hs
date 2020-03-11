@@ -15,7 +15,7 @@ run :: Bool -> Attribute -> String -> FilePath -> GraphvizOutput -> IO ()
 run printNames howToMark input file format = do
   let tokens = lexer input
   let syntax = parser tokens
-  output <- drawCdFromSyntax False printNames (Just howToMark) (first (second maybeToList <$>) syntax) file format
+  output <- drawCdFromSyntax False printNames (Just howToMark) (first (map $ second maybeToList) syntax) file format
   putStrLn $ "Output written to " ++ output
 
 main :: IO ()

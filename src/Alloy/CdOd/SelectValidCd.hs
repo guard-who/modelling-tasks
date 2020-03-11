@@ -47,7 +47,7 @@ selectValidCd
 selectValidCd config path segment seed = do
   let g = mkStdGen $ (segment +) $ (4 *) seed
   (_, chs)  <- evalRandT (repairIncorrect $ classConfig config) g
-  let cds = second snd <$> chs
+  let cds = map (second snd) $ chs
   cds'      <- foldl drawCd (return []) $ zip [1 ..] cds
   return $ SelectValidCdInstance $ M.fromList cds'
   where

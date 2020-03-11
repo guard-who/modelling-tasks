@@ -81,7 +81,7 @@ drawCdsAndOds c y z =
              fromEdges classes [w, x, y, z, inh2]]
   in foldr (id . (>>) . (\(i, cd) -> drawCdAndOdsFor (Just 1) (c ++ show i) M.empty [cd] "cd0")) (return ()) $ zip [0..] cds
   where
-    classes = ((:[]) <$> ['A' .. 'D'])
+    classes = map (:[]) ['A' .. 'D']
 
 drawCdAndOdsFor
   :: Maybe Integer
@@ -98,11 +98,11 @@ drawCdAndOdsFor is c dirs cds cmd = do
   void $ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= print)
     `mapM` zip (maybe id (take . fromInteger) is ods) [1..]
   where
-    parts = (\(cd, i) -> getFour $ transform (toOldSyntax cd) (show i) "") <$> zip cds [0..]
+    parts = map (\(cd, i) -> getFour $ transform (toOldSyntax cd) (show i) "") $ zip cds [0..]
     getFour (p1, p2, p3, p4, _) = (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) =
       p1 ++ p2 ++ p3 ++ p4
-    toOldSyntax = first (second listToMaybe <$>)
+    toOldSyntax = first (map $ second listToMaybe)
     shorten (' ':'a':'n':'d':' ':'c':'d':ys) =
       "and" ++ shorten ys
     shorten (' ':'a':'n':'d':' ':'n':'o':'t':' ':'c':'d':ys) =

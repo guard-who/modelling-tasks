@@ -27,7 +27,7 @@ generate c searchSpace = do
          else generate smallerC searchSpace
   where
     smallerC = shrink c searchSpace
-    classNames x = (:[]) <$> take x ['A'..]
+    classNames x = map (:[]) $ take x ['A'..]
     toAvailable :: (Int, Maybe Int) -> [Int]
     toAvailable (x, Nothing) = [x ..]
     toAvailable (x, Just  y) = [x .. y]

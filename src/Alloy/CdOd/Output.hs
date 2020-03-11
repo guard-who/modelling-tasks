@@ -93,8 +93,8 @@ drawOdFromInstance :: AlloyInstance -> Maybe Int -> Map String DirType -> Bool -
 drawOdFromInstance i anonymous =
   let g = either error id $ do
         os    <- lookupSig (scoped "this" "Obj") i
-        objs  <- fmap objectName . S.toList <$> getSingle "" os
-        links <- fmap (linkOf objs) . S.toList <$> getTriple "get" os
+        objs  <- map objectName . S.toList <$> getSingle "" os
+        links <- map (linkOf objs) . S.toList <$> getTriple "get" os
         return (objs, links)
   in uncurry drawOdFromNodesAndEdges g $ maybe (length (fst g) `div` 3) id anonymous
   where

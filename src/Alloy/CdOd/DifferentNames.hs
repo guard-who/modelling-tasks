@@ -102,11 +102,11 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
     let cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = extractFourParts cd0
         labels = [l | (_, l, _, _, _, _) <- snd $ snd cd0]
-        cds    = fromEdges names
-          . flip renameEdges edges . BM.fromList . zip labels
-          <$> drop 1 (permutations labels)
+        cds    = map
+          (fromEdges names . flip renameEdges edges . BM.fromList . zip labels)
+          $ drop 1 (permutations labels)
         cds'   = zip [1 :: Integer ..] cds
-        partss = extractFourParts <$> cds'
+        partss = map extractFourParts cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand runCmd (length names) maxObjects
         partss' = foldr mergeParts parts0 partss
@@ -117,7 +117,7 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
-      let bm  = BM.fromList $ zip ((:[]) <$> ['a', 'b' ..]) labels'
+      let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = fromEdges names $ renameEdges (BM.twist bm) edges
           bm' = BM.filter (const $ (`elem` usedLabels od1)) bm
       return (cd1, od1, bm')
@@ -138,12 +138,12 @@ getDifferentNamesTask config maxObjects searchSpace maxInstances = do
     usedLabels :: AlloyInstance -> [String]
     usedLabels inst = either error id $ do
       os    <- lookupSig (scoped "this" "Obj") inst
-      links <- fmap nameOf . S.toList <$> getTriple "get" os
+      links <- map nameOf . S.toList <$> getTriple "get" os
       return $ nub links
     nameOf (_,l,_) = takeWhile (/= '$') $ objectName l
 
 toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
-toOldSyntax = first (second listToMaybe <$>)
+toOldSyntax = first (map $ second listToMaybe)
 
 withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
 withMinimalLabels n config

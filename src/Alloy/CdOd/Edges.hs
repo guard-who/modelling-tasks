@@ -33,8 +33,9 @@ fromEdges classNames es =
   let isInheritance (_, _, Inheritance) = True
       isInheritance (_, _, _          ) = False
       (ihs, ass) = partition isInheritance es
-      classes' = (\x -> (x, [e | (s, e, Inheritance) <- ihs, s == x]))
-        <$> classNames
+      classes' = map
+        (\x -> (x, [e | (s, e, Inheritance) <- ihs, s == x]))
+        classNames
       assocs   = [(t, n, m1, s, e, m2) | (s, e, Assoc t n m1 m2 False) <- ass]
   in (classes', assocs)
 
