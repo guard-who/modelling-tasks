@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE QuasiQuotes #-}
 module Alloy.CdOd.DifferentNames where
 
 import qualified Data.Bimap                       as BM
@@ -65,7 +64,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
 
 differentNames
   :: DifferentNamesConfig
-  -> [Char]
+  -> String
   -> Int
   -> Int
   -> IO DifferentNamesInstance
@@ -117,7 +116,7 @@ getDifferentNamesTask config maxObs sSpace maxIs = do
       labels' <- shuffleM labels
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = fromEdges names $ renameEdges (BM.twist bm) edges
-          bm' = BM.filter (const $ (`elem` usedLabels od1)) bm
+          bm' = BM.filter (const (`elem` usedLabels od1)) bm
       return (cd1, od1, bm')
   where
     extractFourParts (n, cd) = case transform (toOldSyntax cd) (show n) "" of

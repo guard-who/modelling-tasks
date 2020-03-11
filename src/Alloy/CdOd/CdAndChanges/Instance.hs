@@ -11,7 +11,7 @@ import Alloy.CdOd.Types
 
 import Data.List                        (stripPrefix)
 import Data.Map                         (Map)
-import Data.Maybe                       (catMaybes, fromMaybe, isJust)
+import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
 import Language.Alloy.Call
 
 fromInstance
@@ -22,7 +22,7 @@ fromInstance insta = do
   cs <- instanceToChanges insta
   ns <- instanceToNames insta
   return (ns,
-          [e | (o, e) <- es, o `notElem` catMaybes (map add cs)],
+          [e | (o, e) <- es, o `notElem` mapMaybe add cs],
           [Change a r | c <- cs
                       , a <- lookupM (add c) es
                       , r <- lookupM (remove c) es])
@@ -48,7 +48,7 @@ instanceToChanges insta = do
   cs      <- S.toList <$> getSingle "" c'
   cAdd    <- getRelation "add" c'
   cRemove <- getRelation "remove" c'
-  return $ map (change cAdd cRemove) $ cs
+  return $ map (change cAdd cRemove) cs
   where
     change cAdd cRemove c =
       Change (M.lookup c cAdd) (M.lookup c cRemove)

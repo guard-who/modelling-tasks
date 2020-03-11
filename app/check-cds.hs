@@ -77,7 +77,7 @@ drawCdsAndOds c y z =
              fromEdges classes [x, y, z, inh2],
              fromEdges classes [x, y, z, inh3, inh2],
              fromEdges classes [w, x, y, z, inh2]]
-  in foldr (id . (>>) . (\(i, cd) -> drawCdAndOdsFor (Just 1) (c ++ show i) M.empty [cd] "cd0")) (return ()) $ zip [0..] cds
+  in foldr ((>>) . (\(i, cd) -> drawCdAndOdsFor (Just 1) (c ++ show i) M.empty [cd] "cd0")) (return ()) $ zip [0..] cds
   where
     classes = map (:[]) ['A' .. 'D']
 

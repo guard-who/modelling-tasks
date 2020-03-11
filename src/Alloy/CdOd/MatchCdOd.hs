@@ -43,8 +43,7 @@ import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
 import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
-import Data.List                        ((\\), intercalate, nub, sort)
-import Data.List                        (delete)
+import Data.List                        ((\\), delete, intercalate, nub, sort)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, isJust)
 import Data.Set                         (singleton)
@@ -88,7 +87,7 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
 instancesOfMatch :: MatchCdOdInstance -> Map Int String
 instancesOfMatch task = nub . sort <$>
   M.foldrWithKey
-  (\o (cs, _) m -> foldr (\c -> M.alter (Just . maybe [o] (o:)) c) m cs)
+  (\o (cs, _) m -> foldr (M.alter (Just . maybe [o] (o:))) m cs)
   M.empty
   (instances task)
 
@@ -110,7 +109,7 @@ matchCdOd config path segment seed = do
     odFilename :: Char -> [Int] -> String
     odFilename n is = [i|#{path}output-od-#{n}-#{toDescription is 2}|]
     toDescription x n =
-      intercalate "and" (map show x) ++ foldr ((++) . ("not" ++) . show) [] ([1..n] \\ x)
+      intercalate "and" (map show x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)
 
 getRandomTask
   :: RandomGen g

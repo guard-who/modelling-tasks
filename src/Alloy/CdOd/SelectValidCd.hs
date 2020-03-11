@@ -34,7 +34,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
     printNavigations = True
   }
 
-data SelectValidCdInstance = SelectValidCdInstance {
+newtype SelectValidCdInstance = SelectValidCdInstance {
     classDiagrams   :: Map Int (Bool, FilePath)
   } deriving (Generic, Show)
 
@@ -47,7 +47,7 @@ selectValidCd
 selectValidCd config path segment seed = do
   let g = mkStdGen $ (segment +) $ (4 *) seed
   (_, chs)  <- evalRandT (repairIncorrect $ classConfig config) g
-  let cds = map (second snd) $ chs
+  let cds = map (second snd) chs
   cds'      <- foldl drawCd (return []) $ zip [1 ..] cds
   return $ SelectValidCdInstance $ M.fromList cds'
   where

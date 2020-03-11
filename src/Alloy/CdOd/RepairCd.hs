@@ -133,7 +133,7 @@ repairCd
 repairCd config path segment seed = do
   let g = mkStdGen $ (segment +) $ (4 *) seed
   (cd, chs) <- evalRandT (repairIncorrect $ classConfig config) g
-  let chs' = map (second fst) $ chs
+  let chs' = map (second fst) chs
   cd'       <- drawCdFromSyntax (printNavigations config) (printNames config) Nothing cd path Svg
   return $ RepairCdInstance
     (M.fromList $ zip [1..] chs')
@@ -190,22 +190,20 @@ repairIncorrect config = do
                               (foldr (`M.insert` Forward) M.empty forwards)
                               backwards
       in drawOdFromInstance od Nothing navigations True ("od-" ++ show x) Pdf
-    getInstanceWithODs _  [] = do
-      repairIncorrect config
+    getInstanceWithODs _  [] = repairIncorrect config
     getInstanceWithODs vs (rinsta:rinstas) = do
       (cd, chs, _) <- applyChanges rinsta
       let cds  = zip vs (map snd chs)
           chs' = zip vs chs
       ods <- (liftIO . getOD . snd) `mapM` filter fst cds
-      if and $ map (not . null) ods
+      if all (not . null) ods
         then do
         when debug $ liftIO $ do
           void $ drawCd cd 0
           uncurry drawCd `mapM_` zip (map snd chs) [1 ..]
           uncurry (drawOd cd . head) `mapM_` zip ods [1 ..]
         return (cd, chs')
-        else do
-        getInstanceWithODs vs rinstas
+        else getInstanceWithODs vs rinstas
     getOD cd = do
       let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) "" ""
       Alloy.getInstances (Just 1) (p1 ++ p2 ++ p3 ++ p4 ++ p5)

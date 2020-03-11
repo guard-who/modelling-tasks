@@ -86,8 +86,7 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
                                         shape BoxShape, Margin $ DVal 0.04, Width 0, Height 0, FontSize 11],
                    fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNavigations printNames marking l }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
-  output <- addExtension (runGraphviz dotGraph) format (dropExtension file)
-  return output
+  addExtension (runGraphviz dotGraph) format (dropExtension file)
 
 drawOdFromInstance :: AlloyInstance -> Maybe Int -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
 drawOdFromInstance i anonymous =
@@ -96,7 +95,7 @@ drawOdFromInstance i anonymous =
         objs  <- map objectName . S.toList <$> getSingle "" os
         links <- map (linkOf objs) . S.toList <$> getTriple "get" os
         return (objs, links)
-  in uncurry drawOdFromNodesAndEdges g $ maybe (length (fst g) `div` 3) id anonymous
+  in uncurry drawOdFromNodesAndEdges g $ fromMaybe (length (fst g) `div` 3) anonymous
   where
     nameOf   = takeWhile (/= '$') . objectName
     linkOf objs (x, l, y) =
@@ -124,8 +123,7 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
                                         shape BoxShape, Margin $ DVal 0.04, Width 0, Height 0, FontSize 12],
                    fmtEdge = \(_,_,l) -> arrowHeads l ++ [ArrowSize 0.4, FontSize 12] ++ [toLabel l | printNames] }) graph
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
-  output <- addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
-  return output
+  addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   where
     arrowHeads l = case M.lookup l navigations of
       Nothing  -> [edgeEnds NoDir]
