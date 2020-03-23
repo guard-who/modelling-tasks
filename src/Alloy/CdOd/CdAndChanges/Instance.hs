@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TupleSections #-}
 module Alloy.CdOd.CdAndChanges.Instance (
   fromInstance,
@@ -12,7 +13,15 @@ import Alloy.CdOd.Types
 import Data.List                        (stripPrefix)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
+#if __GLASGOW_HASKELL__ >= 808
+import Data.String                      (IsString, fromString)
+#endif
 import Language.Alloy.Call
+
+#if __GLASGOW_HASKELL__ >= 808
+instance IsString a => MonadFail (Either a) where
+  fail = Left . fromString
+#endif
 
 fromInstance
   :: AlloyInstance

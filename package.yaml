@@ -1,4 +1,9 @@
 name: alloy-cd-od
+extra-source-files:
+  - alloy/cd/assoclimits.als
+  - alloy/cd/generate.als
+  - alloy/od/template.als
+  - README.md
 build-tools:
   - alex
   - happy
