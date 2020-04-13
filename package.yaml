@@ -5,6 +5,7 @@ dependencies:
   - string-interpolate
   - containers
   - transformers
+  - file-embed
 library:
   source-dirs: .
   exposed-modules: 

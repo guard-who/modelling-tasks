@@ -18,3 +18,5 @@ getFirstElem :: Set.Set a -> a
 getFirstElem s = Set.elemAt 0 s
 
 --work with Lists
+list2nd :: [a] -> a
+list2nd (b:c:rs) = c

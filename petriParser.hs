@@ -1,9 +1,12 @@
 {-# Language QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 module PetriParser where
 
 import Data.List
 import Data.Maybe
+import Data.String
 import Data.String.Interpolate
+import Data.FileEmbed
 import Language.Alloy.Call
 import qualified Data.Set as Set
 import Interactions
@@ -111,7 +114,7 @@ helpConvertPost (p:rp) ((a,b,x):rt)
 --Startmarkierung--
 testPParser :: IO()
 testPParser = do
-  list <- getInstances (Just 5) (petriNetRnd (4,5,4,2,1))
+  list <- getInstances (Just 5) (petriNetRnd (6,5,4,2,1))
   convertPetri (head list)
 
 testMark :: IO ()
@@ -123,7 +126,7 @@ testMark = do
 --Flow--
 testFlow :: IO()
 testFlow = do
-  list <- getInstances (Just 5) petriNetA
+  list <- getInstances (Just 5) (petriNetRnd (4,5,4,2,2))
   filterFlow (head list)
 
 --Stuff--
@@ -158,30 +161,53 @@ testSingle (a,b,c) = do
   print $ objectName a
 
 ----------------------------------------------------------------------
+{-
+-}
 ----------------------------------------------------------------------
+
+modulePetriSignature :: String
+modulePetriSignature = $(embedStringFile "libAlloy/PetriSignature.als")
+
+modulePetriAdditions :: String
+modulePetriAdditions = $(embedStringFile "libAlloy/PetriAdditions.als")
+
+moduleHelpers :: String
+moduleHelpers = $(embedStringFile "libAlloy/Helpers.als")
+
+modulePetriConcepts :: String 
+modulePetriConcepts = $(embedStringFile "libAlloy/PetriConcepts.als")
+
+modulePetriConstraints :: String
+modulePetriConstraints = $(embedStringFile "libAlloy/PetriConstraints.als")
+
+moduleOneLiners :: String 
+moduleOneLiners = $(embedStringFile "libAlloy/OneLiners.als")
+
+--Bigger Net needs bigger "run for x"
 petriNetRnd :: Input -> String
 petriNetRnd (places,trans,tkns,maxTkns,maxWght) = [i|module PetriNetRnd 
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
-#{modulePetriHelpers}
+#{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
-
+#{moduleOneLiners}
 
 fact{
   no givenPlaces
   no givenTransitions
 }
 
-pred showNets [] {
+pred showNets [ts : set Transitions] {
   #Places = #{places}
-  #Transitions = #{trans}
   tokensAddedOverall[#{tkns}]
   perPlaceTokensAddedAtMost[#{maxTkns}]
+  #Transitions = #{trans}
   maxWeight[#{maxWght}]
+  numberActivatedTransition[1,ts]
 }
-run showNets for 10
+run showNets for 20
 
 |]
 

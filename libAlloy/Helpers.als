@@ -1,7 +1,3 @@
-module Helpers
-
-open PetriSignature
-
 //sum of tokenChange
 fun tokenChangeSum[places : set Places] : Int{
   sum p : places | p.tokenChange

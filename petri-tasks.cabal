@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 350a5dbf424c73cca40db2829bcc9680da34d888a3724f39b498de70f4d38203
+-- hash: 54a60cc26647843ffc8ccb68f43b66d8e9024c347f550c0bb23753deb5d8153b
 
 name:           petri-tasks
 version:        0.0.0
@@ -24,6 +24,7 @@ library
       base
     , call-alloy
     , containers
+    , file-embed
     , string-interpolate
     , transformers
   default-language: Haskell2010

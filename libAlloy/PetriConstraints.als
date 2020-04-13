@@ -1,6 +1,4 @@
-module PetriConstraints
 
-open PetriConcepts
 
 //set tokens should be added to a petri net only
 pred tokenAddOnly[]{
