@@ -1,10 +1,21 @@
+{-# Language QuasiQuotes #-}
+module Functions where 
+
 import Data.List
 
 type Mark = [Int]
 type Trans = (Mark,Mark)
+type Petri = (Mark,[Trans])
 type TGNode = (Mark,[Mark])
+data FormalNet = PetriNet{mark :: Int,
+  trans :: Int ,
+  preT :: [(Int,Mark)],
+  postT :: [(Int,Mark)],
+  startM :: Int
+  }
 
 -- (Stellen, Transitionen, Vorbedingungen, Nachbedingungen, Startmarkierung)
+-- FormalNet datatype einfügen als rückgabe
 getFormal :: Mark -> [Trans] -> ( Int , Int , [(Int,Mark)] , [(Int,Mark)] , Mark)
 getFormal _ [] = error "Lost Trans Error"
 getFormal sm tr = ( getMarks tr , length tr , getPre 1 tr , getPost 1 tr , sm)
@@ -55,7 +66,8 @@ convertList [] = ""
 convertList (a:[]) = show a
 convertList (a:rs) = show a ++"," ++ convertList rs
 
---TGNode = (Mark,[Mark])
+--convert to TransitionGraph
+--filled in function -> startM -> TransP -> return
 getTransitionGraph :: [Mark] -> [Mark] -> [Trans] -> [TGNode]
 getTransitionGraph _ [] _ = []
 getTransitionGraph um (m:rm) t = ((m,calcM m t) : getTransitionGraph (m:um) (union rm (cutList (m:um) (calcM m t))) t)
@@ -78,5 +90,34 @@ cutList _ [] = []
 cutList l1 (h:rs)
   | elem h l1 == False = (h:cutList l1 rs)
   | otherwise          =  cutList l1 rs
-
   
+--generate Tasks
+--Tasks generated with Options
+--each Option gets a value with a boolean attached for right and false answer
+--new File later
+
+type TOpt a = [([a],Bool)]
+data TGHelp = TGHelp [Mark] [Trans]
+
+--Task: Petri -> TG
+--generate Transitionsgraphs
+genTGTask :: Int -> Petri -> TOpt TGNode
+genTGTask i (m,tr) = ( (getTransitionGraph [] [m] tr, True) : genTGOpt i (m,tr) )
+
+-- Petrinet change & gen false Opt
+--                       -> [([TGNode],Bool)]
+-- case für auswahl von veränderung?
+genTGOpt :: Int -> Petri -> TOpt TGNode
+genTGOpt 0 _ = []
+genTGOpt i (m,tr) = ( (getTransitionGraph [] (tempOpt m) tr, False) : genTGOpt (i-1) (m,tr) )
+
+
+--Petri anpassen 
+-- momentan ohne Funktion
+altPetri :: Petri -> TGHelp
+altPetri (m,tr) = TGHelp [m] tr
+
+tempOpt :: Mark -> [Mark]
+tempOpt m = [map (1+) m]
+
+--CallAlloy Tests
