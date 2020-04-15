@@ -10,6 +10,7 @@ import Interactions
 import AuxFunctions
       
 type TripSet = Set.Set (Object,Object,Object)
+type Input = (Int,Int,Int,Int,Int)
 
 
 convertPetri :: AlloyInstance -> IO()
@@ -35,7 +36,7 @@ filterFlow inst = do
           case plcs of 
             Left error -> print error
             Right places -> do
-            print $ convertToTrans (Set.toList places) flow
+              print $ convertToTrans (Set.toList places) flow
             
       
 
@@ -110,7 +111,7 @@ helpConvertPost (p:rp) ((a,b,x):rt)
 --Startmarkierung--
 testPParser :: IO()
 testPParser = do
-  list <- getInstances (Just 5) petriNetA
+  list <- getInstances (Just 5) (petriNetRnd (4,5,4,2,1))
   convertPetri (head list)
 
 testMark :: IO ()
@@ -158,6 +159,32 @@ testSingle (a,b,c) = do
 
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
+petriNetRnd :: Input -> String
+petriNetRnd (places,trans,tkns,maxTkns,maxWght) = [i|module PetriNetRnd 
+
+#{modulePetriSignature}
+#{modulePetriAdditions}
+#{modulePetriHelpers}
+#{modulePetriConcepts}
+#{modulePetriConstraints}
+
+
+fact{
+  no givenPlaces
+  no givenTransitions
+}
+
+pred showNets [] {
+  #Places = #{places}
+  #Transitions = #{trans}
+  tokensAddedOverall[#{tkns}]
+  perPlaceTokensAddedAtMost[#{maxTkns}]
+  maxWeight[#{maxWght}]
+}
+run showNets for 10
+
+|]
+
 petriNetA :: String
 petriNetA = [i|module scenarios/examples/PetriNetA 
 #{modulePetriSignature}

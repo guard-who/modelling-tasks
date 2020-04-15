@@ -156,4 +156,180 @@ abstract sig Transitions extends Nodes
 abstract sig givenPlaces extends Places{}
 abstract sig givenTransitions extends Transitions{}
 |]
+---------------------------------------------
+modulePetriConstraints :: String
+modulePetriConstraints = [i|
+//#{modulePetriConcepts}
+
+//set tokens should be added to a petri net only
+pred tokenAddOnly[]{
+  all tc : Places.tokenChange | tc > 0
+}
+
+//set tokens should be removed from a petri net only
+pred tokenRemoveOnly[]{
+  all tc : Places.tokenChange | tc < 0
+}
+
+//check if maximum set of concurrent transitions
+pred isMaxConcurrency[ts : set Transitions]{
+  concurrent[ts]
+  no t : (Transitions - ts) | concurrent[ts+t]
+}
+
+//altogether exactly n tokens should be added
+pred tokensAddedOverall[n : Int]{
+  tokenAddOnly
+  tokenChangeSum[Places] = n
+}
+
+//altogether exactly n tokens should be removed
+pred tokensRemovedOverall[n : Int]{
+  tokenRemoveOnly
+  tokenChangeSum[Places] = minus[0,n]
+}
+
+//In each place, at most m tokens should be added
+pred perPlaceTokensAddedAtMost[m : Int]{
+  tokenAddOnly
+  all p : Places | p.tokenChange =< m
+}
+
+//set weight can be added to a petri net only
+pred weightAddOnly[]{
+  all change : Nodes.flowChange[Nodes] | change > 0
+}
+
+//set weight can be removed from a petri net only
+pred weightRemoveOnly[]{
+  all change : Nodes.flowChange[Nodes] | change < 0
+}
+
+//altogether exactly n weight should be added
+pred weightAddedOverall[n : Int]{
+  weightAddOnly
+  flowChangeSum[Nodes,Nodes] = n
+}
+
+//altogether exactly n weight should be removed
+pred weightRemovedOverall[n : Int]{
+  weightRemoveOnly
+  flowChangeSum[Nodes,Nodes] = minus[0,n]
+}
+
+//altogether exactly n transitions should be activated
+pred numberActivatedTransition[n : Int, ts : set Transitions]{
+  #ts = n
+  all t : ts | activated[t]
+  no t : (Transitions - ts) | activated[t]
+}
+|]
+---------------------------------------------
+modulePetriAdditions :: String
+modulePetriAdditions = [i|
+
+//#{modulePetriSignature}
+
+//Places and Transitions to be added
+sig addedPlaces extends Places{}
+{
+  defaultTokens = 0
+  no defaultFlow
+}
+
+sig addedTransitions extends Transitions{}
+{
+  no defaultFlow
+}
+
+
+pred noChangesToGivenParts[]{
+  no givenPlaces.tokenChange
+  let givenNodes = givenPlaces + givenTransitions | no givenNodes.flowChange[givenNodes]
+}
+|]
+---------------------------------------------
+modulePetriConcepts :: String
+modulePetriConcepts = [i|
+
+//#{modulePetriSignature}
+//#{modulePetriHelpers}
+
+//check if a transition is activated
+pred activated[t : Transitions]{
+  all p : Places | p.tokens >= p.flow[t]
+}
+
+//check if a transition conflicts with another transitions
+pred conflict[t1, t2 : Transitions, p : Places]{
+  t1 != t2
+  activated[t1]
+  activated[t2]
+  p.tokens < plus[p.flow[t1], p.flow[t2]]
+}
+
+//check if two distinct transitions are concurrent
+pred concurrent[ts : set Transitions]{
+  all p : Places | p.tokens >= flowSum[p, ts]
+}
+
+//check activation under default condition
+ pred activatedDefault[t : Transitions]{
+  all p : Places | p.defaultTokens >= p.defaultFlow[t]
+}
+
+//check conflict under default condition
+pred conflictDefault[t1, t2 : Transitions, p : Places]{
+  t1 != t2
+  activatedDefault[t1]
+  activatedDefault[t2]
+  p.defaultTokens < plus[p.defaultFlow[t1], p.defaultFlow[t2]]
+}
+
+//check concurrent under default condition
+pred concurrentDefault[ts : set Transitions]{
+  all p : Places | p.defaultTokens >= defaultFlowSum[p, ts]
+}
+
+//check if there is a loop between a place and a transition
+pred selfLoop[p : Places, t : Transitions]{
+  (one p.flow[t]) and (one t.flow[p])
+}
+
+//check if some transitions are sink transitions
+pred sinkTransitions[ts : set Transitions]{
+  no ts.flow
+}
+
+//check if some transitions are source transitions
+pred sourceTransitions[ts : set Transitions]{
+  no Places.flow[ts]
+}
+|]
+---------------------------------------------
+modulePetriHelpers :: String
+modulePetriHelpers = [i|
+
+//#{modulePetriSignature}
+
+//sum of tokenChange
+fun tokenChangeSum[places : set Places] : Int{
+  sum p : places | p.tokenChange
+}
+
+//total number of flows going from set of nodes to set of nodes
+fun flowSum[from, to : set Nodes] : Int{
+  sum f : from, t : to | f.flow[t]
+}
+
+//total number of default flows going out from set of nodes to a set of nodes
+fun defaultFlowSum[from, to : set Nodes] : Int{
+  sum f : from, t : to | f.defaultFlow[t]
+}
+
+//total number of flow changes going out from set of nodes to a set of nodes
+fun flowChangeSum[from, to : set Nodes] : Int{
+  sum f : from, t : to | f.flowChange[t]
+}
+|]
 
