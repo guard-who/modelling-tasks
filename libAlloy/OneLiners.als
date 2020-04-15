@@ -1,3 +1,7 @@
+module OneLiners
+
+open PetriConstraints
+
 pred noActivatedTrans[]{
   no t : Transitions | activated[t]
 }

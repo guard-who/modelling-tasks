@@ -1,3 +1,5 @@
+module PetriSignature
+
 abstract sig Nodes
 {
   flow : Nodes -> lone Int,

@@ -184,22 +184,25 @@ testSingle (a,b,c) = do
 ----------------------------------------------------------------------
 
 modulePetriSignature :: String
-modulePetriSignature = $(embedStringFile "libAlloy/PetriSignature.als")
+modulePetriSignature = removeLines 2 $(embedStringFile "libAlloy/PetriSignature.als")
 
 modulePetriAdditions :: String
-modulePetriAdditions = $(embedStringFile "libAlloy/PetriAdditions.als")
+modulePetriAdditions = removeLines 11 $(embedStringFile "libAlloy/PetriAdditions.als")
 
 moduleHelpers :: String
-moduleHelpers = $(embedStringFile "libAlloy/Helpers.als")
+moduleHelpers = removeLines 4 $(embedStringFile "libAlloy/Helpers.als")
 
 modulePetriConcepts :: String 
-modulePetriConcepts = $(embedStringFile "libAlloy/PetriConcepts.als")
+modulePetriConcepts = removeLines 5 $(embedStringFile "libAlloy/PetriConcepts.als")
 
 modulePetriConstraints :: String
-modulePetriConstraints = $(embedStringFile "libAlloy/PetriConstraints.als")
+modulePetriConstraints = removeLines 4 $(embedStringFile "libAlloy/PetriConstraints.als")
 
 moduleOneLiners :: String 
-moduleOneLiners = $(embedStringFile "libAlloy/OneLiners.als")
+moduleOneLiners = removeLines 4 $(embedStringFile "libAlloy/OneLiners.als")
+
+removeLines :: Int -> String -> String
+removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
 petriNetRnd :: Input -> String

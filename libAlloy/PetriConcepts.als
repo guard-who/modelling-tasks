@@ -1,3 +1,8 @@
+module PetriConcepts
+
+open PetriSignature
+open Helpers
+
 //check if a transition is activated
 pred activated[t : Transitions]{
   all p : Places | p.tokens >= p.flow[t]
