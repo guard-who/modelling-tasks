@@ -1,5 +1,7 @@
 {-# Language QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE NamedFieldPuns #-}
+
 module PetriParser where
 
 import Data.List
@@ -9,12 +11,28 @@ import Data.String.Interpolate
 import Data.FileEmbed
 import Language.Alloy.Call
 import qualified Data.Set as Set
-import Interactions
 import AuxFunctions
       
 type TripSet = Set.Set (Object,Object,Object)
-type Input = (Int,Int,Int,Int,Int)
 
+data Input = Input
+  { places :: Int
+  , trans :: Int
+  , tkns :: Int
+  , maxTkns :: Int
+  , maxWght :: Int
+  , anyOtherFieldThatMightBeNeededLater :: Bool
+  }
+
+defaultInput :: Input
+defaultInput = Input
+  { places = 4
+  , trans = 5
+  , tkns = 4
+  , maxTkns = 2
+  , maxWght = 2
+  , anyOtherFieldThatMightBeNeededLater = undefined -- Note how this field is not even mentioned anywhere below.
+  }
 
 convertPetri :: AlloyInstance -> IO()
 convertPetri inst = do
@@ -114,7 +132,7 @@ helpConvertPost (p:rp) ((a,b,x):rt)
 --Startmarkierung--
 testPParser :: IO()
 testPParser = do
-  list <- getInstances (Just 5) (petriNetRnd (6,5,4,2,1))
+  list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = 6, maxWght = 1} )
   convertPetri (head list)
 
 testMark :: IO ()
@@ -126,7 +144,7 @@ testMark = do
 --Flow--
 testFlow :: IO()
 testFlow = do
-  list <- getInstances (Just 5) (petriNetRnd (4,5,4,2,2))
+  list <- getInstances (Just 5) (petriNetRnd defaultInput)
   filterFlow (head list)
 
 --Stuff--
@@ -185,7 +203,7 @@ moduleOneLiners = $(embedStringFile "libAlloy/OneLiners.als")
 
 --Bigger Net needs bigger "run for x"
 petriNetRnd :: Input -> String
-petriNetRnd (places,trans,tkns,maxTkns,maxWght) = [i|module PetriNetRnd 
+petriNetRnd Input{places,trans,tkns,maxTkns,maxWght} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}

@@ -10,6 +10,5 @@ library:
   source-dirs: .
   exposed-modules: 
     - Functions
-    - Interactions
     - AuxFunctions
     - PetriParser
