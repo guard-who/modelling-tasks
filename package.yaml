@@ -10,3 +10,5 @@ library:
   exposed-modules: 
     - Functions
     - Interactions
+    - AuxFunctions
+    - PetriParser
