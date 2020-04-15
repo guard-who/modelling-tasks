@@ -1,0 +1,12 @@
+name: petri-tasks
+dependencies:
+  - base
+  - call-alloy
+  - string-interpolate
+  - containers
+  - transformers
+library:
+  source-dirs: .
+  exposed-modules: 
+    - Functions
+    - Interactions

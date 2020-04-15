@@ -1,0 +1,27 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: c3a73cca55d0cab2ef769b5882c501c0ee5326203b6edfbf8592224728a8a00b
+
+name:           petri-tasks
+version:        0.0.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      Functions
+      Interactions
+  other-modules:
+      Paths_petri_tasks
+  hs-source-dirs:
+      ./.
+  build-depends:
+      base
+    , call-alloy
+    , containers
+    , string-interpolate
+    , transformers
+  default-language: Haskell2010
