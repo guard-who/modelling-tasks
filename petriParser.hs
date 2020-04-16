@@ -89,6 +89,7 @@ convertTuple ((_,i):rs) = ((read (objectName i) :: Int) : (convertTuple rs))
   
 
                             --Hilfsfunktionen--
+                            
 -- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
 singleSig :: AlloyInstance -> Set.Set String -> Either String (Set.Set Object)
 singleSig inst set = do
@@ -105,7 +106,7 @@ tripleSig inst = do
   sig <- lookupSig (scoped "this" "Nodes") inst
   getTriple "flow" sig
   
---Filter for Stuff--
+                      --Filter for Objects--
 filterFstTrip :: Object -> (Set.Set (Object,Object,Object)) -> (Set.Set (Object,Object,Object))
 filterFstTrip a set = Set.filter (\s -> helpFilter a s) set
   where helpFilter a (x,_,_) = a == x
@@ -129,58 +130,12 @@ helpConvertPost (p:rp) ((a,b,x):rt)
  | otherwise = (0 : helpConvertPost rp ((a,b,x):rt) )
 ----------------------------------------Testing--------------------------------------------------
 
---Startmarkierung--
 testPParser :: IO()
 testPParser = do
   list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = 6, maxWght = 1} )
   convertPetri (head list)
 
-testMark :: IO ()
-testMark = do
-  list <- getInstances (Just 5) petriNetA
-  mark <- startMark (head list)
-  --doubleSig (head list) (Set.fromAscList ["this","Places","tokens"])
-  print mark
---Flow--
-testFlow :: IO()
-testFlow = do
-  list <- getInstances (Just 5) (petriNetRnd defaultInput)
-  filterFlow (head list)
-
---Stuff--
-getI :: String -> IO [AlloyInstance]
-getI inp = getInstances (Just 5) inp
-
-testInput :: IO[AlloyInstance]
-testInput = do
-  pref <- getInput
-  let inp = petriAlloy pref
-  getI inp
-
-testIt :: IO ()
-testIt = do
-  list <- getInstances (Just 5) petriNetA
-  --convert Object to a String -> für single -> (fmap objectName.Set.toList) <$>  --
-  let out = (tripleSig (head list))
-  let elems = (singleSig (head list) (Set.fromAscList ["this","Nodes",""]))
-  case out of
-    Left error -> print $ "ERROR: "++ error
-    Right set -> do 
-      case elems of
-        Left error ->  print $ "ERROR: "++ error
-        Right elms -> do
-          let a = getFirstElem elms
-          let triple = Set.elemAt 0 (filterFstTrip a set)
-          testSingle triple
-          print triple
-          
-testSingle :: (Object,Object,Object) -> IO ()
-testSingle (a,b,c) = do 
-  print $ objectName a
-
 ----------------------------------------------------------------------
-{-
--}
 ----------------------------------------------------------------------
 
 modulePetriSignature :: String
