@@ -21,16 +21,20 @@ data Input = Input
   , tkns :: Int
   , maxTkns :: Int
   , maxWght :: Int
+  , activated :: Int
+  , netInstances :: Int
   , anyOtherFieldThatMightBeNeededLater :: Bool
   }
 
 defaultInput :: Input
 defaultInput = Input
-  { places = 4
-  , trans = 5
+  { places = 3
+  , trans = 3
   , tkns = 4
   , maxTkns = 2
   , maxWght = 2
+  , activated = 1
+  , netInstances = 10
   , anyOtherFieldThatMightBeNeededLater = undefined -- Note how this field is not even mentioned anywhere below.
   }
 
@@ -132,7 +136,7 @@ helpConvertPost (p:rp) ((a,b,x):rt)
 
 testPParser :: IO()
 testPParser = do
-  list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = 6, maxWght = 1} )
+  list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = 4, maxWght = 1} )
   convertPetri (head list)
 
 ----------------------------------------------------------------------
@@ -161,7 +165,7 @@ removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
 petriNetRnd :: Input -> String
-petriNetRnd Input{places,trans,tkns,maxTkns,maxWght} = [i|module PetriNetRnd
+petriNetRnd Input{places,trans,tkns,maxTkns,maxWght,activated,netInstances} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -175,15 +179,16 @@ fact{
   no givenTransitions
 }
 
-pred showNets [ts : set Transitions] {
+pred showNets [ts : set Transitions, n : Int] {
   #Places = #{places}
   tokensAddedOverall[#{tkns}]
   perPlaceTokensAddedAtMost[#{maxTkns}]
   #Transitions = #{trans}
   maxWeight[#{maxWght}]
-  numberActivatedTransition[1,ts]
+  n >= #{activated}
+  numberActivatedTransition[n,ts]
 }
-run showNets for 20
+run showNets for #{netInstances}
 
 |]
 
