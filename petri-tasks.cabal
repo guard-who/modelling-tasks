@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80320bae399837ec7150067f36e9dc27b92c698d16bd1a91fd88bd077d6ef2bd
+-- hash: f879d173678f741509099e05f3cdea7d6f20dab502f8d4f81bb07f02e02c0243
 
 name:           petri-tasks
 version:        0.0.0
@@ -12,6 +12,7 @@ build-type:     Simple
 
 library
   exposed-modules:
+      PetriDiagram
       Functions
       AuxFunctions
       PetriParser
@@ -20,10 +21,17 @@ library
   hs-source-dirs:
       ./.
   build-depends:
-      base
+      SVGFonts
+    , base
     , call-alloy
     , containers
+    , diagrams
+    , diagrams-graphviz
+    , diagrams-lib
+    , diagrams-svg
+    , fgl
     , file-embed
+    , graphviz
     , string-interpolate
     , transformers
   default-language: Haskell2010

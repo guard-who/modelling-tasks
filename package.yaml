@@ -2,13 +2,21 @@ name: petri-tasks
 dependencies:
   - base
   - call-alloy
+  - diagrams
+  - diagrams-lib
+  - diagrams-graphviz
+  - diagrams-svg
+  - file-embed
+  - fgl
+  - graphviz
   - string-interpolate
+  - SVGFonts
   - containers
   - transformers
-  - file-embed
 library:
   source-dirs: .
   exposed-modules: 
+    - PetriDiagram
     - Functions
     - AuxFunctions
     - PetriParser
