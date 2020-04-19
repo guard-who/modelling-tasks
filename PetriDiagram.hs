@@ -15,13 +15,7 @@ import Data.GraphViz                    hiding (Path)
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
-
-type Mark = [Int]
-type Trans = (Mark,Mark)
-data Petri = Petri
-  { startM :: Mark
-  , trans :: [Trans]
-  }
+import AuxFunctions
   
 defaultPetri :: Petri
 defaultPetri = Petri
@@ -106,7 +100,8 @@ text' pfont t =
   # fc black
   # lc black
 
-main :: IO ()
-main = do
-  diagram <- drawNet (prepNet defaultPetri)
+renderNet :: Petri -> IO ()
+renderNet petri = do
+  diagram <- drawNet (prepNet petri)
   renderSVG "example.svg" (mkWidth 200) diagram
+  print $ "PetriNetz erstellt"

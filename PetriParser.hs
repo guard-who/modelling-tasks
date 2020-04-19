@@ -17,51 +17,58 @@ type TripSet = Set.Set (Object,Object,Object)
 
 data Input = Input
   { places :: Int
-  , trans :: Int
+  , transitions :: Int
   , tkns :: Int
   , maxTkns :: Int
   , maxWght :: Int
   , activated :: Int
-  , netInstances :: Int
+  , petriScope :: Int
   , anyOtherFieldThatMightBeNeededLater :: Bool
   }
 
 defaultInput :: Input
 defaultInput = Input
   { places = 3
-  , trans = 3
+  , transitions = 3
   , tkns = 4
   , maxTkns = 2
   , maxWght = 2
   , activated = 1
-  , netInstances = 10
+  , petriScope = 10
   , anyOtherFieldThatMightBeNeededLater = undefined -- Note how this field is not even mentioned anywhere below.
   }
+  
 
-convertPetri :: AlloyInstance -> IO()
+convertPetri :: AlloyInstance -> IO(Either String Petri)
 convertPetri inst = do
-  filterFlow inst 
-  startMark inst
+  flow <- filterFlow inst
+  case flow of
+    Left error -> return $ Left error
+    Right pFlow -> do
+      mark <- startMark inst
+      case mark of
+        Left error -> return $ Left error
+        Right pMark -> return $ Right (Petri{startM = pMark,trans = pFlow})
       
                           --Transitionen--
 
 --[([(3)],[(3)])] List of TransSets
-filterFlow :: AlloyInstance -> IO()
+filterFlow :: AlloyInstance -> IO(Either String [Trans])
 filterFlow inst = do
   let trn = singleSig inst (Set.fromAscList ["this","Transitions",""])
   case trn of
-    Left error -> print error
+    Left error -> return $ Left error
     Right trans -> do
       let out = tripleSig inst 
       case out of 
-        Left error -> print error
+        Left error -> return $ Left error
         Right set -> do
           let flow = filterTrans (Set.toList trans) set
           let plcs = singleSig inst (Set.fromAscList ["this","Places",""])
           case plcs of 
-            Left error -> print error
+            Left error -> return $ Left error
             Right places -> do
-              print $ convertToTrans (Set.toList places) flow
+              return $ Right$ convertToTrans (Set.toList places) flow
             
       
 
@@ -69,7 +76,7 @@ filterTrans :: [Object] -> TripSet -> [(TripSet,TripSet)]
 filterTrans [] _ = []
 filterTrans (t:rs) set = ((filterSndTrip t set,filterFstTrip t set) : (filterTrans rs set))
 
-convertToTrans :: [Object] -> [(TripSet,TripSet)] -> [([Int],[Int])]
+convertToTrans :: [Object] -> [(TripSet,TripSet)] -> [Trans]
 convertToTrans _ [] = []
 convertToTrans ls ((a,b):rs) = ((helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b)) 
                                 : convertToTrans ls rs )
@@ -77,14 +84,12 @@ convertToTrans ls ((a,b):rs) = ((helpConvertPre ls (Set.toList a),helpConvertPos
 
 
                          --Startmarkierung--
-startMark :: AlloyInstance -> IO ()
+startMark :: AlloyInstance -> IO (Either String Mark)
 startMark inst = do
-  let mark = doubleSig inst (Set.fromAscList ["this","Places","tokens"])
-  case mark of
-    Left error -> print error
-    Right smark -> do 
-      let mList =  convertTuple (Set.toList smark)
-      print mList
+  case doubleSig inst (Set.fromAscList ["this","Places","tokens"]) of
+    Left error -> return $ Left error
+    Right smark -> return $ Right $ convertTuple (Set.toList smark)
+
       
 convertTuple :: [(Object,Object)] -> [Int]
 convertTuple [] = []
@@ -137,7 +142,8 @@ helpConvertPost (p:rp) ((a,b,x):rt)
 testPParser :: IO()
 testPParser = do
   list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = 4, maxWght = 1} )
-  convertPetri (head list)
+  petri <- convertPetri (head list)
+  print petri
 
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
@@ -165,7 +171,7 @@ removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
 petriNetRnd :: Input -> String
-petriNetRnd Input{places,trans,tkns,maxTkns,maxWght,activated,netInstances} = [i|module PetriNetRnd
+petriNetRnd Input{places,transitions,tkns,maxTkns,maxWght,activated,petriScope} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -183,12 +189,12 @@ pred showNets [ts : set Transitions, n : Int] {
   #Places = #{places}
   tokensAddedOverall[#{tkns}]
   perPlaceTokensAddedAtMost[#{maxTkns}]
-  #Transitions = #{trans}
+  #Transitions = #{transitions}
   maxWeight[#{maxWght}]
   n >= #{activated}
   numberActivatedTransition[n,ts]
 }
-run showNets for #{netInstances}
+run showNets for #{petriScope}
 
 |]
 
