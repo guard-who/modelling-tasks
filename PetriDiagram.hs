@@ -81,9 +81,14 @@ net = mkGraph
   )
 
 drawNode :: PreparedFont Double -> String -> Point V2 Double -> Diagram B
-drawNode pfont l p = place
+drawNode pfont l p 
+ | (head l) == 's' = place
   (center (text' pfont l)
     `atop` circle 20 # named l)
+  p
+ | otherwise       = place
+  (center (text' pfont l)
+    `atop` rect 20 20 # named l)
   p
 
 drawEdge :: PreparedFont Double -> String -> String -> String -> Path V2 Double -> Diagram B -> Diagram B
