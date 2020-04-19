@@ -68,18 +68,6 @@ drawNet pnet = do
       gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gnodes edges
   return (gedges # frame 1)
 
-net :: Gr String String
-net = mkGraph
-  [(0,"s1"),
-   (1, "t1"),
-   (2,"s2"),
-   (3, "t2")]
-  ([(0,1,"1"),
-   (1,2,"1"),
-   (0,3,"1"),
-   (2,3,"1")]
-  )
-
 drawNode :: PreparedFont Double -> String -> Point V2 Double -> Diagram B
 drawNode pfont l p 
  | (head l) == 's' = place
@@ -90,6 +78,9 @@ drawNode pfont l p
   (center (text' pfont l)
     `atop` rect 20 20 # named l)
   p
+  
+--drawMark :: PreparedFont Double -> String -> Point V2 Double -> Diagram Backend
+--drawMark f l p 
 
 drawEdge :: PreparedFont Double -> String -> String -> String -> Path V2 Double -> Diagram B -> Diagram B
 drawEdge f l l1 l2 path d = 
@@ -109,4 +100,4 @@ renderNet :: Petri -> IO ()
 renderNet petri = do
   diagram <- drawNet (prepNet petri)
   renderSVG "example.svg" (mkWidth 200) diagram
-  print $ "PetriNetz erstellt"
+  print "PetriNetz erstellt"

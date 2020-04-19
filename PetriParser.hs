@@ -67,25 +67,24 @@ filterFlow inst = do
           let plcs = singleSig inst (Set.fromAscList ["this","Places",""])
           case plcs of 
             Left error -> return $ Left error
-            Right places -> do
-              return $ Right$ convertToTrans (Set.toList places) flow
+            Right places -> return $ Right $ convertToTrans (Set.toList places) flow
             
       
 
 filterTrans :: [Object] -> TripSet -> [(TripSet,TripSet)]
 filterTrans [] _ = []
-filterTrans (t:rs) set = ((filterSndTrip t set,filterFstTrip t set) : (filterTrans rs set))
+filterTrans (t:rs) set = (filterSndTrip t set,filterFstTrip t set) : filterTrans rs set
 
 convertToTrans :: [Object] -> [(TripSet,TripSet)] -> [Trans]
 convertToTrans _ [] = []
-convertToTrans ls ((a,b):rs) = ((helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b)) 
-                                : convertToTrans ls rs )
+convertToTrans ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b)) 
+                                : convertToTrans ls rs 
 
 
 
                          --Startmarkierung--
 startMark :: AlloyInstance -> IO (Either String Mark)
-startMark inst = do
+startMark inst =
   case doubleSig inst (Set.fromAscList ["this","Places","tokens"]) of
     Left error -> return $ Left error
     Right smark -> return $ Right $ convertTuple (Set.toList smark)

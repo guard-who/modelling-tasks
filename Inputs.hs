@@ -12,8 +12,8 @@ userInput = do
   pls <- getLine
   putStr "Anzahl der Transitionen: "
   trns <- getLine
-  let plsI = (read pls :: Int)
-  let trnsI = (read trns :: Int)
+  let plsI = read pls :: Int
+  let trnsI = read trns :: Int
   list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = plsI, transitions = trnsI} )
   out <- convertPetri (head list)
   case out of 
