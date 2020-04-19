@@ -17,7 +17,7 @@ library:
   source-dirs: .
   exposed-modules: 
     - PetriDiagram
-    - Functions
     - AuxFunctions
     - PetriParser
     - Inputs
+    - Types
