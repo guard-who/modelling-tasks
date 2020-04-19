@@ -3,13 +3,6 @@ module AuxFunctions where
 
 import qualified Data.Set as Set
 
-type Mark = [Int]
-type Trans = (Mark,Mark)
-data Petri = Petri
-  { startM :: Mark
-  , trans :: [Trans]
-  } deriving Show
-
 --extract from Triples
 extractTFirst :: (a,b,c) -> a
 extractTFirst (a,_,_) = a
@@ -27,3 +20,6 @@ getFirstElem s = Set.elemAt 0 s
 --work with Lists
 list2nd :: [a] -> a
 list2nd (b:c:rs) = c
+
+list3rd :: [a] -> a
+list3rd (_:_:d:_) = d

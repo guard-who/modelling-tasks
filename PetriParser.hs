@@ -12,6 +12,7 @@ import Data.FileEmbed
 import Language.Alloy.Call
 import qualified Data.Set as Set
 import AuxFunctions
+import Types
       
 type TripSet = Set.Set (Object,Object,Object)
 
@@ -55,7 +56,7 @@ convertPetri inst = do
 --[([(3)],[(3)])] List of TransSets
 filterFlow :: AlloyInstance -> IO(Either String [Trans])
 filterFlow inst = do
-  let trn = singleSig inst (Set.fromAscList ["this","Transitions",""])
+  let trn = singleSig inst ["this","Transitions",""]
   case trn of
     Left error -> return $ Left error
     Right trans -> do
@@ -64,7 +65,7 @@ filterFlow inst = do
         Left error -> return $ Left error
         Right set -> do
           let flow = filterTrans (Set.toList trans) set
-          let plcs = singleSig inst (Set.fromAscList ["this","Places",""])
+          let plcs = singleSig inst ["this","Places",""]
           case plcs of 
             Left error -> return $ Left error
             Right places -> return $ Right $ convertToTrans (Set.toList places) flow
@@ -85,7 +86,7 @@ convertToTrans ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost
                          --Startmarkierung--
 startMark :: AlloyInstance -> IO (Either String Mark)
 startMark inst =
-  case doubleSig inst (Set.fromAscList ["this","Places","tokens"]) of
+  case doubleSig inst ["this","Places","tokens"] of
     Left error -> return $ Left error
     Right smark -> return $ Right $ convertTuple (Set.toList smark)
 
@@ -99,15 +100,15 @@ convertTuple ((_,i):rs) = ((read (objectName i) :: Int) : (convertTuple rs))
                             --Hilfsfunktionen--
                             
 -- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
-singleSig :: AlloyInstance -> Set.Set String -> Either String (Set.Set Object)
-singleSig inst set = do
-  sig <- lookupSig (scoped (Set.elemAt 0 set) (Set.elemAt 1 set)) inst
-  getSingle (Set.elemAt 2 set) sig
+singleSig :: AlloyInstance -> [String] -> Either String (Set.Set Object)
+singleSig inst lst = do
+  sig <- lookupSig (scoped (head lst) (head (tail lst))) inst
+  getSingle (lst !! 2) sig
                             
-doubleSig :: AlloyInstance -> Set.Set String -> Either String (Set.Set (Object,Object))
-doubleSig inst set = do
-  sig <- lookupSig (scoped (Set.elemAt 0 set) (Set.elemAt 1 set)) inst
-  getDouble (Set.elemAt 2 set) sig
+doubleSig :: AlloyInstance -> [String] -> Either String (Set.Set (Object,Object))
+doubleSig inst lst = do
+  sig <- lookupSig (scoped (head lst) (head (tail lst))) inst
+  getDouble (lst !! 2) sig
 
 tripleSig :: AlloyInstance -> Either String (Set.Set (Object,Object,Object))
 tripleSig inst = do

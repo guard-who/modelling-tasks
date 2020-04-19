@@ -15,7 +15,7 @@ import Data.GraphViz                    hiding (Path)
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
-import AuxFunctions
+import Types
   
 defaultPetri :: Petri
 defaultPetri = Petri

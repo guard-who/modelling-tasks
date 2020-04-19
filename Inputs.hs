@@ -4,6 +4,7 @@ import Text.Read
 import PetriParser
 import PetriDiagram        (renderNet)
 import AuxFunctions
+import Types
 import Language.Alloy.Call
 
 userInput :: IO()
