@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: af7c089ff6d4e3202788a712acadf073cddaabea5e70564cbea2d39a7b9832b1
+-- hash: fc0d3855c6f27ecc1697f504c46cee391bdfcec83860f1d2cd8aa91faa240f95
 
 name:           petri-tasks
 version:        0.0.0
@@ -15,6 +15,7 @@ library
       PetriDiagram
       AuxFunctions
       PetriParser
+      PetriAlloy
       Inputs
       Types
   other-modules:

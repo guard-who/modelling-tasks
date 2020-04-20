@@ -1,43 +1,16 @@
-{-# Language QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE NamedFieldPuns #-}
 
 module PetriParser where
 
 import Data.List
 import Data.Maybe
 import Data.String
-import Data.String.Interpolate
-import Data.FileEmbed
 import Language.Alloy.Call
 import qualified Data.Set as Set
 import AuxFunctions
 import Types
+import PetriAlloy
       
 type TripSet = Set.Set (Object,Object,Object)
-
-data Input = Input
-  { places :: Int
-  , transitions :: Int
-  , tkns :: Int
-  , maxTkns :: Int
-  , maxWght :: Int
-  , activated :: Int
-  , petriScope :: Int
-  , anyOtherFieldThatMightBeNeededLater :: Bool
-  }
-
-defaultInput :: Input
-defaultInput = Input
-  { places = 3
-  , transitions = 3
-  , tkns = 4
-  , maxTkns = 2
-  , maxWght = 2
-  , activated = 1
-  , petriScope = 10
-  , anyOtherFieldThatMightBeNeededLater = undefined -- Note how this field is not even mentioned anywhere below.
-  }
   
 
 convertPetri :: AlloyInstance -> IO(Either String Petri)
@@ -147,91 +120,3 @@ testPParser = do
 
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
-
-modulePetriSignature :: String
-modulePetriSignature = removeLines 2 $(embedStringFile "libAlloy/PetriSignature.als")
-
-modulePetriAdditions :: String
-modulePetriAdditions = removeLines 11 $(embedStringFile "libAlloy/PetriAdditions.als")
-
-moduleHelpers :: String
-moduleHelpers = removeLines 4 $(embedStringFile "libAlloy/Helpers.als")
-
-modulePetriConcepts :: String 
-modulePetriConcepts = removeLines 5 $(embedStringFile "libAlloy/PetriConcepts.als")
-
-modulePetriConstraints :: String
-modulePetriConstraints = removeLines 4 $(embedStringFile "libAlloy/PetriConstraints.als")
-
-moduleOneLiners :: String 
-moduleOneLiners = removeLines 4 $(embedStringFile "libAlloy/OneLiners.als")
-
-removeLines :: Int -> String -> String
-removeLines n = unlines . drop n . lines
-
---Bigger Net needs bigger "run for x"
-petriNetRnd :: Input -> String
-petriNetRnd Input{places,transitions,tkns,maxTkns,maxWght,activated,petriScope} = [i|module PetriNetRnd
-
-#{modulePetriSignature}
-#{modulePetriAdditions}
-#{moduleHelpers}
-#{modulePetriConcepts}
-#{modulePetriConstraints}
-#{moduleOneLiners}
-
-fact{
-  no givenPlaces
-  no givenTransitions
-}
-
-pred showNets [ts : set Transitions, n : Int] {
-  #Places = #{places}
-  tokensAddedOverall[#{tkns}]
-  perPlaceTokensAddedAtMost[#{maxTkns}]
-  #Transitions = #{transitions}
-  maxWeight[#{maxWght}]
-  n >= #{activated}
-  numberActivatedTransition[n,ts]
-}
-run showNets for #{petriScope}
-
-|]
-
-petriNetA :: String
-petriNetA = [i|module scenarios/examples/PetriNetA 
-#{modulePetriSignature}
-//default Petri net
-
-one sig S1 extends givenPlaces{}
-one sig S2 extends givenPlaces{}
-one sig S3 extends givenPlaces{}
-one sig T1 extends givenTransitions{}
-one sig T2 extends givenTransitions{}
-one sig T3 extends givenTransitions{}
-
-fact {
-  S1.defaultTokens = 1
-  S2.defaultTokens = 1
-  S3.defaultTokens = 0
-
-  S1.defaultFlow[T1] = 1
-  S1.defaultFlow[T2] = 1
-  S1.defaultFlow[T3] = 1
-
-  S2.defaultFlow[T2] = 1
-  no S2.defaultFlow[Transitions - T2]
-
-  S3.defaultFlow[T2] = 1
-  no S3.defaultFlow[Transitions - T2]
-
-  T1.defaultFlow[S2] = 1
-  no T1.defaultFlow[Places - S2]
-
-  no T2.defaultFlow[Places]
-
-  T3.defaultFlow[S3] = 1
-  no T3.defaultFlow[Places - S3]
-
-}
-|]
