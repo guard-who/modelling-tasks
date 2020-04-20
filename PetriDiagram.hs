@@ -25,7 +25,7 @@ defaultPetri = Petri
   
 testPrep :: IO ()
 testPrep = do
-  print $ prepNet defaultPetri  
+  renderNet defaultPetri  
 ----------------------Preparing a PetriNet for Graph--------------------
 prepNet :: Petri -> Gr String String
 prepNet Petri{startM,trans} = mkGraph (prepNodes "s" 1 (length startM) nA 0) (prepEdges (length startM) trans)
@@ -61,7 +61,8 @@ createPost ex i (m:rm)
 -------------------------------------------------------------------------
 drawNet :: Gr String String -> IO (Diagram B)
 drawNet pnet = do
-  graph <- GV.layoutGraph Dot pnet
+--Either Neato or TwoPi
+  graph <- GV.layoutGraph TwoPi pnet
   pfont <- lin
   let (nodes, edges) = GV.getGraph graph
       gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
