@@ -1,4 +1,4 @@
-# alloy-cd-od
+# modelling-tasks
 
 Installation of Haskell packages needed:
 

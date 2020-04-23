@@ -12,7 +12,7 @@ legacy-app/Auxiliary/Lexer.hs
 legacy-app/Auxiliary/Lexer.info
 legacy-app/Auxiliary/Parser.hs
 legacy-app/Auxiliary/Parser.info
-alloy-cd-od.cabal
+modelling-tasks.cabal
 cd2alloy
 cd2pic
 different-names

@@ -1,4 +1,4 @@
-name: alloy-cd-od
+name: modelling-tasks
 extra-source-files:
   - alloy/cd/assoclimits.als
   - alloy/cd/generate.als
@@ -50,7 +50,7 @@ executables:
     main: cd2alloy.hs
     source-dirs: legacy-app
     dependencies:
-      - alloy-cd-od
+      - modelling-tasks
       - time
     other-modules:
       - Alloy.CdOd.Auxiliary.Lexer
@@ -59,7 +59,7 @@ executables:
     main: cd2pic.hs
     source-dirs: legacy-app
     dependencies:
-      - alloy-cd-od
+      - modelling-tasks
     other-modules:
       - Alloy.CdOd.Auxiliary.Lexer
       - Alloy.CdOd.Auxiliary.Parser
@@ -67,7 +67,7 @@ executables:
     main: different-names.hs
     source-dirs: app
     dependencies:
-      - alloy-cd-od
+      - modelling-tasks
       - bytestring
       - digest
     other-modules:
@@ -76,12 +76,12 @@ executables:
     main: instance2pic.hs
     source-dirs: legacy-app
     dependencies:
-      - alloy-cd-od
+      - modelling-tasks
   match-cd-od:
     main: match-cd-od.hs
     source-dirs: app
     dependencies:
-      - alloy-cd-od
+      - modelling-tasks
       - bytestring
       - digest
     other-modules:
@@ -90,7 +90,7 @@ executables:
     main: repair-incorrect.hs
     source-dirs: app
     dependencies:
-      - alloy-cd-od
+      - modelling-tasks
       - bytestring
       - digest
     other-modules:
@@ -99,6 +99,6 @@ executables:
     main: check-cds.hs
     source-dirs: app
     dependencies:
-      - alloy-cd-od
+      - modelling-tasks
       - bytestring
       - digest
