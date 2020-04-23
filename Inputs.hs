@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Inputs where 
 
 import Text.Read
@@ -16,8 +18,20 @@ userInput = do
   trns <- getLine
   let inp = defaultInput{ places = read pls :: Int , transitions = read trns :: Int}
   let scp = petriScope inp
-  list <- getInstances (Just 5) (petriNetRnd inp scp)
-  out <- convertPetri (head list)
-  case out of 
-    Left error -> print error
-    Right petri -> renderNet petri
+  if checkInput inp 
+  then do
+    out <- runPParser inp scp
+    case out of 
+      Left error -> print error
+      Right petri -> renderNet petri
+  else 
+    print "invalid Input"
+    
+checkInput :: Input -> Bool
+checkInput Input{places,transitions,tkns,maxTkns,maxWght,activated} = 
+  places > 0 && transitions > 0 && tkns > 0 &&
+  maxTkns <= tkns &&
+  tkns <= places*maxTkns &&
+  activated <= transitions &&
+  maxWght <= maxTkns 
+  

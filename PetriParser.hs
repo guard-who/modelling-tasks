@@ -1,3 +1,4 @@
+--{-# LANGUAGE NamedFieldPuns #-}
 
 module PetriParser where
 
@@ -70,7 +71,13 @@ convertTuple ((_,i):rs) = ((read (objectName i) :: Int) : (convertTuple rs))
   
 
                             --Hilfsfunktionen--
-                           
+-- validConfig :: Input -> Bool
+-- validConfig Input{places,transitions,tkns,maxTkns,maxWght,activated} = 
+  -- places > 0 && transitions > 0 && tkns > 0 &&
+  -- maxTkns <= tkns &&
+  -- tkns <= places*maxTkns &&
+  -- activated <= transitions &&
+  -- maxWght <= maxTkns 
                             
 -- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
 singleSig :: AlloyInstance -> [String] -> Either String (Set.Set Object)
@@ -110,15 +117,17 @@ helpConvertPost (p:rp) [] = (0: helpConvertPost rp [])
 helpConvertPost (p:rp) ((a,b,x):rt)
  | p == b = ((read (objectName x) :: Int) : helpConvertPost rp rt)
  | otherwise = (0 : helpConvertPost rp ((a,b,x):rt) )
-----------------------------------------Testing--------------------------------------------------
-
-testPParser :: IO()
-testPParser = do
-  let inp = defaultInput{ places = 4, maxWght = 1}
-  let scp = petriScope inp
-  list <- getInstances (Just 5) (petriNetRnd inp scp )
-  petri <- convertPetri (head list)
-  print petri
+----------------------------------------Main(-s)--------------------------------------------------
+  
+runPParser :: Input -> Int -> IO(Either String Petri)
+runPParser inp scp = do 
+    list <- getInstances (Just 5) (petriNetRnd inp scp)
+    out <- convertPetri(head list)
+    return out
+    
+    
+    
+  
 
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
