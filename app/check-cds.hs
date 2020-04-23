@@ -89,12 +89,12 @@ drawCdAndOdsFor
   -> String
   -> IO ()
 drawCdAndOdsFor is c dirs cds cmd = do
-  void $ (\(cd, i) -> drawCdFromSyntax True True Nothing cd (c ++ "-cd" ++ show i) Pdf >>= print) `mapM` zip cds [0..]
+  mapM_ (\(cd, i) -> drawCdFromSyntax True True Nothing cd (c ++ "-cd" ++ show i) Pdf >>= print) $ zip cds [0..]
   let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
         ++ createRunCommand cmd 3 3
   ods <- Alloy.getInstances is parts'
-  void $ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= print)
-    `mapM` zip (maybe id (take . fromInteger) is ods) [1..]
+  mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= print)
+    $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
     parts = map (\(cd, i) -> getFour $ transform (toOldSyntax cd) (show i) "") $ zip cds [0..]
     getFour (p1, p2, p3, p4, _) = (p1, p2, p3, p4)
