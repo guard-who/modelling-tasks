@@ -1,4 +1,11 @@
 name: petri-tasks
+extra-source-files:
+  - lib/Alloy/Helpers.als
+  - lib/Alloy/OneLiners.als
+  - lib/Alloy/PetriAdditions.als
+  - lib/Alloy/PetriConcepts.als
+  - lib/Alloy/PetriConstraints.als
+  - lib/Alloy/PetriSignature.als
 dependencies:
   - base
   - call-alloy
