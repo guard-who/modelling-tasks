@@ -14,9 +14,9 @@ userInput = do
   pls <- getLine
   putStr "Anzahl der Transitionen: "
   trns <- getLine
-  let plsI = read pls :: Int
-  let trnsI = read trns :: Int
-  list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = plsI, transitions = trnsI} )
+  let inp = defaultInput{ places = read pls :: Int , transitions = read trns :: Int}
+  let scp = petriScope inp
+  list <- getInstances (Just 5) (petriNetRnd inp scp)
   out <- convertPetri (head list)
   case out of 
     Left error -> print error

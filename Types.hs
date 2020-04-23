@@ -14,7 +14,6 @@ data Input = Input
   , maxTkns :: Int
   , maxWght :: Int
   , activated :: Int
-  , petriScope :: Int
   , anyOtherFieldThatMightBeNeededLater :: Bool
   }
 
@@ -26,6 +25,5 @@ defaultInput = Input
   , maxTkns = 2
   , maxWght = 2
   , activated = 1
-  , petriScope = 10
   , anyOtherFieldThatMightBeNeededLater = undefined -- Note how this field is not even mentioned anywhere below.
   }

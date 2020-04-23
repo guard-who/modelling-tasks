@@ -11,7 +11,6 @@ import Types
 import PetriAlloy
       
 type TripSet = Set.Set (Object,Object,Object)
-  
 
 convertPetri :: AlloyInstance -> IO(Either String Petri)
 convertPetri inst = do
@@ -71,6 +70,7 @@ convertTuple ((_,i):rs) = ((read (objectName i) :: Int) : (convertTuple rs))
   
 
                             --Hilfsfunktionen--
+                           
                             
 -- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
 singleSig :: AlloyInstance -> [String] -> Either String (Set.Set Object)
@@ -114,7 +114,9 @@ helpConvertPost (p:rp) ((a,b,x):rt)
 
 testPParser :: IO()
 testPParser = do
-  list <- getInstances (Just 5) (petriNetRnd defaultInput{ places = 4, maxWght = 1} )
+  let inp = defaultInput{ places = 4, maxWght = 1}
+  let scp = petriScope inp
+  list <- getInstances (Just 5) (petriNetRnd inp scp )
   petri <- convertPetri (head list)
   print petri
 

@@ -9,30 +9,34 @@ import Data.FileEmbed
 import Data.String
 import Types
 
+petriScope :: Input -> Int
+petriScope Input{places,transitions,tkns,maxTkns,maxWght,activated} =
+  (places+transitions)*maxWght
+
 modulePetriSignature :: String
-modulePetriSignature = removeLines 2 $(embedStringFile "libAlloy/PetriSignature.als")
+modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
 
 modulePetriAdditions :: String
-modulePetriAdditions = removeLines 11 $(embedStringFile "libAlloy/PetriAdditions.als")
+modulePetriAdditions = removeLines 11 $(embedStringFile "lib/Alloy/PetriAdditions.als")
 
 moduleHelpers :: String
-moduleHelpers = removeLines 4 $(embedStringFile "libAlloy/Helpers.als")
+moduleHelpers = removeLines 4 $(embedStringFile "lib/Alloy/Helpers.als")
 
 modulePetriConcepts :: String 
-modulePetriConcepts = removeLines 5 $(embedStringFile "libAlloy/PetriConcepts.als")
+modulePetriConcepts = removeLines 5 $(embedStringFile "lib/Alloy/PetriConcepts.als")
 
 modulePetriConstraints :: String
-modulePetriConstraints = removeLines 4 $(embedStringFile "libAlloy/PetriConstraints.als")
+modulePetriConstraints = removeLines 4 $(embedStringFile "lib/Alloy/PetriConstraints.als")
 
 moduleOneLiners :: String 
-moduleOneLiners = removeLines 4 $(embedStringFile "libAlloy/OneLiners.als")
+moduleOneLiners = removeLines 4 $(embedStringFile "lib/Alloy/OneLiners.als")
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
-petriNetRnd :: Input -> String
-petriNetRnd Input{places,transitions,tkns,maxTkns,maxWght,activated,petriScope} = [i|module PetriNetRnd
+petriNetRnd :: Input -> Int -> String
+petriNetRnd Input{places,transitions,tkns,maxTkns,maxWght,activated} petriScope = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
