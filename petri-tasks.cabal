@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fc0d3855c6f27ecc1697f504c46cee391bdfcec83860f1d2cd8aa91faa240f95
+-- hash: 07fa2eeb9dde5a7f492000574e898c7bfda1942000be7bf7ea815abd97d6f638
 
 name:           petri-tasks
 version:        0.0.0
@@ -23,7 +23,8 @@ library
   hs-source-dirs:
       ./.
   build-depends:
-      SVGFonts
+      HaTeX
+    , SVGFonts
     , base
     , call-alloy
     , containers
