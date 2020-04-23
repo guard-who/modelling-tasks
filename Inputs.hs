@@ -17,10 +17,9 @@ userInput = do
   putStr "Anzahl der Transitionen: "
   trns <- getLine
   let inp = defaultInput{ places = read pls :: Int , transitions = read trns :: Int}
-  let scp = petriScope inp
   if checkInput inp 
   then do
-    out <- runPParser inp scp
+    out <- runPParser inp
     case out of 
       Left error -> print error
       Right petri -> renderNet petri

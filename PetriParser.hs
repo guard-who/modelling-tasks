@@ -119,9 +119,9 @@ helpConvertPost (p:rp) ((a,b,x):rt)
  | otherwise = (0 : helpConvertPost rp ((a,b,x):rt) )
 ----------------------------------------Main(-s)--------------------------------------------------
   
-runPParser :: Input -> Int -> IO(Either String Petri)
-runPParser inp scp = do 
-    list <- getInstances (Just 5) (petriNetRnd inp scp)
+runPParser :: Input -> IO(Either String Petri)
+runPParser inp = do
+    list <- getInstances (Just 5) (petriNetRnd inp)
     out <- convertPetri(head list)
     return out
     

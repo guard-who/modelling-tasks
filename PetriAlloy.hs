@@ -35,8 +35,8 @@ removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
-petriNetRnd :: Input -> Int -> String
-petriNetRnd Input{places,transitions,tkns,maxTkns,maxWght,activated} petriScope = [i|module PetriNetRnd
+petriNetRnd :: Input -> String
+petriNetRnd input@Input{places,transitions,tkns,maxTkns,maxWght,activated} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -60,7 +60,7 @@ pred showNets [ps : Places, ts : Transitions, n : Int] {
   n >= #{activated}
   numberActivatedTransition[n,ts]
 }
-run showNets for #{petriScope}
+run showNets for #{petriScope input}
 
 |]
 
