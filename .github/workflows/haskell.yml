@@ -10,9 +10,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+#        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-latest]
         plan:
-          - { build: stack }
+#          - { build: stack }
           - { build: cabal, ghc: "8.8.2", cabal-install: "latest" }
         exclude:
           - os: windows-latest
@@ -126,11 +127,11 @@ jobs:
         set -ex
         case "$BUILD" in
           stack)
-            stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps
+            stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps --ghc-options="-Wall -Werror"
             ;;
           cabal)
             PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
-            cabal install --overwrite-policy=always --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+            cabal install --overwrite-policy=always --ghc-options="-O0 -Wall -Werror" --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
             ORIGDIR=$(pwd)
             for dir in $PACKAGES
             do
@@ -160,13 +161,13 @@ jobs:
       run: |
         switch ( "${env:BUILD}" ) {
           "stack" {
-            stack --no-terminal --install-ghc ${env:ARGS} test --bench --only-dependencies
+            stack --no-terminal --install-ghc ${env:ARGS} test --bench --only-dependencies --ghc-options="-Wall -Werror"
           }
           "cabal" {
             $PACKAGES=Invoke-Expression @'
               stack --no-terminal --install-ghc query locals | Select-String -Pattern '^ *path' | %{ $_ -replace '^ *path:', '' }
         '@
-            cabal install --overwrite-policy=always --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 ${env:CABALARGS} $PACKAGES
+            cabal install --overwrite-policy=always --force-reinstalls --ghc-options="-O0 -Wall -Werror" --reorder-goals --max-backjumps=-1 ${env:CABALARGS} $PACKAGES
             ORIGDIR=pwd
             foreach ($dir in $PACKAGES) {
               cd $dir
