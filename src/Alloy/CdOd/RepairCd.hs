@@ -81,7 +81,7 @@ phraseLimit (0, Just 0)  = "not at all"
 phraseLimit (1, Just 1)  = "exactly once"
 phraseLimit (2, Just 2)  = "exactly twice"
 phraseLimit (-1, Just n) = "*.." ++ show n ++ " times"
-phraseLimit (m, Nothing) = show m ++ "..*" ++ " times"
+phraseLimit (m, Nothing) = show m ++ "..* times"
 phraseLimit (m, Just n)  = show m ++ ".." ++ show n ++ " times"
 
 data PropertyChange = PropertyChange {
