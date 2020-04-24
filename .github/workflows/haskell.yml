@@ -87,7 +87,7 @@ jobs:
             cabal --version
             cabal update
             PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
-            cabal install --only-dependencies --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+            cabal install --overwrite-policy=always --only-dependencies --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
             ;;
         esac
         set +ex
@@ -109,7 +109,7 @@ jobs:
             $PACKAGES=Invoke-Expression @'
               stack --no-terminal --install-ghc query locals | Select-String -Pattern '^ *path' | %{ $_ -replace '^ *path:', '' }
         '@
-            cabal install --only-dependencies --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 ${env:CABALARGS} $PACKAGES
+            cabal install --overwrite-policy=always --only-dependencies --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 ${env:CABALARGS} $PACKAGES
           }
           default {
             echo "invalid type $BUILD"
@@ -130,7 +130,7 @@ jobs:
             ;;
           cabal)
             PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
-            cabal install --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+            cabal install --overwrite-policy=always --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
             ORIGDIR=$(pwd)
             for dir in $PACKAGES
             do
@@ -166,7 +166,7 @@ jobs:
             $PACKAGES=Invoke-Expression @'
               stack --no-terminal --install-ghc query locals | Select-String -Pattern '^ *path' | %{ $_ -replace '^ *path:', '' }
         '@
-            cabal install --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 ${env:CABALARGS} $PACKAGES
+            cabal install --overwrite-policy=always --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 ${env:CABALARGS} $PACKAGES
             ORIGDIR=pwd
             foreach ($dir in $PACKAGES) {
               cd $dir
