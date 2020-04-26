@@ -12,6 +12,24 @@ import Types
 petriScope :: Input -> Int
 petriScope Input{places,transitions,tkns,maxTkns,maxWght,activated} =
   (places+transitions)*2
+  
+petriLoops :: Maybe Bool -> String
+petriLoops l
+ | l == Just True    = "presenceSelfLoop"
+ | l == Just False   = "not presenceSelfLoop"
+ | otherwise         = ""
+
+petriSink :: Maybe Bool -> String
+petriSink l
+ | l == Just True    = "presenceSinkTransition"
+ | l == Just False   = "not presenceSinkTransition"
+ | otherwise         = ""
+
+petriSource :: Maybe Bool -> String
+petriSource l
+ | l == Just True    = "presenceSourceTransition"
+ | l == Just False   = "not presenceSourceTransition"
+ | otherwise         = ""
 
 modulePetriSignature :: String
 modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
@@ -36,7 +54,8 @@ removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
 petriNetRnd :: Input -> String
-petriNetRnd input@Input{places,transitions,tkns,maxTkns,maxWght,activated} = [i|module PetriNetRnd
+petriNetRnd input@Input{places,transitions,tkns,maxTkns,maxWght,activated,
+                        selfLoops,presenceSinkTrans,presenceSourceTrans} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -61,6 +80,9 @@ pred showNets [ps : Places, ts : Transitions, n : Int] {
   n >= #{activated}
   activated [ts]
   numberActivatedTransition[n,ts]
+  #{petriLoops selfLoops}
+  #{petriSink presenceSinkTrans}
+  #{petriSource presenceSourceTrans}
 }
 run showNets for #{petriScope input}
 

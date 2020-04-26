@@ -14,6 +14,9 @@ data Input = Input
   , maxTkns :: Int
   , maxWght :: Int
   , activated :: Int
+  , selfLoops :: Maybe Bool
+  , presenceSinkTrans :: Maybe Bool
+  , presenceSourceTrans :: Maybe Bool
   , anyOtherFieldThatMightBeNeededLater :: Bool
   }
 
@@ -25,5 +28,8 @@ defaultInput = Input
   , maxTkns = 2
   , maxWght = 2
   , activated = 1
+  , selfLoops = Nothing
+  , presenceSinkTrans = Nothing
+  , presenceSourceTrans = Nothing
   , anyOtherFieldThatMightBeNeededLater = undefined -- Note how this field is not even mentioned anywhere below.
   }
