@@ -24,18 +24,17 @@ defaultPetri = Petri
   }
   
 testPrep :: IO ()
-testPrep = do
-  renderNet defaultPetri TwoPi
+testPrep = renderNet defaultPetri TwoPi
 ----------------------Preparing a PetriNet for Graph--------------------
 prepNet :: Petri -> Gr String String
 prepNet Petri{startM,trans} = mkGraph (prepNodes "s" 1 (length startM) nA 0) (prepEdges (length startM) trans)
-  where nA = (length startM)+(length trans)
+  where nA = length startM + length trans
         
 prepNodes :: String -> Int -> Int -> Int -> Int -> [(Int,String)]
 prepNodes s n h max i 
 --  | max > i > h   = ((i,"t"++n):prepNHelper (n+1) h max (i+1))
- | i == h  = ((i,"t"++(show(n-i))):prepNodes "t" (n-i+1) h max (i+1))
- | max > i       = ((i,s++(show n)):prepNodes s (n+1) h max (i+1))
+ | i == h  = (i,"t" ++ show(n-i)):prepNodes "t" (n-i+1) h max (i+1)
+ | max > i       = (i,s ++ show n):prepNodes s (n+1) h max (i+1)
  | otherwise     = []
  
 --Counter-> transitions -> Ausgabe
@@ -49,8 +48,8 @@ prepEdges ex ((pre,post):rt) = createPre ex 0 pre
 createPre :: Int -> Int -> Mark -> [(Int,Int,String)]
 createPre _ _ [] = []
 createPre ex i (m:rm) 
- | m /= 0    = ((i,ex,show m):createPre ex (i+1) rm)
- | otherwise =  createPre ex (i+1) rm
+ | m /= 0    = (i,ex,show m):createPre ex (i+1) rm
+ | otherwise = createPre ex (i+1) rm
 
 createPost :: Int -> Int -> Mark -> [(Int,Int,String)]
 createPost _ _ [] = []
@@ -71,7 +70,7 @@ drawNet pnet gc = do
 
 drawNode :: PreparedFont Double -> String -> Point V2 Double -> Diagram B
 drawNode pfont l p 
- | (head l) == 's' = place
+ | head l == 's' = place
   (center (text' pfont l)
     `atop` circle 20 # named l)
   p

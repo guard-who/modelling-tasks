@@ -66,7 +66,7 @@ startMark inst =
       
 convertTuple :: [(Object,Object)] -> [Int]
 convertTuple [] = []
-convertTuple ((_,i):rs) = ((read (objectName i) :: Int) : (convertTuple rs))
+convertTuple ((_,i):rs) = (read (objectName i) :: Int) : convertTuple rs
 
   
 
@@ -96,34 +96,34 @@ tripleSig inst = do
   getTriple "flow" sig
   
                       --Filter for Objects--
-filterFstTrip :: Object -> (Set.Set (Object,Object,Object)) -> (Set.Set (Object,Object,Object))
-filterFstTrip a set = Set.filter (\s -> helpFilter a s) set
+filterFstTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)
+filterFstTrip a = Set.filter $ helpFilter a
   where helpFilter a (x,_,_) = a == x
   
-filterSndTrip :: Object -> (Set.Set (Object,Object,Object)) -> (Set.Set (Object,Object,Object))
-filterSndTrip a set = Set.filter (\s -> helpFilter a s) set
+filterSndTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)
+filterSndTrip a = Set.filter $ helpFilter a
   where helpFilter a (_,x,_) = a == x
   
 helpConvertPre :: [Object] -> [(Object,Object,Object)] -> [Int]
 helpConvertPre [] _ = []
-helpConvertPre (p:rp) [] = (0: helpConvertPre rp [])
-helpConvertPre (p:rp) ((a,b,x):rt)
- | p == a = ((read (objectName x) :: Int) : helpConvertPre rp rt)
- | otherwise = (0 : helpConvertPre rp ((a,b,x):rt) )
+helpConvertPre (p:rp) [] = 0: helpConvertPre rp []
+helpConvertPre (p:rp) list@((a,b,x):rt)
+ | p == a = (read (objectName x) :: Int) : helpConvertPre rp rt
+ | otherwise = 0 : helpConvertPre rp list
  
 helpConvertPost :: [Object] -> [(Object,Object,Object)] -> [Int]
 helpConvertPost [] _ = []
-helpConvertPost (p:rp) [] = (0: helpConvertPost rp [])
-helpConvertPost (p:rp) ((a,b,x):rt)
- | p == b = ((read (objectName x) :: Int) : helpConvertPost rp rt)
- | otherwise = (0 : helpConvertPost rp ((a,b,x):rt) )
+helpConvertPost (p:rp) [] = 0: helpConvertPost rp []
+helpConvertPost (p:rp) list@((a,b,x):rt)
+ | p == b = (read (objectName x) :: Int) : helpConvertPost rp rt
+ | otherwise = 0 : helpConvertPost rp list
 ----------------------------------------Main(-s)--------------------------------------------------
   
 runPParser :: Input -> IO(Either String Petri)
 runPParser inp = do 
     list <- getInstances (Just 5) (petriNetRnd inp)
-    out <- convertPetri(head list)
-    return out
+    convertPetri(head list)
+
     
     
     
