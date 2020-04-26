@@ -11,7 +11,7 @@ import Types
 
 petriScope :: Input -> Int
 petriScope Input{places,transitions,tkns,maxTkns,maxWght,activated} =
-  (places+transitions)*maxWght
+  (places+transitions)*2
 
 modulePetriSignature :: String
 modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
@@ -56,8 +56,10 @@ pred showNets [ps : Places, ts : Transitions, n : Int] {
   perPlaceTokensAddedAtMost[#{maxTkns}]
   #Transitions <= #{transitions}
   maxWeight[#{maxWght}]
-  flowSum[ps,ts] = 2
+  flowSum[ps,ts] >= 2
+  flowSum[ts,ps] >= 1
   n >= #{activated}
+  activated [ts]
   numberActivatedTransition[n,ts]
 }
 run showNets for #{petriScope input}
