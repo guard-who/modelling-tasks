@@ -53,6 +53,7 @@ removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
+-- make flowSum dynamic with input
 petriNetRnd :: Input -> String
 petriNetRnd input@Input{places,transitions,tkns,maxTkns,maxWght,activated,
                         selfLoops,presenceSinkTrans,presenceSourceTrans} = [i|module PetriNetRnd
@@ -75,8 +76,7 @@ pred showNets [ps : Places, ts : Transitions, n : Int] {
   perPlaceTokensAddedAtMost[#{maxTkns}]
   #Transitions <= #{transitions}
   maxWeight[#{maxWght}]
-  flowSum[ps,ts] >= 2
-  flowSum[ts,ps] >= 1
+  flowSum[Nodes,Nodes] >= #{places}
   n >= #{activated}
   activated [ts]
   numberActivatedTransition[n,ts]
