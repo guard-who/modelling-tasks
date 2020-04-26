@@ -29,8 +29,8 @@ userInput = do
     
 checkInput :: Input -> Bool
 checkInput Input{places,transitions,tkns,maxTkns,maxWght,activated} = 
-  places > 0 && transitions > 0 && maxWght > 0 && activated >= 0 &&
+  places > 0 && transitions > 0 && tkns >= 0 && maxWght > 0 && activated >= 0 &&
   tkns <= places*maxTkns &&
-  activated <= transitions &&
-  maxWght <= maxTkns 
+  maxTkns <= tkns &&
+  activated <= transitions
   
