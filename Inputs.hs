@@ -2,6 +2,7 @@
 
 module Inputs where 
 
+import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi, Neato))
 import Text.Read
 import PetriParser
 import PetriDiagram        (renderNet)
@@ -22,7 +23,7 @@ userInput = do
     out <- runPParser inp
     case out of 
       Left error -> print error
-      Right petri -> renderNet petri
+      Right petri -> renderNet petri TwoPi
   else 
     print "invalid Input"
     

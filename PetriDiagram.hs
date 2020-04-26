@@ -25,7 +25,7 @@ defaultPetri = Petri
   
 testPrep :: IO ()
 testPrep = do
-  renderNet defaultPetri  
+  renderNet defaultPetri TwoPi
 ----------------------Preparing a PetriNet for Graph--------------------
 prepNet :: Petri -> Gr String String
 prepNet Petri{startM,trans} = mkGraph (prepNodes "s" 1 (length startM) nA 0) (prepEdges (length startM) trans)
@@ -59,10 +59,10 @@ createPost ex i (m:rm)
  | otherwise = createPost ex (i+1) rm
 
 -------------------------------------------------------------------------
-drawNet :: Gr String String -> IO (Diagram B)
-drawNet pnet = do
+drawNet :: Gr String String -> GraphvizCommand -> IO (Diagram B)
+drawNet pnet gc = do
 --Either Neato or TwoPi
-  graph <- GV.layoutGraph TwoPi pnet
+  graph <- GV.layoutGraph gc pnet
   pfont <- lin
   let (nodes, edges) = GV.getGraph graph
       gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
@@ -97,8 +97,8 @@ text' pfont t =
   # fc black
   # lc black
 
-renderNet :: Petri -> IO ()
-renderNet petri = do
-  diagram <- drawNet (prepNet petri)
+renderNet :: Petri -> GraphvizCommand -> IO ()
+renderNet petri gc = do
+  diagram <- drawNet (prepNet petri) gc
   renderSVG "example.svg" (mkWidth 200) diagram
   print "PetriNetz erstellt"
