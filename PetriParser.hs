@@ -29,7 +29,7 @@ convertPetri inst = do
 --[([(3)],[(3)])] List of TransSets
 filterFlow :: AlloyInstance -> IO(Either String [Trans])
 filterFlow inst = do
-  let trn = singleSig inst ["this","Transitions",""]
+  let trn = singleSig inst "this" "Transitions" ""
   case trn of
     Left error -> return $ Left error
     Right trans -> do
@@ -38,7 +38,7 @@ filterFlow inst = do
         Left error -> return $ Left error
         Right set -> do
           let flow = filterTrans (Set.toList trans) set
-          let plcs = singleSig inst ["this","Places",""]
+          let plcs = singleSig inst "this" "Places" ""
           case plcs of 
             Left error -> return $ Left error
             Right places -> return $ Right $ convertToTrans (Set.toList places) flow
@@ -59,7 +59,7 @@ convertToTrans ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost
                          --Startmarkierung--
 startMark :: AlloyInstance -> IO (Either String Mark)
 startMark inst =
-  case doubleSig inst ["this","Places","tokens"] of
+  case doubleSig inst "this" "Places" "tokens" of
     Left error -> return $ Left error
     Right smark -> return $ Right $ convertTuple (Set.toList smark)
 
@@ -80,15 +80,15 @@ convertTuple ((_,i):rs) = ((read (objectName i) :: Int) : (convertTuple rs))
   -- maxWght <= maxTkns 
                             
 -- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
-singleSig :: AlloyInstance -> [String] -> Either String (Set.Set Object)
-singleSig inst lst = do
-  sig <- lookupSig (scoped (head lst) (head (tail lst))) inst
-  getSingle (lst !! 2) sig
+singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
+singleSig inst st nd rd = do
+  sig <- lookupSig (scoped st nd) inst
+  getSingle rd sig
                             
-doubleSig :: AlloyInstance -> [String] -> Either String (Set.Set (Object,Object))
-doubleSig inst lst = do
-  sig <- lookupSig (scoped (head lst) (head (tail lst))) inst
-  getDouble (lst !! 2) sig
+doubleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set (Object,Object))
+doubleSig inst st nd rd = do
+  sig <- lookupSig (scoped st nd) inst
+  getDouble rd sig
 
 tripleSig :: AlloyInstance -> Either String (Set.Set (Object,Object,Object))
 tripleSig inst = do
@@ -120,7 +120,7 @@ helpConvertPost (p:rp) ((a,b,x):rt)
 ----------------------------------------Main(-s)--------------------------------------------------
   
 runPParser :: Input -> IO(Either String Petri)
-runPParser inp = do
+runPParser inp = do 
     list <- getInstances (Just 5) (petriNetRnd inp)
     out <- convertPetri(head list)
     return out
