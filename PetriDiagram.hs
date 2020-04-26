@@ -54,7 +54,7 @@ createPre ex i (m:rm)
 createPost :: Int -> Int -> Mark -> [(Int,Int,String)]
 createPost _ _ [] = []
 createPost ex i (m:rm) 
- | m /= 0    = ((ex,i,show m):createPost ex (i+1) rm)
+ | m /= 0    = (ex,i,show m):createPost ex (i+1) rm
  | otherwise = createPost ex (i+1) rm
 
 -------------------------------------------------------------------------
