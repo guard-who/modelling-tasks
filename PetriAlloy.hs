@@ -78,7 +78,6 @@ pred showNets [ps : Places, ts : Transitions, n : Int] {
   maxWeight[#{maxWght}]
   flowSum[Nodes,Nodes] >= #{places}
   n >= #{activated}
-  activated [ts]
   numberActivatedTransition[n,ts]
   #{petriLoops selfLoops}
   #{petriSink presenceSinkTrans}
