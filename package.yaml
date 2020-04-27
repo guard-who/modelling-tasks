@@ -46,3 +46,4 @@ tests:
     dependencies:
     - petri-tasks
     - hspec
+    - QuickCheck

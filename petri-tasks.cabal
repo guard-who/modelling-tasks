@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 00aa89caef382deca5877e1dd6732a27eb318c813e81cf0279ea2d800dfe2e7d
+-- hash: c9b9a609c368250d7f7be48d926ca4e3ce4bc598f07676d1f37a7e289f0ac7a9
 
 name:           petri-tasks
 version:        0.0.0
@@ -57,6 +57,7 @@ test-suite petri-tasks-test
       PetriDiagram
       PetriParser
       Types
+      PetriAlloySpec
       Paths_petri_tasks
   hs-source-dirs:
       ./.
@@ -64,6 +65,7 @@ test-suite petri-tasks-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HaTeX
+    , QuickCheck
     , SVGFonts
     , base
     , call-alloy
