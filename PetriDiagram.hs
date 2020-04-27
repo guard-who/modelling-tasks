@@ -26,16 +26,32 @@ defaultPetri = Petri
 testPrep :: IO ()
 testPrep = renderNet defaultPetri TwoPi
 ----------------------Preparing a PetriNet for Graph--------------------
-prepNet :: Petri -> Gr String String
-prepNet Petri{startM,trans} = mkGraph (prepNodes "s" 1 (length startM) nA 0) (prepEdges (length startM) trans)
+prepNet :: Petri -> Gr (String,Int) String
+prepNet Petri{startM,trans} = mkGraph (prepPlaces (length startM) 0 startM 
+                                      ++ prepTrans nA (length startM) 1)
+                                   (prepEdges (length startM) trans)
+--mkGraph (prepNodes "s" 1 (length startM) nA 0 startM) (prepEdges (length startM) trans)
   where nA = length startM + length trans
-        
-prepNodes :: String -> Int -> Int -> Int -> Int -> [(Int,String)]
-prepNodes s n h mx i 
- | i == h  = (i,"t" ++ show(n-i)):prepNodes "t" (n-i+1) h mx (i+1)
- | mx > i       = (i,s ++ show n):prepNodes s (n+1) h mx (i+1)
- | otherwise     = []
+
+--Type -> Number -> AnzahlStellen -> Gesamtanzahl -> startIndex -> StartMarkierung
+-- prepNodes :: String -> Int -> Int -> Int -> Int -> [(Int,String)]
+-- prepNodes s n h mx i
+ -- | i == h  = (i,"t" ++ show(n-i)):prepNodes "t" (n-i+1) h mx (i+1)
+ -- | mx > i       = (i,s ++ show n):prepNodes s (n+1) h mx (i+1)
+ -- | otherwise     = []
  
+--AnzahlStellen -> startIndex -> StartMarkierung
+prepPlaces :: Int -> Int -> [Int] -> [(Int,(String,Int))]
+prepPlaces _ _ []     = []
+prepPlaces s i (m:rm) = (i,("s" ++ show (i+1),m)):prepPlaces s (i+1) rm 
+
+--GesamtAnzahl(Stellen+Trans) -> startIndex
+prepTrans :: Int -> Int -> Int -> [(Int,(String,Int))]
+prepTrans s i t
+ | s > i         = (i,("t" ++ show t,-1)):prepTrans s (i+1) (t+1)
+ | otherwise     = []
+
+
 --Counter-> transitions -> Ausgabe
 prepEdges :: Int -> [Trans] -> [(Int,Int,String)]
 prepEdges _ [] = []
@@ -57,22 +73,21 @@ createPost ex i (m:rm)
  | otherwise = createPost ex (i+1) rm
 
 -------------------------------------------------------------------------
-drawNet :: Gr String String -> [Int] -> GraphvizCommand -> IO (Diagram B)
-drawNet pnet sm gc = do
+drawNet :: Gr (String,Int) String -> GraphvizCommand -> IO (Diagram B)
+drawNet pnet gc = do
 --Either Neato or TwoPi
   graph <- GV.layoutGraph gc pnet
   pfont <- lin
   let (nodes, edges) = GV.getGraph graph
       gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
-      gplaces = foldl (\g i -> g `atop` text' pfont (show i :: String) # translate (r2(-3,-15)) )   
-                  gnodes sm
-      gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gplaces edges
+      gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gnodes edges
   return (gedges # frame 1)
 
-drawNode :: PreparedFont Double -> String -> Point V2 Double -> Diagram B
-drawNode pfont l p 
+drawNode :: PreparedFont Double -> (String,Int) -> Point V2 Double -> Diagram B
+drawNode pfont (l,i) p 
  | head l == 's' = place
   (center (text' pfont l)
+    `atop` text' pfont (show i :: String) # translate (r2(-3,-15))
     `atop` circle 20 # named l)
   p
  | otherwise       = place
@@ -80,11 +95,8 @@ drawNode pfont l p
     `atop` rect 20 20 # named l)
   p
 
---drawMark :: PreparedFont Double -> String -> Point V2 Double -> Diagram Backend
---drawMark f l p 
-
-drawEdge :: PreparedFont Double -> String -> String -> String -> Path V2 Double -> Diagram B -> Diagram B
-drawEdge f l l1 l2 path d = 
+drawEdge :: PreparedFont Double -> String -> (String,Int) -> (String,Int) -> Path V2 Double -> Diagram B -> Diagram B
+drawEdge f l (l1,_) (l2,_) path d = 
   let opts p = with & arrowShaft .~ (unLoc . head $ pathTrails p)
       points = concat $ pathPoints path
       labelPoint = points !! (length points `div` 2)
@@ -98,7 +110,7 @@ text' pfont t =
   # lc black
 
 renderNet :: Petri -> GraphvizCommand -> IO ()
-renderNet petri@Petri{startM} gc = do
-  diagram <- drawNet (prepNet petri) startM gc
+renderNet petri gc = do
+  diagram <- drawNet (prepNet petri) gc
   renderSVG "example.svg" (mkWidth 200) diagram
   print "PetriNetz erstellt"
