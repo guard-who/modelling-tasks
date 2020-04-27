@@ -2,14 +2,9 @@
 
 module Inputs where 
 
-import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi, Neato))
-import Text.Read
 import PetriParser
 import PetriDiagram        (renderNet)
-import AuxFunctions
 import Types
-import PetriAlloy
-import Language.Alloy.Call
 
 userInput :: IO()
 userInput = do
@@ -22,7 +17,7 @@ userInput = do
   then do
     out <- runPParser inp
     case out of 
-      Left error -> print error
+      Left merror -> print merror
       Right petri -> renderNet petri (graphLayout inp)
   else 
     print "invalid Input"

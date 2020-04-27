@@ -1,6 +1,6 @@
 module Types where 
 
-import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi, Neato))
+import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
 
 type Mark = [Int]
 type Trans = (Mark,Mark)
@@ -29,7 +29,7 @@ defaultInput :: Input
 defaultInput = Input
   { places = 3
   , transitions = 3
-  , atLeastActv = 1
+  , atLeastActiv = 1
   , minTknsOverall = 2
   , maxTknsOverall = 4
   , maxTknsPerPlace = 2

@@ -31,16 +31,15 @@ prepNet Petri{startM,trans} = mkGraph (prepNodes "s" 1 (length startM) nA 0) (pr
   where nA = length startM + length trans
         
 prepNodes :: String -> Int -> Int -> Int -> Int -> [(Int,String)]
-prepNodes s n h max i 
---  | max > i > h   = ((i,"t"++n):prepNHelper (n+1) h max (i+1))
- | i == h  = (i,"t" ++ show(n-i)):prepNodes "t" (n-i+1) h max (i+1)
- | max > i       = (i,s ++ show n):prepNodes s (n+1) h max (i+1)
+prepNodes s n h mx i 
+ | i == h  = (i,"t" ++ show(n-i)):prepNodes "t" (n-i+1) h mx (i+1)
+ | mx > i       = (i,s ++ show n):prepNodes s (n+1) h mx (i+1)
  | otherwise     = []
  
 --Counter-> transitions -> Ausgabe
 prepEdges :: Int -> [Trans] -> [(Int,Int,String)]
 prepEdges _ [] = []
-prepEdges ex ((pre,post):rt) = createPre ex 0 pre
+prepEdges ex ((p,post):rt) = createPre ex 0 p
                             ++ createPost ex 0 post
                             ++ prepEdges (ex+1) rt
 

@@ -2,27 +2,18 @@
 
 module PetriParser where
 
-import Data.List
-import Data.Maybe
-import Data.String
 import Language.Alloy.Call
 import qualified Data.Set as Set
-import AuxFunctions
 import Types
 import PetriAlloy
       
 type TripSet = Set.Set (Object,Object,Object)
 
-convertPetri :: AlloyInstance -> IO(Either String Petri)
+convertPetri :: AlloyInstance -> Either String Petri
 convertPetri inst = do
-  flow <- return $ filterFlow inst
-  case flow of
-    Left error -> return $ Left error
-    Right pFlow -> do
-      mark <- startMark inst
-      case mark of
-        Left error -> return $ Left error
-        Right pMark -> return $ Right (Petri{startM = pMark,trans = pFlow})
+  flow <- filterFlow inst
+  mark <- startMark inst
+  return $ Petri{startM = mark,trans = flow}
       
                           --Transitionen--
 
@@ -47,11 +38,10 @@ convertToTrans ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost
 
 
                          --Startmarkierung--
-startMark :: AlloyInstance -> IO (Either String Mark)
-startMark inst =
-  case doubleSig inst "this" "Places" "tokens" of
-    Left error -> return $ Left error
-    Right smark -> return $ Right $ convertTuple (Set.toList smark)
+startMark :: AlloyInstance -> Either String Mark
+startMark inst = do
+  mark <- doubleSig inst "this" "Places" "tokens"
+  return $ convertTuple (Set.toList mark)
 
       
 convertTuple :: [(Object,Object)] -> [Int]
@@ -61,13 +51,6 @@ convertTuple ((_,i):rs) = (read (objectName i) :: Int) : convertTuple rs
   
 
                             --Hilfsfunktionen--
--- validConfig :: Input -> Bool
--- validConfig Input{places,transitions,tkns,maxTkns,maxWght,activated} = 
-  -- places > 0 && transitions > 0 && tkns > 0 &&
-  -- maxTkns <= tkns &&
-  -- tkns <= places*maxTkns &&
-  -- activated <= transitions &&
-  -- maxWght <= maxTkns 
                             
 -- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
 singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
@@ -88,23 +71,23 @@ tripleSig inst = do
                       --Filter for Objects--
 filterFstTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)
 filterFstTrip a = Set.filter $ helpFilter a
-  where helpFilter a (x,_,_) = a == x
+  where helpFilter b (x,_,_) = b == x
   
 filterSndTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)
 filterSndTrip a = Set.filter $ helpFilter a
-  where helpFilter a (_,x,_) = a == x
+  where helpFilter b (_,x,_) = b == x
   
 helpConvertPre :: [Object] -> [(Object,Object,Object)] -> [Int]
 helpConvertPre [] _ = []
-helpConvertPre (p:rp) [] = 0: helpConvertPre rp []
-helpConvertPre (p:rp) list@((a,b,x):rt)
+helpConvertPre (_:rp) [] = 0: helpConvertPre rp []
+helpConvertPre (p:rp) list@((a,_,x):rt)
  | p == a = (read (objectName x) :: Int) : helpConvertPre rp rt
  | otherwise = 0 : helpConvertPre rp list
  
 helpConvertPost :: [Object] -> [(Object,Object,Object)] -> [Int]
 helpConvertPost [] _ = []
-helpConvertPost (p:rp) [] = 0: helpConvertPost rp []
-helpConvertPost (p:rp) list@((a,b,x):rt)
+helpConvertPost (_:rp) [] = 0: helpConvertPost rp []
+helpConvertPost (p:rp) list@((_,b,x):rt)
  | p == b = (read (objectName x) :: Int) : helpConvertPost rp rt
  | otherwise = 0 : helpConvertPost rp list
 ----------------------------------------Main(-s)--------------------------------------------------
@@ -112,7 +95,7 @@ helpConvertPost (p:rp) list@((a,b,x):rt)
 runPParser :: Input -> IO(Either String Petri)
 runPParser inp = do 
     list <- getInstances (Just 5) (petriNetRnd inp)
-    convertPetri(head list)
+    return $ convertPetri(head list)
 
     
     

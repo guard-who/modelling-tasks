@@ -6,11 +6,10 @@ module PetriAlloy where
 
 import Data.String.Interpolate
 import Data.FileEmbed
-import Data.String
 import Types
 
 petriScope :: Input -> Int
-petriScope Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsPerPlace,maxFlowPerEdge} =
+petriScope Input{places,transitions} =
   (places+transitions)*2
   
 petriLoops :: Maybe Bool -> String
