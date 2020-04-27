@@ -69,7 +69,7 @@ pred maxWeight[n : Int]{
   all weight : Nodes.flow[Nodes] | weight =< n
 }
 
-pred showNets [ps : Places, ts : Transitions, t,n : Int] {
+pred showNets [ts : Transitions, t,n : Int] {
   #Places = #{places}
   #Transitions = #{transitions}
   t >= #{minTknsOverall}
