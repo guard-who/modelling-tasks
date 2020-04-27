@@ -77,8 +77,7 @@ pred showNets [ts : set Transitions, t,n : Int] {
   tokensAddedOverall[t]
   perPlaceTokensAddedAtMost[#{maxTknsPerPlace}]
   maxWeight[#{maxFlowPerEdge}]
-  flowSum[Nodes,Nodes] >= #{minFlowOverall}
-  #{maxFlowOverall} >= flowSum[Nodes,Nodes]
+  let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
   n >= #{atLeastActiv}
   numberActivatedTransition[n,ts]
   #{maybe "" petriLoops presenceSelfLoops}
