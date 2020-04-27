@@ -70,8 +70,8 @@ pred maxWeight[n : Int]{
 }
 
 pred showNets [ps : Places, ts : Transitions, t,n : Int] {
-  #Places <= #{places}
-  #Transitions <= #{transitions}
+  #Places = #{places}
+  #Transitions = #{transitions}
   t >= #{minTknsOverall}
   t <= #{maxTknsOverall}
   tokensAddedOverall[t]
