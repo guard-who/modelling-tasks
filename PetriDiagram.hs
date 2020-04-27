@@ -57,14 +57,16 @@ createPost ex i (m:rm)
  | otherwise = createPost ex (i+1) rm
 
 -------------------------------------------------------------------------
-drawNet :: Gr String String -> GraphvizCommand -> IO (Diagram B)
-drawNet pnet gc = do
+drawNet :: Gr String String -> [Int] -> GraphvizCommand -> IO (Diagram B)
+drawNet pnet sm gc = do
 --Either Neato or TwoPi
   graph <- GV.layoutGraph gc pnet
   pfont <- lin
   let (nodes, edges) = GV.getGraph graph
       gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
-      gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gnodes edges
+      gplaces = foldl (\g i -> g `atop` text' pfont (show i :: String) # translate (r2(-3,-15)) )   
+                  gnodes sm
+      gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gplaces edges
   return (gedges # frame 1)
 
 drawNode :: PreparedFont Double -> String -> Point V2 Double -> Diagram B
@@ -77,7 +79,7 @@ drawNode pfont l p
   (center (text' pfont l)
     `atop` rect 20 20 # named l)
   p
-  
+
 --drawMark :: PreparedFont Double -> String -> Point V2 Double -> Diagram Backend
 --drawMark f l p 
 
@@ -96,7 +98,7 @@ text' pfont t =
   # lc black
 
 renderNet :: Petri -> GraphvizCommand -> IO ()
-renderNet petri gc = do
-  diagram <- drawNet (prepNet petri) gc
+renderNet petri@Petri{startM} gc = do
+  diagram <- drawNet (prepNet petri) startM gc
   renderSVG "example.svg" (mkWidth 200) diagram
   print "PetriNetz erstellt"
