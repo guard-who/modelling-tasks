@@ -12,7 +12,7 @@ userInput = do
   pls <- getLine
   putStr "Anzahl der Transitionen: "
   trns <- getLine
-  let inp = defaultInput{ places = read pls :: Int , transitions = read trns :: Int}
+  let inp = defaultInput{ places = read pls, transitions = read trns }
   if checkInput inp 
   then do
     out <- runPParser inp

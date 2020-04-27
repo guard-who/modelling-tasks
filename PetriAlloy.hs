@@ -1,6 +1,7 @@
 {-# Language QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module PetriAlloy where 
 
@@ -12,23 +13,20 @@ petriScope :: Input -> Int
 petriScope Input{places,transitions} =
   (places+transitions)*2
   
-petriLoops :: Maybe Bool -> String
-petriLoops l
- | l == Just True    = "some p : Places, t : Transitions | selfLoop[p, t]"
- | l == Just False   = "no p : Places, t : Transitions | selfLoop[p, t]"
- | otherwise         = ""
+petriLoops :: Bool -> String
+petriLoops = \case
+ True  -> "some p : Places, t : Transitions | selfLoop[p, t]"
+ False -> "no p : Places, t : Transitions | selfLoop[p, t]"
 
-petriSink :: Maybe Bool -> String
-petriSink l
- | l == Just True    = "some t : Transitions | sinkTransitions[t]"
- | l == Just False   = "no t : Transitions | sinkTransitions[t]"
- | otherwise         = ""
+petriSink :: Bool -> String
+petriSink = \case
+ True  -> "some t : Transitions | sinkTransitions[t]"
+ False -> "no t : Transitions | sinkTransitions[t]"
 
-petriSource :: Maybe Bool -> String
-petriSource l
- | l == Just True    = "some t : Transitions | sourceTransitions[t]"
- | l == Just False   = "no t : Transitions | sourceTransitions[t]"
- | otherwise         = ""
+petriSource :: Bool -> String
+petriSource = \case
+ True  -> "some t : Transitions | sourceTransitions[t]"
+ False -> "no t : Transitions | sourceTransitions[t]"
 
 modulePetriSignature :: String
 modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
@@ -83,9 +81,9 @@ pred showNets [ps : Places, ts : Transitions, t,n : Int] {
   #{maxFlowOverall} >= flowSum[Nodes,Nodes]
   n >= #{atLeastActiv}
   numberActivatedTransition[n,ts]
-  #{petriLoops selfLoops}
-  #{petriSink presenceSinkTrans}
-  #{petriSource presenceSourceTrans}
+  #{maybe "" petriLoops selfLoops}
+  #{maybe "" petriSink presenceSinkTrans}
+  #{maybe "" petriSource presenceSourceTrans}
 }
 run showNets for #{petriScope input}
 
