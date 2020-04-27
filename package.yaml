@@ -30,3 +30,6 @@ library:
     - PetriAlloy
     - Inputs
     - Types
+  ghc-options:
+    - -Wall
+    - -Werror
