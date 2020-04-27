@@ -1,6 +1,6 @@
-module OneLiners
+module scenarios/OneLiners
 
-open PetriConstraints
+open lib/PetriConstraints
 
 pred noActivatedTrans[]{
   no t : Transitions | activated[t]

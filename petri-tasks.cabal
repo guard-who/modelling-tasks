@@ -4,14 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c9b9a609c368250d7f7be48d926ca4e3ce4bc598f07676d1f37a7e289f0ac7a9
+-- hash: 68aed58742b5634f6aa88d3e7b02daa724d47b6ece9718d5dc950e61eaacc48c
 
 name:           petri-tasks
 version:        0.0.0
 build-type:     Simple
 extra-source-files:
     lib/Alloy/Helpers.als
-    lib/Alloy/OneLiners.als
     lib/Alloy/PetriAdditions.als
     lib/Alloy/PetriConcepts.als
     lib/Alloy/PetriConstraints.als
