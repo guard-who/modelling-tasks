@@ -15,7 +15,7 @@ type TripSet = Set.Set (Object,Object,Object)
 
 convertPetri :: AlloyInstance -> IO(Either String Petri)
 convertPetri inst = do
-  flow <- filterFlow inst
+  flow <- return $ filterFlow inst
   case flow of
     Left error -> return $ Left error
     Right pFlow -> do
@@ -27,23 +27,13 @@ convertPetri inst = do
                           --Transitionen--
 
 --[([(3)],[(3)])] List of TransSets
-filterFlow :: AlloyInstance -> IO(Either String [Trans])
+filterFlow :: AlloyInstance -> Either String [Trans]
 filterFlow inst = do
-  let trn = singleSig inst "this" "Transitions" ""
-  case trn of
-    Left error -> return $ Left error
-    Right trans -> do
-      let out = tripleSig inst 
-      case out of 
-        Left error -> return $ Left error
-        Right set -> do
-          let flow = filterTrans (Set.toList trans) set
-          let plcs = singleSig inst "this" "Places" ""
-          case plcs of 
-            Left error -> return $ Left error
-            Right places -> return $ Right $ convertToTrans (Set.toList places) flow
-            
-      
+  trns <- singleSig inst "this" "Transitions" ""
+  set  <- tripleSig inst
+  let flow = filterTrans (Set.toList trns) set
+  plcs <- singleSig inst "this" "Places" ""
+  return $ convertToTrans (Set.toList plcs) flow
 
 filterTrans :: [Object] -> TripSet -> [(TripSet,TripSet)]
 filterTrans [] _ = []
