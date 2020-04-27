@@ -12,18 +12,17 @@ data Petri = Petri
 data Input = Input
   { places :: Int
   , transitions :: Int
-  , atLeastActv :: Int
-  , minTknsOv :: Int
-  , maxTknsOv :: Int
-  , maxTknsPPs :: Int
-  , minFlowOv :: Int
-  , maxFlowOv :: Int
-  , maxFlowPEdge :: Int
+  , atLeastActiv :: Int
+  , minTknsOverall :: Int
+  , maxTknsOverall :: Int
+  , maxTknsPerPlace :: Int
+  , minFlowOverall :: Int
+  , maxFlowOverall :: Int
+  , maxFlowPerEdge :: Int
   , selfLoops :: Maybe Bool
   , presenceSinkTrans :: Maybe Bool
   , presenceSourceTrans :: Maybe Bool
   , graphLayout :: GraphvizCommand
-  , anyOtherFieldThatMightBeNeededLater :: Bool
   }
 
 defaultInput :: Input
@@ -31,15 +30,14 @@ defaultInput = Input
   { places = 3
   , transitions = 3
   , atLeastActv = 1
-  , minTknsOv = 2
-  , maxTknsOv = 4
-  , maxTknsPPs = 2
-  , minFlowOv = 3
-  , maxFlowOv = 6
-  , maxFlowPEdge = 2
+  , minTknsOverall = 2
+  , maxTknsOverall = 4
+  , maxTknsPerPlace = 2
+  , minFlowOverall = 3
+  , maxFlowOverall = 6
+  , maxFlowPerEdge = 2
   , selfLoops = Nothing
   , presenceSinkTrans = Nothing
   , presenceSourceTrans = Nothing
   , graphLayout = TwoPi
-  , anyOtherFieldThatMightBeNeededLater = undefined -- Note how this field is not even mentioned anywhere below.
   }

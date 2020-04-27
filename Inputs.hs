@@ -28,9 +28,15 @@ userInput = do
     print "invalid Input"
     
 checkInput :: Input -> Bool
-checkInput Input{places,transitions,atLeastActv,minTknsOv,maxTknsPPs,maxFlowPEdge} = 
-  places > 0 && transitions > 0 && minTknsOv >= 0 && maxFlowPEdge > 0 && atLeastActv >= 0 &&
-  minTknsOv <= places*maxTknsPPs &&
-  maxTknsPPs <= minTknsOv &&
-  atLeastActv <= transitions
+checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
+                 minFlowOverall,maxFlowOverall,maxFlowPerEdge} = 
+  places > 0 && transitions > 0 && atLeastActiv >= 0 && minTknsOverall >= 0 && maxTknsPerPlace >= 0 &&
+  maxFlowPerEdge > 0 && minFlowOverall >= 0 &&
+  atLeastActiv <= transitions &&
+  maxTknsOverall <= places*maxTknsPerPlace &&
+  maxTknsOverall >= minTknsOverall &&
+  maxTknsPerPlace <= maxTknsOverall &&
+  maxFlowOverall >= minFlowOverall &&
+  maxFlowOverall >= maxFlowPerEdge 
+  
   
