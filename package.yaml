@@ -33,3 +33,16 @@ library:
   ghc-options:
     - -Wall
     - -Werror
+tests:
+  petri-tasks-test:
+    main: Spec.hs
+    source-dirs:
+    - .
+    - test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - petri-tasks
+    - hspec

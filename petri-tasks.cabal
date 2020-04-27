@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dd458ed67fb6b0c7fde36c3167210d11eba7ee7ce5c9d63aa2545b64a4f21a24
+-- hash: 00aa89caef382deca5877e1dd6732a27eb318c813e81cf0279ea2d800dfe2e7d
 
 name:           petri-tasks
 version:        0.0.0
@@ -43,6 +43,40 @@ library
     , fgl
     , file-embed
     , graphviz
+    , string-interpolate
+    , transformers
+  default-language: Haskell2010
+
+test-suite petri-tasks-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      AuxFunctions
+      Inputs
+      PetriAlloy
+      PetriDiagram
+      PetriParser
+      Types
+      Paths_petri_tasks
+  hs-source-dirs:
+      ./.
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HaTeX
+    , SVGFonts
+    , base
+    , call-alloy
+    , containers
+    , diagrams
+    , diagrams-graphviz
+    , diagrams-lib
+    , diagrams-svg
+    , fgl
+    , file-embed
+    , graphviz
+    , hspec
+    , petri-tasks
     , string-interpolate
     , transformers
   default-language: Haskell2010
