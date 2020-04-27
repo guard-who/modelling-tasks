@@ -23,14 +23,14 @@ userInput = do
     out <- runPParser inp
     case out of 
       Left error -> print error
-      Right petri -> renderNet petri TwoPi
+      Right petri -> renderNet petri (graphLayout inp)
   else 
     print "invalid Input"
     
 checkInput :: Input -> Bool
-checkInput Input{places,transitions,tkns,maxTkns,maxWght,activated} = 
-  places > 0 && transitions > 0 && tkns >= 0 && maxWght > 0 && activated >= 0 &&
-  tkns <= places*maxTkns &&
-  maxTkns <= tkns &&
-  activated <= transitions
+checkInput Input{places,transitions,atLeastActv,minTknsOv,maxTknsPPs,maxFlowPEdge} = 
+  places > 0 && transitions > 0 && minTknsOv >= 0 && maxFlowPEdge > 0 && atLeastActv >= 0 &&
+  minTknsOv <= places*maxTknsPPs &&
+  maxTknsPPs <= minTknsOv &&
+  atLeastActv <= transitions
   

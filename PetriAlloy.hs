@@ -10,7 +10,7 @@ import Data.String
 import Types
 
 petriScope :: Input -> Int
-petriScope Input{places,transitions,tkns,maxTkns,maxWght,activated} =
+petriScope Input{places,transitions,atLeastActv,minTknsOv,maxTknsPPs,maxFlowPEdge} =
   (places+transitions)*2
   
 petriLoops :: Maybe Bool -> String
@@ -51,8 +51,10 @@ removeLines n = unlines . drop n . lines
 
 --Bigger Net needs bigger "run for x"
 -- make flowSum dynamic with input
+
 petriNetRnd :: Input -> String
-petriNetRnd input@Input{places,transitions,tkns,maxTkns,maxWght,activated,
+petriNetRnd input@Input{places,transitions,atLeastActv,minTknsOv,maxTknsOv,maxTknsPPs,
+                        minFlowOv,maxFlowOv,maxFlowPEdge,
                         selfLoops,presenceSinkTrans,presenceSourceTrans} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
@@ -70,14 +72,17 @@ pred maxWeight[n : Int]{
   all weight : Nodes.flow[Nodes] | weight =< n
 }
 
-pred showNets [ps : Places, ts : Transitions, n : Int] {
+pred showNets [ps : Places, ts : Transitions, t,n : Int] {
   #Places <= #{places}
-  tokensAddedOverall[#{tkns}]
-  perPlaceTokensAddedAtMost[#{maxTkns}]
   #Transitions <= #{transitions}
-  maxWeight[#{maxWght}]
-  flowSum[Nodes,Nodes] >= #{places}
-  n >= #{activated}
+  t >= #{minTknsOv}
+  t <= #{maxTknsOv}
+  tokensAddedOverall[t]
+  perPlaceTokensAddedAtMost[#{maxTknsPPs}]
+  maxWeight[#{maxFlowPEdge}]
+  flowSum[Nodes,Nodes] >= #{minFlowOv}
+  #{maxFlowOv} >= flowSum[Nodes,Nodes]
+  n >= #{atLeastActv}
   numberActivatedTransition[n,ts]
   #{petriLoops selfLoops}
   #{petriSink presenceSinkTrans}
