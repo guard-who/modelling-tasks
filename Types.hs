@@ -19,7 +19,7 @@ data Input = Input
   , minFlowOverall :: Int
   , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
-  , selfLoops :: Maybe Bool
+  , presenceSelfLoops :: Maybe Bool
   , presenceSinkTrans :: Maybe Bool
   , presenceSourceTrans :: Maybe Bool
   , graphLayout :: GraphvizCommand
@@ -36,7 +36,7 @@ defaultInput = Input
   , minFlowOverall = 3
   , maxFlowOverall = 6
   , maxFlowPerEdge = 2
-  , selfLoops = Nothing
+  , presenceSelfLoops = Nothing
   , presenceSinkTrans = Nothing
   , presenceSourceTrans = Nothing
   , graphLayout = TwoPi

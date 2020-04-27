@@ -52,7 +52,7 @@ removeLines n = unlines . drop n . lines
 petriNetRnd :: Input -> String
 petriNetRnd input@Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
                         minFlowOverall,maxFlowOverall,maxFlowPerEdge,
-                        selfLoops,presenceSinkTrans,presenceSourceTrans} = [i|module PetriNetRnd
+                        presenceSelfLoops,presenceSinkTrans,presenceSourceTrans} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -81,7 +81,7 @@ pred showNets [ps : Places, ts : Transitions, t,n : Int] {
   #{maxFlowOverall} >= flowSum[Nodes,Nodes]
   n >= #{atLeastActiv}
   numberActivatedTransition[n,ts]
-  #{maybe "" petriLoops selfLoops}
+  #{maybe "" petriLoops presenceSelfLoops}
   #{maybe "" petriSink presenceSinkTrans}
   #{maybe "" petriSource presenceSourceTrans}
 }
