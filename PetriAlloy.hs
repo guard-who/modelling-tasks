@@ -15,20 +15,20 @@ petriScope Input{places,transitions,tkns,maxTkns,maxWght,activated} =
   
 petriLoops :: Maybe Bool -> String
 petriLoops l
- | l == Just True    = "presenceSelfLoop"
- | l == Just False   = "not presenceSelfLoop"
+ | l == Just True    = "some p : Places, t : Transitions | selfLoop[p, t]"
+ | l == Just False   = "no p : Places, t : Transitions | selfLoop[p, t]"
  | otherwise         = ""
 
 petriSink :: Maybe Bool -> String
 petriSink l
- | l == Just True    = "presenceSinkTransition"
- | l == Just False   = "not presenceSinkTransition"
+ | l == Just True    = "some t : Transitions | sinkTransitions[t]"
+ | l == Just False   = "no t : Transitions | sinkTransitions[t]"
  | otherwise         = ""
 
 petriSource :: Maybe Bool -> String
 petriSource l
- | l == Just True    = "presenceSourceTransition"
- | l == Just False   = "not presenceSourceTransition"
+ | l == Just True    = "some t : Transitions | sourceTransitions[t]"
+ | l == Just False   = "no t : Transitions | sourceTransitions[t]"
  | otherwise         = ""
 
 modulePetriSignature :: String
@@ -46,9 +46,6 @@ modulePetriConcepts = removeLines 5 $(embedStringFile "lib/Alloy/PetriConcepts.a
 modulePetriConstraints :: String
 modulePetriConstraints = removeLines 4 $(embedStringFile "lib/Alloy/PetriConstraints.als")
 
-moduleOneLiners :: String 
-moduleOneLiners = removeLines 4 $(embedStringFile "lib/Alloy/OneLiners.als")
-
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
 
@@ -63,11 +60,14 @@ petriNetRnd input@Input{places,transitions,tkns,maxTkns,maxWght,activated,
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
-#{moduleOneLiners}
 
 fact{
   no givenPlaces
   no givenTransitions
+}
+
+pred maxWeight[n : Int]{
+  all weight : Nodes.flow[Nodes] | weight =< n
 }
 
 pred showNets [ps : Places, ts : Transitions, n : Int] {
