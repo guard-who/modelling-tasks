@@ -69,17 +69,17 @@ pred maxWeight[n : Int]{
   all weight : Nodes.flow[Nodes] | weight =< n
 }
 
-pred showNets [ts : set Transitions, t,n : Int] {
+pred showNets [ts : set Transitions, t : Int] {
   #Places = #{places}
   #Transitions = #{transitions}
   t >= #{minTknsOverall}
   t <= #{maxTknsOverall}
-  tokensAddedOverall[t]
-  perPlaceTokensAddedAtMost[#{maxTknsPerPlace}]
+  tokenChangeOverall[t]
+  all p : Places | p.tokens =< #{maxTknsPerPlace}
   maxWeight[#{maxFlowPerEdge}]
   let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
-  n >= #{atLeastActiv}
-  numberActivatedTransition[n,ts]
+  #ts >= #{atLeastActiv}
+  theActivatedTransitions[ts]
   #{maybe "" petriLoops presenceSelfLoops}
   #{maybe "" petriSink presenceSinkTrans}
   #{maybe "" petriSource presenceSourceTrans}
