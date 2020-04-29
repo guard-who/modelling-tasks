@@ -46,6 +46,7 @@ extra-deps:
   - transformers-0.5.6.2
   - file-embed-0.0.11.2
   - HaTeX-3.22.2.0
+  - text-1.2.3.1
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

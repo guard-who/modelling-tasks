@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 68aed58742b5634f6aa88d3e7b02daa724d47b6ece9718d5dc950e61eaacc48c
+-- hash: da814f4018762a4338e1fb0684a624f33433394ebc4e6152abac34c9506f37af
 
 name:           petri-tasks
 version:        0.0.0
@@ -22,6 +22,7 @@ library
       AuxFunctions
       PetriParser
       PetriAlloy
+      PetriTex
       Inputs
       Types
   other-modules:
@@ -43,6 +44,7 @@ library
     , file-embed
     , graphviz
     , string-interpolate
+    , text
     , transformers
   default-language: Haskell2010
 
@@ -55,6 +57,7 @@ test-suite petri-tasks-test
       PetriAlloy
       PetriDiagram
       PetriParser
+      PetriTex
       Types
       PetriAlloySpec
       Paths_petri_tasks
@@ -79,5 +82,6 @@ test-suite petri-tasks-test
     , hspec
     , petri-tasks
     , string-interpolate
+    , text
     , transformers
   default-language: Haskell2010

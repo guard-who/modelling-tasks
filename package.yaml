@@ -20,6 +20,7 @@ dependencies:
   - SVGFonts
   - containers
   - transformers
+  - text
 library:
   source-dirs: .
   exposed-modules: 
@@ -27,6 +28,7 @@ library:
     - AuxFunctions
     - PetriParser
     - PetriAlloy
+    - PetriTex
     - Inputs
     - Types
   ghc-options:
