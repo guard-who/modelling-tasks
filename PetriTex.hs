@@ -32,7 +32,7 @@ body Petri{startM,trans} task
 task1 :: Mark -> Int -> LaTeX
 task1 m tl = 
   "Which of the presented petrinets shows the mathematical expression?" 
-  <> linebreak 0
+  <> newline
   <> "Given the following: "
   <> math ( "N = (P, T," <> raw "^{\\bullet}" <> "(), ()" 
   <> raw "^{\\bullet}" <> ", m" <> raw "_" <> "0)")
@@ -40,7 +40,7 @@ task1 m tl =
   <> " , "
   <> math ( raw "T = \\{" <> createTrans 1 tl <> raw "\\}" )
   <> " , "
-  <> math ( raw "m_0 = (" <>fromString (unpack (renderCommas m)) <> ")") 
+  <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas m)) <> ")") 
 
 createPlaces ::Int -> Int -> LaTeX
 createPlaces i p 
