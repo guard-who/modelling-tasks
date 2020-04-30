@@ -24,7 +24,7 @@ defaultPetri = Petri
   }
   
 testPrep :: IO ()
-testPrep = renderNet defaultPetri TwoPi
+testPrep = renderNet "test" defaultPetri TwoPi
 ----------------------Preparing a PetriNet for Graph--------------------
 prepNet :: Petri -> Gr (String, Maybe Int) String
 prepNet Petri{startM,trans} = mkGraph (prepPlaces (length startM) 0 startM 
@@ -101,8 +101,8 @@ text' pfont t =
   # fc black
   # lc black
 
-renderNet :: Petri -> GraphvizCommand -> IO ()
-renderNet petri gc = do
+renderNet :: String -> Petri -> GraphvizCommand -> IO ()
+renderNet name petri gc = do
   diagram <- drawNet (prepNet petri) gc
-  renderSVG "example.svg" (mkWidth 200) diagram
+  renderSVG (name++".svg") (mkWidth 200) diagram
   print "PetriNetz erstellt"

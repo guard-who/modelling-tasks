@@ -26,6 +26,7 @@ library:
   exposed-modules: 
     - PetriDiagram
     - AuxFunctions
+    - FalsePetri
     - PetriParser
     - PetriAlloy
     - PetriTex

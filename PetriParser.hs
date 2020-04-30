@@ -9,10 +9,10 @@ import PetriAlloy
       
 type TripSet = Set.Set (Object,Object,Object)
 
-convertPetri :: AlloyInstance -> Either String Petri
-convertPetri inst = do
+convertPetri :: String -> AlloyInstance -> Either String Petri
+convertPetri s inst = do
   flow <- filterFlow inst
-  mark <- startMark inst
+  mark <- startMark s inst
   return $ Petri{startM = mark,trans = flow}
       
                           --Transitionen--
@@ -38,9 +38,9 @@ convertToTrans ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost
 
 
                          --Startmarkierung--
-startMark :: AlloyInstance -> Either String Mark
-startMark inst = do
-  mark <- doubleSig inst "this" "Places" "tokens"
+startMark :: String -> AlloyInstance -> Either String Mark
+startMark s inst = do
+  mark <- doubleSig inst "this" "Places" s
   return $ convertTuple (Set.toList mark)
 
       
@@ -91,14 +91,18 @@ helpConvertPost (p:rp) list@((_,b,x):rt)
  | p == b = (read (objectName x) :: Int) : helpConvertPost rp rt
  | otherwise = 0 : helpConvertPost rp list
 ----------------------------------------Main(-s)--------------------------------------------------
-  
-runPParser :: Input -> IO(Either String Petri)
-runPParser inp = do 
-    list <- getInstances (Just 5) (petriNetRnd inp)
-    return $ convertPetri(head list)
 
+--Parse From Input
+runIParser :: Input -> IO(Either String Petri)
+runIParser inp = do 
+    list <- getInstances (Just 5) (petriNetRnd inp)
+    return $ convertPetri "tokens" (head list)
     
-    
+--Parse From String(Alloy Code)
+runAParser :: String -> IO(Either String Petri)
+runAParser alloy = do
+  list <- getInstances (Just 5) alloy
+  return $ convertPetri "defaultTokens" (head list)
     
   
 

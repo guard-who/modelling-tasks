@@ -2,6 +2,7 @@
 
 module Inputs where 
 
+import FalsePetri
 import PetriParser
 import PetriDiagram        (renderNet)
 import Types
@@ -16,10 +17,16 @@ userInput = do
   let c = checkInput inp
   if c == Nothing
   then do  
-    out <- runPParser inp
+    out <- runIParser inp
     case out of 
       Left merror -> print merror
-      Right petri -> renderNet petri (graphLayout inp)
+      Right petri -> do
+        renderNet "right" petri (graphLayout inp)
+        let f = renderFalse petri
+        fPetri <- runAParser f
+        case fPetri of
+          Left ferror -> print ferror
+          Right fNet -> renderNet "wrong" fNet (graphLayout inp)
   else
     print $ c
   
