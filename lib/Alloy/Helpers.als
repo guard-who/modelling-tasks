@@ -2,6 +2,14 @@ module Helpers
 
 open PetriSignature
 
+fun tokenSum[places : set Places] : Int{
+  sum p : places | p.tokens
+}
+
+fun defaultTokenSum[places : set Places] : Int{
+  sum p : places | p.defaultTokens
+}
+
 //sum of tokenChange
 fun tokenChangeSum[places : set Places] : Int{
   sum p : places | p.tokenChange
