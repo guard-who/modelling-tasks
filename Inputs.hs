@@ -34,7 +34,9 @@ checkInput :: Input -> Maybe String
 checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
                  minFlowOverall,maxFlowOverall,maxFlowPerEdge}
  | places <= 0         = Just "There must at least be 1 Place"
+ | places > 9          = Just "Places are to be picked in a range of 1 to 9"
  | transitions <= 0    = Just "There must at least be 1 Transition"
+ | transitions > 9     = Just "Transitions are to be picked in a range of 1 to 9"
  | atLeastActiv < 0    = Just "Least Active Transitions must be at least 0"
  | minTknsOverall < 0  = Just "Tokens Overall must be at least 0"
  | maxTknsPerPlace < 0 = Just "Tokens per Place must be at least 0"
