@@ -69,12 +69,10 @@ pred maxWeight[n : Int]{
   all weight : Nodes.flow[Nodes] | weight =< n
 }
 
-pred showNets [ts : set Transitions, t : Int] {
+pred showNets [ts : set Transitions] {
   #Places = #{places}
   #Transitions = #{transitions}
-  t >= #{minTknsOverall}
-  t <= #{maxTknsOverall}
-  tokenChangeOverall[t]
+  let t = tokenChangeSum[Places] | t >= #{minTknsOverall} and t <= #{maxTknsOverall}
   all p : Places | p.tokens =< #{maxTknsPerPlace}
   maxWeight[#{maxFlowPerEdge}]
   let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow

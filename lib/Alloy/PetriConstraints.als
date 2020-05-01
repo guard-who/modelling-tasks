@@ -18,10 +18,6 @@ pred maximallyConcurrent[ts : set Transitions]{
   no t : (Transitions - ts) | concurrent[ts+t]
 }
 
-pred tokenChangeOverall[n : Int]{
-  tokenChangeSum[Places] = n
-}
-
 //set weight can be added to a petri net only
 pred weightAddOnly[]{
   all change : Nodes.flowChange[Nodes] | change > 0
@@ -30,10 +26,6 @@ pred weightAddOnly[]{
 //set weight can be removed from a petri net only
 pred weightRemoveOnly[]{
   all change : Nodes.flowChange[Nodes] | change < 0
-}
-
-pred flowChangeOverall[n : Int]{
-  flowChangeSum[Nodes,Nodes] = n
 }
 
 pred theActivatedTransitions[ts : set Transitions]{
