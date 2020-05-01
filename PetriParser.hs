@@ -1,4 +1,4 @@
---{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module PetriParser where
 
@@ -21,15 +21,17 @@ convertPetri s inst = do
 filterFlow :: AlloyInstance -> Either String [Trans]
 filterFlow inst = do
   trns <- singleSig inst "this" "Transitions" ""
-  set  <- tripleSig inst
+  set  <- tripleSig inst "this" "Nodes" "flow"
   let flow = filterTrans (Set.toList trns) set
   plcs <- singleSig inst "this" "Places" ""
   return $ convertToTrans (Set.toList plcs) flow
 
+-- prepare with given Transitions the Pre and Post Sets for Petri
 filterTrans :: [Object] -> TripSet -> [(TripSet,TripSet)]
 filterTrans [] _ = []
 filterTrans (t:rs) set = (filterSndTrip t set,filterFstTrip t set) : filterTrans rs set
 
+-- make out of the given Sets the Transitions for Petri
 convertToTrans :: [Object] -> [(TripSet,TripSet)] -> [Trans]
 convertToTrans _ [] = []
 convertToTrans ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b)) 
@@ -48,6 +50,25 @@ convertTuple :: [(Object,Object)] -> [Int]
 convertTuple [] = []
 convertTuple ((_,i):rs) = (read (objectName i) :: Int) : convertTuple rs
 
+                          --get Abweichung--
+parseChange :: AlloyInstance -> Either String Change 
+parseChange inst = do
+  flow <- tripleSig inst "this" "Nodes" "flowChange"
+  tkn  <- doubleSig inst "this" "Places" "tokenChange"
+  let flowC = flowChange (Set.toList flow)
+  let tknC  = tokenChange (Set.toList tkn)
+  return $ Change{tknChange = tknC , flwChange = flowC}
+
+flowChange :: [(Object,Object,Object)] -> [(String,String,Int)]
+flowChange []               = []
+flowChange ((n1,n2,val):rs) =
+  (listTill (objectName n1) '$' ,listTill (objectName n2) '$',(read (objectName val) :: Int))
+  : flowChange rs
+  
+tokenChange :: [(Object,Object)] -> [(String,Int)]
+tokenChange []            = []
+tokenChange ((pl,val):rt) = (listTill (objectName pl) '$' ,(read (objectName val) :: Int)) 
+                             : tokenChange rt
   
 
                             --Hilfsfunktionen--
@@ -63,10 +84,11 @@ doubleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   getDouble rd sig
 
-tripleSig :: AlloyInstance -> Either String (Set.Set (Object,Object,Object))
-tripleSig inst = do
-  sig <- lookupSig (scoped "this" "Nodes") inst
-  getTriple "flow" sig
+tripleSig :: AlloyInstance -> String -> String -> String
+               -> Either String (Set.Set (Object,Object,Object))
+tripleSig inst st nd rd = do
+  sig <- lookupSig (scoped st nd) inst
+  getTriple rd sig
   
                       --Filter for Objects--
 filterFstTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)
@@ -90,6 +112,13 @@ helpConvertPost (_:rp) [] = 0: helpConvertPost rp []
 helpConvertPost (p:rp) list@((_,b,x):rt)
  | p == b = (read (objectName x) :: Int) : helpConvertPost rp rt
  | otherwise = 0 : helpConvertPost rp list
+ 
+--getList up to given element
+listTill :: (Eq a) => [a] -> a -> [a]
+listTill [] _ = []
+listTill (x:rs) y 
+ | x == y    = []
+ | otherwise = x : listTill rs y
 ----------------------------------------Main(-s)--------------------------------------------------
 
 --Parse From Input
@@ -99,11 +128,12 @@ runIParser inp = do
     return $ convertPetri "tokens" (head list)
     
 --Parse From String(Alloy Code)
-runAParser :: String -> IO(Either String Petri)
+runAParser :: String -> IO(Either String Petri,Either String Change)
 runAParser alloy = do
   list <- getInstances (Just 5) alloy
-  return $ convertPetri "defaultTokens" (head list)
-    
+  let petri = convertPetri "tokens" (head list)
+  let change = parseChange (head list)
+  return (petri,change)
   
 
 ----------------------------------------------------------------------

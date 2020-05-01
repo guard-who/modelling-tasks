@@ -2,6 +2,10 @@ module Types where
 
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
 
+--tokenChange,flowChange
+data Change = Change {tknChange :: [(String,Int)],flwChange :: [(String,String,Int)]}
+  deriving Show
+
 type Mark = [Int]
 type Trans = (Mark,Mark)
 data Petri = Petri

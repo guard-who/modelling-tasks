@@ -5,16 +5,20 @@
 module FalsePetri where
 
 import Data.String.Interpolate
-import PetriAlloy               (modulePetriSignature)
+import PetriAlloy               (modulePetriSignature, moduleHelpers, modulePetriConstraints
+        , modulePetriConcepts)
 import Types
 
 testFalse :: Petri -> IO()
-testFalse petri = writeFile "output.txt" $ renderFalse petri
+testFalse petri = writeFile "output.txt" $ renderFalse 1 2 petri
 
-renderFalse :: Petri -> String
-renderFalse Petri{startM,trans} = [i| module FalseNet
+renderFalse :: Int -> Int -> Petri -> String
+renderFalse tknChange flwChange Petri{startM,trans} = [i| module FalseNet
 
 #{modulePetriSignature}
+#{moduleHelpers}
+#{modulePetriConcepts}
+#{modulePetriConstraints}
 
 #{givPlaces (length startM)}
 #{givTrans (length trans)}
@@ -23,6 +27,10 @@ fact{
   #{startMark 1 startM}
   
   #{defFlow 1 trans}
+  weightAddOnly[]
+  flowChangeSum[Nodes,Nodes] = #{flwChange}
+  tokenAddOnly[]
+  tokenChangeSum[Places] = #{tknChange}
 }
 |]
 
@@ -55,3 +63,4 @@ flowPost iT iM (m:rm)
  | m == 0     = "no T"++ show iT ++".defaultFlow[S"++ show iM ++"]\n  " ++ flowPost iT (iM+1) rm
  | otherwise  = "T"++ show iT ++".defaultFlow[S"++ show iM ++"] = "++ show m ++"\n  "
                         ++ flowPost iT (iM+1) rm
+                        

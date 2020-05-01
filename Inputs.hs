@@ -7,13 +7,13 @@ import PetriParser
 import PetriDiagram        (renderNet)
 import Types
 
-userInput :: IO()
-userInput = do
-  putStr "Anzahl der Stellen: "
-  pls <- getLine
-  putStr "Anzahl der Transitionen: "
-  trns <- getLine
-  let inp = defaultInput{ places = read pls, transitions = read trns }
+------------(finished ,finished,[(WIP,WIP)])
+--main :: IO(Diagram B, LaTeX, [(Diagram B, Change)])
+
+mainInput :: IO()
+mainInput = do
+  (pls,trns,tknChange,flwChange) <- userInput
+  let inp = defaultInput{ places = pls, transitions = trns }
   let c = checkInput inp
   if c == Nothing
   then do  
@@ -22,13 +22,30 @@ userInput = do
       Left merror -> print merror
       Right petri -> do
         renderNet "right" petri (graphLayout inp)
-        let f = renderFalse petri
-        fPetri <- runAParser f
-        case fPetri of
-          Left ferror -> print ferror
-          Right fNet -> renderNet "wrong" fNet (graphLayout inp)
+        let f = renderFalse tknChange flwChange petri
+        fParsed <- runAParser f
+        case fParsed of
+          (Left ferror,Left cError) -> print $ ferror ++ cError
+          (Left ferror, _)          -> print ferror
+          (_,Left cError)           -> print cError
+          (Right fNet,Right change) -> do
+            renderNet "wrong" fNet (graphLayout inp)
+            print change
   else
     print $ c
+    
+userInput :: IO (Int,Int,Int,Int)
+userInput = do   
+  putStr "Number of Places: "
+  pls <- getLine
+  putStr "Number of Transitions: "
+  trns <- getLine
+  putStr "TokenChange: "
+  tknCh <- getLine
+  putStr "FlowChange: "
+  flwCh <- getLine
+  return (read pls, read trns, read tknCh, read flwCh)
+  
   
 checkInput :: Input -> Maybe String
 checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
