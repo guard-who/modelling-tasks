@@ -32,3 +32,11 @@ pred theActivatedTransitions[ts : set Transitions]{
   all t : ts | activated[t]
   no t : (Transitions - ts) | activated[t]
 }
+
+pred noIsolatedNodes[]{
+  all n : Nodes | some m : Nodes | m in n.flow.Int or n in m.flow.Int
+}
+
+pred graphIsConnected[]{
+  all n,m : Nodes | n != m implies n in m.^(flow.Int + ~(flow.Int))
+}
