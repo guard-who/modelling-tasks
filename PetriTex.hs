@@ -11,8 +11,11 @@ import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
 import Text.LaTeX.Packages.Geometry
 import Types
 
+--PetriNet -> Choose task 
 runTex :: Petri -> Int -> IO()
-runTex petri t = renderFile "testA.tex" $ uebung petri t
+runTex petri t = do
+  renderFile ("task"++show t++".tex") $ uebung petri t
+  print $ "Task"++show t++" generated"
 
 uebung :: Petri -> Int -> LaTeX
 uebung petri task =

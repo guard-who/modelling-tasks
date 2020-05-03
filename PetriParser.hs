@@ -128,12 +128,13 @@ runIParser inp = do
     return $ convertPetri "tokens" (head list)
     
 --Parse From String(Alloy Code)
-runAParser :: String -> IO(Either String Petri,Either String Change)
+runAParser :: AlloyInstance -> IO(Either String Petri,Either String Change)
 runAParser alloy = do
-  list <- getInstances (Just 5) alloy
-  let petri = convertPetri "tokens" (head list)
-  let change = parseChange (head list)
+  let petri = convertPetri "tokens" alloy
+  let change = parseChange alloy
   return (petri,change)
+  
+
   
 
 ----------------------------------------------------------------------

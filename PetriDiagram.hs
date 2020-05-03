@@ -23,8 +23,10 @@ defaultPetri = Petri
   , trans = [([1,0,0],[0,1,0]),([1,0,0],[0,0,1]),([0,1,1],[2,0,0])]
   }
   
-testPrep :: IO ()
-testPrep = renderNet "test" defaultPetri TwoPi
+-- testPrep :: IO()
+-- testPrep = do
+  -- t <- return $ renderNet "test" defaultPetri TwoPi
+  -- return $ t
 ----------------------Preparing a PetriNet for Graph--------------------
 prepNet :: Petri -> Gr (String, Maybe Int) String
 prepNet Petri{startM,trans} = mkGraph (prepPlaces (length startM) 0 startM 

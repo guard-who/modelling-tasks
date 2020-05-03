@@ -2,12 +2,17 @@
 
 module Inputs where 
 
+import Data.GraphViz.Attributes.Complete (GraphvizCommand )
+--import Diagrams.Backend.SVG              (B)
+--import Diagrams.Prelude                  (Diagram)
 import FalsePetri
-import PetriParser
-import PetriDiagram        (renderNet)
+import Language.Alloy.Call               (AlloyInstance,getInstances)
+import PetriDiagram                      (renderNet)
+import PetriParser                       (runIParser,runAParser)
+import PetriTex                          (runTex)
 import Types
 
-------------(finished ,finished,[(WIP,WIP)])
+------------(finished ,finished,[(done,done)]) -- List needs to be done
 --main :: IO(Diagram B, LaTeX, [(Diagram B, Change)])
 
 mainInput :: IO()
@@ -22,17 +27,37 @@ mainInput = do
       Left merror -> print merror
       Right petri -> do
         renderNet "right" petri (graphLayout inp)
+        runTex petri 1
         let f = renderFalse tknChange flwChange petri
-        fParsed <- runAParser f
-        case fParsed of
-          (Left ferror,Left cError) -> print $ ferror ++ cError
-          (Left ferror, _)          -> print ferror
-          (_,Left cError)           -> print cError
-          (Right fNet,Right change) -> do
-            renderNet "wrong" fNet (graphLayout inp)
-            print change
+        list <- getInstances (Just 4) f
+        wrongList 1 (graphLayout inp) list
   else
     print $ c
+    
+-- falseList :: Int -> GraphvizCommand -> [AlloyInstance] -> Either String [(Diagram B,Change)]
+-- falseList _ _ []     = Right []
+-- falseList i gc (inst:rs) = do
+  -- fParsed <- runAParser inst
+  -- case fParsed of
+    -- (Left ferror,Left cError) -> return $ ferror ++ cError
+    -- (Left ferror, _)          -> return ferror
+    -- (_,Left cError)           -> return cError
+    -- (Right fNet,Right change) -> do
+      -- let net = return $ renderNet ("wrong"++show i) fNet gc
+      -- return $ (net,change) : falseList (i+1) gc rs
+      
+wrongList :: Int -> GraphvizCommand -> [AlloyInstance] -> IO()
+wrongList _ _ []         = print "finished"
+wrongList i gc (inst:rs) = do
+  fParsed <- runAParser inst
+  case fParsed of
+    (Left ferror,Left cError) -> print $ ferror ++ cError
+    (Left ferror, _)          -> print ferror
+    (_,Left cError)           -> print cError
+    (Right fNet,Right change) -> do
+      renderNet ("wrong"++show i) fNet gc
+      print ("wrong"++show i++" : "++ show change)
+      wrongList (i+1) gc rs
     
 userInput :: IO (Int,Int,Int,Int)
 userInput = do   
@@ -67,6 +92,8 @@ checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,m
                                                 ++ "Overall")
  | maxFlowOverall < minFlowOverall         = Just "Min and Max FLow Overall aren't fitting"
  | maxFlowOverall < maxFlowPerEdge         = Just "Flow Per Edge must be lower than Max Flow Overall"
+ | maxFlowOverall > constA                 = Just "maxFlowOverall not in bounds"
  | otherwise   = Nothing 
+  where constA = 2 * places * transitions * maxFlowPerEdge
   
   
