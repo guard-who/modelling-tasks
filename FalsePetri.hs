@@ -5,15 +5,12 @@
 module FalsePetri where
 
 import Data.String.Interpolate
-import PetriAlloy               (modulePetriSignature, moduleHelpers, modulePetriConstraints
-        , modulePetriConcepts)
+import PetriAlloy               
 import Types
 
-testFalse :: Petri -> IO()
-testFalse petri = writeFile "output.txt" $ renderFalse 1 2 petri
-
-renderFalse :: Int -> Int -> Petri -> String
-renderFalse tknChange flwChange Petri{startM,trans} = [i| module FalseNet
+renderFalse :: Int -> Int -> Petri -> Input -> String
+renderFalse tknChange flwChange Petri{startM,trans} 
+    Input{graphConnected, presenceSelfLoops, presenceSinkTrans ,presenceSourceTrans} = [i| module FalseNet
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -31,6 +28,12 @@ fact{
   flowChangeSum[Nodes,Nodes] = #{flwChange}
   tokenAddOnly[]
   tokenChangeSum[Places] = #{tknChange}
+  noIsolatedNodes[]
+  
+  #{maybe "" petriConnectedGraph graphConnected}
+  #{maybe "" petriLoops presenceSelfLoops}
+  #{maybe "" petriSink presenceSinkTrans}
+  #{maybe "" petriSource presenceSourceTrans}
 }
 |]
 

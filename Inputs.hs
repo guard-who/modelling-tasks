@@ -28,7 +28,7 @@ mainInput = do
       Right petri -> do
         renderNet "right" petri (graphLayout inp)
         runTex petri 1
-        let f = renderFalse tknChange flwChange petri
+        let f = renderFalse tknChange flwChange petri inp
         list <- getInstances (Just 4) f
         wrongList 1 (graphLayout inp) list
   else

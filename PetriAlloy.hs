@@ -13,6 +13,11 @@ petriScope :: Input -> Int
 petriScope Input{places,transitions} =
   (places+transitions)*2
   
+petriConnectedGraph :: Bool -> String
+petriConnectedGraph = \case
+ True  -> "graphIsConnected[]"
+ False -> "no graphIsConnected[]"
+  
 petriLoops :: Bool -> String
 petriLoops = \case
  True  -> "some p : Places, t : Transitions | selfLoop[p, t]"
@@ -51,7 +56,7 @@ removeLines n = unlines . drop n . lines
 
 petriNetRnd :: Input -> String
 petriNetRnd input@Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
-                        minFlowOverall,maxFlowOverall,maxFlowPerEdge,
+                        minFlowOverall,maxFlowOverall,maxFlowPerEdge,graphConnected,
                         presenceSelfLoops,presenceSinkTrans,presenceSourceTrans} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
@@ -78,6 +83,9 @@ pred showNets [ts : set Transitions] {
   let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
   #ts >= #{atLeastActiv}
   theActivatedTransitions[ts]
+  noIsolatedNodes[]
+  
+  #{maybe "" petriConnectedGraph graphConnected}
   #{maybe "" petriLoops presenceSelfLoops}
   #{maybe "" petriSink presenceSinkTrans}
   #{maybe "" petriSource presenceSourceTrans}

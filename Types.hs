@@ -23,6 +23,7 @@ data Input = Input
   , minFlowOverall :: Int
   , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
+  , graphConnected :: Maybe Bool
   , presenceSelfLoops :: Maybe Bool
   , presenceSinkTrans :: Maybe Bool
   , presenceSourceTrans :: Maybe Bool
@@ -40,6 +41,7 @@ defaultInput = Input
   , minFlowOverall = 3
   , maxFlowOverall = 6
   , maxFlowPerEdge = 2
+  , graphConnected = Nothing
   , presenceSelfLoops = Nothing
   , presenceSinkTrans = Nothing
   , presenceSourceTrans = Nothing
