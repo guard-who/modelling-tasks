@@ -8,9 +8,9 @@ import Data.String.Interpolate
 import PetriAlloy               
 import Types
 
-renderFalse :: Int -> Int -> Petri -> Input -> String
-renderFalse tknChange flwChange Petri{startM,trans} 
-    Input{graphConnected, presenceSelfLoops, presenceSinkTrans ,presenceSourceTrans} = [i| module FalseNet
+renderFalse :: Petri -> Input -> String
+renderFalse Petri{startM,trans} 
+    input@Input{flowChangeOverall, maxFlowChangePerEdge, tokenChangeOverall, maxTokenChangePerPlace} = [i| module FalseNet
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -20,21 +20,28 @@ renderFalse tknChange flwChange Petri{startM,trans}
 #{givPlaces (length startM)}
 #{givTrans (length trans)}
 
+pred maxWeight[n : Int]{
+  all weight : Nodes.flow[Nodes] | weight =< n
+}
+
 fact{
   #{startMark 1 startM}
   
   #{defFlow 1 trans}
-  weightAddOnly[]
-  flowChangeSum[Nodes,Nodes] = #{flwChange}
-  tokenAddOnly[]
-  tokenChangeSum[Places] = #{tknChange}
-  noIsolatedNodes[]
-  
-  #{maybe "" petriConnectedGraph graphConnected}
-  #{maybe "" petriLoops presenceSelfLoops}
-  #{maybe "" petriSink presenceSinkTrans}
-  #{maybe "" petriSource presenceSourceTrans}
 }
+
+pred showFalseNets[ts : set Transitions]{
+  #{petriNetConstraints input}
+  flowChangeSum[Nodes,Nodes] = #{flowChangeOverall}
+  all n : Nodes | n.flowChange[n] =< #{maxFlowChangePerEdge}
+  tokenChangeSum[Places] = #{tokenChangeOverall}
+  all p : Places | p.tokenChange =< #{maxTokenChangePerPlace}
+  (tokenAddOnly or tokenRemoveOnly) and (weightAddOnly or weightRemoveOnly)
+
+}
+
+run showFalseNets for #{petriScope input}
+
 |]
 
 givPlaces :: Int -> String

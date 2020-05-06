@@ -17,12 +17,6 @@ import Graphics.SVGFonts
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Types
   
-defaultPetri :: Petri
-defaultPetri = Petri
-  { startM = [1,1,0]
-  , trans = [([1,0,0],[0,1,0]),([1,0,0],[0,0,1]),([0,1,1],[2,0,0])]
-  }
-  
 -- testPrep :: IO()
 -- testPrep = do
   -- t <- return $ renderNet "test" defaultPetri TwoPi

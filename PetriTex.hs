@@ -5,7 +5,6 @@ module PetriTex where
 
 import Data.Text                    (unpack)
 import Text.LaTeX
---import Text.LaTeX.Packages.AMSMath  (bullet)
 import Text.LaTeX.Packages.Inputenc 
 import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
 import Text.LaTeX.Packages.Geometry

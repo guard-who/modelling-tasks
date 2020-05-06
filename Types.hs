@@ -11,7 +11,13 @@ type Trans = (Mark,Mark)
 data Petri = Petri
   { startM :: Mark
   , trans :: [Trans]
-  } deriving Show
+  } deriving (Eq,Show)
+  
+defaultPetri :: Petri
+defaultPetri = Petri
+  { startM = [1,1,0]
+  , trans = [([1,0,0],[0,1,0]),([1,0,0],[0,0,1]),([0,1,1],[2,0,0])]
+  }
   
 data Input = Input
   { places :: Int
@@ -23,11 +29,14 @@ data Input = Input
   , minFlowOverall :: Int
   , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
-  , graphConnected :: Maybe Bool
   , presenceSelfLoops :: Maybe Bool
   , presenceSinkTrans :: Maybe Bool
   , presenceSourceTrans :: Maybe Bool
   , graphLayout :: GraphvizCommand
+  , tokenChangeOverall :: Int
+  , maxTokenChangePerPlace :: Int
+  , flowChangeOverall :: Int
+  , maxFlowChangePerEdge :: Int
   }
 
 defaultInput :: Input
@@ -41,9 +50,12 @@ defaultInput = Input
   , minFlowOverall = 3
   , maxFlowOverall = 6
   , maxFlowPerEdge = 2
-  , graphConnected = Nothing
   , presenceSelfLoops = Nothing
   , presenceSinkTrans = Nothing
   , presenceSourceTrans = Nothing
   , graphLayout = TwoPi
+  , tokenChangeOverall = 0
+  , maxTokenChangePerPlace = 1
+  , flowChangeOverall = 2
+  , maxFlowChangePerEdge = 1
   }

@@ -13,11 +13,6 @@ petriScope :: Input -> Int
 petriScope Input{places,transitions} =
   (places+transitions)*2
   
-petriConnectedGraph :: Bool -> String
-petriConnectedGraph = \case
- True  -> "graphIsConnected[]"
- False -> "no graphIsConnected[]"
-  
 petriLoops :: Bool -> String
 petriLoops = \case
  True  -> "some p : Places, t : Transitions | selfLoop[p, t]"
@@ -54,10 +49,24 @@ removeLines n = unlines . drop n . lines
 --Bigger Net needs bigger "run for x"
 -- make flowSum dynamic with input
 
+petriNetConstraints :: Input -> String 
+petriNetConstraints Input{atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
+                        minFlowOverall,maxFlowOverall,maxFlowPerEdge,
+                        presenceSelfLoops,presenceSinkTrans,presenceSourceTrans} = [i|let t = tokenSum[Places] | t >= #{minTknsOverall} and t <= #{maxTknsOverall}
+  all p : Places | p.tokens =< #{maxTknsPerPlace}
+  maxWeight[#{maxFlowPerEdge}]
+  let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
+  #ts >= #{atLeastActiv}
+  theActivatedTransitions[ts]
+  noIsolatedNodes[]
+  graphIsConnected[]
+  #{maybe "" petriLoops presenceSelfLoops}
+  #{maybe "" petriSink presenceSinkTrans}
+  #{maybe "" petriSource presenceSourceTrans}
+|]
+
 petriNetRnd :: Input -> String
-petriNetRnd input@Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
-                        minFlowOverall,maxFlowOverall,maxFlowPerEdge,graphConnected,
-                        presenceSelfLoops,presenceSinkTrans,presenceSourceTrans} = [i|module PetriNetRnd
+petriNetRnd input@Input{places,transitions} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -77,18 +86,8 @@ pred maxWeight[n : Int]{
 pred showNets [ts : set Transitions] {
   #Places = #{places}
   #Transitions = #{transitions}
-  let t = tokenSum[Places] | t >= #{minTknsOverall} and t <= #{maxTknsOverall}
-  all p : Places | p.tokens =< #{maxTknsPerPlace}
-  maxWeight[#{maxFlowPerEdge}]
-  let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
-  #ts >= #{atLeastActiv}
-  theActivatedTransitions[ts]
-  noIsolatedNodes[]
+  #{petriNetConstraints input}
   
-  #{maybe "" petriConnectedGraph graphConnected}
-  #{maybe "" petriLoops presenceSelfLoops}
-  #{maybe "" petriSink presenceSinkTrans}
-  #{maybe "" petriSource presenceSourceTrans}
 }
 run showNets for #{petriScope input}
 

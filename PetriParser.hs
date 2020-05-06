@@ -5,7 +5,6 @@ module PetriParser where
 import Language.Alloy.Call
 import qualified Data.Set as Set
 import Types
-import PetriAlloy
       
 type TripSet = Set.Set (Object,Object,Object)
 
@@ -55,20 +54,20 @@ parseChange :: AlloyInstance -> Either String Change
 parseChange inst = do
   flow <- tripleSig inst "this" "Nodes" "flowChange"
   tkn  <- doubleSig inst "this" "Places" "tokenChange"
-  let flowC = flowChange (Set.toList flow)
-  let tknC  = tokenChange (Set.toList tkn)
+  let flowC = flowChangeP (Set.toList flow)
+  let tknC  = tokenChangeP (Set.toList tkn)
   return $ Change{tknChange = tknC , flwChange = flowC}
 
-flowChange :: [(Object,Object,Object)] -> [(String,String,Int)]
-flowChange []               = []
-flowChange ((n1,n2,val):rs) =
+flowChangeP :: [(Object,Object,Object)] -> [(String,String,Int)]
+flowChangeP []               = []
+flowChangeP ((n1,n2,val):rs) =
   (listTill (objectName n1) '$' ,listTill (objectName n2) '$',(read (objectName val) :: Int))
-  : flowChange rs
+  : flowChangeP rs
   
-tokenChange :: [(Object,Object)] -> [(String,Int)]
-tokenChange []            = []
-tokenChange ((pl,val):rt) = (listTill (objectName pl) '$' ,(read (objectName val) :: Int)) 
-                             : tokenChange rt
+tokenChangeP :: [(Object,Object)] -> [(String,Int)]
+tokenChangeP []            = []
+tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' ,(read (objectName val) :: Int)) 
+                             : tokenChangeP rt
   
 
                             --Hilfsfunktionen--
@@ -122,17 +121,17 @@ listTill (x:rs) y
 ----------------------------------------Main(-s)--------------------------------------------------
 
 --Parse From Input
-runIParser :: Input -> IO(Either String Petri)
-runIParser inp = do 
-    list <- getInstances (Just 5) (petriNetRnd inp)
-    return $ convertPetri "tokens" (head list)
+-- runIParser :: Input -> IO(Either String Petri)
+-- runIParser inp = do 
+    -- list <- getInstances (Just 5) (petriNetRnd inp)
+    -- return $ convertPetri "tokens" (head list)
     
 --Parse From String(Alloy Code)
-runAParser :: AlloyInstance -> IO(Either String Petri,Either String Change)
+runAParser :: AlloyInstance -> (Either String Petri,Either String Change)
 runAParser alloy = do
   let petri = convertPetri "tokens" alloy
   let change = parseChange alloy
-  return (petri,change)
+  (petri,change)
   
 
   

@@ -3,61 +3,61 @@
 module Inputs where 
 
 import Data.GraphViz.Attributes.Complete (GraphvizCommand )
---import Diagrams.Backend.SVG              (B)
---import Diagrams.Prelude                  (Diagram)
+import Data.Maybe                        (isNothing)
+import Diagrams.Backend.SVG              (B)
+import Diagrams.Prelude                  (Diagram)
 import FalsePetri
 import Language.Alloy.Call               (AlloyInstance,getInstances)
-import PetriDiagram                      (renderNet)
-import PetriParser                       (runIParser,runAParser)
-import PetriTex                          (runTex)
+import PetriAlloy                        (petriNetRnd)
+import PetriDiagram                      (drawNet,prepNet)
+import PetriParser                       (convertPetri,runAParser)
+import PetriTex                          (uebung)
+import Text.LaTeX                        (LaTeX)
 import Types
-
-------------(finished ,finished,[(done,done)]) -- List needs to be done
---main :: IO(Diagram B, LaTeX, [(Diagram B, Change)])
 
 mainInput :: IO()
 mainInput = do
   (pls,trns,tknChange,flwChange) <- userInput
-  let inp = defaultInput{ places = pls, transitions = trns }
+  let inp = defaultInput{places = pls, transitions = trns, tokenChangeOverall = tknChange
+                         , flowChangeOverall = flwChange}
   let c = checkInput inp
-  if c == Nothing
-  then do  
-    out <- runIParser inp
-    case out of 
-      Left merror -> print merror
-      Right petri -> do
-        renderNet "right" petri (graphLayout inp)
-        runTex petri 1
-        let f = renderFalse tknChange flwChange petri inp
-        list <- getInstances (Just 4) f
-        wrongList 1 (graphLayout inp) list
+  if isNothing c
+  then do
+    _ <- mainTask1 inp
+    print "yay"
   else
-    print $ c
+    print c
+
+mainTask1 :: Input -> IO (Diagram B, LaTeX, [(Diagram B, Change)])
+mainTask1 inp = do
+  list <- getInstances (Just 1) (petriNetRnd inp)
+  let out = convertPetri "tokens" (head list)
+  case out of
+    Left merror -> error merror
+    Right petri -> do
+      rightNet <- drawNet (prepNet petri) (graphLayout inp)
+      let tex = uebung petri 1
+      let f = renderFalse petri inp
+      fList <- getInstances (Just 3) f
+      fNets <- falseList (graphLayout inp) fList []
+      return (rightNet, tex, fNets)
+
     
--- falseList :: Int -> GraphvizCommand -> [AlloyInstance] -> Either String [(Diagram B,Change)]
--- falseList _ _ []     = Right []
--- falseList i gc (inst:rs) = do
-  -- fParsed <- runAParser inst
-  -- case fParsed of
-    -- (Left ferror,Left cError) -> return $ ferror ++ cError
-    -- (Left ferror, _)          -> return ferror
-    -- (_,Left cError)           -> return cError
-    -- (Right fNet,Right change) -> do
-      -- let net = return $ renderNet ("wrong"++show i) fNet gc
-      -- return $ (net,change) : falseList (i+1) gc rs
-      
-wrongList :: Int -> GraphvizCommand -> [AlloyInstance] -> IO()
-wrongList _ _ []         = print "finished"
-wrongList i gc (inst:rs) = do
-  fParsed <- runAParser inst
+falseList :: GraphvizCommand -> [AlloyInstance] -> [Petri] -> IO [(Diagram B,Change)]
+falseList _ [] _       = return []
+falseList gc (inst:rs) usedP = do
+  let fParsed = runAParser inst
   case fParsed of
-    (Left ferror,Left cError) -> print $ ferror ++ cError
-    (Left ferror, _)          -> print ferror
-    (_,Left cError)           -> print cError
+    (Left ferror,Left cError) -> error $ ferror ++ cError
+    (Left ferror, _)          -> error ferror
+    (_,Left cError)           -> error cError
     (Right fNet,Right change) -> do
-      renderNet ("wrong"++show i) fNet gc
-      print ("wrong"++show i++" : "++ show change)
-      wrongList (i+1) gc rs
+      rest <- falseList gc rs (fNet:usedP)
+      if elem fNet usedP 
+      then return $ rest
+      else do
+        net <- drawNet (prepNet fNet) gc
+        return $ (net,change) : rest
     
 userInput :: IO (Int,Int,Int,Int)
 userInput = do   
@@ -74,7 +74,7 @@ userInput = do
   
 checkInput :: Input -> Maybe String
 checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
-                 minFlowOverall,maxFlowOverall,maxFlowPerEdge}
+                 minFlowOverall,maxFlowOverall,maxFlowPerEdge,tokenChangeOverall,flowChangeOverall}
  | places <= 0         = Just "There must at least be 1 Place"
  | places > 9          = Just "Places are to be picked in a range of 1 to 9"
  | transitions <= 0    = Just "There must at least be 1 Transition"
@@ -84,6 +84,8 @@ checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,m
  | maxTknsPerPlace < 0 = Just "Tokens per Place must be at least 0"
  | maxFlowPerEdge <= 0 = Just "Max Flow per Edge must be at least 1"
  | minFlowOverall < 0  = Just "Overall Flow must be at least 0"
+ | tokenChangeOverall < 0     = Just "tokenChange can't be negative"
+ | flowChangeOverall  < 0     = Just "flowChange can't be negative"
  | atLeastActiv > transitions              = Just ("Least Active Transitions must be lower than "
                                                 ++"Transitions")
  | maxTknsOverall > places*maxTknsPerPlace = Just "choose a lower Max Token Overall"
