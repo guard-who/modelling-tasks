@@ -28,15 +28,35 @@ pred weightRemoveOnly[]{
   all change : Nodes.flowChange[Nodes] | change < 0
 }
 
+pred maxTokenChangePerPlace[max : one Int] {
+  no place : Places | abs[place.tokenChange] > max
+}
+
+pred tokenChangeOverall[total : one Int] {
+  total = (sum p : Places | abs[p.tokenChange])
+}
+
+pred maxFlowChangePerEdge[max : one Int] {
+  no n, m : Nodes | abs[n.flowChange[m]] > max
+}
+
+pred flowChangeOverall[total : one Int] {
+  total = (sum n, m : Nodes | abs[n.flowChange[m]])
+}
+
+fun abs[n : one Int] : one Int {
+  n >= 0 implies n else minus[0, n]
+}
+
 pred theActivatedTransitions[ts : set Transitions]{
   all t : ts | activated[t]
   no t : (Transitions - ts) | activated[t]
 }
 
 pred noIsolatedNodes[]{
-  all n : Nodes | some m : Nodes | m in n.flow.Int or n in m.flow.Int
+  all n : Nodes | some n.flow.Int or some n.(~(flow.Int))
 }
 
 pred graphIsConnected[]{
-  all n,m : Nodes | n != m implies n in m.^(flow.Int + ~(flow.Int))
+  all n : Nodes | Nodes = n.^(flow.Int + ~(flow.Int))
 }
