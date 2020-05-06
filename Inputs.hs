@@ -24,7 +24,7 @@ mainInput = do
   if isNothing c
   then do
     _ <- mainTask1 inp
-    print "yay"
+    print "finished"
   else
     print c
 

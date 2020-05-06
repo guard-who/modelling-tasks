@@ -32,10 +32,10 @@ fact{
 
 pred showFalseNets[ts : set Transitions]{
   #{petriNetConstraints input}
-  flowChangeSum[Nodes,Nodes] = #{flowChangeOverall}
-  all n : Nodes | n.flowChange[n] =< #{maxFlowChangePerEdge}
-  tokenChangeSum[Places] = #{tokenChangeOverall}
-  all p : Places | p.tokenChange =< #{maxTokenChangePerPlace}
+  flowChangeOverall [#{flowChangeOverall}]
+  maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
+  tokenChangeOverall [#{tokenChangeOverall}]
+  maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
   (tokenAddOnly or tokenRemoveOnly) and (weightAddOnly or weightRemoveOnly)
 
 }
