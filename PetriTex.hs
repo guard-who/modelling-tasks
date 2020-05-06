@@ -27,22 +27,26 @@ uebung petri task =
  <> document (maketitle <> (body petri task))
 
 body :: Petri -> Int -> LaTeX
-body Petri{startM,trans} task 
- | task == 1 = (task1 startM (length trans))  <> itemize ( conditions 1 trans )
+body petri task 
+ | task == 1 = task1 <> createPetriTex petri
  | otherwise = mempty
+ 
+createPetriTex :: Petri -> LaTeX
+createPetriTex Petri{startM,trans} =
+  math ( "N = (P, T," <> raw "^{\\bullet}" <> "(), ()" 
+  <> raw "^{\\bullet}" <> ", m" <> raw "_" <> "0)")
+  <> math ( raw "P = \\{" <> createPlaces 1 (length startM) <> raw "\\}" )
+  <> " , "
+  <> math ( raw "T = \\{" <> createTrans 1 (length trans) <> raw "\\}" )
+  <> " , "
+  <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas startM)) <> ")")
+  <> itemize ( conditions 1 trans )
 
-task1 :: Mark -> Int -> LaTeX
-task1 m tl = 
+task1 :: LaTeX
+task1 = 
   "Which of the presented petrinets shows the mathematical expression?" 
   <> newline
   <> "Given the following: "
-  <> math ( "N = (P, T," <> raw "^{\\bullet}" <> "(), ()" 
-  <> raw "^{\\bullet}" <> ", m" <> raw "_" <> "0)")
-  <> math ( raw "P = \\{" <> createPlaces 1 (length m) <> raw "\\}" )
-  <> " , "
-  <> math ( raw "T = \\{" <> createTrans 1 tl <> raw "\\}" )
-  <> " , "
-  <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas m)) <> ")") 
 
 createPlaces ::Int -> Int -> LaTeX
 createPlaces i p 
