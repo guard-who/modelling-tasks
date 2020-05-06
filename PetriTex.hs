@@ -29,6 +29,7 @@ uebung petri task =
 body :: Petri -> Int -> LaTeX
 body petri task 
  | task == 1 = task1 <> createPetriTex petri
+ | task == 2 = task1a
  | otherwise = mempty
  
 createPetriTex :: Petri -> LaTeX
@@ -47,6 +48,10 @@ task1 =
   "Which of the presented petrinets shows the mathematical expression?" 
   <> newline
   <> "Given the following: "
+  
+task1a :: LaTeX
+task1a = 
+  "Which of the presented mathematical expressions shows the given petrinet?" 
 
 createPlaces ::Int -> Int -> LaTeX
 createPlaces i p 

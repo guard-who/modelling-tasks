@@ -2,16 +2,16 @@
 
 module Inputs where 
 
-import Data.GraphViz.Attributes.Complete (GraphvizCommand )
+import Control.Monad
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import FalsePetri
 import Language.Alloy.Call               (AlloyInstance,getInstances)
 import PetriAlloy                        (petriNetRnd)
-import PetriDiagram                      (drawNet,prepNet)
+import PetriDiagram                      (drawNet,drawNets,prepNet)
 import PetriParser                       (convertPetri,runAParser)
-import PetriTex                          (uebung)
+import PetriTex                          (uebung,createPetriTex)
 import Text.LaTeX                        (LaTeX)
 import Types
 
@@ -27,6 +27,12 @@ mainInput = do
     print "finished"
   else
     print c
+    
+--vorerst "voided"
+switchTask1 :: Bool -> Input -> IO()
+switchTask1 s inp = case s of
+  True  -> void $ mainTask1 inp
+  False -> void $ mainTask1a inp
 
 mainTask1 :: Input -> IO (Diagram B, LaTeX, [(Diagram B, Change)])
 mainTask1 inp = do
@@ -39,25 +45,39 @@ mainTask1 inp = do
       let tex = uebung petri 1
       let f = renderFalse petri inp
       fList <- getInstances (Just 3) f
-      fNets <- falseList (graphLayout inp) fList []
-      return (rightNet, tex, fNets)
+      let (fNets,changes) = falseList fList []
+      fDias <- drawNets fNets (graphLayout inp)
+      return (rightNet, tex, zip fDias changes)
+      
+mainTask1a :: Input -> IO (LaTeX, Diagram B, [(LaTeX, Change)])
+mainTask1a inp = do
+  list <- getInstances (Just 1) (petriNetRnd inp)
+  let out = convertPetri "tokens" (head list)
+  case out of
+    Left merror -> error merror
+    Right petri -> do
+      rightNet <- drawNet (prepNet petri) (graphLayout inp)
+      let tex = uebung petri 2
+      let f = renderFalse petri inp
+      fList <- getInstances (Just 3) f
+      let (fNets,changes) = falseList fList []
+      let fTex = map createPetriTex fNets
+      return (tex, rightNet, zip fTex changes)
 
-    
-falseList :: GraphvizCommand -> [AlloyInstance] -> [Petri] -> IO [(Diagram B,Change)]
-falseList _ [] _       = return []
-falseList gc (inst:rs) usedP = do
+falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
+falseList [] _       = ([],[])
+falseList (inst:rs) usedP = do
   let fParsed = runAParser inst
   case fParsed of
     (Left ferror,Left cError) -> error $ ferror ++ cError
     (Left ferror, _)          -> error ferror
     (_,Left cError)           -> error cError
     (Right fNet,Right change) -> do
-      rest <- falseList gc rs (fNet:usedP)
+      let rest@(rf,rc) = falseList rs (fNet:usedP)
       if elem fNet usedP 
-      then return $ rest
+      then rest
       else do
-        net <- drawNet (prepNet fNet) gc
-        return $ (net,change) : rest
+        (fNet:rf,change:rc)
     
 userInput :: IO (Int,Int,Int,Int)
 userInput = do   

@@ -96,6 +96,13 @@ text' pfont t =
   textSVG_ (TextOpts pfont INSIDE_H KERN False 18 18) t
   # fc black
   # lc black
+  
+drawNets :: [Petri] -> GraphvizCommand -> IO ([Diagram B])
+drawNets (p:rs) gc = do
+  let net = prepNet p
+  rest <- drawNets rs gc
+  dia <- drawNet net gc 
+  return $ dia : rest
 
 renderNet :: String -> Petri -> GraphvizCommand -> IO ()
 renderNet name petri gc = do
