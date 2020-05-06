@@ -73,8 +73,10 @@ userInput = do
   
   
 checkInput :: Input -> Maybe String
-checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
-                 minFlowOverall,maxFlowOverall,maxFlowPerEdge,tokenChangeOverall,flowChangeOverall}
+checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace
+                 , minFlowOverall,maxFlowOverall,maxFlowPerEdge
+                 , tokenChangeOverall, flowChangeOverall
+                 , maxFlowChangePerEdge, maxTokenChangePerPlace}
  | places <= 0         = Just "There must at least be 1 Place"
  | places > 9          = Just "Places are to be picked in a range of 1 to 9"
  | transitions <= 0    = Just "There must at least be 1 Transition"
@@ -86,6 +88,8 @@ checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,m
  | minFlowOverall < 0  = Just "Overall Flow must be at least 0"
  | tokenChangeOverall < 0     = Just "tokenChange can't be negative"
  | flowChangeOverall  < 0     = Just "flowChange can't be negative"
+ | maxTokenChangePerPlace < 0 = Just "maxTokenChangePerPlace can't be negative"
+ | maxFlowChangePerEdge < 0   = Just "maxFlowChangePerEdge can't be negative"
  | atLeastActiv > transitions              = Just ("Least Active Transitions must be lower than "
                                                 ++"Transitions")
  | maxTknsOverall > places*maxTknsPerPlace = Just "choose a lower Max Token Overall"
@@ -95,6 +99,10 @@ checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,m
  | maxFlowOverall < minFlowOverall         = Just "Min and Max FLow Overall aren't fitting"
  | maxFlowOverall < maxFlowPerEdge         = Just "Flow Per Edge must be lower than Max Flow Overall"
  | maxFlowOverall > constA                 = Just "maxFlowOverall not in bounds"
+ | maxTokenChangePerPlace > tokenChangeOverall = Just "maxTokenChangePerPlace must be lower than Overall"
+ | maxTokenChangePerPlace > maxTknsPerPlace    = Just "maxTokenChangePerPlace can't be higher than the maxTokensPerPlace"
+ | maxFlowChangePerEdge > flowChangeOverall    = Just "maxFlowChangePerEdge must be lower than Overall"
+ | maxFlowChangePerEdge > maxFlowPerEdge       = Just "maxFlowChangePerEdge can't be higher than the maxFlowPerEdge"
  | otherwise   = Nothing 
   where constA = 2 * places * transitions * maxFlowPerEdge
   
