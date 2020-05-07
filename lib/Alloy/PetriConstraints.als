@@ -28,24 +28,12 @@ pred weightRemoveOnly[]{
   all change : Nodes.flowChange[Nodes] | change < 0
 }
 
-pred maxTokenChangePerPlace[max : one Int] {
+pred maxTokenChangePerPlace[max : Int] {
   no place : Places | abs[place.tokenChange] > max
 }
 
-pred tokenChangeOverall[total : one Int] {
-  total = (sum p : Places | abs[p.tokenChange])
-}
-
-pred maxFlowChangePerEdge[max : one Int] {
+pred maxFlowChangePerEdge[max : Int] {
   no n, m : Nodes | abs[n.flowChange[m]] > max
-}
-
-pred flowChangeOverall[total : one Int] {
-  total = (sum n, m : Nodes | abs[n.flowChange[m]])
-}
-
-fun abs[n : one Int] : one Int {
-  n >= 0 implies n else minus[0, n]
 }
 
 pred theActivatedTransitions[ts : set Transitions]{
