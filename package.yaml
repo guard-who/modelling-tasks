@@ -39,7 +39,6 @@ tests:
   petri-tasks-test:
     main: Spec.hs
     source-dirs:
-    - .
     - test
     ghc-options:
     - -threaded
