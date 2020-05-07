@@ -24,7 +24,7 @@ uebung petri task =
  <> importGeometry [GCentered]
  <> title "Uebung"
  <> author "Autor"
- <> document (maketitle <> (body petri task))
+ <> document (maketitle <> body petri task)
 
 body :: Petri -> Int -> LaTeX
 body petri task 

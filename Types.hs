@@ -55,7 +55,7 @@ defaultInput = Input
   , presenceSourceTrans = Nothing
   , graphLayout = TwoPi
   , tokenChangeOverall = 0
-  , maxTokenChangePerPlace = 1
+  , maxTokenChangePerPlace = 0
   , flowChangeOverall = 2
   , maxFlowChangePerEdge = 1
   }

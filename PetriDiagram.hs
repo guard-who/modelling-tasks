@@ -97,7 +97,8 @@ text' pfont t =
   # fc black
   # lc black
   
-drawNets :: [Petri] -> GraphvizCommand -> IO ([Diagram B])
+drawNets :: [Petri] -> GraphvizCommand -> IO [Diagram B]
+drawNets [] _      = return []
 drawNets (p:rs) gc = do
   let net = prepNet p
   rest <- drawNets rs gc

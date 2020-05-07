@@ -1,5 +1,4 @@
 {-# Language QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
 module FalsePetri where

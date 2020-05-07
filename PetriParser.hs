@@ -61,12 +61,12 @@ parseChange inst = do
 flowChangeP :: [(Object,Object,Object)] -> [(String,String,Int)]
 flowChangeP []               = []
 flowChangeP ((n1,n2,val):rs) =
-  (listTill (objectName n1) '$' ,listTill (objectName n2) '$',(read (objectName val) :: Int))
+  (listTill (objectName n1) '$' ,listTill (objectName n2) '$', read (objectName val) :: Int)
   : flowChangeP rs
   
 tokenChangeP :: [(Object,Object)] -> [(String,Int)]
 tokenChangeP []            = []
-tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' ,(read (objectName val) :: Int)) 
+tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName val) :: Int) 
                              : tokenChangeP rt
   
 

@@ -6,7 +6,7 @@ import Test.Hspec
 import Test.QuickCheck
 
 spec :: Spec
-spec = do
+spec =
   describe "removeLines" $ do
     it "preserves the string (besides newlines) when removing 0 lines" $
       property $ \x -> let newline

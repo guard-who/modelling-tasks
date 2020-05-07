@@ -28,11 +28,20 @@ mainInput = do
   else
     print c
     
+-- selectTask :: IO (Int)
+-- selectTask = do
+  -- putStr ("which of the following tasks would you like to generate? \n"
+        -- ++"- 1: Mathematical to Petri (and vice versa) \n"
+        -- ++"- 2: Conflicts in PetriNets"
+        -- )
+  -- task <- getLine
+  -- return $ task :: Int
+    
 --vorerst "voided"
 switchTask1 :: Bool -> Input -> IO()
-switchTask1 s inp = case s of
-  True  -> void $ mainTask1 inp
-  False -> void $ mainTask1a inp
+switchTask1 s inp =
+  if s then void $ mainTask1 inp
+  else void $ mainTask1a inp
 
 mainTask1 :: Input -> IO (Diagram B, LaTeX, [(Diagram B, Change)])
 mainTask1 inp = do
@@ -74,10 +83,9 @@ falseList (inst:rs) usedP = do
     (_,Left cError)           -> error cError
     (Right fNet,Right change) -> do
       let rest@(rf,rc) = falseList rs (fNet:usedP)
-      if elem fNet usedP 
+      if fNet `elem` usedP 
       then rest
-      else do
-        (fNet:rf,change:rc)
+      else (fNet:rf,change:rc)
     
 userInput :: IO (Int,Int,Int,Int)
 userInput = do   
@@ -119,7 +127,7 @@ checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,m
  | maxFlowOverall < minFlowOverall         = Just "Min and Max FLow Overall aren't fitting"
  | maxFlowOverall < maxFlowPerEdge         = Just "Flow Per Edge must be lower than Max Flow Overall"
  | maxFlowOverall > constA                 = Just "maxFlowOverall not in bounds"
- | maxTokenChangePerPlace > tokenChangeOverall = Just "maxTokenChangePerPlace must be lower than Overall"
+ | maxTokenChangePerPlace > tokenChangeOverall = Just "maxTokenChangePerPlace must be at maximum Overall"
  | maxTokenChangePerPlace > maxTknsPerPlace    = Just "maxTokenChangePerPlace can't be higher than the maxTokensPerPlace"
  | maxFlowChangePerEdge > flowChangeOverall    = Just "maxFlowChangePerEdge must be lower than Overall"
  | maxFlowChangePerEdge > maxFlowPerEdge       = Just "maxFlowChangePerEdge can't be higher than the maxFlowPerEdge"
