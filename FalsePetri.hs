@@ -31,7 +31,6 @@ pred showFalseNets[ts : set Transitions]{
   maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
   tokenChangeAbsolutesSum[Places] = #{tokenChangeOverall}
   maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
-  (tokenAddOnly or tokenRemoveOnly) and (weightAddOnly or weightRemoveOnly)
 
 }
 
