@@ -116,6 +116,10 @@ checkInput Input{places,transitions,atLeastActiv,minTknsOverall,maxTknsOverall,m
  | maxTokenChangePerPlace > maxTknsPerPlace    = Just "maxTokenChangePerPlace can't be higher than the maxTokensPerPlace"
  | maxFlowChangePerEdge > flowChangeOverall    = Just "maxFlowChangePerEdge must be lower than Overall"
  | maxFlowChangePerEdge > maxFlowPerEdge       = Just "maxFlowChangePerEdge can't be higher than the maxFlowPerEdge"
+ | tokenChangeOverall > maxTknsOverall - minTknsOverall = Just "Stay within the Range of Tokens with the Change Overall"
+ | flowChangeOverall > maxFlowOverall - minFlowOverall = Just "Stay within the Range of Flow with the Change Overall"
+ | maxTokenChangePerPlace * places < tokenChangeOverall = Just "You can't have more Tokenchanges Overall than maxChange at all given Places together"
+ | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall = Just "You can't have more FlowCHange Overall than maxChange at all given Edges together"
  | otherwise   = Nothing 
   where constA = 2 * places * transitions * maxFlowPerEdge
   
