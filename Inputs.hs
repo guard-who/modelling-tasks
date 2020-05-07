@@ -2,7 +2,6 @@
 
 module Inputs where 
 
-import Control.Monad
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
@@ -23,7 +22,7 @@ mainInput = do
   let c = checkInput inp
   if isNothing c
   then do
-    _ <- mainTask1 inp
+    _ <- mainTask1 True inp
     print "finished"
   else
     print c
@@ -36,42 +35,28 @@ mainInput = do
         -- )
   -- task <- getLine
   -- return $ task :: Int
-    
---vorerst "voided"
-switchTask1 :: Bool -> Input -> IO()
-switchTask1 s inp =
-  if s then void $ mainTask1 inp
-  else void $ mainTask1a inp
 
-mainTask1 :: Input -> IO (Diagram B, LaTeX, [(Diagram B, Change)])
-mainTask1 inp = do
+--True Task1 <-> False Task1a
+mainTask1 :: Bool -> Input -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
+mainTask1 switch inp = do
   list <- getInstances (Just 1) (petriNetRnd inp)
   let out = convertPetri "tokens" (head list)
   case out of
     Left merror -> error merror
     Right petri -> do
       rightNet <- drawNet (prepNet petri) (graphLayout inp)
-      let tex = uebung petri 1
+      let tex
+           | switch==True  = uebung petri 1
+           | otherwise = uebung petri 2
       let f = renderFalse petri inp
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
-      fDias <- drawNets fNets (graphLayout inp)
-      return (rightNet, tex, zip fDias changes)
-      
-mainTask1a :: Input -> IO (LaTeX, Diagram B, [(LaTeX, Change)])
-mainTask1a inp = do
-  list <- getInstances (Just 1) (petriNetRnd inp)
-  let out = convertPetri "tokens" (head list)
-  case out of
-    Left merror -> error merror
-    Right petri -> do
-      rightNet <- drawNet (prepNet petri) (graphLayout inp)
-      let tex = uebung petri 2
-      let f = renderFalse petri inp
-      fList <- getInstances (Just 3) f
-      let (fNets,changes) = falseList fList []
-      let fTex = map createPetriTex fNets
-      return (tex, rightNet, zip fTex changes)
+      if switch then do
+        fDia <- drawNets fNets (graphLayout inp)
+        return (rightNet, tex, Left $ zip fDia changes)
+      else do
+        let fTex = map createPetriTex fNets
+        return (rightNet, tex, Right $ zip fTex changes)
 
 falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
 falseList [] _       = ([],[])
