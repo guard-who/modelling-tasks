@@ -42,9 +42,9 @@ pred theActivatedTransitions[ts : set Transitions]{
 }
 
 pred noIsolatedNodes[]{
-  all n : Nodes | some n.flow.Int or some n.(~(flow.Int))
+  all n : Nodes | some n.flow.Int or some n.~(flow.Int)
 }
 
 pred graphIsConnected[]{
-  all n : Nodes | Nodes = n.^(flow.Int + ~(flow.Int))
+  all n : Nodes | Nodes = n + n.^(flow.Int + ~(flow.Int))
 }
