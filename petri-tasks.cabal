@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6872049dcb82b6814e60d75f9a4d32c7ae15d7f8393ba255fe2104c30e0af8c2
+-- hash: 2822d924cffe19f603d61bb37a65dbb5f43a0ff7e50a647d06da4110fb4be7c8
 
 name:           petri-tasks
 version:        0.0.0
@@ -66,6 +66,7 @@ test-suite petri-tasks-test
       PetriAlloySpec
       PetriParserSpec
       PetriScopeSpec
+      RenderFalseSpec
       RunAParserSpec
       RunTexSpec
       Paths_petri_tasks
