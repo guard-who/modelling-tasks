@@ -19,10 +19,6 @@ renderFalse Petri{startM,trans}
 #{givPlaces (length startM)}
 #{givTrans (length trans)}
 
-pred maxWeight[n : Int]{
-  all weight : Nodes.flow[Nodes] | weight =< n
-}
-
 fact{
   #{startMark 1 startM}
   

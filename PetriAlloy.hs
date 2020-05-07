@@ -54,7 +54,7 @@ petriNetConstraints Input{atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerP
                         minFlowOverall,maxFlowOverall,maxFlowPerEdge,
                         presenceSelfLoops,presenceSinkTrans,presenceSourceTrans} = [i|let t = tokenSum[Places] | t >= #{minTknsOverall} and t <= #{maxTknsOverall}
   all p : Places | p.tokens =< #{maxTknsPerPlace}
-  maxWeight[#{maxFlowPerEdge}]
+  all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
   let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
   #ts >= #{atLeastActiv}
   theActivatedTransitions[ts]
@@ -77,10 +77,6 @@ petriNetRnd input@Input{places,transitions} = [i|module PetriNetRnd
 fact{
   no givenPlaces
   no givenTransitions
-}
-
-pred maxWeight[n : Int]{
-  all weight : Nodes.flow[Nodes] | weight =< n
 }
 
 pred showNets [ts : set Transitions] {
