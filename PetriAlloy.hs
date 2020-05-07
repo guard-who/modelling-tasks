@@ -58,7 +58,6 @@ petriNetConstraints Input{atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerP
   let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
   #ts >= #{atLeastActiv}
   theActivatedTransitions[ts]
-  noIsolatedNodes[]
   graphIsConnected[]
   #{maybe "" petriLoops presenceSelfLoops}
   #{maybe "" petriSink presenceSinkTrans}
