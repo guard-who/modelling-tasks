@@ -1,9 +1,10 @@
-module DrawNetSpec where 
+module Modelling.PetriNet.DiagramSpec where
 
-import PetriDiagram
+import Modelling.PetriNet.Diagram
+import Modelling.PetriNet.Types
+
 import Control.Monad
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
-import Types
 import Test.Hspec
 
 spec :: Spec

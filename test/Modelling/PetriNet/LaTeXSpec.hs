@@ -1,7 +1,8 @@
-module RunTexSpec where
+module Modelling.PetriNet.LaTeXSpec where
 
-import PetriTex
-import Types       (defaultPetri)
+import Modelling.PetriNet.LaTeX
+import Modelling.PetriNet.Types         (defaultPetri)
+
 import Test.Hspec
 
 spec :: Spec

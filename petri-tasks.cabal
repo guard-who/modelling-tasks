@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b0c00f206d7f3ceaddde8608f0b2adc393d8ec5151a90e69cbe4cdc7aad40542
+-- hash: b2d913b4294564ce45bb1ac340606285a3e475ffe5e0b39f4fab2aa8adf104da
 
 name:           petri-tasks
 version:        0.0.0
@@ -76,12 +76,11 @@ test-suite petri-tasks-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      CheckInputSpec
-      DrawNetSpec
-      PetriScopeSpec
-      RenderFalseSpec
-      RunAParserSpec
-      RunTexSpec
+      Modelling.PetriNet.AlloySpec
+      Modelling.PetriNet.DiagramSpec
+      Modelling.PetriNet.LaTeXSpec
+      Modelling.PetriNet.MatchToMathSpec
+      Modelling.PetriNet.ParserSpec
       Paths_petri_tasks
   hs-source-dirs:
       test
