@@ -1,14 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module PetriTex where
+module Modelling.PetriNet.LaTeX where
+
+import Modelling.PetriNet.Types
 
 import Data.Text                    (unpack)
 import Text.LaTeX
 import Text.LaTeX.Packages.Inputenc 
 import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
 import Text.LaTeX.Packages.Geometry
-import Types
 
 --PetriNet -> Choose task 
 runTex :: Petri -> Int -> IO()
@@ -33,14 +34,14 @@ body petri task
  | otherwise = mempty
  
 createPetriTex :: Petri -> LaTeX
-createPetriTex Petri{startM,trans} =
+createPetriTex Petri{initialMarking,trans} =
   math ( "N = (P, T," <> raw "^{\\bullet}" <> "(), ()" 
   <> raw "^{\\bullet}" <> ", m" <> raw "_" <> "0)")
-  <> math ( raw "P = \\{" <> createPlaces 1 (length startM) <> raw "\\}" )
+  <> math ( raw "P = \\{" <> createPlaces 1 (length initialMarking) <> raw "\\}" )
   <> " , "
   <> math ( raw "T = \\{" <> createTrans 1 (length trans) <> raw "\\}" )
   <> " , "
-  <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas startM)) <> ")")
+  <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas initialMarking)) <> ")")
   <> itemize ( conditions 1 trans )
 
 task1 :: LaTeX
@@ -67,7 +68,7 @@ createTrans i t
  | i == t    = raw "t_" <> fromString (show i :: String)
  | otherwise = mempty
 
-conditions :: Int -> [Trans] -> LaTeX
+conditions :: Int -> [Transition] -> LaTeX
 conditions _ []          = mempty
 conditions i ((pr,po):rs)=
   item Nothing <> math (raw "^{\\bullet}" <> fromString("t" ::String) 

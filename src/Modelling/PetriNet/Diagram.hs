@@ -1,6 +1,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module PetriDiagram where
+module Modelling.PetriNet.Diagram where
+
+import Modelling.PetriNet.Types
 
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
@@ -15,7 +17,6 @@ import Data.GraphViz                    hiding (Path)
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
-import Types
   
 -- testPrep :: IO()
 -- testPrep = do
@@ -23,11 +24,12 @@ import Types
   -- return $ t
 ----------------------Preparing a PetriNet for Graph--------------------
 prepNet :: Petri -> Gr (String, Maybe Int) String
-prepNet Petri{startM,trans} = mkGraph (prepPlaces (length startM) 0 startM 
-                                      ++ prepTrans nA (length startM) 1)
-                                   (prepEdges (length startM) trans)
---mkGraph (prepNodes "s" 1 (length startM) nA 0 startM) (prepEdges (length startM) trans)
-  where nA = length startM + length trans
+prepNet Petri{initialMarking,trans} =
+  mkGraph (prepPlaces (length initialMarking) 0 initialMarking
+           ++ prepTrans nA (length initialMarking) 1)
+  (prepEdges (length initialMarking) trans)
+--mkGraph (prepNodes "s" 1 (length initialMarking) nA 0 initialMarking) (prepEdges (length initialMarking) trans)
+  where nA = length initialMarking + length trans
  
 --AnzahlStellen -> startIndex -> StartMarkierung
 prepPlaces :: Int -> Int -> [Int] -> [(Int,(String,Maybe Int))]
@@ -42,20 +44,20 @@ prepTrans s i t
 
 
 --Counter-> transitions -> Ausgabe
-prepEdges :: Int -> [Trans] -> [(Int,Int,String)]
+prepEdges :: Int -> [Transition] -> [(Int,Int,String)]
 prepEdges _ [] = []
 prepEdges ex ((p,post):rt) = createPre ex 0 p
                             ++ createPost ex 0 post
                             ++ prepEdges (ex+1) rt
 
 --ExternCounter -> InternCounter->List->Ausgabe
-createPre :: Int -> Int -> Mark -> [(Int,Int,String)]
+createPre :: Int -> Int -> Marking -> [(Int,Int,String)]
 createPre _ _ [] = []
 createPre ex i (m:rm) 
  | m /= 0    = (i,ex,show m):createPre ex (i+1) rm
  | otherwise = createPre ex (i+1) rm
 
-createPost :: Int -> Int -> Mark -> [(Int,Int,String)]
+createPost :: Int -> Int -> Marking -> [(Int,Int,String)]
 createPost _ _ [] = []
 createPost ex i (m:rm) 
  | m /= 0    = (ex,i,show m):createPost ex (i+1) rm

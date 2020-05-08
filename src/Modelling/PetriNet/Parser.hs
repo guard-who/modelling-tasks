@@ -1,10 +1,9 @@
-{-# LANGUAGE NamedFieldPuns #-}
+module Modelling.PetriNet.Parser where
 
-module PetriParser where
+import Modelling.PetriNet.Types
 
 import Language.Alloy.Call
 import qualified Data.Set as Set
-import Types
       
 type TripSet = Set.Set (Object,Object,Object)
 
@@ -12,34 +11,34 @@ convertPetri :: String -> AlloyInstance -> Either String Petri
 convertPetri s inst = do
   flow <- filterFlow inst
   mark <- startMark s inst
-  return $ Petri{startM = mark,trans = flow}
+  return $ Petri{initialMarking = mark,trans = flow}
       
                           --Transitionen--
 
 --[([(3)],[(3)])] List of TransSets
-filterFlow :: AlloyInstance -> Either String [Trans]
+filterFlow :: AlloyInstance -> Either String [Transition]
 filterFlow inst = do
   trns <- singleSig inst "this" "Transitions" ""
   set  <- tripleSig inst "this" "Nodes" "flow"
-  let flow = filterTrans (Set.toList trns) set
+  let flow = filterTransitions (Set.toList trns) set
   plcs <- singleSig inst "this" "Places" ""
-  return $ convertToTrans (Set.toList plcs) flow
+  return $ convertToTransitions (Set.toList plcs) flow
 
 -- prepare with given Transitions the Pre and Post Sets for Petri
-filterTrans :: [Object] -> TripSet -> [(TripSet,TripSet)]
-filterTrans [] _ = []
-filterTrans (t:rs) set = (filterSndTrip t set,filterFstTrip t set) : filterTrans rs set
+filterTransitions :: [Object] -> TripSet -> [(TripSet,TripSet)]
+filterTransitions [] _ = []
+filterTransitions (t:rs) set = (filterSndTrip t set,filterFstTrip t set) : filterTransitions rs set
 
 -- make out of the given Sets the Transitions for Petri
-convertToTrans :: [Object] -> [(TripSet,TripSet)] -> [Trans]
-convertToTrans _ [] = []
-convertToTrans ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b)) 
-                                : convertToTrans ls rs 
+convertToTransitions :: [Object] -> [(TripSet,TripSet)] -> [Transition]
+convertToTransitions _ [] = []
+convertToTransitions ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b))
+                                : convertToTransitions ls rs
 
 
 
                          --Startmarkierung--
-startMark :: String -> AlloyInstance -> Either String Mark
+startMark :: String -> AlloyInstance -> Either String Marking
 startMark s inst = do
   mark <- doubleSig inst "this" "Places" s
   return $ convertTuple (Set.toList mark)
@@ -56,7 +55,7 @@ parseChange inst = do
   tkn  <- doubleSig inst "this" "Places" "tokenChange"
   let flowC = flowChangeP (Set.toList flow)
   let tknC  = tokenChangeP (Set.toList tkn)
-  return $ Change{tknChange = tknC , flwChange = flowC}
+  return $ Change{tokenChange = tknC , flowChange = flowC}
 
 flowChangeP :: [(Object,Object,Object)] -> [(String,String,Int)]
 flowChangeP []               = []

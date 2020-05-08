@@ -22,16 +22,14 @@ dependencies:
   - transformers
   - text
 library:
-  source-dirs: .
+  source-dirs: src
   exposed-modules: 
-    - PetriDiagram
-    - AuxFunctions
-    - FalsePetri
-    - PetriParser
-    - PetriAlloy
-    - PetriTex
-    - Inputs
-    - Types
+    - Modelling.PetriNet.Alloy
+    - Modelling.PetriNet.Diagram
+    - Modelling.PetriNet.LaTeX
+    - Modelling.PetriNet.MatchToMath
+    - Modelling.PetriNet.Parser
+    - Modelling.PetriNet.Types
   ghc-options:
     - -Wall
     - -Werror
