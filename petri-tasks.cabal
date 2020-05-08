@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 038ff05163ac366c2bf68c05c4f0d0bdec4d8c21d3b3c523e221027f741f44ef
+-- hash: b0c00f206d7f3ceaddde8608f0b2adc393d8ec5151a90e69cbe4cdc7aad40542
 
 name:           petri-tasks
 version:        0.0.0
@@ -42,6 +42,31 @@ library
     , fgl
     , file-embed
     , graphviz
+    , string-interpolate
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable matchToMath
+  main-is: matchToMath.hs
+  other-modules:
+      Paths_petri_tasks
+  hs-source-dirs:
+      app
+  build-depends:
+      HaTeX
+    , SVGFonts
+    , base
+    , call-alloy
+    , containers
+    , diagrams
+    , diagrams-graphviz
+    , diagrams-lib
+    , diagrams-svg
+    , fgl
+    , file-embed
+    , graphviz
+    , petri-tasks
     , string-interpolate
     , text
     , transformers

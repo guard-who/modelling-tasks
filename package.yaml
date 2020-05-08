@@ -33,6 +33,12 @@ library:
   ghc-options:
     - -Wall
     - -Werror
+executables:
+  matchToMath:
+    main: matchToMath.hs
+    source-dirs: app
+    dependencies:
+      - petri-tasks
 tests:
   petri-tasks-test:
     main: Spec.hs

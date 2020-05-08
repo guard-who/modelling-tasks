@@ -8,33 +8,10 @@ import Modelling.PetriNet.LaTeX          (uebung,createPetriTex)
 import Modelling.PetriNet.Parser         (convertPetri,runAParser)
 import Modelling.PetriNet.Types
 
-import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import Language.Alloy.Call               (AlloyInstance,getInstances)
 import Text.LaTeX                        (LaTeX)
-
-mainInput :: IO ()
-mainInput = do
-  (pls,trns,tknChange,flwChange) <- userInput
-  let inp = defaultPetriConfig{places = pls, transitions = trns, tokenChangeOverall = tknChange
-                         , flowChangeOverall = flwChange}
-  let c = checkConfig inp
-  if isNothing c
-  then do
-    _ <- matchToMath True inp
-    print "finished"
-  else
-    print c
-    
--- selectTask :: IO (Int)
--- selectTask = do
-  -- putStr ("which of the following tasks would you like to generate? \n"
-        -- ++"- 1: Mathematical to Petri (and vice versa) \n"
-        -- ++"- 2: Conflicts in PetriNets"
-        -- )
-  -- task <- getLine
-  -- return $ task :: Int
 
 --True Task1 <-> False Task1a
 matchToMath :: Bool -> PetriConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
@@ -71,19 +48,6 @@ falseList (inst:rs) usedP = do
       if fNet `elem` usedP 
       then rest
       else (fNet:rf,change:rc)
-    
-userInput :: IO (Int,Int,Int,Int)
-userInput = do   
-  putStr "Number of Places: "
-  pls <- getLine
-  putStr "Number of Transitions: "
-  trns <- getLine
-  putStr "TokenChange: "
-  tknCh <- getLine
-  putStr "FlowChange: "
-  flwCh <- getLine
-  return (read pls, read trns, read tknCh, read flwCh)
-  
   
 checkConfig :: PetriConfig -> Maybe String
 checkConfig PetriConfig{places,transitions,atLeastActive,minTokensOverall,maxTokensOverall,maxTokensPerPlace
