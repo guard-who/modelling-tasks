@@ -52,7 +52,8 @@ removeLines n = unlines . drop n . lines
 petriNetConstraints :: Input -> String 
 petriNetConstraints Input{atLeastActiv,minTknsOverall,maxTknsOverall,maxTknsPerPlace,
                         minFlowOverall,maxFlowOverall,maxFlowPerEdge,
-                        presenceSelfLoops,presenceSinkTrans,presenceSourceTrans} = [i|let t = tokenSum[Places] | t >= #{minTknsOverall} and t <= #{maxTknsOverall}
+                        presenceSelfLoops,presenceSinkTrans,presenceSourceTrans} = [i|
+  let t = tokenSum[Places] | t >= #{minTknsOverall} and t <= #{maxTknsOverall}
   all p : Places | p.tokens =< #{maxTknsPerPlace}
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
   let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
