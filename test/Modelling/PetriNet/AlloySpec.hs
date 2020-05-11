@@ -14,4 +14,4 @@ spec = do
   describe "petriScope" $
     context "compute a scope for generating Petrinets with Alloy" $
       it "taking some values out of the User's input" $
-        petriScope defaultPetriConfig `shouldSatisfy` const True
+        petriScope defaultPetriConfig `shouldSatisfy` (< 10)

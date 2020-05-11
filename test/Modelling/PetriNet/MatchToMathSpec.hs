@@ -4,6 +4,7 @@ import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types
 
 import Test.Hspec
+import Data.Maybe
 
 spec :: Spec 
 spec =
@@ -12,4 +13,4 @@ spec =
       checkConfig defaultPetriConfig `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with nessecary changes" $
-        checkConfig defaultPetriConfig{places = 0} `shouldBe` Just "There must at least be 1 Place"
+        checkConfig defaultPetriConfig{places = 0} `shouldSatisfy` isJust
