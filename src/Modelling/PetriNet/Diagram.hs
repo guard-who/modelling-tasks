@@ -1,13 +1,13 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.Diagram where
+module Modelling.PetriNet.Diagram (drawNet,drawNets) where
 
 import Modelling.PetriNet.Types
 
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
-import Diagrams.Backend.SVG             (B, renderSVG)
+import Diagrams.Backend.SVG             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
 import Data.Graph.Inductive.Graph       (mkGraph)
@@ -64,10 +64,11 @@ createPost ex i (m:rm)
  | otherwise = createPost ex (i+1) rm
 
 -------------------------------------------------------------------------
-drawNet :: Gr (String,Maybe Int) String -> GraphvizCommand -> IO (Diagram B)
+drawNet :: Petri -> GraphvizCommand -> IO (Diagram B)
 drawNet pnet gc = do
 --Either Neato or TwoPi
-  graph <- GV.layoutGraph gc pnet
+  let gnet = prepNet pnet
+  graph <- GV.layoutGraph gc gnet
   pfont <- lin
   let (nodes, edges) = GV.getGraph graph
       gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
@@ -102,13 +103,12 @@ text' pfont t =
 drawNets :: [Petri] -> GraphvizCommand -> IO [Diagram B]
 drawNets [] _      = return []
 drawNets (p:rs) gc = do
-  let net = prepNet p
   rest <- drawNets rs gc
-  dia <- drawNet net gc 
+  dia <- drawNet p gc 
   return $ dia : rest
 
-renderNet :: String -> Petri -> GraphvizCommand -> IO ()
-renderNet name petri gc = do
-  diagram <- drawNet (prepNet petri) gc
-  renderSVG (name++".svg") (mkWidth 200) diagram
-  print "PetriNetz erstellt"
+-- renderNet :: String -> Petri -> GraphvizCommand -> IO ()
+-- renderNet name petri gc = do
+  -- diagram <- drawNet petri gc
+  -- renderSVG (name++".svg") (mkWidth 200) diagram
+  -- print "PetriNetz erstellt"

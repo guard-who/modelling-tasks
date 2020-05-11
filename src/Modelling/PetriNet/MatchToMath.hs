@@ -3,9 +3,9 @@
 module Modelling.PetriNet.MatchToMath where
 
 import Modelling.PetriNet.Alloy          (petriNetRnd, renderFalse)
-import Modelling.PetriNet.Diagram        (drawNet,drawNets,prepNet)
-import Modelling.PetriNet.LaTeX          (uebung,createPetriTex)
-import Modelling.PetriNet.Parser         (convertPetri,runAParser)
+import Modelling.PetriNet.Diagram
+import Modelling.PetriNet.LaTeX
+import Modelling.PetriNet.Parser
 import Modelling.PetriNet.Types
 
 import Diagrams.Backend.SVG              (B)
@@ -21,7 +21,7 @@ matchToMath switch inp = do
   case out of
     Left merror -> error merror
     Right petri -> do
-      rightNet <- drawNet (prepNet petri) (graphLayout inp)
+      rightNet <- drawNet petri (graphLayout inp)
       let tex
            | switch    = uebung petri 1
            | otherwise = uebung petri 2
@@ -38,7 +38,7 @@ matchToMath switch inp = do
 falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
 falseList [] _       = ([],[])
 falseList (inst:rs) usedP = do
-  let fParsed = runAParser inst
+  let fParsed = runFalseParser inst
   case fParsed of
     (Left ferror,Left cError) -> error $ ferror ++ cError
     (Left ferror, _)          -> error ferror
@@ -50,7 +50,8 @@ falseList (inst:rs) usedP = do
       else (fNet:rf,change:rc)
   
 checkConfig :: PetriConfig -> Maybe String
-checkConfig PetriConfig{places,transitions,atLeastActive,minTokensOverall,maxTokensOverall,maxTokensPerPlace
+checkConfig PetriConfig{places,transitions,atLeastActive
+                 , minTokensOverall,maxTokensOverall,maxTokensPerPlace
                  , minFlowOverall,maxFlowOverall,maxFlowPerEdge
                  , tokenChangeOverall, flowChangeOverall
                  , maxFlowChangePerEdge, maxTokenChangePerPlace}

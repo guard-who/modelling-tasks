@@ -1,4 +1,4 @@
-module Modelling.PetriNet.Parser where
+module Modelling.PetriNet.Parser (convertPetri, runFalseParser) where
 
 import Modelling.PetriNet.Types
 
@@ -126,8 +126,8 @@ listTill (x:rs) y
     -- return $ convertPetri "tokens" (head list)
     
 --Parse From String(Alloy Code)
-runAParser :: AlloyInstance -> (Either String Petri,Either String Change)
-runAParser alloy = do
+runFalseParser :: AlloyInstance -> (Either String Petri,Either String Change)
+runFalseParser alloy = do
   let petri = convertPetri "tokens" alloy
   let change = parseChange alloy
   (petri,change)

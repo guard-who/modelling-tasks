@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.LaTeX where
+module Modelling.PetriNet.LaTeX (uebung,createPetriTex) where
 
 import Modelling.PetriNet.Types
 
@@ -12,10 +12,10 @@ import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
 import Text.LaTeX.Packages.Geometry
 
 --PetriNet -> Choose task 
-runTex :: Petri -> Int -> IO()
-runTex petri t = do
-  renderFile ("task"++show t++".tex") $ uebung petri t
-  print $ "Task"++show t++" generated"
+-- runTex :: Petri -> Int -> IO()
+-- runTex petri t = do
+  -- renderFile ("task"++show t++".tex") $ uebung petri t
+  -- print $ "Task"++show t++" generated"
 
 uebung :: Petri -> Int -> LaTeX
 uebung petri task =
