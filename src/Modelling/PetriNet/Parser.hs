@@ -1,4 +1,4 @@
-module Modelling.PetriNet.Parser (convertPetri, parseChange) where
+module Modelling.PetriNet.Parser (convertPetri, parseChange, parseConflict) where
 
 import Modelling.PetriNet.Types
 
@@ -70,13 +70,13 @@ tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName va
   
                             --Spezielles--
                             
--- parseConflict :: AlloyInstance -> Either String Conflict
--- parseConflict inst = do
-  -- tc1 <- unscopedSingleSig inst "$showConflNet_tc1" ""
-  -- tc2 <- unscopedSingleSig inst "$showConflNet_tc2" ""
-  -- pc  <- unscopedSingleSig inst "$showConflNet_pc"  ""
-  -- return 
-    -- Conflict{conflictTrans = (objectName tc1,objectName tc2),conflictPlace = objectName pc}
+parseConflict :: AlloyInstance -> Either String Conflict
+parseConflict inst = do
+  tc1 <- unscopedSingleSig inst "$showConflNets_tc1" ""
+  tc2 <- unscopedSingleSig inst "$showConflNets_tc2" ""
+  pc  <- unscopedSingleSig inst "$showConflNets_pc"  ""
+  return 
+    Conflict{conflictTrans = (objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2)),conflictPlace = objectName (Set.elemAt 0 pc)}
                             
                             --Hilfsfunktionen--
                             
@@ -97,10 +97,10 @@ tripleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   getTriple rd sig
   
--- unscopedSingleSig :: AlloyInstance -> String -> String -> Either String (Set.Set Object)
--- unscopedSingleSig inst st nd = do
-  -- sig <- lookupSig (unscoped st) inst
-  -- getSingle nd sig
+unscopedSingleSig :: AlloyInstance -> String -> String -> Either String (Set.Set Object)
+unscopedSingleSig inst st nd = do
+  sig <- lookupSig (unscoped st) inst
+  getSingle nd sig
   
                       --Filter for Objects--
 filterFstTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)

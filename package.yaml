@@ -30,12 +30,19 @@ library:
     - Modelling.PetriNet.MatchToMath
     - Modelling.PetriNet.Parser
     - Modelling.PetriNet.Types
+    - Modelling.PetriNet.FindConflicts
+    - Modelling.PetriNet.BasicNetFunctions
   ghc-options:
     - -Wall
     - -Werror
 executables:
   matchToMath:
     main: matchToMath.hs
+    source-dirs: app
+    dependencies:
+      - petri-tasks
+  findConflicts:
+    main: findConflicts.hs
     source-dirs: app
     dependencies:
       - petri-tasks

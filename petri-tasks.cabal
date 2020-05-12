@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b2d913b4294564ce45bb1ac340606285a3e475ffe5e0b39f4fab2aa8adf104da
+-- hash: 87431ea580d1d0cdd0bcce4be50136ede410df16723a4bf5f77d5701ce813fa9
 
 name:           petri-tasks
 version:        0.0.0
@@ -24,6 +24,8 @@ library
       Modelling.PetriNet.MatchToMath
       Modelling.PetriNet.Parser
       Modelling.PetriNet.Types
+      Modelling.PetriNet.FindConflicts
+      Modelling.PetriNet.BasicNetFunctions
   other-modules:
       Paths_petri_tasks
   hs-source-dirs:
@@ -42,6 +44,31 @@ library
     , fgl
     , file-embed
     , graphviz
+    , string-interpolate
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable findConflicts
+  main-is: findConflicts.hs
+  other-modules:
+      Paths_petri_tasks
+  hs-source-dirs:
+      app
+  build-depends:
+      HaTeX
+    , SVGFonts
+    , base
+    , call-alloy
+    , containers
+    , diagrams
+    , diagrams-graphviz
+    , diagrams-lib
+    , diagrams-svg
+    , fgl
+    , file-embed
+    , graphviz
+    , petri-tasks
     , string-interpolate
     , text
     , transformers

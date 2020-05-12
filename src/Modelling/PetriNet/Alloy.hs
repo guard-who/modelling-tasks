@@ -122,7 +122,7 @@ run showFalseNets for #{petriScope basicTask1}
 |]
 
 petriNetConfl :: PetriBasicConfig -> String
-petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetRnd
+petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -135,13 +135,14 @@ fact{
   no givenTransitions
 }
 
-pred showNets [ts : set Transitions] {
+pred showConflNets [ts,tc1,tc2 : set Transitions, pc : Places] {
   #Places = #{places}
   #Transitions = #{transitions}
+  conflict[tc1, tc2, pc] and all u,v : Transitions, q : Places | conflict[u,v,q] implies tc1 + tc2 = u + v
   #{petriNetConstraints input}
   
 }
-run showNets for #{petriScope input}
+run showConflNets for #{petriScope input}
 
 |]
 

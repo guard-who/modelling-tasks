@@ -17,20 +17,21 @@ import Text.LaTeX.Packages.Geometry
   -- renderFile ("task"++show t++".tex") $ uebung petri t
   -- print $ "Task"++show t++" generated"
 
-uebung :: Petri -> Int -> LaTeX
-uebung petri task =
+uebung :: Petri -> Int -> Bool -> LaTeX
+uebung petri task switch =
     documentclass [] article
  <> usepackage [utf8] inputenc
  <> uselanguage English
  <> importGeometry [GCentered]
  <> title "Uebung"
  <> author "Autor"
- <> document (maketitle <> body petri task)
+ <> document (maketitle <> body petri task switch)
 
-body :: Petri -> Int -> LaTeX
-body petri task 
- | task == 1 = task1 <> createPetriTex petri
- | task == 2 = task1a
+body :: Petri -> Int -> Bool -> LaTeX
+body petri task switch 
+ | task == 1 && switch     = task1 <> createPetriTex petri
+ | task == 1 && not switch = task1a
+ | task == 2 && switch     = task2
  | otherwise = mempty
  
 createPetriTex :: Petri -> LaTeX
@@ -44,6 +45,7 @@ createPetriTex Petri{initialMarking,trans} =
   <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas initialMarking)) <> ")")
   <> itemize ( conditions 1 trans )
 
+--MatchToMath
 task1 :: LaTeX
 task1 = 
   "Which of the presented petrinets shows the mathematical expression?" 
@@ -53,6 +55,11 @@ task1 =
 task1a :: LaTeX
 task1a = 
   "Which of the presented mathematical expressions shows the given petrinet?" 
+  
+--FIndConflicts
+task2 :: LaTeX
+task2 = 
+  "Which pair of transitions are in conflict?"
 
 createPlaces ::Int -> Int -> LaTeX
 createPlaces i p 
