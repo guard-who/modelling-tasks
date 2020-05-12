@@ -1,6 +1,7 @@
 module Main where
 
 import Modelling.PetriNet.MatchToMath
+import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types
 
 import Data.Maybe                        (isNothing)
@@ -11,13 +12,17 @@ main = do
   let inp = defaultPetriTask1Config{basicTask1= defaultPetriBasicConfig{places = pls, transitions = trns}
                          , tokenChangeOverall = tknChange
                          , flowChangeOverall = flwChange}
-  let c = checkConfig inp
+  let ct = checkTask1Config inp
+  let c  = checkBasicConfig (basicTask1 inp)
   if isNothing c
-  then do
-    _ <- matchToMath True inp
-    print "finished"
+  then if isNothing ct 
+       then do
+         _ <- matchToMath True inp
+         print "finished"
+       else 
+         print ct
   else
-    print c
+    print c 
     
 -- selectTask :: IO (Int)
 -- selectTask = do

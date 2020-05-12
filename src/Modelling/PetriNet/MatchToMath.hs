@@ -23,8 +23,8 @@ matchToMath switch inp@PetriTask1Config{basicTask1} = do
     Right petri -> do
       rightNet <- drawNet petri (graphLayout basicTask1)
       let tex
-           | switch    = uebung petri 1
-           | otherwise = uebung petri 2
+           | switch    = uebung petri 1 switch
+           | otherwise = uebung petri 2 switch
       let f = renderFalse petri inp
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
@@ -55,44 +55,12 @@ runFalseParser alloy = do
   let change = parseChange alloy
   (petri,change)
   
-checkConfig :: PetriTask1Config -> Maybe String
-checkConfig PetriTask1Config{basicTask1 = PetriBasicConfig{places,transitions,atLeastActive
+checkTask1Config :: PetriTask1Config -> Maybe String
+checkTask1Config PetriTask1Config{basicTask1 = PetriBasicConfig{places,transitions
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
                    , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
                  , tokenChangeOverall, flowChangeOverall
                  , maxFlowChangePerEdge, maxTokenChangePerPlace}
- | places <= 0
-  = Just "The number of places must be positive."
- | places > 9
-  = Just "Cannot deal with more than 9 places."
- | transitions <= 0
-  = Just "The number of transitions must be positive."
- | transitions > 9
-  = Just "Cannot deal with more than 9 transitions."
- | atLeastActive < 0
-  = Just "The parameter 'atLeastActive' must be non-negative."
- | atLeastActive > transitions
-  = Just ("There cannot be more active transitions than there are transitions.")
- | minTokensOverall < 0
-  = Just "The parameter 'minTokensOverall' must be non-negative."
- | maxTokensOverall < minTokensOverall
-  = Just "The parameter 'minTokensOverall' must not be larger than 'maxTokensOverall'."
- | maxTokensPerPlace < 0
-  = Just "The parameter 'maxTokensPerPlace' must be non-negative."
- | maxTokensPerPlace > maxTokensOverall
-  = Just "The parameter 'maxTokensPerPlace' must not be larger than 'maxTokensOverall'."
- | maxTokensOverall > places * maxTokensPerPlace
-  = Just "The parameter 'maxTokensOverall' is set unreasonably high, given the per-place parameter."
- | minFlowOverall < 0
-  = Just "The parameter 'minFlowOverall' must be non-negative."
- | maxFlowOverall < minFlowOverall
-  = Just "The parameter 'minFlowOverall' must not be larger than 'maxFlowOverall'."
- | maxFlowPerEdge <= 0
-  = Just "The parameter 'maxFlowPerEdge' must be positive."
- | maxFlowOverall < maxFlowPerEdge
-  = Just "The parameter 'maxFlowPerEdge' must not be larger than 'maxFlowOverall'."
- | maxFlowOverall > 2 * places * transitions * maxFlowPerEdge
-  = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
  | tokenChangeOverall < 0
   = Just "The parameter 'tokenChangeOverall' must be non-negative."
  | maxTokenChangePerPlace < 0
