@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.Diagram (drawNet,drawNets) where
+module Modelling.PetriNet.Diagram (drawNet) where
 
 import Modelling.PetriNet.Types
 
@@ -99,13 +99,6 @@ text' pfont t =
   textSVG_ (TextOpts pfont INSIDE_H KERN False 18 18) t
   # fc black
   # lc black
-  
-drawNets :: [Petri] -> GraphvizCommand -> IO [Diagram B]
-drawNets [] _      = return []
-drawNets (p:rs) gc = do
-  rest <- drawNets rs gc
-  dia <- drawNet p gc 
-  return $ dia : rest
 
 -- renderNet :: String -> Petri -> GraphvizCommand -> IO ()
 -- renderNet name petri gc = do

@@ -29,7 +29,7 @@ matchToMath switch inp = do
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
       if switch then do
-        fDia <- drawNets fNets (graphLayout inp)
+        fDia <- mapM (flip drawNet (graphLayout inp)) fNets
         return (rightNet, tex, Left $ zip fDia changes)
       else do
         let fTex = map createPetriTex fNets
@@ -48,6 +48,12 @@ falseList (inst:rs) usedP = do
       if fNet `elem` usedP 
       then rest
       else (fNet:rf,change:rc)
+      
+runFalseParser :: AlloyInstance -> (Either String Petri,Either String Change)
+runFalseParser alloy = do
+  let petri = convertPetri "tokens" alloy
+  let change = parseChange alloy
+  (petri,change)
   
 checkConfig :: PetriConfig -> Maybe String
 checkConfig PetriConfig{places,transitions,atLeastActive

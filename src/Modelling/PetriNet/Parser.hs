@@ -1,4 +1,4 @@
-module Modelling.PetriNet.Parser (convertPetri, runFalseParser) where
+module Modelling.PetriNet.Parser (convertPetri, parseChange) where
 
 import Modelling.PetriNet.Types
 
@@ -124,16 +124,3 @@ listTill (x:rs) y
 -- runIParser inp = do 
     -- list <- getInstances (Just 5) (petriNetRnd inp)
     -- return $ convertPetri "tokens" (head list)
-    
---Parse From String(Alloy Code)
-runFalseParser :: AlloyInstance -> (Either String Petri,Either String Change)
-runFalseParser alloy = do
-  let petri = convertPetri "tokens" alloy
-  let change = parseChange alloy
-  (petri,change)
-  
-
-  
-
-----------------------------------------------------------------------
-----------------------------------------------------------------------
