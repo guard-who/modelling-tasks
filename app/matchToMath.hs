@@ -8,7 +8,8 @@ import Data.Maybe                        (isNothing)
 main :: IO ()
 main = do
   (pls,trns,tknChange,flwChange) <- userInput
-  let inp = defaultPetriConfig{places = pls, transitions = trns, tokenChangeOverall = tknChange
+  let inp = defaultPetriTask1Config{basicTask1= defaultPetriBasicConfig{places = pls, transitions = trns}
+                         , tokenChangeOverall = tknChange
                          , flowChangeOverall = flwChange}
   let c = checkConfig inp
   if isNothing c

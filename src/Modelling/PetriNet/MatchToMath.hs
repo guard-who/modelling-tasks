@@ -14,14 +14,14 @@ import Language.Alloy.Call               (AlloyInstance,getInstances)
 import Text.LaTeX                        (LaTeX)
 
 --True Task1 <-> False Task1a
-matchToMath :: Bool -> PetriConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
-matchToMath switch inp = do
-  list <- getInstances (Just 1) (petriNetRnd inp)
+matchToMath :: Bool -> PetriTask1Config -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
+matchToMath switch inp@PetriTask1Config{basicTask1} = do
+  list <- getInstances (Just 1) (petriNetRnd basicTask1)
   let out = convertPetri "tokens" (head list)
   case out of
     Left merror -> error merror
     Right petri -> do
-      rightNet <- drawNet petri (graphLayout inp)
+      rightNet <- drawNet petri (graphLayout basicTask1)
       let tex
            | switch    = uebung petri 1
            | otherwise = uebung petri 2
@@ -29,7 +29,7 @@ matchToMath switch inp = do
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
       if switch then do
-        fDia <- mapM (flip drawNet (graphLayout inp)) fNets
+        fDia <- mapM (flip drawNet (graphLayout basicTask1)) fNets
         return (rightNet, tex, Left $ zip fDia changes)
       else do
         let fTex = map createPetriTex fNets
@@ -55,10 +55,10 @@ runFalseParser alloy = do
   let change = parseChange alloy
   (petri,change)
   
-checkConfig :: PetriConfig -> Maybe String
-checkConfig PetriConfig{places,transitions,atLeastActive
-                 , minTokensOverall,maxTokensOverall,maxTokensPerPlace
-                 , minFlowOverall,maxFlowOverall,maxFlowPerEdge
+checkConfig :: PetriTask1Config -> Maybe String
+checkConfig PetriTask1Config{basicTask1 = PetriBasicConfig{places,transitions,atLeastActive
+                   , minTokensOverall,maxTokensOverall,maxTokensPerPlace
+                   , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
                  , tokenChangeOverall, flowChangeOverall
                  , maxFlowChangePerEdge, maxTokenChangePerPlace}
  | places <= 0

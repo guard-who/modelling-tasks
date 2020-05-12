@@ -68,7 +68,16 @@ tokenChangeP []            = []
 tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName val) :: Int) 
                              : tokenChangeP rt
   
-
+                            --Spezielles--
+                            
+-- parseConflict :: AlloyInstance -> Either String Conflict
+-- parseConflict inst = do
+  -- tc1 <- unscopedSingleSig inst "$showConflNet_tc1" ""
+  -- tc2 <- unscopedSingleSig inst "$showConflNet_tc2" ""
+  -- pc  <- unscopedSingleSig inst "$showConflNet_pc"  ""
+  -- return 
+    -- Conflict{conflictTrans = (objectName tc1,objectName tc2),conflictPlace = objectName pc}
+                            
                             --Hilfsfunktionen--
                             
 -- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
@@ -87,6 +96,11 @@ tripleSig :: AlloyInstance -> String -> String -> String
 tripleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   getTriple rd sig
+  
+-- unscopedSingleSig :: AlloyInstance -> String -> String -> Either String (Set.Set Object)
+-- unscopedSingleSig inst st nd = do
+  -- sig <- lookupSig (unscoped st) inst
+  -- getSingle nd sig
   
                       --Filter for Objects--
 filterFstTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)

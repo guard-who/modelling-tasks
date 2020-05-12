@@ -10,8 +10,8 @@ import Modelling.PetriNet.Types
 import Data.String.Interpolate
 import Data.FileEmbed
 
-petriScope :: PetriConfig -> Int
-petriScope PetriConfig{places,transitions} =
+petriScope :: PetriBasicConfig -> Int
+petriScope PetriBasicConfig{places,transitions} =
   (places+transitions)*2
   
 petriLoops :: Bool -> String
@@ -50,8 +50,8 @@ removeLines n = unlines . drop n . lines
 --Bigger Net needs bigger "run for x"
 -- make flowSum dynamic with input
 
-petriNetConstraints :: PetriConfig -> String
-petriNetConstraints PetriConfig{atLeastActive,minTokensOverall,maxTokensOverall,maxTokensPerPlace,
+petriNetConstraints :: PetriBasicConfig -> String
+petriNetConstraints PetriBasicConfig{atLeastActive,minTokensOverall,maxTokensOverall,maxTokensPerPlace,
                         minFlowOverall,maxFlowOverall,maxFlowPerEdge,
                         presenceOfSelfLoops,presenceOfSinkTransitions,presenceOfSourceTransitions} = [i|
   let t = tokenSum[Places] | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
@@ -66,8 +66,8 @@ petriNetConstraints PetriConfig{atLeastActive,minTokensOverall,maxTokensOverall,
   #{maybe "" petriSource presenceOfSourceTransitions}
 |]
 
-petriNetRnd :: PetriConfig -> String
-petriNetRnd input@PetriConfig{places,transitions} = [i|module PetriNetRnd
+petriNetRnd :: PetriBasicConfig -> String
+petriNetRnd input@PetriBasicConfig{places,transitions} = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -90,9 +90,9 @@ run showNets for #{petriScope input}
 
 |]
 
-renderFalse :: Petri -> PetriConfig -> String
+renderFalse :: Petri -> PetriTask1Config -> String
 renderFalse Petri{initialMarking,trans}
-    input@PetriConfig{flowChangeOverall, maxFlowChangePerEdge, tokenChangeOverall, maxTokenChangePerPlace} = [i| module FalseNet
+    PetriTask1Config{basicTask1,flowChangeOverall, maxFlowChangePerEdge, tokenChangeOverall, maxTokenChangePerPlace} = [i| module FalseNet
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -109,7 +109,7 @@ fact{
 }
 
 pred showFalseNets[ts : set Transitions]{
-  #{petriNetConstraints input}
+  #{petriNetConstraints basicTask1}
   flowChangeAbsolutesSum[Nodes,Nodes] = #{flowChangeOverall}
   maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
   tokenChangeAbsolutesSum[Places] = #{tokenChangeOverall}
@@ -117,7 +117,31 @@ pred showFalseNets[ts : set Transitions]{
 
 }
 
-run showFalseNets for #{petriScope input}
+run showFalseNets for #{petriScope basicTask1}
+
+|]
+
+petriNetConfl :: PetriBasicConfig -> String
+petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetRnd
+
+#{modulePetriSignature}
+#{modulePetriAdditions}
+#{moduleHelpers}
+#{modulePetriConcepts}
+#{modulePetriConstraints}
+
+fact{
+  no givenPlaces
+  no givenTransitions
+}
+
+pred showNets [ts : set Transitions] {
+  #Places = #{places}
+  #Transitions = #{transitions}
+  #{petriNetConstraints input}
+  
+}
+run showNets for #{petriScope input}
 
 |]
 
