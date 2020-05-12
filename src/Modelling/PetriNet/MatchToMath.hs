@@ -61,37 +61,61 @@ checkConfig PetriConfig{places,transitions,atLeastActive
                  , minFlowOverall,maxFlowOverall,maxFlowPerEdge
                  , tokenChangeOverall, flowChangeOverall
                  , maxFlowChangePerEdge, maxTokenChangePerPlace}
- | places <= 0         = Just "There must at least be 1 Place"
- | places > 9          = Just "Places are to be picked in a range of 1 to 9"
- | transitions <= 0    = Just "There must at least be 1 Transition"
- | transitions > 9     = Just "Transitions are to be picked in a range of 1 to 9"
- | atLeastActive < 0    = Just "Least Activee Transitions must be at least 0"
- | minTokensOverall < 0  = Just "Tokens Overall must be at least 0"
- | maxTokensPerPlace < 0 = Just "Tokens per Place must be at least 0"
- | maxFlowPerEdge <= 0 = Just "Max Flow per Edge must be at least 1"
- | minFlowOverall < 0  = Just "Overall Flow must be at least 0"
- | tokenChangeOverall < 0     = Just "tokenChange can't be negative"
- | flowChangeOverall  < 0     = Just "flowChange can't be negative"
- | maxTokenChangePerPlace < 0 = Just "maxTokenChangePerPlace can't be negative"
- | maxFlowChangePerEdge < 0   = Just "maxFlowChangePerEdge can't be negative"
- | atLeastActive > transitions              = Just ("Least Activee Transitions must be lower than "
-                                                ++"Transitions")
- | maxTokensOverall > places*maxTokensPerPlace = Just "choose a lower Max Token Overall"
- | maxTokensOverall < minTokensOverall         = Just "Min and Max Tokens Overall aren't fitting"
- | maxTokensPerPlace > maxTokensOverall        = Just ("Tokens Per Place must be lower than Max Tokens "
-                                                ++ "Overall")
- | maxFlowOverall < minFlowOverall         = Just "Min and Max FLow Overall aren't fitting"
- | maxFlowOverall < maxFlowPerEdge         = Just "Flow Per Edge must be lower than Max Flow Overall"
- | maxFlowOverall > constA                 = Just "maxFlowOverall not in bounds"
- | maxTokenChangePerPlace > tokenChangeOverall = Just "maxTokenChangePerPlace must be at maximum Overall"
- | maxTokenChangePerPlace > maxTokensPerPlace    = Just "maxTokenChangePerPlace can't be higher than the maxTokensPerPlace"
- | maxFlowChangePerEdge > flowChangeOverall    = Just "maxFlowChangePerEdge must be lower than Overall"
- | maxFlowChangePerEdge > maxFlowPerEdge       = Just "maxFlowChangePerEdge can't be higher than the maxFlowPerEdge"
- | tokenChangeOverall > maxTokensOverall - minTokensOverall = Just "Stay within the Range of Tokens with the Change Overall"
- | flowChangeOverall > maxFlowOverall - minFlowOverall = Just "Stay within the Range of Flow with the Change Overall"
- | maxTokenChangePerPlace * places < tokenChangeOverall = Just "You can't have more Tokenchanges Overall than maxChange at all given Places together"
- | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall = Just "You can't have more FlowCHange Overall than maxChange at all given Edges together"
- | otherwise   = Nothing 
-  where constA = 2 * places * transitions * maxFlowPerEdge
-  
-  
+ | places <= 0
+  = Just "The number of places must be positive."
+ | places > 9
+  = Just "Cannot deal with more than 9 places."
+ | transitions <= 0
+  = Just "The number of transitions must be positive."
+ | transitions > 9
+  = Just "Cannot deal with more than 9 transitions."
+ | atLeastActive < 0
+  = Just "The parameter 'atLeastActive' must be non-negative."
+ | atLeastActive > transitions
+  = Just ("There cannot be more active transitions than there are transitions.")
+ | minTokensOverall < 0
+  = Just "The parameter 'minTokensOverall' must be non-negative."
+ | maxTokensOverall < minTokensOverall
+  = Just "The parameter 'minTokensOverall' must not be larger than 'maxTokensOverall'."
+ | maxTokensPerPlace < 0
+  = Just "The parameter 'maxTokensPerPlace' must be non-negative."
+ | maxTokensPerPlace > maxTokensOverall
+  = Just "The parameter 'maxTokensPerPlace' must not be larger than 'maxTokensOverall'."
+ | maxTokensOverall > places * maxTokensPerPlace
+  = Just "The parameter 'maxTokensOverall' is set unreasonably high, given the per-place parameter."
+ | minFlowOverall < 0
+  = Just "The parameter 'minFlowOverall' must be non-negative."
+ | maxFlowOverall < minFlowOverall
+  = Just "The parameter 'minFlowOverall' must not be larger than 'maxFlowOverall'."
+ | maxFlowPerEdge <= 0
+  = Just "The parameter 'maxFlowPerEdge' must be positive."
+ | maxFlowOverall < maxFlowPerEdge
+  = Just "The parameter 'maxFlowPerEdge' must not be larger than 'maxFlowOverall'."
+ | maxFlowOverall > 2 * places * transitions * maxFlowPerEdge
+  = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
+ | tokenChangeOverall < 0
+  = Just "The parameter 'tokenChangeOverall' must be non-negative."
+ | maxTokenChangePerPlace < 0
+  = Just "The parameter 'maxTokenChangePerPlace' must be non-negative."
+ | maxTokenChangePerPlace > tokenChangeOverall
+  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'tokenChangeOverall'."
+ | maxTokenChangePerPlace > maxTokensPerPlace
+  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'maxTokensPerPlace'."
+ | tokenChangeOverall > maxTokensOverall - minTokensOverall
+  = Just "With 'tokenChangeOverall', stay within the range of tokens overall."
+ | maxTokenChangePerPlace * places < tokenChangeOverall
+  = Just "The parameter 'tokenChangeOverall' is set unreasonably high, given the per-place parameter."
+ | flowChangeOverall < 0
+  = Just "The parameter 'flowChangeOverall' must be non-negative."
+ | maxFlowChangePerEdge < 0
+  = Just "The parameter 'maxFlowChangePerEdge' must be non-negative."
+ | maxFlowChangePerEdge > flowChangeOverall
+  = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'flowChangeOverall'."
+ | maxFlowChangePerEdge > maxFlowPerEdge
+  = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'maxFlowPerEdge'."
+ | flowChangeOverall > maxFlowOverall - minFlowOverall
+  = Just "With 'flowChangeOverall', stay within the range of flow overall."
+ | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall
+  = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
+ | otherwise
+  = Nothing
