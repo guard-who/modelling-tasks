@@ -12,12 +12,13 @@ import Data.String.Interpolate
 import Data.FileEmbed
 
 petriScope :: PetriBasicConfig -> Int
-petriScope PetriBasicConfig{places,transitions,maxFlowPerEdge} =
-  round ( 2
+petriScope PetriBasicConfig{places,transitions,maxFlowPerEdge} = max
+  (ceiling ( 2
   + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) places
   + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) transitions
   + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowPerEdge
-  )
+  ))
+  (places+transitions)
   
 petriLoops :: Bool -> String
 petriLoops = \case
