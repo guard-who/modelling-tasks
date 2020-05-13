@@ -2,7 +2,6 @@ module Modelling.PetriNet.Types where
 
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
 
---tokenChange,flowChange
 data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,String,Int)]}
   deriving Show
   

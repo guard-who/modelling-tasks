@@ -80,7 +80,7 @@ parseConflict inst = do
                             
                             --Hilfsfunktionen--
                             
--- Instance -> scoped? -> relations (e.g. ["this","Nodes","flow"])
+-- Instance -> scope -> relations (e.g. ["this","Nodes","flow"])
 singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
 singleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
@@ -131,7 +131,7 @@ listTill [] _ = []
 listTill (x:rs) y 
  | x == y    = []
  | otherwise = x : listTill rs y
-----------------------------------------Main(-s)--------------------------------------------------
+------------------------------------------------------------------------------------------
 
 --Parse From Input
 -- runIParser :: Input -> IO(Either String Petri)

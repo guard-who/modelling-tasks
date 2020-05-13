@@ -18,17 +18,13 @@ import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
   
--- testPrep :: IO()
--- testPrep = do
-  -- t <- return $ renderNet "test" defaultPetri TwoPi
-  -- return $ t
+
 ----------------------Preparing a PetriNet for Graph--------------------
 prepNet :: Petri -> Gr (String, Maybe Int) String
 prepNet Petri{initialMarking,trans} =
   mkGraph (prepPlaces (length initialMarking) 0 initialMarking
            ++ prepTrans nA (length initialMarking) 1)
   (prepEdges (length initialMarking) trans)
---mkGraph (prepNodes "s" 1 (length initialMarking) nA 0 initialMarking) (prepEdges (length initialMarking) trans)
   where nA = length initialMarking + length trans
  
 --AnzahlStellen -> startIndex -> StartMarkierung
@@ -41,7 +37,11 @@ prepTrans :: Int -> Int -> Int -> [(Int,(String,Maybe Int))]
 prepTrans s i t
  | s > i         = (i,("t" ++ show t,Nothing)):prepTrans s (i+1) (t+1)
  | otherwise     = []
-
+ 
+{-
+  ex: extern Index of Transitions
+  i : intern Index of Places
+-}
 
 --Counter-> transitions -> Ausgabe
 prepEdges :: Int -> [Transition] -> [(Int,Int,String)]
@@ -66,7 +66,6 @@ createPost ex i (m:rm)
 -------------------------------------------------------------------------
 drawNet :: Petri -> GraphvizCommand -> IO (Diagram B)
 drawNet pnet gc = do
---Either Neato or TwoPi
   let gnet = prepNet pnet
   graph <- GV.layoutGraph gc gnet
   pfont <- lin
@@ -100,6 +99,7 @@ text' pfont t =
   # fc black
   # lc black
 
+-----------------------------------------------------------------------
 -- renderNet :: String -> Petri -> GraphvizCommand -> IO ()
 -- renderNet name petri gc = do
   -- diagram <- drawNet petri gc

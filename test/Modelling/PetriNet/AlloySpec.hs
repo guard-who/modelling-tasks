@@ -1,7 +1,7 @@
 module Modelling.PetriNet.AlloySpec where
 
 import Modelling.PetriNet.Alloy
-import Modelling.PetriNet.Types         (defaultPetriConfig,defaultPetri)
+import Modelling.PetriNet.Types         (defaultPetriBasicConfig,defaultPetri)
 
 import Test.Hspec
 

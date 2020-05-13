@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.MatchToMath where
+module Modelling.PetriNet.MatchToMath (matchToMath,checkTask1Config)  where
 
 import Modelling.PetriNet.Alloy          (petriNetRnd, renderFalse)
 import Modelling.PetriNet.Diagram
@@ -15,7 +15,7 @@ import Text.LaTeX                        (LaTeX)
 
 --True Task1 <-> False Task1a
 matchToMath :: Bool -> PetriTask1Config -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
-matchToMath switch inp@PetriTask1Config{basicTask1} = do
+matchToMath switch config@PetriTask1Config{basicTask1} = do
   list <- getInstances (Just 1) (petriNetRnd basicTask1)
   let out = convertPetri "tokens" (head list)
   case out of
@@ -25,7 +25,7 @@ matchToMath switch inp@PetriTask1Config{basicTask1} = do
       let tex
            | switch    = uebung petri 1 switch
            | otherwise = uebung petri 2 switch
-      let f = renderFalse petri inp
+      let f = renderFalse petri config
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
       if switch then do

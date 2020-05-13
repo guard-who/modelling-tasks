@@ -34,6 +34,7 @@ body petri task switch
  | task == 2 && switch     = task2
  | otherwise = mempty
  
+--Math Petri Appearance
 createPetriTex :: Petri -> LaTeX
 createPetriTex Petri{initialMarking,trans} =
   math ( "N = (P, T," <> raw "^{\\bullet}" <> "(), ()" 
@@ -56,7 +57,7 @@ task1a :: LaTeX
 task1a = 
   "Which of the presented mathematical expressions shows the given petrinet?" 
   
---FIndConflicts
+--FindConflicts
 task2 :: LaTeX
 task2 = 
   "Which pair of transitions are in conflict?"

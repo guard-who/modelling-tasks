@@ -9,15 +9,17 @@ import Data.Maybe                        (isNothing)
 main :: IO ()
 main = do
   (pls,trns,tknChange,flwChange) <- userInput
-  let inp = defaultPetriTask1Config{basicTask1= defaultPetriBasicConfig{places = pls, transitions = trns}
+  let config = defaultPetriTask1Config{
+                         basicTask1= 
+                             defaultPetriBasicConfig{places = pls, transitions = trns}
                          , tokenChangeOverall = tknChange
                          , flowChangeOverall = flwChange}
-  let ct = checkTask1Config inp
-  let c  = checkBasicConfig (basicTask1 inp)
+  let ct = checkTask1Config config
+  let c  = checkBasicConfig (basicTask1 config)
   if isNothing c
   then if isNothing ct 
        then do
-         _ <- matchToMath True inp
+         _ <- matchToMath True config
          print "finished"
        else 
          print ct
@@ -39,8 +41,8 @@ userInput = do
   pls <- getLine
   putStr "Number of Transitions: "
   trns <- getLine
-  putStr "TokenChange: "
+  putStr "TokenChange Overall: "
   tknCh <- getLine
-  putStr "FlowChange: "
+  putStr "FlowChange Overall: "
   flwCh <- getLine
   return (read pls, read trns, read tknCh, read flwCh)
