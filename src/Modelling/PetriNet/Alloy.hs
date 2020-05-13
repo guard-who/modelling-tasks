@@ -3,7 +3,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Modelling.PetriNet.Alloy where
+module Modelling.PetriNet.Alloy 
+  (petriNetRnd,renderFalse,petriNetConfl) where
 
 import Modelling.PetriNet.Types
 
