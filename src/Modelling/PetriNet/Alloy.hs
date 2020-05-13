@@ -11,8 +11,12 @@ import Data.String.Interpolate
 import Data.FileEmbed
 
 petriScope :: PetriBasicConfig -> Int
-petriScope PetriBasicConfig{places,transitions} =
-  (places+transitions)*2
+petriScope PetriBasicConfig{places,transitions,maxFlowPerEdge} =
+  round ( 2
+  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) places
+  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) transitions
+  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowPerEdge
+  )
   
 petriLoops :: Bool -> String
 petriLoops = \case
@@ -46,9 +50,6 @@ modulePetriConstraints = removeLines 4 $(embedStringFile "lib/Alloy/PetriConstra
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
-
---Bigger Net needs bigger "run for x"
--- make flowSum dynamic with input
 
 petriNetConstraints :: PetriBasicConfig -> String
 petriNetConstraints PetriBasicConfig{atLeastActive,minTokensOverall,maxTokensOverall,maxTokensPerPlace,
