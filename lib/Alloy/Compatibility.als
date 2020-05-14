@@ -42,3 +42,8 @@ pred weightRemovedOverall[n : Int]{
   weightRemoveOnly
   flowChangeSum[Nodes,Nodes] = minus[0,n]
 }
+
+//check if there is a loop between a place and a transition
+// pred selfLoop[p : Places, t : Transitions]{
+//   (one p.flow[t]) and (one t.flow[p])
+// }

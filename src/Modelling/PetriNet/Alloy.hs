@@ -22,8 +22,8 @@ petriScope PetriBasicConfig{places,transitions,maxFlowPerEdge} = max
   
 petriLoops :: Bool -> String
 petriLoops = \case
- True  -> "some p : Places, t : Transitions | selfLoop[p, t]"
- False -> "no p : Places, t : Transitions | selfLoop[p, t]"
+ True  -> "some n : Nodes | selfLoop[n]"
+ False -> "no n : Nodes | selfLoop[n]"
 
 petriSink :: Bool -> String
 petriSink = \case

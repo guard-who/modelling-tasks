@@ -39,9 +39,9 @@ pred concurrentDefault[ts : set Transitions]{
   all p : Places | p.defaultTokens >= defaultFlowSum[p, ts]
 }
 
-//check if there is a loop between a place and a transition
-pred selfLoop[p : Places, t : Transitions]{
-  (one p.flow[t]) and (one t.flow[p])
+//check if there is a loop between two nodes
+pred selfLoop[n : Nodes]{
+  n in n.flow.Int.flow.Int
 }
 
 //check if some transitions are sink transitions

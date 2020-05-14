@@ -7,7 +7,7 @@ abstract sig Nodes
   flowChange : Nodes -> lone (Int - 0)
 }
 {
-  all weight : defaultFlow[Nodes] + flow[Nodes] | weight > 0
+  all weight : defaultFlow[Nodes] | weight > 0
   all n : Nodes | let theFlow = plus[defaultFlow[n], flowChange[n]] | theFlow = 0 implies no flow[n] else flow[n] = theFlow
 }
 
@@ -21,8 +21,6 @@ abstract sig Places extends Nodes
   defaultTokens >= 0
   tokens = plus[defaultTokens, tokenChange]
   tokens >= 0
-  //set place only going to transition
-  flow.Int in Transitions
   defaultFlow.Int in Transitions
 }
 
@@ -30,9 +28,13 @@ abstract sig Transitions extends Nodes
 {
 }
 {
-  //set transition only going to place
-  flow.Int in Places
   defaultFlow.Int in Places
+}
+
+fact isLegalPetrinet {
+  all weight : Nodes.flow[Nodes] | weight > 0
+  Places.flow.Int in Transitions
+  Transitions.flow.Int in Places
 }
 
 //set default places and transitions
