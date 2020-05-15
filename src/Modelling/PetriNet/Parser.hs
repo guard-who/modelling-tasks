@@ -7,19 +7,19 @@ import qualified Data.Set as Set
       
 type TripSet = Set.Set (Object,Object,Object)
 
-convertPetri :: String -> AlloyInstance -> Either String Petri
-convertPetri s inst = do
-  flow <- filterFlow inst
-  mark <- startMark s inst
+convertPetri :: String -> String -> AlloyInstance -> Either String Petri
+convertPetri f t inst = do
+  flow <- filterFlow f inst
+  mark <- startMark t inst
   return $ Petri{initialMarking = mark,trans = flow}
       
                           --Transitionen--
 
 --[([(3)],[(3)])] List of TransSets
-filterFlow :: AlloyInstance -> Either String [Transition]
-filterFlow inst = do
+filterFlow :: String -> AlloyInstance -> Either String [Transition]
+filterFlow f inst = do
   trns <- singleSig inst "this" "Transitions" ""
-  set  <- tripleSig inst "this" "Nodes" "flow"
+  set  <- tripleSig inst "this" "Nodes" f
   let flow = filterTransitions (Set.toList trns) set
   plcs <- singleSig inst "this" "Places" ""
   return $ convertToTransitions (Set.toList plcs) flow
@@ -34,7 +34,6 @@ convertToTransitions :: [Object] -> [(TripSet,TripSet)] -> [Transition]
 convertToTransitions _ [] = []
 convertToTransitions ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b))
                                 : convertToTransitions ls rs
-
 
 
                          --Startmarkierung--

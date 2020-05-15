@@ -17,8 +17,7 @@ import Text.LaTeX                        (LaTeX)
 matchToMath :: Bool -> PetriTask1Config -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
 matchToMath switch config@PetriTask1Config{basicTask1} = do
   list <- getInstances (Just 1) (petriNetRnd basicTask1)
-  let out = convertPetri "tokens" (head list)
-  case out of
+  case convertPetri "flow" "tokens" (head list) of
     Left merror -> error merror
     Right petri -> do
       rightNet <- drawNet petri (graphLayout basicTask1)
@@ -38,8 +37,7 @@ matchToMath switch config@PetriTask1Config{basicTask1} = do
 falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
 falseList [] _       = ([],[])
 falseList (inst:rs) usedP = do
-  let fParsed = runFalseParser inst
-  case fParsed of
+  case runFalseParser inst of
     (Left ferror,Left cError) -> error $ ferror ++ cError
     (Left ferror, _)          -> error ferror
     (_,Left cError)           -> error cError
@@ -51,7 +49,7 @@ falseList (inst:rs) usedP = do
       
 runFalseParser :: AlloyInstance -> (Either String Petri,Either String Change)
 runFalseParser alloy = do
-  let petri = convertPetri "tokens" alloy
+  let petri = convertPetri "flow" "tokens" alloy
   let change = parseChange alloy
   (petri,change)
   

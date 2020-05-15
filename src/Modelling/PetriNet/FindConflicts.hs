@@ -14,8 +14,7 @@ import Text.LaTeX                        (LaTeX)
 findConflicts :: PetriBasicConfig -> IO(Diagram B,LaTeX,Conflict)
 findConflicts config = do
   list <- getInstances (Just 1) (petriNetConfl config)
-  let out = convertPetri "tokens" (head list)
-  case out of
+  case convertPetri "flow" "tokens" (head list) of
     Left merror -> error merror
     Right petri -> do
       dia <- drawNet petri (graphLayout config)
