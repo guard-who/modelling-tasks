@@ -128,15 +128,11 @@ petriNetConfl :: PetriBasicConfig -> String
 petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
-#{modulePetriAdditions}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-fact{
-  no givenPlaces
-  no givenTransitions
-}
+
 
 pred showConflNets [ts,tc1,tc2 : set Transitions, pc : Places] {
   #Places = #{places}
