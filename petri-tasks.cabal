@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 421fb846f93b139119bec85a730fac1e4427c953642e0c26108720c21cb20a4e
+-- hash: f335d4ef4963d91a6fd6769d00d03b46f7054d14ac89a23c83e968395e905989
 
 name:           petri-tasks
 version:        0.0.0
@@ -108,7 +108,6 @@ test-suite petri-tasks-test
       Modelling.PetriNet.DiagramSpec
       Modelling.PetriNet.LaTeXSpec
       Modelling.PetriNet.MatchToMathSpec
-      Modelling.PetriNet.ParserSpec
       Paths_petri_tasks
   hs-source-dirs:
       test
@@ -128,6 +127,7 @@ test-suite petri-tasks-test
     , graphviz
     , hspec
     , petri-tasks
+    , process
     , string-interpolate
     , text
     , transformers

@@ -58,3 +58,4 @@ tests:
     dependencies:
     - petri-tasks
     - hspec
+    - process
