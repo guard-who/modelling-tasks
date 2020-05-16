@@ -41,10 +41,19 @@ pred theActivatedTransitions[ts : set Transitions]{
   no t : (Transitions - ts) | activated[t]
 }
 
+pred theActivatedDefaultTransitions[ts : set Transitions]{
+  all t : ts | activatedDefault[t]
+  no t : (Transitions - ts) | activatedDefault[t]
+}
+
 pred noIsolatedNodes[]{
   all n : Nodes | some n.flow.Int or some n.~(flow.Int)
 }
 
 pred graphIsConnected[]{
   all n : Nodes | Nodes = n + n.^(flow.Int + ~(flow.Int))
+}
+
+pred defaultGraphIsConnected[]{
+  all n : Nodes | Nodes = n + n.^(defaultFlow.Int + ~(defaultFlow.Int))
 }
