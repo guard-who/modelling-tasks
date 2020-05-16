@@ -13,6 +13,11 @@ pred numberActivatedTransition[n : Int, ts : set Transitions]{
   theActivatedTransitions[ts]
 }
 
+//sum of tokenChange
+fun tokenChangeSum[places : set Places] : Int{
+  sum p : places | p.tokenChange
+}
+
 //altogether exactly n tokens should be added
 pred tokensAddedOverall[n : Int]{
   tokenAddOnly
@@ -29,6 +34,11 @@ pred tokensRemovedOverall[n : Int]{
 pred perPlaceTokensAddedAtMost[m : Int]{
   tokenAddOnly
   all p : Places | p.tokenChange =< m
+}
+
+//total number of flow changes going out from set of nodes to a set of nodes
+fun flowChangeSum[from, to : set Nodes] : Int{
+  sum f : from, t : to | f.flowChange[t]
 }
 
 //altogether exactly n weight should be added
