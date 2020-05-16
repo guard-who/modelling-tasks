@@ -5,9 +5,11 @@ import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types
 
 import Data.Maybe                        (isNothing)
+import System.IO
 
 main :: IO ()
 main = do
+  hSetBuffering stdout NoBuffering
   (pls,trns,tknChange,flwChange) <- userInput
   let config = defaultPetriTask1Config{
                          basicTask1= 
