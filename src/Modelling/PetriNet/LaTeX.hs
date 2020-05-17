@@ -32,6 +32,7 @@ body petri task switch
  | task == 1 && switch     = task1 <> createPetriTex petri
  | task == 1 && not switch = task1a
  | task == 2 && switch     = task2
+ | task == 2 && not switch = task2a
  | otherwise = mempty
  
 --Math Petri Appearance
@@ -61,6 +62,10 @@ task1a =
 task2 :: LaTeX
 task2 = 
   "Which pair of transitions are in conflict?"
+  
+task2a :: LaTeX
+task2a =
+  "Which of the following Petrinets does have a conflict?"
 
 createPlaces ::Int -> Int -> LaTeX
 createPlaces i p 

@@ -15,7 +15,7 @@ main = do
   let c = checkBasicConfig config
   if isNothing c
   then do 
-    _ <- findConflicts config
+    _ <- findConflicts True config
     print "finished Task2"
   else
     print c

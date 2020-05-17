@@ -137,7 +137,8 @@ petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetCon
 pred showConflNets [ts,tc1,tc2 : set Transitions, pc : Places] {
   #Places = #{places}
   #Transitions = #{transitions}
-  conflict[tc1, tc2, pc] and all u,v : Transitions, q : Places | conflict[u,v,q] implies tc1 + tc2 = u + v
+  all x,y : Transitions, z : Places | not conflictDefault[x,y,z]
+  conflict [tc1, tc2, pc] and all u,v : Transitions, q : Places | conflict[u,v,q] implies tc1 + tc2 = u + v
   #{petriNetConstraints input}
   
 }

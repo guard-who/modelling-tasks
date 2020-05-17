@@ -21,9 +21,7 @@ matchToMath switch config@PetriTask1Config{basicTask1} = do
     Left merror -> error merror
     Right petri -> do
       rightNet <- drawNet petri (graphLayout basicTask1)
-      let tex
-           | switch    = uebung petri 1 switch
-           | otherwise = uebung petri 2 switch
+      let tex = uebung petri 1 switch
       let f = renderFalse petri config
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
