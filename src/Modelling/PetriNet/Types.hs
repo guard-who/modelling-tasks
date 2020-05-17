@@ -6,6 +6,7 @@ data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,Strin
   deriving (Eq,Show)
   
 data Conflict = Conflict{conflictTrans :: (String,String),conflictPlace :: String}
+  deriving Show
 
 type Marking = [Int]
 type Transition = (Marking,Marking)
