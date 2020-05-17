@@ -5,7 +5,7 @@ import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
 data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,String,Int)]}
   deriving (Eq,Show)
   
-type Conflict = (String,String)
+data Conflict = Conflict{conflictTrans :: (String,String),conflictPlace :: String}
 
 type Marking = [Int]
 type Transition = (Marking,Marking)

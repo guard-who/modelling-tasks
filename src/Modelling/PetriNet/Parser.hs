@@ -73,7 +73,9 @@ parseConflict :: AlloyInstance -> Either String Conflict
 parseConflict inst = do
   tc1 <- unscopedSingleSig inst "$showConflNets_tc1" ""
   tc2 <- unscopedSingleSig inst "$showConflNets_tc2" ""
-  return (objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2))
+  pc  <- unscopedSingleSig inst "$showConflNets_pc"  ""
+  return 
+    Conflict{conflictTrans = (objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2)),conflictPlace = objectName (Set.elemAt 0 pc)}
                             
                             --Hilfsfunktionen--
                             
