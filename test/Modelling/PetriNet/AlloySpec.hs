@@ -24,7 +24,7 @@ spec =
 prepPetri :: IO(Petri)
 prepPetri = do
   list <- getInstances (Just 1) (petriNetRnd defaultPetriBasicConfig)
-  let out = convertPetri "tokens" (head list)
+  let out = convertPetri "flow" "tokens" (head list)
   case out of
     Left merror -> error merror
     Right petri -> return petri
