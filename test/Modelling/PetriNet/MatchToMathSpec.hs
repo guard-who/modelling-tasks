@@ -18,5 +18,5 @@ spec = do
           `shouldSatisfy` isJust
   describe "matchToMath" $
     context "out of a given Task1 Config and a Boolean for Tasktype" $
-      it "everything needed to create the Task" $ 
+      it "everything needed to create the Task is generated" $ 
         void (matchToMath True defaultPetriTask1Config) `shouldReturn` ()
