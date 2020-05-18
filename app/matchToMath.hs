@@ -15,15 +15,17 @@ main = do
   hSetBuffering stdout NoBuffering
   (pls,trns,tknChange,flwChange,sw) <- userInput
   let config = defaultPetriTask1Config{
-                         basicTask1= 
-                             defaultPetriBasicConfig{places = pls, transitions = trns}
-                         , tokenChangeOverall = tknChange
-                         , flowChangeOverall = flwChange}
+                         basicTask1 = 
+                           defaultPetriBasicConfig{places = pls, transitions = trns}
+                         , changeTask1 =
+                           defaultPetriChangeConfig{ tokenChangeOverall = tknChange
+                                                   , flowChangeOverall = flwChange}
+                         }
   let ct = checkTask1Config config
   let switch 
         | sw == "b" = False
         | otherwise = True
-  let c  = checkBasicConfig (basicTask1 config)
+  let c  = checkBasicConfig $ basicTask1 config
   if isNothing c
   then if isNothing ct 
        then do

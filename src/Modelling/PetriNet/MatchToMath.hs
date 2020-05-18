@@ -15,8 +15,8 @@ import Text.LaTeX                        (LaTeX)
 
 --True Task1 <-> False Task1a
 matchToMath :: Bool -> PetriTask1Config -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
-matchToMath switch config@PetriTask1Config{basicTask1} = do
-  list <- getInstances (Just 1) (petriNetRnd basicTask1)
+matchToMath switch config@PetriTask1Config{basicTask1,advTask1} = do
+  list <- getInstances (Just 1) (petriNetRnd basicTask1 advTask1)
   case convertPetri "flow" "tokens" (head list) of
     Left merror -> error merror
     Right petri -> do
@@ -55,8 +55,9 @@ checkTask1Config :: PetriTask1Config -> Maybe String
 checkTask1Config PetriTask1Config{basicTask1 = PetriBasicConfig{places,transitions
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
                    , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
-                 , tokenChangeOverall, flowChangeOverall
-                 , maxFlowChangePerEdge, maxTokenChangePerPlace}
+                 , changeTask1 = PetriChangeConfig{tokenChangeOverall, flowChangeOverall
+                   , maxFlowChangePerEdge, maxTokenChangePerPlace}
+                 }
  | tokenChangeOverall < 0
   = Just "The parameter 'tokenChangeOverall' must be non-negative."
  | maxTokenChangePerPlace < 0

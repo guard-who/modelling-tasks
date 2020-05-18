@@ -1,6 +1,6 @@
 module Modelling.PetriNet.Types where
 
-import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
+import Data.GraphViz.Attributes.Complete (GraphvizCommand (Circo))
 
 data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,String,Int)]}
   deriving (Eq,Show)
@@ -31,9 +31,6 @@ data PetriBasicConfig = PetriBasicConfig
   , minFlowOverall :: Int
   , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
-  , presenceOfSelfLoops :: Maybe Bool
-  , presenceOfSinkTransitions :: Maybe Bool
-  , presenceOfSourceTransitions :: Maybe Bool
   , graphLayout :: GraphvizCommand
   }
 
@@ -48,26 +45,47 @@ defaultPetriBasicConfig = PetriBasicConfig
   , minFlowOverall = 3
   , maxFlowOverall = 6
   , maxFlowPerEdge = 2
-  , presenceOfSelfLoops = Just False
+  , graphLayout = Circo
+  }
+  
+data PetriAdvConfig = PetriAdvConfig
+  { presenceOfSelfLoops :: Maybe Bool
+  , presenceOfSinkTransitions :: Maybe Bool
+  , presenceOfSourceTransitions :: Maybe Bool
+  }
+  
+defaultPetriAdvConfig :: PetriAdvConfig
+defaultPetriAdvConfig = PetriAdvConfig
+  { presenceOfSelfLoops = Just False
   , presenceOfSinkTransitions = Just False
   , presenceOfSourceTransitions = Just False
-  , graphLayout = TwoPi
   }
 
-data PetriTask1Config = PetriTask1Config 
-  { basicTask1 :: PetriBasicConfig
-  , tokenChangeOverall :: Int
+data PetriChangeConfig = PetriChangeConfig
+  { tokenChangeOverall :: Int
   , maxTokenChangePerPlace :: Int
   , flowChangeOverall :: Int
   , maxFlowChangePerEdge :: Int
   }
   
-defaultPetriTask1Config :: PetriTask1Config
-defaultPetriTask1Config = PetriTask1Config
-  { basicTask1 = defaultPetriBasicConfig
-  , tokenChangeOverall = 0
+defaultPetriChangeConfig :: PetriChangeConfig
+defaultPetriChangeConfig = PetriChangeConfig
+  { tokenChangeOverall = 0
   , maxTokenChangePerPlace = 0
   , flowChangeOverall = 2
   , maxFlowChangePerEdge = 1
+  }
+
+data PetriTask1Config = PetriTask1Config 
+  { basicTask1 :: PetriBasicConfig
+  , advTask1 :: PetriAdvConfig
+  , changeTask1 :: PetriChangeConfig
+  }
+  
+defaultPetriTask1Config :: PetriTask1Config
+defaultPetriTask1Config = PetriTask1Config
+  { basicTask1 = defaultPetriBasicConfig
+  , advTask1 = defaultPetriAdvConfig
+  , changeTask1 = defaultPetriChangeConfig
   }
   

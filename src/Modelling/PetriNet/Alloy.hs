@@ -4,7 +4,7 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Modelling.PetriNet.Alloy 
-  (petriNetRnd,renderFalse,petriNetConfl) where
+  (petriNetRnd,renderFalse,petriNetConfl,petriScope) where
 
 import Modelling.PetriNet.Types
 
@@ -53,24 +53,8 @@ modulePetriConstraints = removeLines 4 $(embedStringFile "lib/Alloy/PetriConstra
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
 
-petriNetConstraints :: PetriBasicConfig -> String
-petriNetConstraints PetriBasicConfig{atLeastActive,minTokensOverall,maxTokensOverall,maxTokensPerPlace,
-                        minFlowOverall,maxFlowOverall,maxFlowPerEdge,
-                        presenceOfSelfLoops,presenceOfSinkTransitions,presenceOfSourceTransitions} = [i|
-  let t = tokenSum[Places] | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
-  all p : Places | p.tokens =< #{maxTokensPerPlace}
-  all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
-  let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
-  #ts >= #{atLeastActive}
-  theActivatedTransitions[ts]
-  graphIsConnected[]
-  #{maybe "" petriLoops presenceOfSelfLoops}
-  #{maybe "" petriSink presenceOfSinkTransitions}
-  #{maybe "" petriSource presenceOfSourceTransitions}
-|]
-
-petriNetRnd :: PetriBasicConfig -> String
-petriNetRnd input@PetriBasicConfig{places,transitions} = [i|module PetriNetRnd
+petriNetRnd :: PetriBasicConfig -> PetriAdvConfig -> String
+petriNetRnd input@PetriBasicConfig{places,transitions} advConfig = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -86,7 +70,8 @@ fact{
 pred showNets [ts : set Transitions] {
   #Places = #{places}
   #Transitions = #{transitions}
-  #{petriNetConstraints input}
+  #{compBasicConstraints input}
+  #{compAdvConstraints advConfig}
   
 }
 run showNets for #{petriScope input}
@@ -95,7 +80,7 @@ run showNets for #{petriScope input}
 
 renderFalse :: Petri -> PetriTask1Config -> String
 renderFalse Petri{initialMarking,trans}
-    PetriTask1Config{basicTask1,flowChangeOverall, maxFlowChangePerEdge, tokenChangeOverall, maxTokenChangePerPlace} = [i| module FalseNet
+    PetriTask1Config{basicTask1,advTask1,changeTask1} = [i| module FalseNet
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -112,12 +97,10 @@ fact{
 }
 
 pred showFalseNets[ts : set Transitions]{
-  #{petriNetConstraints basicTask1}
-  flowChangeAbsolutesSum[Nodes,Nodes] = #{flowChangeOverall}
-  maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
-  tokenChangeAbsolutesSum[Places] = #{tokenChangeOverall}
-  maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
-
+  #{compBasicConstraints basicTask1}
+  #{compAdvConstraints advTask1}
+  #{compChange changeTask1}
+  
 }
 
 run showFalseNets for #{petriScope basicTask1}
@@ -132,18 +115,57 @@ petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetCon
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-
-
 pred showConflNets [ts,tc1,tc2 : set Transitions, pc : Places] {
   #Places = #{places}
   #Transitions = #{transitions}
   all x,y : Transitions, z : Places | not conflictDefault[x,y,z]
   conflict [tc1, tc2, pc] and all u,v : Transitions, q : Places | conflict[u,v,q] implies tc1 + tc2 = u + v
-  #{petriNetConstraints input}
+  defaultGraphIsConnected[]
+  #{compBasicConstraints input}
+  theActivatedDefaultTransitions[ts]
   
 }
 run showConflNets for #{petriScope input}
 
+|]
+
+----------------------"Building-Kit"----------------------------
+
+compBasicConstraints :: PetriBasicConfig -> String
+compBasicConstraints PetriBasicConfig
+                        {atLeastActive,minTokensOverall
+                        ,maxTokensOverall,maxTokensPerPlace
+                        , minFlowOverall,maxFlowOverall,maxFlowPerEdge
+                        } = [i|
+  let t = tokenSum[Places] | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
+  all p : Places | p.tokens =< #{maxTokensPerPlace}
+  all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
+  let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
+  #ts >= #{atLeastActive}
+  theActivatedTransitions[ts]
+  graphIsConnected[]
+  
+|]
+
+compAdvConstraints :: PetriAdvConfig -> String
+compAdvConstraints PetriAdvConfig
+                        { presenceOfSelfLoops, presenceOfSinkTransitions
+                        , presenceOfSourceTransitions
+                        } = [i| 
+  #{maybe "" petriLoops presenceOfSelfLoops}
+  #{maybe "" petriSink presenceOfSinkTransitions}
+  #{maybe "" petriSource presenceOfSourceTransitions}
+|]
+
+compChange :: PetriChangeConfig -> String
+compChange PetriChangeConfig
+                  {flowChangeOverall, maxFlowChangePerEdge
+                  , tokenChangeOverall, maxTokenChangePerPlace
+                  } = [i|
+  flowChangeAbsolutesSum[Nodes,Nodes] = #{flowChangeOverall}
+  maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
+  tokenChangeAbsolutesSum[Places] = #{tokenChangeOverall}
+  maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
 |]
 
 givPlaces :: Int -> String
