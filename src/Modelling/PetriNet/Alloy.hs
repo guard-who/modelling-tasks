@@ -108,7 +108,7 @@ run showFalseNets for #{petriScope basicTask1}
 |]
 
 petriNetConfl :: PetriBasicConfig -> String
-petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetConfl
+petriNetConfl input@PetriBasicConfig{places,transitions,atLeastActive} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -122,6 +122,7 @@ pred showConflNets [activatedTrans,defaultActivTrans,conflictTrans1,conflictTran
   conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v
   defaultGraphIsConnected[]
   #{compBasicConstraints input}
+  #defaultActivTrans >= #{atLeastActive}
   theActivatedDefaultTransitions[defaultActivTrans]
   
 }
