@@ -67,7 +67,7 @@ fact{
   no givenTransitions
 }
 
-pred showNets [ts : set Transitions] {
+pred showNets [activatedTrans : set Transitions] {
   #Places = #{places}
   #Transitions = #{transitions}
   #{compBasicConstraints input}
@@ -96,7 +96,7 @@ fact{
   #{defFlow 1 trans}
 }
 
-pred showFalseNets[ts : set Transitions]{
+pred showFalseNets[activatedTrans : set Transitions]{
   #{compBasicConstraints basicTask1}
   #{compAdvConstraints advTask1}
   #{compChange changeTask1}
@@ -115,14 +115,14 @@ petriNetConfl input@PetriBasicConfig{places,transitions} = [i|module PetriNetCon
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showConflNets [ts,tc1,tc2 : set Transitions, pc : Places] {
+pred showConflNets [activatedTrans,defaultActivTrans,conflictTrans1,conflictTrans2 : set Transitions, conflictPlace : Places] {
   #Places = #{places}
   #Transitions = #{transitions}
   all x,y : Transitions, z : Places | not conflictDefault[x,y,z]
-  conflict [tc1, tc2, pc] and all u,v : Transitions, q : Places | conflict[u,v,q] implies tc1 + tc2 = u + v
+  conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v
   defaultGraphIsConnected[]
   #{compBasicConstraints input}
-  theActivatedDefaultTransitions[ts]
+  theActivatedDefaultTransitions[defaultActivTrans]
   
 }
 run showConflNets for #{petriScope input}
@@ -141,8 +141,8 @@ compBasicConstraints PetriBasicConfig
   all p : Places | p.tokens =< #{maxTokensPerPlace}
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
   let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
-  #ts >= #{atLeastActive}
-  theActivatedTransitions[ts]
+  #activatedTrans >= #{atLeastActive}
+  theActivatedTransitions[activatedTrans]
   graphIsConnected[]
   
 |]
