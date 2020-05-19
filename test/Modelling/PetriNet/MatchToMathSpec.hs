@@ -14,7 +14,8 @@ spec = do
       checkTask1Config defaultPetriTask1Config `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with nessecary changes" $
-        checkTask1Config defaultPetriTask1Config{tokenChangeOverall = -1} 
+        checkTask1Config defaultPetriTask1Config
+              {changeTask1 = PetriChangeConfig{tokenChangeOverall = -1}}
           `shouldSatisfy` isJust
   describe "matchToMath" $
     context "out of a given Task1 Config and a Boolean for Tasktype" $

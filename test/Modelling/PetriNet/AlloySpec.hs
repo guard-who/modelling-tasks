@@ -3,7 +3,7 @@ module Modelling.PetriNet.AlloySpec where
 import Modelling.PetriNet.Alloy
 import Modelling.PetriNet.Parser (convertPetri)
 import Modelling.PetriNet.Types         
-  (defaultPetriBasicConfig,defaultPetriTask1Config,Petri)
+  (defaultPetriBasicConfig,defaultPetriTask1Config,defaultPetriAdvConfig,Petri)
 
 import Test.Hspec
 import Language.Alloy.Call       (existsInstance,getInstances)
@@ -23,7 +23,8 @@ spec = do
         
 prepPetri :: IO(Petri)
 prepPetri = do
-  list <- getInstances (Just 1) (petriNetRnd defaultPetriBasicConfig)
+  list <- getInstances (Just 1) 
+           (petriNetRnd defaultPetriBasicConfig defaultPetriAdvConfig)
   let out = convertPetri "flow" "tokens" (head list)
   case out of
     Left merror -> error merror
