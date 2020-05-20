@@ -10,8 +10,8 @@ spec :: Spec
 spec = 
   describe "checkBasicConfig" $ do
     it "checks if the basic Input is in given boundaries" $ 
-      checkBasicConfig defaultPetriBasicConfig `shouldBe` Nothing
+      checkBasicConfig defaultBasicConfig `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with nessecary changes" $
-        checkBasicConfig defaultPetriBasicConfig{places = 0} 
+        checkBasicConfig defaultBasicConfig{places = 0} 
           `shouldSatisfy` isJust

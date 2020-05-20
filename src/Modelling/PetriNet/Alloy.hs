@@ -2,6 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# Language DuplicateRecordFields #-}
 
 module Modelling.PetriNet.Alloy 
   (petriNetRnd,renderFalse,petriNetConfl,petriScope) where
@@ -11,8 +12,8 @@ import Modelling.PetriNet.Types
 import Data.String.Interpolate
 import Data.FileEmbed
 
-petriScope :: PetriBasicConfig -> Int
-petriScope PetriBasicConfig{places,transitions,maxFlowPerEdge} = max
+petriScope :: BasicConfig -> Int
+petriScope BasicConfig{places,transitions,maxFlowPerEdge} = max
   (ceiling ( 2
   + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) places
   + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) transitions
@@ -53,8 +54,8 @@ modulePetriConstraints = removeLines 4 $(embedStringFile "lib/Alloy/PetriConstra
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
 
-petriNetRnd :: PetriBasicConfig -> PetriAdvConfig -> String
-petriNetRnd input@PetriBasicConfig{places,transitions} advConfig = [i|module PetriNetRnd
+petriNetRnd :: BasicConfig -> AdvConfig -> String
+petriNetRnd input@BasicConfig{places,transitions} advConfig = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -78,9 +79,9 @@ run showNets for #{petriScope input}
 
 |]
 
-renderFalse :: Petri -> PetriTask1Config -> String
+renderFalse :: Petri -> MathConfig -> String
 renderFalse Petri{initialMarking,trans}
-    PetriTask1Config{basicTask1,advTask1,changeTask1} = [i| module FalseNet
+    MathConfig{basicTask,advTask,changeTask} = [i| module FalseNet
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -97,18 +98,18 @@ fact{
 }
 
 pred showFalseNets[activatedTrans : set Transitions]{
-  #{compBasicConstraints basicTask1}
-  #{compAdvConstraints advTask1}
-  #{compChange changeTask1}
+  #{compBasicConstraints basicTask}
+  #{compAdvConstraints advTask}
+  #{compChange changeTask}
   
 }
 
-run showFalseNets for #{petriScope basicTask1}
+run showFalseNets for #{petriScope basicTask}
 
 |]
 
-petriNetConfl :: PetriBasicConfig -> String
-petriNetConfl input@PetriBasicConfig{places,transitions,atLeastActive} = [i|module PetriNetConfl
+petriNetConfl :: BasicConfig -> String
+petriNetConfl input@BasicConfig{places,transitions,atLeastActive} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -132,8 +133,8 @@ run showConflNets for #{petriScope input}
 
 ----------------------"Building-Kit"----------------------------
 
-compBasicConstraints :: PetriBasicConfig -> String
-compBasicConstraints PetriBasicConfig
+compBasicConstraints :: BasicConfig -> String
+compBasicConstraints BasicConfig
                         {atLeastActive,minTokensOverall
                         ,maxTokensOverall,maxTokensPerPlace
                         , minFlowOverall,maxFlowOverall,maxFlowPerEdge
@@ -148,8 +149,8 @@ compBasicConstraints PetriBasicConfig
   
 |]
 
-compAdvConstraints :: PetriAdvConfig -> String
-compAdvConstraints PetriAdvConfig
+compAdvConstraints :: AdvConfig -> String
+compAdvConstraints AdvConfig
                         { presenceOfSelfLoops, presenceOfSinkTransitions
                         , presenceOfSourceTransitions
                         } = [i| 
@@ -158,8 +159,8 @@ compAdvConstraints PetriAdvConfig
   #{maybe "" petriSource presenceOfSourceTransitions}
 |]
 
-compChange :: PetriChangeConfig -> String
-compChange PetriChangeConfig
+compChange :: ChangeConfig -> String
+compChange ChangeConfig
                   {flowChangeOverall, maxFlowChangePerEdge
                   , tokenChangeOverall, maxTokenChangePerPlace
                   } = [i|

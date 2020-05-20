@@ -4,8 +4,8 @@ module Modelling.PetriNet.BasicNetFunctions where
 
 import Modelling.PetriNet.Types
 
-checkBasicConfig :: PetriBasicConfig -> Maybe String
-checkBasicConfig PetriBasicConfig{places,transitions,atLeastActive
+checkBasicConfig :: BasicConfig -> Maybe String
+checkBasicConfig BasicConfig{places,transitions,atLeastActive
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
                    , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
  | places <= 0

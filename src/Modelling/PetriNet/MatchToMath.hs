@@ -1,6 +1,7 @@
+{-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.MatchToMath (matchToMath,checkTask1Config)  where
+module Modelling.PetriNet.MatchToMath (matchToMath,checkMathConfig)  where
 
 import Modelling.PetriNet.Alloy          (petriNetRnd, renderFalse)
 import Modelling.PetriNet.Diagram
@@ -14,19 +15,19 @@ import Language.Alloy.Call               (AlloyInstance,getInstances)
 import Text.LaTeX                        (LaTeX)
 
 --True Task1 <-> False Task1a
-matchToMath :: Bool -> PetriTask1Config -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
-matchToMath switch config@PetriTask1Config{basicTask1,advTask1} = do
-  list <- getInstances (Just 1) (petriNetRnd basicTask1 advTask1)
+matchToMath :: Bool -> MathConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
+matchToMath switch config@MathConfig{basicTask,advTask} = do
+  list <- getInstances (Just 1) (petriNetRnd basicTask advTask)
   case convertPetri "flow" "tokens" (head list) of
     Left merror -> error merror
     Right petri -> do
-      rightNet <- drawNet petri (graphLayout basicTask1)
+      rightNet <- drawNet petri (graphLayout basicTask)
       let tex = uebung petri 1 switch
       let f = renderFalse petri config
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
       if switch then do
-        fDia <- mapM (flip drawNet (graphLayout basicTask1)) fNets
+        fDia <- mapM (flip drawNet (graphLayout basicTask)) fNets
         return (rightNet, tex, Left $ zip fDia changes)
       else do
         let fTex = map createPetriTex fNets
@@ -51,11 +52,11 @@ runFalseParser alloy = do
   let change = parseChange alloy
   (petri,change)
   
-checkTask1Config :: PetriTask1Config -> Maybe String
-checkTask1Config PetriTask1Config{basicTask1 = PetriBasicConfig{places,transitions
+checkMathConfig :: MathConfig -> Maybe String
+checkMathConfig MathConfig{basicTask = BasicConfig{places,transitions
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
                    , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
-                 , changeTask1 = PetriChangeConfig{tokenChangeOverall, flowChangeOverall
+                 , changeTask = ChangeConfig{tokenChangeOverall, flowChangeOverall
                    , maxFlowChangePerEdge, maxTokenChangePerPlace}
                  }
  | tokenChangeOverall < 0

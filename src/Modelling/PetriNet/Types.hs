@@ -1,3 +1,5 @@
+{-# Language DuplicateRecordFields #-}
+
 module Modelling.PetriNet.Types where
 
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (Circo))
@@ -21,7 +23,7 @@ defaultPetri = Petri
   , trans = [([1,0,0],[0,1,0]),([1,0,0],[0,0,1]),([0,1,1],[2,0,0])]
   }
   
-data PetriBasicConfig = PetriBasicConfig
+data BasicConfig = BasicConfig
   { places :: Int
   , transitions :: Int
   , atLeastActive :: Int
@@ -34,8 +36,8 @@ data PetriBasicConfig = PetriBasicConfig
   , graphLayout :: GraphvizCommand
   }
 
-defaultPetriBasicConfig :: PetriBasicConfig
-defaultPetriBasicConfig = PetriBasicConfig
+defaultBasicConfig :: BasicConfig
+defaultBasicConfig = BasicConfig
   { places = 3
   , transitions = 3
   , atLeastActive = 1
@@ -48,44 +50,53 @@ defaultPetriBasicConfig = PetriBasicConfig
   , graphLayout = Circo
   }
   
-data PetriAdvConfig = PetriAdvConfig
+data AdvConfig = AdvConfig
   { presenceOfSelfLoops :: Maybe Bool
   , presenceOfSinkTransitions :: Maybe Bool
   , presenceOfSourceTransitions :: Maybe Bool
   }
   
-defaultPetriAdvConfig :: PetriAdvConfig
-defaultPetriAdvConfig = PetriAdvConfig
+defaultAdvConfig :: AdvConfig
+defaultAdvConfig = AdvConfig
   { presenceOfSelfLoops = Just False
   , presenceOfSinkTransitions = Just False
   , presenceOfSourceTransitions = Just False
   }
 
-data PetriChangeConfig = PetriChangeConfig
+data ChangeConfig = ChangeConfig
   { tokenChangeOverall :: Int
   , maxTokenChangePerPlace :: Int
   , flowChangeOverall :: Int
   , maxFlowChangePerEdge :: Int
   }
   
-defaultPetriChangeConfig :: PetriChangeConfig
-defaultPetriChangeConfig = PetriChangeConfig
+defaultChangeConfig :: ChangeConfig
+defaultChangeConfig = ChangeConfig
   { tokenChangeOverall = 0
   , maxTokenChangePerPlace = 0
   , flowChangeOverall = 2
   , maxFlowChangePerEdge = 1
   }
 
-data PetriTask1Config = PetriTask1Config 
-  { basicTask1 :: PetriBasicConfig
-  , advTask1 :: PetriAdvConfig
-  , changeTask1 :: PetriChangeConfig
+data MathConfig = MathConfig 
+  { basicTask :: BasicConfig
+  , advTask :: AdvConfig
+  , changeTask :: ChangeConfig
   }
   
-defaultPetriTask1Config :: PetriTask1Config
-defaultPetriTask1Config = PetriTask1Config
-  { basicTask1 = defaultPetriBasicConfig
-  , advTask1 = defaultPetriAdvConfig
-  , changeTask1 = defaultPetriChangeConfig
+defaultMathConfig :: MathConfig
+defaultMathConfig = MathConfig
+  { basicTask = defaultBasicConfig
+  , advTask = defaultAdvConfig
+  , changeTask = defaultChangeConfig
+  }
+  
+data ConflictConfig = ConflictConfig
+  { basicTask :: BasicConfig
+  }
+
+defaultConflictConfig :: ConflictConfig
+defaultConflictConfig = ConflictConfig
+  { basicTask = defaultBasicConfig
   }
   

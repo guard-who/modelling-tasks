@@ -4,7 +4,7 @@ import Modelling.PetriNet.Alloy          (petriNetConfl)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser         (convertPetri, parseConflict)
-import Modelling.PetriNet.Types
+import Modelling.PetriNet.Types          (Petri(..),Conflict,BasicConfig(..))
 
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
@@ -16,7 +16,7 @@ import Text.LaTeX                        (LaTeX)
 placeHoldPetri :: Petri
 placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
-findConflicts :: Bool -> PetriBasicConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+findConflicts :: Bool -> BasicConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
 findConflicts sw config = do
   list <- getInstances (Just 1) (petriNetConfl config)
   confl <- getNet "flow" "tokens" (head list) (graphLayout config)

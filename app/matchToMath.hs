@@ -3,7 +3,7 @@ module Main (main) where
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types
-
+  (defaultBasicConfig,BasicConfig(..),defaultChangeConfig,ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
@@ -14,18 +14,18 @@ main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
   (pls,trns,tknChange,flwChange,sw) <- userInput
-  let config = defaultPetriTask1Config{
-                         basicTask1 = 
-                           defaultPetriBasicConfig{places = pls, transitions = trns}
-                         , changeTask1 =
-                           defaultPetriChangeConfig{ tokenChangeOverall = tknChange
+  let config = defaultMathConfig{
+                         basicTask = 
+                           defaultBasicConfig{places = pls, transitions = trns}
+                         , changeTask =
+                           defaultChangeConfig{ tokenChangeOverall = tknChange
                                                    , flowChangeOverall = flwChange}
                          }
-  let ct = checkTask1Config config
+  let ct = checkMathConfig config
   let switch 
         | sw == "b" = False
         | otherwise = True
-  let c  = checkBasicConfig $ basicTask1 config
+  let c  = checkBasicConfig $ basicTask config
   if isNothing c
   then if isNothing ct 
        then do

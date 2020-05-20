@@ -2,8 +2,8 @@ module Main (main) where
 
 import Modelling.PetriNet.FindConflicts
 import Modelling.PetriNet.BasicNetFunctions
-import Modelling.PetriNet.Types
-
+import Modelling.PetriNet.Types          
+  (defaultBasicConfig,BasicConfig(..),defaultConflictConfig,ConflictConfig(..),Conflict)
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
@@ -14,11 +14,11 @@ main :: IO()
 main = do
   hSetBuffering stdout NoBuffering
   (pls,trns) <- userInput
-  let config = defaultPetriBasicConfig{places = pls, transitions = trns}
-  let c = checkBasicConfig config
+  let config = defaultConflictConfig{basicTask = defaultBasicConfig{places = pls, transitions = trns}}
+  let c = checkBasicConfig (basicTask config)
   if isNothing c
   then do 
-    (latex,conflDia) <- findConflicts True config
+    (latex,conflDia) <- findConflicts True (basicTask config)
     renderFile ("app/task2.tex") latex
     parseConflDia 1 conflDia
   else

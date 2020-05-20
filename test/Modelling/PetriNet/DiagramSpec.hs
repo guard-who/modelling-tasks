@@ -1,7 +1,7 @@
 module Modelling.PetriNet.DiagramSpec where
 
 import Modelling.PetriNet.Diagram
-import Modelling.PetriNet.Types
+import Modelling.PetriNet.Types          (defaultPetri)
 
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
 import Diagrams.Backend.SVG              (renderSVG)
