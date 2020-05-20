@@ -4,6 +4,7 @@
 module Modelling.PetriNet.MatchToMath (matchToMath,checkMathConfig)  where
 
 import Modelling.PetriNet.Alloy          (petriNetRnd, renderFalse)
+import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser
@@ -53,7 +54,7 @@ runFalseParser alloy = do
   (petri,change)
   
 checkMathConfig :: MathConfig -> Maybe String
-checkMathConfig MathConfig{basicTask = BasicConfig{places,transitions
+checkMathConfig m@MathConfig{basicTask = BasicConfig{places,transitions
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
                    , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
                  , changeTask = ChangeConfig{tokenChangeOverall, flowChangeOverall
@@ -84,4 +85,4 @@ checkMathConfig MathConfig{basicTask = BasicConfig{places,transitions
  | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall
   = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
  | otherwise
-  = Nothing
+  = checkBasicConfig (basicTask (m :: MathConfig))

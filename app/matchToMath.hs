@@ -1,7 +1,6 @@
 module Main (main) where
 
 import Modelling.PetriNet.MatchToMath
-import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types
   (defaultBasicConfig,BasicConfig(..),defaultChangeConfig,ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
 import Data.Maybe                        (isNothing)
@@ -21,22 +20,18 @@ main = do
                            defaultChangeConfig{ tokenChangeOverall = tknChange
                                                    , flowChangeOverall = flwChange}
                          }
-  let ct = checkMathConfig config
+  let c = checkMathConfig config
   let switch 
         | sw == "b" = False
         | otherwise = True
-  let c  = checkBasicConfig $ basicTask config
-  if isNothing c
-  then if isNothing ct 
-       then do
-         (dia,tex,falseNets) <- matchToMath switch config
-         renderSVG ("app/change0.svg") (mkWidth 200) dia
-         renderFile ("app/change0.tex") tex
-         case falseNets of
-           Right falseTex -> parseChangeTex 1 falseTex
-           Left falseDia  -> parseChangeDia 1 falseDia
-       else 
-         print ct
+  if isNothing c 
+     then do
+       (dia,tex,falseNets) <- matchToMath switch config
+       renderSVG ("app/change0.svg") (mkWidth 200) dia
+       renderFile ("app/change0.tex") tex
+       case falseNets of
+         Right falseTex -> parseChangeTex 1 falseTex
+         Left falseDia  -> parseChangeDia 1 falseDia
   else
     print c 
 
