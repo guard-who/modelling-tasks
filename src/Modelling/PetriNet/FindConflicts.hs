@@ -1,6 +1,6 @@
 module Modelling.PetriNet.FindConflicts (findConflicts) where
 
-import Modelling.PetriNet.Alloy          (petriNetConfl)
+import Modelling.PetriNet.Alloy          (petriNetRel)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser         (convertPetri, parseConflict)
@@ -18,10 +18,10 @@ placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
 findConflicts :: Bool -> BasicConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
 findConflicts sw config = do
-  list <- getInstances (Just 1) (petriNetConfl config)
+  list <- getInstances (Just 1) (petriNetRel False config)
   confl <- getNet "flow" "tokens" (head list) (graphLayout config)
   let tex = uebung placeHoldPetri 2 sw
-  if sw 
+  if sw
   then return (tex, [confl])
   else do
     net <- getNet "defaultFlow" "defaultTokens" (head list) (graphLayout config)

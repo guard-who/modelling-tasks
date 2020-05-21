@@ -5,7 +5,7 @@
 {-# Language DuplicateRecordFields #-}
 
 module Modelling.PetriNet.Alloy 
-  (petriNetRnd,renderFalse,petriNetConfl,petriScope) where
+  (petriNetRnd,renderFalse,petriNetRel,petriScope) where
 
 import Modelling.PetriNet.Types
 
@@ -35,6 +35,19 @@ petriSource :: Bool -> String
 petriSource = \case
  True  -> "some t : Transitions | sourceTransitions[t]"
  False -> "no t : Transitions | sourceTransitions[t]"
+ 
+petriRelation :: Bool -> String
+petriRelation = \case
+ True  -> "concurrent [relationTrans1+relationTrans2] and all u : Transitions | concurrent[u] implies relationTrans1 + relationTrans2 = u \n"
+            ++"no x : Transitions | concurrentDefault[x]"
+ False -> "all x,y : Transitions, z : Places | not conflictDefault[x,y,z] \n"
+           ++"conflict [relationTrans1, relationTrans2, conflictPlace] and all u,v : Transitions, q : Places "
+           ++"| conflict[u,v,q] implies relationTrans1 + relationTrans2 = u + v"
+           
+petriRelationP :: Bool -> String
+petriRelationP = \case
+ True  -> ""
+ False -> ", relationPlace : Places"
 
 modulePetriSignature :: String
 modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
@@ -108,26 +121,25 @@ run showFalseNets for #{petriScope basicTask}
 
 |]
 
-petriNetConfl :: BasicConfig -> String
-petriNetConfl input@BasicConfig{places,transitions,atLeastActive} = [i|module PetriNetConfl
+petriNetRel :: Bool -> BasicConfig -> String
+petriNetRel switch input@BasicConfig{places,transitions,atLeastActive} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showConflNets [activatedTrans,defaultActivTrans,conflictTrans1,conflictTrans2 : set Transitions, conflictPlace : Places] {
+pred showRelNets [activatedTrans,defaultActivTrans,relationTrans1,relationTrans2 : set Transitions #{petriRelationP switch} ] {
   #Places = #{places}
   #Transitions = #{transitions}
-  all x,y : Transitions, z : Places | not conflictDefault[x,y,z]
-  conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v
+  #{petriRelation switch}
   defaultGraphIsConnected[]
   #{compBasicConstraints input}
   #defaultActivTrans >= #{atLeastActive}
   theActivatedDefaultTransitions[defaultActivTrans]
   
 }
-run showConflNets for #{petriScope input}
+run showRelNets for #{petriScope input}
 
 |]
 

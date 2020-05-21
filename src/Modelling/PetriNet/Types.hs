@@ -9,6 +9,8 @@ data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,Strin
   
 data Conflict = Conflict{conflictTrans :: (String,String),conflictPlace :: String}
   deriving Show
+  
+type Concurrent = [String]
 
 type Marking = [Int]
 type Transition = (Marking,Marking)

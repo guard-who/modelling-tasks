@@ -71,11 +71,17 @@ tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName va
                             
 parseConflict :: AlloyInstance -> Either String Conflict
 parseConflict inst = do
-  tc1 <- unscopedSingleSig inst "$showConflNets_conflictTrans1" ""
-  tc2 <- unscopedSingleSig inst "$showConflNets_conflictTrans2" ""
-  pc  <- unscopedSingleSig inst "$showConflNets_conflictPlace"  ""
+  tc1 <- unscopedSingleSig inst "$showRelNets_relationTrans1" ""
+  tc2 <- unscopedSingleSig inst "$showRelNets_relationTrans2" ""
+  pc  <- unscopedSingleSig inst "$showRelNets_conflictPlace"  ""
   return 
     Conflict{conflictTrans = (objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2)),conflictPlace = objectName (Set.elemAt 0 pc)}
+    
+-- parseConcurrency :: AlloyInstance -> Either String Concurrent
+-- parseConcurrency inst = do
+  -- tc1 <- unscopedSingleSig inst "$showRelNets_relationTrans1" ""
+  -- tc2 <- unscopedSingleSig inst "$showRelNets_relationTrans2" ""
+  -- return [objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2)]
                             
                             --Hilfsfunktionen--
                             
