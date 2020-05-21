@@ -13,24 +13,31 @@ import Text.LaTeX                        (renderFile)
 main :: IO()
 main = do
   hSetBuffering stdout NoBuffering
-  (pls,trns) <- userInput
+  (pls,trns,nets,sw) <- userInput
   let config = defaultConflictConfig{basicTask = defaultBasicConfig{places = pls, transitions = trns}}
   let c = checkBasicConfig (basicTask config)
+  let switch 
+        | sw == "b" = False
+        | otherwise = True
   if isNothing c
   then do 
-    (latex,conflDia) <- findConflicts True (basicTask config)
+    (latex,conflDia) <- findConflicts switch nets (basicTask config)
     renderFile ("app/task2.tex") latex
     parseConflDia 1 conflDia
   else
     print c
 
-userInput :: IO (Int,Int)
+userInput :: IO (Int,Int,Int,String)
 userInput = do   
   putStr "Number of Places: "
   pls <- getLine
   putStr "Number of Transitions: "
   trns <- getLine
-  return (read pls, read trns)
+  putStr "Number of ConflictNets: "
+  nets <- getLine
+  putStr "Which tasktype would you like to use? a:Show the occuring conflicts in the Nets, b: Show which Net doesn't have a Conflict \n"
+  switch <- getLine
+  return (read pls, read trns,read nets,switch)
   
 parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO ()
 parseConflDia _ []               = print "no more Nets"

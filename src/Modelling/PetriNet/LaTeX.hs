@@ -61,11 +61,11 @@ task1a =
 --FindConflicts
 task2 :: LaTeX
 task2 = 
-  "Which pair of transitions are in conflict?"
+  "Which pair of transitions are in conflict in each Petrinet?"
   
 task2a :: LaTeX
 task2a =
-  "Which of the following Petrinets does have a conflict?"
+  "Which of the following Petrinets doesn't has a conflict?"
 
 createPlaces ::Int -> Int -> LaTeX
 createPlaces i p 

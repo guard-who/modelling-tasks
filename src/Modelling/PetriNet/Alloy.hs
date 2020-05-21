@@ -40,14 +40,14 @@ petriRelation :: Bool -> String
 petriRelation = \case
  True  -> "concurrent [relationTrans1+relationTrans2] and all u : Transitions | concurrent[u] implies relationTrans1 + relationTrans2 = u \n"
             ++"no x : Transitions | concurrentDefault[x]"
- False -> "all x,y : Transitions, z : Places | not conflictDefault[x,y,z] \n"
+ False -> "no x,y : Transitions, z : Places | conflictDefault[x,y,z] \n"
            ++"conflict [relationTrans1, relationTrans2, conflictPlace] and all u,v : Transitions, q : Places "
            ++"| conflict[u,v,q] implies relationTrans1 + relationTrans2 = u + v"
            
 petriRelationP :: Bool -> String
 petriRelationP = \case
  True  -> ""
- False -> ", relationPlace : Places"
+ False -> ", conflictPlace : Places"
 
 modulePetriSignature :: String
 modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
