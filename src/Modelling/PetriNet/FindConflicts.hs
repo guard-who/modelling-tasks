@@ -16,16 +16,16 @@ import Text.LaTeX                        (LaTeX)
 placeHoldPetri :: Petri
 placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
-findConflicts :: Bool -> Int -> BasicConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
-findConflicts sw nets config = do
-  list <- getInstances (Just (toInteger nets)) (petriNetRel False config)
-  confl <- sequence [getNet "flow" "tokens" inst (graphLayout config) | inst <- list]
+findConflicts :: Bool -> BasicConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+findConflicts sw config = do
+  list <- getInstances (Just 1) (petriNetRel False config)
+  confl <- getNet "flow" "tokens" (head list) (graphLayout config)
   let tex = uebung placeHoldPetri 2 sw
   if sw
-  then return (tex, confl)
+  then return (tex, [confl])
   else do
     net <- getNet "defaultFlow" "defaultTokens" (head list) (graphLayout config)
-    return (tex, (net:confl))
+    return (tex, [confl,net])
         
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Conflict)
 getNet st nd inst gc = do

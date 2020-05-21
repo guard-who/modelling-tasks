@@ -12,7 +12,7 @@ spec = do
   describe "findConflicts" $
     context "out of a given basic-config, count of Nets and a Boolean for the tasktype" $
       it "everything needed to create the Task is generated" $ do
-        (tex,diaConfl) <- findConflicts True 3 defaultBasicConfig 
+        (tex,diaConfl) <- findConflicts True defaultBasicConfig 
         print (get2ndElements diaConfl) `shouldReturn` ()
         
 get2ndElements :: [(a,b)] -> [b]
