@@ -69,6 +69,6 @@ userInput = do
 parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO ()
 parseConflDia _ []               = print "no more Nets"
 parseConflDia i ((dia,confl):rs) = do
-  renderSVG ("app/conflict"++show i++".svg") (mkWidth 200) dia
+  renderSVG ("app/conflict"++show i++".svg") (mkWidth 400) dia
   print confl
   parseConflDia (i+1) rs

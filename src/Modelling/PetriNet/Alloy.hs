@@ -128,7 +128,7 @@ specCompConfl basic@BasicConfig{places,transitions,atLeastActive} change = [i|
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [activatedTrans,defaultActivTrans,conflictTrans1,conflictTrans2 : set Transitions, conflictPlace : Places] {
+pred showRelNets [activatedTrans,defaultActivTrans: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places] {
   #Places = #{places}
   #Transitions = #{transitions}
   #{compBasicConstraints basic}
