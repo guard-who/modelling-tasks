@@ -5,7 +5,7 @@
 {-# Language DuplicateRecordFields #-}
 
 module Modelling.PetriNet.Alloy 
-  (petriNetRnd,renderFalse,petriNetRel,petriScope) where
+  (petriNetRnd,renderFalse,petriNetFindConfl,petriNetPickConfl,petriScope) where
 
 import Modelling.PetriNet.Types
 
@@ -36,18 +36,18 @@ petriSource = \case
  True  -> "some t : Transitions | sourceTransitions[t]"
  False -> "no t : Transitions | sourceTransitions[t]"
  
-petriRelation :: Bool -> String
-petriRelation = \case
- True  -> "concurrent [relationTrans1+relationTrans2] and all u : Transitions | concurrent[u] implies relationTrans1 + relationTrans2 = u \n"
-            ++"no x : Transitions | concurrentDefault[x]"
- False -> "no x,y : Transitions, z : Places | conflictDefault[x,y,z] \n"
-           ++"conflict [relationTrans1, relationTrans2, conflictPlace] and all u,v : Transitions, q : Places "
-           ++"| conflict[u,v,q] implies relationTrans1 + relationTrans2 = u + v"
+-- petriRelation :: Bool -> String
+-- petriRelation = \case
+ -- True  -> "concurrent [relationTrans1+relationTrans2] and all u : Transitions | concurrent[u] implies relationTrans1 + relationTrans2 = u \n"
+            -- ++"no x : Transitions | concurrentDefault[x]"
+ -- False -> "no x,y : Transitions, z : Places | conflictDefault[x,y,z] \n"
+           -- ++"conflict [relationTrans1, relationTrans2, conflictPlace] and all u,v : Transitions, q : Places "
+           -- ++"| conflict[u,v,q] implies relationTrans1 + relationTrans2 = u + v"
            
-petriRelationP :: Bool -> String
-petriRelationP = \case
- True  -> ""
- False -> ", conflictPlace : Places"
+-- petriRelationP :: Bool -> String
+-- petriRelationP = \case
+ -- True  -> ""
+ -- False -> ", conflictPlace : Places"
 
 modulePetriSignature :: String
 modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
@@ -121,30 +121,45 @@ run showFalseNets for #{petriScope basicTask}
 
 |]
 
-petriNetRel :: Bool -> BasicConfig -> String
-petriNetRel switch input@BasicConfig{places,transitions,atLeastActive} = [i|module PetriNetConfl
-
+specCompConfl :: BasicConfig -> ChangeConfig -> String
+specCompConfl basic@BasicConfig{places,transitions,atLeastActive} change = [i|
 #{modulePetriSignature}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [activatedTrans,defaultActivTrans,relationTrans1,relationTrans2 : set Transitions #{petriRelationP switch} ] {
+pred showRelNets [activatedTrans,defaultActivTrans,conflictTrans1,conflictTrans2 : set Transitions, conflictPlace : Places] {
   #Places = #{places}
   #Transitions = #{transitions}
-  #{petriRelation switch}
-  defaultGraphIsConnected[]
-  #{compBasicConstraints input}
-  #defaultActivTrans >= #{atLeastActive}
-  theActivatedDefaultTransitions[defaultActivTrans]
+  #{compBasicConstraints basic}
+  #{compChange change}
+  #{compDefaultConstraints atLeastActive}
+  #{compConflict}
+|]
+
+petriNetFindConfl :: FindConflictConfig -> String
+petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module PetriNetConfl
+
+  #{specCompConfl basicTask changeTask}
+  #{compAdvConstraints advTask}
   
 }
-run showRelNets for #{petriScope input}
+run showRelNets for #{petriScope basicTask}
+
+|]
+
+petriNetPickConfl :: PickConflictConfig -> String
+petriNetPickConfl PickConflictConfig{basicTask,changeTask} = [i|module PetriNetConfl
+
+  #{specCompConfl basicTask changeTask}
+}
+run showRelNets for #{petriScope basicTask}
 
 |]
 
 ----------------------"Building-Kit"----------------------------
 
+-- Needs: activatedTrans : set Transitions
 compBasicConstraints :: BasicConfig -> String
 compBasicConstraints BasicConfig
                         {atLeastActive,minTokensOverall
@@ -171,6 +186,14 @@ compAdvConstraints AdvConfig
   #{maybe "" petriSource presenceOfSourceTransitions}
 |]
 
+--Needs: defaultActivTrans : set Transitions
+compDefaultConstraints :: Int -> String
+compDefaultConstraints atLeastActive = [i|
+  defaultGraphIsConnected[]
+  #defaultActivTrans >= #{atLeastActive}
+  theActivatedDefaultTransitions[defaultActivTrans]
+|]
+
 compChange :: ChangeConfig -> String
 compChange ChangeConfig
                   {flowChangeOverall, maxFlowChangePerEdge
@@ -180,6 +203,14 @@ compChange ChangeConfig
   maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
   tokenChangeAbsolutesSum[Places] = #{tokenChangeOverall}
   maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
+|]
+
+--Needs: conflictTrans1,conflictTrans2 : set Transitions, conflictPlace : Places
+compConflict :: String
+compConflict = [i|
+  no x,y : Transitions, z : Places | conflictDefault[x,y,z]
+  conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places 
+    | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v
 |]
 
 givPlaces :: Int -> String

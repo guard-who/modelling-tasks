@@ -1,10 +1,13 @@
-module Modelling.PetriNet.FindConflicts (findConflicts) where
+{-# LANGUAGE NamedFieldPuns #-}
+{-# Language DuplicateRecordFields #-}
 
-import Modelling.PetriNet.Alloy          (petriNetRel)
+module Modelling.PetriNet.FindConflicts (findConflicts,pickConflicts) where
+
+import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser         (convertPetri, parseConflict)
-import Modelling.PetriNet.Types          (Petri(..),Conflict,BasicConfig(..))
+import Modelling.PetriNet.Types          (Petri(..),Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))
 
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
@@ -16,16 +19,20 @@ import Text.LaTeX                        (LaTeX)
 placeHoldPetri :: Petri
 placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
-findConflicts :: Bool -> BasicConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
-findConflicts sw config = do
-  list <- getInstances (Just 1) (petriNetRel False config)
-  confl <- getNet "flow" "tokens" (head list) (graphLayout config)
-  let tex = uebung placeHoldPetri 2 sw
-  if sw
-  then return (tex, [confl])
-  else do
-    net <- getNet "defaultFlow" "defaultTokens" (head list) (graphLayout config)
-    return (tex, [confl,net])
+findConflicts :: FindConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+findConflicts config@FindConflictConfig{basicTask} = do
+  list <- getInstances (Just 1) (petriNetFindConfl config)
+  confl <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
+  let tex = uebung placeHoldPetri 2 True
+  return (tex, [confl])
+  
+pickConflicts :: PickConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+pickConflicts config@PickConflictConfig{basicTask} = do
+  list <- getInstances (Just 1) (petriNetPickConfl config)
+  confl <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
+  let tex = uebung placeHoldPetri 2 True  
+  net <- getNet "defaultFlow" "defaultTokens" (head list) (graphLayout basicTask)
+  return (tex, [confl,net])
         
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Conflict)
 getNet st nd inst gc = do

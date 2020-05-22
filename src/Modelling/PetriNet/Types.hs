@@ -79,7 +79,7 @@ defaultChangeConfig = ChangeConfig
   , flowChangeOverall = 2
   , maxFlowChangePerEdge = 1
   }
-
+--------------------------------------------
 data MathConfig = MathConfig 
   { basicTask :: BasicConfig
   , advTask :: AdvConfig
@@ -93,12 +93,27 @@ defaultMathConfig = MathConfig
   , changeTask = defaultChangeConfig
   }
   
-data ConflictConfig = ConflictConfig
+data FindConflictConfig = FindConflictConfig
   { basicTask :: BasicConfig
+  , advTask :: AdvConfig
+  , changeTask :: ChangeConfig
+  }
+  
+defaultFindConflictConfig :: FindConflictConfig
+defaultFindConflictConfig = FindConflictConfig
+  { basicTask = defaultBasicConfig
+  , advTask = defaultAdvConfig
+  , changeTask = defaultChangeConfig
+  }
+  
+data PickConflictConfig = PickConflictConfig
+  { basicTask :: BasicConfig
+  , changeTask :: ChangeConfig
   }
 
-defaultConflictConfig :: ConflictConfig
-defaultConflictConfig = ConflictConfig
+defaultPickConflictConfig :: PickConflictConfig
+defaultPickConflictConfig = PickConflictConfig
   { basicTask = defaultBasicConfig
+  , changeTask = defaultChangeConfig
   }
   
