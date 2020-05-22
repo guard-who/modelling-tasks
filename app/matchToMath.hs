@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types
   (defaultBasicConfig,BasicConfig(..),defaultChangeConfig,ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
@@ -20,7 +21,7 @@ main = do
                            defaultChangeConfig{ tokenChangeOverall = tknChange
                                                    , flowChangeOverall = flwChange}
                          }
-  let c = checkMathConfig config
+  let c = checkChangeConfig (basicTask config) (changeTask config)
   let switch 
         | sw == "b" = False
         | otherwise = True

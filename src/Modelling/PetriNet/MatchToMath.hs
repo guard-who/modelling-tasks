@@ -1,10 +1,9 @@
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.MatchToMath (matchToMath,checkMathConfig)  where
+module Modelling.PetriNet.MatchToMath (matchToMath)  where
 
 import Modelling.PetriNet.Alloy          (petriNetRnd, renderFalse)
-import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser
@@ -53,36 +52,3 @@ runFalseParser alloy = do
   let change = parseChange alloy
   (petri,change)
   
-checkMathConfig :: MathConfig -> Maybe String
-checkMathConfig m@MathConfig{basicTask = BasicConfig{places,transitions
-                   , minTokensOverall,maxTokensOverall,maxTokensPerPlace
-                   , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
-                 , changeTask = ChangeConfig{tokenChangeOverall, flowChangeOverall
-                   , maxFlowChangePerEdge, maxTokenChangePerPlace}
-                 }
- | tokenChangeOverall < 0
-  = Just "The parameter 'tokenChangeOverall' must be non-negative."
- | maxTokenChangePerPlace < 0
-  = Just "The parameter 'maxTokenChangePerPlace' must be non-negative."
- | maxTokenChangePerPlace > tokenChangeOverall
-  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'tokenChangeOverall'."
- | maxTokenChangePerPlace > maxTokensPerPlace
-  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'maxTokensPerPlace'."
- | tokenChangeOverall > maxTokensOverall - minTokensOverall
-  = Just "With 'tokenChangeOverall', stay within the range of tokens overall."
- | maxTokenChangePerPlace * places < tokenChangeOverall
-  = Just "The parameter 'tokenChangeOverall' is set unreasonably high, given the per-place parameter."
- | flowChangeOverall < 0
-  = Just "The parameter 'flowChangeOverall' must be non-negative."
- | maxFlowChangePerEdge < 0
-  = Just "The parameter 'maxFlowChangePerEdge' must be non-negative."
- | maxFlowChangePerEdge > flowChangeOverall
-  = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'flowChangeOverall'."
- | maxFlowChangePerEdge > maxFlowPerEdge
-  = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'maxFlowPerEdge'."
- | flowChangeOverall > maxFlowOverall - minFlowOverall
-  = Just "With 'flowChangeOverall', stay within the range of flow overall."
- | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall
-  = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
- | otherwise
-  = checkBasicConfig (basicTask (m :: MathConfig))

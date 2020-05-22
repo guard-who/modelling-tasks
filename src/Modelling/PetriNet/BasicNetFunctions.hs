@@ -42,3 +42,39 @@ checkBasicConfig BasicConfig{places,transitions,atLeastActive
   = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
  | otherwise
   = Nothing
+  
+checkChangeConfig :: BasicConfig -> ChangeConfig -> Maybe String
+checkChangeConfig basic@BasicConfig
+                   {places,transitions
+                   , minTokensOverall,maxTokensOverall,maxTokensPerPlace
+                   , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
+                ChangeConfig
+                   {tokenChangeOverall, flowChangeOverall
+                   , maxFlowChangePerEdge, maxTokenChangePerPlace}
+                 
+ | tokenChangeOverall < 0
+  = Just "The parameter 'tokenChangeOverall' must be non-negative."
+ | maxTokenChangePerPlace < 0
+  = Just "The parameter 'maxTokenChangePerPlace' must be non-negative."
+ | maxTokenChangePerPlace > tokenChangeOverall
+  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'tokenChangeOverall'."
+ | maxTokenChangePerPlace > maxTokensPerPlace
+  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'maxTokensPerPlace'."
+ | tokenChangeOverall > maxTokensOverall - minTokensOverall
+  = Just "With 'tokenChangeOverall', stay within the range of tokens overall."
+ | maxTokenChangePerPlace * places < tokenChangeOverall
+  = Just "The parameter 'tokenChangeOverall' is set unreasonably high, given the per-place parameter."
+ | flowChangeOverall < 0
+  = Just "The parameter 'flowChangeOverall' must be non-negative."
+ | maxFlowChangePerEdge < 0
+  = Just "The parameter 'maxFlowChangePerEdge' must be non-negative."
+ | maxFlowChangePerEdge > flowChangeOverall
+  = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'flowChangeOverall'."
+ | maxFlowChangePerEdge > maxFlowPerEdge
+  = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'maxFlowPerEdge'."
+ | flowChangeOverall > maxFlowOverall - minFlowOverall
+  = Just "With 'flowChangeOverall', stay within the range of flow overall."
+ | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall
+  = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
+ | otherwise
+  = checkBasicConfig basic
