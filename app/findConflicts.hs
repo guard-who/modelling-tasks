@@ -15,13 +15,13 @@ import Text.LaTeX                        (renderFile)
 
 main :: IO()
 main = do 
+  hSetBuffering stdout NoBuffering
   putStr "What type would you like? a: Find a Conflict in a Net, b: Choose the Net with the Conflict"
   sw <- getLine
   if sw == "b" then mainPick else mainFind
 
 mainPick :: IO()
 mainPick = do
-  hSetBuffering stdout NoBuffering
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConflictConfig{
                            basicTask = defaultBasicConfig{places = pls, transitions = trns}
@@ -39,7 +39,6 @@ mainPick = do
     
 mainFind :: IO()
 mainFind = do
-  hSetBuffering stdout NoBuffering
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConflictConfig{
                            basicTask = defaultBasicConfig{places = pls, transitions = trns}
