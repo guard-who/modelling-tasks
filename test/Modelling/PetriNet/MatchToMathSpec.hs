@@ -5,14 +5,13 @@ import Modelling.PetriNet.Types
   (defaultMathConfig,MathConfig(..),defaultChangeConfig,ChangeConfig(..))
 
 import Test.Hspec
-import Data.Maybe
 
 spec :: Spec 
 spec =
   describe "matchToMath" $
     context "out of a given Task1 Config and a Boolean for Tasktype" $
       it "everything needed to create the Task is generated" $ do
-        (dia,tex,changes) <- matchToMath True defaultMathConfig
+        (_,_,changes) <- matchToMath True defaultMathConfig
              {changeTask = defaultChangeConfig
                {tokenChangeOverall = 1,maxTokenChangePerPlace = 2}}
         case changes of
@@ -21,4 +20,4 @@ spec =
         
 
 get2ndElements :: [(a,b)] -> [b]
-get2ndElements list = [x| (y,x) <- list]
+get2ndElements list = [x| (_,x) <- list]
