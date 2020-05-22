@@ -32,7 +32,7 @@ mainPick = do
   if isNothing c
   then do
     (latex,conflDia) <- pickConflicts config
-    renderFile ("app/task2.tex") latex
+    renderFile "app/task2.tex" latex
     parseConflDia 1 conflDia
   else
     print (c :: Maybe String)
@@ -49,7 +49,7 @@ mainFind = do
   if isNothing c
   then do
     (latex,conflDia) <- findConflicts config
-    renderFile ("app/task2.tex") latex
+    renderFile "app/task2.tex" latex
     parseConflDia 1 conflDia
   else
     print (c :: Maybe String)

@@ -27,7 +27,7 @@ matchToMath switch config@MathConfig{basicTask,advTask} = do
       fList <- getInstances (Just 3) f
       let (fNets,changes) = falseList fList []
       if switch then do
-        fDia <- mapM (flip drawNet (graphLayout basicTask)) fNets
+        fDia <- mapM ( `drawNet` (graphLayout basicTask)) fNets
         return (rightNet, tex, Left $ zip fDia changes)
       else do
         let fTex = map createPetriTex fNets
@@ -35,7 +35,7 @@ matchToMath switch config@MathConfig{basicTask,advTask} = do
 
 falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
 falseList [] _       = ([],[])
-falseList (inst:rs) usedP = do
+falseList (inst:rs) usedP =
   case runFalseParser inst of
     (Left ferror,Left cError) -> error $ ferror ++ cError
     (Left ferror, _)          -> error ferror

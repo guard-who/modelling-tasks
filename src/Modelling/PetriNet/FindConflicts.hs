@@ -35,7 +35,7 @@ pickConflicts config@PickConflictConfig{basicTask} = do
   return (tex, [confl,net])
         
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Conflict)
-getNet st nd inst gc = do
+getNet st nd inst gc =
   case convertPetri st nd inst of
     Left merror -> error merror
     Right petri -> do

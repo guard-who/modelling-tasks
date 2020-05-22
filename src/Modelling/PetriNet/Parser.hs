@@ -76,10 +76,10 @@ parseConflict inst = do
   pc  <- unscopedSingleSig inst "$showRelNets_conflictPlace"  ""
   return 
     Conflict
-      {conflictTrans = ("T"++show(read (listFrom (objectName (Set.elemAt 0 tc1)) '$')+1)
-                       ,"T"++show(read (listFrom (objectName (Set.elemAt 0 tc2)) '$')+1)
+      {conflictTrans = ("T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc1)) '$') :: Int)
+                       ,"T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc2)) '$') :: Int)
                        )
-      ,conflictPlace = "S"++show(read (listFrom (objectName (Set.elemAt 0 pc)) '$')+1)
+      ,conflictPlace = "S"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 pc)) '$') :: Int)
       }
     
 -- parseConcurrency :: AlloyInstance -> Either String Concurrent

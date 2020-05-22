@@ -21,7 +21,7 @@ spec = do
       it "taking some values out of the User's input" $
         petriScope defaultBasicConfig `shouldSatisfy` (< 10)
         
-prepPetri :: IO(Petri)
+prepPetri :: IO Petri
 prepPetri = do
   list <- getInstances (Just 1) 
            (petriNetRnd defaultBasicConfig defaultAdvConfig)

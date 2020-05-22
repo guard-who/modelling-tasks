@@ -28,8 +28,8 @@ main = do
   if isNothing c 
      then do
        (dia,tex,falseNets) <- matchToMath switch config
-       renderSVG ("app/change0.svg") (mkWidth 200) dia
-       renderFile ("app/change0.tex") tex
+       renderSVG "app/change0.svg" (mkWidth 200) dia
+       renderFile "app/change0.tex" tex
        case falseNets of
          Right falseTex -> parseChangeTex 1 falseTex
          Left falseDia  -> parseChangeDia 1 falseDia

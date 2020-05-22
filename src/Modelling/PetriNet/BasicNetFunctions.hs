@@ -19,7 +19,7 @@ checkBasicConfig BasicConfig{places,transitions,atLeastActive
  | atLeastActive < 0
   = Just "The parameter 'atLeastActive' must be non-negative."
  | atLeastActive > transitions
-  = Just ("There cannot be more active transitions than there are transitions.")
+  = Just "There cannot be more active transitions than there are transitions."
  | minTokensOverall < 0
   = Just "The parameter 'minTokensOverall' must be non-negative."
  | maxTokensOverall < minTokensOverall
