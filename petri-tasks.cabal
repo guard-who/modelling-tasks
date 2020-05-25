@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e5fb2e41f5885e8534d6555b1e57df44199c921ae7e2be7017ab945681e56f80
+-- hash: 3448d4da8c37c45c7aa3a45618cf019cf1e46b24bd5fa72a7575f5c3a6ed0f1f
 
 name:           petri-tasks
 version:        0.0.0
@@ -24,7 +24,7 @@ library
       Modelling.PetriNet.MatchToMath
       Modelling.PetriNet.Parser
       Modelling.PetriNet.Types
-      Modelling.PetriNet.FindConflicts
+      Modelling.PetriNet.Conflicts
       Modelling.PetriNet.Concurrency
       Modelling.PetriNet.BasicNetFunctions
   other-modules:
@@ -77,8 +77,8 @@ executable concurrency
     , transformers
   default-language: Haskell2010
 
-executable findConflicts
-  main-is: findConflicts.hs
+executable conflicts
+  main-is: conflicts.hs
   other-modules:
       Paths_petri_tasks
   hs-source-dirs:
@@ -135,8 +135,8 @@ test-suite petri-tasks-test
   other-modules:
       Modelling.PetriNet.AlloySpec
       Modelling.PetriNet.BasicNetFunctionsSpec
+      Modelling.PetriNet.ConflictsSpec
       Modelling.PetriNet.DiagramSpec
-      Modelling.PetriNet.FindConflictsSpec
       Modelling.PetriNet.LaTeXSpec
       Modelling.PetriNet.MatchToMathSpec
       Paths_petri_tasks

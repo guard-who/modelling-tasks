@@ -31,7 +31,7 @@ library:
     - Modelling.PetriNet.MatchToMath
     - Modelling.PetriNet.Parser
     - Modelling.PetriNet.Types
-    - Modelling.PetriNet.FindConflicts
+    - Modelling.PetriNet.Conflicts
     - Modelling.PetriNet.Concurrency
     - Modelling.PetriNet.BasicNetFunctions
   ghc-options:
@@ -43,8 +43,8 @@ executables:
     source-dirs: app
     dependencies:
       - petri-tasks
-  findConflicts:
-    main: findConflicts.hs
+  conflicts:
+    main: conflicts.hs
     source-dirs: app
     dependencies:
       - petri-tasks

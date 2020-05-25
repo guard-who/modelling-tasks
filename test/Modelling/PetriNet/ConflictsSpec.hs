@@ -1,6 +1,6 @@
-module Modelling.PetriNet.FindConflictsSpec where
+module Modelling.PetriNet.ConflictsSpec where
 
-import Modelling.PetriNet.FindConflicts
+import Modelling.PetriNet.Conflicts
 import Modelling.PetriNet.Types          
   (defaultFindConflictConfig,defaultPickConflictConfig)
 

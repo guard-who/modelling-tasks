@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language DuplicateRecordFields #-}
 
-module Modelling.PetriNet.FindConflicts (findConflicts,pickConflicts) where
+module Modelling.PetriNet.Conflicts (findConflicts,pickConflicts) where
 
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
 import Modelling.PetriNet.Diagram

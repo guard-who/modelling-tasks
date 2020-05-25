@@ -2,7 +2,7 @@
 
 module Main (main) where 
 
-import Modelling.PetriNet.FindConflicts
+import Modelling.PetriNet.Conflicts
 import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types          
   (defaultBasicConfig,BasicConfig(..),defaultFindConflictConfig,FindConflictConfig(..)
