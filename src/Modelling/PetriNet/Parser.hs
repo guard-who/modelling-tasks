@@ -86,7 +86,10 @@ parseConcurrency :: AlloyInstance -> Either String Concurrent
 parseConcurrency inst = do
   tc1 <- unscopedSingleSig inst "$showRelNets_concurTrans1" ""
   tc2 <- unscopedSingleSig inst "$showRelNets_concurTrans2" ""
-  return (objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2))
+  return
+    ("T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc1)) '$') :: Int)
+    ,"T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc2)) '$') :: Int)
+    )
                             
                             --Hilfsfunktionen--
                             
