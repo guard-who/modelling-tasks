@@ -19,7 +19,7 @@ spec =
     context "takes a parsed PetriNet, chosen Task and Task-Type" $
       it " and creates coresponding LaTeX-Data for the mathematical notation" $ do
         out <- (renderFile "test.tex" (uebung defaultPetri 1 True) >> renderPdf "test.tex") 
-        out `shouldStartWith` "This is pdfTeX"
+        out `shouldContain` "Output written on test.pdf"
 
 renderPdf :: String -> IO String
 renderPdf file = do
