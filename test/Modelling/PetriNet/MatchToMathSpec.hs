@@ -9,8 +9,8 @@ import Test.Hspec
 spec :: Spec 
 spec =
   describe "matchToMath" $
-    context "out of a given Task1 Config and a Boolean for Tasktype" $
-      it "everything needed to create the Task is generated" $ do
+    context "creates, out of a given Config and a Boolean for Tasktype," $
+      it "everything needed to create the Task" $ do
         (_,_,changes) <- matchToMath True defaultMathConfig
              {changeTask = defaultChangeConfig
                {tokenChangeOverall = 1,maxTokenChangePerPlace = 2}}
