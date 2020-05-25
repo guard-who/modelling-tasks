@@ -36,7 +36,7 @@ data BasicConfig = BasicConfig
   , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
   , graphLayout :: GraphvizCommand
-  }
+  } deriving Show
 
 defaultBasicConfig :: BasicConfig
 defaultBasicConfig = BasicConfig
@@ -56,7 +56,7 @@ data AdvConfig = AdvConfig
   { presenceOfSelfLoops :: Maybe Bool
   , presenceOfSinkTransitions :: Maybe Bool
   , presenceOfSourceTransitions :: Maybe Bool
-  }
+  } deriving Show
   
 defaultAdvConfig :: AdvConfig
 defaultAdvConfig = AdvConfig
@@ -70,7 +70,7 @@ data ChangeConfig = ChangeConfig
   , maxTokenChangePerPlace :: Int
   , flowChangeOverall :: Int
   , maxFlowChangePerEdge :: Int
-  }
+  } deriving Show
   
 defaultChangeConfig :: ChangeConfig
 defaultChangeConfig = ChangeConfig
@@ -84,7 +84,7 @@ data MathConfig = MathConfig
   { basicTask :: BasicConfig
   , advTask :: AdvConfig
   , changeTask :: ChangeConfig
-  }
+  } deriving Show
   
 defaultMathConfig :: MathConfig
 defaultMathConfig = MathConfig
@@ -97,7 +97,7 @@ data FindConflictConfig = FindConflictConfig
   { basicTask :: BasicConfig
   , advTask :: AdvConfig
   , changeTask :: ChangeConfig
-  }
+  } deriving Show
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
@@ -109,7 +109,7 @@ defaultFindConflictConfig = FindConflictConfig
 data PickConflictConfig = PickConflictConfig
   { basicTask :: BasicConfig
   , changeTask :: ChangeConfig
-  }
+  } deriving Show
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
@@ -121,7 +121,7 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   { basicTask :: BasicConfig
   , advTask :: AdvConfig
   , changeTask :: ChangeConfig
-  }
+  } deriving Show
   
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
@@ -133,7 +133,7 @@ defaultFindConcurrencyConfig = FindConcurrencyConfig
 data PickConcurrencyConfig = PickConcurrencyConfig
   { basicTask :: BasicConfig
   , changeTask :: ChangeConfig
-  }
+  } deriving Show
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig

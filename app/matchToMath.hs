@@ -9,10 +9,12 @@ import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
 import System.IO
 import Text.LaTeX                        (LaTeX,renderFile)
+import Text.Pretty.Simple                (pPrint)
 
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
+  pPrint $ defaultMathConfig
   (pls,trns,tknChange,flwChange,sw) <- userInput
   let config = defaultMathConfig{
                          basicTask = 

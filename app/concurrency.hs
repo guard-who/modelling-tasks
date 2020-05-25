@@ -12,6 +12,7 @@ import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
 import System.IO
 import Text.LaTeX                        (renderFile)
+import Text.Pretty.Simple                (pPrint)
 
 main :: IO()
 main = do 
@@ -22,6 +23,7 @@ main = do
 
 mainFind :: IO()
 mainFind = do
+  pPrint $ defaultFindConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConcurrencyConfig{
                            basicTask = defaultBasicConfig{places = pls, transitions = trns}
@@ -39,6 +41,7 @@ mainFind = do
     
 mainPick :: IO()
 mainPick = do
+  pPrint $ defaultPickConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConcurrencyConfig{
                            basicTask = defaultBasicConfig{places = pls, transitions = trns}
