@@ -26,8 +26,8 @@ mainFind = do
   pPrint $ defaultFindConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConcurrencyConfig{
-                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
-                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
+                           basicTask = (basicTask (defaultFindConcurrencyConfig :: FindConcurrencyConfig)){places = pls, transitions = trns}
+                         , changeTask = (changeTask (defaultFindConcurrencyConfig :: FindConcurrencyConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: FindConcurrencyConfig
   let c = checkChangeConfig (basicTask (config :: FindConcurrencyConfig)) (changeTask (config :: FindConcurrencyConfig))
@@ -44,8 +44,8 @@ mainPick = do
   pPrint $ defaultPickConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConcurrencyConfig{
-                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
-                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
+                           basicTask = (basicTask (defaultPickConcurrencyConfig :: PickConcurrencyConfig)){places = pls, transitions = trns}
+                         , changeTask = (changeTask (defaultPickConcurrencyConfig :: PickConcurrencyConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: PickConcurrencyConfig
   let c = checkChangeConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig))

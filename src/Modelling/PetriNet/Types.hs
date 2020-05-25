@@ -40,14 +40,14 @@ data BasicConfig = BasicConfig
 
 defaultBasicConfig :: BasicConfig
 defaultBasicConfig = BasicConfig
-  { places = 3
+  { places = 4
   , transitions = 3
   , atLeastActive = 1
   , minTokensOverall = 2
-  , maxTokensOverall = 4
+  , maxTokensOverall = 7
   , maxTokensPerPlace = 2
-  , minFlowOverall = 3
-  , maxFlowOverall = 6
+  , minFlowOverall = 4
+  , maxFlowOverall = 7
   , maxFlowPerEdge = 2
   , graphLayout = Circo
   }
@@ -74,8 +74,8 @@ data ChangeConfig = ChangeConfig
   
 defaultChangeConfig :: ChangeConfig
 defaultChangeConfig = ChangeConfig
-  { tokenChangeOverall = 0
-  , maxTokenChangePerPlace = 0
+  { tokenChangeOverall = 2
+  , maxTokenChangePerPlace = 1
   , flowChangeOverall = 2
   , maxFlowChangePerEdge = 1
   }
@@ -90,7 +90,7 @@ defaultMathConfig :: MathConfig
 defaultMathConfig = MathConfig
   { basicTask = defaultBasicConfig
   , advTask = defaultAdvConfig
-  , changeTask = defaultChangeConfig
+  , changeTask = defaultChangeConfig{ tokenChangeOverall = 0, maxTokenChangePerPlace = 0 }
   }
   
 data FindConflictConfig = FindConflictConfig
@@ -101,8 +101,8 @@ data FindConflictConfig = FindConflictConfig
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
-  { basicTask = defaultBasicConfig
-  , advTask = defaultAdvConfig
+  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
+  , advTask = defaultAdvConfig{ presenceOfSinkTransitions = Nothing, presenceOfSourceTransitions = Nothing }
   , changeTask = defaultChangeConfig
   }
   
@@ -125,8 +125,8 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
-  { basicTask = defaultBasicConfig
-  , advTask = defaultAdvConfig
+  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
+  , advTask = defaultAdvConfig{ presenceOfSinkTransitions = Nothing, presenceOfSourceTransitions = Nothing }
   , changeTask = defaultChangeConfig
   }
   
@@ -137,7 +137,7 @@ data PickConcurrencyConfig = PickConcurrencyConfig
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig
-  { basicTask = defaultBasicConfig
+  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
   , changeTask = defaultChangeConfig
   }
   

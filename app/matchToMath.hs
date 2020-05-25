@@ -18,9 +18,9 @@ main = do
   (pls,trns,tknChange,flwChange,sw) <- userInput
   let config = defaultMathConfig{
                          basicTask = 
-                           defaultBasicConfig{places = pls, transitions = trns}
+                           (basicTask defaultMathConfig){places = pls, transitions = trns}
                          , changeTask =
-                           defaultChangeConfig{ tokenChangeOverall = tknChange
+                           (changeTask defaultMathConfig){ tokenChangeOverall = tknChange
                                                    , flowChangeOverall = flwChange}
                          }
   let c = checkChangeConfig (basicTask config) (changeTask config)

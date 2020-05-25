@@ -12,7 +12,7 @@ spec =
     context "creates, out of a given Config and a Boolean for Tasktype," $
       it "everything needed to create the Task" $ do
         (_,_,changes) <- matchToMath True defaultMathConfig
-             {changeTask = defaultChangeConfig
+             {changeTask = (changeTask defaultMathConfig)
                {tokenChangeOverall = 1,maxTokenChangePerPlace = 2}}
         case changes of
           Right dChng -> print (map snd dChng) `shouldReturn` ()

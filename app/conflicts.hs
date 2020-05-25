@@ -26,8 +26,8 @@ mainFind = do
   pPrint $ defaultFindConflictConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConflictConfig{
-                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
-                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
+                           basicTask = (basicTask (defaultFindConflictConfig :: FindConflictConfig)){places = pls, transitions = trns}
+                         , changeTask = (changeTask (defaultFindConflictConfig :: FindConflictConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: FindConflictConfig
   let c = checkChangeConfig (basicTask (config :: FindConflictConfig)) (changeTask (config :: FindConflictConfig))
@@ -44,8 +44,8 @@ mainPick = do
   pPrint $ defaultPickConflictConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConflictConfig{
-                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
-                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
+                           basicTask = (basicTask (defaultPickConflictConfig :: PickConflictConfig)){places = pls, transitions = trns}
+                         , changeTask = (changeTask (defaultPickConflictConfig :: PickConflictConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: PickConflictConfig
   let c = checkChangeConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
