@@ -17,8 +17,9 @@ spec :: Spec
 spec =
   describe "uebung" $
     context "takes a parsed PetriNet, chosen Task and Task-Type" $
-      it " and creates coresponding LaTeX-Data for the mathematical notation" $
-        (renderFile "test.tex" (uebung defaultPetri 1 True) >> renderPdf "test.tex") `shouldReturn` []
+      it " and creates coresponding LaTeX-Data for the mathematical notation" $ do
+        out <- (renderFile "test.tex" (uebung defaultPetri 1 True) >> renderPdf "test.tex") 
+        out `shouldStartWith` "This is pdfTeX"
 
 renderPdf :: String -> IO String
 renderPdf file = do

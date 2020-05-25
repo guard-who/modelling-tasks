@@ -9,7 +9,7 @@ import Data.Text                    (unpack)
 import Text.LaTeX
 import Text.LaTeX.Packages.Inputenc 
 import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
-import Text.LaTeX.Packages.Geometry
+-- import Text.LaTeX.Packages.Geometry
 
 --PetriNet -> Choose task 
 -- runTex :: Petri -> Int -> IO()
@@ -22,7 +22,7 @@ uebung petri task switch =
     documentclass [] article
  <> usepackage [utf8] inputenc
  <> uselanguage English
- <> importGeometry [GCentered]
+ -- <> importGeometry [GCentered]
  <> title "Uebung"
  <> author "Autor"
  <> document (maketitle <> body petri task switch)
