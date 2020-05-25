@@ -2,7 +2,7 @@ module Modelling.PetriNet.MatchToMathSpec where
 
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types       
-  (defaultMathConfig,MathConfig(..),defaultChangeConfig,ChangeConfig(..))
+  (defaultMathConfig,MathConfig(..),ChangeConfig(..))
 
 import Test.Hspec
 

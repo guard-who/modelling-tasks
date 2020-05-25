@@ -5,8 +5,8 @@ module Main (main) where
 import Modelling.PetriNet.Conflicts
 import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types          
-  (defaultBasicConfig,BasicConfig(..),defaultFindConflictConfig,FindConflictConfig(..)
-  ,defaultPickConflictConfig,PickConflictConfig(..),Conflict,defaultChangeConfig,ChangeConfig(..))
+  (BasicConfig(..),defaultFindConflictConfig,FindConflictConfig(..)
+  ,defaultPickConflictConfig,PickConflictConfig(..),Conflict,ChangeConfig(..))
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)

@@ -3,7 +3,7 @@ module Main (main) where
 import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types
-  (defaultBasicConfig,BasicConfig(..),defaultChangeConfig,ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
+  (BasicConfig(..),ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)

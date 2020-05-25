@@ -5,8 +5,8 @@ module Main (main) where
 import Modelling.PetriNet.Concurrency
 import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types          
-  (defaultBasicConfig,BasicConfig(..),defaultFindConcurrencyConfig,FindConcurrencyConfig(..)
-  ,defaultPickConcurrencyConfig,PickConcurrencyConfig(..),Concurrent,defaultChangeConfig,ChangeConfig(..))
+  (BasicConfig(..),defaultFindConcurrencyConfig,FindConcurrencyConfig(..)
+  ,defaultPickConcurrencyConfig,PickConcurrencyConfig(..),Concurrent,ChangeConfig(..))
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
