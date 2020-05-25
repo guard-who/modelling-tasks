@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 07065332de78bffe2885f330aedfaac6c196051c7df6f9ddf29ca6a8450895f5
+-- hash: e5fb2e41f5885e8534d6555b1e57df44199c921ae7e2be7017ab945681e56f80
 
 name:           petri-tasks
 version:        0.0.0
@@ -45,6 +45,7 @@ library
     , fgl
     , file-embed
     , graphviz
+    , pretty-simple
     , string-interpolate
     , text
     , transformers
@@ -70,6 +71,7 @@ executable concurrency
     , file-embed
     , graphviz
     , petri-tasks
+    , pretty-simple
     , string-interpolate
     , text
     , transformers
@@ -95,6 +97,7 @@ executable findConflicts
     , file-embed
     , graphviz
     , petri-tasks
+    , pretty-simple
     , string-interpolate
     , text
     , transformers
@@ -120,6 +123,7 @@ executable matchToMath
     , file-embed
     , graphviz
     , petri-tasks
+    , pretty-simple
     , string-interpolate
     , text
     , transformers
@@ -154,6 +158,7 @@ test-suite petri-tasks-test
     , graphviz
     , hspec
     , petri-tasks
+    , pretty-simple
     , process
     , string-interpolate
     , text
