@@ -31,6 +31,7 @@ library:
     - Modelling.PetriNet.Parser
     - Modelling.PetriNet.Types
     - Modelling.PetriNet.FindConflicts
+    - Modelling.PetriNet.Concurrency
     - Modelling.PetriNet.BasicNetFunctions
   ghc-options:
     - -Wall
@@ -43,6 +44,11 @@ executables:
       - petri-tasks
   findConflicts:
     main: findConflicts.hs
+    source-dirs: app
+    dependencies:
+      - petri-tasks
+  concurrency:
+    main: concurrency.hs
     source-dirs: app
     dependencies:
       - petri-tasks

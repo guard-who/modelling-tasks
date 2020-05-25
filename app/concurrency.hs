@@ -1,0 +1,74 @@
+{-# Language DuplicateRecordFields #-}
+
+module Main (main) where 
+
+import Modelling.PetriNet.Concurrency
+import Modelling.PetriNet.BasicNetFunctions
+import Modelling.PetriNet.Types          
+  (defaultBasicConfig,BasicConfig(..),defaultFindConcurrencyConfig,FindConcurrencyConfig(..)
+  ,defaultPickConcurrencyConfig,PickConcurrencyConfig(..),Concurrent,defaultChangeConfig,ChangeConfig(..))
+import Data.Maybe                        (isNothing)
+import Diagrams.Backend.SVG              (B,renderSVG)
+import Diagrams.Prelude                  (Diagram,mkWidth)
+import System.IO
+import Text.LaTeX                        (renderFile)
+
+main :: IO()
+main = do 
+  hSetBuffering stdout NoBuffering
+  putStr "What type would you like? a: Find a concurrency in a Net, b: Choose the Net with the concurrency"
+  sw <- getLine
+  if sw == "b" then mainPick else mainFind
+
+mainFind :: IO()
+mainFind = do
+  (pls,trns,tknChange,flwChange) <- userInput 
+  let config = defaultFindConcurrencyConfig{
+                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
+                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
+                                                           , flowChangeOverall = flwChange}
+                         } :: FindConcurrencyConfig
+  let c = checkChangeConfig (basicTask (config :: FindConcurrencyConfig)) (changeTask (config :: FindConcurrencyConfig))
+  if isNothing c
+  then do
+    (latex,concDia) <- findConcurrency config
+    renderFile "app/task3.tex" latex
+    parseConcDia 1 concDia
+  else
+    print (c :: Maybe String)
+    
+mainPick :: IO()
+mainPick = do
+  (pls,trns,tknChange,flwChange) <- userInput 
+  let config = defaultPickConcurrencyConfig{
+                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
+                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
+                                                           , flowChangeOverall = flwChange}
+                         } :: PickConcurrencyConfig
+  let c = checkChangeConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig))
+  if isNothing c
+  then do
+    (latex,concDia) <- pickConcurrency config
+    renderFile "app/task3.tex" latex
+    parseConcDia 1 concDia
+  else
+    print (c :: Maybe String)
+
+userInput :: IO (Int,Int,Int,Int)
+userInput = do
+  putStr "Number of Places: "
+  pls <- getLine
+  putStr "Number of Transitions: "
+  trns <- getLine
+  putStr "TokenChange Overall: "
+  tknCh <- getLine
+  putStr "FlowChange Overall: "
+  flwCh <- getLine
+  return (read pls, read trns,read tknCh, read flwCh)
+  
+parseConcDia :: Int -> [(Diagram B, Maybe Concurrent)] -> IO ()
+parseConcDia _ []               = print "no more Nets"
+parseConcDia i ((dia,conc):rs) = do
+  renderSVG ("app/concurrency"++show i++".svg") (mkWidth 400) dia
+  print conc
+  parseConcDia (i+1) rs

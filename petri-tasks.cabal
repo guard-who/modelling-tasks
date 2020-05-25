@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f335d4ef4963d91a6fd6769d00d03b46f7054d14ac89a23c83e968395e905989
+-- hash: 07065332de78bffe2885f330aedfaac6c196051c7df6f9ddf29ca6a8450895f5
 
 name:           petri-tasks
 version:        0.0.0
@@ -25,6 +25,7 @@ library
       Modelling.PetriNet.Parser
       Modelling.PetriNet.Types
       Modelling.PetriNet.FindConflicts
+      Modelling.PetriNet.Concurrency
       Modelling.PetriNet.BasicNetFunctions
   other-modules:
       Paths_petri_tasks
@@ -44,6 +45,31 @@ library
     , fgl
     , file-embed
     , graphviz
+    , string-interpolate
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable concurrency
+  main-is: concurrency.hs
+  other-modules:
+      Paths_petri_tasks
+  hs-source-dirs:
+      app
+  build-depends:
+      HaTeX
+    , SVGFonts
+    , base
+    , call-alloy
+    , containers
+    , diagrams
+    , diagrams-graphviz
+    , diagrams-lib
+    , diagrams-svg
+    , fgl
+    , file-embed
+    , graphviz
+    , petri-tasks
     , string-interpolate
     , text
     , transformers
@@ -106,9 +132,9 @@ test-suite petri-tasks-test
       Modelling.PetriNet.AlloySpec
       Modelling.PetriNet.BasicNetFunctionsSpec
       Modelling.PetriNet.DiagramSpec
+      Modelling.PetriNet.FindConflictsSpec
       Modelling.PetriNet.LaTeXSpec
       Modelling.PetriNet.MatchToMathSpec
-      Modelling.PetriNet.FindConflictsSpec
       Paths_petri_tasks
   hs-source-dirs:
       test

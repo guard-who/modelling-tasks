@@ -10,7 +10,7 @@ data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,Strin
 data Conflict = Conflict{conflictTrans :: (String,String),conflictPlace :: String}
   deriving Show
   
-type Concurrent = [String]
+type Concurrent = (String,String)
 
 type Marking = [Int]
 type Transition = (Marking,Marking)
@@ -113,6 +113,30 @@ data PickConflictConfig = PickConflictConfig
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
+  { basicTask = defaultBasicConfig
+  , changeTask = defaultChangeConfig
+  }
+  
+data FindConcurrencyConfig = FindConcurrencyConfig
+  { basicTask :: BasicConfig
+  , advTask :: AdvConfig
+  , changeTask :: ChangeConfig
+  }
+  
+defaultFindConcurrencyConfig :: FindConcurrencyConfig
+defaultFindConcurrencyConfig = FindConcurrencyConfig
+  { basicTask = defaultBasicConfig
+  , advTask = defaultAdvConfig
+  , changeTask = defaultChangeConfig
+  }
+  
+data PickConcurrencyConfig = PickConcurrencyConfig
+  { basicTask :: BasicConfig
+  , changeTask :: ChangeConfig
+  }
+
+defaultPickConcurrencyConfig :: PickConcurrencyConfig
+defaultPickConcurrencyConfig = PickConcurrencyConfig
   { basicTask = defaultBasicConfig
   , changeTask = defaultChangeConfig
   }

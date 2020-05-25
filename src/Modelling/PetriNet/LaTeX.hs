@@ -29,10 +29,21 @@ uebung petri task switch =
 
 body :: Petri -> Int -> Bool -> LaTeX
 body petri task switch 
- | task == 1 && switch     = task1 <> createPetriTex petri
- | task == 1 && not switch = task1a
- | task == 2 && switch     = task2
- | task == 2 && not switch = task2a
+ | task == 1 && switch     =
+   "Which of the presented petrinets shows the mathematical expression?" 
+   <> newline
+   <> "Given the following: "
+   <> createPetriTex petri
+ | task == 1 && not switch = 
+   "Which of the presented mathematical expressions shows the given petrinet?" 
+ | task == 2 && switch     =
+   "Which pair of transitions are in conflict under the initial marking?"
+ | task == 2 && not switch = 
+   "Which of the following Petrinets doesn't have a conflict?"
+ | task == 3 && switch     =
+   "Which pair of transitions are in concurrency under the initial marking?"
+ | task == 3 && not switch = 
+   "Which of the following Petrinet doesn't have a concurrency?"
  | otherwise = mempty
  
 --Math Petri Appearance
@@ -46,26 +57,6 @@ createPetriTex Petri{initialMarking,trans} =
   <> " , "
   <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas initialMarking)) <> ")")
   <> itemize ( conditions 1 trans )
-
---MatchToMath
-task1 :: LaTeX
-task1 = 
-  "Which of the presented petrinets shows the mathematical expression?" 
-  <> newline
-  <> "Given the following: "
-  
-task1a :: LaTeX
-task1a = 
-  "Which of the presented mathematical expressions shows the given petrinet?" 
-  
---FindConflicts
-task2 :: LaTeX
-task2 = 
-  "Which pair of transitions are in conflict under the initial marking in each Petrinet?"
-  
-task2a :: LaTeX
-task2a =
-  "Which of the following Petrinets doesn't have a conflict?"
 
 createPlaces ::Int -> Int -> LaTeX
 createPlaces i p 

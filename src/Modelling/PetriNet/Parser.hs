@@ -1,4 +1,4 @@
-module Modelling.PetriNet.Parser (convertPetri, parseChange, parseConflict) where
+module Modelling.PetriNet.Parser (convertPetri, parseChange, parseConflict, parseConcurrency) where
 
 import Modelling.PetriNet.Types
 
@@ -82,11 +82,11 @@ parseConflict inst = do
       ,conflictPlace = "S"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 pc)) '$') :: Int)
       }
     
--- parseConcurrency :: AlloyInstance -> Either String Concurrent
--- parseConcurrency inst = do
-  -- tc1 <- unscopedSingleSig inst "$showRelNets_relationTrans1" ""
-  -- tc2 <- unscopedSingleSig inst "$showRelNets_relationTrans2" ""
-  -- return [objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2)]
+parseConcurrency :: AlloyInstance -> Either String Concurrent
+parseConcurrency inst = do
+  tc1 <- unscopedSingleSig inst "$showRelNets_concurTrans1" ""
+  tc2 <- unscopedSingleSig inst "$showRelNets_concurTrans2" ""
+  return (objectName (Set.elemAt 0 tc1),objectName (Set.elemAt 0 tc2))
                             
                             --Hilfsfunktionen--
                             

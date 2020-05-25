@@ -5,7 +5,9 @@
 {-# Language DuplicateRecordFields #-}
 
 module Modelling.PetriNet.Alloy 
-  (petriNetRnd,renderFalse,petriNetFindConfl,petriNetPickConfl,petriScope) where
+  (petriNetRnd,renderFalse,petriNetFindConfl,petriNetPickConfl
+  ,petriNetFindConcur,petriNetPickConcur,petriScope) 
+  where
 
 import Modelling.PetriNet.Types
 
@@ -108,9 +110,11 @@ run showFalseNets for #{petriScope basicTask}
 
 |]
 
+--Conflict--
+
 specCompConfl :: BasicConfig -> ChangeConfig -> String
 specCompConfl basic@BasicConfig{places,transitions} change = [i|
-activatedTrans,conflictedTransitions: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places] {
+activatedTrans,conflictedTransitions: set Transitions, conflictPlace : Places] {
   #Places = #{places}
   #Transitions = #{transitions}
   #{compBasicConstraints basic}
@@ -145,10 +149,53 @@ petriNetPickConfl p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},ch
 
 pred showRelNets [defaultActivTrans, #{specCompConfl (basicTask(p :: PickConflictConfig)) changeTask}
 
-  no x,y : Transitions, z : Places | conflictDefault[x,y,z]
   #{compDefaultConstraints atLeastActive}
 }
 run showRelNets for #{petriScope (basicTask(p :: PickConflictConfig))}
+
+|]
+
+--Concurrency--
+specCompConcur :: BasicConfig -> ChangeConfig -> String
+specCompConcur basic@BasicConfig{places,transitions} change = [i|
+activatedTrans,concurrentTransitions: set Transitions] {
+  #Places = #{places}
+  #Transitions = #{transitions}
+  #{compBasicConstraints basic}
+  #{compChange change}
+  #{compConcurrency}
+|]
+
+petriNetFindConcur :: FindConcurrencyConfig -> String
+petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|module PetriNetConcur
+
+#{modulePetriSignature}
+#{moduleHelpers}
+#{modulePetriConcepts}
+#{modulePetriConstraints}
+
+pred showRelNets [ #{specCompConcur basicTask changeTask}
+
+  #{compAdvConstraints advTask}
+  
+}
+run showRelNets for #{petriScope basicTask}
+
+|]
+
+petriNetPickConcur :: PickConcurrencyConfig -> String
+petriNetPickConcur p@PickConcurrencyConfig{basicTask = BasicConfig{atLeastActive},changeTask} = [i|module PetriNetConcur
+
+#{modulePetriSignature}
+#{moduleHelpers}
+#{modulePetriConcepts}
+#{modulePetriConstraints}
+
+pred showRelNets [defaultActivTrans, #{specCompConcur (basicTask(p :: PickConcurrencyConfig)) changeTask}
+
+  #{compDefaultConstraints atLeastActive}
+}
+run showRelNets for #{petriScope (basicTask(p :: PickConcurrencyConfig))}
 
 |]
 
@@ -200,20 +247,23 @@ compChange ChangeConfig
   maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
 |]
 
--- compConcurrent :: String
--- compConcurrent = [i|
-  -- concurrent [relationTrans1+relationTrans2] and all u : Transitions | concurrent[u] implies relationTrans1 + relationTrans2 = u
-  -- no x : Transitions | concurrentDefault[x]
--- |]
+compConcurrency :: String
+compConcurrency = [i|
+  no x,y : Transitions | concurrentDefault[x+y] and x != y
+  some concurTrans1, concurTrans2 : Transitions | concurrentTransitions = concurTrans1 + concurTrans2
+  and concurTrans1 != concurTrans2
+  and concurrent [concurTrans1+concurTrans2]
+  and all u,v : Transitions | concurrent[u+v] and u != v implies concurTrans1 + concurTrans2 = u + v
+|]
 
 --Needs: conflictedTransitions: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places
 compConflict :: String
 compConflict = [i|
-  conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places 
+  no x,y : Transitions, z : Places | conflictDefault[x,y,z]
+  some conflictTrans1, conflictTrans2 : Transitions | conflictedTransitions = conflictTrans1 + conflictTrans2 
+  and conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places 
     | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v
-  one conflictTrans1
-  one conflictTrans2
-  conflictedTransitions = conflictTrans1 + conflictTrans2
+  
 |]
 
 givPlaces :: Int -> String
