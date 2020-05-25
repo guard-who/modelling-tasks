@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3448d4da8c37c45c7aa3a45618cf019cf1e46b24bd5fa72a7575f5c3a6ed0f1f
+-- hash: 0f5dc00f3bce071e6294376863b2f85b61cc351a50112dc68e300bc21efc88aa
 
 name:           petri-tasks
 version:        0.0.0
@@ -135,6 +135,7 @@ test-suite petri-tasks-test
   other-modules:
       Modelling.PetriNet.AlloySpec
       Modelling.PetriNet.BasicNetFunctionsSpec
+      Modelling.PetriNet.ConcurrencySpec
       Modelling.PetriNet.ConflictsSpec
       Modelling.PetriNet.DiagramSpec
       Modelling.PetriNet.LaTeXSpec
