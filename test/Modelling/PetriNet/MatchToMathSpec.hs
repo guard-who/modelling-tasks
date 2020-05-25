@@ -15,9 +15,8 @@ spec =
              {changeTask = defaultChangeConfig
                {tokenChangeOverall = 1,maxTokenChangePerPlace = 2}}
         case changes of
-          Right dChng -> print (get2ndElements dChng) `shouldReturn` ()
-          Left tChng -> print (get2ndElements tChng) `shouldReturn` ()
+          Right dChng -> print (map snd dChng) `shouldReturn` ()
+          Left tChng -> print (map snd tChng) `shouldReturn` ()
         
 
-get2ndElements :: [(a,b)] -> [b]
-get2ndElements list = [x| (_,x) <- list]
+

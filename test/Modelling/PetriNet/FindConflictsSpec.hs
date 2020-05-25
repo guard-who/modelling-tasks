@@ -12,12 +12,10 @@ spec = do
     context "out of a given Config" $
       it "everything needed to create the Task is generated" $ do
         (_,diaConfl) <- findConflicts defaultFindConflictConfig 
-        print (get2ndElements diaConfl) `shouldReturn` ()
+        print (map snd diaConfl) `shouldReturn` ()
   describe "pickConflicts" $
     context "out of a given Config" $
       it "everything needed to create the Task is generated" $ do
         (_,diaConfl) <- pickConflicts defaultPickConflictConfig 
-        print (get2ndElements diaConfl) `shouldReturn` ()
+        print (map snd diaConfl) `shouldReturn` ()
         
-get2ndElements :: [(a,b)] -> [b]
-get2ndElements list = [x| (_,x) <- list]
