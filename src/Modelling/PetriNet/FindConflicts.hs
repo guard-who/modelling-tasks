@@ -30,7 +30,7 @@ pickConflicts :: PickConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
 pickConflicts config@PickConflictConfig{basicTask} = do
   list <- getInstances (Just 1) (petriNetPickConfl config)
   confl <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
-  let tex = uebung placeHoldPetri 2 True  
+  let tex = uebung placeHoldPetri 2 False
   net <- getNet "defaultFlow" "defaultTokens" (head list) (graphLayout basicTask)
   return (tex, [confl,net])
         

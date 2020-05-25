@@ -20,23 +20,6 @@ main = do
   sw <- getLine
   if sw == "b" then mainPick else mainFind
 
-mainPick :: IO()
-mainPick = do
-  (pls,trns,tknChange,flwChange) <- userInput 
-  let config = defaultPickConflictConfig{
-                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
-                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
-                                                           , flowChangeOverall = flwChange}
-                         } :: PickConflictConfig
-  let c = checkChangeConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
-  if isNothing c
-  then do
-    (latex,conflDia) <- pickConflicts config
-    renderFile "app/task2.tex" latex
-    parseConflDia 1 conflDia
-  else
-    print (c :: Maybe String)
-    
 mainFind :: IO()
 mainFind = do
   (pls,trns,tknChange,flwChange) <- userInput 
@@ -54,6 +37,23 @@ mainFind = do
   else
     print (c :: Maybe String)
 
+mainPick :: IO()
+mainPick = do
+  (pls,trns,tknChange,flwChange) <- userInput 
+  let config = defaultPickConflictConfig{
+                           basicTask = defaultBasicConfig{places = pls, transitions = trns}
+                         , changeTask = defaultChangeConfig{ tokenChangeOverall = tknChange
+                                                           , flowChangeOverall = flwChange}
+                         } :: PickConflictConfig
+  let c = checkChangeConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
+  if isNothing c
+  then do
+    (latex,conflDia) <- pickConflicts config
+    renderFile "app/task2.tex" latex
+    parseConflDia 1 conflDia
+  else
+    print (c :: Maybe String)
+    
 userInput :: IO (Int,Int,Int,Int)
 userInput = do
   putStr "Number of Places: "
