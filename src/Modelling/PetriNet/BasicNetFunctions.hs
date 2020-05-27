@@ -24,12 +24,12 @@ checkBasicConfig BasicConfig{places,transitions,atLeastActive
                    , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
  | places <= 0
   = Just "The number of places must be positive."
- | places > 9
-  = Just "Cannot deal with more than 9 places."
+ | places > 8
+  = Just "Cannot deal with more than 8 places."
  | transitions <= 0
   = Just "The number of transitions must be positive."
- | transitions > 9
-  = Just "Cannot deal with more than 9 transitions."
+ | transitions > 8
+  = Just "Cannot deal with more than 8 transitions."
  | atLeastActive < 0
   = Just "The parameter 'atLeastActive' must be non-negative."
  | atLeastActive > transitions
@@ -54,6 +54,8 @@ checkBasicConfig BasicConfig{places,transitions,atLeastActive
   = Just "The parameter 'maxFlowPerEdge' must not be larger than 'maxFlowOverall'."
  | maxFlowOverall > 2 * places * transitions * maxFlowPerEdge
   = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
+ | transitions + places > 1 + maxFlowOverall 
+  = Just "the sum of Nodes are exceeding 'maxFlowOverall' too far to create a connected net."
  | otherwise
   = Nothing
   
@@ -95,7 +97,7 @@ checkChangeConfig BasicConfig
   
 checkCConfig :: BasicConfig -> ChangeConfig -> Maybe String
 checkCConfig basic@BasicConfig{atLeastActive} change
- | atLeastActive < 1
+ | atLeastActive < 2
   = Just "The parameter 'atLeastActive' must be at least 2 to create the task." 
  | otherwise = do
   let c = checkBasicConfig basic
