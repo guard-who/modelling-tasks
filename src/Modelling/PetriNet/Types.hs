@@ -116,7 +116,7 @@ data PickConflictConfig = PickConflictConfig
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
-  { basicTask = defaultBasicConfig
+  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
   , changeTask = defaultChangeConfig
   }
   
