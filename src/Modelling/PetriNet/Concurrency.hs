@@ -1,14 +1,17 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language DuplicateRecordFields #-}
 
-module Modelling.PetriNet.Concurrency (findConcurrency,pickConcurrency) where
+module Modelling.PetriNet.Concurrency 
+  (findConcurrency,pickConcurrency,checkFindConfig,checkPickConfig) where
 
 import Modelling.PetriNet.Alloy          (petriNetFindConcur,petriNetPickConcur)
+import Modelling.PetriNet.BasicNetFunctions 
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser         (convertPetri, parseConcurrency)
 import Modelling.PetriNet.Types          (Petri(..),Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
 
+import Data.Maybe                        (isJust)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
@@ -45,3 +48,15 @@ getNet st nd inst gc =
         case parseConcurrency inst of
           Left perror -> error perror
           Right conc -> return (dia, Just conc)
+          
+checkFindConfig :: FindConcurrencyConfig -> Maybe String
+checkFindConfig FindConcurrencyConfig{basicTask,changeTask} = do
+  let c = checkBasicConfig basicTask
+  if isJust c then c
+  else checkChangeConfig basicTask  changeTask
+  
+checkPickConfig :: PickConcurrencyConfig -> Maybe String
+checkPickConfig PickConcurrencyConfig{basicTask,changeTask} = do
+  let c = checkBasicConfig basicTask
+  if isJust c then c
+  else checkChangeConfig basicTask  changeTask

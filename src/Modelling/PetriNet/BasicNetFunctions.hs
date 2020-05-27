@@ -44,7 +44,7 @@ checkBasicConfig BasicConfig{places,transitions,atLeastActive
   = Nothing
   
 checkChangeConfig :: BasicConfig -> ChangeConfig -> Maybe String
-checkChangeConfig basic@BasicConfig
+checkChangeConfig BasicConfig
                    {places,transitions
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
                    , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
@@ -77,4 +77,4 @@ checkChangeConfig basic@BasicConfig
  | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall
   = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
  | otherwise
-  = checkBasicConfig basic
+  = Nothing

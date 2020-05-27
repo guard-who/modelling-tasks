@@ -30,7 +30,7 @@ mainFind = do
                          , changeTask = (changeTask (defaultFindConcurrencyConfig :: FindConcurrencyConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: FindConcurrencyConfig
-  let c = checkChangeConfig (basicTask (config :: FindConcurrencyConfig)) (changeTask (config :: FindConcurrencyConfig))
+  let c = checkFindConfig config
   if isNothing c
   then do
     (latex,concDia) <- findConcurrency config
@@ -48,7 +48,7 @@ mainPick = do
                          , changeTask = (changeTask (defaultPickConcurrencyConfig :: PickConcurrencyConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: PickConcurrencyConfig
-  let c = checkChangeConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig))
+  let c = checkPickConfig config
   if isNothing c
   then do
     (latex,concDia) <- pickConcurrency config

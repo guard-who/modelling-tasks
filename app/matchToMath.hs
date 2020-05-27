@@ -23,7 +23,7 @@ main = do
                            (changeTask defaultMathConfig){ tokenChangeOverall = tknChange
                                                    , flowChangeOverall = flwChange}
                          }
-  let c = checkChangeConfig (basicTask config) (changeTask config)
+  let c = checkConfig config
   let switch 
         | sw == "b" = False
         | otherwise = True

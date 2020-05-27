@@ -1,14 +1,17 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language DuplicateRecordFields #-}
 
-module Modelling.PetriNet.Conflicts (findConflicts,pickConflicts) where
+module Modelling.PetriNet.Conflicts 
+  (findConflicts,pickConflicts,checkFindConfig,checkPickConfig) where
 
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
+import Modelling.PetriNet.BasicNetFunctions 
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser         (convertPetri, parseConflict)
 import Modelling.PetriNet.Types          (Petri(..),Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))
 
+import Data.Maybe                        (isJust)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
@@ -46,3 +49,15 @@ getNet st nd inst gc =
         case parseConflict inst of
           Left perror -> error perror
           Right confl -> return (dia, Just confl)
+          
+checkFindConfig :: FindConflictConfig -> Maybe String
+checkFindConfig FindConflictConfig{basicTask,changeTask} = do
+  let c = checkBasicConfig basicTask
+  if isJust c then c
+  else checkChangeConfig basicTask  changeTask
+  
+checkPickConfig :: PickConflictConfig -> Maybe String
+checkPickConfig PickConflictConfig{basicTask,changeTask} = do
+  let c = checkBasicConfig basicTask
+  if isJust c then c
+  else checkChangeConfig basicTask  changeTask

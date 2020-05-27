@@ -1,14 +1,16 @@
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.MatchToMath (matchToMath)  where
+module Modelling.PetriNet.MatchToMath (matchToMath,checkConfig)  where
 
 import Modelling.PetriNet.Alloy          (petriNetRnd, renderFalse)
+import Modelling.PetriNet.BasicNetFunctions 
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser
 import Modelling.PetriNet.Types
 
+import Data.Maybe                        (isJust)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import Language.Alloy.Call               (AlloyInstance,getInstances)
@@ -33,6 +35,12 @@ matchToMath switch config@MathConfig{basicTask,advTask} = do
         let fTex = map createPetriTex fNets
         return (rightNet, tex, Right $ zip fTex changes)
 
+checkConfig :: MathConfig -> Maybe String
+checkConfig MathConfig{basicTask,changeTask} = do
+  let c = checkBasicConfig basicTask
+  if isJust c then c
+  else checkChangeConfig basicTask changeTask
+
 falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
 falseList [] _       = ([],[])
 falseList (inst:rs) usedP =
@@ -52,3 +60,4 @@ runFalseParser alloy = do
   let change = parseChange alloy
   (petri,change)
   
+
