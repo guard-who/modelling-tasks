@@ -16,10 +16,14 @@ spec = do
         petri <- prepPetri
         let falseAlloy = renderFalse petri defaultMathConfig 
         existsInstance falseAlloy `shouldReturn` True
-  describe "petriScope" $
-    context "compute a scope for generating Petrinets with Alloy" $
+  describe "petriScopeBitwidth" $
+    context "computes the needed Bitwidth for generating Petrinets with Alloy" $
       it "taking some values out of the User's input" $
-        petriScope defaultBasicConfig `shouldSatisfy` (< 10)
+        petriScopeBitwidth defaultBasicConfig `shouldSatisfy` (< 7)
+  describe "petriScopeMaxSeq" $
+    context "computes the maximal needed Space for generating Petrinets with Alloy" $
+      it "taking some values out of the User's input" $
+        petriScopeMaxSeq defaultBasicConfig `shouldSatisfy` (< 10)
         
 prepPetri :: IO Petri
 prepPetri = do

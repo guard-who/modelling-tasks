@@ -6,7 +6,7 @@
 
 module Modelling.PetriNet.Alloy 
   (petriNetRnd,renderFalse,petriNetFindConfl,petriNetPickConfl
-  ,petriNetFindConcur,petriNetPickConcur,petriScope) 
+  ,petriNetFindConcur,petriNetPickConcur,petriScopeBitwidth,petriScopeMaxSeq) 
   where
 
 import Modelling.PetriNet.Types
@@ -14,14 +14,14 @@ import Modelling.PetriNet.Types
 import Data.String.Interpolate
 import Data.FileEmbed
 
-petriScope :: BasicConfig -> Int
-petriScope BasicConfig{places,transitions,maxFlowPerEdge} = max
-  (ceiling ( 2
-  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) places
-  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) transitions
-  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowPerEdge
-  ))
-  (places+transitions)
+petriScopeBitwidth :: BasicConfig -> Int
+petriScopeBitwidth BasicConfig{maxFlowOverall} =
+  ceiling ( 2
+  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowOverall
+  )
+  
+petriScopeMaxSeq :: BasicConfig -> Int
+petriScopeMaxSeq BasicConfig{places,transitions} = (places+transitions)
   
 petriLoops :: Bool -> String
 petriLoops = \case
@@ -77,7 +77,7 @@ pred showNets [activatedTrans : set Transitions] {
   #{compAdvConstraints advConfig}
   
 }
-run showNets for #{petriScope input}
+run showNets for exactly #{petriScopeMaxSeq input} Nodes, #{petriScopeBitwidth input} Int
 
 |]
 
@@ -106,7 +106,7 @@ pred showFalseNets[activatedTrans : set Transitions]{
   
 }
 
-run showFalseNets for #{petriScope basicTask}
+run showFalseNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
 
 |]
 
@@ -135,7 +135,8 @@ pred showRelNets [ #{specCompConfl basicTask changeTask}
   #{compAdvConstraints advTask}
   
 }
-run showRelNets for #{petriScope basicTask}
+run showRelNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+
 
 |]
 
@@ -151,7 +152,7 @@ pred showRelNets [defaultActivTrans, #{specCompConfl (basicTask(p :: PickConflic
 
   #{compDefaultConstraints atLeastActive}
 }
-run showRelNets for #{petriScope (basicTask(p :: PickConflictConfig))}
+run showRelNets for exactly #{petriScopeMaxSeq (basicTask(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConflictConfig))} Int
 
 |]
 
@@ -179,7 +180,8 @@ pred showRelNets [ #{specCompConcur basicTask changeTask}
   #{compAdvConstraints advTask}
   
 }
-run showRelNets for #{petriScope basicTask}
+run showRelNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+
 
 |]
 
@@ -195,7 +197,7 @@ pred showRelNets [defaultActivTrans, #{specCompConcur (basicTask(p :: PickConcur
 
   #{compDefaultConstraints atLeastActive}
 }
-run showRelNets for #{petriScope (basicTask(p :: PickConcurrencyConfig))}
+run showRelNets for exactly #{petriScopeMaxSeq (basicTask(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConcurrencyConfig))} Int
 
 |]
 
