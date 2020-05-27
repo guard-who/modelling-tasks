@@ -13,7 +13,7 @@ spec =
       it "everything needed to create the Task" $ do
         (_,_,changes) <- matchToMath True defaultMathConfig
              {changeTask = (changeTask defaultMathConfig)
-               {tokenChangeOverall = 1,maxTokenChangePerPlace = 2}}
+               {tokenChangeOverall = 1,maxTokenChangePerPlace = 1}}
         case changes of
           Right dChng -> print (map snd dChng) `shouldReturn` ()
           Left tChng -> print (map snd tChng) `shouldReturn` ()
