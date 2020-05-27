@@ -9,24 +9,22 @@ import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser         (convertPetri, parseConcurrency)
-import Modelling.PetriNet.Types          (Petri(..),Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
+import Modelling.PetriNet.Types          
+  (placeHoldPetri,Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
 
-import Data.Maybe                        (isJust)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Language.Alloy.Call               (getInstances,AlloyInstance)
 import Text.LaTeX                        (LaTeX)
 
-placeHoldPetri :: Petri
-placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
 findConcurrency :: FindConcurrencyConfig -> IO(LaTeX,[(Diagram B, Maybe Concurrent)])
 findConcurrency config@FindConcurrencyConfig{basicTask} = do
   list <- getInstances (Just 1) (petriNetFindConcur config)
-  confl <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
+  conc <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
   let tex = uebung placeHoldPetri 3 True
-  return (tex, [confl])
+  return (tex, [conc])
   
 pickConcurrency :: PickConcurrencyConfig -> IO(LaTeX,[(Diagram B, Maybe Concurrent)])
 pickConcurrency config@PickConcurrencyConfig{basicTask} = do
@@ -50,13 +48,15 @@ getNet st nd inst gc =
           Right conc -> return (dia, Just conc)
           
 checkFindConfig :: FindConcurrencyConfig -> Maybe String
-checkFindConfig FindConcurrencyConfig{basicTask,changeTask} = do
-  let c = checkBasicConfig basicTask
-  if isJust c then c
-  else checkChangeConfig basicTask  changeTask
+checkFindConfig f@FindConcurrencyConfig{basicTask = BasicConfig{atLeastActive},changeTask}
+ | atLeastActive < 1
+  = Just "The parameter 'atLeastActive' must be at least 2 to create a concurrency." 
+ | otherwise = 
+  checkBCConfig (basicTask(f :: FindConcurrencyConfig)) changeTask
   
 checkPickConfig :: PickConcurrencyConfig -> Maybe String
-checkPickConfig PickConcurrencyConfig{basicTask,changeTask} = do
-  let c = checkBasicConfig basicTask
-  if isJust c then c
-  else checkChangeConfig basicTask  changeTask
+checkPickConfig p@PickConcurrencyConfig{basicTask = BasicConfig{atLeastActive},changeTask}
+ | atLeastActive < 1
+  = Just "The parameter 'atLeastActive' must be at least 2 to create a concurrency." 
+ | otherwise = 
+  checkBCConfig (basicTask(p :: PickConcurrencyConfig)) changeTask

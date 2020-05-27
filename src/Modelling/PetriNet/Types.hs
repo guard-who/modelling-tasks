@@ -25,6 +25,9 @@ defaultPetri = Petri
   , trans = [([1,0,0],[0,1,0]),([1,0,0],[0,0,1]),([0,1,1],[2,0,0])]
   }
   
+placeHoldPetri :: Petri
+placeHoldPetri = Petri{initialMarking =[],trans=[]}
+  
 data BasicConfig = BasicConfig
   { places :: Int
   , transitions :: Int

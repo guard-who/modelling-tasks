@@ -9,18 +9,15 @@ import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser         (convertPetri, parseConflict)
-import Modelling.PetriNet.Types          (Petri(..),Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))
+import Modelling.PetriNet.Types          
+  (placeHoldPetri,Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))
 
-import Data.Maybe                        (isJust)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Language.Alloy.Call               (getInstances,AlloyInstance)
 import Text.LaTeX                        (LaTeX)
 
---until i find a good working solution for LaTeX.hs taking Petri in function "uebung"
-placeHoldPetri :: Petri
-placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
 findConflicts :: FindConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
 findConflicts config@FindConflictConfig{basicTask} = do
@@ -51,13 +48,15 @@ getNet st nd inst gc =
           Right confl -> return (dia, Just confl)
           
 checkFindConfig :: FindConflictConfig -> Maybe String
-checkFindConfig FindConflictConfig{basicTask,changeTask} = do
-  let c = checkBasicConfig basicTask
-  if isJust c then c
-  else checkChangeConfig basicTask  changeTask
+checkFindConfig f@FindConflictConfig{basicTask = BasicConfig{atLeastActive},changeTask}
+ | atLeastActive < 1
+  = Just "The parameter 'atLeastActive' must be at least 2 to create a conflict." 
+ | otherwise = 
+  checkBCConfig (basicTask(f :: FindConflictConfig)) changeTask
   
 checkPickConfig :: PickConflictConfig -> Maybe String
-checkPickConfig PickConflictConfig{basicTask,changeTask} = do
-  let c = checkBasicConfig basicTask
-  if isJust c then c
-  else checkChangeConfig basicTask  changeTask
+checkPickConfig p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},changeTask}
+ | atLeastActive < 1
+  = Just "The parameter 'atLeastActive' must be at least 2 to create a conflict." 
+ | otherwise = 
+  checkBCConfig (basicTask(p :: PickConflictConfig)) changeTask

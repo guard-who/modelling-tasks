@@ -4,6 +4,8 @@ module Modelling.PetriNet.BasicNetFunctions where
 
 import Modelling.PetriNet.Types
 
+import Data.Maybe                        (isJust)
+
 checkBasicConfig :: BasicConfig -> Maybe String
 checkBasicConfig BasicConfig{places,transitions,atLeastActive
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
@@ -78,3 +80,9 @@ checkChangeConfig BasicConfig
   = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
  | otherwise
   = Nothing
+  
+checkBCConfig :: BasicConfig -> ChangeConfig -> Maybe String
+checkBCConfig basic change = do
+  let c = checkBasicConfig basic
+  if isJust c then c
+  else checkChangeConfig basic change
