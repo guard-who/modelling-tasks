@@ -2,13 +2,12 @@
 {-# Language DuplicateRecordFields #-}
 
 module Modelling.PetriNet.Conflicts 
-  (findConflicts,pickConflicts,checkFindConfig,checkPickConfig) where
+  (findConflicts,pickConflicts) where
 
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
 import Modelling.PetriNet.BasicNetFunctions 
-import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
-import Modelling.PetriNet.Parser         (convertPetri, parseConflict)
+import Modelling.PetriNet.Parser         (parseConflict)
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))
 
@@ -35,28 +34,12 @@ pickConflicts config@PickConflictConfig{basicTask} = do
   return (tex, [confl,net])
         
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Conflict)
-getNet st nd inst gc =
-  case convertPetri st nd inst of
-    Left merror -> error merror
-    Right petri -> do
-      dia <- drawNet petri gc
-      if st == "defaultFlow" && nd == "defaultTokens" 
-      then return (dia,Nothing)
-      else
-        case parseConflict inst of
-          Left perror -> error perror
-          Right confl -> return (dia, Just confl)
+getNet st nd inst gc = do
+  dia <- getDia st nd inst gc
+  if st == "defaultFlow" && nd == "defaultTokens" 
+  then return (dia,Nothing)
+  else
+    case parseConflict inst of
+      Left perror -> error perror
+      Right confl -> return (dia, Just confl)
           
-checkFindConfig :: FindConflictConfig -> Maybe String
-checkFindConfig f@FindConflictConfig{basicTask = BasicConfig{atLeastActive},changeTask}
- | atLeastActive < 1
-  = Just "The parameter 'atLeastActive' must be at least 2 to create a conflict." 
- | otherwise = 
-  checkBCConfig (basicTask(f :: FindConflictConfig)) changeTask
-  
-checkPickConfig :: PickConflictConfig -> Maybe String
-checkPickConfig p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},changeTask}
- | atLeastActive < 1
-  = Just "The parameter 'atLeastActive' must be at least 2 to create a conflict." 
- | otherwise = 
-  checkBCConfig (basicTask(p :: PickConflictConfig)) changeTask

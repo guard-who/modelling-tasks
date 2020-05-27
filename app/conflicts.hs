@@ -30,7 +30,7 @@ mainFind = do
                          , changeTask = (changeTask (defaultFindConflictConfig :: FindConflictConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: FindConflictConfig
-  let c = checkFindConfig config
+  let c = checkCConfig (basicTask (config :: FindConflictConfig)) (changeTask (config :: FindConflictConfig))
   if isNothing c
   then do
     (latex,conflDia) <- findConflicts config
@@ -48,7 +48,7 @@ mainPick = do
                          , changeTask = (changeTask (defaultPickConflictConfig :: PickConflictConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: PickConflictConfig
-  let c = checkPickConfig config
+  let c = checkCConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
   if isNothing c
   then do
     (latex,conflDia) <- pickConflicts config
