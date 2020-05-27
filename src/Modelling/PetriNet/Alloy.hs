@@ -15,10 +15,15 @@ import Data.String.Interpolate
 import Data.FileEmbed
 
 petriScopeBitwidth :: BasicConfig -> Int
-petriScopeBitwidth BasicConfig{maxFlowOverall} =
-  ceiling ( 2
-  + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowOverall
-  )
+petriScopeBitwidth BasicConfig
+ {places,transitions,maxFlowOverall,maxTokensOverall} = maximum
+  [ floor 
+     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowOverall)
+  , floor 
+     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxTokensOverall)
+  , places
+  , transitions
+  ]
   
 petriScopeMaxSeq :: BasicConfig -> Int
 petriScopeMaxSeq BasicConfig{places,transitions} = (places+transitions)
