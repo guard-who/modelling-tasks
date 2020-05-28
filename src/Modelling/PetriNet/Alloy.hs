@@ -21,8 +21,8 @@ petriScopeBitwidth BasicConfig
      (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowOverall)
   , floor 
      (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxTokensOverall)
-  , places
-  , transitions
+  , floor 
+     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) (places+transitions))
   ]
   
 petriScopeMaxSeq :: BasicConfig -> Int
@@ -117,16 +117,6 @@ run showFalseNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeB
 
 --Conflict--
 
-specCompConfl :: BasicConfig -> ChangeConfig -> String
-specCompConfl basic@BasicConfig{places,transitions} change = [i|
-activatedTrans,conflictedTransitions: set Transitions, conflictPlace : Places] {
-  #Places = #{places}
-  #Transitions = #{transitions}
-  #{compBasicConstraints basic}
-  #{compChange change}
-  #{compConflict}
-|]
-
 petriNetFindConfl :: FindConflictConfig -> String
 petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module PetriNetConfl
 
@@ -135,8 +125,9 @@ petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module P
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [ #{specCompConfl basicTask changeTask}
+pred showRelNets [conflictPlace : Places, #{specCompRelation basicTask changeTask}
 
+  #{compConflict}
   #{compAdvConstraints advTask}
   
 }
@@ -153,8 +144,9 @@ petriNetPickConfl p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},ch
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [defaultActivTrans, #{specCompConfl (basicTask(p :: PickConflictConfig)) changeTask}
+pred showRelNets [conflictPlace : Places, defaultActivTrans, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
 
+  #{compConflict}
   #{compDefaultConstraints atLeastActive}
 }
 run showRelNets for exactly #{petriScopeMaxSeq (basicTask(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConflictConfig))} Int
@@ -162,15 +154,7 @@ run showRelNets for exactly #{petriScopeMaxSeq (basicTask(p :: PickConflictConfi
 |]
 
 --Concurrency--
-specCompConcur :: BasicConfig -> ChangeConfig -> String
-specCompConcur basic@BasicConfig{places,transitions} change = [i|
-activatedTrans,concurrentTransitions: set Transitions] {
-  #Places = #{places}
-  #Transitions = #{transitions}
-  #{compBasicConstraints basic}
-  #{compChange change}
-  #{compConcurrency}
-|]
+
 
 petriNetFindConcur :: FindConcurrencyConfig -> String
 petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|module PetriNetConcur
@@ -180,8 +164,9 @@ petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|modu
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [ #{specCompConcur basicTask changeTask}
+pred showRelNets [ #{specCompRelation basicTask changeTask}
 
+  #{compConcurrency}
   #{compAdvConstraints advTask}
   
 }
@@ -198,8 +183,9 @@ petriNetPickConcur p@PickConcurrencyConfig{basicTask = BasicConfig{atLeastActive
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [defaultActivTrans, #{specCompConcur (basicTask(p :: PickConcurrencyConfig)) changeTask}
+pred showRelNets [defaultActivTrans, #{specCompRelation (basicTask(p :: PickConcurrencyConfig)) changeTask}
 
+  #{compConcurrency}
   #{compDefaultConstraints atLeastActive}
 }
 run showRelNets for exactly #{petriScopeMaxSeq (basicTask(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConcurrencyConfig))} Int
@@ -257,20 +243,29 @@ compChange ChangeConfig
 compConcurrency :: String
 compConcurrency = [i|
   no x,y : Transitions | concurrentDefault[x+y] and x != y
-  some concurTrans1, concurTrans2 : Transitions | concurrentTransitions = concurTrans1 + concurTrans2
+  some concurTrans1, concurTrans2 : Transitions | relatedTransitions = concurTrans1 + concurTrans2
   and concurTrans1 != concurTrans2
   and concurrent [concurTrans1+concurTrans2]
   and all u,v : Transitions | concurrent[u+v] and u != v implies concurTrans1 + concurTrans2 = u + v
 |]
 
---Needs: conflictedTransitions: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places
+--Needs: relatedTransitions: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places
 compConflict :: String
 compConflict = [i|
   no x,y : Transitions, z : Places | conflictDefault[x,y,z]
-  some conflictTrans1, conflictTrans2 : Transitions | conflictedTransitions = conflictTrans1 + conflictTrans2 
+  some conflictTrans1, conflictTrans2 : Transitions | relatedTransitions = conflictTrans1 + conflictTrans2 
   and conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places 
     | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v
   
+|]
+
+specCompRelation :: BasicConfig -> ChangeConfig -> String
+specCompRelation basic@BasicConfig{places,transitions} change = [i|
+activatedTrans,relatedTransitions: set Transitions] {
+  #Places = #{places}
+  #Transitions = #{transitions}
+  #{compBasicConstraints basic}
+  #{compChange change}
 |]
 
 givPlaces :: Int -> String
