@@ -7,7 +7,7 @@ import Modelling.PetriNet.Types
 import Test.Hspec
 
 spec :: Spec 
-spec =
+spec = do
   describe "matchToMath" $
     context "creates, out of a given Config and a Boolean for Tasktype," $
       it "everything needed to create the Task" $ do
@@ -17,6 +17,9 @@ spec =
         case changes of
           Right dChng -> print (map snd dChng) `shouldReturn` ()
           Left tChng -> print (map snd tChng) `shouldReturn` ()
+  describe "checkConfig" $ 
+    it "checks if the input is in given boundaries for the task" $
+      checkConfig defaultMathConfig `shouldBe` Nothing
         
 
 

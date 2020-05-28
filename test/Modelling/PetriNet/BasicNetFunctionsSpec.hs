@@ -2,7 +2,7 @@ module Modelling.PetriNet.BasicNetFunctionsSpec where
 
 import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.Types
-  (defaultBasicConfig,BasicConfig(..),defaultChangeConfig,ChangeConfig(..))       
+  (defaultBasicConfig,BasicConfig(..),defaultChangeConfig,ChangeConfig(..),defaultFindConflictConfig,FindConflictConfig(..))       
 
 import Test.Hspec
 import Data.Maybe
@@ -23,3 +23,13 @@ spec = do
       it "it returns a String with nessecary changes" $
         checkChangeConfig defaultBasicConfig defaultChangeConfig{tokenChangeOverall = -1}
           `shouldSatisfy` isJust
+  describe "checkCConfig" $ do
+    it "checks if the input for the C-Tasks(Conflict&Concurrency) is in given boundaries" $ do
+      let inp = defaultFindConflictConfig
+      checkCConfig (basicTask inp) (changeTask inp) `shouldBe` Nothing
+    context "when provided with Input out of the constraints" $
+      it "it returns a String with nessecary changes" $ do
+        let inp = defaultFindConflictConfig{
+          basicTask = (basicTask (defaultFindConflictConfig :: FindConflictConfig)){atLeastActive = 1}
+          }
+        checkCConfig (basicTask inp) (changeTask inp) `shouldSatisfy` isJust
