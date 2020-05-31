@@ -49,8 +49,8 @@ defaultBasicConfig = BasicConfig
   , minTokensOverall = 2
   , maxTokensOverall = 7
   , maxTokensPerPlace = 2
-  , minFlowOverall = 4
-  , maxFlowOverall = 7
+  , minFlowOverall = 6
+  , maxFlowOverall = 12
   , maxFlowPerEdge = 2
   , graphLayout = Circo
   }
@@ -104,7 +104,7 @@ data FindConflictConfig = FindConflictConfig
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
-  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
+  { basicTask = defaultBasicConfig{ atLeastActive = 3 }
   , advTask = defaultAdvConfig{ presenceOfSinkTransitions = Nothing, presenceOfSourceTransitions = Nothing }
   , changeTask = defaultChangeConfig
   }
@@ -128,7 +128,7 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
-  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
+  { basicTask = defaultBasicConfig{ atLeastActive = 3 }
   , advTask = defaultAdvConfig{ presenceOfSinkTransitions = Nothing, presenceOfSourceTransitions = Nothing }
   , changeTask = defaultChangeConfig
   }
