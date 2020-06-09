@@ -16,14 +16,11 @@ import Data.FileEmbed
 
 petriScopeBitwidth :: BasicConfig -> Int
 petriScopeBitwidth BasicConfig
- {places,transitions,maxFlowOverall,maxTokensOverall} = maximum
-  [ floor 
-     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxFlowOverall)
-  , floor 
-     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) maxTokensOverall)
-  , floor 
-     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) (places+transitions))
-  ]
+ {places,transitions,maxFlowOverall,maxTokensOverall} = 
+  floor 
+     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) 
+       (maximum [maxFlowOverall,maxTokensOverall,places,transitions])
+     )
   
 petriScopeMaxSeq :: BasicConfig -> Int
 petriScopeMaxSeq BasicConfig{places,transitions} = (places+transitions)
