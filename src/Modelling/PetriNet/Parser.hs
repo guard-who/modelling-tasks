@@ -1,9 +1,16 @@
-module Modelling.PetriNet.Parser (convertPetri, parseChange, parseConflict, parseConcurrency) where
+{-# LANGUAGE ParallelListComp #-}
+
+module Modelling.PetriNet.Parser (convertPetri, convertGr, prepNodes, parseChange, parseConflict, parseConcurrency) where
 
 import Modelling.PetriNet.Types
 
 import Language.Alloy.Call
 import qualified Data.Set as Set
+import Data.Graph.Inductive.Graph       (mkGraph)
+import Data.Graph.Inductive.PatriciaTree
+  (Gr)
+import qualified Data.Map.Lazy as Map
+import Data.Maybe                       (fromMaybe)
       
 type TripSet = Set.Set (Object,Object,Object)
 
@@ -69,29 +76,43 @@ tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName va
   
                             --Spezielles--
                             
-parseConflict :: AlloyInstance -> Either String Conflict
-parseConflict inst = do
+                            
+parseConflict :: [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String Conflict
+parseConflict nodes inst = do
+  mId <- mapNodes inst
   tc1 <- unscopedSingleSig inst "$showRelNets_conflictTrans1" ""
   tc2 <- unscopedSingleSig inst "$showRelNets_conflictTrans2" ""
   pc  <- unscopedSingleSig inst "$showRelNets_conflictPlace"  ""
   return 
     Conflict
-      {conflictTrans = ("T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc1)) '$') :: Int)
-                       ,"T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc2)) '$') :: Int)
+      {conflictTrans = ( extractName (getVal (Set.elemAt 0 tc1) mId) nodes
+                       , extractName (getVal (Set.elemAt 0 tc2) mId) nodes
                        )
-      ,conflictPlace = "S"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 pc)) '$') :: Int)
+      ,conflictPlace = extractName (getVal (Set.elemAt 0 pc) mId) nodes
       }
     
-parseConcurrency :: AlloyInstance -> Either String Concurrent
-parseConcurrency inst = do
+parseConcurrency :: [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String Concurrent
+parseConcurrency nodes inst = do
+  mId <- mapNodes inst
   tc1 <- unscopedSingleSig inst "$showRelNets_concurTrans1" ""
   tc2 <- unscopedSingleSig inst "$showRelNets_concurTrans2" ""
   return
-    ("T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc1)) '$') :: Int)
-    ,"T"++(show . succ) (read (listFrom (objectName (Set.elemAt 0 tc2)) '$') :: Int)
+    ( extractName (getVal (Set.elemAt 0 tc1) mId) nodes
+    , extractName (getVal (Set.elemAt 0 tc2) mId) nodes
     )
                             
-                            --Hilfsfunktionen--
+                            --Hilfsfunktionen--    
+                           
+mapNodes :: AlloyInstance -> Either String (Map.Map Object Int)
+mapNodes inst = do
+  nods <- singleSig inst "this" "Nodes" ""
+  return $ Map.fromList $ Set.toList nods `zip`  [0..]
+
+extractName :: Int -> [(Int,(String, Maybe Int))] -> String
+extractName i nodes =
+  fst $ fromMaybe (error "Error occurred while mapping the net") (lookup i nodes)
+  
+ 
                             
 -- Instance -> scope -> relations (e.g. ["this","Nodes","flow"])
 singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
@@ -145,13 +166,37 @@ listTill (x:rs) y
  | x == y    = []
  | otherwise = x : listTill rs y
  
-listFrom :: (Eq a) => [a] -> a -> [a]
-listFrom [] _ = []
-listFrom (x:rs) y
- | x == y    = rs
- | otherwise = listFrom rs y
 ------------------------------------------------------------------------------------------
 
+--ParseDirectlyToDiagram
+
+convertGr :: String -> [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String (Gr(String,Maybe Int) String)
+convertGr f n inst = do
+  flow <- tripleSig inst "this" "Nodes" f
+  nodesM <- mapNodes inst 
+  return $ mkGraph n 
+    [(getVal pr nodesM, getVal po nodesM, objectName wg)| (pr,po,wg) <- (Set.toList flow)]
+  
+prepNodes :: String -> AlloyInstance -> Either String [(Int,(String, Maybe Int))]
+prepNodes t inst = do
+  pls <- singleSig inst "this" "Places" ""
+  trns <- singleSig inst "this" "Transitions" ""
+  mark <- doubleSig inst "this" "Places" t
+  let mVal = Map.fromList ( Set.toList mark)
+  nodes <- mapNodes inst 
+  return 
+    (  [ (getVal p nodes,("S"++show (i :: Int),Just (read (objectName (getVal p mVal)) :: Int)))
+       | p <- Set.toList pls | i <- [1..]]
+    ++ [ (getVal tr nodes,("T"++show (i :: Int),Nothing)) 
+       | tr <- Set.toList trns | i <- [1..] ]
+    )
+  
+getVal :: Ord k => k -> Map.Map k v -> v
+getVal x m = do
+  let item = Map.lookup x m
+  fromMaybe (error "Error occurred while mapping the net") item
+
+------------------------------------------------------------------------------------------
 --Parse From Input
 -- runIParser :: Input -> IO(Either String Petri)
 -- runIParser inp = do 

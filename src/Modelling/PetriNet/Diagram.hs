@@ -2,7 +2,8 @@
 
 module Modelling.PetriNet.Diagram (drawNet) where
 
-import Modelling.PetriNet.Types
+--import Modelling.PetriNet.Types
+import Modelling.PetriNet.Parser        (convertGr)
 
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
@@ -10,69 +11,29 @@ import qualified Data.Map                         as M (foldlWithKey)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
-import Data.Graph.Inductive.Graph       (mkGraph)
-import Data.Graph.Inductive.PatriciaTree
-  (Gr)
+-- import Data.Graph.Inductive.Graph       (mkGraph)
+-- import Data.Graph.Inductive.PatriciaTree
+  -- (Gr)
 import Data.GraphViz                    hiding (Path)
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
-  
-
-----------------------Preparing a PetriNet for Graph--------------------
-prepNet :: Petri -> Gr (String, Maybe Int) String
-prepNet Petri{initialMarking,trans} =
-  mkGraph (prepPlaces (length initialMarking) 0 initialMarking
-           ++ prepTrans nA (length initialMarking) 1)
-  (prepEdges (length initialMarking) trans)
-  where nA = length initialMarking + length trans
- 
---AnzahlStellen -> startIndex -> StartMarkierung
-prepPlaces :: Int -> Int -> [Int] -> [(Int,(String,Maybe Int))]
-prepPlaces _ _ []     = []
-prepPlaces s i (m:rm) = (i,("s" ++ show (i+1), Just m)):prepPlaces s (i+1) rm 
-
---GesamtAnzahl(Stellen+Trans) -> startIndex
-prepTrans :: Int -> Int -> Int -> [(Int,(String,Maybe Int))]
-prepTrans s i t
- | s > i         = (i,("t" ++ show t,Nothing)):prepTrans s (i+1) (t+1)
- | otherwise     = []
- 
-{-
-  ex: extern Index of Transitions
-  i : intern Index of Places
--}
-
---Counter-> transitions -> Ausgabe
-prepEdges :: Int -> [Transition] -> [(Int,Int,String)]
-prepEdges _ [] = []
-prepEdges ex ((p,post):rt) = createPre ex 0 p
-                            ++ createPost ex 0 post
-                            ++ prepEdges (ex+1) rt
-
---ExternCounter -> InternCounter->List->Ausgabe
-createPre :: Int -> Int -> Marking -> [(Int,Int,String)]
-createPre _ _ [] = []
-createPre ex i (m:rm) 
- | m /= 0    = (i,ex,show m):createPre ex (i+1) rm
- | otherwise = createPre ex (i+1) rm
-
-createPost :: Int -> Int -> Marking -> [(Int,Int,String)]
-createPost _ _ [] = []
-createPost ex i (m:rm) 
- | m /= 0    = (ex,i,show m):createPost ex (i+1) rm
- | otherwise = createPost ex (i+1) rm
+import Language.Alloy.Call               (AlloyInstance)
 
 -------------------------------------------------------------------------
-drawNet :: Petri -> GraphvizCommand -> IO (Diagram B)
-drawNet pnet gc = do
-  let gnet = prepNet pnet
-  graph <- GV.layoutGraph gc gnet
-  pfont <- lin
-  let (nodes, edges) = GV.getGraph graph
-      gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
-      gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gnodes edges
-  return (gedges # frame 1)
+drawNet :: 
+  String -> [(Int,(String, Maybe Int))] -> AlloyInstance -> GraphvizCommand -> IO (Diagram B)
+drawNet f n inst gc =
+  case convertGr f n inst of
+    Left merror -> error merror
+    Right gnet -> do
+      graph <- GV.layoutGraph gc gnet
+      pfont <- lin
+      let (nodes, edges) = GV.getGraph graph
+          gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
+          gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gnodes edges
+      return (gedges # frame 1)
+      
 
 drawNode :: PreparedFont Double -> (String,Maybe Int) -> Point V2 Double -> Diagram B
 drawNode pfont (l, Nothing) p  = place

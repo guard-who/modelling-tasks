@@ -1,6 +1,5 @@
 module Main (main) where
 
-import Modelling.PetriNet.BasicNetFunctions
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types
   (BasicConfig(..),ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
@@ -30,7 +29,7 @@ main = do
   if isNothing c 
      then do
        (dia,tex,falseNets) <- matchToMath switch config
-       renderSVG "app/change0.svg" (mkWidth 200) dia
+       renderSVG "app/change0.svg" (mkWidth 400) dia
        renderFile "app/change0.tex" tex
        case falseNets of
          Right falseTex -> parseChangeTex 1 falseTex

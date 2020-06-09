@@ -5,9 +5,9 @@ module Modelling.PetriNet.Conflicts
   (findConflicts,pickConflicts) where
 
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
-import Modelling.PetriNet.BasicNetFunctions 
+import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
-import Modelling.PetriNet.Parser         (parseConflict)
+import Modelling.PetriNet.Parser         (parseConflict,prepNodes)
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))
 
@@ -34,12 +34,15 @@ pickConflicts config@PickConflictConfig{basicTask} = do
   return (tex, [confl,net])
         
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Conflict)
-getNet st nd inst gc = do
-  dia <- getDia st nd inst gc
-  if st == "defaultFlow" && nd == "defaultTokens" 
-  then return (dia,Nothing)
-  else
-    case parseConflict inst of
-      Left perror -> error perror
-      Right confl -> return (dia, Just confl)
+getNet f t inst gc =
+  case prepNodes t inst of
+    Left nerror -> error nerror
+    Right nodes -> do
+      dia <- drawNet f nodes inst gc
+      if f == "defaultFlow" && t == "defaultTokens" 
+      then return (dia,Nothing)
+      else
+        case parseConflict nodes inst of
+          Left perror -> error perror
+          Right confl -> return (dia, Just confl)
           

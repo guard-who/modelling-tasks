@@ -2,21 +2,9 @@
 
 module Modelling.PetriNet.BasicNetFunctions where
 
-import Modelling.PetriNet.Diagram
-import Modelling.PetriNet.Parser         (convertPetri)
 import Modelling.PetriNet.Types
 
-import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Data.Maybe                        (isJust)
-import Diagrams.Backend.SVG              (B)
-import Diagrams.Prelude                  (Diagram)
-import Language.Alloy.Call               (AlloyInstance)
-
-getDia :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B)
-getDia st nd inst gc =
-  case convertPetri st nd inst of
-    Left merror -> error merror
-    Right petri -> drawNet petri gc
 
 checkBasicConfig :: BasicConfig -> Maybe String
 checkBasicConfig BasicConfig{places,transitions,atLeastActive

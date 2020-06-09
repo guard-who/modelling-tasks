@@ -20,20 +20,24 @@ import Text.LaTeX                        (LaTeX)
 matchToMath :: Bool -> MathConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
 matchToMath switch config@MathConfig{basicTask,advTask} = do
   list <- getInstances (Just 1) (petriNetRnd basicTask advTask)
-  case convertPetri "flow" "tokens" (head list) of
-    Left merror -> error merror
-    Right petri -> do
-      rightNet <- drawNet petri (graphLayout basicTask)
-      let tex = uebung petri 1 switch
-      let f = renderFalse petri config
-      fList <- getInstances (Just 3) f
-      let (fNets,changes) = falseList fList []
-      if switch then do
-        fDia <- mapM ( `drawNet` (graphLayout basicTask)) fNets
-        return (rightNet, tex, Left $ zip fDia changes)
-      else do
-        let fTex = map createPetriTex fNets
-        return (rightNet, tex, Right $ zip fTex changes)
+  case prepNodes "tokens" (head list) of
+    Left nerror -> error nerror
+    Right nodes ->
+      case convertPetri "flow" "tokens" (head list) of
+        Left merror -> error merror
+        Right petri -> do
+          rightNet <- drawNet "flow" nodes (head list) (graphLayout basicTask)
+          let tex = uebung petri 1 switch
+          let f = renderFalse petri config
+          fList <- getInstances (Just 3) f
+          let (fNets,changes) = falseList fList []
+          if switch then do
+            fDia <- mapM helper fList
+            return (rightNet, tex, Left $ zip fDia changes)
+          else do
+            let fTex = map createPetriTex fNets
+            return (rightNet, tex, Right $ zip fTex changes)
+      where helper x = drawNet "flow" nodes x (graphLayout basicTask)
 
 checkConfig :: MathConfig -> Maybe String
 checkConfig MathConfig{basicTask,changeTask} = do

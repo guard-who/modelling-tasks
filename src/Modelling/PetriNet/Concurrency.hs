@@ -5,9 +5,9 @@ module Modelling.PetriNet.Concurrency
   (findConcurrency,pickConcurrency) where
 
 import Modelling.PetriNet.Alloy          (petriNetFindConcur,petriNetPickConcur)
-import Modelling.PetriNet.BasicNetFunctions 
+import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
-import Modelling.PetriNet.Parser         (parseConcurrency)
+import Modelling.PetriNet.Parser         (parseConcurrency,prepNodes)
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
 
@@ -34,11 +34,14 @@ pickConcurrency config@PickConcurrencyConfig{basicTask} = do
   return (tex, [conc,net])
 
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Concurrent)
-getNet st nd inst gc = do
-  dia <- getDia st nd inst gc
-  if st == "defaultFlow" && nd == "defaultTokens" 
-  then return (dia,Nothing)
-  else
-    case parseConcurrency inst of
-      Left perror -> error perror
-      Right conc -> return (dia, Just conc)
+getNet f t inst gc =
+  case prepNodes t inst of
+    Left nerror -> error nerror
+    Right nodes -> do
+      dia <- drawNet f nodes inst gc
+      if f == "defaultFlow" && t == "defaultTokens" 
+      then return (dia,Nothing)
+      else
+        case parseConcurrency nodes inst of
+          Left perror -> error perror
+          Right conc -> return (dia, Just conc)
