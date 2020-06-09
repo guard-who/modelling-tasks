@@ -42,8 +42,8 @@ checkBasicConfig BasicConfig{places,transitions,atLeastActive
   = Just "The parameter 'maxFlowPerEdge' must not be larger than 'maxFlowOverall'."
  | maxFlowOverall > 2 * places * transitions * maxFlowPerEdge
   = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
- | transitions + places > 1 + maxFlowOverall 
-  = Just "the sum of Nodes are exceeding 'maxFlowOverall' too far to create a connected net."
+ | transitions + places > 1 + minFlowOverall 
+  = Just "the sum of Nodes are exceeding 'minFlowOverall' too far to create a connected net."
  | otherwise
   = Nothing
   
