@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0f5dc00f3bce071e6294376863b2f85b61cc351a50112dc68e300bc21efc88aa
+-- hash: 48da9ef52b89599fcbf0d3958dd5ff2391e8c20ffee3e787b817508272da7587
 
 name:           petri-tasks
 version:        0.0.0
@@ -44,6 +44,7 @@ library
     , diagrams-svg
     , fgl
     , file-embed
+    , ghc
     , graphviz
     , pretty-simple
     , string-interpolate
@@ -69,6 +70,7 @@ executable concurrency
     , diagrams-svg
     , fgl
     , file-embed
+    , ghc
     , graphviz
     , petri-tasks
     , pretty-simple
@@ -95,6 +97,7 @@ executable conflicts
     , diagrams-svg
     , fgl
     , file-embed
+    , ghc
     , graphviz
     , petri-tasks
     , pretty-simple
@@ -121,6 +124,7 @@ executable matchToMath
     , diagrams-svg
     , fgl
     , file-embed
+    , ghc
     , graphviz
     , petri-tasks
     , pretty-simple
@@ -156,6 +160,7 @@ test-suite petri-tasks-test
     , diagrams-svg
     , fgl
     , file-embed
+    , ghc
     , graphviz
     , hspec
     , petri-tasks

@@ -4,8 +4,6 @@ module Modelling.PetriNet.BasicNetFunctions where
 
 import Modelling.PetriNet.Types
 
-import Data.Maybe                        (isJust)
-
 checkBasicConfig :: BasicConfig -> Maybe String
 checkBasicConfig BasicConfig{places,transitions,atLeastActive
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
@@ -83,11 +81,8 @@ checkChangeConfig BasicConfig
  | otherwise
   = Nothing
   
-checkCConfig :: BasicConfig -> ChangeConfig -> Maybe String
-checkCConfig basic@BasicConfig{atLeastActive} change
+checkCConfig :: BasicConfig  -> Maybe String
+checkCConfig BasicConfig{atLeastActive}
  | atLeastActive < 2
   = Just "The parameter 'atLeastActive' must be at least 2 to create the task." 
- | otherwise = do
-  let c = checkBasicConfig basic
-  if isJust c then c
-  else checkChangeConfig basic change
+ | otherwise = Nothing

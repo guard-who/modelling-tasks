@@ -10,6 +10,7 @@ import Modelling.PetriNet.Types
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
+import Maybes                            (firstJusts)
 import System.IO
 import Text.LaTeX                        (renderFile)
 import Text.Pretty.Simple                (pPrint)
@@ -30,7 +31,11 @@ mainFind = do
                          , changeTask = (changeTask (defaultFindConflictConfig :: FindConflictConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: FindConflictConfig
-  let c = checkCConfig (basicTask (config :: FindConflictConfig)) (changeTask (config :: FindConflictConfig))
+  let c = firstJusts 
+        [ checkBasicConfig (basicTask (config :: FindConflictConfig))
+        , checkChangeConfig (basicTask (config :: FindConflictConfig)) (changeTask (config :: FindConflictConfig))
+        , checkCConfig (basicTask (config :: FindConflictConfig)) 
+        ]
   if isNothing c
   then do
     (latex,conflDia) <- findConflicts config
@@ -48,7 +53,11 @@ mainPick = do
                          , changeTask = (changeTask (defaultPickConflictConfig :: PickConflictConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: PickConflictConfig
-  let c = checkCConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
+  let c = firstJusts 
+        [ checkBasicConfig (basicTask (config :: PickConflictConfig))
+        , checkChangeConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
+        , checkCConfig (basicTask (config ::PickConflictConfig)) 
+        ]
   if isNothing c
   then do
     (latex,conflDia) <- pickConflicts config

@@ -48,6 +48,7 @@ extra-deps:
   - HaTeX-3.22.2.0
   - text-1.2.3.1
   - pretty-simple-3.2.2.0
+  - ghc-8.6.5
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

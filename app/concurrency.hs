@@ -10,6 +10,7 @@ import Modelling.PetriNet.Types
 import Data.Maybe                        (isNothing)
 import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
+import Maybes                            (firstJusts)
 import System.IO
 import Text.LaTeX                        (renderFile)
 import Text.Pretty.Simple                (pPrint)
@@ -30,7 +31,11 @@ mainFind = do
                          , changeTask = (changeTask (defaultFindConcurrencyConfig :: FindConcurrencyConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: FindConcurrencyConfig
-  let c = checkCConfig (basicTask (config :: FindConcurrencyConfig)) (changeTask (config :: FindConcurrencyConfig))
+  let c = firstJusts 
+        [ checkBasicConfig (basicTask (config :: FindConcurrencyConfig))
+        , checkChangeConfig (basicTask (config :: FindConcurrencyConfig)) (changeTask (config :: FindConcurrencyConfig))
+        , checkCConfig (basicTask (config ::FindConcurrencyConfig)) 
+        ]
   if isNothing c
   then do
     (latex,concDia) <- findConcurrency config
@@ -48,7 +53,11 @@ mainPick = do
                          , changeTask = (changeTask (defaultPickConcurrencyConfig :: PickConcurrencyConfig)){ tokenChangeOverall = tknChange
                                                            , flowChangeOverall = flwChange}
                          } :: PickConcurrencyConfig
-  let c = checkCConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig))
+  let c = firstJusts 
+        [ checkBasicConfig (basicTask (config :: PickConcurrencyConfig))
+        , checkChangeConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig))
+        , checkCConfig (basicTask (config ::PickConcurrencyConfig)) 
+        ]
   if isNothing c
   then do
     (latex,concDia) <- pickConcurrency config

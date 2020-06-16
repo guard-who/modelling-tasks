@@ -10,10 +10,10 @@ import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser
 import Modelling.PetriNet.Types
 
-import Data.Maybe                        (isJust)
 import Diagrams.Backend.SVG              (B)
 import Diagrams.Prelude                  (Diagram)
 import Language.Alloy.Call               (AlloyInstance,getInstances)
+import Maybes                            (firstJusts)
 import Text.LaTeX                        (LaTeX)
 
 --True Task1 <-> False Task1a
@@ -40,10 +40,8 @@ matchToMath switch config@MathConfig{basicTask,advTask} = do
       where helper x = drawNet "flow" nodes x (graphLayout basicTask)
 
 checkConfig :: MathConfig -> Maybe String
-checkConfig MathConfig{basicTask,changeTask} = do
-  let c = checkBasicConfig basicTask
-  if isJust c then c
-  else checkChangeConfig basicTask changeTask
+checkConfig MathConfig{basicTask,changeTask} = 
+  firstJusts [checkBasicConfig basicTask, checkChangeConfig basicTask changeTask]
 
 falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
 falseList [] _       = ([],[])
