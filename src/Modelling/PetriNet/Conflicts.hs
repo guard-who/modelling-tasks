@@ -18,19 +18,19 @@ import Language.Alloy.Call               (getInstances,AlloyInstance)
 import Text.LaTeX                        (LaTeX)
 
 
-findConflicts :: FindConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
-findConflicts config@FindConflictConfig{basicTask} = do
-  list <- getInstances (Just 1) (petriNetFindConfl config)
-  confl <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
+findConflicts :: Int -> FindConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+findConflicts indInst config@FindConflictConfig{basicTask} = do
+  list <- getInstances (Just (toInteger (indInst+1))) (petriNetFindConfl config)
+  confl <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
   let tex = uebung placeHoldPetri 2 True
   return (tex, [confl])
   
-pickConflicts :: PickConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
-pickConflicts config@PickConflictConfig{basicTask} = do
-  list <- getInstances (Just 1) (petriNetPickConfl config)
-  confl <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
+pickConflicts :: Int -> PickConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+pickConflicts indInst config@PickConflictConfig{basicTask} = do
+  list <- getInstances (Just (toInteger (indInst+1))) (petriNetPickConfl config)
+  confl <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
   let tex = uebung placeHoldPetri 2 False
-  net <- getNet "defaultFlow" "defaultTokens" (head list) (graphLayout basicTask)
+  net <- getNet "defaultFlow" "defaultTokens" (list !! indInst) (graphLayout basicTask)
   return (tex, [confl,net])
         
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Conflict)

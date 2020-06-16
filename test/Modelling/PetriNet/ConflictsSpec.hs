@@ -11,11 +11,11 @@ spec = do
   describe "findConflicts" $
     context "creates, out of a given Config," $
       it "everything needed to create the Task is generated" $ do
-        (_,diaConfl) <- findConflicts defaultFindConflictConfig 
+        (_,diaConfl) <- findConflicts 0 defaultFindConflictConfig 
         print (map snd diaConfl) `shouldReturn` ()
   describe "pickConflicts" $
     context "creates, out of a given Config," $
       it "everything needed to create the Task is generated" $ do
-        (_,diaConfl) <- pickConflicts defaultPickConflictConfig 
+        (_,diaConfl) <- pickConflicts 0 defaultPickConflictConfig 
         print (map snd diaConfl) `shouldReturn` ()
         

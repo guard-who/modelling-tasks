@@ -20,10 +20,13 @@ main = do
   hSetBuffering stdout NoBuffering
   putStr "What type would you like? a: Find a Conflict in a Net, b: Choose the Net with the Conflict"
   sw <- getLine
-  if sw == "b" then mainPick else mainFind
+  i <- instanceInput
+  if i >= 0 
+  then if sw == "b" then mainPick i else mainFind i
+  else print "There is no negative index"
 
-mainFind :: IO()
-mainFind = do
+mainFind ::Int -> IO()
+mainFind i = do
   pPrint $ defaultFindConflictConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConflictConfig{
@@ -38,14 +41,14 @@ mainFind = do
         ]
   if isNothing c
   then do
-    (latex,conflDia) <- findConflicts config
+    (latex,conflDia) <- findConflicts i config
     renderFile "app/task2.tex" latex
     parseConflDia 1 conflDia
   else
     print (c :: Maybe String)
 
-mainPick :: IO()
-mainPick = do
+mainPick :: Int -> IO()
+mainPick i = do
   pPrint $ defaultPickConflictConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConflictConfig{
@@ -60,7 +63,7 @@ mainPick = do
         ]
   if isNothing c
   then do
-    (latex,conflDia) <- pickConflicts config
+    (latex,conflDia) <- pickConflicts i config
     renderFile "app/task2.tex" latex
     parseConflDia 1 conflDia
   else

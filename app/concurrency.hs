@@ -20,10 +20,13 @@ main = do
   hSetBuffering stdout NoBuffering
   putStr "What type would you like? a: Find a concurrency in a Net, b: Choose the Net with the concurrency"
   sw <- getLine
-  if sw == "b" then mainPick else mainFind
+  i <- instanceInput
+  if i >= 0 
+  then if sw == "b" then mainPick i else mainFind i
+  else print "There is no negative index"
 
-mainFind :: IO()
-mainFind = do
+mainFind :: Int -> IO()
+mainFind i = do
   pPrint $ defaultFindConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConcurrencyConfig{
@@ -38,14 +41,14 @@ mainFind = do
         ]
   if isNothing c
   then do
-    (latex,concDia) <- findConcurrency config
+    (latex,concDia) <- findConcurrency i config
     renderFile "app/task3.tex" latex
     parseConcDia 1 concDia
   else
     print (c :: Maybe String)
     
-mainPick :: IO()
-mainPick = do
+mainPick :: Int -> IO()
+mainPick i = do
   pPrint $ defaultPickConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConcurrencyConfig{
@@ -60,7 +63,7 @@ mainPick = do
         ]
   if isNothing c
   then do
-    (latex,concDia) <- pickConcurrency config
+    (latex,concDia) <- pickConcurrency i config
     renderFile "app/task3.tex" latex
     parseConcDia 1 concDia
   else

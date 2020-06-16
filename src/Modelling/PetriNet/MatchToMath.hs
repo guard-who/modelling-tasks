@@ -17,16 +17,16 @@ import Maybes                            (firstJusts)
 import Text.LaTeX                        (LaTeX)
 
 --True Task1 <-> False Task1a
-matchToMath :: Bool -> MathConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
-matchToMath switch config@MathConfig{basicTask,advTask} = do
-  list <- getInstances (Just 1) (petriNetRnd basicTask advTask)
-  case prepNodes "tokens" (head list) of
+matchToMath :: Int -> Bool -> MathConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
+matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
+  list <- getInstances (Just (toInteger (indInst+1))) (petriNetRnd basicTask advTask)
+  case prepNodes "tokens" (list !! indInst) of
     Left nerror -> error nerror
     Right nodes ->
-      case convertPetri "flow" "tokens" (head list) of
+      case convertPetri "flow" "tokens" (list !! indInst) of
         Left merror -> error merror
         Right petri -> do
-          rightNet <- drawNet "flow" nodes (head list) (graphLayout basicTask)
+          rightNet <- drawNet "flow" nodes (list !! indInst) (graphLayout basicTask)
           let tex = uebung petri 1 switch
           let f = renderFalse petri config
           fList <- getInstances (Just 3) f

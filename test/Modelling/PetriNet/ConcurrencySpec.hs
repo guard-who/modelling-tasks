@@ -11,10 +11,10 @@ spec = do
   describe "findConcurrency" $
     context "creates, out of a given Config," $
       it "everything needed to create the Task is generated" $ do
-        (_,diaConc) <- findConcurrency defaultFindConcurrencyConfig 
+        (_,diaConc) <- findConcurrency 0 defaultFindConcurrencyConfig 
         print (map snd diaConc) `shouldReturn` ()
   describe "pickConcurrency" $
     context "creates, out of a given Config," $
       it "everything needed to create the Task is generated" $ do
-        (_,diaConc) <- pickConcurrency defaultPickConcurrencyConfig 
+        (_,diaConc) <- pickConcurrency 0 defaultPickConcurrencyConfig 
         print (map snd diaConc) `shouldReturn` ()

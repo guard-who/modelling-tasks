@@ -18,19 +18,19 @@ import Language.Alloy.Call               (getInstances,AlloyInstance)
 import Text.LaTeX                        (LaTeX)
 
 
-findConcurrency :: FindConcurrencyConfig -> IO(LaTeX,[(Diagram B, Maybe Concurrent)])
-findConcurrency config@FindConcurrencyConfig{basicTask} = do
-  list <- getInstances (Just 1) (petriNetFindConcur config)
-  conc <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
+findConcurrency :: Int -> FindConcurrencyConfig -> IO(LaTeX,[(Diagram B, Maybe Concurrent)])
+findConcurrency indInst config@FindConcurrencyConfig{basicTask} = do
+  list <- getInstances (Just (toInteger (indInst+1))) (petriNetFindConcur config)
+  conc <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
   let tex = uebung placeHoldPetri 3 True
   return (tex, [conc])
   
-pickConcurrency :: PickConcurrencyConfig -> IO(LaTeX,[(Diagram B, Maybe Concurrent)])
-pickConcurrency config@PickConcurrencyConfig{basicTask} = do
-  list <- getInstances (Just 1) (petriNetPickConcur config)
-  conc <- getNet "flow" "tokens" (head list) (graphLayout basicTask)
+pickConcurrency :: Int -> PickConcurrencyConfig -> IO(LaTeX,[(Diagram B, Maybe Concurrent)])
+pickConcurrency indInst config@PickConcurrencyConfig{basicTask} = do
+  list <- getInstances (Just (toInteger (indInst+1))) (petriNetPickConcur config)
+  conc <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
   let tex = uebung placeHoldPetri 3 False
-  net <- getNet "defaultFlow" "defaultTokens" (head list) (graphLayout basicTask)
+  net <- getNet "defaultFlow" "defaultTokens" (list !! indInst) (graphLayout basicTask)
   return (tex, [conc,net])
 
 getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Concurrent)

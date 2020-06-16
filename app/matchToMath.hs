@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Modelling.PetriNet.BasicNetFunctions (instanceInput)
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types
   (BasicConfig(..),ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
@@ -28,12 +29,16 @@ main = do
         | otherwise = True
   if isNothing c 
      then do
-       (dia,tex,falseNets) <- matchToMath switch config
-       renderSVG "app/change0.svg" (mkWidth 400) dia
-       renderFile "app/change0.tex" tex
-       case falseNets of
-         Right falseTex -> parseChangeTex 1 falseTex
-         Left falseDia  -> parseChangeDia 1 falseDia
+       i <- instanceInput
+       if i < 0
+       then error "There is no negative index"
+       else do
+           (dia,tex,falseNets) <- matchToMath i switch config
+           renderSVG "app/change0.svg" (mkWidth 400) dia
+           renderFile "app/change0.tex" tex
+           case falseNets of
+             Right falseTex -> parseChangeTex 1 falseTex
+             Left falseDia  -> parseChangeDia 1 falseDia
   else
     print c 
 
@@ -47,7 +52,7 @@ userInput = do
   tknCh <- getLine
   putStr "FlowChange Overall: "
   flwCh <- getLine
-  putStr "Which Tasktype would you like to get?(a: Math to Net, b: Net to Math)"
+  putStr "Which Tasktype would you like to get?(a: Math to Net, b: Net to Math): "
   sw <- getLine
   return (read pls, read trns, read tknCh, read flwCh,sw)
   
@@ -64,3 +69,4 @@ parseChangeTex i ((tex,change):rs) = do
   print change
   renderFile ("app/change"++show i++".tex") tex
   parseChangeTex (i+1) rs
+
