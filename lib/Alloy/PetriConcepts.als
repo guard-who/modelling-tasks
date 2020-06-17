@@ -22,12 +22,12 @@ pred concurrent[ts : set Transitions]{
 }
 
 //check activation under default condition
- pred activatedDefault[t : Transitions]{
-  all p : Places | p.defaultTokens >= p.defaultFlow[t]
+ pred activatedDefault[t : givenTransitions]{
+  all p : givenPlaces | p.defaultTokens >= p.defaultFlow[t]
 }
 
 //check conflict under default condition
-pred conflictDefault[t1, t2 : Transitions, p : Places]{
+pred conflictDefault[t1, t2 : givenTransitions, p : givenPlaces]{
   t1 != t2
   activatedDefault[t1]
   activatedDefault[t2]
@@ -35,8 +35,8 @@ pred conflictDefault[t1, t2 : Transitions, p : Places]{
 }
 
 //check concurrent under default condition
-pred concurrentDefault[ts : set Transitions]{
-  all p : Places | p.defaultTokens >= defaultFlowSum[p, ts]
+pred concurrentDefault[ts : set givenTransitions]{
+  all p : givenPlaces | p.defaultTokens >= defaultFlowSum[p, ts]
 }
 
 //check if there is a loop between two nodes

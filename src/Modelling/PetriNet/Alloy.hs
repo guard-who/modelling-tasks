@@ -141,7 +141,7 @@ petriNetPickConfl p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},ch
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [conflictPlace : Places, defaultActivTrans, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
+pred showRelNets [conflictPlace : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
 
   #{compConflict}
   #{compDefaultConstraints atLeastActive}
@@ -180,7 +180,7 @@ petriNetPickConcur p@PickConcurrencyConfig{basicTask = BasicConfig{atLeastActive
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [defaultActivTrans, #{specCompRelation (basicTask(p :: PickConcurrencyConfig)) changeTask}
+pred showRelNets [defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConcurrencyConfig)) changeTask}
 
   #{compConcurrency}
   #{compDefaultConstraints atLeastActive}
@@ -239,7 +239,7 @@ compChange ChangeConfig
 
 compConcurrency :: String
 compConcurrency = [i|
-  no x,y : Transitions | concurrentDefault[x+y] and x != y
+  no x,y : givenTransitions | concurrentDefault[x+y] and x != y
   some concurTrans1, concurTrans2 : Transitions | relatedTransitions = concurTrans1 + concurTrans2
   and concurTrans1 != concurTrans2
   and concurrent [concurTrans1+concurTrans2]
@@ -249,7 +249,7 @@ compConcurrency = [i|
 --Needs: relatedTransitions: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places
 compConflict :: String
 compConflict = [i|
-  no x,y : Transitions, z : Places | conflictDefault[x,y,z]
+  no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
   some conflictTrans1, conflictTrans2 : Transitions | relatedTransitions = conflictTrans1 + conflictTrans2 
   and conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places 
     | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v

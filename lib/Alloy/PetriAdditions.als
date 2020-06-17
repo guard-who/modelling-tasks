@@ -26,3 +26,7 @@ pred noChangesToGivenParts[]{
   no givenPlaces.tokenChange
   let givenNodes = givenPlaces + givenTransitions | no givenNodes.flowChange[givenNodes]
 }
+
+fact noDefaultFlowToAddedNodes {
+  no Nodes.defaultFlow[addedPlaces + addedTransitions]
+}
