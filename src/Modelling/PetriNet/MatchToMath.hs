@@ -10,7 +10,7 @@ import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser
 import Modelling.PetriNet.Types
 
-import Diagrams.Backend.SVG              (B)
+import Diagrams.Backend.Rasterific       (B)
 import Diagrams.Prelude                  (Diagram)
 import Language.Alloy.Call               (AlloyInstance,getInstances)
 import Maybes                            (firstJusts)

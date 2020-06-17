@@ -4,11 +4,13 @@ module Main (main) where
 
 import Modelling.PetriNet.Conflicts
 import Modelling.PetriNet.BasicNetFunctions
+import Modelling.PetriNet.LaTeX          (diagramTex)
 import Modelling.PetriNet.Types          
   (BasicConfig(..),defaultFindConflictConfig,FindConflictConfig(..)
   ,defaultPickConflictConfig,PickConflictConfig(..),Conflict,ChangeConfig(..))
+import Data.List                         (isInfixOf)
 import Data.Maybe                        (isNothing)
-import Diagrams.Backend.SVG              (B,renderSVG)
+import Diagrams.Backend.Rasterific       (renderPdf,B)
 import Diagrams.Prelude                  (Diagram,mkWidth)
 import Maybes                            (firstJusts)
 import System.IO
@@ -27,7 +29,7 @@ main = do
 
 mainFind ::Int -> IO()
 mainFind i = do
-  pPrint $ defaultFindConflictConfig
+  pPrint defaultFindConflictConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConflictConfig{
                            basicTask = (basicTask (defaultFindConflictConfig :: FindConflictConfig)){places = pls, transitions = trns}
@@ -42,14 +44,19 @@ mainFind i = do
   if isNothing c
   then do
     (latex,conflDia) <- findConflicts i config
-    renderFile "app/task2.tex" latex
-    parseConflDia 1 conflDia
+    renderFile "app/findConflictTask.tex" latex
+    conflicts <- parseConflDia 1 conflDia
+    let texN = diagramTex conflicts (length conflicts - 1) latex
+    out <- renderFile "app/findConflict.tex" texN >> renderPdfFile "app/findConflict.tex"
+    if "Output written on" `isInfixOf` out
+    then print "PDF succesfully generated"
+    else print "Error upon generating the PDF-File"
   else
     print (c :: Maybe String)
 
 mainPick :: Int -> IO()
 mainPick i = do
-  pPrint $ defaultPickConflictConfig
+  pPrint defaultPickConflictConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConflictConfig{
                            basicTask = (basicTask (defaultPickConflictConfig :: PickConflictConfig)){places = pls, transitions = trns}
@@ -64,8 +71,13 @@ mainPick i = do
   if isNothing c
   then do
     (latex,conflDia) <- pickConflicts i config
-    renderFile "app/task2.tex" latex
-    parseConflDia 1 conflDia
+    renderFile "app/pickConflictTask.tex" latex
+    conflicts <- parseConflDia 1 conflDia
+    let texN = diagramTex conflicts (length conflicts - 1) latex
+    out <- renderFile "app/pickConflict.tex" texN >> renderPdfFile "app/pickConflict.tex"
+    if "Output written on" `isInfixOf` out
+    then print "PDF succesfully generated"
+    else print "Error upon generating the PDF-File"
   else
     print (c :: Maybe String)
     
@@ -81,9 +93,10 @@ userInput = do
   flwCh <- getLine
   return (read pls, read trns,read tknCh, read flwCh)
   
-parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO ()
-parseConflDia _ []               = print "no more Nets"
+parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO [Maybe Conflict]
+parseConflDia _ []               = return []
 parseConflDia i ((dia,confl):rs) = do
-  renderSVG ("app/conflict"++show i++".svg") (mkWidth 400) dia
+  renderPdf 400 400 ("app/"++show i++".pdf") (mkWidth 300) dia
   print confl
-  parseConflDia (i+1) rs
+  rest <- parseConflDia (i+1) rs
+  return $ confl : rest

@@ -1,12 +1,16 @@
 module Main (main) where
 
-import Modelling.PetriNet.BasicNetFunctions (instanceInput)
+import Modelling.PetriNet.BasicNetFunctions (instanceInput,renderPdfFile)
+
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types
   (BasicConfig(..),ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
+import Modelling.PetriNet.LaTeX          (diagramTex,texTex)
+
+import Data.List                         (isInfixOf)
 import Data.Maybe                        (isNothing)
-import Diagrams.Backend.SVG              (B,renderSVG)
 import Diagrams.Prelude                  (Diagram,mkWidth)
+import Diagrams.Backend.Rasterific       (renderPdf,B)
 import System.IO
 import Text.LaTeX                        (LaTeX,renderFile)
 import Text.Pretty.Simple                (pPrint)
@@ -14,7 +18,7 @@ import Text.Pretty.Simple                (pPrint)
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
-  pPrint $ defaultMathConfig
+  pPrint defaultMathConfig
   (pls,trns,tknChange,flwChange,sw) <- userInput
   let config = defaultMathConfig{
                          basicTask = 
@@ -33,12 +37,25 @@ main = do
        if i < 0
        then error "There is no negative index"
        else do
-           (dia,tex,falseNets) <- matchToMath i switch config
-           renderSVG "app/change0.svg" (mkWidth 400) dia
-           renderFile "app/change0.tex" tex
-           case falseNets of
-             Right falseTex -> parseChangeTex 1 falseTex
-             Left falseDia  -> parseChangeDia 1 falseDia
+         (dia,tex,falseNets) <- matchToMath i switch config
+         renderPdf 300 300 "app/0.pdf" (mkWidth 300) dia
+         case falseNets of
+           Right falseTex -> do
+             parseChangeTex 1 falseTex
+             let (texList,changes) = unzip falseTex
+             let texN = texTex changes texList tex 
+             out <- renderFile "app/mathB.tex" texN >> renderPdfFile "app/mathB.tex"
+             if "Output written on" `isInfixOf` out
+             then print "PDF succesfully generated"
+             else print "Error upon generating the PDF-File"
+           Left falseDia  -> do
+             changes <- parseChangeDia 1 falseDia
+             renderFile "app/mathTask.tex" tex
+             let texN = diagramTex changes (length changes) tex 
+             out <- renderFile "app/math.tex" texN >> renderPdfFile "app/math.tex"
+             if "Output written on" `isInfixOf` out
+             then print "PDF succesfully generated"
+             else print "Error upon generating the PDF-File"
   else
     print c 
 
@@ -56,17 +73,17 @@ userInput = do
   sw <- getLine
   return (read pls, read trns, read tknCh, read flwCh,sw)
   
-parseChangeDia :: Int -> [(Diagram B, Change)] -> IO()
-parseChangeDia _ []                = print "no more Nets"
+parseChangeDia :: Int -> [(Diagram B, Change)] -> IO [Change]
+parseChangeDia _ []                = return []
 parseChangeDia i ((dia,change):rs) = do
   print change
-  renderSVG ("app/change"++show i++".svg") (mkWidth 200) dia
-  parseChangeDia (i+1) rs
+  renderPdf 300 300 ("app/"++show i++".pdf") (mkWidth 300) dia
+  rest <- parseChangeDia (i+1) rs
+  return $ change : rest
 
 parseChangeTex :: Int -> [(LaTeX, Change)] -> IO()
 parseChangeTex _ []                = print "no more Nets"
 parseChangeTex i ((tex,change):rs) = do 
   print change
-  renderFile ("app/change"++show i++".tex") tex
+  renderFile ("app/mathB"++show i++".tex") tex
   parseChangeTex (i+1) rs
-

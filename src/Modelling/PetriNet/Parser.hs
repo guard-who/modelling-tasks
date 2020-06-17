@@ -175,7 +175,7 @@ convertGr f n inst = do
   flow <- tripleSig inst "this" "Nodes" f
   nodesM <- mapNodes inst 
   return $ mkGraph n 
-    [(getVal pr nodesM, getVal po nodesM, objectName wg)| (pr,po,wg) <- (Set.toList flow)]
+    [(getVal pr nodesM, getVal po nodesM, objectName wg)| (pr,po,wg) <- Set.toList flow]
   
 prepNodes :: String -> AlloyInstance -> Either String [(Int,(String, Maybe Int))]
 prepNodes t inst = do

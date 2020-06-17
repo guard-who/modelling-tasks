@@ -23,7 +23,7 @@ petriScopeBitwidth BasicConfig
      )
   
 petriScopeMaxSeq :: BasicConfig -> Int
-petriScopeMaxSeq BasicConfig{places,transitions} = (places+transitions)
+petriScopeMaxSeq BasicConfig{places,transitions} = places+transitions
   
 petriLoops :: Bool -> String
 petriLoops = \case

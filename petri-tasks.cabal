@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 48da9ef52b89599fcbf0d3958dd5ff2391e8c20ffee3e787b817508272da7587
+-- hash: 6b9717d002fc9b787f3d3e31bf8553da8db77686e9681843200407a84870eab6
 
 name:           petri-tasks
 version:        0.0.0
@@ -41,12 +41,14 @@ library
     , diagrams
     , diagrams-graphviz
     , diagrams-lib
+    , diagrams-rasterific
     , diagrams-svg
     , fgl
     , file-embed
     , ghc
     , graphviz
     , pretty-simple
+    , process
     , string-interpolate
     , text
     , transformers
@@ -67,6 +69,7 @@ executable concurrency
     , diagrams
     , diagrams-graphviz
     , diagrams-lib
+    , diagrams-rasterific
     , diagrams-svg
     , fgl
     , file-embed
@@ -74,6 +77,7 @@ executable concurrency
     , graphviz
     , petri-tasks
     , pretty-simple
+    , process
     , string-interpolate
     , text
     , transformers
@@ -94,6 +98,7 @@ executable conflicts
     , diagrams
     , diagrams-graphviz
     , diagrams-lib
+    , diagrams-rasterific
     , diagrams-svg
     , fgl
     , file-embed
@@ -101,6 +106,7 @@ executable conflicts
     , graphviz
     , petri-tasks
     , pretty-simple
+    , process
     , string-interpolate
     , text
     , transformers
@@ -121,6 +127,7 @@ executable matchToMath
     , diagrams
     , diagrams-graphviz
     , diagrams-lib
+    , diagrams-rasterific
     , diagrams-svg
     , fgl
     , file-embed
@@ -128,6 +135,7 @@ executable matchToMath
     , graphviz
     , petri-tasks
     , pretty-simple
+    , process
     , string-interpolate
     , text
     , transformers
@@ -157,6 +165,7 @@ test-suite petri-tasks-test
     , diagrams
     , diagrams-graphviz
     , diagrams-lib
+    , diagrams-rasterific
     , diagrams-svg
     , fgl
     , file-embed

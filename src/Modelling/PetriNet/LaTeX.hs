@@ -1,15 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.LaTeX (uebung,createPetriTex) where
+module Modelling.PetriNet.LaTeX (uebung,createPetriTex,diagramTex,texTex) where
 
 import Modelling.PetriNet.Types
 
+import Data.Maybe                   (fromMaybe)
 import Data.Text                    (unpack)
 import Text.LaTeX
+import Text.LaTeX.Base.Syntax       (getBody)
 import Text.LaTeX.Packages.Inputenc 
 import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
--- import Text.LaTeX.Packages.Geometry
+import Text.LaTeX.Packages.Graphicx
 
 --PetriNet -> Choose task 
 -- runTex :: Petri -> Int -> IO()
@@ -22,7 +24,6 @@ uebung petri task switch =
     documentclass [] article
  <> usepackage [utf8] inputenc
  <> uselanguage English
- -- <> importGeometry [GCentered]
  <> title "Uebung"
  <> author "Autor"
  <> document (maketitle <> body petri task switch)
@@ -82,3 +83,37 @@ conditions i ((pr,po):rs)=
     <> raw "_" <> fromString (show i :: String) <> raw "^{\\bullet}"
     <> fromString (" = ("++ unpack (  renderCommas po) ++ ")" :: String))
   <> conditions (i+1) rs
+------------------------------------------------------------
+texTex :: Show a => [a] -> [LaTeX] -> LaTeX -> LaTeX
+texTex list txList tx =
+    documentclass [] article
+ <> usepackage [utf8] inputenc
+ <> usepackage [] graphicx
+ <> uselanguage English
+ <> title "Uebung"
+ <> author "Autor"
+ <> document (maketitle <> takeBody tx <> newline <> includegraphics [] "app/0.pdf" <> newline <> splitList list <> newline <> splitTexList txList)
+
+diagramTex :: Show a => [a] -> Int -> LaTeX -> LaTeX
+diagramTex list i tx =
+    documentclass [] article
+ <> usepackage [utf8] inputenc
+ <> usepackage [] graphicx
+ <> uselanguage English
+ <> title "Uebung"
+ <> author "Autor"
+ <> document (maketitle <> takeBody tx <> splitList list <> newline <> getDiagrams i)
+ 
+takeBody :: LaTeX -> LaTeX
+takeBody tx = fromMaybe (error "no default body available") (getBody tx)
+  
+getDiagrams :: Int -> LaTeX
+getDiagrams 0 = includegraphics [] "app/0.pdf"
+getDiagrams i = includegraphics [] ("app/"++show i++".pdf") <> newline <> getDiagrams (i-1)
+  
+splitList :: Show a => [a] -> LaTeX
+splitList []     = raw ""
+splitList (h:rs) = fromString (show h) <> newline <> splitList rs
+
+splitTexList :: [LaTeX] -> LaTeX
+splitTexList = foldr (<>) (raw "")

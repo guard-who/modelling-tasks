@@ -8,7 +8,7 @@ import Modelling.PetriNet.Parser        (convertGr)
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
-import Diagrams.Backend.SVG             (B)
+import Diagrams.Backend.Rasterific             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
 -- import Data.Graph.Inductive.Graph       (mkGraph)

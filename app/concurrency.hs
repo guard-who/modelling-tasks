@@ -4,11 +4,13 @@ module Main (main) where
 
 import Modelling.PetriNet.Concurrency
 import Modelling.PetriNet.BasicNetFunctions
+import Modelling.PetriNet.LaTeX          (diagramTex)
 import Modelling.PetriNet.Types          
   (BasicConfig(..),defaultFindConcurrencyConfig,FindConcurrencyConfig(..)
   ,defaultPickConcurrencyConfig,PickConcurrencyConfig(..),Concurrent,ChangeConfig(..))
+import Data.List                         (isInfixOf)
 import Data.Maybe                        (isNothing)
-import Diagrams.Backend.SVG              (B,renderSVG)
+import Diagrams.Backend.Rasterific       (renderPdf,B)
 import Diagrams.Prelude                  (Diagram,mkWidth)
 import Maybes                            (firstJusts)
 import System.IO
@@ -27,7 +29,7 @@ main = do
 
 mainFind :: Int -> IO()
 mainFind i = do
-  pPrint $ defaultFindConcurrencyConfig
+  pPrint defaultFindConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultFindConcurrencyConfig{
                            basicTask = (basicTask (defaultFindConcurrencyConfig :: FindConcurrencyConfig)){places = pls, transitions = trns}
@@ -42,14 +44,19 @@ mainFind i = do
   if isNothing c
   then do
     (latex,concDia) <- findConcurrency i config
-    renderFile "app/task3.tex" latex
-    parseConcDia 1 concDia
+    renderFile "app/FindConcurrentTask.tex" latex
+    concurrents <- parseConcDia 1 concDia
+    let texN = diagramTex concurrents (length concurrents - 1) latex
+    out <- renderFile "app/findConcurrent.tex" texN >> renderPdfFile "app/findConcurrent.tex"
+    if "Output written on" `isInfixOf` out
+    then print "PDF succesfully generated"
+    else print "Error upon generating the PDF-File"
   else
     print (c :: Maybe String)
     
 mainPick :: Int -> IO()
 mainPick i = do
-  pPrint $ defaultPickConcurrencyConfig
+  pPrint defaultPickConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- userInput 
   let config = defaultPickConcurrencyConfig{
                            basicTask = (basicTask (defaultPickConcurrencyConfig :: PickConcurrencyConfig)){places = pls, transitions = trns}
@@ -63,9 +70,15 @@ mainPick i = do
         ]
   if isNothing c
   then do
+
     (latex,concDia) <- pickConcurrency i config
-    renderFile "app/task3.tex" latex
-    parseConcDia 1 concDia
+    renderFile "app/pickConcurrentTask.tex" latex
+    concurrents <- parseConcDia 1 concDia
+    let texN = diagramTex concurrents (length concurrents - 1) latex
+    out <- renderFile "app/pickConcurrent.tex" texN >> renderPdfFile "app/pickConcurrent.tex"
+    if "Output written on" `isInfixOf` out
+    then print "PDF succesfully generated"
+    else print "Error upon generating the PDF-File"
   else
     print (c :: Maybe String)
 
@@ -81,9 +94,10 @@ userInput = do
   flwCh <- getLine
   return (read pls, read trns,read tknCh, read flwCh)
   
-parseConcDia :: Int -> [(Diagram B, Maybe Concurrent)] -> IO ()
-parseConcDia _ []               = print "no more Nets"
+parseConcDia :: Int -> [(Diagram B, Maybe Concurrent)] -> IO [Maybe Concurrent]
+parseConcDia _ []               = return []
 parseConcDia i ((dia,conc):rs) = do
-  renderSVG ("app/concurrency"++show i++".svg") (mkWidth 400) dia
+  renderPdf 400 400 ("app/concurrency"++show i++".png") (mkWidth 300) dia
   print conc
-  parseConcDia (i+1) rs
+  rest <- parseConcDia (i+1) rs
+  return $ conc : rest

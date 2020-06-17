@@ -43,6 +43,7 @@ extra-deps:
   - call-alloy-0.2.0.4
   - containers-0.6.0.1
   - diagrams-graphviz-1.4.1.1@sha256:e71afa8f89904c2a6a2cb490dba7108c6425779c2174b90bd90dbaf507a9d3dc,1388
+  - diagrams-rasterific-1.4.2
   - transformers-0.5.6.2
   - file-embed-0.0.11.2
   - HaTeX-3.22.2.0

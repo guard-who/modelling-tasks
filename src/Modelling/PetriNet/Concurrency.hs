@@ -11,7 +11,7 @@ import Modelling.PetriNet.Parser         (parseConcurrency,prepNodes)
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
 
-import Diagrams.Backend.SVG              (B)
+import Diagrams.Backend.Rasterific       (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Language.Alloy.Call               (getInstances,AlloyInstance)
