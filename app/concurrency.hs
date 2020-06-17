@@ -65,8 +65,7 @@ mainPick i = do
                          } :: PickConcurrencyConfig
   let c = firstJusts 
         [ checkBasicConfig (basicTask (config :: PickConcurrencyConfig))
-        , checkChangeConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig))
-        , checkCConfig (basicTask (config ::PickConcurrencyConfig)) 
+        , checkChangeConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig)) 
         ]
   if isNothing c
   then do

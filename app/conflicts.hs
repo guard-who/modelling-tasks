@@ -66,7 +66,6 @@ mainPick i = do
   let c = firstJusts 
         [ checkBasicConfig (basicTask (config :: PickConflictConfig))
         , checkChangeConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
-        , checkCConfig (basicTask (config ::PickConflictConfig)) 
         ]
   if isNothing c
   then do
