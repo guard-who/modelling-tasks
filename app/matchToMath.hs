@@ -77,7 +77,7 @@ parseChangeDia :: Int -> [(Diagram B, Change)] -> IO [Change]
 parseChangeDia _ []                = return []
 parseChangeDia i ((dia,change):rs) = do
   print change
-  renderPdf 500 500 ("app/"++show i++".pdf") (mkWidth 400) dia
+  renderPdf 1000 1000 ("app/"++show i++".pdf") (mkWidth 800) dia
   rest <- parseChangeDia (i+1) rs
   return $ change : rest
 

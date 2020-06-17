@@ -108,8 +108,8 @@ takeBody :: LaTeX -> LaTeX
 takeBody tx = fromMaybe (error "no default body available") (getBody tx)
   
 getDiagrams :: Int -> LaTeX
-getDiagrams 0 = includegraphics [] "app/0.pdf"
-getDiagrams i = includegraphics [] ("app/"++show i++".pdf") <> newline <> getDiagrams (i-1)
+getDiagrams 0 = includegraphics [IGScale 0.5] "app/0.pdf"
+getDiagrams i = includegraphics [IGScale 0.5] ("app/"++show i++".pdf") <> newline <> getDiagrams (i-1)
   
 splitList :: Show a => [a] -> LaTeX
 splitList []     = raw ""

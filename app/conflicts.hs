@@ -95,7 +95,7 @@ userInput = do
 parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO [Maybe Conflict]
 parseConflDia _ []               = return []
 parseConflDia i ((dia,confl):rs) = do
-  renderPdf 500 500 ("app/"++show i++".pdf") (mkWidth 400) dia
+  renderPdf 1000 1000 ("app/"++show i++".pdf") (mkWidth 800) dia
   print confl
   rest <- parseConflDia (i+1) rs
   return $ confl : rest

@@ -96,7 +96,7 @@ userInput = do
 parseConcDia :: Int -> [(Diagram B, Maybe Concurrent)] -> IO [Maybe Concurrent]
 parseConcDia _ []               = return []
 parseConcDia i ((dia,conc):rs) = do
-  renderPdf 500 500 ("app/concurrency"++show i++".png") (mkWidth 400) dia
+  renderPdf 1000 1000 ("app/"++show i++".pdf") (mkWidth 800) dia
   print conc
   rest <- parseConcDia (i+1) rs
   return $ conc : rest
