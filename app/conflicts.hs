@@ -45,7 +45,7 @@ mainFind i = do
   then do
     (latex,conflDia) <- findConflicts i config
     renderFile "app/findConflictTask.tex" latex
-    conflicts <- parseConflDia 1 conflDia
+    conflicts <- parseConflDia 0 conflDia
     let texN = diagramTex conflicts (length conflicts - 1) latex
     out <- renderFile "app/findConflict.tex" texN >> renderPdfFile "app/findConflict.tex"
     if "Output written on" `isInfixOf` out
@@ -71,7 +71,7 @@ mainPick i = do
   then do
     (latex,conflDia) <- pickConflicts i config
     renderFile "app/pickConflictTask.tex" latex
-    conflicts <- parseConflDia 1 conflDia
+    conflicts <- parseConflDia 0 conflDia
     let texN = diagramTex conflicts (length conflicts - 1) latex
     out <- renderFile "app/pickConflict.tex" texN >> renderPdfFile "app/pickConflict.tex"
     if "Output written on" `isInfixOf` out
@@ -95,7 +95,7 @@ userInput = do
 parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO [Maybe Conflict]
 parseConflDia _ []               = return []
 parseConflDia i ((dia,confl):rs) = do
-  renderPdf 400 400 ("app/"++show i++".pdf") (mkWidth 300) dia
+  renderPdf 500 500 ("app/"++show i++".pdf") (mkWidth 400) dia
   print confl
   rest <- parseConflDia (i+1) rs
   return $ confl : rest

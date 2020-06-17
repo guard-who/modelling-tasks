@@ -45,7 +45,7 @@ mainFind i = do
   then do
     (latex,concDia) <- findConcurrency i config
     renderFile "app/FindConcurrentTask.tex" latex
-    concurrents <- parseConcDia 1 concDia
+    concurrents <- parseConcDia 0 concDia
     let texN = diagramTex concurrents (length concurrents - 1) latex
     out <- renderFile "app/findConcurrent.tex" texN >> renderPdfFile "app/findConcurrent.tex"
     if "Output written on" `isInfixOf` out
@@ -72,7 +72,7 @@ mainPick i = do
 
     (latex,concDia) <- pickConcurrency i config
     renderFile "app/pickConcurrentTask.tex" latex
-    concurrents <- parseConcDia 1 concDia
+    concurrents <- parseConcDia 0 concDia
     let texN = diagramTex concurrents (length concurrents - 1) latex
     out <- renderFile "app/pickConcurrent.tex" texN >> renderPdfFile "app/pickConcurrent.tex"
     if "Output written on" `isInfixOf` out
@@ -96,7 +96,7 @@ userInput = do
 parseConcDia :: Int -> [(Diagram B, Maybe Concurrent)] -> IO [Maybe Concurrent]
 parseConcDia _ []               = return []
 parseConcDia i ((dia,conc):rs) = do
-  renderPdf 400 400 ("app/concurrency"++show i++".png") (mkWidth 300) dia
+  renderPdf 500 500 ("app/concurrency"++show i++".png") (mkWidth 400) dia
   print conc
   rest <- parseConcDia (i+1) rs
   return $ conc : rest

@@ -38,7 +38,7 @@ main = do
        then error "There is no negative index"
        else do
          (dia,tex,falseNets) <- matchToMath i switch config
-         renderPdf 300 300 "app/0.pdf" (mkWidth 300) dia
+         renderPdf 500 500 "app/0.pdf" (mkWidth 400) dia
          case falseNets of
            Right falseTex -> do
              parseChangeTex 1 falseTex
@@ -77,7 +77,7 @@ parseChangeDia :: Int -> [(Diagram B, Change)] -> IO [Change]
 parseChangeDia _ []                = return []
 parseChangeDia i ((dia,change):rs) = do
   print change
-  renderPdf 300 300 ("app/"++show i++".pdf") (mkWidth 300) dia
+  renderPdf 500 500 ("app/"++show i++".pdf") (mkWidth 400) dia
   rest <- parseChangeDia (i+1) rs
   return $ change : rest
 
