@@ -35,11 +35,12 @@ drawNode pfont (l, Nothing) p  = place
     `atop` rect 20 20 # named l)
   p
 drawNode pfont (l,Just i) p  = place
-  (center (text' pfont l)
-    `atop` text' pfont (show i :: String) # translate (r2(-3,-15))
+  (center (text' pfont l) # translate (r2(0,10))
+    `atop` circle 3 #fc black # translate (r2(-5,-11))
+    `atop` text' pfont (show i :: String) # translate (r2(1,-15))
     `atop` circle 20 # named l)
   p
-
+        
 drawEdge :: PreparedFont Double -> String -> (String,Maybe Int) -> (String,Maybe Int) -> Path V2 Double -> Diagram B -> Diagram B
 drawEdge f l (l1,_) (l2,_) path d = 
   let opts p = with & arrowShaft .~ (unLoc . head $ pathTrails p)
