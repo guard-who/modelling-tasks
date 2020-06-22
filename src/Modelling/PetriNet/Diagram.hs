@@ -53,10 +53,3 @@ text' pfont t =
   textSVG_ (TextOpts pfont INSIDE_H KERN False 18 18) t
   # fc black
   # lc black
-
------------------------------------------------------------------------
--- renderNet :: String -> Petri -> GraphvizCommand -> IO ()
--- renderNet name petri gc = do
-  -- diagram <- drawNet petri gc
-  -- renderSVG (name++".svg") (mkWidth 200) diagram
-  -- print "PetriNetz erstellt"
