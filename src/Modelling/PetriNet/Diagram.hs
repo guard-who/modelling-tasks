@@ -1,8 +1,5 @@
-{-# LANGUAGE NamedFieldPuns #-}
-
 module Modelling.PetriNet.Diagram (drawNet) where
 
---import Modelling.PetriNet.Types
 import Modelling.PetriNet.Parser        (convertGr)
 
 import qualified Diagrams.TwoD.GraphViz           as GV
@@ -11,9 +8,6 @@ import qualified Data.Map                         as M (foldlWithKey)
 import Diagrams.Backend.Rasterific             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
--- import Data.Graph.Inductive.Graph       (mkGraph)
--- import Data.Graph.Inductive.PatriciaTree
-  -- (Gr)
 import Data.GraphViz                    hiding (Path)
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)

@@ -3,18 +3,18 @@
 
 module Modelling.PetriNet.MatchToMath (matchToMath,checkConfig)  where
 
-import Modelling.PetriNet.Alloy          (petriNetRnd, renderFalse)
-import Modelling.PetriNet.BasicNetFunctions 
+import Modelling.PetriNet.Alloy             (petriNetRnd, renderFalse)
+import Modelling.PetriNet.BasicNetFunctions (checkBasicConfig,checkChangeConfig)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX
 import Modelling.PetriNet.Parser
 import Modelling.PetriNet.Types
 
-import Diagrams.Backend.Rasterific       (B)
-import Diagrams.Prelude                  (Diagram)
-import Language.Alloy.Call               (AlloyInstance,getInstances)
-import Maybes                            (firstJusts)
-import Text.LaTeX                        (LaTeX)
+import Diagrams.Backend.Rasterific          (B)
+import Diagrams.Prelude                     (Diagram)
+import Language.Alloy.Call                  (AlloyInstance,getInstances)
+import Maybes                               (firstJusts)
+import Text.LaTeX                           (LaTeX)
 
 --True Task1 <-> False Task1a
 matchToMath :: Int -> Bool -> MathConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])

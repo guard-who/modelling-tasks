@@ -5,15 +5,16 @@ module Modelling.PetriNet.Parser (convertPetri, convertGr, prepNodes, parseChang
 import Modelling.PetriNet.Types
 
 import Language.Alloy.Call
-import qualified Data.Set as Set
+import qualified Data.Set as Set        (Set,toList,filter,elemAt)
 import Data.Graph.Inductive.Graph       (mkGraph)
 import Data.Graph.Inductive.PatriciaTree
   (Gr)
-import qualified Data.Map.Lazy as Map
+import qualified Data.Map.Lazy as Map   (Map,fromList,lookup)
 import Data.Maybe                       (fromMaybe)
       
 type TripSet = Set.Set (Object,Object,Object)
 
+--convert Instance to Petri
 convertPetri :: String -> String -> AlloyInstance -> Either String Petri
 convertPetri f t inst = do
   flow <- filterFlow f inst
@@ -21,8 +22,7 @@ convertPetri f t inst = do
   return $ Petri{initialMarking = mark,trans = flow}
       
                           --Transitionen--
-
---[([(3)],[(3)])] List of TransSets
+--Flow -> Transitions
 filterFlow :: String -> AlloyInstance -> Either String [Transition]
 filterFlow f inst = do
   trns <- singleSig inst "this" "Transitions" ""
@@ -36,7 +36,7 @@ filterTransitions :: [Object] -> TripSet -> [(TripSet,TripSet)]
 filterTransitions [] _ = []
 filterTransitions (t:rs) set = (filterSndTrip t set,filterFstTrip t set) : filterTransitions rs set
 
--- make out of the given Sets the Transitions for Petri
+-- make Transitions out of the given Sets the Transitions for Petri
 convertToTransitions :: [Object] -> [(TripSet,TripSet)] -> [Transition]
 convertToTransitions _ [] = []
 convertToTransitions ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b))
@@ -73,10 +73,8 @@ tokenChangeP :: [(Object,Object)] -> [(String,Int)]
 tokenChangeP []            = []
 tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName val) :: Int) 
                              : tokenChangeP rt
-  
-                            --Spezielles--
-                            
-                            
+
+                            --Spezielles--                
 parseConflict :: [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String Conflict
 parseConflict nodes inst = do
   mId <- mapNodes inst
@@ -101,8 +99,7 @@ parseConcurrency nodes inst = do
     , extractName (getVal (Set.elemAt 0 tc2) mId) nodes
     )
                             
-                            --Hilfsfunktionen--    
-                           
+                            --Hilfsfunktionen--                                
 mapNodes :: AlloyInstance -> Either String (Map.Map Object Int)
 mapNodes inst = do
   nods <- singleSig inst "this" "Nodes" ""
@@ -114,7 +111,7 @@ extractName i nodes =
   
  
                             
--- Instance -> scope -> relations (e.g. ["this","Nodes","flow"])
+
 singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
 singleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
@@ -167,7 +164,6 @@ listTill (x:rs) y
  | otherwise = x : listTill rs y
  
 ------------------------------------------------------------------------------------------
-
 --ParseDirectlyToDiagram
 
 convertGr :: String -> [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String (Gr(String,Maybe Int) String)
@@ -195,10 +191,3 @@ getVal :: Ord k => k -> Map.Map k v -> v
 getVal x m = do
   let item = Map.lookup x m
   fromMaybe (error "Error occurred while mapping the net") item
-
-------------------------------------------------------------------------------------------
---Parse From Input
--- runIParser :: Input -> IO(Either String Petri)
--- runIParser inp = do 
-    -- list <- getInstances (Just 5) (petriNetRnd inp)
-    -- return $ convertPetri "tokens" (head list)

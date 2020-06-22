@@ -6,7 +6,7 @@ module Modelling.PetriNet.Concurrency
 
 import Modelling.PetriNet.Alloy          (petriNetFindConcur,petriNetPickConcur)
 import Modelling.PetriNet.Diagram
-import Modelling.PetriNet.LaTeX
+import Modelling.PetriNet.LaTeX          (uebung)
 import Modelling.PetriNet.Parser         (parseConcurrency,prepNodes)
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))

@@ -6,7 +6,7 @@ module Modelling.PetriNet.Conflicts
 
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
 import Modelling.PetriNet.Diagram
-import Modelling.PetriNet.LaTeX
+import Modelling.PetriNet.LaTeX          (uebung)
 import Modelling.PetriNet.Parser         (parseConflict,prepNodes)
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))

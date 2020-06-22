@@ -13,12 +13,6 @@ import Text.LaTeX.Packages.Inputenc
 import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
 import Text.LaTeX.Packages.Graphicx
 
---PetriNet -> Choose task 
--- runTex :: Petri -> Int -> IO()
--- runTex petri t = do
-  -- renderFile ("task"++show t++".tex") $ uebung petri t
-  -- print $ "Task"++show t++" generated"
-
 uebung :: Petri -> Int -> Bool -> LaTeX
 uebung petri task switch =
     documentclass [] article

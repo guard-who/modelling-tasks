@@ -2,7 +2,7 @@
 
 module Modelling.PetriNet.Types where
 
-import Data.GraphViz.Attributes.Complete (GraphvizCommand (Circo))
+import Data.GraphViz.Attributes.Complete (GraphvizCommand (Neato))
 
 data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,String,Int)]}
   deriving (Eq,Show)
@@ -52,7 +52,7 @@ defaultBasicConfig = BasicConfig
   , minFlowOverall = 6
   , maxFlowOverall = 12
   , maxFlowPerEdge = 2
-  , graphLayout = Circo
+  , graphLayout = Neato
   }
   
 data AdvConfig = AdvConfig
