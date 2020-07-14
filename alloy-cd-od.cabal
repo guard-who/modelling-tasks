@@ -1,0 +1,269 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 40930be833cc058d356278a97a35d22b1eecb4d6a6eebec0a69f58d8ad1a315a
+
+name:           alloy-cd-od
+version:        0.0.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      Alloy.CdOd.Auxiliary.Util
+      Alloy.CdOd.CD2Alloy.Transform
+      Alloy.CdOd.CdAndChanges.Instance
+      Alloy.CdOd.CdAndChanges.Transform
+      Alloy.CdOd.DifferentNames
+      Alloy.CdOd.Edges
+      Alloy.CdOd.Generate
+      Alloy.CdOd.MatchCdOd
+      Alloy.CdOd.Mutation
+      Alloy.CdOd.Output
+      Alloy.CdOd.RepairCd
+      Alloy.CdOd.SelectValidCd
+      Alloy.CdOd.Types
+  other-modules:
+      Paths_alloy_cd_od
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , array
+    , base
+    , bimap
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+  default-language: Haskell2010
+
+executable cd2alloy
+  main-is: cd2alloy.hs
+  other-modules:
+      Alloy.CdOd.Auxiliary.Lexer
+      Alloy.CdOd.Auxiliary.Parser
+  hs-source-dirs:
+      legacy-app
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , alloy-cd-od
+    , array
+    , base
+    , bimap
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+    , time
+  default-language: Haskell2010
+
+executable cd2pic
+  main-is: cd2pic.hs
+  other-modules:
+      Alloy.CdOd.Auxiliary.Lexer
+      Alloy.CdOd.Auxiliary.Parser
+  hs-source-dirs:
+      legacy-app
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , alloy-cd-od
+    , array
+    , base
+    , bimap
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+  default-language: Haskell2010
+
+executable check-cds
+  main-is: check-cds.hs
+  other-modules:
+      EvaluateArgs
+      Paths_alloy_cd_od
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , alloy-cd-od
+    , array
+    , base
+    , bimap
+    , bytestring
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , digest
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+  default-language: Haskell2010
+
+executable different-names
+  main-is: different-names.hs
+  other-modules:
+      EvaluateArgs
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , alloy-cd-od
+    , array
+    , base
+    , bimap
+    , bytestring
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , digest
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+  default-language: Haskell2010
+
+executable instance2pic
+  main-is: instance2pic.hs
+  other-modules:
+      Alloy.CdOd.Auxiliary.Lexer
+      Alloy.CdOd.Auxiliary.Parser
+      Paths_alloy_cd_od
+  hs-source-dirs:
+      legacy-app
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , alloy-cd-od
+    , array
+    , base
+    , bimap
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+  default-language: Haskell2010
+
+executable match-cd-od
+  main-is: match-cd-od.hs
+  other-modules:
+      EvaluateArgs
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , alloy-cd-od
+    , array
+    , base
+    , bimap
+    , bytestring
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , digest
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+  default-language: Haskell2010
+
+executable repair-incorrect
+  main-is: repair-incorrect.hs
+  other-modules:
+      EvaluateArgs
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , alloy-cd-od
+    , array
+    , base
+    , bimap
+    , bytestring
+    , call-alloy >=0.2.0.4 && <0.3
+    , containers
+    , digest
+    , fgl
+    , file-embed
+    , filepath
+    , graphviz
+    , random
+    , random-shuffle
+    , split
+    , string-interpolate
+    , text
+  default-language: Haskell2010
