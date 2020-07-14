@@ -4,11 +4,16 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 40930be833cc058d356278a97a35d22b1eecb4d6a6eebec0a69f58d8ad1a315a
+-- hash: 29c88c33a7922ecb507ded57d5047535738939cc2e1528e0fd4446cf4ed25bc5
 
-name:           alloy-cd-od
+name:           modelling-tasks
 version:        0.0.0
 build-type:     Simple
+extra-source-files:
+    alloy/cd/assoclimits.als
+    alloy/cd/generate.als
+    alloy/od/template.als
+    README.md
 
 library
   exposed-modules:
@@ -26,7 +31,7 @@ library
       Alloy.CdOd.SelectValidCd
       Alloy.CdOd.Types
   other-modules:
-      Paths_alloy_cd_od
+      Paths_modelling_tasks
   hs-source-dirs:
       src
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
@@ -64,7 +69,6 @@ executable cd2alloy
     , happy
   build-depends:
       MonadRandom
-    , alloy-cd-od
     , array
     , base
     , bimap
@@ -74,6 +78,7 @@ executable cd2alloy
     , file-embed
     , filepath
     , graphviz
+    , modelling-tasks
     , random
     , random-shuffle
     , split
@@ -95,7 +100,6 @@ executable cd2pic
     , happy
   build-depends:
       MonadRandom
-    , alloy-cd-od
     , array
     , base
     , bimap
@@ -105,6 +109,7 @@ executable cd2pic
     , file-embed
     , filepath
     , graphviz
+    , modelling-tasks
     , random
     , random-shuffle
     , split
@@ -116,7 +121,7 @@ executable check-cds
   main-is: check-cds.hs
   other-modules:
       EvaluateArgs
-      Paths_alloy_cd_od
+      Paths_modelling_tasks
   hs-source-dirs:
       app
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
@@ -125,7 +130,6 @@ executable check-cds
     , happy
   build-depends:
       MonadRandom
-    , alloy-cd-od
     , array
     , base
     , bimap
@@ -137,6 +141,7 @@ executable check-cds
     , file-embed
     , filepath
     , graphviz
+    , modelling-tasks
     , random
     , random-shuffle
     , split
@@ -156,7 +161,6 @@ executable different-names
     , happy
   build-depends:
       MonadRandom
-    , alloy-cd-od
     , array
     , base
     , bimap
@@ -168,6 +172,7 @@ executable different-names
     , file-embed
     , filepath
     , graphviz
+    , modelling-tasks
     , random
     , random-shuffle
     , split
@@ -180,7 +185,7 @@ executable instance2pic
   other-modules:
       Alloy.CdOd.Auxiliary.Lexer
       Alloy.CdOd.Auxiliary.Parser
-      Paths_alloy_cd_od
+      Paths_modelling_tasks
   hs-source-dirs:
       legacy-app
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints
@@ -189,7 +194,6 @@ executable instance2pic
     , happy
   build-depends:
       MonadRandom
-    , alloy-cd-od
     , array
     , base
     , bimap
@@ -199,6 +203,7 @@ executable instance2pic
     , file-embed
     , filepath
     , graphviz
+    , modelling-tasks
     , random
     , random-shuffle
     , split
@@ -218,7 +223,6 @@ executable match-cd-od
     , happy
   build-depends:
       MonadRandom
-    , alloy-cd-od
     , array
     , base
     , bimap
@@ -230,6 +234,7 @@ executable match-cd-od
     , file-embed
     , filepath
     , graphviz
+    , modelling-tasks
     , random
     , random-shuffle
     , split
@@ -249,7 +254,6 @@ executable repair-incorrect
     , happy
   build-depends:
       MonadRandom
-    , alloy-cd-od
     , array
     , base
     , bimap
@@ -261,6 +265,7 @@ executable repair-incorrect
     , file-embed
     , filepath
     , graphviz
+    , modelling-tasks
     , random
     , random-shuffle
     , split
