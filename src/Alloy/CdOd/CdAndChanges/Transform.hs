@@ -66,16 +66,16 @@ pred cd {
       #{hasDoubleRelationships props}, #{hasReverseRelationships props},
       #{hasMultipleInheritances props}, #{hasInheritanceCycles props},
       #{hasCompositionCycles props}, #{maybeToAlloySet $ hasMarkedEdges props}]
-    #{fst $ associations config} <= #Association'
-    #Association' <= #{upper $ associations config}
-    #{fst $ aggregations config} <= #Aggregation'
-    #Aggregation' <= #{upper $ aggregations config}
-    #{fst $ compositions config} <= #Composition'
-    #Composition' <= #{upper $ compositions config}
-    #{fst $ inheritances config} <= #Inheritance'
-    #Inheritance' <= #{upper $ inheritances config}
-    #{fst $ classes config} <= #Class
-    3 <= #Relationship'
+    #{fst $ associations config} <= \#Association'
+    \#Association' <= #{upper $ associations config}
+    #{fst $ aggregations config} <= \#Aggregation'
+    \#Aggregation' <= #{upper $ aggregations config}
+    #{fst $ compositions config} <= \#Composition'
+    \#Composition' <= #{upper $ compositions config}
+    #{fst $ inheritances config} <= \#Inheritance'
+    \#Inheritance' <= #{upper $ inheritances config}
+    #{fst $ classes config} <= \#Class
+    3 <= \#Relationship'
   }
 }
 |]
@@ -142,14 +142,14 @@ pred changeLimits {
         Composition' = Composition - (Change.add - c.add) - c.remove,
         Aggregation' = Aggregation - (Change.add - c.add) - c.remove,
         Inheritance' = Inheritance - (Change.add - c.add) - c.remove {
-      #{fst $ associations config} <= #Association'
-      #Association' <= #{upper $ associations config}
-      #{fst $ aggregations config} <= #Aggregation'
-      #Aggregation' <= #{upper $ aggregations config}
-      #{fst $ compositions config} <= #Composition'
-      #Composition' <= #{upper $ compositions config}
-      #{fst $ inheritances config} <= #Inheritance'
-      #Inheritance' <= #{upper $ inheritances config}
+      #{fst $ associations config} <= \#Association'
+      \#Association' <= #{upper $ associations config}
+      #{fst $ aggregations config} <= \#Aggregation'
+      \#Aggregation' <= #{upper $ aggregations config}
+      #{fst $ compositions config} <= \#Composition'
+      \#Composition' <= #{upper $ compositions config}
+      #{fst $ inheritances config} <= \#Inheritance'
+      \#Inheritance' <= #{upper $ inheritances config}
     }
   }
 }
