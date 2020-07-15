@@ -10,7 +10,6 @@ import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
 import Alloy.CdOd.Types
   (AssociationType (..), Connection (..), DiagramEdge, Syntax, toOldSyntax)
 
-import Control.Monad                    (void)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
 import Data.Map                         (Map)
 

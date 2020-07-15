@@ -8,11 +8,13 @@ build-tools:
   - alex
   - happy
 ghc-options:
-  -Wall
-  -Wincomplete-uni-patterns
-  -Wincomplete-record-updates
-  -Widentities
-  -Wredundant-constraints
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Widentities
+  - -Wredundant-constraints
+  - -Werror
+  - -Wwarn=incomplete-uni-patterns
 dependencies:
   - base
   - array

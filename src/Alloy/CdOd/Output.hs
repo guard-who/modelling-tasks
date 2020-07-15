@@ -16,7 +16,9 @@ import Alloy.CdOd.Edges                 (shouldBeMarked)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
-import Data.List                        (elemIndex, isPrefixOf, stripPrefix)
+import Data.List (
+  elemIndex, intercalate, isPrefixOf, stripPrefix,
+  )
 import Data.List.Split                  (splitOn)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
@@ -115,7 +117,7 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
   let numberedNodes = zip [0..] theNodes
   let graph = mkGraph numberedNodes theEdges :: Gr String String
   objectNames <-
-    map (\(i, l) -> (i, let [n,z] = splitOn "$" l in firstLower n ++ (if z == "0" then "" else z) ++ " "))
+    map (\(i, l) -> (i, removeDollar l ++ " "))
     . drop anonymous
     <$> shuffleM numberedNodes
   let dotGraph = graphToDot (nonClusteredParams {
@@ -125,6 +127,12 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   where
+    removeDollar l = case splitOn "$" l of
+      n:xs@(_:_) ->
+        let z  = last xs
+            ys = intercalate "$" $ init xs
+        in firstLower n ++ ys ++ (if z == "0" then "" else z)
+      _          -> l
     arrowHeads l = case M.lookup l navigations of
       Nothing  -> [edgeEnds NoDir]
       Just dir -> [edgeEnds dir, arrowFrom vee, arrowTo vee]

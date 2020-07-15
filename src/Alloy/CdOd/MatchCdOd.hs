@@ -45,7 +45,7 @@ import Control.Monad.Random
 import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
 import Data.List                        ((\\), delete, intercalate, nub, sort)
 import Data.Map                         (Map)
-import Data.Maybe                       (fromJust, isJust)
+import Data.Maybe                       (fromJust)
 import Data.Set                         (singleton)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
@@ -191,22 +191,23 @@ getRandomCDs config search = do
   when debug . liftIO . void $ drawCdFromSyntax False True (Just redColor) cd0 "debug-0" Pdf
   mutations <- shuffleM $ getAllMutationResults config names edges
   let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
-  continueIf (isJust medges1) $ do
+  continueWithJust medges1 (const True) $ \edges1 -> do
     mutations' <- shuffleM mutations
-    let Just edges1 = medges1
-        medges2     = getFirstValidSatisfying (const True) names mutations'
-        Just edges2 = medges2
-        notOnlyInhs = not $ null $ nonTargets (singleton TInheritance) $ edges1 ++ edges2
-    continueIf (isJust medges2 && notOnlyInhs) $ do
+    let medges2     = getFirstValidSatisfying (const True) names mutations'
+        notOnlyInhs = not . null . nonTargets (singleton TInheritance) . (edges1 ++)
+    continueWithJust medges2 notOnlyInhs $ \edges2 -> do
       [cd1, cd2] <- shuffleM [fromEdges names edges1, fromEdges names edges2]
       mutations'' <- shuffleM mutations
-      let Just edges3 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations''
-          cd3         = fromEdges names edges3
-      when debug . void. liftIO $ drawCdFromSyntax False True (Just redColor) cd3 "debug-3" Pdf
-      return (cd1, cd2, cd3, length names)
+      let medges3 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations''
+      continueWithJust medges3 (const True) $ \edges3 -> do
+        let cd3         = fromEdges names edges3
+        when debug . void . liftIO
+          $ drawCdFromSyntax False True (Just redColor) cd3 "debug-3" Pdf
+        return (cd1, cd2, cd3, length names)
   where
-    continueIf True  m = m
-    continueIf False _ = getRandomCDs config search
+    continueWithJust mx p m
+      | Just x <- mx, p x = m x
+      | otherwise         = getRandomCDs config search
 
 getODInstances
   :: Int

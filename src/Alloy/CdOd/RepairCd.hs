@@ -239,9 +239,9 @@ legalChanges = [
     withReverseRelationships :: RelationshipProperties -> RelationshipProperties
     withReverseRelationships config
       = config { hasReverseRelationships = True }
-    withMultipleInheritances :: RelationshipProperties -> RelationshipProperties
-    withMultipleInheritances config
-      = config { hasMultipleInheritances = True }
+    -- withMultipleInheritances :: RelationshipProperties -> RelationshipProperties
+    -- withMultipleInheritances config
+    --   = config { hasMultipleInheritances = True }
 
 illegalChanges :: [PropertyChange]
 illegalChanges = map ($ const False) [
