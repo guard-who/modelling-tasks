@@ -17,8 +17,8 @@ jobs:
 #        os: [ubuntu-latest, macOS-latest, windows-latest]
         os: [ubuntu-latest]
         plan:
-#          - { build: stack }
-          - { build: cabal, ghc: "8.8.2", cabal-install: "latest" }
+          - { build: stack }
+#          - { build: cabal, ghc: "8.8.3", cabal-install: "latest" }
         exclude:
           - os: windows-latest
             plan: { cabal-install: "latest" }
