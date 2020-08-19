@@ -118,6 +118,7 @@ petriNetFindConfl :: FindConflictConfig -> String
 petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
+#{modulePetriAdditions}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
@@ -157,6 +158,7 @@ petriNetFindConcur :: FindConcurrencyConfig -> String
 petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|module PetriNetConcur
 
 #{modulePetriSignature}
+#{modulePetriAdditions}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
