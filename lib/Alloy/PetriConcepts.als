@@ -51,5 +51,5 @@ pred sinkTransitions[ts : set Transitions]{
 
 //check if some transitions are source transitions
 pred sourceTransitions[ts : set Transitions]{
-  no Places.flow[ts]
+  no Nodes.flow[ts]  // under assumption of valid Petri nets, could use Places instead of Nodes here
 }
