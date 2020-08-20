@@ -105,7 +105,7 @@ data FindConflictConfig = FindConflictConfig
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
   { basicTask = defaultBasicConfig{ atLeastActive = 3 }
-  , advTask = defaultAdvConfig{ presenceOfSinkTransitions = Nothing, presenceOfSourceTransitions = Nothing }
+  , advTask = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeTask = defaultChangeConfig
   }
   
@@ -129,7 +129,7 @@ data FindConcurrencyConfig = FindConcurrencyConfig
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
   { basicTask = defaultBasicConfig{ atLeastActive = 3 }
-  , advTask = defaultAdvConfig{ presenceOfSinkTransitions = Nothing, presenceOfSourceTransitions = Nothing }
+  , advTask = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeTask = defaultChangeConfig
   }
   
