@@ -6,7 +6,7 @@ fun tokenSum[places : set Places] : Int{
   sum p : places | p.tokens
 }
 
-fun defaultTokenSum[places : set Places] : Int{
+fun defaultTokenSum[places : set givenPlaces] : Int{
   sum p : places | p.defaultTokens
 }
 
@@ -20,7 +20,7 @@ fun flowSum[from, to : set Nodes] : Int{
 }
 
 //total number of default flows going out from set of nodes to a set of nodes
-fun defaultFlowSum[from, to : set Nodes] : Int{
+fun defaultFlowSum[from, to : set (givenPlaces + givenTransitions)] : Int{
   sum f : from, t : to | f.defaultFlow[t]
 }
 
