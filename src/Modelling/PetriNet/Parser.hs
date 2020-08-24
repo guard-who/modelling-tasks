@@ -2,57 +2,82 @@
 
 module Modelling.PetriNet.Parser (convertPetri, convertGr, prepNodes, parseChange, parseConflict, parseConcurrency) where
 
+import qualified Data.Set                         as Set (
+  Set, elemAt, foldr, lookupMin, toList
+  )
+import qualified Data.Map.Lazy                    as Map (
+  Map, empty, fromList, insert, lookup
+  )
+
 import Modelling.PetriNet.Types
 
+import Control.Arrow                    (second)
 import Language.Alloy.Call
-import qualified Data.Set as Set        (Set,toList,filter,elemAt)
 import Data.Graph.Inductive.Graph       (mkGraph)
 import Data.Graph.Inductive.PatriciaTree
   (Gr)
-import qualified Data.Map.Lazy as Map   (Map,fromList,lookup)
+import Data.Set                         (Set)
+import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe)
-      
-type TripSet = Set.Set (Object,Object,Object)
 
---convert Instance to Petri
-convertPetri :: String -> String -> AlloyInstance -> Either String Petri
+{-|
+Given the name of a flow set and a token set the given alloy instance is parsed
+to a 'PetriLike' graph and a 'Petri' is returned if the instance is indeed a
+valid Petri net (after applying 'petriLikeToPetri').
+-}
+convertPetri
+  :: String              -- ^ the name of the flow set
+  -> String              -- ^ the name of the token set
+  -> AlloyInstance       -- ^ the Petri net 'AlloyInstance'
+  -> Either String Petri
 convertPetri f t inst = do
-  flow <- filterFlow f inst
-  mark <- startMark t inst
-  return $ Petri{initialMarking = mark,trans = flow}
-      
-                          --Transitionen--
---Flow -> Transitions
-filterFlow :: String -> AlloyInstance -> Either String [Transition]
-filterFlow f inst = do
-  trns <- singleSig inst "this" "Transitions" ""
-  set  <- tripleSig inst "this" "Nodes" f
-  let flow = filterTransitions (Set.toList trns) set
-  plcs <- singleSig inst "this" "Places" ""
-  return $ convertToTransitions (Set.toList plcs) flow
+  p <- parsePetriLike f t inst
+  petriLikeToPetri p
 
--- prepare with given Transitions the Pre and Post Sets for Petri
-filterTransitions :: [Object] -> TripSet -> [(TripSet,TripSet)]
-filterTransitions [] _ = []
-filterTransitions (t:rs) set = (filterSndTrip t set,filterFstTrip t set) : filterTransitions rs set
-
--- make Transitions out of the given Sets the Transitions for Petri
-convertToTransitions :: [Object] -> [(TripSet,TripSet)] -> [Transition]
-convertToTransitions _ [] = []
-convertToTransitions ls ((a,b):rs) = (helpConvertPre ls (Set.toList a),helpConvertPost ls (Set.toList b))
-                                : convertToTransitions ls rs
-
-
-                         --Startmarkierung--
-startMark :: String -> AlloyInstance -> Either String Marking
-startMark s inst = do
-  mark <- doubleSig inst "this" "Places" s
-  return $ convertTuple (Set.toList mark)
-
-      
-convertTuple :: [(Object,Object)] -> [Int]
-convertTuple [] = []
-convertTuple ((_,i):rs) = (read (objectName i) :: Int) : convertTuple rs
+{-|
+Parse a `PetriLike' graph from an 'AlloyInstance' given the instances flow and
+token sets.
+-}
+parsePetriLike
+  :: String                           -- ^ the name of the flow set
+  -> String                           -- ^ the name of the token set
+  -> AlloyInstance                    -- ^ the Petri net 'AlloyInstance'
+  -> Either String (PetriLike Object)
+parsePetriLike flowSetName tokenSetName inst = do
+  nodes  <- singleSig inst "this" "Nodes" ""
+  tkns   <- doubleSig inst "this" "Places" tokenSetName
+  tokens <- relToMap (second $ read . objectName) tkns
+  flow   <- tripleSig inst "this" "Nodes" flowSetName
+  fin    <- relToMap tripleToIn flow
+  fin'   <- relToMap id `mapM` fin
+  fout   <- relToMap tripleToOut flow
+  fout'  <- relToMap id `mapM` fout
+  return $ PetriLike $
+    Set.foldr (\x -> Map.insert x (toNode tokens fin' fout' x)) Map.empty nodes
+  where
+    toNode
+      :: Ord k
+      => Map k (Set Int)
+      -> Map k (Map k (Set Int))
+      -> Map k (Map k (Set Int))
+      -> k
+      -> Node k
+    toNode tokens fin fout x = case Map.lookup x tokens >>= Set.lookupMin of
+      Nothing -> TransitionNode {
+        flowIn  = toFlow x fin,
+        flowOut = toFlow x fout
+        }
+      Just t  -> PlaceNode {
+        initial = t,
+        flowIn  = toFlow x fin,
+        flowOut = toFlow x fout
+        }
+    toFlow :: Ord k => k -> Map k (Map k (Set a)) -> Map k a
+    toFlow x flow = fromMaybe Map.empty $ do
+      xs <- Map.lookup x flow
+      Set.lookupMin `mapM` xs
+    tripleToIn  (x, y, z) = (y, (x, read $ objectName z))
+    tripleToOut (x, y, z) = (x, (y, read $ objectName z))
 
                           --get Abweichung--
 parseChange :: AlloyInstance -> Either String Change 
@@ -133,29 +158,6 @@ unscopedSingleSig inst st nd = do
   sig <- lookupSig (unscoped st) inst
   getSingle nd sig
   
-                      --Filter for Objects--
-filterFstTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)
-filterFstTrip a = Set.filter $ helpFilter a
-  where helpFilter b (x,_,_) = b == x
-  
-filterSndTrip :: Object -> Set.Set (Object,Object,Object) -> Set.Set (Object,Object,Object)
-filterSndTrip a = Set.filter $ helpFilter a
-  where helpFilter b (_,x,_) = b == x
-  
-helpConvertPre :: [Object] -> [(Object,Object,Object)] -> [Int]
-helpConvertPre [] _ = []
-helpConvertPre (_:rp) [] = 0: helpConvertPre rp []
-helpConvertPre (p:rp) list@((a,_,x):rt)
- | p == a = (read (objectName x) :: Int) : helpConvertPre rp rt
- | otherwise = 0 : helpConvertPre rp list
- 
-helpConvertPost :: [Object] -> [(Object,Object,Object)] -> [Int]
-helpConvertPost [] _ = []
-helpConvertPost (_:rp) [] = 0: helpConvertPost rp []
-helpConvertPost (p:rp) list@((_,b,x):rt)
- | p == b = (read (objectName x) :: Int) : helpConvertPost rp rt
- | otherwise = 0 : helpConvertPost rp list
- 
 --getList up to given element
 listTill :: (Eq a) => [a] -> a -> [a]
 listTill [] _ = []
