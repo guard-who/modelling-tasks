@@ -55,29 +55,37 @@ parsePetriLike flowSetName tokenSetName inst = do
   return $ PetriLike $
     Set.foldr (\x -> Map.insert x (toNode tokens fin' fout' x)) Map.empty nodes
   where
-    toNode
-      :: Ord k
-      => Map k (Set Int)
-      -> Map k (Map k (Set Int))
-      -> Map k (Map k (Set Int))
-      -> k
-      -> Node k
-    toNode tokens fin fout x = case Map.lookup x tokens >>= Set.lookupMin of
-      Nothing -> TransitionNode {
-        flowIn  = toFlow x fin,
-        flowOut = toFlow x fout
-        }
-      Just t  -> PlaceNode {
-        initial = t,
-        flowIn  = toFlow x fin,
-        flowOut = toFlow x fout
-        }
-    toFlow :: Ord k => k -> Map k (Map k (Set a)) -> Map k a
-    toFlow x flow = fromMaybe Map.empty $ do
-      xs <- Map.lookup x flow
-      Set.lookupMin `mapM` xs
     tripleToIn  (x, y, z) = (y, (x, read $ objectName z))
     tripleToOut (x, y, z) = (x, (y, read $ objectName z))
+
+{-|
+Given three maps, and a given key construct a node for that key, containing its
+initial token (if available), its 'Map's for flow from and to other nodes.
+-}
+toNode
+  :: Ord k
+  => Map k (Set Int)
+  -- ^ the initial markings (i.e. initial tokens) as a map of singleton sets
+  -> Map k (Map k (Set Int))
+  -- ^ all flow out
+  -> Map k (Map k (Set Int))
+  -- ^ all flow in
+  -> k
+  -> Node k
+toNode tokens fin fout x = case Map.lookup x tokens >>= Set.lookupMin of
+  Nothing -> TransitionNode {
+    flowIn  = toFlow fin,
+    flowOut = toFlow fout
+    }
+  Just t  -> PlaceNode {
+    initial = t,
+    flowIn  = toFlow fin,
+    flowOut = toFlow fout
+    }
+  where
+    toFlow flow = fromMaybe Map.empty $ do
+      xs <- Map.lookup x flow
+      Set.lookupMin `mapM` xs
 
                           --get Abweichung--
 parseChange :: AlloyInstance -> Either String Change 

@@ -95,7 +95,7 @@ mapping on internal keys.
 
 Thus, the user of 'mapPetriLike' is responsible to preserve uniqueness of values
 (otherwise values might be lost after applying the mapping). Furthermore, if the
-transformation is not order preserving, the order of values within 'Map's might
+transformation is not order-preserving, the order of keys within 'Map's might
 be changed.
 -}
 mapPetriLike :: Ord b => (a -> b) -> PetriLike a -> PetriLike b
