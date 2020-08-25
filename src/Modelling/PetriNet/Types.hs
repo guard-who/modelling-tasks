@@ -1,9 +1,19 @@
 {-# Language DuplicateRecordFields #-}
+{-|
+This module provides types to represent Petri nets.
 
+A Petri net is a mathematical modelling language.
+It is used to describe distributed systems.
+Another name for Petri net is place / transition (PT) net.
+
+The 'Modelling.PetriNet.Types' module defines basic type class instances and
+functions to work on and transform Petri net representations.
+-}
 module Modelling.PetriNet.Types where
 
 import qualified Data.Map.Lazy          as M (
-  elems, filter, foldrWithKey, keysSet, lookup, mapKeys, member, null
+  elems, empty, filter, foldrWithKey, insert, keysSet, lookup,
+  mapKeys, member, null
   )
 import qualified Data.Set               as S (empty, union)
 
@@ -57,6 +67,55 @@ mapNode f (TransitionNode i o) =
   TransitionNode (M.mapKeys f i) (M.mapKeys f o)
 
 {-|
+This function acts like 'traverse' on 'Traversable'.
+
+Not that 'Node' is not 'Traversable' itself as it requires an 'Ord' instance
+for the result type within the 'Applicative' of its first argument, the
+applicative lifting transformation function.
+This behaviour occurs, because the traversal changes the keys of the underlying
+'Map'.
+Transformations on this map require a specific traversal 'traverseKeyMap'.
+
+The user is responsible to ensure uniqueness of the keys after the traversal.
+Note, that the order of values could also change if the transformation is not
+order-preserving.
+-}
+traverseNode :: (Applicative f, Ord b) => (a -> f b) -> Node a -> f (Node b)
+traverseNode f (PlaceNode s i o)    =
+  PlaceNode <$> pure s <*> traverseKeyMap f i <*> traverseKeyMap f o
+traverseNode f (TransitionNode i o) =
+  TransitionNode <$> traverseKeyMap f i <*> traverseKeyMap f o
+
+{-|
+A specific traversal for 'Map's changing the keys rather than values.
+That is why, the result requires an 'Ord' instance.
+It calls 'traverseKeyAndValueMap' but transforms only the keys.
+-}
+traverseKeyMap
+  :: (Applicative f, Ord k2)
+  => (k1 -> f k2) -- ^ transformation on keys
+  -> Map k1 a
+  -> f (Map k2 a)
+traverseKeyMap f = traverseKeyAndValueMap f pure
+
+{-|
+A specific traversal for 'Map's transforming its keys and its values.
+That is why, the result requires an 'Ord' instance on the resulting key values
+type.
+The traversal happens by inserting every changed key value pair into a new map.
+-}
+traverseKeyAndValueMap
+  :: (Applicative f, Ord k2)
+  => (k1 -> f k2) -- ^ transformation function on keys
+  -> (a -> f b)   -- ^ transformation function on values
+  -> Map k1 a
+  -> f (Map k2 b)
+traverseKeyAndValueMap f g =
+  M.foldrWithKey insertApplicativeKeyValue (pure M.empty)
+  where
+    insertApplicativeKeyValue k x rs = M.insert <$> f k <*> g x <*> rs
+
+{-|
 Whether the 'Node' is a 'PlaceNode'.
 -}
 isPlaceNode :: Node a -> Bool
@@ -100,6 +159,25 @@ be changed.
 -}
 mapPetriLike :: Ord b => (a -> b) -> PetriLike a -> PetriLike b
 mapPetriLike f x = PetriLike $ M.mapKeys f $ mapNode f <$> allNodes x
+
+{-|
+A 'Traversable' like 'traverse' on 'PetriLike'.
+
+Note that 'PetriLike' is not a true 'Traversable' as it requires the resulting
+type to be an instance of 'Ord', because it uses 'traverseKeyAndValueMap' which
+requires this constraint due to changing keys of 'Map's.
+
+Thus, the user is responsible to preserve uniqueness of keys.
+Furthermore, the order of keys might be changed if the transformation is not
+order-preserving.
+-}
+traversePetriLike
+  :: (Applicative f, Ord b)
+  => (a -> f b)
+  -> PetriLike a
+  -> f (PetriLike b)
+traversePetriLike f x =
+  PetriLike <$> traverseKeyAndValueMap f (traverseNode f) (allNodes x)
 
 {-|
 Transform a 'PetriLike' graph into a 'Petri' net.

@@ -1,10 +1,13 @@
 module Modelling.PetriNet.AlloySpec where
 
 import Modelling.PetriNet.Alloy
-import Modelling.PetriNet.Parser (convertPetri)
-import Modelling.PetriNet.Types         
-  (defaultBasicConfig,defaultMathConfig,defaultAdvConfig,Petri)
+import Modelling.PetriNet.Parser        (parsePetriLike, simpleRename)
+import Modelling.PetriNet.Types (
+  PetriLike,
+  defaultBasicConfig, defaultMathConfig, defaultAdvConfig, traversePetriLike,
+  )
 
+import Control.Monad.Trans.Except       (except, runExceptT)
 import Test.Hspec
 import Language.Alloy.Call       (existsInstance,getInstances)
 
@@ -25,11 +28,13 @@ spec = do
       it "taking some values out of the User's input" $
         petriScopeMaxSeq defaultBasicConfig `shouldSatisfy` (< 10)
         
-prepPetri :: IO Petri
+prepPetri :: IO (PetriLike String)
 prepPetri = do
   list <- getInstances (Just 1) 
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
-  let out = convertPetri "flow" "tokens" (head list)
+  out <- runExceptT $ do
+    petriLike <- except $ parsePetriLike "flow" "tokens" (head list)
+    except $ simpleRename `traversePetriLike` petriLike
   case out of
     Left merror -> error merror
     Right petri -> return petri

@@ -9,6 +9,10 @@ module Modelling.PetriNet.Alloy
   ,petriNetFindConcur,petriNetPickConcur,petriScopeBitwidth,petriScopeMaxSeq) 
   where
 
+import qualified Data.Map                         as M (
+  foldrWithKey, keys, lookup, partition
+  )
+
 import Modelling.PetriNet.Types
 
 import Data.String.Interpolate
@@ -83,33 +87,57 @@ run showNets for exactly #{petriScopeMaxSeq input} Nodes, #{petriScopeBitwidth i
 
 |]
 
-renderFalse :: Petri -> MathConfig -> String
-renderFalse Petri{initialMarking,trans}
-    MathConfig{basicTask,advTask,changeTask} = [i| module FalseNet
+renderFalse :: PetriLike String -> MathConfig -> String
+renderFalse
+  PetriLike  {allNodes}
+  MathConfig {basicTask, advTask, changeTask} = [i|module FalseNet
 
 #{modulePetriSignature}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-#{givPlaces (length initialMarking)}
-#{givTrans (length trans)}
+#{places}
+#{transitions}
 
 fact{
-  #{initialMark 1 initialMarking}
+#{initialMark}
 
-  #{defFlow 1 trans}
+#{defaultFlow}
 }
 
 pred showFalseNets[activatedTrans : set Transitions]{
   #{compBasicConstraints basicTask}
   #{compAdvConstraints advTask}
   #{compChange changeTask}
-  
 }
 
 run showFalseNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+|]
+  where
+    (ps, ts)    = M.partition isPlaceNode allNodes
+    places      = unlines [extendLine p "givenPlaces" | p <- M.keys ps]
+    transitions = unlines [extendLine t "givenTransitions" | t <- M.keys ts]
+    initialMark = M.foldrWithKey (\k -> (++) . tokenLine k) "" $ initial <$> ps
+    defaultFlow = M.foldrWithKey (\k _ -> (printFlow k ++)) "" allNodes
+    printFlow :: String -> String
+    printFlow x = M.foldrWithKey
+      (\y flow -> (++) $ flowLine x y $ M.lookup x $ flowIn flow)
+      ""
+      allNodes
 
+extendLine :: String -> String -> String
+extendLine n k = [i|one sig #{n} extends #{k}{}
+|]
+
+tokenLine :: String -> Int -> String
+tokenLine k l = [i|  #{k}.defaultTokens = #{l}
+|]
+
+flowLine :: String -> String -> Maybe Int -> String
+flowLine from to Nothing  = [i|  no #{from}.defaultFlow[#{to}]
+|]
+flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
 |]
 
 --Conflict--
@@ -266,33 +294,3 @@ activatedTrans,relatedTransitions: set Transitions] {
   #{compBasicConstraints basic}
   #{compChange change}
 |]
-
-givPlaces :: Int -> String
-givPlaces 0 = ""
-givPlaces p = "one sig S"++show p++" extends givenPlaces{} \n"++ givPlaces (p-1)
-
-givTrans :: Int -> String
-givTrans 0 = ""
-givTrans t = "one sig T"++show t++" extends givenTransitions{} \n"++ givTrans (t-1)
-
-initialMark ::Int -> Marking -> String
-initialMark _ []      = ""
-initialMark iM (m:rm) ="S"++ show iM ++".defaultTokens = "++ show m ++"\n  " ++ initialMark (iM+1) rm
-
-defFlow :: Int -> [Transition] -> String
-defFlow _ []            = ""
-defFlow iT ((pr,po):rt) = flowPre iT 1 pr ++ flowPost iT 1 po ++ defFlow (iT+1) rt
-
-flowPre :: Int -> Int -> [Int] -> String
-flowPre _ _ [] = ""
-flowPre iT iM (m:rm)
- | m == 0     = "no S"++ show iM ++".defaultFlow[T"++ show iT ++"]\n  " ++ flowPre iT (iM+1) rm
- | otherwise  = "S"++ show iM ++".defaultFlow[T"++ show iT ++"] = "++ show m ++"\n  "
-                       ++ flowPre iT (iM+1) rm
-
-flowPost :: Int -> Int -> [Int] -> String
-flowPost _ _ [] = ""
-flowPost iT iM (m:rm)
- | m == 0     = "no T"++ show iT ++".defaultFlow[S"++ show iM ++"]\n  " ++ flowPost iT (iM+1) rm
- | otherwise  = "T"++ show iT ++".defaultFlow[S"++ show iM ++"] = "++ show m ++"\n  "
-                        ++ flowPost iT (iM+1) rm

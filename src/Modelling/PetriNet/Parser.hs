@@ -1,6 +1,10 @@
 {-# LANGUAGE ParallelListComp #-}
 
-module Modelling.PetriNet.Parser (convertPetri, convertGr, prepNodes, parseChange, parseConflict, parseConcurrency) where
+module Modelling.PetriNet.Parser (
+  convertPetri, convertGr, prepNodes,
+  parseChange, parseConflict, parseConcurrency, parsePetriLike,
+  simpleRename
+  ) where
 
 import qualified Data.Set                         as Set (
   Set, elemAt, foldr, lookupMin, toList
@@ -16,6 +20,7 @@ import Language.Alloy.Call
 import Data.Graph.Inductive.Graph       (mkGraph)
 import Data.Graph.Inductive.PatriciaTree
   (Gr)
+import Data.List                        (stripPrefix)
 import Data.Set                         (Set)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe)
@@ -57,6 +62,24 @@ parsePetriLike flowSetName tokenSetName inst = do
   where
     tripleToIn  (x, y, z) = (y, (x, read $ objectName z))
     tripleToOut (x, y, z) = (x, (y, read $ objectName z))
+
+{-|
+Transform an 'Object' into a 'String' by replacing the prefix.
+Returns 'Either':
+
+ * an error message if no matching prefix was found
+ * or the resulting 'String'
+-}
+simpleRename :: Object -> Either String String
+simpleRename x
+  | Just y <- strip "addedPlaces$"      = Right $ 'a':'S':y
+  | Just y <- strip "addedTransitions$" = Right $ 'a':'T':y
+  | Just y <- strip "givenPlaces$"      = Right $ 'S':y
+  | Just y <- strip "givenTransitions$" = Right $ 'T':y
+  | otherwise
+  = Left $ "simpleRename: Could not rename " ++ show x
+  where
+    strip pre = stripPrefix pre $ objectName x
 
 {-|
 Given three maps, and a given key construct a node for that key, containing its
