@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -38,7 +39,9 @@ import Alloy.CdOd.Types (
   )
 
 import Control.Monad                    (void, when)
+#if __GLASGOW_HASKELL__ < 808
 import Control.Monad.Fail               (MonadFail)
+#endif
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
