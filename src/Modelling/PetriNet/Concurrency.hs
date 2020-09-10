@@ -11,6 +11,7 @@ import Modelling.PetriNet.Parser         (parseConcurrency,prepNodes)
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
 
+import Control.Monad.Trans.Except       (runExceptT)
 import Diagrams.Backend.Rasterific       (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
@@ -38,7 +39,8 @@ getNet f t inst gc =
   case prepNodes t inst of
     Left nerror -> error nerror
     Right nodes -> do
-      dia <- drawNet f nodes inst gc
+      edia <- runExceptT $ drawNet f t inst gc
+      dia  <- either error return edia
       if f == "defaultFlow" && t == "defaultTokens" 
       then return (dia,Nothing)
       else

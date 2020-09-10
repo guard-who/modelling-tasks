@@ -1,10 +1,15 @@
 module Modelling.PetriNet.Diagram (drawNet) where
 
-import Modelling.PetriNet.Parser        (convertGr)
+import Modelling.PetriNet.Parser (
+  parsePetriLike, petriLikeToGr, simpleNameMap
+  )
 
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
+import Control.Monad.Trans.Class        (MonadTrans (lift))
+import Control.Monad.Trans.Except       (ExceptT, except)
+import Data.Graph.Inductive             (Gr)
 import Diagrams.Backend.Rasterific             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
@@ -15,19 +20,25 @@ import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call               (AlloyInstance)
 
 -------------------------------------------------------------------------
-drawNet :: 
-  String -> [(Int,(String, Maybe Int))] -> AlloyInstance -> GraphvizCommand -> IO (Diagram B)
-drawNet f n inst gc =
-  case convertGr f n inst of
-    Left merror -> error merror
-    Right gnet -> do
-      graph <- GV.layoutGraph gc gnet
-      pfont <- lin
-      let (nodes, edges) = GV.getGraph graph
-          gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
-          gedges = foldl (\g (l1, l2, l, p) -> g # drawEdge pfont l l1 l2 p) gnodes edges
-      return (gedges # frame 1)
-      
+drawNet ::
+  String -> String -> AlloyInstance -> GraphvizCommand -> ExceptT String IO (Diagram B)
+drawNet f t inst gc = do
+  pl <- except $ parsePetriLike f t inst
+  let bm = simpleNameMap pl
+  gr    <- except $ petriLikeToGr pl bm
+  graph <- lift $ GV.layoutGraph gc gr
+  pfont <- lift $ lin
+  return $ drawGraph pfont graph
+
+drawGraph
+  :: PreparedFont Double
+  -> Gr (AttributeNode (String, Maybe Int)) (AttributeEdge String)
+  -> Diagram B
+drawGraph pfont graph = gedges # frame 1
+  where
+    (nodes, edges) = GV.getGraph graph
+    gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
+    gedges = foldl (\g (s, t, l, p) -> g # drawEdge pfont l s t p) gnodes edges
 
 drawNode :: PreparedFont Double -> (String,Maybe Int) -> Point V2 Double -> Diagram B
 drawNode pfont (l, Nothing) p  = place

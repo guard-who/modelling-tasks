@@ -23,19 +23,18 @@ matchToMath :: Int -> Bool -> MathConfig -> IO (Diagram B, LaTeX, Either [(Diagr
 matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
   list <- getInstances (Just (toInteger (indInst+1))) (petriNetRnd basicTask advTask)
   ematerial <- runExceptT $ do
-    nodes     <- except $ prepNodes "tokens" (list !! indInst)
     petriLike <- except $ parsePetriLike "flow" "tokens" (list !! indInst)
     named     <- except $ simpleRename `traversePetriLike` petriLike
     petri     <- except $ convertPetri "flow" "tokens" (list !! indInst)
-    rightNet  <- lift $ drawNet "flow" nodes (list !! indInst) (graphLayout basicTask)
+    rightNet  <- drawNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
     let tex = uebung petri 1 switch
     let f = renderFalse named config
     fList <- lift $ getInstances (Just 3) f
     let (fNets,changes) = falseList fList []
-    let helper x = drawNet "flow" nodes x (graphLayout basicTask)
+    let helper x = drawNet "flow" "tokens" x (graphLayout basicTask)
     if switch
       then do
-      fDia <- lift $ mapM helper fList
+      fDia  <- mapM helper fList
       return (rightNet, tex, Left $ zip fDia changes)
       else do
       let fTex = map createPetriTex fNets

@@ -11,11 +11,11 @@ functions to work on and transform Petri net representations.
 -}
 module Modelling.PetriNet.Types where
 
-import qualified Data.Map.Lazy          as M (
+import qualified Data.Map.Lazy                    as M (
   elems, empty, filter, foldrWithKey, insert, keysSet, lookup,
   mapKeys, member, null
   )
-import qualified Data.Set               as S (empty, union)
+import qualified Data.Set                         as S (empty, union)
 
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (Neato))
 import Data.Map.Lazy                    (Map)
@@ -49,6 +49,15 @@ data Node a =
   flowOut :: Map a Int
   }
   deriving Show
+
+{-|
+Returns 'Just' the 'initial' tokens of the given 'Node', if it is a 'PlaceNode',
+otherwise it returns 'Nothing'.
+-}
+maybeInitial :: Node a -> Maybe Int
+maybeInitial n = case n of
+  PlaceNode      {} -> Just $ initial n
+  TransitionNode {} -> Nothing
 
 {-|
 This function acts like 'fmap' on other 'Functor's.

@@ -3,20 +3,24 @@
 module Modelling.PetriNet.Parser (
   convertPetri, convertGr, prepNodes,
   parseChange, parseConflict, parseConcurrency, parsePetriLike,
-  simpleRename
+  simpleNameMap, simpleRename, petriLikeToGr
   ) where
 
+import qualified Data.Bimap                       as BM (
+  fromList, lookup,
+  )
 import qualified Data.Set                         as Set (
   Set, elemAt, foldr, lookupMin, toList
   )
 import qualified Data.Map.Lazy                    as Map (
-  Map, empty, fromList, insert, lookup
+  Map, empty, findIndex, foldlWithKey, foldrWithKey, fromList, insert, lookup,
   )
 
 import Modelling.PetriNet.Types
 
-import Control.Arrow                    (second)
+import Control.Arrow                    (left, second)
 import Language.Alloy.Call
+import Data.Bimap                       (Bimap)
 import Data.Graph.Inductive.Graph       (mkGraph)
 import Data.Graph.Inductive.PatriciaTree
   (Gr)
@@ -196,6 +200,39 @@ listTill (x:rs) y
  | x == y    = []
  | otherwise = x : listTill rs y
  
+simpleNameMap :: Ord a => PetriLike a -> Bimap a String
+simpleNameMap pl = BM.fromList . fst <$>
+  Map.foldlWithKey
+  nameIncreasingly
+  ([], (1 :: Integer, 1 :: Integer))
+  $ allNodes pl
+  where
+    nameIncreasingly (ys, (p, t)) k x =
+      let (k', p', t') = step x p t
+      in ((k, k'):ys, (p', t'))
+    step n p t = case n of
+      PlaceNode {}      -> ('S':show p, p + 1, t)
+      TransitionNode {} -> ('T':show t, p, t + 1)
+
+petriLikeToGr
+  :: Ord a
+  => PetriLike a
+  -> Bimap a String
+  -> Either String (Gr (String, Maybe Int) String)
+petriLikeToGr plike names = left show $ do
+  nodes <- Map.foldrWithKey convertNode (return []) $ allNodes plike
+  let edges = Map.foldrWithKey convertTransition [] $ allNodes plike
+  return $ mkGraph nodes edges
+  where
+    convertNode k x ns = do
+      ns' <- ns
+      k'  <- BM.lookup k names
+      return $ (indexOf k, (k', maybeInitial x)):ns'
+    convertTransition k x ns =
+      Map.foldrWithKey (convertEdge k) ns $ flowIn x
+    indexOf x = Map.findIndex x $ allNodes plike
+    convertEdge k source target rs =
+      (indexOf source, indexOf k, show target) : rs
 ------------------------------------------------------------------------------------------
 --ParseDirectlyToDiagram
 
