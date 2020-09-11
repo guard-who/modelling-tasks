@@ -26,12 +26,14 @@ matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
     petriLike <- except $ parsePetriLike "flow" "tokens" (list !! indInst)
     named     <- except $ simpleRename `traversePetriLike` petriLike
     petri     <- except $ convertPetri "flow" "tokens" (list !! indInst)
-    rightNet  <- drawNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
+    rightNet  <- drawNet petriLike (graphLayout basicTask)
     let tex = uebung petri 1 switch
     let f = renderFalse named config
     fList <- lift $ getInstances (Just 3) f
     let (fNets,changes) = falseList fList []
-    let helper x = drawNet "flow" "tokens" x (graphLayout basicTask)
+    let helper x = do
+          pl <- except $ parsePetriLike "flow" "tokens" x
+          drawNet pl (graphLayout basicTask)
     if switch
       then do
       fDia  <- mapM helper fList

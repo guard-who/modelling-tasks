@@ -91,7 +91,7 @@ order-preserving.
 -}
 traverseNode :: (Applicative f, Ord b) => (a -> f b) -> Node a -> f (Node b)
 traverseNode f (PlaceNode s i o)    =
-  PlaceNode <$> pure s <*> traverseKeyMap f i <*> traverseKeyMap f o
+  PlaceNode s <$> traverseKeyMap f i <*> traverseKeyMap f o
 traverseNode f (TransitionNode i o) =
   TransitionNode <$> traverseKeyMap f i <*> traverseKeyMap f o
 

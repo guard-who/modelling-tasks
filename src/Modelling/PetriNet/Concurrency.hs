@@ -7,11 +7,13 @@ module Modelling.PetriNet.Concurrency
 import Modelling.PetriNet.Alloy          (petriNetFindConcur,petriNetPickConcur)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.LaTeX          (uebung)
-import Modelling.PetriNet.Parser         (parseConcurrency,prepNodes)
+import Modelling.PetriNet.Parser         (
+  parseConcurrency, parsePetriLike, prepNodes,
+  )
 import Modelling.PetriNet.Types          
   (placeHoldPetri,Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
 
-import Control.Monad.Trans.Except       (runExceptT)
+import Control.Monad.Trans.Except       (except, runExceptT)
 import Diagrams.Backend.Rasterific       (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
@@ -39,7 +41,9 @@ getNet f t inst gc =
   case prepNodes t inst of
     Left nerror -> error nerror
     Right nodes -> do
-      edia <- runExceptT $ drawNet f t inst gc
+      edia <- runExceptT $ do
+        pl <- except $ parsePetriLike f t inst
+        drawNet pl gc
       dia  <- either error return edia
       if f == "defaultFlow" && t == "defaultTokens" 
       then return (dia,Nothing)

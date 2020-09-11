@@ -1,11 +1,12 @@
 module Modelling.PetriNet.Diagram (drawNet) where
 
-import Modelling.PetriNet.Parser (
-  parsePetriLike, petriLikeToGr, simpleNameMap
-  )
-
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
+
+import Modelling.PetriNet.Parser (
+  petriLikeToGr, simpleNameMap,
+  )
+import Modelling.PetriNet.Types         (PetriLike)
 
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
@@ -17,17 +18,23 @@ import Data.GraphViz                    hiding (Path)
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
-import Language.Alloy.Call               (AlloyInstance)
 
--------------------------------------------------------------------------
-drawNet ::
-  String -> String -> AlloyInstance -> GraphvizCommand -> ExceptT String IO (Diagram B)
-drawNet f t inst gc = do
-  pl <- except $ parsePetriLike f t inst
+{-| Create a 'Diagram's graph of a petri net like graph definition ('PetriLike')
+by distributing places and transitions using GraphViz.
+The provided 'GraphvizCommand' is used for this distribution.
+-}
+drawNet
+  :: Ord a
+  => PetriLike a
+  -- ^ the graph definition
+  -> GraphvizCommand
+  -- ^ how to distribute the nodes
+  -> ExceptT String IO (Diagram B)
+drawNet pl gc = do
   let bm = simpleNameMap pl
   gr    <- except $ petriLikeToGr pl bm
   graph <- lift $ GV.layoutGraph gc gr
-  pfont <- lift $ lin
+  pfont <- lift lin
   return $ drawGraph pfont graph
 
 drawGraph
