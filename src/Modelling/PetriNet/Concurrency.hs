@@ -14,7 +14,7 @@ import Modelling.PetriNet.Types
   (placeHoldPetri,Concurrent,FindConcurrencyConfig(..),PickConcurrencyConfig(..),BasicConfig(..))
 
 import Control.Monad.Trans.Except       (except, runExceptT)
-import Diagrams.Backend.Rasterific       (B)
+import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                  (Diagram)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Language.Alloy.Call               (getInstances,AlloyInstance)

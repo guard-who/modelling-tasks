@@ -3,8 +3,6 @@ cabal-version: 1.12
 -- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 586d0f672472fb6bbb3d4c3a41c9caea27212d852227ffdd05ac2f8a2c1ba7f3
 
 name:           petri-tasks
 version:        0.0.0
@@ -48,6 +46,7 @@ library
     , file-embed
     , ghc
     , graphviz
+    , latex-svg-image
     , pretty-simple
     , process
     , string-interpolate
@@ -77,6 +76,7 @@ executable concurrency
     , file-embed
     , ghc
     , graphviz
+    , latex-svg-image
     , petri-tasks
     , pretty-simple
     , process
@@ -107,6 +107,7 @@ executable conflicts
     , file-embed
     , ghc
     , graphviz
+    , latex-svg-image
     , petri-tasks
     , pretty-simple
     , process
@@ -137,6 +138,7 @@ executable matchToMath
     , file-embed
     , ghc
     , graphviz
+    , latex-svg-image
     , petri-tasks
     , pretty-simple
     , process
@@ -177,6 +179,7 @@ test-suite petri-tasks-test
     , ghc
     , graphviz
     , hspec
+    , latex-svg-image
     , petri-tasks
     , pretty-simple
     , process

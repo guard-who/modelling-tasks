@@ -1,71 +1,62 @@
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.MatchToMath (matchToMath,checkConfig)  where
 
 import Modelling.PetriNet.Alloy             (petriNetRnd, renderFalse)
 import Modelling.PetriNet.BasicNetFunctions (checkBasicConfig,checkChangeConfig)
-import Modelling.PetriNet.Diagram
-import Modelling.PetriNet.LaTeX
+import Modelling.PetriNet.Diagram       (drawNet)
+import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser
 import Modelling.PetriNet.Types
 
 import Control.Monad.Trans.Class        (lift)
-import Control.Monad.Trans.Except       (except, runExceptT)
-import Diagrams.Backend.Rasterific          (B)
+import Control.Monad.Trans.Except       (ExceptT, except)
+import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                     (Diagram)
+import Image.LaTeX.Render               (Formula)
 import Language.Alloy.Call                  (AlloyInstance,getInstances)
 import Maybes                               (firstJusts)
-import Text.LaTeX                           (LaTeX)
 
+type Math  = PetriMath Formula
+type Graph = Diagram B
 --True Task1 <-> False Task1a
-matchToMath :: Int -> Bool -> MathConfig -> IO (Diagram B, LaTeX, Either [(Diagram B, Change)] [(LaTeX, Change)])
+matchToMath
+  :: Int
+  -> Bool
+  -> MathConfig
+  -> ExceptT String IO (Graph, Math, Either [(Graph, Change)] [(Math, Change)])
 matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
-  list <- getInstances (Just (toInteger (indInst+1))) (petriNetRnd basicTask advTask)
-  ematerial <- runExceptT $ do
-    petriLike <- except $ parsePetriLike "flow" "tokens" (list !! indInst)
-    named     <- except $ simpleRename `traversePetriLike` petriLike
-    petri     <- except $ convertPetri "flow" "tokens" (list !! indInst)
-    rightNet  <- drawNet petriLike (graphLayout basicTask)
-    let tex = uebung petri 1 switch
-    let f = renderFalse named config
-    fList <- lift $ getInstances (Just 3) f
-    let (fNets,changes) = falseList fList []
-    let helper x = do
+  list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetRnd basicTask advTask)
+  petriLike <- except $ parsePetriLike "flow" "tokens" (list !! indInst)
+  named     <- except $ simpleRename `traversePetriLike` petriLike
+  petri     <- except $ convertPetri "flow" "tokens" (list !! indInst)
+  rightNet  <- drawNet petriLike (graphLayout basicTask)
+  let tex = toPetriMath petri
+  let f = renderFalse named config
+  fList <- lift $ getInstances (Just 3) f
+  alloyChanges <- except $ mapM addChange fList
+  if switch
+    then do
+    let draw x = do
           pl <- except $ parsePetriLike "flow" "tokens" x
           drawNet pl (graphLayout basicTask)
-    if switch
-      then do
-      fDia  <- mapM helper fList
-      return (rightNet, tex, Left $ zip fDia changes)
-      else do
-      let fTex = map createPetriTex fNets
-      return (rightNet, tex, Right $ zip fTex changes)
-  case ematerial of
-    Left e  -> error e
-    Right x -> return x
+    drawChanges <- firstM draw `mapM` alloyChanges
+    return (rightNet, tex, Left drawChanges)
+    else do
+    let toMath x = toPetriMath <$> convertPetri "flow" "tokens" x
+    mathChanges <- except $ firstM toMath `mapM` alloyChanges
+    return (rightNet, tex, Right mathChanges)
+
+firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
+firstM f (p, c) = f p >>= (return . (,c))
 
 checkConfig :: MathConfig -> Maybe String
 checkConfig MathConfig{basicTask,changeTask} = 
   firstJusts [checkBasicConfig basicTask, checkChangeConfig basicTask changeTask]
 
-falseList :: [AlloyInstance] -> [Petri] -> ([Petri],[Change])
-falseList [] _       = ([],[])
-falseList (inst:rs) usedP =
-  case runFalseParser inst of
-    (Left ferror,Left cError) -> error $ ferror ++ cError
-    (Left ferror, _)          -> error ferror
-    (_,Left cError)           -> error cError
-    (Right fNet,Right change) -> do
-      let rest@(rf,rc) = falseList rs (fNet:usedP)
-      if fNet `elem` usedP 
-      then rest
-      else (fNet:rf,change:rc)
-      
-runFalseParser :: AlloyInstance -> (Either String Petri,Either String Change)
-runFalseParser alloy = do
-  let petri = convertPetri "flow" "tokens" alloy
-  let change = parseChange alloy
-  (petri,change)
-  
-
+addChange :: AlloyInstance -> Either String (AlloyInstance, Change)
+addChange alloy = do
+  change <- parseChange alloy
+  return (alloy, change)

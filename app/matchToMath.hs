@@ -1,63 +1,92 @@
 module Main (main) where
 
-import Modelling.PetriNet.BasicNetFunctions (instanceInput,renderPdfFile)
+import Modelling.PetriNet.BasicNetFunctions (instanceInput)
 
 import Modelling.PetriNet.MatchToMath
-import Modelling.PetriNet.Types
-  (BasicConfig(..),ChangeConfig(..),defaultMathConfig,MathConfig(..),Change)
-import Modelling.PetriNet.LaTeX          (diagramTex,texTex)
+import Modelling.PetriNet.Types (
+  BasicConfig (..), ChangeConfig (..), MathConfig (..), PetriMath (..),
+  defaultMathConfig,
+  )
 
-import Data.List                         (isInfixOf)
-import Data.Maybe                        (isNothing)
+import Control.Monad                    (when)
+import Control.Monad.Trans.Class        (lift)
+import Control.Monad.Trans.Except       (ExceptT, except, runExceptT, throwE)
+import Data.Bifunctor                   (bimap)
 import Diagrams.Prelude                  (Diagram,mkWidth)
-import Diagrams.Backend.Rasterific       (renderPdf,B)
+import Diagrams.Backend.SVG             (renderSVG, B)
+import Image.LaTeX.Render               (
+  Formula, SVG,
+  alterForHTML, defaultEnv, defaultFormulaOptions, imageForFormula,
+  )
 import System.IO
-import Text.LaTeX                        (LaTeX,renderFile)
 import Text.Pretty.Simple                (pPrint)
 
+forceErrors :: Monad m => ExceptT String m () -> m ()
+forceErrors m = do
+  () <- either error id <$> runExceptT m
+  return ()
+
 main :: IO ()
-main = do
-  hSetBuffering stdout NoBuffering
-  pPrint defaultMathConfig
-  (pls,trns,tknChange,flwChange,sw) <- userInput
+main = forceErrors $ do
+  lift $ hSetBuffering stdout NoBuffering
+  lift $ pPrint defaultMathConfig
+  (pls, trns, tknChange, flwChange, sw) <- lift userInput
   let config = defaultMathConfig{
-                         basicTask = 
-                           (basicTask defaultMathConfig){places = pls, transitions = trns}
-                         , changeTask =
-                           (changeTask defaultMathConfig){ tokenChangeOverall = tknChange
-                                                   , flowChangeOverall = flwChange}
-                         }
-  let c = checkConfig config
+        basicTask =
+            (basicTask defaultMathConfig) {places = pls, transitions = trns},
+        changeTask =
+            (changeTask defaultMathConfig) {
+            tokenChangeOverall = tknChange,
+                flowChangeOverall = flwChange}
+        }
+  maybe (return ()) throwE $ checkConfig config
   let switch 
         | sw == "b" = False
         | otherwise = True
-  if isNothing c 
-     then do
-       i <- instanceInput
-       if i < 0
-       then error "There is no negative index"
-       else do
-         (dia,tex,falseNets) <- matchToMath i switch config
-         renderPdf 1000 1000 "app/0.pdf" (mkWidth 800) dia
-         case falseNets of
-           Right falseTex -> do
-             parseChangeTex 1 falseTex
-             let (texList,changes) = unzip falseTex
-             let texN = texTex changes texList tex 
-             out <- renderFile "app/mathB.tex" texN >> renderPdfFile "app/mathB.tex"
-             if "Output written on" `isInfixOf` out
-             then print "PDF succesfully generated"
-             else print "Error upon generating the PDF-File"
-           Left falseDia  -> do
-             changes <- parseChangeDia 1 falseDia
-             renderFile "app/mathTask.tex" tex
-             let texN = diagramTex changes (length changes) tex 
-             out <- renderFile "app/math.tex" texN >> renderPdfFile "app/math.tex"
-             if "Output written on" `isInfixOf` out
-             then print "PDF succesfully generated"
-             else print "Error upon generating the PDF-File"
-  else
-    print c 
+  i <- lift instanceInput
+  when (i < 0) $ error "There is no negative index"
+  (dia, math, falseNets) <- matchToMath i switch config
+  lift $ renderPetriNet "0" dia
+  saveMathFiles "0" math
+  case falseNets of
+    Right falseTex -> do
+      let writeBoth num (x, y) = do
+            saveMathFiles (show num) x
+            lift $ print y
+      uncurry writeBoth `mapM_` zip [1 :: Integer ..] falseTex
+    Left falseDia  -> lift $ do
+      let writeBoth num (x, y) = do
+            renderPetriNet (show num) x
+            print y
+      uncurry writeBoth `mapM_` zip [1 :: Integer ..] falseDia
+
+renderPetriNet :: String -> Diagram B -> IO ()
+renderPetriNet x dia = do
+  renderSVG name (mkWidth 800) dia
+  putStrLn $ "wrote file" ++ name
+  where
+    name = x ++ "petri.svg"
+
+saveMathFiles :: String -> PetriMath Formula -> ExceptT String IO ()
+saveMathFiles name m = do
+  eformula <- lift $ mapM renderFormula m
+  formula  <- except `mapM` eformula
+  writeFile' "net" $ netMath formula
+  writeFile' "places" $ placesMath formula
+  writeFile' "transitions" $ transitionsMath formula
+  uncurry writeChange `mapM_` zip [1 :: Integer ..] (tokenChangeMath formula)
+  writeFile' "marking" $ initialMarkingMath formula
+  where
+    writeChange n (x, y) = do
+      writeFile' ("in" ++ show n) x
+      writeFile' ("out" ++ show n) y
+    writeFile' x =
+      let y = name ++ x ++ ".svg"
+      in lift . (putStrLn ("wrote file " ++ y) >>) . writeFile y
+
+renderFormula :: String -> IO (Either String SVG)
+renderFormula = (bimap show alterForHTML <$>)
+  . imageForFormula defaultEnv defaultFormulaOptions
 
 userInput :: IO (Int,Int,Int,Int,String)
 userInput = do   
@@ -72,18 +101,3 @@ userInput = do
   putStr "Which Tasktype would you like to get?(a: Math to Net, b: Net to Math): "
   sw <- getLine
   return (read pls, read trns, read tknCh, read flwCh,sw)
-  
-parseChangeDia :: Int -> [(Diagram B, Change)] -> IO [Change]
-parseChangeDia _ []                = return []
-parseChangeDia i ((dia,change):rs) = do
-  print change
-  renderPdf 1000 1000 ("app/"++show i++".pdf") (mkWidth 800) dia
-  rest <- parseChangeDia (i+1) rs
-  return $ change : rest
-
-parseChangeTex :: Int -> [(LaTeX, Change)] -> IO()
-parseChangeTex _ []                = print "no more Nets"
-parseChangeTex i ((tex,change):rs) = do 
-  print change
-  renderFile ("app/mathB"++show i++".tex") tex
-  parseChangeTex (i+1) rs

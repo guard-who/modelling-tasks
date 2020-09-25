@@ -19,6 +19,7 @@ dependencies:
   - ghc
   - graphviz
   - HaTeX
+  - latex-svg-image
   - string-interpolate
   - SVGFonts
   - containers

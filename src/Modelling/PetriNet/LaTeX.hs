@@ -1,12 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.PetriNet.LaTeX (uebung,createPetriTex,diagramTex,texTex) where
+module Modelling.PetriNet.LaTeX (
+  uebung, createPetriTex, diagramTex, texTex,
+  toPetriMath,
+  ) where
 
 import Modelling.PetriNet.Types
 
+import Data.List                    (intercalate)
 import Data.Maybe                   (fromMaybe)
 import Data.Text                    (unpack)
+import Image.LaTeX.Render           (Formula)
 import Text.LaTeX
 import Text.LaTeX.Base.Syntax       (getBody)
 import Text.LaTeX.Packages.Inputenc 
@@ -42,6 +47,53 @@ body petri task switch
  | otherwise = mempty
  
 --Math Petri Appearance
+
+toPetriMath :: Petri -> PetriMath Formula
+toPetriMath Petri { initialMarking, trans } = PetriMath {
+  netMath            = netLaTeX,
+  placesMath         = placesLaTeX $ length initialMarking,
+  transitionsMath    = transitionsLaTeX $ length trans,
+  tokenChangeMath    = tokenChangeLaTeX trans,
+  initialMarkingMath = initialMarkingLaTeX initialMarking
+  }
+
+netLaTeX :: String
+netLaTeX = mathMode $
+  "N = " ++ parenthesise "P, T, ^{\\bullet}(), ()^{\\bullet}, m_0"
+
+mathMode :: String -> String
+mathMode = wrap "$" "$"
+
+parenthesise :: String -> String
+parenthesise = wrap "\\left(" "\\right)"
+
+brace :: String -> String
+brace = wrap "\\left\\{" "\\right\\}"
+
+wrap :: [a] -> [a] -> [a] -> [a]
+wrap x y zs = x ++ zs ++ y
+
+placesLaTeX :: Int -> String
+placesLaTeX n = mathMode $ "P = "
+  ++ brace (intercalate "," [ "p_" ++ show x | x <- [1 .. n]])
+
+transitionsLaTeX :: Int -> String
+transitionsLaTeX n = mathMode $ "T = "
+  ++ brace (intercalate "," [ "t_" ++ show x | x <- [1 .. n]])
+
+initialMarkingLaTeX :: Marking -> String
+initialMarkingLaTeX m = mathMode $ "m_0 = "
+  ++ parenthesise (intercalate "," (show <$> m))
+
+tokenChangeLaTeX :: [Transition] -> [(String, String)]
+tokenChangeLaTeX ts =
+  (\x -> (uncurry inT x, uncurry outT x)) <$> zip [1 :: Int ..] ts
+  where
+    inT  n (y, _) = mathMode $ "^{\\bullet}t" ++ tkns n y
+    outT n (_, z) = mathMode $ "t^{\\bullet}" ++ tkns n z
+    tkns n xs = "_" ++ show n ++ " = "
+      ++ parenthesise (intercalate "," $ show <$> xs)
+
 createPetriTex :: Petri -> LaTeX
 createPetriTex Petri{initialMarking,trans} =
   math ( "N = (P, T," <> raw "^{\\bullet}" <> "(), ()" 

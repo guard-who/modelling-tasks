@@ -11,7 +11,7 @@ import Modelling.PetriNet.Types         (PetriLike)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Graph.Inductive             (Gr)
-import Diagrams.Backend.Rasterific             (B)
+import Diagrams.Backend.SVG             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
 import Data.GraphViz                    hiding (Path)

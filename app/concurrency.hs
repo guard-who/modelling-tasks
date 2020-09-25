@@ -10,7 +10,7 @@ import Modelling.PetriNet.Types
   ,defaultPickConcurrencyConfig,PickConcurrencyConfig(..),Concurrent,ChangeConfig(..))
 import Data.List                         (isInfixOf)
 import Data.Maybe                        (isNothing)
-import Diagrams.Backend.Rasterific       (renderPdf,B)
+import Diagrams.Backend.SVG             (renderSVG, B)
 import Diagrams.Prelude                  (Diagram,mkWidth)
 import Maybes                            (firstJusts)
 import System.IO
@@ -96,7 +96,7 @@ userInput = do
 parseConcDia :: Int -> [(Diagram B, Maybe Concurrent)] -> IO [Maybe Concurrent]
 parseConcDia _ []               = return []
 parseConcDia i ((dia,conc):rs) = do
-  renderPdf 1000 1000 ("app/"++show i++".pdf") (mkWidth 800) dia
+  renderSVG ("app/"++show i++".pdf") (mkWidth 800) dia
   print conc
   rest <- parseConcDia (i+1) rs
   return $ conc : rest

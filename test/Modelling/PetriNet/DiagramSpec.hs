@@ -9,7 +9,7 @@ import Control.Monad                     ((<=<))
 import Control.Monad.Trans.Class         (lift)
 import Control.Monad.Trans.Except        (ExceptT, except, runExceptT)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
-import Diagrams.Backend.Rasterific       (renderPdf)
+import Diagrams.Backend.SVG             (renderSVG)
 import Diagrams.Prelude                  (mkWidth)
 import Language.Alloy.Call               (getInstances)
 import Test.Hspec
@@ -23,7 +23,7 @@ spec =
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
         pl <- except $ parsePetriLike "flow" "tokens" inst
         dia <- drawNet pl TwoPi
-        lift $ renderPdf 300 300 "test.pdf" (mkWidth 200) dia `shouldReturn` ()
+        lift $ renderSVG "test.svg" (mkWidth 200) dia `shouldReturn` ()
 
 failOnErrors :: ExceptT String IO a -> IO a
 failOnErrors = either fail return <=< runExceptT

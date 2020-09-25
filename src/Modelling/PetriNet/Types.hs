@@ -1,3 +1,4 @@
+{-# Language DeriveTraversable #-}
 {-# Language DuplicateRecordFields #-}
 {-|
 This module provides types to represent Petri nets.
@@ -238,6 +239,24 @@ petriLikeToPetri p = do
 
 type Marking = [Int]
 type Transition = (Marking,Marking)
+
+{-|
+Stores a mathematical representation of a Petri net based on a five tuple.
+-}
+data PetriMath a = PetriMath {
+  -- | the five tuple itself
+  netMath            :: a,
+  -- | the places (the first element of the five tuple)
+  placesMath         :: a,
+  -- | the transitions (the second element of the five tuple)
+  transitionsMath    :: a,
+  {- | the token change of each transition
+       (the third and fourth element of the five tuple) -}
+  tokenChangeMath    :: [(a, a)],
+  -- | the initial marking (the fifth element of the five tuple)
+  initialMarkingMath :: a
+  } deriving (Foldable, Functor, Traversable)
+
 data Petri = Petri
   { initialMarking :: Marking
   , trans :: [Transition]

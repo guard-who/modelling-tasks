@@ -10,7 +10,7 @@ import Modelling.PetriNet.Types
   ,defaultPickConflictConfig,PickConflictConfig(..),Conflict,ChangeConfig(..))
 import Data.List                         (isInfixOf)
 import Data.Maybe                        (isNothing)
-import Diagrams.Backend.Rasterific       (renderPdf,B)
+import Diagrams.Backend.SVG             (renderSVG, B)
 import Diagrams.Prelude                  (Diagram,mkWidth)
 import Maybes                            (firstJusts)
 import System.IO
@@ -95,7 +95,7 @@ userInput = do
 parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO [Maybe Conflict]
 parseConflDia _ []               = return []
 parseConflDia i ((dia,confl):rs) = do
-  renderPdf 1000 1000 ("app/"++show i++".pdf") (mkWidth 800) dia
+  renderSVG ("app/"++show i++".pdf") (mkWidth 800) dia
   print confl
   rest <- parseConflDia (i+1) rs
   return $ confl : rest
