@@ -28,7 +28,7 @@ data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,Strin
 data Conflict = Conflict{conflictTrans :: (String,String),conflictPlace :: String}
   deriving Show
   
-type Concurrent = (String,String)
+type Concurrent a = (a, a)
 
 {-|
 A node is part of a petri like graph (see 'PetriLike').

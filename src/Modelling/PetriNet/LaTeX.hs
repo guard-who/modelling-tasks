@@ -2,7 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Modelling.PetriNet.LaTeX (
-  uebung, createPetriTex, diagramTex, texTex,
+  uebung, createPetriTex, diagramTex,
   toPetriMath,
   ) where
 
@@ -129,16 +129,6 @@ conditions i ((pr,po):rs)=
     <> raw "_" <> fromString (show i :: String) <> raw "^{\\bullet}"
     <> fromString (" = ("++ unpack (  renderCommas po) ++ ")" :: String))
   <> conditions (i+1) rs
-------------------------------------------------------------
-texTex :: Show a => [a] -> [LaTeX] -> LaTeX -> LaTeX
-texTex list txList tx =
-    documentclass [] article
- <> usepackage [utf8] inputenc
- <> usepackage [] graphicx
- <> uselanguage English
- <> title "Uebung"
- <> author "Autor"
- <> document (maketitle <> takeBody tx <> newline <> includegraphics [] "app/0.pdf" <> newline <> splitList list <> newline <> splitTexList txList)
 
 diagramTex :: Show a => [a] -> Int -> LaTeX -> LaTeX
 diagramTex list i tx =
@@ -160,6 +150,3 @@ getDiagrams i = includegraphics [IGScale 0.5] ("app/"++show i++".pdf") <> newlin
 splitList :: Show a => [a] -> LaTeX
 splitList []     = raw ""
 splitList (h:rs) = fromString (show h) <> newline <> splitList rs
-
-splitTexList :: [LaTeX] -> LaTeX
-splitTexList = foldr (<>) (raw "")

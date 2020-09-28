@@ -57,6 +57,7 @@ library
 executable concurrency
   main-is: concurrency.hs
   other-modules:
+      Common
       Paths_petri_tasks
   hs-source-dirs:
       app
@@ -88,6 +89,7 @@ executable concurrency
 executable conflicts
   main-is: conflicts.hs
   other-modules:
+      Common
       Paths_petri_tasks
   hs-source-dirs:
       app
@@ -119,6 +121,7 @@ executable conflicts
 executable matchToMath
   main-is: matchToMath.hs
   other-modules:
+      Common
       Paths_petri_tasks
   hs-source-dirs:
       app

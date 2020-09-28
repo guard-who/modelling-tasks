@@ -10,12 +10,13 @@ import qualified Data.Bimap                       as BM (
   fromList, lookup,
   )
 import qualified Data.Set                         as Set (
-  Set, elemAt, foldr, lookupMin, toList
+  Set, elemAt, findMin, foldr, lookupMin, null, size, toList
   )
 import qualified Data.Map.Lazy                    as Map (
   Map, empty, findIndex, foldlWithKey, foldrWithKey, fromList, insert, lookup,
   )
 
+import Modelling.PetriNet.Alloy         (concurrencyTransition1, concurrencyTransition2)
 import Modelling.PetriNet.Types
 
 import Control.Arrow                    (left, second)
@@ -148,17 +149,26 @@ parseConflict nodes inst = do
                        )
       ,conflictPlace = extractName (getVal (Set.elemAt 0 pc) mId) nodes
       }
-    
-parseConcurrency :: [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String Concurrent
-parseConcurrency nodes inst = do
-  mId <- mapNodes inst
-  tc1 <- unscopedSingleSig inst "$showRelNets_concurTrans1" ""
-  tc2 <- unscopedSingleSig inst "$showRelNets_concurTrans2" ""
-  return
-    ( extractName (getVal (Set.elemAt 0 tc1) mId) nodes
-    , extractName (getVal (Set.elemAt 0 tc2) mId) nodes
-    )
-                            
+
+{-|
+Parses the concurrency skolem variables for singleton of transitions and returns
+both as tuple.
+It returns an error message instead if unexpected behaviour occurs.
+-}
+parseConcurrency :: AlloyInstance -> Either String (Object, Object)
+parseConcurrency inst = do
+  t1 <- unscopedSingleSig inst concurrencyTransition1 ""
+  t2 <- unscopedSingleSig inst concurrencyTransition2 ""
+  (,) <$> asSingleton t1 <*> asSingleton t2
+  where
+    asSingleton s
+      | Set.null s
+      = Left "Expected a singleton element but got an empty set"
+      | Set.size s /= 1
+      = Left "Expected a singleton element but got multiple elements"
+      | otherwise
+      = Right $ Set.findMin s
+
                             --Hilfsfunktionen--                                
 mapNodes :: AlloyInstance -> Either String (Map.Map Object Int)
 mapNodes inst = do

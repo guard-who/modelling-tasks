@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Common                           (forceErrors, renderPetriNet)
 import Modelling.PetriNet.BasicNetFunctions (instanceInput)
 
 import Modelling.PetriNet.MatchToMath
@@ -10,21 +11,14 @@ import Modelling.PetriNet.Types (
 
 import Control.Monad                    (when)
 import Control.Monad.Trans.Class        (lift)
-import Control.Monad.Trans.Except       (ExceptT, except, runExceptT, throwE)
+import Control.Monad.Trans.Except       (ExceptT, except, throwE)
 import Data.Bifunctor                   (bimap)
-import Diagrams.Prelude                  (Diagram,mkWidth)
-import Diagrams.Backend.SVG             (renderSVG, B)
 import Image.LaTeX.Render               (
   Formula, SVG,
   alterForHTML, defaultEnv, defaultFormulaOptions, imageForFormula,
   )
 import System.IO
 import Text.Pretty.Simple                (pPrint)
-
-forceErrors :: Monad m => ExceptT String m () -> m ()
-forceErrors m = do
-  () <- either error id <$> runExceptT m
-  return ()
 
 main :: IO ()
 main = forceErrors $ do
@@ -59,13 +53,6 @@ main = forceErrors $ do
             renderPetriNet (show num) x
             print y
       uncurry writeBoth `mapM_` zip [1 :: Integer ..] falseDia
-
-renderPetriNet :: String -> Diagram B -> IO ()
-renderPetriNet x dia = do
-  renderSVG name (mkWidth 800) dia
-  putStrLn $ "wrote file" ++ name
-  where
-    name = x ++ "petri.svg"
 
 saveMathFiles :: String -> PetriMath Formula -> ExceptT String IO ()
 saveMathFiles name m = do

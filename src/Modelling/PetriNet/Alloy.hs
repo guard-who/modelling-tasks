@@ -4,10 +4,11 @@
 {-# LANGUAGE LambdaCase #-}
 {-# Language DuplicateRecordFields #-}
 
-module Modelling.PetriNet.Alloy 
-  (petriNetRnd,renderFalse,petriNetFindConfl,petriNetPickConfl
-  ,petriNetFindConcur,petriNetPickConcur,petriScopeBitwidth,petriScopeMaxSeq) 
-  where
+module Modelling.PetriNet.Alloy (
+  concurrencyTransition1, concurrencyTransition2,
+  petriNetFindConcur, petriNetPickConcur, petriScopeBitwidth, petriScopeMaxSeq,
+  petriNetRnd, renderFalse, petriNetFindConfl, petriNetPickConfl,
+  ) where
 
 import qualified Data.Map                         as M (
   foldrWithKey, keys, lookup, partition
@@ -140,6 +141,9 @@ flowLine from to Nothing  = [i|  no #{from}.defaultFlow[#{to}]
 flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
 |]
 
+conflictPredicateName :: String
+conflictPredicateName = "showRelNets"
+
 --Conflict--
 
 petriNetFindConfl :: FindConflictConfig -> String
@@ -151,13 +155,13 @@ petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module P
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [conflictPlace : Places, #{specCompRelation basicTask changeTask}
+pred #{conflictPredicateName} [conflictPlace : Places, #{specCompRelation basicTask changeTask}
 
   #{compConflict}
   #{compAdvConstraints advTask}
   
 }
-run showRelNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
 
 
 |]
@@ -170,17 +174,18 @@ petriNetPickConfl p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},ch
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [conflictPlace : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
+pred #{conflictPredicateName} [conflictPlace : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
 
   #{compConflict}
   #{compDefaultConstraints atLeastActive}
 }
-run showRelNets for exactly #{petriScopeMaxSeq (basicTask(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConflictConfig))} Int
+run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicTask(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConflictConfig))} Int
 
 |]
 
 --Concurrency--
-
+concurrencyPredicateName :: String
+concurrencyPredicateName = "showRelNets"
 
 petriNetFindConcur :: FindConcurrencyConfig -> String
 petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|module PetriNetConcur
@@ -191,13 +196,13 @@ petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|modu
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [ #{specCompRelation basicTask changeTask}
+pred #{concurrencyPredicateName} [ #{specCompRelation basicTask changeTask}
 
   #{compConcurrency}
   #{compAdvConstraints advTask}
   
 }
-run showRelNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
 
 
 |]
@@ -210,12 +215,12 @@ petriNetPickConcur p@PickConcurrencyConfig{basicTask = BasicConfig{atLeastActive
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred showRelNets [defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConcurrencyConfig)) changeTask}
+pred #{concurrencyPredicateName} [defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConcurrencyConfig)) changeTask}
 
   #{compConcurrency}
   #{compDefaultConstraints atLeastActive}
 }
-run showRelNets for exactly #{petriScopeMaxSeq (basicTask(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConcurrencyConfig))} Int
+run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq (basicTask(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConcurrencyConfig))} Int
 
 |]
 
@@ -267,14 +272,29 @@ compChange ChangeConfig
   maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
 |]
 
+concurrencyTransition1 :: String
+concurrencyTransition1 = "$" ++ concurrencyPredicateName ++ "_" ++ transition1
+
+concurrencyTransition2 :: String
+concurrencyTransition2 = "$" ++ concurrencyPredicateName ++ "_" ++ transition2
+
+transition1 :: String
+transition1 = "concurTrans1"
+
+transition2 :: String
+transition2 = "concurTrans2"
+
 compConcurrency :: String
 compConcurrency = [i|
   no x,y : givenTransitions | concurrentDefault[x+y] and x != y
-  some concurTrans1, concurTrans2 : Transitions | relatedTransitions = concurTrans1 + concurTrans2
-  and concurTrans1 != concurTrans2
-  and concurrent [concurTrans1+concurTrans2]
-  and all u,v : Transitions | concurrent[u+v] and u != v implies concurTrans1 + concurTrans2 = u + v
+  some #{t1}, #{t2} : Transitions | relatedTransitions = #{t1} + #{t2}
+  and #{t1} != #{t2}
+  and concurrent [#{t1}+#{t2}]
+  and all u,v : Transitions | concurrent[u+v] and u != v implies #{t1} + #{t2} = u + v
 |]
+  where
+    t1 = transition1
+    t2 = transition2
 
 --Needs: relatedTransitions: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places
 compConflict :: String
