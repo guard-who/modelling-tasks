@@ -1,54 +1,63 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language DuplicateRecordFields #-}
 
-module Modelling.PetriNet.Conflicts 
-  (findConflicts,pickConflicts) where
+module Modelling.PetriNet.Conflicts (
+  findConflicts, findConflictsTask, pickConflicts, pickConflictsTask
+  ) where
 
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
-import Modelling.PetriNet.Diagram
-import Modelling.PetriNet.LaTeX          (uebung)
-import Modelling.PetriNet.Parser         (
-  parseConflict, parsePetriLike, prepNodes,
+import Modelling.PetriNet.Diagram       (drawNet)
+import Modelling.PetriNet.Parser        (
+  parseConflict, parsePetriLike,
   )
-import Modelling.PetriNet.Types          
-  (placeHoldPetri,Conflict,FindConflictConfig(..),PickConflictConfig(..),BasicConfig(..))
+import Modelling.PetriNet.Types         (
+  BasicConfig(..), Conflict, FindConflictConfig(..), PickConflictConfig(..),
+  )
 
-import Control.Monad.Trans.Except       (except, runExceptT)
+import Control.Monad.Trans.Class        (MonadTrans (lift))
+import Control.Monad.Trans.Except       (ExceptT, except)
+import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                  (Diagram)
-import Data.GraphViz.Attributes.Complete (GraphvizCommand)
-import Language.Alloy.Call               (getInstances,AlloyInstance)
-import Text.LaTeX                        (LaTeX)
+import Language.Alloy.Call              (AlloyInstance, Object, getInstances)
 
-
-findConflicts :: Int -> FindConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+findConflicts
+  :: Int
+  -> FindConflictConfig
+  -> ExceptT String IO (Diagram B, Maybe (Conflict Object))
 findConflicts indInst config@FindConflictConfig{basicTask} = do
-  list <- getInstances (Just (toInteger (indInst+1))) (petriNetFindConfl config)
-  confl <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
-  let tex = uebung placeHoldPetri 2 True
-  return (tex, [confl])
-  
-pickConflicts :: Int -> PickConflictConfig -> IO(LaTeX,[(Diagram B, Maybe Conflict)])
+  list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetFindConfl config)
+  getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
+
+findConflictsTask :: [Char]
+findConflictsTask =
+  "Which of the following Petrinets doesn't have a conflict?"
+
+pickConflicts
+  :: Int
+  -> PickConflictConfig
+  -> ExceptT String IO [(Diagram B, Maybe (Conflict Object))]
 pickConflicts indInst config@PickConflictConfig{basicTask} = do
-  list <- getInstances (Just (toInteger (indInst+1))) (petriNetPickConfl config)
+  list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetPickConfl config)
   confl <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
-  let tex = uebung placeHoldPetri 2 False
   net <- getNet "defaultFlow" "defaultTokens" (list !! indInst) (graphLayout basicTask)
-  return (tex, [confl,net])
-        
-getNet :: String -> String -> AlloyInstance -> GraphvizCommand -> IO (Diagram B, Maybe Conflict)
-getNet f t inst gc =
-  case prepNodes t inst of
-    Left nerror -> error nerror
-    Right nodes -> do
-      edia <- runExceptT $ do
-        pl <- except $ parsePetriLike f t inst
-        drawNet pl gc
-      dia  <- either error return edia
-      if f == "defaultFlow" && t == "defaultTokens" 
-      then return (dia,Nothing)
-      else
-        case parseConflict nodes inst of
-          Left perror -> error perror
-          Right confl -> return (dia, Just confl)
-          
+  return [confl,net]
+
+pickConflictsTask :: [Char]
+pickConflictsTask =
+  "Which pair of transitions are in conflict under the initial marking?"
+
+getNet
+  :: String
+  -> String
+  -> AlloyInstance
+  -> GraphvizCommand
+  -> ExceptT String IO (Diagram B, Maybe (Conflict Object))
+getNet f t inst gc = do
+  pl <- except $ parsePetriLike f t inst
+  dia <- drawNet pl gc
+  if f == "defaultFlow" && t == "defaultTokens"
+    then return (dia, Nothing)
+    else do
+    conc <- except $ parseConflict inst
+    return (dia, Just conc)

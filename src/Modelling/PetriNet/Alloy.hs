@@ -6,8 +6,9 @@
 
 module Modelling.PetriNet.Alloy (
   concurrencyTransition1, concurrencyTransition2,
-  petriNetFindConcur, petriNetPickConcur, petriScopeBitwidth, petriScopeMaxSeq,
-  petriNetRnd, renderFalse, petriNetFindConfl, petriNetPickConfl,
+  conflictPlace1, conflictTransition1, conflictTransition2,
+  petriNetFindConcur, petriNetFindConfl, petriNetPickConcur, petriNetPickConfl,
+  petriNetRnd, petriScopeBitwidth, petriScopeMaxSeq, renderFalse,
   ) where
 
 import qualified Data.Map                         as M (
@@ -142,7 +143,7 @@ flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
 |]
 
 conflictPredicateName :: String
-conflictPredicateName = "showRelNets"
+conflictPredicateName = "showConflict"
 
 --Conflict--
 
@@ -155,7 +156,7 @@ petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module P
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [conflictPlace : Places, #{specCompRelation basicTask changeTask}
+pred #{conflictPredicateName} [#{place1} : Places, #{specCompRelation basicTask changeTask}
 
   #{compConflict}
   #{compAdvConstraints advTask}
@@ -174,7 +175,7 @@ petriNetPickConfl p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},ch
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [conflictPlace : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
+pred #{conflictPredicateName} [#{place1} : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
 
   #{compConflict}
   #{compDefaultConstraints atLeastActive}
@@ -185,7 +186,7 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicTask(p :: Pick
 
 --Concurrency--
 concurrencyPredicateName :: String
-concurrencyPredicateName = "showRelNets"
+concurrencyPredicateName = "showConcurrency"
 
 petriNetFindConcur :: FindConcurrencyConfig -> String
 petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|module PetriNetConcur
@@ -272,17 +273,32 @@ compChange ChangeConfig
   maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
 |]
 
+skolemVariable :: String -> String -> String
+skolemVariable x y = '$' : x ++ '_' : y
+
 concurrencyTransition1 :: String
-concurrencyTransition1 = "$" ++ concurrencyPredicateName ++ "_" ++ transition1
+concurrencyTransition1 = skolemVariable concurrencyPredicateName transition1
 
 concurrencyTransition2 :: String
-concurrencyTransition2 = "$" ++ concurrencyPredicateName ++ "_" ++ transition2
+concurrencyTransition2 = skolemVariable concurrencyPredicateName transition2
+
+conflictPlace1 :: String
+conflictPlace1 = skolemVariable conflictPredicateName place1
+
+conflictTransition1 :: String
+conflictTransition1 = skolemVariable conflictPredicateName transition1
+
+conflictTransition2 :: String
+conflictTransition2 = skolemVariable conflictPredicateName transition2
 
 transition1 :: String
-transition1 = "concurTrans1"
+transition1 = "transition1"
 
 transition2 :: String
-transition2 = "concurTrans2"
+transition2 = "transition2"
+
+place1 :: String
+place1 = "place1"
 
 compConcurrency :: String
 compConcurrency = [i|
@@ -300,11 +316,14 @@ compConcurrency = [i|
 compConflict :: String
 compConflict = [i|
   no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
-  some conflictTrans1, conflictTrans2 : Transitions | relatedTransitions = conflictTrans1 + conflictTrans2 
-  and conflict [conflictTrans1, conflictTrans2, conflictPlace] and all u,v : Transitions, q : Places 
-    | conflict[u,v,q] implies conflictTrans1 + conflictTrans2 = u + v
-  
+  some #{t1}, #{t2} : Transitions | relatedTransitions = #{t1} + #{t2}
+  and conflict [#{t1}, #{t2}, #{p}] and all u,v : Transitions, q : Places
+    | conflict[u,v,q] implies #{t1} + #{t2} = u + v
 |]
+  where
+    t1 = transition1
+    t2 = transition2
+    p  = place1
 
 specCompRelation :: BasicConfig -> ChangeConfig -> String
 specCompRelation basic@BasicConfig{places,transitions} change = [i|

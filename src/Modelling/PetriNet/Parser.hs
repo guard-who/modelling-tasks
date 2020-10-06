@@ -10,13 +10,16 @@ import qualified Data.Bimap                       as BM (
   fromList, lookup,
   )
 import qualified Data.Set                         as Set (
-  Set, elemAt, findMin, foldr, lookupMin, null, size, toList
+  Set, findMin, foldr, lookupMin, null, size, toList
   )
 import qualified Data.Map.Lazy                    as Map (
   Map, empty, findIndex, foldlWithKey, foldrWithKey, fromList, insert, lookup,
   )
 
-import Modelling.PetriNet.Alloy         (concurrencyTransition1, concurrencyTransition2)
+import Modelling.PetriNet.Alloy         (
+  conflictTransition1, conflictTransition2, conflictPlace1,
+  concurrencyTransition1, concurrencyTransition2,
+  )
 import Modelling.PetriNet.Types
 
 import Control.Arrow                    (left, second)
@@ -136,51 +139,45 @@ tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName va
                              : tokenChangeP rt
 
                             --Spezielles--                
-parseConflict :: [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String Conflict
-parseConflict nodes inst = do
-  mId <- mapNodes inst
-  tc1 <- unscopedSingleSig inst "$showRelNets_conflictTrans1" ""
-  tc2 <- unscopedSingleSig inst "$showRelNets_conflictTrans2" ""
-  pc  <- unscopedSingleSig inst "$showRelNets_conflictPlace"  ""
-  return 
-    Conflict
-      {conflictTrans = ( extractName (getVal (Set.elemAt 0 tc1) mId) nodes
-                       , extractName (getVal (Set.elemAt 0 tc2) mId) nodes
-                       )
-      ,conflictPlace = extractName (getVal (Set.elemAt 0 pc) mId) nodes
-      }
+{-|
+Parses the conflict skolem variables for singleton of transitions and returns
+both as tuple.
+It returns an error message instead if unexpected behaviour occurs.
+-}
+parseConflict :: AlloyInstance -> Either String (Conflict Object)
+parseConflict inst = do
+  tc1 <- unscopedSingleSig inst conflictTransition1 ""
+  tc2 <- unscopedSingleSig inst conflictTransition2 ""
+  pc  <- unscopedSingleSig inst conflictPlace1 ""
+  Conflict
+    <$> ((,) <$> asSingleton tc1 <*> asSingleton tc2)
+    <*> asSingleton pc
 
 {-|
 Parses the concurrency skolem variables for singleton of transitions and returns
 both as tuple.
 It returns an error message instead if unexpected behaviour occurs.
 -}
-parseConcurrency :: AlloyInstance -> Either String (Object, Object)
+parseConcurrency :: AlloyInstance -> Either String (Concurrent Object)
 parseConcurrency inst = do
   t1 <- unscopedSingleSig inst concurrencyTransition1 ""
   t2 <- unscopedSingleSig inst concurrencyTransition2 ""
   (,) <$> asSingleton t1 <*> asSingleton t2
-  where
-    asSingleton s
-      | Set.null s
-      = Left "Expected a singleton element but got an empty set"
-      | Set.size s /= 1
-      = Left "Expected a singleton element but got multiple elements"
-      | otherwise
-      = Right $ Set.findMin s
+
+asSingleton :: Set b -> Either String b
+asSingleton s
+  | Set.null s
+  = Left "Expected a singleton element but got an empty set"
+  | Set.size s /= 1
+  = Left "Expected a singleton element but got multiple elements"
+  | otherwise
+  = Right $ Set.findMin s
 
                             --Hilfsfunktionen--                                
 mapNodes :: AlloyInstance -> Either String (Map.Map Object Int)
 mapNodes inst = do
   nods <- singleSig inst "this" "Nodes" ""
   return $ Map.fromList $ Set.toList nods `zip`  [0..]
-
-extractName :: Int -> [(Int,(String, Maybe Int))] -> String
-extractName i nodes =
-  fst $ fromMaybe (error "Error occurred while mapping the net") (lookup i nodes)
-  
- 
-                            
 
 singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
 singleSig inst st nd rd = do

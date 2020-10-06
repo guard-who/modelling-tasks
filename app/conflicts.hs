@@ -2,19 +2,31 @@
 
 module Main (main) where 
 
-import Modelling.PetriNet.Conflicts
-import Modelling.PetriNet.BasicNetFunctions
-import Modelling.PetriNet.LaTeX          (diagramTex)
-import Modelling.PetriNet.Types          
-  (BasicConfig(..),defaultFindConflictConfig,FindConflictConfig(..)
-  ,defaultPickConflictConfig,PickConflictConfig(..),Conflict,ChangeConfig(..))
-import Data.List                         (isInfixOf)
+import Common                           (forceErrors, printNetAndInfo)
+import Modelling.PetriNet.Conflicts (
+  findConflicts,
+  findConflictsTask,
+  pickConflicts,
+  pickConflictsTask,
+  )
+import Modelling.PetriNet.BasicNetFunctions (
+  checkBasicConfig,
+  checkCConfig,
+  checkChangeConfig,
+  instanceInput
+  )
+import Modelling.PetriNet.Types         (
+  BasicConfig(..), ChangeConfig(..), FindConflictConfig(..),
+  PickConflictConfig(..),
+  defaultFindConflictConfig, defaultPickConflictConfig,
+  )
+
+import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.Maybe                        (isNothing)
-import Diagrams.Backend.SVG             (renderSVG, B)
-import Diagrams.Prelude                  (Diagram,mkWidth)
 import Maybes                            (firstJusts)
-import System.IO
-import Text.LaTeX                        (renderFile)
+import System.IO (
+  BufferMode (NoBuffering), hSetBuffering, stdout,
+  )
 import Text.Pretty.Simple                (pPrint)
 
 main :: IO()
@@ -28,9 +40,9 @@ main = do
   else print "There is no negative index"
 
 mainFind ::Int -> IO()
-mainFind i = do
+mainFind i = forceErrors $ do
   pPrint defaultFindConflictConfig
-  (pls,trns,tknChange,flwChange) <- userInput 
+  (pls, trns, tknChange, flwChange) <- lift userInput
   let config = defaultFindConflictConfig{
                            basicTask = (basicTask (defaultFindConflictConfig :: FindConflictConfig)){places = pls, transitions = trns}
                          , changeTask = (changeTask (defaultFindConflictConfig :: FindConflictConfig)){ tokenChangeOverall = tknChange
@@ -43,21 +55,16 @@ mainFind i = do
         ]
   if isNothing c
   then do
-    (latex,conflDia) <- findConflicts i config
-    renderFile "app/findConflictTask.tex" latex
-    conflicts <- parseConflDia 0 conflDia
-    let texN = diagramTex conflicts (length conflicts - 1) latex
-    out <- renderFile "app/findConflict.tex" texN >> renderPdfFile "app/findConflict.tex"
-    if "Output written on" `isInfixOf` out
-    then print "PDF succesfully generated"
-    else print "Error upon generating the PDF-File"
+    conflDia <- findConflicts i config
+    lift $ putStrLn findConflictsTask
+    lift $ printNetAndInfo "" conflDia
   else
-    print (c :: Maybe String)
+    lift $ print c
 
 mainPick :: Int -> IO()
-mainPick i = do
+mainPick i = forceErrors $ do
   pPrint defaultPickConflictConfig
-  (pls,trns,tknChange,flwChange) <- userInput 
+  (pls, trns, tknChange, flwChange) <- lift userInput
   let config = defaultPickConflictConfig{
                            basicTask = (basicTask (defaultPickConflictConfig :: PickConflictConfig)){places = pls, transitions = trns}
                          , changeTask = (changeTask (defaultPickConflictConfig :: PickConflictConfig)){ tokenChangeOverall = tknChange
@@ -69,16 +76,11 @@ mainPick i = do
         ]
   if isNothing c
   then do
-    (latex,conflDia) <- pickConflicts i config
-    renderFile "app/pickConflictTask.tex" latex
-    conflicts <- parseConflDia 0 conflDia
-    let texN = diagramTex conflicts (length conflicts - 1) latex
-    out <- renderFile "app/pickConflict.tex" texN >> renderPdfFile "app/pickConflict.tex"
-    if "Output written on" `isInfixOf` out
-    then print "PDF succesfully generated"
-    else print "Error upon generating the PDF-File"
+    conflDias <- pickConflicts i config
+    lift $ putStrLn pickConflictsTask
+    lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
   else
-    print (c :: Maybe String)
+    lift $ print c
     
 userInput :: IO (Int,Int,Int,Int)
 userInput = do
@@ -91,11 +93,3 @@ userInput = do
   putStr "FlowChange Overall: "
   flwCh <- getLine
   return (read pls, read trns,read tknCh, read flwCh)
-  
-parseConflDia :: Int -> [(Diagram B, Maybe Conflict)] -> IO [Maybe Conflict]
-parseConflDia _ []               = return []
-parseConflDia i ((dia,confl):rs) = do
-  renderSVG ("app/"++show i++".pdf") (mkWidth 800) dia
-  print confl
-  rest <- parseConflDia (i+1) rs
-  return $ confl : rest

@@ -2,10 +2,19 @@
 
 module Main (main) where
 
-import Common                           (forceErrors, renderPetriNet)
-
-import Modelling.PetriNet.Concurrency
-import Modelling.PetriNet.BasicNetFunctions
+import Common                           (printNetAndInfo, forceErrors)
+import Modelling.PetriNet.Concurrency (
+  findConcurrency,
+  findConcurrencyTask,
+  pickConcurrency,
+  pickConcurrencyTask,
+  )
+import Modelling.PetriNet.BasicNetFunctions(
+  checkBasicConfig,
+  checkCConfig,
+  checkChangeConfig,
+  instanceInput,
+  )
 import Modelling.PetriNet.Types (
   BasicConfig (..), ChangeConfig (..), FindConcurrencyConfig (..),
   PickConcurrencyConfig (..),
@@ -14,10 +23,10 @@ import Modelling.PetriNet.Types (
 
 import Control.Monad.Trans.Class        (lift)
 import Data.Maybe                        (isNothing)
-import Diagrams.Backend.SVG             (B)
-import Diagrams.Prelude                 (Diagram)
 import Maybes                            (firstJusts)
-import System.IO
+import System.IO (
+  BufferMode (NoBuffering), hSetBuffering, stdout,
+  )
 import Text.Pretty.Simple                (pPrint)
 
 main :: IO ()
@@ -48,7 +57,7 @@ mainFind i = forceErrors $ do
   then do
     conc <- findConcurrency i config
     lift $ putStrLn findConcurrencyTask
-    lift $ printNetAndConcurrency "" conc
+    lift $ printNetAndInfo "" conc
   else
     lift $ print (c :: Maybe String)
     
@@ -69,14 +78,9 @@ mainPick i = forceErrors $ do
   then do
     concs <- pickConcurrency i config
     lift $ putStrLn pickConcurrencyTask
-    lift $ uncurry printNetAndConcurrency `mapM_` zip (show <$> [1 :: Integer ..]) concs
+    lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
   else
     lift $ print (c :: Maybe String)
-
-printNetAndConcurrency :: Show a => String -> (Diagram B, a) -> IO ()
-printNetAndConcurrency x (dia, concurrent) = do
-  renderPetriNet x dia
-  print concurrent
 
 userInput :: IO (Int,Int,Int,Int)
 userInput = do

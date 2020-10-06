@@ -25,7 +25,10 @@ import Data.Maybe                       (fromMaybe)
 data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,String,Int)]}
   deriving (Eq,Show)
   
-data Conflict = Conflict{conflictTrans :: (String,String),conflictPlace :: String}
+data Conflict a = Conflict {
+  conflictTrans :: (a, a),
+  conflictPlace :: a
+  }
   deriving Show
   
 type Concurrent a = (a, a)
