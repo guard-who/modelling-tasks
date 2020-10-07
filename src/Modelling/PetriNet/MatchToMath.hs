@@ -2,14 +2,24 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 
-module Modelling.PetriNet.MatchToMath (matchToMath,checkConfig)  where
+module Modelling.PetriNet.MatchToMath (
+  checkConfig, matchToMath, matchToMathTask,
+  )  where
 
 import Modelling.PetriNet.Alloy             (petriNetRnd, renderFalse)
 import Modelling.PetriNet.BasicNetFunctions (checkBasicConfig,checkChangeConfig)
 import Modelling.PetriNet.Diagram       (drawNet)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
-import Modelling.PetriNet.Parser
-import Modelling.PetriNet.Types
+import Modelling.PetriNet.Parser (
+  convertPetri, parseChange, parsePetriLike, simpleRename,
+  )
+import Modelling.PetriNet.Types (
+  traversePetriLike,
+  BasicConfig (graphLayout),
+  Change,
+  MathConfig (..),
+  PetriMath,
+  )
 
 import Control.Monad.Trans.Class        (lift)
 import Control.Monad.Trans.Except       (ExceptT, except)
@@ -33,7 +43,7 @@ matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
   named     <- except $ simpleRename `traversePetriLike` petriLike
   petri     <- except $ convertPetri "flow" "tokens" (list !! indInst)
   rightNet  <- drawNet petriLike (graphLayout basicTask)
-  let tex = toPetriMath petri
+  let math = toPetriMath petri
   let f = renderFalse named config
   fList <- lift $ getInstances (Just 3) f
   alloyChanges <- except $ mapM addChange fList
@@ -43,11 +53,17 @@ matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
           pl <- except $ parsePetriLike "flow" "tokens" x
           drawNet pl (graphLayout basicTask)
     drawChanges <- firstM draw `mapM` alloyChanges
-    return (rightNet, tex, Left drawChanges)
+    return (rightNet, math, Left drawChanges)
     else do
     let toMath x = toPetriMath <$> convertPetri "flow" "tokens" x
     mathChanges <- except $ firstM toMath `mapM` alloyChanges
-    return (rightNet, tex, Right mathChanges)
+    return (rightNet, math, Right mathChanges)
+
+matchToMathTask :: Bool -> String
+matchToMathTask switch =
+  if switch
+  then "Which of the presented petrinets shows the mathematical expression?"
+  else "Which of the presented mathematical expressions shows the given petrinet?"
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = f p >>= (return . (,c))

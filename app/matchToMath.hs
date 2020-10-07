@@ -2,8 +2,9 @@ module Main (main) where
 
 import Common                           (forceErrors, renderPetriNet)
 import Modelling.PetriNet.BasicNetFunctions (instanceInput)
-
-import Modelling.PetriNet.MatchToMath
+import Modelling.PetriNet.MatchToMath (
+  checkConfig, matchToMath, matchToMathTask,
+  )
 import Modelling.PetriNet.Types (
   BasicConfig (..), ChangeConfig (..), MathConfig (..), PetriMath (..),
   defaultMathConfig,
@@ -17,7 +18,9 @@ import Image.LaTeX.Render               (
   Formula, SVG,
   alterForHTML, defaultEnv, defaultFormulaOptions, imageForFormula,
   )
-import System.IO
+import System.IO (
+  BufferMode (NoBuffering), hSetBuffering, stdout,
+  )
 import Text.Pretty.Simple                (pPrint)
 
 main :: IO ()
@@ -40,6 +43,7 @@ main = forceErrors $ do
   i <- lift instanceInput
   when (i < 0) $ error "There is no negative index"
   (dia, math, falseNets) <- matchToMath i switch config
+  lift $ putStrLn $ matchToMathTask switch
   lift $ renderPetriNet "0" dia
   saveMathFiles "0" math
   case falseNets of
