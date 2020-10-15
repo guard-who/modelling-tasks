@@ -1,152 +1,133 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
+{-|
+This module provides functionality of generating LaTeX formula in order to
+represent a given 'PetriLike'.
+Using this module these formulars are only converted into LaTeX source code.
+-}
 module Modelling.PetriNet.LaTeX (
-  uebung, createPetriTex, diagramTex,
   toPetriMath,
   ) where
 
-import Modelling.PetriNet.Types
+import qualified Data.Map as M
 
+import Modelling.PetriNet.Types (
+  Node (..), PetriLike (..), PetriMath (..),
+  isPlaceNode, mapPetriLike,
+  )
+
+import Data.Char                    (isDigit)
 import Data.List                    (intercalate)
 import Data.Maybe                   (fromMaybe)
-import Data.Text                    (unpack)
+import Data.String.Interpolate      (i)
 import Image.LaTeX.Render           (Formula)
-import Text.LaTeX
-import Text.LaTeX.Base.Syntax       (getBody)
-import Text.LaTeX.Packages.Inputenc 
-import Text.LaTeX.Packages.Babel    (uselanguage, Language (English))
-import Text.LaTeX.Packages.Graphicx
 
-uebung :: Petri -> Int -> Bool -> LaTeX
-uebung petri task switch =
-    documentclass [] article
- <> usepackage [utf8] inputenc
- <> uselanguage English
- <> title "Uebung"
- <> author "Autor"
- <> document (maketitle <> body petri task switch)
-
-body :: Petri -> Int -> Bool -> LaTeX
-body petri task switch 
- | task == 1 && switch     =
-   "Which of the presented petrinets shows the mathematical expression?" 
-   <> newline
-   <> "Given the following: "
-   <> createPetriTex petri
- | task == 1 && not switch = 
-   "Which of the presented mathematical expressions shows the given petrinet?" 
- | task == 2 && switch     =
-   "Which pair of transitions are in conflict under the initial marking?"
- | task == 2 && not switch = 
-   "Which of the following Petrinets doesn't have a conflict?"
- | task == 3 && switch     =
-   "Which pair of transitions are in concurrency under the initial marking?"
- | task == 3 && not switch = 
-   "Which of the following Petrinet doesn't have a concurrency?"
- | otherwise = mempty
- 
---Math Petri Appearance
-
-toPetriMath :: Petri -> PetriMath Formula
-toPetriMath Petri { initialMarking, trans } = PetriMath {
+{-|
+Takes a 'PetriLike' net and generates all formulas required in order to
+represent this net using a mathematical representation ('PetriMath').
+-}
+toPetriMath :: PetriLike String -> PetriMath Formula
+toPetriMath pl = PetriMath {
   netMath            = netLaTeX,
-  placesMath         = placesLaTeX $ length initialMarking,
-  transitionsMath    = transitionsLaTeX $ length trans,
-  tokenChangeMath    = tokenChangeLaTeX trans,
-  initialMarkingMath = initialMarkingLaTeX initialMarking
+  placesMath         = placesLaTeX places,
+  transitionsMath    = transitionsLaTeX $ fst <$> transitions,
+  tokenChangeMath    = tokenChangeLaTeX places transitions,
+  initialMarkingMath = initialMarkingLaTeX pnodes
   }
+  where
+    (ps, ts)         = M.partition isPlaceNode allNodes
+    (places, pnodes) = unzip $ M.toList ps
+    transitions      = M.toList ts
+    PetriLike {allNodes} = toLowerIndexes `mapPetriLike` pl
 
-netLaTeX :: String
-netLaTeX = mathMode $
-  "N = " ++ parenthesise "P, T, ^{\\bullet}(), ()^{\\bullet}, m_0"
+{-|
+Rewrite the given 'String' to print indexes as subscripts when rendering it
+using LaTeX.
 
-mathMode :: String -> String
+>>> toLowerIndexes "t1"
+"t_{1}"
+-}
+toLowerIndexes :: String -> Formula
+toLowerIndexes [] = []
+toLowerIndexes (x:xs)
+  | isDigit x = "_{" ++ x : ys ++ '}' : toLowerIndexes zs
+  | otherwise = x : toLowerIndexes xs
+  where
+    (ys, zs) = span isDigit xs
+
+{-|
+A LaTeX-'Formula' for the basic five tuple representing a 'PetriNet'.
+-}
+netLaTeX :: Formula
+netLaTeX = mathMode [i|N = #{tuple}|]
+  where
+    tuple :: Formula
+    tuple = parenthesise "P, T, ^{\\bullet}(), ()^{\\bullet}, m_0"
+
+{-|
+Switch the mode for the given LaTeX-'Formula' to Math mode while in text mode
+and vice versa otherwise.
+-}
+mathMode :: Formula -> Formula
 mathMode = wrap "$" "$"
 
-parenthesise :: String -> String
+{-|
+Wrap the given LaTeX-'Formula' into parentheses.
+-}
+parenthesise :: Formula -> Formula
 parenthesise = wrap "\\left(" "\\right)"
 
-brace :: String -> String
+{-|
+Wrap the given LaTeX-'Formula' into braces.
+-}
+brace :: Formula -> Formula
 brace = wrap "\\left\\{" "\\right\\}"
 
-wrap :: [a] -> [a] -> [a] -> [a]
-wrap x y zs = x ++ zs ++ y
+{-|
+Wrap the third given 'Formula' between the first and second 'Formula'.
+-}
+wrap :: Formula -> Formula -> Formula -> Formula
+wrap x y zs = [i|#{x}#{zs}#{y}|]
 
-placesLaTeX :: Int -> String
-placesLaTeX n = mathMode $ "P = "
-  ++ brace (intercalate "," [ "p_" ++ show x | x <- [1 .. n]])
+{-|
+Create a LaTeX-'Formula' representing the set of given places.
+-}
+placesLaTeX :: [String] -> Formula
+placesLaTeX ps = mathMode [i|P = #{brace $ intercalate "," ps}|]
 
-transitionsLaTeX :: Int -> String
-transitionsLaTeX n = mathMode $ "T = "
-  ++ brace (intercalate "," [ "t_" ++ show x | x <- [1 .. n]])
+{-|
+Create a LaTeX-'Formula' representing the set of given transitions.
+-}
+transitionsLaTeX :: [String] -> Formula
+transitionsLaTeX ts = mathMode [i|T = #{brace $ intercalate "," ts}|]
 
-initialMarkingLaTeX :: Marking -> String
-initialMarkingLaTeX m = mathMode $ "m_0 = "
-  ++ parenthesise (intercalate "," (show <$> m))
+{-|
+Create a LaTeX-'Formula' representing the tuple of the inital marking.
+-}
+initialMarkingLaTeX
+  :: [Node a]
+  -- ^ A list of nodes which should only contain 'PlaceNode's.
+  -> Formula
+initialMarkingLaTeX ns = mathMode $ "m_0 = "
+  ++ parenthesise (intercalate "," $ show . initial <$> ns)
 
-tokenChangeLaTeX :: [Transition] -> [(String, String)]
-tokenChangeLaTeX ts =
-  (\x -> (uncurry inT x, uncurry outT x)) <$> zip [1 :: Int ..] ts
+{-|
+Create LaTeX-'Formula's representing the tuples for incoming and outgoing flow
+for each of the given transitions in the order of the given places.
+-}
+tokenChangeLaTeX
+  :: [String]
+  -- ^ the names of the places (in this given order)
+  -> [(String, Node String)]
+  -- ^ The transitions together with their names.
+  --   This List should only contain 'TransitionNode's.
+  -> [(Formula, Formula)]
+tokenChangeLaTeX ps ts =
+  (\x -> (uncurry inT x, uncurry outT x)) <$> ts
   where
-    inT  n (y, _) = mathMode $ "^{\\bullet}t" ++ tkns n y
-    outT n (_, z) = mathMode $ "t^{\\bullet}" ++ tkns n z
-    tkns n xs = "_" ++ show n ++ " = "
-      ++ parenthesise (intercalate "," $ show <$> xs)
-
-createPetriTex :: Petri -> LaTeX
-createPetriTex Petri{initialMarking,trans} =
-  math ( "N = (P, T," <> raw "^{\\bullet}" <> "(), ()" 
-  <> raw "^{\\bullet}" <> ", m" <> raw "_" <> "0)")
-  <> math ( raw "P = \\{" <> createPlaces 1 (length initialMarking) <> raw "\\}" )
-  <> " , "
-  <> math ( raw "T = \\{" <> createTrans 1 (length trans) <> raw "\\}" )
-  <> " , "
-  <> math ( raw "m_0 = (" <> fromString (unpack (renderCommas initialMarking)) <> ")")
-  <> itemize ( conditions 1 trans )
-
-createPlaces ::Int -> Int -> LaTeX
-createPlaces i p 
- | i < p     = raw "p_" <> fromString (show i :: String) <> "," 
-                 <> createPlaces (i+1) p
- | i == p    = raw "p_" <> fromString (show i :: String)
- | otherwise = mempty
-
-createTrans :: Int -> Int -> LaTeX
-createTrans i t 
- | i < t     = raw "t_" <> fromString (show i :: String) <> ","
-                 <> createTrans (i+1) t
- | i == t    = raw "t_" <> fromString (show i :: String)
- | otherwise = mempty
-
-conditions :: Int -> [Transition] -> LaTeX
-conditions _ []          = mempty
-conditions i ((pr,po):rs)=
-  item Nothing <> math (raw "^{\\bullet}" <> fromString("t" ::String) 
-    <> raw "_" <> fromString(show i :: String) 
-    <> fromString ("= ("++ unpack (  renderCommas pr) ++ ")" :: String))
-  <> item Nothing <> math ( fromString ( "t" :: String) 
-    <> raw "_" <> fromString (show i :: String) <> raw "^{\\bullet}"
-    <> fromString (" = ("++ unpack (  renderCommas po) ++ ")" :: String))
-  <> conditions (i+1) rs
-
-diagramTex :: Show a => [a] -> Int -> LaTeX -> LaTeX
-diagramTex list i tx =
-    documentclass [] article
- <> usepackage [utf8] inputenc
- <> usepackage [] graphicx
- <> uselanguage English
- <> title "Uebung"
- <> author "Autor"
- <> document (maketitle <> takeBody tx <> splitList list <> newline <> getDiagrams i)
- 
-takeBody :: LaTeX -> LaTeX
-takeBody tx = fromMaybe (error "no default body available") (getBody tx)
-  
-getDiagrams :: Int -> LaTeX
-getDiagrams 0 = includegraphics [IGScale 0.5] "app/0.pdf"
-getDiagrams i = includegraphics [IGScale 0.5] ("app/"++show i++".pdf") <> newline <> getDiagrams (i-1)
-  
-splitList :: Show a => [a] -> LaTeX
-splitList []     = raw ""
-splitList (h:rs) = fromString (show h) <> newline <> splitList rs
+    inT  n t = mathMode $ "^{\\bullet}" ++ n ++ tkns (flowIn t)
+    outT n t = mathMode $ n ++ "^{\\bullet}" ++ tkns (flowOut t)
+    tkns xs  = " = " ++ parenthesise (intercalate "," $ show <$> flowList xs)
+    flowList xs = (\x -> fromMaybe 0 $ M.lookup x xs) <$> ps

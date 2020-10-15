@@ -159,7 +159,6 @@ test-suite petri-tasks-test
       Modelling.PetriNet.ConcurrencySpec
       Modelling.PetriNet.ConflictsSpec
       Modelling.PetriNet.DiagramSpec
-      Modelling.PetriNet.LaTeXSpec
       Modelling.PetriNet.MatchToMathSpec
       Paths_petri_tasks
   hs-source-dirs:

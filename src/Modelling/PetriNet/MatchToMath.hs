@@ -11,7 +11,7 @@ import Modelling.PetriNet.BasicNetFunctions (checkBasicConfig,checkChangeConfig)
 import Modelling.PetriNet.Diagram       (drawNet)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser (
-  convertPetri, parseChange, parsePetriLike, simpleRename,
+  parseChange, parsePetriLike, simpleRename,
   )
 import Modelling.PetriNet.Types (
   traversePetriLike,
@@ -41,9 +41,8 @@ matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
   list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetRnd basicTask advTask)
   petriLike <- except $ parsePetriLike "flow" "tokens" (list !! indInst)
   named     <- except $ simpleRename `traversePetriLike` petriLike
-  petri     <- except $ convertPetri "flow" "tokens" (list !! indInst)
   rightNet  <- drawNet petriLike (graphLayout basicTask)
-  let math = toPetriMath petri
+  let math = toPetriMath named
   let f = renderFalse named config
   fList <- lift $ getInstances (Just 3) f
   alloyChanges <- except $ mapM addChange fList
@@ -55,7 +54,9 @@ matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
     drawChanges <- firstM draw `mapM` alloyChanges
     return (rightNet, math, Left drawChanges)
     else do
-    let toMath x = toPetriMath <$> convertPetri "flow" "tokens" x
+    let toMath x = toPetriMath <$> do
+          pl <- parsePetriLike "flow" "tokens" x
+          traversePetriLike simpleRename pl
     mathChanges <- except $ firstM toMath `mapM` alloyChanges
     return (rightNet, math, Right mathChanges)
 
