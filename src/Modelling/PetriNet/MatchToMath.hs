@@ -63,8 +63,8 @@ matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
 matchToMathTask :: Bool -> String
 matchToMathTask switch =
   if switch
-  then "Which of the presented petrinets shows the mathematical expression?"
-  else "Which of the presented mathematical expressions shows the given petrinet?"
+  then "Which of the presented Petri nets shows the mathematical expression?"
+  else "Which of the presented mathematical expressions shows the given Petri net?"
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = f p >>= (return . (,c))

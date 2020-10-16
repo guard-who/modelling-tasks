@@ -5,7 +5,7 @@
 {-|
 This module provides functionality of generating LaTeX formula in order to
 represent a given 'PetriLike'.
-Using this module these formulars are only converted into LaTeX source code.
+Using this module these formulas are only converted into LaTeX source code.
 -}
 module Modelling.PetriNet.LaTeX (
   toPetriMath,

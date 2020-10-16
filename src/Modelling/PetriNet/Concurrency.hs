@@ -46,7 +46,7 @@ pickConcurrency indInst config@PickConcurrencyConfig{basicTask} = do
 
 pickConcurrencyTask :: String
 pickConcurrencyTask =
-   "Which of the following Petrinets does not have a concurrency?"
+   "Which of the following Petri nets does not have a concurrency?"
 
 getNet
   :: String

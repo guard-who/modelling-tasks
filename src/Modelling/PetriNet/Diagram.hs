@@ -19,7 +19,7 @@ import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 
-{-| Create a 'Diagram's graph of a petri net like graph definition ('PetriLike')
+{-| Create a 'Diagram's graph of a Petri net like graph definition ('PetriLike')
 by distributing places and transitions using GraphViz.
 The provided 'GraphvizCommand' is used for this distribution.
 -}

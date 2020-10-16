@@ -143,10 +143,10 @@ isTransitionNode TransitionNode {} = True
 isTransitionNode _                 = False
 
 {-|
-A petri like graph consists of 'Node's which might have connections between each
+A Petri like graph consists of 'Node's which might have connections between each
 other.
 
-The 'PetriLike' graph is a valid petri net only if
+The 'PetriLike' graph is a valid Petri net only if
 
  * 'PlaceNode's are only successors of 'TransitionNode's
  * 'TransitionNode's are only successors of 'PlaceNode's
@@ -198,10 +198,10 @@ It first checks if the given Petri net like graph is indeed a valid Petri net
 (see also 'PetriLike'),
 
 * if it is, the Petri net like graph is transformed into a Petri net by
-  eliminating references to names of places and transitions at all. Instead
-  'initialMarking' is given by a list (where each position represents
-  different places) and 'trans'itions are given by lists of token change
-  (where, again, each position represents a different place, but the same
+  eliminating references to names of places and transitions at all.
+  Instead 'initialMarking' is given by a list (where each position represents
+  different places) and transitions ('trans') are given by a lists of token
+  change (where, again, each position represents a different place, but the same
   index within 'initialMarking' and 'trans' represents the same place).
 * if it is not, a message is returned indicating the reason why the given
   Petri net like graph is not a valid Petri net.
@@ -219,7 +219,7 @@ petriLikeToPetri p = do
     ts = M.filter isTransitionNode $ allNodes p
     isValid
       | not (M.null $ M.filter ((< 0) . initial) ps)
-      = Left "Invalid petri net: place with negative token number"
+      = Left "Invalid Petri net: place with negative token number"
       | any (`M.member` ts) (allRelatedNodes ts)
       = Left "related nodes of TransitionNodes contain TranisitionNodes"
       | any (`M.member` ps) (allRelatedNodes ps)
