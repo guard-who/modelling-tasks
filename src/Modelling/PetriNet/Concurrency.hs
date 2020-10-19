@@ -8,7 +8,7 @@ module Modelling.PetriNet.Concurrency (
 import Modelling.PetriNet.Alloy          (petriNetFindConcur,petriNetPickConcur)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.Parser         (
-  parseConcurrency, parsePetriLike,
+  parseConcurrency, parseRenamedPetriLike,
   )
 import Modelling.PetriNet.Types (
   BasicConfig(..), Concurrent, FindConcurrencyConfig(..),
@@ -55,8 +55,8 @@ getNet
   -> GraphvizCommand
   -> ExceptT String IO (Diagram B, Maybe (Concurrent Object))
 getNet f t inst gc = do
-  pl <- except $ parsePetriLike f t inst
-  dia <- drawNet pl gc
+  pl <- except $ parseRenamedPetriLike f t inst
+  dia <- drawNet id pl gc
   if f == "defaultFlow" && t == "defaultTokens"
     then return (dia, Nothing)
     else do

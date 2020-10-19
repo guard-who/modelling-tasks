@@ -8,7 +8,7 @@ module Modelling.PetriNet.Conflicts (
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
 import Modelling.PetriNet.Diagram       (drawNet)
 import Modelling.PetriNet.Parser        (
-  parseConflict, parsePetriLike,
+  parseConflict, parseRenamedPetriLike,
   )
 import Modelling.PetriNet.Types         (
   BasicConfig(..), Conflict, FindConflictConfig(..), PickConflictConfig(..),
@@ -54,8 +54,8 @@ getNet
   -> GraphvizCommand
   -> ExceptT String IO (Diagram B, Maybe (Conflict Object))
 getNet f t inst gc = do
-  pl <- except $ parsePetriLike f t inst
-  dia <- drawNet pl gc
+  pl <- except $ parseRenamedPetriLike f t inst
+  dia <- drawNet id pl gc
   if f == "defaultFlow" && t == "defaultTokens"
     then return (dia, Nothing)
     else do

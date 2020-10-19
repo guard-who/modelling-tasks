@@ -13,7 +13,7 @@ import Modelling.PetriNet.BasicNetFunctions (
   checkBasicConfig,
   checkCConfig,
   checkChangeConfig,
-  instanceInput
+  instanceInput,
   )
 import Modelling.PetriNet.Types         (
   BasicConfig(..), ChangeConfig(..), FindConflictConfig(..),

@@ -58,7 +58,7 @@ toLowerIndexes (x:xs)
     (ys, zs) = span isDigit xs
 
 {-|
-A LaTeX-'Formula' for the basic five tuple representing a 'PetriNet'.
+A LaTeX-'Formula' for the basic five tuple representing a Petri net.
 -}
 netLaTeX :: Formula
 netLaTeX = mathMode [i|N = #{tuple}|]

@@ -22,7 +22,7 @@ spec =
         (inst:_) <- lift $ getInstances (Just 1)
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
         pl <- except $ parsePetriLike "flow" "tokens" inst
-        dia <- drawNet pl TwoPi
+        dia <- drawNet show pl TwoPi
         lift $ renderSVG "test.svg" (mkWidth 200) dia `shouldReturn` ()
 
 failOnErrors :: ExceptT String IO a -> IO a

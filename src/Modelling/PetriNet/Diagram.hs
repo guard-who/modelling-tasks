@@ -1,20 +1,24 @@
+{-|
+Provides the ability to render Petri nets.
+-}
 module Modelling.PetriNet.Diagram (drawNet) where
 
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
 import Modelling.PetriNet.Parser (
-  petriLikeToGr, simpleNameMap,
+  petriLikeToGr,
   )
 import Modelling.PetriNet.Types         (PetriLike)
 
+import Control.Arrow                    (ArrowChoice(left), first)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Graph.Inductive             (Gr)
+import Data.GraphViz                    hiding (Path)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
-import Data.GraphViz                    hiding (Path)
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
@@ -25,29 +29,64 @@ The provided 'GraphvizCommand' is used for this distribution.
 -}
 drawNet
   :: Ord a
-  => PetriLike a
+  => (a -> String)
+  -- ^ how to obtain labels of the nodes
+  -> PetriLike a
   -- ^ the graph definition
   -> GraphvizCommand
   -- ^ how to distribute the nodes
   -> ExceptT String IO (Diagram B)
-drawNet pl gc = do
-  let bm = simpleNameMap pl
-  gr    <- except $ petriLikeToGr pl bm
+drawNet labelOf pl gc = do
+  gr    <- except $ left errorMessage $ petriLikeToGr pl
   graph <- lift $ GV.layoutGraph gc gr
   pfont <- lift lin
-  return $ drawGraph pfont graph
+  return $ drawGraph labelOf pfont graph
+  where
+    errorMessage x =
+      "drawNet: Could not find " ++ labelOf x ++ " within the graph"
 
+{-|
+Obtain the Petri net like graph by drawing Nodes and connections between them
+using the specific functions @drawNode@ and @drawEdge@.
+-}
 drawGraph
-  :: PreparedFont Double
-  -> Gr (AttributeNode (String, Maybe Int)) (AttributeEdge String)
+  :: (Ord a, Show b)
+  => (a -> String)
+  -- ^ how to obtain labels from nodes
+  -> PreparedFont Double
+  -- ^ the font to be used for labels
+  -> Gr (AttributeNode (a, Maybe Int)) (AttributeEdge b)
+  -- ^ the graph consisting of nodes and edges
   -> Diagram B
-drawGraph pfont graph = gedges # frame 1
+drawGraph labelOf pfont graph = gedges # frame 1
   where
     (nodes, edges) = GV.getGraph graph
-    gnodes = M.foldlWithKey (\g l p -> g `atop` drawNode pfont l p) mempty nodes
-    gedges = foldl (\g (s, t, l, p) -> g # drawEdge pfont l s t p) gnodes edges
+    gnodes = M.foldlWithKey
+      (\g l p -> g `atop` drawNode pfont (withLabel l) p)
+      mempty
+      nodes
+    gedges = foldl
+      (\g (s, t, l, p) -> g # drawEdge pfont l (labelOnly s) (labelOnly t) p)
+      gnodes
+      edges
+    withLabel = first labelOf
+    labelOnly = labelOf . fst
 
-drawNode :: PreparedFont Double -> (String,Maybe Int) -> Point V2 Double -> Diagram B
+{-|
+Nodes are either Places (having 'Just' tokens), or Transitions (having
+'Nothing').
+Transitions are drawn as squares.
+Places are drawn as circles.
+Each node gets a label.
+-}
+drawNode
+  :: PreparedFont Double
+  -- ^ the font to use
+  -> (String, Maybe Int)
+  -- ^ a node (the first part is used for its label)
+  -> Point V2 Double
+  -- ^ where to place the node
+  -> Diagram B
 drawNode pfont (l, Nothing) p  = place
   (center (text' pfont l)
     `atop` rect 20 20 # named l)
@@ -58,16 +97,41 @@ drawNode pfont (l,Just i) p  = place
     `atop` text' pfont (show i :: String) # translate (r2(1,-15))
     `atop` circle 20 # named l)
   p
-        
-drawEdge :: PreparedFont Double -> String -> (String,Maybe Int) -> (String,Maybe Int) -> Path V2 Double -> Diagram B -> Diagram B
-drawEdge f l (l1,_) (l2,_) path d = 
+
+{-|
+Edges are drawn as arcs between nodes (identified by labels).
+-}
+drawEdge
+  :: Show a
+  => PreparedFont Double
+  -- ^ the font to use
+  -> a
+  -- ^ the edges label
+  -> String
+  -- ^ label of start node
+  -> String
+  -- ^ label of end node
+  -> Path V2 Double
+  -- ^ the path along which to align the edge
+  -> Diagram B
+  -- ^ the diagram which contains labeled nodes already
+  -> Diagram B
+drawEdge f l l1 l2 path d =
   let opts p = with & arrowShaft .~ (unLoc . head $ pathTrails p)
       points = concat $ pathPoints path
       labelPoint = points !! (length points `div` 2)
   in connectOutside' (opts path) l1 l2 d
-     `atop` place (text' f l) labelPoint
+     `atop` place (text' f $ show l) labelPoint
 
-text' :: PreparedFont Double -> String -> Diagram B
+{-|
+Render text as a diagram.
+-}
+text'
+  :: PreparedFont Double
+  -- ^ which font to use
+  -> String
+  -- ^ what to write
+  -> Diagram B
 text' pfont t =
   textSVG_ (TextOpts pfont INSIDE_H KERN False 18 18) t
   # fc black

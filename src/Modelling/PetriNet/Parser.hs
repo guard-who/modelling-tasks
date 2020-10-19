@@ -3,7 +3,8 @@
 module Modelling.PetriNet.Parser (
   convertPetri, convertGr, prepNodes,
   parseChange, parseConflict, parseConcurrency, parsePetriLike,
-  simpleNameMap, simpleRename, petriLikeToGr
+  parseRenamedPetriLike, petriLikeToGr,
+  simpleNameMap, simpleRename,
   ) where
 
 import qualified Data.Bimap                       as BM (
@@ -48,8 +49,23 @@ convertPetri f t inst = do
   petriLikeToPetri p
 
 {-|
+Parse a 'PetriLike' graph from an 'AlloyInstance' given the instances flow and
+token set names.
+And return an already renamed Petri net.
+-}
+parseRenamedPetriLike
+  :: String
+  -> String
+  -> AlloyInstance
+  -> Either String (PetriLike String)
+parseRenamedPetriLike flowSetName tokenSetName inst= do
+  petriLike <- parsePetriLike flowSetName tokenSetName inst
+  let nameMap = simpleNameMap petriLike
+  traversePetriLike (\x -> left show $ BM.lookup x nameMap) petriLike
+
+{-|
 Parse a `PetriLike' graph from an 'AlloyInstance' given the instances flow and
-token sets.
+token set names.
 -}
 parsePetriLike
   :: String                           -- ^ the name of the flow set
@@ -224,22 +240,20 @@ simpleNameMap pl = BM.fromList . fst <$>
 petriLikeToGr
   :: Ord a
   => PetriLike a
-  -> Bimap a String
-  -> Either String (Gr (String, Maybe Int) String)
-petriLikeToGr plike names = left show $ do
+  -> Either a (Gr (a, Maybe Int) Int)
+petriLikeToGr plike = do
   nodes <- Map.foldrWithKey convertNode (return []) $ allNodes plike
   let edges = Map.foldrWithKey convertTransition [] $ allNodes plike
   return $ mkGraph nodes edges
   where
     convertNode k x ns = do
       ns' <- ns
-      k'  <- BM.lookup k names
-      return $ (indexOf k, (k', maybeInitial x)):ns'
+      return $ (indexOf k, (k, maybeInitial x)):ns'
     convertTransition k x ns =
       Map.foldrWithKey (convertEdge k) ns $ flowIn x
     indexOf x = Map.findIndex x $ allNodes plike
     convertEdge k source target rs =
-      (indexOf source, indexOf k, show target) : rs
+      (indexOf source, indexOf k, target) : rs
 ------------------------------------------------------------------------------------------
 --ParseDirectlyToDiagram
 
