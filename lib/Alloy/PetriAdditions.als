@@ -21,12 +21,15 @@ sig addedTransitions extends Transitions{}
   no defaultFlow
 }
 
+fun addedNodes : set Nodes {
+  addedPlaces + addedTransitions
+}
 
 pred noChangesToGivenParts[]{
   no givenPlaces.tokenChange
-  let givenNodes = givenPlaces + givenTransitions | no givenNodes.flowChange[givenNodes]
+  no givenNodes.flowChange[givenNodes]
 }
 
 fact noDefaultFlowToAddedNodes {
-  no Nodes.defaultFlow[addedPlaces + addedTransitions]
+  no Nodes.defaultFlow[addedNodes]
 }

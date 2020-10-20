@@ -40,3 +40,7 @@ fact isLegalPetrinet {
 //set default places and transitions
 abstract sig givenPlaces extends Places{}
 abstract sig givenTransitions extends Transitions{}
+
+fun givenNodes : set Nodes {
+  givenPlaces + givenTransitions
+}

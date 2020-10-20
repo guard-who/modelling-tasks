@@ -55,6 +55,5 @@ pred graphIsConnected[]{
 }
 
 pred defaultGraphIsConnected[]{
-  let givenNodes = givenPlaces + givenTransitions |
-    all n : givenNodes | givenNodes = n + n.^(defaultFlow.Int + ~(defaultFlow.Int))
+  all n : givenNodes | givenNodes = n + n.^(defaultFlow.Int + ~(defaultFlow.Int))
 }
