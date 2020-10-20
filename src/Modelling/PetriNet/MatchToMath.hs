@@ -18,6 +18,7 @@ import Modelling.PetriNet.Types (
   Change,
   MathConfig (..),
   PetriMath,
+  mapChange,
   )
 
 import Control.Monad.Trans.Class        (lift)
@@ -25,7 +26,9 @@ import Control.Monad.Trans.Except       (ExceptT, except)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                     (Diagram)
 import Image.LaTeX.Render               (Formula)
-import Language.Alloy.Call                  (AlloyInstance,getInstances)
+import Language.Alloy.Call (
+  AlloyInstance, getInstances, objectName,
+  )
 import Maybes                               (firstJusts)
 
 type Math  = PetriMath Formula
@@ -72,4 +75,4 @@ checkConfig MathConfig{basicTask,changeTask} =
 addChange :: AlloyInstance -> Either String (AlloyInstance, Change)
 addChange alloy = do
   change <- parseChange alloy
-  return (alloy, change)
+  return (alloy, mapChange (takeWhile (/= '$') . objectName) change)

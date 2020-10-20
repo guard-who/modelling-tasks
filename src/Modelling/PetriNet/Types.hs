@@ -22,19 +22,61 @@ import Data.GraphViz.Attributes.Complete (GraphvizCommand (Neato))
 import Data.Map.Lazy                    (Map)
 import Data.Maybe                       (fromMaybe)
 
-data Change = Change {tokenChange :: [(String,Int)],flowChange :: [(String,String,Int)]}
-  deriving (Eq,Show)
-  
-data Conflict a = Conflict {
+{-|
+A 'PetriChange' where nodes are labelled by strings.
+-}
+type Change = PetriChange String
+
+{-|
+A 'PetriChange' describes the changes on a 'PetriLike' graph by mapping 'PlaceNode's
+to token changes and origins of an edge to a mapping from their targets to flow
+changes.
+-}
+data PetriChange a = Change {
+  -- | The token change 'Map': Mapping places to changes of their tokens.
+  tokenChange :: Map a Int,
+  -- | The flow change 'Map': Mapping source places to a mapping from target
+  --   place to the flow change at the edge between source and target.
+  flowChange  :: Map a (Map a Int)
+  }
+  deriving (Eq, Show)
+
+{-|
+This function acts like 'fmap' on other 'Functor's.
+
+Note that 'Change' is not a true 'Functor' and thus 'mapChange' is not a true
+'fmap' because an 'Ord' instance is required for 'Change's first type parameter
+for 'mapChange' to work, furthermore (and that is the original reason),
+'mapChange' uses 'M.mapKeys' internally in order to apply the mapping.
+Thus, the user of 'mapChange' is responsible to ensure that the transformation
+preserves uniqueness on all used keys.
+-}
+mapChange :: Ord b => (a -> b) -> PetriChange a -> PetriChange b
+mapChange f (Change tc fc) =
+  Change (M.mapKeys f tc) (M.mapKeys f $ M.mapKeys f <$> fc)
+
+{-|
+A 'PetriConflict' where nodes are labelled by strings.
+-}
+type Conflict = PetriConflict String
+
+{-|
+A 'PetriConflict' describes a conflict between two transitions.
+It occurs when the number of tokens at the source place are not enough to fire
+both transitions (both are having the same source place).
+-}
+data PetriConflict a = Conflict {
+  -- | The pair of transitions in conflict.
   conflictTrans :: (a, a),
+  -- | Their common source node having not enough to tokens to fire both.
   conflictPlace :: a
   }
-  deriving Show
+  deriving (Functor, Show)
   
 type Concurrent a = (a, a)
 
 {-|
-A node is part of a petri like graph (see 'PetriLike').
+A node is part of a Petri like graph (see 'PetriLike').
 Each node stores its predecessor and successor nodes together with their weight
 in the fields 'flowIn' and 'flowOut' respectively.
 Additionally 'PlaceNode's have a value of initial tokens.
@@ -71,7 +113,7 @@ because an 'Ord' instance is required for 'Node's first type parameter for
 'mapNode' to work, furthermore (and that is the original reason), 'mapNode'
 uses 'M.mapKeys' internally in order to apply the mapping. Thus, the user of
 'mapNode' is responsible to ensure that the transformation preserves uniqueness
-on the available keys used.
+on all used keys.
 -}
 mapNode :: Ord b => (a -> b) -> Node a -> Node b
 mapNode f (PlaceNode s i o) =

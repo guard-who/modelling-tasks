@@ -19,12 +19,14 @@ import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                  (Diagram)
-import Language.Alloy.Call              (AlloyInstance, Object, getInstances)
+import Language.Alloy.Call (
+  AlloyInstance, getInstances, objectName,
+  )
 
 findConflicts
   :: Int
   -> FindConflictConfig
-  -> ExceptT String IO (Diagram B, Maybe (Conflict Object))
+  -> ExceptT String IO (Diagram B, Maybe Conflict)
 findConflicts indInst config@FindConflictConfig{basicTask} = do
   list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetFindConfl config)
   getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
@@ -36,7 +38,7 @@ findConflictsTask =
 pickConflicts
   :: Int
   -> PickConflictConfig
-  -> ExceptT String IO [(Diagram B, Maybe (Conflict Object))]
+  -> ExceptT String IO [(Diagram B, Maybe Conflict)]
 pickConflicts indInst config@PickConflictConfig{basicTask} = do
   list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetPickConfl config)
   confl <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
@@ -52,7 +54,7 @@ getNet
   -> String
   -> AlloyInstance
   -> GraphvizCommand
-  -> ExceptT String IO (Diagram B, Maybe (Conflict Object))
+  -> ExceptT String IO (Diagram B, Maybe Conflict)
 getNet f t inst gc = do
   pl <- except $ parseRenamedPetriLike f t inst
   dia <- drawNet id pl gc
@@ -60,4 +62,4 @@ getNet f t inst gc = do
     then return (dia, Nothing)
     else do
     conc <- except $ parseConflict inst
-    return (dia, Just conc)
+    return (dia, Just $ takeWhile (/= '$') . objectName <$> conc)

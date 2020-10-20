@@ -1,5 +1,11 @@
 {-# LANGUAGE ParallelListComp #-}
-
+{-|
+A module for parsing Petri Alloy instances into Haskell representations defined
+by the 'Modelling.PetriNet.Types' module.
+The instances contain valid and invalid Petri nets that is why these are parsed
+into types as 'PetriLike' which allow representing some invalid representations
+of graphs which are similar to Petri nets.
+-}
 module Modelling.PetriNet.Parser (
   convertPetri, convertGr, prepNodes,
   parseChange, parseConflict, parseConcurrency, parsePetriLike,
@@ -134,33 +140,32 @@ toNode tokens fin fout x = case Map.lookup x tokens >>= Set.lookupMin of
       xs <- Map.lookup x flow
       Set.lookupMin `mapM` xs
 
-                          --get Abweichung--
-parseChange :: AlloyInstance -> Either String Change 
+{-|
+Parses a 'PetriChange' given an 'AlloyInstance'.
+On error a 'Left' error message will be returned.
+-}
+parseChange :: AlloyInstance -> Either String (PetriChange Object)
 parseChange inst = do
   flow <- tripleSig inst "this" "Nodes" "flowChange"
   tkn  <- doubleSig inst "this" "Places" "tokenChange"
-  let flowC = flowChangeP (Set.toList flow)
-  let tknC  = tokenChangeP (Set.toList tkn)
-  return $ Change{tokenChange = tknC , flowChange = flowC}
+  tknM   <- relToMap (second $ read . objectName) tkn
+  tknC   <- asSingleton `mapM` tknM
+  flowM  <- relToMap tripleToOut flow
+  flowM' <- relToMap id `mapM` flowM
+  flowC  <- mapM asSingleton `mapM` flowM'
+  return $ Change {
+    tokenChange = tknC,
+    flowChange  = flowC
+    }
+  where
+    tripleToOut (x, y, z) = (x, (y, read $ objectName z))
 
-flowChangeP :: [(Object,Object,Object)] -> [(String,String,Int)]
-flowChangeP []               = []
-flowChangeP ((n1,n2,val):rs) =
-  (listTill (objectName n1) '$' ,listTill (objectName n2) '$', read (objectName val) :: Int)
-  : flowChangeP rs
-  
-tokenChangeP :: [(Object,Object)] -> [(String,Int)]
-tokenChangeP []            = []
-tokenChangeP ((pl,val):rt) = (listTill (objectName pl) '$' , read (objectName val) :: Int) 
-                             : tokenChangeP rt
-
-                            --Spezielles--                
 {-|
-Parses the conflict skolem variables for singleton of transitions and returns
+Parses the conflict Skolem variables for singleton of transitions and returns
 both as tuple.
 It returns an error message instead if unexpected behaviour occurs.
 -}
-parseConflict :: AlloyInstance -> Either String (Conflict Object)
+parseConflict :: AlloyInstance -> Either String (PetriConflict Object)
 parseConflict inst = do
   tc1 <- unscopedSingleSig inst conflictTransition1 ""
   tc2 <- unscopedSingleSig inst conflictTransition2 ""
@@ -170,7 +175,7 @@ parseConflict inst = do
     <*> asSingleton pc
 
 {-|
-Parses the concurrency skolem variables for singleton of transitions and returns
+Parses the concurrency Skolem variables for singleton of transitions and returns
 both as tuple.
 It returns an error message instead if unexpected behaviour occurs.
 -}
@@ -180,6 +185,11 @@ parseConcurrency inst = do
   t2 <- unscopedSingleSig inst concurrencyTransition2 ""
   (,) <$> asSingleton t1 <*> asSingleton t2
 
+{-|
+Convert a singleton 'Set' into its single value.
+Returns a 'Left' error message if the 'Set' is empty or contains more than one
+single element.
+-}
 asSingleton :: Set b -> Either String b
 asSingleton s
   | Set.null s
@@ -216,13 +226,6 @@ unscopedSingleSig inst st nd = do
   sig <- lookupSig (unscoped st) inst
   getSingle nd sig
   
---getList up to given element
-listTill :: (Eq a) => [a] -> a -> [a]
-listTill [] _ = []
-listTill (x:rs) y 
- | x == y    = []
- | otherwise = x : listTill rs y
- 
 simpleNameMap :: Ord a => PetriLike a -> Bimap a String
 simpleNameMap pl = BM.fromList . fst <$>
   Map.foldlWithKey
