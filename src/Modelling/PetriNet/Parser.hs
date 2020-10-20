@@ -1,4 +1,3 @@
-{-# LANGUAGE ParallelListComp #-}
 {-|
 A module for parsing Petri Alloy instances into Haskell representations defined
 by the 'Modelling.PetriNet.Types' module.
@@ -7,7 +6,7 @@ into types as 'PetriLike' which allow representing some invalid representations
 of graphs which are similar to Petri nets.
 -}
 module Modelling.PetriNet.Parser (
-  convertPetri, convertGr, prepNodes,
+  convertPetri,
   parseChange, parseConflict, parseConcurrency, parsePetriLike,
   parseRenamedPetriLike, petriLikeToGr,
   simpleNameMap, simpleRename,
@@ -17,10 +16,10 @@ import qualified Data.Bimap                       as BM (
   fromList, lookup,
   )
 import qualified Data.Set                         as Set (
-  Set, findMin, foldr, lookupMin, null, size, toList
+  Set, findMin, foldr, lookupMin, null, size
   )
 import qualified Data.Map.Lazy                    as Map (
-  Map, empty, findIndex, foldlWithKey, foldrWithKey, fromList, insert, lookup,
+  empty, findIndex, foldlWithKey, foldrWithKey, insert, lookup,
   )
 
 import Modelling.PetriNet.Alloy         (
@@ -199,12 +198,6 @@ asSingleton s
   | otherwise
   = Right $ Set.findMin s
 
-                            --Hilfsfunktionen--                                
-mapNodes :: AlloyInstance -> Either String (Map.Map Object Int)
-mapNodes inst = do
-  nods <- singleSig inst "this" "Nodes" ""
-  return $ Map.fromList $ Set.toList nods `zip`  [0..]
-
 singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
 singleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
@@ -225,7 +218,16 @@ unscopedSingleSig :: AlloyInstance -> String -> String -> Either String (Set.Set
 unscopedSingleSig inst st nd = do
   sig <- lookupSig (unscoped st) inst
   getSingle nd sig
-  
+
+{-|
+Retrieve a simple naming map from a given 'PetriLike'.
+The newly created names for naming every 'Node' of the 'PetriLike' are unique
+for each individually 'Node'.
+Furthermore, each 'PlaceNode's names prefix is a @s@, while each
+'TransitionNode's name is preceded by a @t@.
+These prefixes are followed by numbers starting by 1 and reaching to the number
+of 'PlaceNode's and 'TransitionNode's respectively.
+-}
 simpleNameMap :: Ord a => PetriLike a -> Bimap a String
 simpleNameMap pl = BM.fromList . fst <$>
   Map.foldlWithKey
@@ -237,9 +239,12 @@ simpleNameMap pl = BM.fromList . fst <$>
       let (k', p', t') = step x p t
       in ((k, k'):ys, (p', t'))
     step n p t = case n of
-      PlaceNode {}      -> ('S':show p, p + 1, t)
-      TransitionNode {} -> ('T':show t, p, t + 1)
+      PlaceNode {}      -> ('s':show p, p + 1, t)
+      TransitionNode {} -> ('t':show t, p, t + 1)
 
+{-|
+Convert a 'PetriLike' into a 'Gr' enabling to draw it using graphviz.
+-}
 petriLikeToGr
   :: Ord a
   => PetriLike a
@@ -257,31 +262,3 @@ petriLikeToGr plike = do
     indexOf x = Map.findIndex x $ allNodes plike
     convertEdge k source target rs =
       (indexOf source, indexOf k, target) : rs
-------------------------------------------------------------------------------------------
---ParseDirectlyToDiagram
-
-convertGr :: String -> [(Int,(String, Maybe Int))] -> AlloyInstance -> Either String (Gr(String,Maybe Int) String)
-convertGr f n inst = do
-  flow <- tripleSig inst "this" "Nodes" f
-  nodesM <- mapNodes inst 
-  return $ mkGraph n 
-    [(getVal pr nodesM, getVal po nodesM, objectName wg)| (pr,po,wg) <- Set.toList flow]
-  
-prepNodes :: String -> AlloyInstance -> Either String [(Int,(String, Maybe Int))]
-prepNodes t inst = do
-  pls <- singleSig inst "this" "Places" ""
-  trns <- singleSig inst "this" "Transitions" ""
-  mark <- doubleSig inst "this" "Places" t
-  let mVal = Map.fromList ( Set.toList mark)
-  nodes <- mapNodes inst 
-  return 
-    (  [ (getVal p nodes,("S"++show (i :: Int),Just (read (objectName (getVal p mVal)) :: Int)))
-       | p <- Set.toList pls | i <- [1..]]
-    ++ [ (getVal tr nodes,("T"++show (i :: Int),Nothing)) 
-       | tr <- Set.toList trns | i <- [1..] ]
-    )
-  
-getVal :: Ord k => k -> Map.Map k v -> v
-getVal x m = do
-  let item = Map.lookup x m
-  fromMaybe (error "Error occurred while mapping the net") item
