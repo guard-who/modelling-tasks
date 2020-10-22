@@ -4,15 +4,14 @@ module Main (main) where
 
 import Common                           (forceErrors, printNetAndInfo)
 import Modelling.PetriNet.Conflicts (
+  checkFindConflictConfig,
+  checkPickConflictConfig,
   findConflicts,
   findConflictsTask,
   pickConflicts,
   pickConflictsTask,
   )
 import Modelling.PetriNet.BasicNetFunctions (
-  checkBasicConfig,
-  checkCConfig,
-  checkChangeConfig,
   instanceInput,
   )
 import Modelling.PetriNet.Types         (
@@ -23,7 +22,6 @@ import Modelling.PetriNet.Types         (
 
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.Maybe                        (isNothing)
-import Maybes                            (firstJusts)
 import System.IO (
   BufferMode (NoBuffering), hSetBuffering, stdout,
   )
@@ -43,16 +41,17 @@ mainFind ::Int -> IO()
 mainFind i = forceErrors $ do
   pPrint defaultFindConflictConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
-  let config = defaultFindConflictConfig{
-                           basicTask = (basicTask (defaultFindConflictConfig :: FindConflictConfig)){places = pls, transitions = trns}
-                         , changeTask = (changeTask (defaultFindConflictConfig :: FindConflictConfig)){ tokenChangeOverall = tknChange
-                                                           , flowChangeOverall = flwChange}
-                         } :: FindConflictConfig
-  let c = firstJusts 
-        [ checkBasicConfig (basicTask (config :: FindConflictConfig))
-        , checkChangeConfig (basicTask (config :: FindConflictConfig)) (changeTask (config :: FindConflictConfig))
-        , checkCConfig (basicTask (config :: FindConflictConfig)) 
-        ]
+  let config = defaultFindConflictConfig {
+        basicConfig = (bc defaultFindConflictConfig) {
+            places = pls,
+            transitions = trns
+            },
+        changeConfig = (cc defaultFindConflictConfig) {
+            tokenChangeOverall = tknChange,
+            flowChangeOverall = flwChange
+            }
+        } :: FindConflictConfig
+  let c = checkFindConflictConfig config
   if isNothing c
   then do
     conflDia <- findConflicts i config
@@ -60,20 +59,27 @@ mainFind i = forceErrors $ do
     lift $ printNetAndInfo "" conflDia
   else
     lift $ print c
+  where
+    bc :: FindConflictConfig -> BasicConfig
+    bc = basicConfig
+    cc :: FindConflictConfig -> ChangeConfig
+    cc = changeConfig
 
 mainPick :: Int -> IO()
 mainPick i = forceErrors $ do
   pPrint defaultPickConflictConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
-  let config = defaultPickConflictConfig{
-                           basicTask = (basicTask (defaultPickConflictConfig :: PickConflictConfig)){places = pls, transitions = trns}
-                         , changeTask = (changeTask (defaultPickConflictConfig :: PickConflictConfig)){ tokenChangeOverall = tknChange
-                                                           , flowChangeOverall = flwChange}
-                         } :: PickConflictConfig
-  let c = firstJusts 
-        [ checkBasicConfig (basicTask (config :: PickConflictConfig))
-        , checkChangeConfig (basicTask (config :: PickConflictConfig)) (changeTask (config :: PickConflictConfig))
-        ]
+  let config = defaultPickConflictConfig {
+        basicConfig = (bc defaultPickConflictConfig) {
+            places = pls,
+            transitions = trns
+            },
+        changeConfig = (cc defaultPickConflictConfig) {
+            tokenChangeOverall = tknChange,
+            flowChangeOverall = flwChange
+            }
+        } :: PickConflictConfig
+  let c = checkPickConflictConfig config
   if isNothing c
   then do
     conflDias <- pickConflicts i config
@@ -81,6 +87,11 @@ mainPick i = forceErrors $ do
     lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
   else
     lift $ print c
+  where
+    bc :: PickConflictConfig -> BasicConfig
+    bc = basicConfig
+    cc :: PickConflictConfig -> ChangeConfig
+    cc = changeConfig
     
 userInput :: IO (Int,Int,Int,Int)
 userInput = do

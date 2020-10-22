@@ -71,7 +71,7 @@ data PetriConflict a = Conflict {
   -- | Their common source node having not enough to tokens to fire both.
   conflictPlace :: a
   }
-  deriving (Functor, Show)
+  deriving (Foldable, Functor, Show, Traversable)
   
 type Concurrent a = (a, a)
 
@@ -385,27 +385,27 @@ defaultMathConfig = MathConfig
   }
   
 data FindConflictConfig = FindConflictConfig
-  { basicTask :: BasicConfig
-  , advTask :: AdvConfig
-  , changeTask :: ChangeConfig
+  { basicConfig :: BasicConfig
+  , advConfig :: AdvConfig
+  , changeConfig :: ChangeConfig
   } deriving Show
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
-  { basicTask = defaultBasicConfig{ atLeastActive = 3 }
-  , advTask = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
-  , changeTask = defaultChangeConfig
+  { basicConfig = defaultBasicConfig{ atLeastActive = 3 }
+  , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
+  , changeConfig = defaultChangeConfig
   }
   
 data PickConflictConfig = PickConflictConfig
-  { basicTask :: BasicConfig
-  , changeTask :: ChangeConfig
+  { basicConfig :: BasicConfig
+  , changeConfig :: ChangeConfig
   } deriving Show
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
-  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
-  , changeTask = defaultChangeConfig
+  { basicConfig = defaultBasicConfig{ atLeastActive = 2 }
+  , changeConfig = defaultChangeConfig
   }
   
 data FindConcurrencyConfig = FindConcurrencyConfig

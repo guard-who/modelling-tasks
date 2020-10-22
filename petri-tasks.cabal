@@ -166,6 +166,7 @@ test-suite petri-tasks-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HaTeX
+    , QuickCheck
     , SVGFonts
     , base
     , bimap
@@ -185,6 +186,7 @@ test-suite petri-tasks-test
     , petri-tasks
     , pretty-simple
     , process
+    , random
     , string-interpolate
     , text
     , transformers

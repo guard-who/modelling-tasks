@@ -69,5 +69,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - petri-tasks
+    - QuickCheck
     - hspec
     - process
+    - random

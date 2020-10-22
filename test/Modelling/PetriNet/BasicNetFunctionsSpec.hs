@@ -26,10 +26,10 @@ spec = do
   describe "checkCConfig" $ do
     it "checks if the input for the C-Tasks(Conflict&Concurrency) is in given boundaries" $ do
       let inp = defaultFindConflictConfig
-      checkCConfig (basicTask inp) `shouldBe` Nothing
+      checkCConfig (basicConfig inp) `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with nessecary changes" $ do
         let inp = defaultFindConflictConfig{
-          basicTask = (basicTask (defaultFindConflictConfig :: FindConflictConfig)){atLeastActive = 1}
+          basicConfig = (basicConfig (defaultFindConflictConfig :: FindConflictConfig)){atLeastActive = 1}
           }
-        checkCConfig (basicTask inp) `shouldSatisfy` isJust
+        checkCConfig (basicConfig inp) `shouldSatisfy` isJust

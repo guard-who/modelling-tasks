@@ -148,7 +148,7 @@ conflictPredicateName = "showConflict"
 --Conflict--
 
 petriNetFindConfl :: FindConflictConfig -> String
-petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module PetriNetConfl
+petriNetFindConfl FindConflictConfig{basicConfig,advConfig,changeConfig} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -156,31 +156,31 @@ petriNetFindConfl FindConflictConfig{basicTask,advTask,changeTask} = [i|module P
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [#{place1} : Places, #{specCompRelation basicTask changeTask}
+pred #{conflictPredicateName} [#{place1} : Places, #{specCompRelation basicConfig changeConfig}
 
   #{compConflict}
-  #{compAdvConstraints advTask}
+  #{compAdvConstraints advConfig}
   
 }
-run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitwidth basicConfig} Int
 
 
 |]
 
 petriNetPickConfl :: PickConflictConfig -> String
-petriNetPickConfl p@PickConflictConfig{basicTask = BasicConfig{atLeastActive},changeTask} = [i|module PetriNetConfl
+petriNetPickConfl p@PickConflictConfig{basicConfig = BasicConfig{atLeastActive},changeConfig} = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [#{place1} : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConflictConfig)) changeTask}
+pred #{conflictPredicateName} [#{place1} : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicConfig(p :: PickConflictConfig)) changeConfig}
 
   #{compConflict}
   #{compDefaultConstraints atLeastActive}
 }
-run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicTask(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConflictConfig))} Int
+run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicConfig(p :: PickConflictConfig))} Int
 
 |]
 

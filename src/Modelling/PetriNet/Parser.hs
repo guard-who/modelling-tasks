@@ -9,7 +9,7 @@ module Modelling.PetriNet.Parser (
   convertPetri,
   parseChange, parseConflict, parseConcurrency, parsePetriLike,
   parseRenamedPetriLike, petriLikeToGr,
-  simpleNameMap, simpleRename,
+  simpleNameMap, simpleRename, simpleRenameWith,
   ) where
 
 import qualified Data.Bimap                       as BM (
@@ -65,8 +65,17 @@ parseRenamedPetriLike
   -> Either String (PetriLike String)
 parseRenamedPetriLike flowSetName tokenSetName inst= do
   petriLike <- parsePetriLike flowSetName tokenSetName inst
+  let rename = simpleRenameWith petriLike
+  traversePetriLike rename petriLike
+
+{-|
+Transform a given value into a 'String' by replacing it according to the
+'simpleNameMap' retrieved by the given 'PetriLike'.
+-}
+simpleRenameWith :: Ord a => PetriLike a -> a -> Either String String
+simpleRenameWith petriLike x = do
   let nameMap = simpleNameMap petriLike
-  traversePetriLike (\x -> left show $ BM.lookup x nameMap) petriLike
+  left show $ BM.lookup x nameMap
 
 {-|
 Parse a `PetriLike' graph from an 'AlloyInstance' given the instances flow and
