@@ -4,6 +4,7 @@ module Modelling.PetriNet.ConflictsSpec (
   spec
   ) where
 
+import Modelling.PetriNet.Alloy         (petriNetFindConfl, petriNetPickConfl)
 import Modelling.PetriNet.Conflicts (
   checkFindConflictConfig,
   checkPickConflictConfig,
@@ -25,14 +26,17 @@ import Modelling.PetriNet.Types (
 import Control.Monad.Trans.Except       (runExceptT)
 import Data.Either                      (isRight)
 import Data.GraphViz                    (GraphvizCommand (Neato))
+import GHC.Base                         (maxInt, minInt)
 import Language.Alloy.Call (
   CallAlloyConfig (..), defaultCallAlloyConfig,
   )
 import System.Random                    (StdGen, mkStdGen, randomR)
 import Test.Hspec
 import Test.Hspec.QuickCheck            (modifyMaxSuccess)
-import Test.QuickCheck                  (Property, (==>), ioProperty, property)
-import Modelling.PetriNet.Alloy         (petriNetFindConfl, petriNetPickConfl)
+import Test.QuickCheck (
+  Arbitrary (..), Property, (==>), ioProperty, property
+  )
+import Test.QuickCheck.Gen (choose)
 
 spec :: Spec
 spec = do
@@ -65,19 +69,26 @@ spec = do
     pcs = validPickConflictConfigs cs
     cs  = basicAndChangeConfigs 0 6
 
+newtype RandomGen = RandomGen { getGen :: StdGen }
+  deriving Show
+
+instance Arbitrary RandomGen where
+  arbitrary = RandomGen . mkStdGen <$> choose (minInt, maxInt)
+
+maxJavaInt :: Int
+maxJavaInt = 2 ^ (31 :: Int) - 1
+
 ioPropertyWith :: Int -> (Int -> StdGen -> IO Property) -> Spec
 ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
-  it "generates everything required to create the task" $ property $ \x y ->
-    let g  = mkStdGen x
-        g' = mkStdGen y
-        r  = fst $ randomR (0, ints - 1) g'
-    in ioProperty $ f r g
+  it "generates everything required to create the task" $ property $ \g g' ->
+    let r  = fst $ randomR (0, ints - 1) $ getGen g'
+    in ioProperty $ f r $ getGen g
 
 testFindConflictConfig :: [(BasicConfig, ChangeConfig)] -> Spec
 testFindConflictConfig cs = ioPropertyWith (length cs) $ \r g -> do
   ti <- runExceptT $ do
     let conf = fcs !! r
-    let (r', g') = randomR (0, 1000) g
+    let (r', g') = randomR (0, maxJavaInt) g
     is <- getAlloyInstances
       defaultCallAlloyConfig {
          maxInstances = Just $ toInteger r',
@@ -100,7 +111,7 @@ testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig cs = ioPropertyWith (length cs) $ \r g -> do
   ti <- runExceptT $ do
     let conf = cs !! r
-    let (r', g') = randomR (0, 10000) g
+    let (r', g') = randomR (0, maxJavaInt) g
     is <- getAlloyInstances
       defaultCallAlloyConfig {
          maxInstances = Just $ toInteger r',
