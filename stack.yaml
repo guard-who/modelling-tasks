@@ -41,7 +41,7 @@ packages:
 #
 extra-deps:
   - base64-bytestring-1.0.0.3@sha256:6c82d900465345e30ff0eeb9a1374fbd2955c8e5ca6206e03669f04575830f88,2242
-  - call-alloy-0.2.0.6
+  - call-alloy-0.2.1.0
   - diagrams-graphviz-1.4.1.1@sha256:e71afa8f89904c2a6a2cb490dba7108c6425779c2174b90bd90dbaf507a9d3dc,1388
   - latex-svg-image-0.2@sha256:b282a74a96724037ec3d24b664118e51170c8152aff12f363ddb715a38ef053a,1830
 

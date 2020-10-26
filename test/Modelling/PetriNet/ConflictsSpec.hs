@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module Modelling.PetriNet.ConflictsSpec (
   spec
   ) where
@@ -7,69 +8,113 @@ import Modelling.PetriNet.Conflicts (
   checkFindConflictConfig,
   checkPickConflictConfig,
   findConflicts,
+  findConflictsTaskInstance,
+  getAlloyInstances,
   pickConflicts,
+  pickConflictsTaskInstance,
   )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig), BasicConfig (..), ChangeConfig (ChangeConfig),
   Conflict,
-  FindConflictConfig (FindConflictConfig),
+  FindConflictConfig (FindConflictConfig, basicConfig),
   PetriConflict (Conflict),
-  PickConflictConfig (PickConflictConfig),
+  PickConflictConfig (PickConflictConfig, basicConfig),
   defaultFindConflictConfig, defaultPickConflictConfig,
   )
 
 import Control.Monad.Trans.Except       (runExceptT)
+import Data.Either                      (isRight)
 import Data.GraphViz                    (GraphvizCommand (Neato))
-import System.Random                    (mkStdGen, randomR)
+import Language.Alloy.Call (
+  CallAlloyConfig (..), defaultCallAlloyConfig,
+  )
+import System.Random                    (StdGen, mkStdGen, randomR)
 import Test.Hspec
 import Test.Hspec.QuickCheck            (modifyMaxSuccess)
 import Test.QuickCheck                  (Property, (==>), ioProperty, property)
+import Modelling.PetriNet.Alloy         (petriNetFindConfl, petriNetPickConfl)
 
 spec :: Spec
 spec = do
-  describe "findConflicts" $
-    context "creates, out of a given Config," $
-      it "everything needed to create the Task is generated" $ do
-        Right diaConfl <- runExceptT $ findConflicts 0 defaultFindConflictConfig
-        print (snd diaConfl) `shouldReturn` ()
-  describe "pickConflicts" $
-    context "creates, out of a given Config," $
-      it "everything needed to create the Task is generated" $ do
-        Right diaConfls <- runExceptT $ pickConflicts 0 defaultPickConflictConfig
-        print (map snd diaConfls) `shouldReturn` ()
-  describe "validPickConflictConfigs" $ do
-    it "contains only valid configs" $
-      take 1 (filter (/= Nothing) $ checkPickConflictConfig <$> pcs)
-      `shouldBe` []
-    context "pickConflicts on randomly chosen configs" $ testPickConflictConfig pcs
-  describe "validFindConflictConfigs" $ do
+  describe "validFindConflictConfigs" $
     it "contains only valid configs" $
       take 1 (filter (/= Nothing) $ checkFindConflictConfig <$> fcs)
       `shouldBe` []
-    context "findConflicts on randomly chosen configs" testFindConflictConfig
+  describe "findConflicts" $ do
+    context "using its default config" $
+      it "generates everything required to create the task" $ do
+        diaConfl <- runExceptT $ findConflicts 0 defaultFindConflictConfig
+        print (snd <$> diaConfl)
+        return (isRight diaConfl) `shouldReturn` True
+    context "using randomly chosen configs"
+      $ testFindConflictConfig cs
+  describe "validPickConflictConfigs" $
+    it "contains only valid configs" $
+      take 1 (filter (/= Nothing) $ checkPickConflictConfig <$> pcs)
+      `shouldBe` []
+  describe "pickConflicts" $ do
+    context "using its default config" $
+      it "generates everything required to create the task" $ do
+        diaConfls <- runExceptT $ pickConflicts 0 defaultPickConflictConfig
+        print (map snd <$> diaConfls)
+        return (isRight diaConfls) `shouldReturn` True
+    context "using randomly chosen configs"
+      $ testPickConflictConfig pcs
   where
-    fcs = validFindConflictConfigs 0 6 (AdvConfig Nothing Nothing Nothing)
-    pcs = validPickConflictConfigs 0 6
+    fcs = validFindConflictConfigs cs (AdvConfig Nothing Nothing Nothing)
+    pcs = validPickConflictConfigs cs
+    cs  = basicAndChangeConfigs 0 6
 
-ioPropertyWith :: Int -> (Int -> IO Property) -> Spec
+ioPropertyWith :: Int -> (Int -> StdGen -> IO Property) -> Spec
 ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
-  it "generates everything required to create the task" $ property $ \r ->
-    let g = mkStdGen r
-        (ri, _) = randomR (0, ints - 1) g
-    in ioProperty $ f ri
+  it "generates everything required to create the task" $ property $ \x y ->
+    let g  = mkStdGen x
+        g' = mkStdGen y
+        r  = fst $ randomR (0, ints - 1) g'
+    in ioProperty $ f r g
 
-testFindConflictConfig :: Spec
-testFindConflictConfig = ioPropertyWith (length cs) $ \ri ->
-  isConflictResult f . fmap snd <$> runExceptT (findConflicts 0 $ cs !! ri)
+testFindConflictConfig :: [(BasicConfig, ChangeConfig)] -> Spec
+testFindConflictConfig cs = ioPropertyWith (length cs) $ \r g -> do
+  ti <- runExceptT $ do
+    let conf = fcs !! r
+    let (r', g') = randomR (0, 1000) g
+    is <- getAlloyInstances
+      defaultCallAlloyConfig {
+         maxInstances = Just $ toInteger r',
+         timeout = Just 5000000
+         }
+      (petriNetFindConfl conf)
+    let r'' = if r' >= length is
+              then fst $ randomR (0, length is - 1) g'
+              else r'
+    findConflictsTaskInstance (is !! r'') $ graphLayout $ bc conf
+  return $ isConflictResult f . fmap snd $ ti
   where
-    cs = validAdvConfigs >>= validFindConflictConfigs 0 6
+    bc :: FindConflictConfig -> BasicConfig
+    bc = basicConfig
+    fcs = validAdvConfigs >>= validFindConflictConfigs cs
     f Nothing  = False
     f (Just c) = isValidConflict c
 
 testPickConflictConfig :: [PickConflictConfig] -> Spec
-testPickConflictConfig cs = ioPropertyWith (length cs) $ \ri ->
-  isConflictResult f . fmap (fmap snd) <$> runExceptT (pickConflicts 0 $ cs !! ri)
+testPickConflictConfig cs = ioPropertyWith (length cs) $ \r g -> do
+  ti <- runExceptT $ do
+    let conf = cs !! r
+    let (r', g') = randomR (0, 10000) g
+    is <- getAlloyInstances
+      defaultCallAlloyConfig {
+         maxInstances = Just $ toInteger r',
+         timeout = Just 5000000
+         }
+      (petriNetPickConfl conf)
+    let r'' = if r' >= length is
+              then fst $ randomR (0, length is - 1) g'
+              else r'
+    pickConflictsTaskInstance (is !! r'') $ graphLayout $ bc conf
+  return $ isConflictResult f . fmap (fmap snd) $ ti
   where
+    bc :: PickConflictConfig -> BasicConfig
+    bc = basicConfig
     f [Just x, Nothing] = isValidConflict x
     f _                 = False
 
@@ -80,17 +125,21 @@ isValidConflict c@(Conflict (t1, t2) p)
 
 isConflictResult :: (a -> Bool) -> Either String a -> Property
 isConflictResult p (Right c)                      = True ==> p c
-isConflictResult p (Left "no instance available") = False ==> False
-isConflictResult p (Left x)                       = error x
+isConflictResult _ (Left "no instance available") = False ==> False
+isConflictResult _ (Left x)                       = error x
 
-validFindConflictConfigs :: Int -> Int -> AdvConfig -> [FindConflictConfig]
-validFindConflictConfigs low high aconfig =
-  uncurry (`FindConflictConfig` aconfig)
-  <$> basicAndChangeConfigs low high
+validFindConflictConfigs
+  :: [(BasicConfig, ChangeConfig)]
+  -> AdvConfig
+  -> [FindConflictConfig]
+validFindConflictConfigs cs aconfig =
+  uncurry (`FindConflictConfig` aconfig) <$> cs
 
-validPickConflictConfigs :: Int -> Int -> [PickConflictConfig]
-validPickConflictConfigs low high =
-  uncurry PickConflictConfig <$> basicAndChangeConfigs low high
+validPickConflictConfigs
+  :: [(BasicConfig, ChangeConfig)]
+  -> [PickConflictConfig]
+validPickConflictConfigs cs =
+  uncurry PickConflictConfig <$> cs
 
 basicAndChangeConfigs :: Int -> Int -> [(BasicConfig, ChangeConfig)]
 basicAndChangeConfigs low high =

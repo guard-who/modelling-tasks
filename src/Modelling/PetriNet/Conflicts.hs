@@ -2,6 +2,9 @@
 {-# Language DuplicateRecordFields #-}
 
 module Modelling.PetriNet.Conflicts (
+  findConflicts, findConflictsTaskInstance, findConflictsTask,
+  getAlloyInstances,
+  pickConflicts, pickConflictsTaskInstance, pickConflictsTask,
   checkFindConflictConfig, checkPickConflictConfig
   ) where
 
@@ -18,26 +21,30 @@ import Modelling.PetriNet.Types         (
   traversePetriLike,
   )
 
-import Control.Monad                    (unless)
+import Control.Monad                    (when, unless)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                  (Diagram)
 import Language.Alloy.Call (
-  AlloyInstance, getInstances,
+  AlloyInstance, CallAlloyConfig (..), defaultCallAlloyConfig, getInstancesWith,
   )
 
 findConflicts
   :: Int
   -> FindConflictConfig
   -> ExceptT String IO (Diagram B, Maybe Conflict)
-findConflicts indInst config@FindConflictConfig{basicTask} = do
-  list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetFindConfl config)
+findConflicts indInst config@FindConflictConfig{basicConfig} = do
+  list <- getAlloyInstances
+    defaultCallAlloyConfig {
+      maxInstances = Just $ toInteger $ indInst + 1
+      }
+    (petriNetFindConfl config)
   unless (length list > indInst) $ except $ Left "instance not available"
-  getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
+  findConflictsTaskInstance (list !! indInst) (graphLayout basicConfig)
 
-findConflictsTask :: [Char]
+findConflictsTask :: String
 findConflictsTask =
   "Which of the following Petrinets doesn't have a conflict?"
 
@@ -45,14 +52,40 @@ pickConflicts
   :: Int
   -> PickConflictConfig
   -> ExceptT String IO [(Diagram B, Maybe Conflict)]
-pickConflicts indInst config@PickConflictConfig{basicTask} = do
-  list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetPickConfl config)
+pickConflicts indInst  config@PickConflictConfig{basicConfig}= do
+  list <- getAlloyInstances
+    defaultCallAlloyConfig {
+      maxInstances = Just $ toInteger $ indInst + 1
+      }
+    (petriNetPickConfl config)
+  unless (length list > indInst) $ except $ Left "instance not available"
+  pickConflictsTaskInstance (list !! indInst) (graphLayout basicConfig)
+
+getAlloyInstances
+  :: CallAlloyConfig
+  -> String
+  -> ExceptT String IO [AlloyInstance]
+getAlloyInstances config alloy = do
+  list <- lift $ getInstancesWith config alloy
   when (null list) $ except $ Left "no instance available"
-  confl <- getNet "flow" "tokens" (list !! indInst) (graphLayout basicTask)
-  net <- getNet "defaultFlow" "defaultTokens" (list !! indInst) (graphLayout basicTask)
+  return list
+
+findConflictsTaskInstance
+  :: AlloyInstance
+  -> GraphvizCommand
+  -> ExceptT String IO (Diagram B, Maybe Conflict)
+findConflictsTaskInstance = getNet "flow" "tokens"
+
+pickConflictsTaskInstance
+  :: AlloyInstance
+  -> GraphvizCommand
+  -> ExceptT String IO [(Diagram B, Maybe Conflict)]
+pickConflictsTaskInstance inst gc = do
+  confl <- getNet "flow" "tokens" inst gc
+  net   <- getNet "defaultFlow" "defaultTokens" inst gc
   return [confl,net]
 
-pickConflictsTask :: [Char]
+pickConflictsTask :: String
 pickConflictsTask =
   "Which pair of transitions are in conflict under the initial marking?"
 
