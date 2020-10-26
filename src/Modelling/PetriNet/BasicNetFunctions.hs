@@ -4,15 +4,6 @@ module Modelling.PetriNet.BasicNetFunctions where
 
 import Modelling.PetriNet.Types
 
-import Control.Concurrent
-  (forkIO, killThread, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad
-import System.Exit                      (ExitCode (..))
-import System.IO                        (hGetContents)
-import System.Process
-  (CreateProcess (..), StdStream (..), createProcess, proc, waitForProcess)
-
-
 instanceInput :: IO Int
 instanceInput = do
   putStr "Index of wanted Instance: "
@@ -94,37 +85,9 @@ checkChangeConfig BasicConfig
   = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
  | otherwise
   = Nothing
-  
+
 checkCConfig :: BasicConfig  -> Maybe String
 checkCConfig BasicConfig{atLeastActive}
  | atLeastActive < 2
   = Just "The parameter 'atLeastActive' must be at least 2 to create the task." 
  | otherwise = Nothing
- 
-renderPdfFile :: String -> IO String
-renderPdfFile file = do
-  let callLatex = proc "pdflatex" ["-halt-on-error", file]
-  (_, Just hout, Just herr, ph) <- createProcess callLatex {
-      std_out = CreatePipe,
-      std_err = CreatePipe
-    }
-  pout <- listenForOutput hout
-  perr <- listenForOutput herr
-  out <- getOutput pout
-  err <- getOutput perr
-  code <- waitForProcess ph
-  unless (null err) $ errorMessage err
-  (if code == ExitSuccess
-    then return
-    else errorMessage) out
-  where
-    listenForOutput h = do
-      mvar <- newEmptyMVar
-      pid <- forkIO $ hGetContents h >>= putMVar mvar
-      return (pid, mvar)
-    getOutput (pid, mvar) = do
-      output <- takeMVar mvar
-      killThread pid
-      return output
-    errorMessage err = error $
-      "Failed creating pdf for LaTeX-File: " <> file <> "\n" <> err
