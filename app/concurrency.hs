@@ -43,15 +43,20 @@ mainFind :: Int -> IO ()
 mainFind i = forceErrors $ do
   lift $ pPrint defaultFindConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- lift userInput
-  let config = defaultFindConcurrencyConfig{
-                           basicTask = (basicTask (defaultFindConcurrencyConfig :: FindConcurrencyConfig)){places = pls, transitions = trns}
-                         , changeTask = (changeTask (defaultFindConcurrencyConfig :: FindConcurrencyConfig)){ tokenChangeOverall = tknChange
-                                                           , flowChangeOverall = flwChange}
-                         } :: FindConcurrencyConfig
+  let config = defaultFindConcurrencyConfig {
+        basicConfig = (bc defaultFindConcurrencyConfig) {
+            places = pls,
+            transitions = trns
+            },
+        changeConfig = (cc defaultFindConcurrencyConfig) {
+            tokenChangeOverall = tknChange,
+            flowChangeOverall = flwChange
+            }
+        } :: FindConcurrencyConfig
   let c = firstJusts 
-        [ checkBasicConfig (basicTask (config :: FindConcurrencyConfig))
-        , checkChangeConfig (basicTask (config :: FindConcurrencyConfig)) (changeTask (config :: FindConcurrencyConfig))
-        , checkCConfig (basicTask (config ::FindConcurrencyConfig)) 
+        [ checkBasicConfig (basicConfig (config :: FindConcurrencyConfig))
+        , checkChangeConfig (basicConfig (config :: FindConcurrencyConfig)) (changeConfig (config :: FindConcurrencyConfig))
+        , checkCConfig (basicConfig (config ::FindConcurrencyConfig))
         ]
   if isNothing c
   then do
@@ -60,19 +65,29 @@ mainFind i = forceErrors $ do
     lift $ printNetAndInfo "" conc
   else
     lift $ print (c :: Maybe String)
+  where
+    bc :: FindConcurrencyConfig -> BasicConfig
+    bc = basicConfig
+    cc :: FindConcurrencyConfig -> ChangeConfig
+    cc = changeConfig
     
 mainPick :: Int -> IO ()
 mainPick i = forceErrors $ do
   lift $ pPrint defaultPickConcurrencyConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
-  let config = defaultPickConcurrencyConfig{
-                           basicTask = (basicTask (defaultPickConcurrencyConfig :: PickConcurrencyConfig)){places = pls, transitions = trns}
-                         , changeTask = (changeTask (defaultPickConcurrencyConfig :: PickConcurrencyConfig)){ tokenChangeOverall = tknChange
-                                                           , flowChangeOverall = flwChange}
-                         } :: PickConcurrencyConfig
+  let config = defaultPickConcurrencyConfig {
+        basicConfig = (bc defaultPickConcurrencyConfig) {
+            places = pls,
+            transitions = trns
+            },
+        changeConfig = (cc defaultPickConcurrencyConfig) {
+            tokenChangeOverall = tknChange,
+            flowChangeOverall = flwChange
+            }
+        } :: PickConcurrencyConfig
   let c = firstJusts 
-        [ checkBasicConfig (basicTask (config :: PickConcurrencyConfig))
-        , checkChangeConfig (basicTask (config :: PickConcurrencyConfig)) (changeTask (config :: PickConcurrencyConfig)) 
+        [ checkBasicConfig (basicConfig (config :: PickConcurrencyConfig))
+        , checkChangeConfig (basicConfig (config :: PickConcurrencyConfig)) (changeConfig (config :: PickConcurrencyConfig))
         ]
   if isNothing c
   then do
@@ -81,6 +96,11 @@ mainPick i = forceErrors $ do
     lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
   else
     lift $ print (c :: Maybe String)
+  where
+    bc :: PickConcurrencyConfig -> BasicConfig
+    bc = basicConfig
+    cc :: PickConcurrencyConfig -> ChangeConfig
+    cc = changeConfig
 
 userInput :: IO (Int,Int,Int,Int)
 userInput = do

@@ -10,7 +10,7 @@ module Modelling.PetriNet.Conflicts (
 
 import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
 import Modelling.PetriNet.BasicNetFunctions (
-  checkBasicConfig, checkCConfig, checkChangeConfig,
+  checkConfigForFind, checkConfigForPick,
   )
 import Modelling.PetriNet.Diagram       (drawNet)
 import Modelling.PetriNet.Parser        (
@@ -94,26 +94,14 @@ checkFindConflictConfig FindConflictConfig {
   basicConfig,
   changeConfig
   }
-  | Just x <- checkCConfig basicConfig
-  = Just x
-  | Just x <- checkBasicConfig basicConfig
-  = Just x
-  | Just x <- checkChangeConfig basicConfig changeConfig
-  = Just x
-  | otherwise
-  = Nothing
+  = checkConfigForFind basicConfig changeConfig
 
 checkPickConflictConfig :: PickConflictConfig -> Maybe String
 checkPickConflictConfig PickConflictConfig {
   basicConfig,
   changeConfig
   }
-  | Just x <- checkBasicConfig basicConfig
-  = Just x
-  | Just x <- checkChangeConfig basicConfig changeConfig
-  = Just x
-  | otherwise
-  = Nothing
+  = checkConfigForPick basicConfig changeConfig
 
 getNet
   :: String

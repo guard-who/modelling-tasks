@@ -189,7 +189,11 @@ concurrencyPredicateName :: String
 concurrencyPredicateName = "showConcurrency"
 
 petriNetFindConcur :: FindConcurrencyConfig -> String
-petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|module PetriNetConcur
+petriNetFindConcur FindConcurrencyConfig{
+  basicConfig,
+  advConfig,
+  changeConfig
+  } = [i|module PetriNetConcur
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -197,31 +201,34 @@ petriNetFindConcur FindConcurrencyConfig{basicTask,advTask,changeTask} = [i|modu
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{concurrencyPredicateName} [ #{specCompRelation basicTask changeTask}
+pred #{concurrencyPredicateName} [ #{specCompRelation basicConfig changeConfig}
 
   #{compConcurrency}
-  #{compAdvConstraints advTask}
+  #{compAdvConstraints advConfig}
   
 }
-run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitwidth basicConfig} Int
 
 
 |]
 
 petriNetPickConcur :: PickConcurrencyConfig -> String
-petriNetPickConcur p@PickConcurrencyConfig{basicTask = BasicConfig{atLeastActive},changeTask} = [i|module PetriNetConcur
+petriNetPickConcur p@PickConcurrencyConfig{
+  basicConfig = BasicConfig{atLeastActive}
+  ,changeConfig
+  } = [i|module PetriNetConcur
 
 #{modulePetriSignature}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{concurrencyPredicateName} [defaultActivTrans : set givenTransitions, #{specCompRelation (basicTask(p :: PickConcurrencyConfig)) changeTask}
+pred #{concurrencyPredicateName} [defaultActivTrans : set givenTransitions, #{specCompRelation (basicConfig(p :: PickConcurrencyConfig)) changeConfig}
 
   #{compConcurrency}
   #{compDefaultConstraints atLeastActive}
 }
-run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq (basicTask(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicTask(p :: PickConcurrencyConfig))} Int
+run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicConfig(p :: PickConcurrencyConfig))} Int
 
 |]
 

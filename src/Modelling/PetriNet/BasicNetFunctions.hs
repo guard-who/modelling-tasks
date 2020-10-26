@@ -91,3 +91,23 @@ checkCConfig BasicConfig{atLeastActive}
  | atLeastActive < 2
   = Just "The parameter 'atLeastActive' must be at least 2 to create the task." 
  | otherwise = Nothing
+
+checkConfigForFind :: BasicConfig -> ChangeConfig -> Maybe String
+checkConfigForFind basic change
+  | Just x <- checkCConfig basic
+  = Just x
+  | Just x <- checkBasicConfig basic
+  = Just x
+  | Just x <- checkChangeConfig basic change
+  = Just x
+  | otherwise
+  = Nothing
+
+checkConfigForPick :: BasicConfig -> ChangeConfig -> Maybe String
+checkConfigForPick basic change
+  | Just x <- checkBasicConfig basic
+  = Just x
+  | Just x <- checkChangeConfig basic change
+  = Just x
+  | otherwise
+  = Nothing

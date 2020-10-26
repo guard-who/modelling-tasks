@@ -409,26 +409,25 @@ defaultPickConflictConfig = PickConflictConfig
   }
   
 data FindConcurrencyConfig = FindConcurrencyConfig
-  { basicTask :: BasicConfig
-  , advTask :: AdvConfig
-  , changeTask :: ChangeConfig
+  { basicConfig :: BasicConfig
+  , advConfig :: AdvConfig
+  , changeConfig :: ChangeConfig
   } deriving Show
   
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
-  { basicTask = defaultBasicConfig{ atLeastActive = 3 }
-  , advTask = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
-  , changeTask = defaultChangeConfig
+  { basicConfig = defaultBasicConfig{ atLeastActive = 3 }
+  , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
+  , changeConfig = defaultChangeConfig
   }
   
 data PickConcurrencyConfig = PickConcurrencyConfig
-  { basicTask :: BasicConfig
-  , changeTask :: ChangeConfig
+  { basicConfig :: BasicConfig
+  , changeConfig :: ChangeConfig
   } deriving Show
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig
-  { basicTask = defaultBasicConfig{ atLeastActive = 2 }
-  , changeTask = defaultChangeConfig
+  { basicConfig = defaultBasicConfig{ atLeastActive = 2 }
+  , changeConfig = defaultChangeConfig
   }
-  
