@@ -4,15 +4,14 @@ module Main (main) where
 
 import Common                           (printNetAndInfo, forceErrors)
 import Modelling.PetriNet.Concurrency (
+  checkPickConcurrencyConfig,
+  checkFindConcurrencyConfig,
   findConcurrency,
   findConcurrencyTask,
   pickConcurrency,
   pickConcurrencyTask,
   )
 import Modelling.PetriNet.BasicNetFunctions(
-  checkBasicConfig,
-  checkCConfig,
-  checkChangeConfig,
   instanceInput,
   )
 import Modelling.PetriNet.Types (
@@ -23,7 +22,6 @@ import Modelling.PetriNet.Types (
 
 import Control.Monad.Trans.Class        (lift)
 import Data.Maybe                        (isNothing)
-import Maybes                            (firstJusts)
 import System.IO (
   BufferMode (NoBuffering), hSetBuffering, stdout,
   )
@@ -53,18 +51,14 @@ mainFind i = forceErrors $ do
             flowChangeOverall = flwChange
             }
         } :: FindConcurrencyConfig
-  let c = firstJusts 
-        [ checkBasicConfig (basicConfig (config :: FindConcurrencyConfig))
-        , checkChangeConfig (basicConfig (config :: FindConcurrencyConfig)) (changeConfig (config :: FindConcurrencyConfig))
-        , checkCConfig (basicConfig (config ::FindConcurrencyConfig))
-        ]
+  let c = checkFindConcurrencyConfig config
   if isNothing c
   then do
     conc <- findConcurrency i config
     lift $ putStrLn findConcurrencyTask
     lift $ printNetAndInfo "" conc
   else
-    lift $ print (c :: Maybe String)
+    lift $ print c
   where
     bc :: FindConcurrencyConfig -> BasicConfig
     bc = basicConfig
@@ -85,17 +79,14 @@ mainPick i = forceErrors $ do
             flowChangeOverall = flwChange
             }
         } :: PickConcurrencyConfig
-  let c = firstJusts 
-        [ checkBasicConfig (basicConfig (config :: PickConcurrencyConfig))
-        , checkChangeConfig (basicConfig (config :: PickConcurrencyConfig)) (changeConfig (config :: PickConcurrencyConfig))
-        ]
+  let c = checkPickConcurrencyConfig config
   if isNothing c
   then do
     concs <- pickConcurrency i config
     lift $ putStrLn pickConcurrencyTask
     lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
   else
-    lift $ print (c :: Maybe String)
+    lift $ print c
   where
     bc :: PickConcurrencyConfig -> BasicConfig
     bc = basicConfig
