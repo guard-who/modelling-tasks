@@ -73,7 +73,8 @@ data PetriConflict a = Conflict {
   }
   deriving (Foldable, Functor, Show, Traversable)
   
-type Concurrent a = (a, a)
+newtype Concurrent a = Concurrent (a, a)
+  deriving (Foldable, Functor, Show, Traversable)
 
 {-|
 A node is part of a Petri like graph (see 'PetriLike').

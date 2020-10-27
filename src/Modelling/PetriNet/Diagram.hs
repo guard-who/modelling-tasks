@@ -1,15 +1,17 @@
 {-|
 Provides the ability to render Petri nets.
 -}
-module Modelling.PetriNet.Diagram (drawNet) where
+module Modelling.PetriNet.Diagram (drawNet, getNetWith) where
 
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
 import Modelling.PetriNet.Parser (
+  parsePetriLike,
   petriLikeToGr,
+  simpleRenameWith,
   )
-import Modelling.PetriNet.Types         (PetriLike)
+import Modelling.PetriNet.Types         (PetriLike, traversePetriLike)
 
 import Control.Arrow                    (ArrowChoice(left), first)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
@@ -22,6 +24,7 @@ import Diagrams.Prelude
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
+import Language.Alloy.Call              (AlloyInstance, Object)
 
 {-| Create a 'Diagram's graph of a Petri net like graph definition ('PetriLike')
 by distributing places and transitions using GraphViz.
@@ -44,6 +47,38 @@ drawNet labelOf pl gc = do
   where
     errorMessage x =
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
+
+{-|
+Draws a Petri net like graph using 'drawNet'.
+It additionally parses another part of the instance.
+All nodes are renamed using the 'simpleRenameWith' function.
+The renaming is also applied to the additionally parsed instance, that is why
+this instance needs to be 'Traversable'.
+-}
+getNetWith
+  :: Traversable t
+  => (AlloyInstance -> Either String (t Object))
+  -- ^ the additional instance parser
+  -> String
+  -- ^ flow
+  -> String
+  -- ^ tokens
+  -> AlloyInstance
+  -- ^ the instance to parse
+  -> GraphvizCommand
+  -- ^ how to draw the graph
+  -> ExceptT String IO (Diagram B, Maybe (t String))
+getNetWith parseInst f t inst gc = do
+  pl <- except $ parsePetriLike f t inst
+  let rename = simpleRenameWith pl
+  pl' <- except $ traversePetriLike rename pl
+  dia <- drawNet id pl' gc
+  if f == "defaultFlow" && t == "defaultTokens"
+    then return (dia, Nothing)
+    else do
+    conc <- except $ parseInst inst
+    rconc <- except $ traverse rename conc
+    return (dia, Just rconc)
 
 {-|
 Obtain the Petri net like graph by drawing Nodes and connections between them

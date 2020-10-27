@@ -31,9 +31,6 @@ import Modelling.PetriNet.TestCommon (
 import Control.Monad.Trans.Except       (runExceptT)
 import Data.Either                      (isRight)
 import Test.Hspec
-import Test.QuickCheck (
-  Property, (==>)
-  )
 
 spec :: Spec
 spec = do
@@ -72,7 +69,7 @@ testFindConflictConfig :: [FindConflictConfig] -> Spec
 testFindConflictConfig = testTaskGeneration
   petriNetFindConfl
   (\i -> findConflictsTaskInstance i . graphLayout . bc)
-  (isConflictResult f . fmap snd)
+  (f . snd)
   where
     bc :: FindConflictConfig -> BasicConfig
     bc = basicConfig
@@ -83,7 +80,7 @@ testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig = testTaskGeneration
   petriNetPickConfl
   (\i -> pickConflictsTaskInstance i . graphLayout . bc)
-  (isConflictResult f . fmap (fmap snd))
+  (f . fmap snd)
   where
     bc :: PickConflictConfig -> BasicConfig
     bc = basicConfig
@@ -94,11 +91,6 @@ isValidConflict :: Conflict -> Bool
 isValidConflict c@(Conflict (t1, t2) p)
   | ('t':x) <- t1, ('t':y) <- t2, x /= y, ('s':_) <- p = True
   | otherwise                                          = error $ show c
-
-isConflictResult :: (a -> Bool) -> Either String a -> Property
-isConflictResult p (Right c)                      = True ==> p c
-isConflictResult _ (Left "no instance available") = False ==> False
-isConflictResult _ (Left x)                       = error x
 
 validFindConflictConfigs
   :: [(BasicConfig, ChangeConfig)]

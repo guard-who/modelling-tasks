@@ -14,13 +14,12 @@ import Modelling.PetriNet.Alloy (
 import Modelling.PetriNet.BasicNetFunctions (
   checkConfigForFind, checkConfigForPick,
   )
-import Modelling.PetriNet.Diagram       (drawNet)
+import Modelling.PetriNet.Diagram       (getNetWith)
 import Modelling.PetriNet.Parser        (
-  parseConflict, parsePetriLike, simpleRenameWith
+  parseConflict
   )
 import Modelling.PetriNet.Types         (
   BasicConfig(..), Conflict, FindConflictConfig(..), PickConflictConfig(..),
-  traversePetriLike,
   )
 
 import Control.Monad                    (unless)
@@ -101,14 +100,4 @@ getNet
   -> AlloyInstance
   -> GraphvizCommand
   -> ExceptT String IO (Diagram B, Maybe Conflict)
-getNet f t inst gc = do
-  pl <- except $ parsePetriLike f t inst
-  let rename = simpleRenameWith pl
-  pl' <- except $ traversePetriLike rename pl
-  dia <- drawNet id pl' gc
-  if f == "defaultFlow" && t == "defaultTokens"
-    then return (dia, Nothing)
-    else do
-    conc <- except $ parseConflict inst
-    rconc <- except $ traverse rename conc
-    return (dia, Just rconc)
+getNet = getNetWith parseConflict

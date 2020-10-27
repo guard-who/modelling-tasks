@@ -191,7 +191,7 @@ parseConcurrency :: AlloyInstance -> Either String (Concurrent Object)
 parseConcurrency inst = do
   t1 <- unscopedSingleSig inst concurrencyTransition1 ""
   t2 <- unscopedSingleSig inst concurrencyTransition2 ""
-  (,) <$> asSingleton t1 <*> asSingleton t2
+  Concurrent <$> ((,) <$> asSingleton t1 <*> asSingleton t2)
 
 {-|
 Convert a singleton 'Set' into its single value.

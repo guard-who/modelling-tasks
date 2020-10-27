@@ -23,7 +23,7 @@ import System.Random                    (StdGen, mkStdGen, randomR)
 import Test.Hspec                       (Spec, it)
 import Test.Hspec.QuickCheck            (modifyMaxSuccess)
 import Test.QuickCheck (
-  Arbitrary (..), Property, ioProperty, property
+  Arbitrary (..), Property, (==>), ioProperty, property
   )
 import Test.QuickCheck.Gen              (choose)
 
@@ -45,7 +45,7 @@ ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
 testTaskGeneration
   :: (config -> String)
   -> (AlloyInstance -> config -> ExceptT String IO inst)
-  -> (Either String inst -> Property)
+  -> (inst -> Bool)
   -> [config]
   -> Spec
 testTaskGeneration alloyGen taskInst checkInst cs =
@@ -63,7 +63,12 @@ testTaskGeneration alloyGen taskInst checkInst cs =
                 then fst $ randomR (0, length is - 1) g'
                 else r'
       taskInst (is !! r'') conf
-    return $ checkInst ti
+    return $ isResult checkInst ti
+
+isResult :: (a -> Bool) -> Either String a -> Property
+isResult p (Right c)                      = True ==> p c
+isResult _ (Left "no instance available") = False ==> False
+isResult _ (Left x)                       = error x
 
 validConfigsForPick :: Int -> Int -> [(BasicConfig, ChangeConfig)]
 validConfigsForPick = validBasicAndChangeConfigs 0
