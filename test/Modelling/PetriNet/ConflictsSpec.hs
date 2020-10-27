@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 module Modelling.PetriNet.ConflictsSpec (
   spec
@@ -10,12 +9,11 @@ import Modelling.PetriNet.Conflicts (
   checkPickConflictConfig,
   findConflicts,
   findConflictsTaskInstance,
-  getAlloyInstances,
   pickConflicts,
   pickConflictsTaskInstance,
   )
 import Modelling.PetriNet.Types (
-  AdvConfig (AdvConfig), BasicConfig (..), ChangeConfig (ChangeConfig),
+  AdvConfig (AdvConfig), BasicConfig (graphLayout), ChangeConfig,
   Conflict,
   FindConflictConfig (FindConflictConfig, basicConfig),
   PetriConflict (Conflict),
@@ -23,26 +21,25 @@ import Modelling.PetriNet.Types (
   defaultFindConflictConfig, defaultPickConflictConfig,
   )
 
+import Modelling.PetriNet.TestCommon (
+  testTaskGeneration,
+  validAdvConfigs,
+  validConfigsForFind,
+  validConfigsForPick,
+  )
+
 import Control.Monad.Trans.Except       (runExceptT)
 import Data.Either                      (isRight)
-import Data.GraphViz                    (GraphvizCommand (Neato))
-import GHC.Base                         (maxInt, minInt)
-import Language.Alloy.Call (
-  CallAlloyConfig (..), defaultCallAlloyConfig,
-  )
-import System.Random                    (StdGen, mkStdGen, randomR)
 import Test.Hspec
-import Test.Hspec.QuickCheck            (modifyMaxSuccess)
 import Test.QuickCheck (
-  Arbitrary (..), Property, (==>), ioProperty, property
+  Property, (==>)
   )
-import Test.QuickCheck.Gen (choose)
 
 spec :: Spec
 spec = do
   describe "validFindConflictConfigs" $
     it "contains only valid configs" $
-      take 1 (filter (/= Nothing) $ checkFindConflictConfig <$> fcs)
+      take 1 (filter (/= Nothing) $ checkFindConflictConfig <$> fcs')
       `shouldBe` []
   describe "findConflicts" $ do
     context "using its default config" $
@@ -51,7 +48,7 @@ spec = do
         print (snd <$> diaConfl)
         return (isRight diaConfl) `shouldReturn` True
     context "using randomly chosen configs"
-      $ testFindConflictConfig cs
+      $ testFindConflictConfig fcs
   describe "validPickConflictConfigs" $
     it "contains only valid configs" $
       take 1 (filter (/= Nothing) $ checkPickConflictConfig <$> pcs)
@@ -65,64 +62,28 @@ spec = do
     context "using randomly chosen configs"
       $ testPickConflictConfig pcs
   where
-    fcs = validFindConflictConfigs cs (AdvConfig Nothing Nothing Nothing)
-    pcs = validPickConflictConfigs cs
-    cs  = basicAndChangeConfigs 0 6
+    fcs' = validFindConflictConfigs vcfs (AdvConfig Nothing Nothing Nothing)
+    fcs  = validAdvConfigs >>= validFindConflictConfigs vcfs
+    pcs  = validPickConflictConfigs vcps
+    vcfs = validConfigsForFind 0 6
+    vcps = validConfigsForPick 0 6
 
-newtype RandomGen = RandomGen { getGen :: StdGen }
-  deriving Show
-
-instance Arbitrary RandomGen where
-  arbitrary = RandomGen . mkStdGen <$> choose (minInt, maxInt)
-
-maxJavaInt :: Int
-maxJavaInt = 2 ^ (31 :: Int) - 1
-
-ioPropertyWith :: Int -> (Int -> StdGen -> IO Property) -> Spec
-ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
-  it "generates everything required to create the task" $ property $ \g g' ->
-    let r  = fst $ randomR (0, ints - 1) $ getGen g'
-    in ioProperty $ f r $ getGen g
-
-testFindConflictConfig :: [(BasicConfig, ChangeConfig)] -> Spec
-testFindConflictConfig cs = ioPropertyWith (length cs) $ \r g -> do
-  ti <- runExceptT $ do
-    let conf = fcs !! r
-    let (r', g') = randomR (0, maxJavaInt) g
-    is <- getAlloyInstances
-      defaultCallAlloyConfig {
-         maxInstances = Just $ toInteger r',
-         timeout = Just 5000000
-         }
-      (petriNetFindConfl conf)
-    let r'' = if r' >= length is
-              then fst $ randomR (0, length is - 1) g'
-              else r'
-    findConflictsTaskInstance (is !! r'') $ graphLayout $ bc conf
-  return $ isConflictResult f . fmap snd $ ti
+testFindConflictConfig :: [FindConflictConfig] -> Spec
+testFindConflictConfig = testTaskGeneration
+  petriNetFindConfl
+  (\i -> findConflictsTaskInstance i . graphLayout . bc)
+  (isConflictResult f . fmap snd)
   where
     bc :: FindConflictConfig -> BasicConfig
     bc = basicConfig
-    fcs = validAdvConfigs >>= validFindConflictConfigs cs
     f Nothing  = False
     f (Just c) = isValidConflict c
 
 testPickConflictConfig :: [PickConflictConfig] -> Spec
-testPickConflictConfig cs = ioPropertyWith (length cs) $ \r g -> do
-  ti <- runExceptT $ do
-    let conf = cs !! r
-    let (r', g') = randomR (0, maxJavaInt) g
-    is <- getAlloyInstances
-      defaultCallAlloyConfig {
-         maxInstances = Just $ toInteger r',
-         timeout = Just 5000000
-         }
-      (petriNetPickConfl conf)
-    let r'' = if r' >= length is
-              then fst $ randomR (0, length is - 1) g'
-              else r'
-    pickConflictsTaskInstance (is !! r'') $ graphLayout $ bc conf
-  return $ isConflictResult f . fmap (fmap snd) $ ti
+testPickConflictConfig = testTaskGeneration
+  petriNetPickConfl
+  (\i -> pickConflictsTaskInstance i . graphLayout . bc)
+  (isConflictResult f . fmap (fmap snd))
   where
     bc :: PickConflictConfig -> BasicConfig
     bc = basicConfig
@@ -151,32 +112,3 @@ validPickConflictConfigs
   -> [PickConflictConfig]
 validPickConflictConfigs cs =
   uncurry PickConflictConfig <$> cs
-
-basicAndChangeConfigs :: Int -> Int -> [(BasicConfig, ChangeConfig)]
-basicAndChangeConfigs low high =
-  [ (BasicConfig p t ala mintoa maxtoa maxtpp minfoa maxfoa maxfpe Neato,
-     ChangeConfig tcoa mtcpp fcoa mfcpe
-    )
-  | p      <- [mlow1 .. min 8 high]
-  , t      <- [mlow1 .. min 8 high]
-  , minfoa <- [t + p - 1 .. high]
-  , maxfpe <- [mlow1 .. high]
-  , maxfoa <- [max minfoa maxfpe .. min high (2 * p * t * maxfpe)]
-  , mfcpe  <- [mlow .. min high maxfpe]
-  , fcoa   <- [max mfcpe low .. minimum [high, maxfoa - minfoa, 2 * p * t * mfcpe]]
-  , mintoa <- [mlow .. high]
-  , maxtpp <- [mlow .. high]
-  , maxtoa <- [max mintoa maxtpp .. min high (p * maxtpp)]
-  , mtcpp  <- [mlow .. min high maxtpp]
-  , tcoa   <- [max mtcpp low .. minimum [high, maxtoa - mintoa, mtcpp * p]]
-  , ala    <- [max 2 low .. min t high]
-  ]
-  where
-    mlow  = max 0 low
-    mlow1 = max 1 low
-
-validAdvConfigs :: [AdvConfig]
-validAdvConfigs =
-  AdvConfig <$> mbool <*> mbool <*> mbool
-  where
-    mbool = [Nothing, Just False, Just True]

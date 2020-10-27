@@ -8,7 +8,9 @@ module Modelling.PetriNet.Conflicts (
   checkFindConflictConfig, checkPickConflictConfig
   ) where
 
-import Modelling.PetriNet.Alloy          (petriNetFindConfl,petriNetPickConfl)
+import Modelling.PetriNet.Alloy (
+  getAlloyInstances, petriNetFindConfl, petriNetPickConfl,
+  )
 import Modelling.PetriNet.BasicNetFunctions (
   checkConfigForFind, checkConfigForPick,
   )
@@ -21,14 +23,13 @@ import Modelling.PetriNet.Types         (
   traversePetriLike,
   )
 
-import Control.Monad                    (when, unless)
-import Control.Monad.Trans.Class        (MonadTrans (lift))
+import Control.Monad                    (unless)
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                  (Diagram)
 import Language.Alloy.Call (
-  AlloyInstance, CallAlloyConfig (..), defaultCallAlloyConfig, getInstancesWith,
+  AlloyInstance, CallAlloyConfig (..), defaultCallAlloyConfig,
   )
 
 findConflicts
@@ -60,15 +61,6 @@ pickConflicts indInst  config@PickConflictConfig{basicConfig}= do
     (petriNetPickConfl config)
   unless (length list > indInst) $ except $ Left "instance not available"
   pickConflictsTaskInstance (list !! indInst) (graphLayout basicConfig)
-
-getAlloyInstances
-  :: CallAlloyConfig
-  -> String
-  -> ExceptT String IO [AlloyInstance]
-getAlloyInstances config alloy = do
-  list <- lift $ getInstancesWith config alloy
-  when (null list) $ except $ Left "no instance available"
-  return list
 
 findConflictsTaskInstance
   :: AlloyInstance

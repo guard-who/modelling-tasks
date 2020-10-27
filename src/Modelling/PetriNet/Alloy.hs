@@ -7,6 +7,7 @@
 module Modelling.PetriNet.Alloy (
   concurrencyTransition1, concurrencyTransition2,
   conflictPlace1, conflictTransition1, conflictTransition2,
+  getAlloyInstances,
   petriNetFindConcur, petriNetFindConfl, petriNetPickConcur, petriNetPickConfl,
   petriNetRnd, petriScopeBitwidth, petriScopeMaxSeq, renderFalse,
   ) where
@@ -17,8 +18,14 @@ import qualified Data.Map                         as M (
 
 import Modelling.PetriNet.Types
 
-import Data.String.Interpolate
+import Control.Monad                    (when)
+import Control.Monad.Trans.Class        (MonadTrans (lift))
+import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.FileEmbed
+import Data.String.Interpolate
+import Language.Alloy.Call (
+  AlloyInstance, CallAlloyConfig, getInstancesWith,
+  )
 
 petriScopeBitwidth :: BasicConfig -> Int
 petriScopeBitwidth BasicConfig
@@ -340,3 +347,12 @@ activatedTrans,relatedTransitions: set Transitions] {
   #{compBasicConstraints basic}
   #{compChange change}
 |]
+
+getAlloyInstances
+  :: CallAlloyConfig
+  -> String
+  -> ExceptT String IO [AlloyInstance]
+getAlloyInstances config alloy = do
+  list <- lift $ getInstancesWith config alloy
+  when (null list) $ except $ Left "no instance available"
+  return list
