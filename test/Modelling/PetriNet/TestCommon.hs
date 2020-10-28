@@ -2,6 +2,8 @@
 This module provides common functions for testing Petri net modules.
 -}
 module Modelling.PetriNet.TestCommon (
+  checkConfigs,
+  defaultConfigTaskGeneration,
   testTaskGeneration,
   validAdvConfigs,
   validConfigsForFind,
@@ -20,7 +22,9 @@ import Language.Alloy.Call (
   AlloyInstance, CallAlloyConfig (..), defaultCallAlloyConfig,
   )
 import System.Random                    (StdGen, mkStdGen, randomR)
-import Test.Hspec                       (Spec, it)
+import Test.Hspec (
+  Spec, context, it, shouldBe, shouldReturn,
+  )
 import Test.Hspec.QuickCheck            (modifyMaxSuccess)
 import Test.QuickCheck (
   Arbitrary (..), Property, (==>), ioProperty, property
@@ -49,7 +53,9 @@ testTaskGeneration
   -> [config]
   -> Spec
 testTaskGeneration alloyGen taskInst checkInst cs =
-  ioPropertyWith (length cs) $ \r g -> do
+  context "using randomly chosen configs"
+  $ ioPropertyWith (length cs)
+  $ \r g -> do
     ti <- runExceptT $ do
       let conf = cs !! r
       let (r', g') = randomR (0, maxJavaInt) g
@@ -64,6 +70,23 @@ testTaskGeneration alloyGen taskInst checkInst cs =
                 else r'
       taskInst (is !! r'') conf
     return $ isResult checkInst ti
+
+defaultConfigTaskGeneration
+  :: (Show e, Eq e)
+  => ExceptT e IO a
+  -> (a -> Bool)
+  -> Spec
+defaultConfigTaskGeneration generateInst checkInst = do
+  context "using its default config" $
+    it "generates everything required to create the task" $ do
+      result <- runExceptT generateInst
+      return (checkInst <$> result) `shouldReturn` Right True
+
+checkConfigs :: (Eq b, Show b) => (a -> Maybe b) -> [a] -> Spec
+checkConfigs check cs = do
+  it "contains only valid configs" $
+    take 1 (filter (/= Nothing) $ check <$> cs)
+    `shouldBe` []
 
 isResult :: (a -> Bool) -> Either String a -> Property
 isResult p (Right c)                      = True ==> p c

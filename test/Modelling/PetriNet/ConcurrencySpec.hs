@@ -20,9 +20,10 @@ import Modelling.PetriNet.Types (
   defaultPickConcurrencyConfig,
   )
 
-import Control.Monad.Trans.Except       (runExceptT)
 import Test.Hspec
 import Modelling.PetriNet.TestCommon (
+  checkConfigs,
+  defaultConfigTaskGeneration,
   testTaskGeneration,
   validAdvConfigs,
   validConfigsForFind,
@@ -33,27 +34,19 @@ import Modelling.PetriNet.Alloy         (petriNetFindConcur, petriNetPickConcur)
 spec :: Spec
 spec = do
   describe "validFindConcurrencyConfigs" $
-    it "contains only valid configs" $
-      take 1 (filter (/= Nothing) $ checkFindConcurrencyConfig <$> fcs')
-      `shouldBe` []
+    checkConfigs checkFindConcurrencyConfig fcs'
   describe "findConcurrency" $ do
-    context "creates, out of a given Config," $
-      it "everything needed to create the Task is generated" $ do
-        Right diaConc <- runExceptT $ findConcurrency 0 defaultFindConcurrencyConfig
-        print (snd diaConc) `shouldReturn` ()
-    context "using randomly chosen configs"
-      $ testFindConcurrencyConfig fcs
+    defaultConfigTaskGeneration
+      (findConcurrency 0 defaultFindConcurrencyConfig)
+      checkFindInstance
+    testFindConcurrencyConfig fcs
   describe "validPickConcurrencyConfigs" $
-    it "contains only valid configs" $
-      take 1 (filter (/= Nothing) $ checkPickConcurrencyConfig <$> pcs)
-      `shouldBe` []
+    checkConfigs checkPickConcurrencyConfig pcs
   describe "pickConcurrency" $ do
-    context "creates, out of a given Config," $
-      it "everything needed to create the Task is generated" $ do
-        Right diaConc <- runExceptT $ pickConcurrency 0 defaultPickConcurrencyConfig
-        print (map snd diaConc) `shouldReturn` ()
-    context "using randomly chosen configs"
-      $ testPickConcurrencyConfig pcs
+    defaultConfigTaskGeneration
+      (pickConcurrency 0 defaultPickConcurrencyConfig)
+      checkPickInstance
+    testPickConcurrencyConfig pcs
   where
     fcs' = validFindConcurrencyConfigs vcfs (AdvConfig Nothing Nothing Nothing)
     fcs  = validAdvConfigs >>= validFindConcurrencyConfigs vcfs
@@ -61,27 +54,35 @@ spec = do
     vcfs = validConfigsForFind 0 6
     vcps = validConfigsForPick 0 6
 
+checkFindInstance :: (a, Maybe (Concurrent String)) -> Bool
+checkFindInstance = f . snd
+  where
+    f Nothing  = False
+    f (Just c) = isValidConcurrency c
+
+checkPickInstance :: [(a, Maybe (Concurrent String))] -> Bool
+checkPickInstance = f . fmap snd
+  where
+    f [Just x, Nothing] = isValidConcurrency x
+    f _                 = False
+
 testFindConcurrencyConfig :: [FindConcurrencyConfig] -> Spec
 testFindConcurrencyConfig = testTaskGeneration
   petriNetFindConcur
   (\i -> findConcurrencyTaskInstance i . graphLayout . bc)
-  (f . snd)
+  checkFindInstance
   where
     bc :: FindConcurrencyConfig -> BasicConfig
     bc = basicConfig
-    f Nothing  = False
-    f (Just c) = isValidConcurrency c
 
 testPickConcurrencyConfig :: [PickConcurrencyConfig] -> Spec
 testPickConcurrencyConfig = testTaskGeneration
   petriNetPickConcur
   (\i -> pickConcurrencyTaskInstance i . graphLayout . bc)
-  (f . fmap snd)
+  checkPickInstance
   where
     bc :: PickConcurrencyConfig -> BasicConfig
     bc = basicConfig
-    f [Just x, Nothing] = isValidConcurrency x
-    f _                 = False
 
 isValidConcurrency :: Concurrent String -> Bool
 isValidConcurrency c@(Concurrent (t1, t2))

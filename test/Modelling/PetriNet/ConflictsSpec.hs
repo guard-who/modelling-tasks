@@ -22,42 +22,32 @@ import Modelling.PetriNet.Types (
   )
 
 import Modelling.PetriNet.TestCommon (
+  checkConfigs,
+  defaultConfigTaskGeneration,
   testTaskGeneration,
   validAdvConfigs,
   validConfigsForFind,
   validConfigsForPick,
   )
 
-import Control.Monad.Trans.Except       (runExceptT)
-import Data.Either                      (isRight)
 import Test.Hspec
 
 spec :: Spec
 spec = do
   describe "validFindConflictConfigs" $
-    it "contains only valid configs" $
-      take 1 (filter (/= Nothing) $ checkFindConflictConfig <$> fcs')
-      `shouldBe` []
+    checkConfigs checkFindConflictConfig fcs'
   describe "findConflicts" $ do
-    context "using its default config" $
-      it "generates everything required to create the task" $ do
-        diaConfl <- runExceptT $ findConflicts 0 defaultFindConflictConfig
-        print (snd <$> diaConfl)
-        return (isRight diaConfl) `shouldReturn` True
-    context "using randomly chosen configs"
-      $ testFindConflictConfig fcs
+    defaultConfigTaskGeneration
+      (findConflicts 0 defaultFindConflictConfig)
+      checkFindInstance
+    testFindConflictConfig fcs
   describe "validPickConflictConfigs" $
-    it "contains only valid configs" $
-      take 1 (filter (/= Nothing) $ checkPickConflictConfig <$> pcs)
-      `shouldBe` []
+    checkConfigs checkPickConflictConfig pcs
   describe "pickConflicts" $ do
-    context "using its default config" $
-      it "generates everything required to create the task" $ do
-        diaConfls <- runExceptT $ pickConflicts 0 defaultPickConflictConfig
-        print (map snd <$> diaConfls)
-        return (isRight diaConfls) `shouldReturn` True
-    context "using randomly chosen configs"
-      $ testPickConflictConfig pcs
+    defaultConfigTaskGeneration
+      (pickConflicts 0 defaultPickConflictConfig)
+      checkPickInstance
+    testPickConflictConfig pcs
   where
     fcs' = validFindConflictConfigs vcfs (AdvConfig Nothing Nothing Nothing)
     fcs  = validAdvConfigs >>= validFindConflictConfigs vcfs
@@ -65,27 +55,35 @@ spec = do
     vcfs = validConfigsForFind 0 6
     vcps = validConfigsForPick 0 6
 
+checkFindInstance :: (a, Maybe Conflict) -> Bool
+checkFindInstance = f . snd
+  where
+    f Nothing  = False
+    f (Just c) = isValidConflict c
+
+checkPickInstance :: [(a, Maybe Conflict)] -> Bool
+checkPickInstance = f . fmap snd
+  where
+    f [Just x, Nothing] = isValidConflict x
+    f _                 = False
+
 testFindConflictConfig :: [FindConflictConfig] -> Spec
 testFindConflictConfig = testTaskGeneration
   petriNetFindConfl
   (\i -> findConflictsTaskInstance i . graphLayout . bc)
-  (f . snd)
+  checkFindInstance
   where
     bc :: FindConflictConfig -> BasicConfig
     bc = basicConfig
-    f Nothing  = False
-    f (Just c) = isValidConflict c
 
 testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig = testTaskGeneration
   petriNetPickConfl
   (\i -> pickConflictsTaskInstance i . graphLayout . bc)
-  (f . fmap snd)
+  checkPickInstance
   where
     bc :: PickConflictConfig -> BasicConfig
     bc = basicConfig
-    f [Just x, Nothing] = isValidConflict x
-    f _                 = False
 
 isValidConflict :: Conflict -> Bool
 isValidConflict c@(Conflict (t1, t2) p)
