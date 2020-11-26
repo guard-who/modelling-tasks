@@ -1,6 +1,14 @@
 module Alloy.CdOd.Auxiliary.Util (
-  emptyArr, filterFirst, firstLower, firstUpper, redColor, underlinedLabel,
+  emptyArr, filterFirst, firstLower, firstUpper, getInstances,
+  redColor, underlinedLabel,
   ) where
+
+import Language.Alloy.Call              as Alloy (
+  AlloyInstance,
+  CallAlloyConfig (..),
+  defaultCallAlloyConfig,
+  getInstancesWith,
+  )
 
 import Data.Char                        (isUpper, toLower, toUpper)
 import Data.GraphViz                    (X11Color (..))
@@ -39,3 +47,9 @@ emptyArr = AType [(openMod, Normal)]
 
 redColor :: Attribute
 redColor = Color [toWColor Red]
+
+getInstances :: Maybe Integer -> Maybe Int -> String -> IO [AlloyInstance]
+getInstances mmaxInstances mtimeout = getInstancesWith $ defaultCallAlloyConfig {
+  maxInstances = mmaxInstances,
+  timeout      = mtimeout
+  }

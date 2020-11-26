@@ -17,8 +17,10 @@ import GHC.Generics                     (Generic)
 
 data SelectValidCdConfig = SelectValidCdConfig {
     classConfig      :: ClassConfig,
+    maxInstances     :: Maybe Integer,
     printNames       :: Bool,
-    printNavigations :: Bool
+    printNavigations :: Bool,
+    timeout          :: Maybe Int
   } deriving Generic
 
 defaultSelectValidCdConfig :: SelectValidCdConfig
@@ -30,8 +32,10 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         compositions = (0, Just 3),
         inheritances = (1, Just 3)
       },
+    maxInstances     = Just 200,
     printNames       = True,
-    printNavigations = True
+    printNavigations = True,
+    timeout          = Nothing
   }
 
 newtype SelectValidCdInstance = SelectValidCdInstance {
@@ -45,8 +49,8 @@ selectValidCd
   -> Int
   -> IO SelectValidCdInstance
 selectValidCd config path segment seed = do
-  let g = mkStdGen $ (segment +) $ (4 *) seed
-  (_, chs)  <- evalRandT (repairIncorrect $ classConfig config) g
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  (_, chs)  <- evalRandT (repairIncorrect (classConfig config) (maxInstances config) (timeout config)) g
   let cds = map (second snd) chs
   cds'      <- foldl drawCd (return []) $ zip [1 ..] cds
   return $ SelectValidCdInstance $ M.fromList cds'

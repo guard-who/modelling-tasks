@@ -10,11 +10,10 @@ import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transform)
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M
   (alter, empty, foldrWithKey, fromList, lookup, traverseWithKey, union)
-import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
 import Alloy.CdOd.CdAndChanges.Instance (fromInstance)
-import Alloy.CdOd.Auxiliary.Util        (redColor)
+import Alloy.CdOd.Auxiliary.Util        (getInstances, redColor)
 import Alloy.CdOd.Edges (
   DiagramEdge,
   anyMarkedEdge,
@@ -69,7 +68,8 @@ data MatchCdOdConfig = MatchCdOdConfig {
     maxObjects       :: Int,
     maxInstances     :: Maybe Integer,
     searchSpace      :: Int,
-    printNavigations :: Bool
+    printNavigations :: Bool,
+    timeout          :: Maybe Int
   } deriving Generic
 
 defaultMatchCdOdConfig :: MatchCdOdConfig
@@ -84,7 +84,8 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
     maxObjects       = 4,
     maxInstances     = Nothing,
     searchSpace      = 10,
-    printNavigations = False
+    printNavigations = False,
+    timeout          = Nothing
   }
 
 instancesOfMatch :: MatchCdOdInstance -> Map Int String
@@ -96,8 +97,8 @@ instancesOfMatch task = nub . sort <$>
 
 matchCdOd :: MatchCdOdConfig -> FilePath -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config path segment seed = do
-  let g = mkStdGen $ (segment +) $ (4 *) seed
-  (cds, ods) <- evalRandT (getRandomTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config)) g
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  (cds, ods) <- evalRandT (getRandomTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config) (timeout config)) g
   let dirs
         | printNavigations config =
           foldr (M.union . getDirs . toEdges) M.empty cds
@@ -120,13 +121,14 @@ getRandomTask
   -> Int
   -> Int
   -> Maybe Integer
+  -> Maybe Int
   -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
-getRandomTask config maxObs search maxIs = do
+getRandomTask config maxObs search maxIs to = do
   (cd1, cd2, cd3, numClasses) <- getRandomCDs config search
-  instas <- liftIO $ getODInstances maxObs maxIs cd1 cd2 cd3 numClasses
+  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
-    Nothing      -> getRandomTask config maxObs search maxIs
+    Nothing      -> getRandomTask config maxObs search maxIs to
     Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
 
 getRandomTask'
@@ -138,25 +140,26 @@ getRandomTask'
   -> RandT g IO (Map Int Syntax, [([Int], AlloyInstance)])
 getRandomTask' config maxObs search maxIs = do
   let code = Changes.transform config defaultProperties
-  instas <- liftIO $ Alloy.getInstances (Just 6000) code
+  instas <- liftIO $ getInstances (Just 6000) Nothing code
   when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
-  ods <- getODsFor maxObs maxIs rinstas
+  ods <- getODsFor maxObs maxIs Nothing rinstas
   maybe (getRandomTask' config maxObs search maxIs) return ods
 
 getODsFor
   :: RandomGen g
   => Int
   -> Maybe Integer
+  -> Maybe Int
   -> [AlloyInstance]
   -> RandT g IO (Maybe (Map Int Syntax, [([Int], AlloyInstance)]))
-getODsFor _          _            []       = return Nothing
-getODsFor maxObs maxIs (cd:cds) = do
+getODsFor _      _     _  []       = return Nothing
+getODsFor maxObs maxIs to (cd:cds) = do
   (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
-  instas <- liftIO $ getODInstances maxObs maxIs cd1 cd2 cd3 numClasses
+  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
-    Nothing      -> getODsFor maxObs maxIs cds
+    Nothing      -> getODsFor maxObs maxIs to cds
     Just rinstas -> return $ Just (M.fromList [(1, cd1), (2, cd2)], rinstas)
 
 applyChanges
@@ -215,12 +218,13 @@ getRandomCDs config search = do
 getODInstances
   :: Int
   -> Maybe Integer
+  -> Maybe Int
   -> Syntax
   -> Syntax
   -> Syntax
   -> Int
   -> IO (Map [Int] [AlloyInstance])
-getODInstances maxObs maxIs cd1 cd2 cd3 numClasses = do
+getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses = do
   -- TODO remove `toOldSyntax`
   let parts1 = case transform (toOldSyntax cd1) "1" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
       parts2 = case transform (toOldSyntax cd2) "2" "" of (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
@@ -230,10 +234,10 @@ getODInstances maxObs maxIs cd1 cd2 cd3 numClasses = do
       cd2not1 = createRunCommand "cd2 and (not cd1)" numClasses maxObs
       cd1and2 = createRunCommand "cd1 and cd2" numClasses maxObs
       cdNot1not2 = createRunCommand "(not cd1) and (not cd2) and cd3" numClasses maxObs
-  instances1not2 <- Alloy.getInstances maxIs (combineParts parts1and2 ++ cd1not2)
-  instances2not1 <- Alloy.getInstances maxIs (combineParts parts1and2 ++ cd2not1)
-  instances1and2 <- Alloy.getInstances maxIs (combineParts parts1and2 ++ cd1and2)
-  instancesNot1not2 <- Alloy.getInstances maxIs (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
+  instances1not2 <- getInstances maxIs to (combineParts parts1and2 ++ cd1not2)
+  instances2not1 <- getInstances maxIs to (combineParts parts1and2 ++ cd2not1)
+  instances1and2 <- getInstances maxIs to (combineParts parts1and2 ++ cd1and2)
+  instancesNot1not2 <- getInstances maxIs to (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
   when debug . print $ length instances1not2
   when debug . print $ length instances2not1
   when debug . print $ length instances1and2

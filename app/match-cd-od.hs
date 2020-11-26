@@ -20,7 +20,8 @@ main = do
           maxObjects       = 4,
           maxInstances     = Nothing,
           printNavigations = False,
-          searchSpace      = 10
+          searchSpace      = 10,
+          timeout          = Nothing
         }
   putStrLn $ "Seed: " ++ show seed
   putStrLn $ "Segment: " ++ show s

@@ -2,4 +2,4 @@ resolver: lts-16.11
 packages:
 - .
 extra-deps:
-- call-alloy-0.2.0.4
+- call-alloy-0.2.1.0

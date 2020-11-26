@@ -6,8 +6,8 @@ module Alloy.CdOd.RepairCd where
 import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transformChanges)
 
 import qualified Data.Map                         as M (empty, insert, fromList)
-import qualified Language.Alloy.Call              as Alloy (getInstances)
 
+import Alloy.CdOd.Auxiliary.Util        (getInstances)
 import Alloy.CdOd.CD2Alloy.Transform    (transform)
 import Alloy.CdOd.Edges                 (toEdges)
 import Alloy.CdOd.MatchCdOd             (applyChanges)
@@ -98,8 +98,10 @@ isValid p = validityChange p True
 
 data RepairCdConfig = RepairCdConfig {
     classConfig      :: ClassConfig,
+    maxInstances     :: Maybe Integer,
     printNames       :: Bool,
     printNavigations :: Bool,
+    timeout          :: Maybe Int,
     useNames         :: Bool
   } deriving Generic
 
@@ -112,8 +114,10 @@ defaultRepairCdConfig = RepairCdConfig {
         compositions = (0, Just 3),
         inheritances = (1, Just 3)
       },
+    maxInstances     = Just 200,
     printNames       = True,
     printNavigations = True,
+    timeout          = Nothing,
     useNames         = False
   }
 
@@ -131,8 +135,8 @@ repairCd
   -> Int
   -> IO RepairCdInstance
 repairCd config path segment seed = do
-  let g = mkStdGen $ (segment +) $ (4 *) seed
-  (cd, chs) <- evalRandT (repairIncorrect $ classConfig config) g
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  (cd, chs) <- evalRandT (repairIncorrect (classConfig config) (maxInstances config) (timeout config)) g
   let chs' = map (second fst) chs
   cd'       <- drawCdFromSyntax (printNavigations config) (printNames config) Nothing cd path Svg
   return $ RepairCdInstance
@@ -154,14 +158,16 @@ constrainConfig n config = do
   where
     edges = [aggregations, associations, compositions, inheritances]
     randOf f maxF = do
-      x <- getRandomR (fst $ f config, fromMaybe maxF $ snd $ f config)
+      x <- getRandomR (second (fromMaybe maxF) (f config))
       return (maxF - x, (x, Just x))
 
 repairIncorrect
   :: RandomGen g
   => ClassConfig
+  -> Maybe Integer
+  -> Maybe Int
   -> RandT g IO (Syntax, [(Bool, (Change DiagramEdge, Syntax))])
-repairIncorrect config = do
+repairIncorrect config maxInsts to = do
   e0:_    <- shuffleM illegalChanges
   l0:l1:_ <- shuffleM legalChanges
   c0:_    <- shuffleM allChanges
@@ -174,7 +180,7 @@ repairIncorrect config = do
     putStrLn $ changeName e0
     print $ map changeName cs
     writeFile "repair.als" code
-  instas  <- liftIO $ Alloy.getInstances (Just 200) code
+  instas  <- liftIO $ getInstances maxInsts to code
   rinstas <- shuffleM instas
   getInstanceWithODs (map isValid cs) rinstas
   where
@@ -190,13 +196,13 @@ repairIncorrect config = do
                               (foldr (`M.insert` Forward) M.empty forwards)
                               backwards
       in drawOdFromInstance od Nothing navigations True ("od-" ++ show x) Pdf
-    getInstanceWithODs _  [] = repairIncorrect config
+    getInstanceWithODs _  [] = repairIncorrect config maxInsts to
     getInstanceWithODs vs (rinsta:rinstas) = do
       (cd, chs, _) <- applyChanges rinsta
       let cds  = zip vs (map snd chs)
           chs' = zip vs chs
       ods <- (liftIO . getOD . snd) `mapM` filter fst cds
-      if all (not . null) ods
+      if not (any null ods)
         then do
         when debug $ liftIO $ do
           void $ drawCd cd 0
@@ -206,7 +212,7 @@ repairIncorrect config = do
         else getInstanceWithODs vs rinstas
     getOD cd = do
       let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) "" ""
-      Alloy.getInstances (Just 1) (p1 ++ p2 ++ p3 ++ p4 ++ p5)
+      getInstances (Just 1) to (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
 allChanges :: [PropertyChange]
 allChanges = legalChanges ++ illegalChanges
