@@ -143,7 +143,7 @@ repairCd config path segment seed = do
     (M.fromList $ zip [1..] chs')
     cd'
     (printNavigations config)
-    (printNames config == useNames config)
+    (printNames config && useNames config)
 
 constrainConfig :: RandomGen g => Int -> ClassConfig -> RandT g IO ClassConfig
 constrainConfig n config = do
