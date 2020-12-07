@@ -163,9 +163,9 @@ petriNetFindConfl FindConflictConfig{basicConfig,advConfig,changeConfig} = [i|mo
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [#{place1} : Places, #{specCompRelation basicConfig changeConfig}
+pred #{conflictPredicateName} [#{p} : Places, #{specCompRelation t1 t2 basicConfig changeConfig}
 
-  #{compConflict}
+  #{compConflict t1 t2 p}
   #{compAdvConstraints advConfig}
   
 }
@@ -173,6 +173,10 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Nodes, 
 
 
 |]
+  where
+    t1 = transition1
+    t2 = transition2
+    p  = place1
 
 petriNetPickConfl :: PickConflictConfig -> String
 petriNetPickConfl p@PickConflictConfig{basicConfig = BasicConfig{atLeastActive},changeConfig} = [i|module PetriNetConfl
@@ -182,14 +186,18 @@ petriNetPickConfl p@PickConflictConfig{basicConfig = BasicConfig{atLeastActive},
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [#{place1} : Places, defaultActivTrans : set givenTransitions, #{specCompRelation (basicConfig(p :: PickConflictConfig)) changeConfig}
+pred #{conflictPredicateName} [#{pl} : Places, defaultActivTrans : set givenTransitions, #{specCompRelation t1 t2 (basicConfig(p :: PickConflictConfig)) changeConfig}
 
-  #{compConflict}
+  #{compConflict t1 t2 pl}
   #{compDefaultConstraints atLeastActive}
 }
 run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicConfig(p :: PickConflictConfig))} Int
 
 |]
+  where
+    t1 = transition1
+    t2 = transition2
+    pl = place1
 
 --Concurrency--
 concurrencyPredicateName :: String
@@ -208,9 +216,9 @@ petriNetFindConcur FindConcurrencyConfig{
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{concurrencyPredicateName} [ #{specCompRelation basicConfig changeConfig}
+pred #{concurrencyPredicateName} [ #{specCompRelation t1 t2 basicConfig changeConfig}
 
-  #{compConcurrency}
+  #{compConcurrency t1 t2}
   #{compAdvConstraints advConfig}
   
 }
@@ -218,6 +226,9 @@ run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Node
 
 
 |]
+  where
+    t1 = transition1
+    t2 = transition2
 
 petriNetPickConcur :: PickConcurrencyConfig -> String
 petriNetPickConcur p@PickConcurrencyConfig{
@@ -230,14 +241,17 @@ petriNetPickConcur p@PickConcurrencyConfig{
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{concurrencyPredicateName} [defaultActivTrans : set givenTransitions, #{specCompRelation (basicConfig(p :: PickConcurrencyConfig)) changeConfig}
+pred #{concurrencyPredicateName} [defaultActivTrans : set givenTransitions, #{specCompRelation t1 t2 (basicConfig(p :: PickConcurrencyConfig)) changeConfig}
 
-  #{compConcurrency}
+  #{compConcurrency t1 t2}
   #{compDefaultConstraints atLeastActive}
 }
 run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicConfig(p :: PickConcurrencyConfig))} Int
 
 |]
+  where
+    t1 = transition1
+    t2 = transition2
 
 ----------------------"Building-Kit"----------------------------
 
@@ -314,34 +328,26 @@ transition2 = "transition2"
 place1 :: String
 place1 = "place1"
 
-compConcurrency :: String
-compConcurrency = [i|
+compConcurrency :: String -> String -> String
+compConcurrency t1 t2 = [i|
   no x,y : givenTransitions | concurrentDefault[x+y] and x != y
-  some #{t1}, #{t2} : Transitions | relatedTransitions = #{t1} + #{t2}
-  and #{t1} != #{t2}
-  and concurrent [#{t1}+#{t2}]
-  and all u,v : Transitions | concurrent[u+v] and u != v implies #{t1} + #{t2} = u + v
+  #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
+    and all u,v : Transitions |
+      concurrent[u + v] and u != v implies #{t1} + #{t2} = u + v
 |]
-  where
-    t1 = transition1
-    t2 = transition2
 
---Needs: relatedTransitions: set Transitions, conflictTrans1,conflictTrans2 : Transitions, conflictPlace : Places
-compConflict :: String
-compConflict = [i|
+compConflict :: String -> String -> String -> String
+compConflict t1 t2 p = [i|
   no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
-  some #{t1}, #{t2} : Transitions | relatedTransitions = #{t1} + #{t2}
-  and conflict [#{t1}, #{t2}, #{p}] and all u,v : Transitions, q : Places
-    | conflict[u,v,q] implies #{t1} + #{t2} = u + v
-|]
-  where
-    t1 = transition1
-    t2 = transition2
-    p  = place1
 
-specCompRelation :: BasicConfig -> ChangeConfig -> String
-specCompRelation basic@BasicConfig{places,transitions} change = [i|
-activatedTrans,relatedTransitions: set Transitions] {
+  #{t1} != #{t2} and conflict [#{t1}, #{t2}, #{p}]
+    and all u,v : Transitions, q : Places |
+      conflict[u,v,q] implies #{t1} + #{t2} = u + v
+|]
+
+specCompRelation :: String -> String -> BasicConfig -> ChangeConfig -> String
+specCompRelation t1 t2 basic@BasicConfig{places,transitions} change = [i|
+activatedTrans : set Transitions, #{t1}, #{t2} : Transitions] {
   #Places = #{places}
   #Transitions = #{transitions}
   #{compBasicConstraints basic}
