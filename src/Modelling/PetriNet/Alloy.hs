@@ -340,7 +340,7 @@ compConflict :: String -> String -> String -> String
 compConflict t1 t2 p = [i|
   no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
 
-  #{t1} != #{t2} and conflict [#{t1}, #{t2}, #{p}]
+  conflict[#{t1}, #{t2}, #{p}]
     and all u,v : Transitions, q : Places |
       conflict[u,v,q] implies #{t1} + #{t2} = u + v
 |]
