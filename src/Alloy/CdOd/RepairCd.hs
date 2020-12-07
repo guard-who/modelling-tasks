@@ -56,14 +56,14 @@ phraseRelation True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
   Aggregation -> "aggregation "
   Composition -> "composition "
 phraseRelation _ False (from, to, Assoc Association _ l h _) =
-  "an association where " ++ participations l from h to
+  "an association" ++ participations l from h to
 phraseRelation _ _ (from, to, Assoc t _ l h _) = (++ participations l from h to) $
   case t of
     Association -> "an association from " ++ from ++ " to " ++ to
     Aggregation -> "a relationship that makes " ++ from
-      ++ " an aggregation of " ++ to ++ "'s"
+      ++ " an aggregation of " ++ to ++ "s"
     Composition -> "a relationship that makes " ++ from
-      ++ " a composition of " ++ to ++ "'s"
+      ++ " a composition of " ++ to ++ "s"
 participations
   :: (Int, Maybe Int)
   -> String
