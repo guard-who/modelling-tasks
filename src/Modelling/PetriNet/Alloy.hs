@@ -348,10 +348,11 @@ compConcurrency t1 t2 = [i|
 compConflict :: Maybe Bool -> String -> String -> String -> String
 compConflict muniquePlace t1 t2 p = [i|
   no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
-
-  conflict[#{t1}, #{t2}, #{p}] #{multiplePlaces}
-    and all u,v : Transitions, q : Places |
-      conflict[u,v,q] implies #{t1} + #{t2} = u + v #{uniquePlace}
+  #{multiplePlaces}
+  all q : #{p} | conflict[#{t1}, #{t2}, q]
+  all u,v : Transitions | no q : (Places - #{p}) | conflict[u,v,q]
+  all u,v : Transitions, q : Places |
+    conflict[u,v,q] implies #{t1} + #{t2} = u + v #{uniquePlace}
 |]
   where
     uniquePlace
@@ -361,7 +362,7 @@ compConflict muniquePlace t1 t2 p = [i|
       = ""
     multiplePlaces
       | muniquePlace == Just False
-      = [i|and \##{p} > 1|]
+      = [i|\##{p} > 1|]
       | otherwise
       = ""
 
