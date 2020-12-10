@@ -6,7 +6,7 @@
 
 module Modelling.PetriNet.Alloy (
   concurrencyTransition1, concurrencyTransition2,
-  conflictPlace1, conflictTransition1, conflictTransition2,
+  conflictPlaces1, conflictTransition1, conflictTransition2,
   getAlloyInstances,
   petriNetFindConcur, petriNetFindConfl, petriNetPickConcur, petriNetPickConfl,
   petriNetRnd, petriScopeBitwidth, petriScopeMaxSeq, renderFalse,
@@ -155,7 +155,12 @@ conflictPredicateName = "showConflict"
 --Conflict--
 
 petriNetFindConfl :: FindConflictConfig -> String
-petriNetFindConfl FindConflictConfig{basicConfig,advConfig,changeConfig} = [i|module PetriNetConfl
+petriNetFindConfl FindConflictConfig {
+  basicConfig,
+  advConfig,
+  changeConfig,
+  uniqueConflictPlace
+  } = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -163,9 +168,9 @@ petriNetFindConfl FindConflictConfig{basicConfig,advConfig,changeConfig} = [i|mo
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [#{p} : Places, #{specCompRelation t1 t2 basicConfig changeConfig}
+pred #{conflictPredicateName} [#{p} : some Places, #{specCompRelation t1 t2 basicConfig changeConfig}
 
-  #{compConflict t1 t2 p}
+  #{compConflict uniqueConflictPlace t1 t2 p}
   #{compAdvConstraints advConfig}
   
 }
@@ -176,19 +181,23 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Nodes, 
   where
     t1 = transition1
     t2 = transition2
-    p  = place1
+    p  = places1
 
 petriNetPickConfl :: PickConflictConfig -> String
-petriNetPickConfl p@PickConflictConfig{basicConfig = BasicConfig{atLeastActive},changeConfig} = [i|module PetriNetConfl
+petriNetPickConfl p@PickConflictConfig {
+  basicConfig = BasicConfig {atLeastActive},
+  changeConfig,
+  uniqueConflictPlace
+  } = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [#{pl} : Places, defaultActivTrans : set givenTransitions, #{specCompRelation t1 t2 (basicConfig(p :: PickConflictConfig)) changeConfig}
+pred #{conflictPredicateName} [#{pl} : some Places, defaultActivTrans : set givenTransitions, #{specCompRelation t1 t2 (basicConfig(p :: PickConflictConfig)) changeConfig}
 
-  #{compConflict t1 t2 pl}
+  #{compConflict uniqueConflictPlace t1 t2 pl}
   #{compDefaultConstraints atLeastActive}
 }
 run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicConfig(p :: PickConflictConfig))} Int
@@ -197,7 +206,7 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: Pi
   where
     t1 = transition1
     t2 = transition2
-    pl = place1
+    pl = places1
 
 --Concurrency--
 concurrencyPredicateName :: String
@@ -310,8 +319,8 @@ concurrencyTransition1 = skolemVariable concurrencyPredicateName transition1
 concurrencyTransition2 :: String
 concurrencyTransition2 = skolemVariable concurrencyPredicateName transition2
 
-conflictPlace1 :: String
-conflictPlace1 = skolemVariable conflictPredicateName place1
+conflictPlaces1 :: String
+conflictPlaces1 = skolemVariable conflictPredicateName places1
 
 conflictTransition1 :: String
 conflictTransition1 = skolemVariable conflictPredicateName transition1
@@ -325,8 +334,8 @@ transition1 = "transition1"
 transition2 :: String
 transition2 = "transition2"
 
-place1 :: String
-place1 = "place1"
+places1 :: String
+places1 = "places"
 
 compConcurrency :: String -> String -> String
 compConcurrency t1 t2 = [i|
@@ -336,14 +345,25 @@ compConcurrency t1 t2 = [i|
       concurrent[u + v] and u != v implies #{t1} + #{t2} = u + v
 |]
 
-compConflict :: String -> String -> String -> String
-compConflict t1 t2 p = [i|
+compConflict :: Maybe Bool -> String -> String -> String -> String
+compConflict muniquePlace t1 t2 p = [i|
   no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
 
-  conflict[#{t1}, #{t2}, #{p}]
+  conflict[#{t1}, #{t2}, #{p}] #{multiplePlaces}
     and all u,v : Transitions, q : Places |
-      conflict[u,v,q] implies #{t1} + #{t2} = u + v
+      conflict[u,v,q] implies #{t1} + #{t2} = u + v #{uniquePlace}
 |]
+  where
+    uniquePlace
+      | muniquePlace == Just True
+      = [i|and q = #{p}|]
+      | otherwise
+      = ""
+    multiplePlaces
+      | muniquePlace == Just False
+      = [i|and \##{p} > 1|]
+      | otherwise
+      = ""
 
 specCompRelation :: String -> String -> BasicConfig -> ChangeConfig -> String
 specCompRelation t1 t2 basic@BasicConfig{places,transitions} change = [i|

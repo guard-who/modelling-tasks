@@ -16,14 +16,14 @@ import qualified Data.Bimap                       as BM (
   fromList, lookup,
   )
 import qualified Data.Set                         as Set (
-  Set, findMin, foldr, lookupMin, null, size
+  Set, findMin, foldr, lookupMin, null, size, toList,
   )
 import qualified Data.Map.Lazy                    as Map (
   empty, findIndex, foldlWithKey, foldrWithKey, insert, lookup,
   )
 
 import Modelling.PetriNet.Alloy         (
-  conflictTransition1, conflictTransition2, conflictPlace1,
+  conflictTransition1, conflictTransition2, conflictPlaces1,
   concurrencyTransition1, concurrencyTransition2,
   )
 import Modelling.PetriNet.Types
@@ -177,10 +177,9 @@ parseConflict :: AlloyInstance -> Either String (PetriConflict Object)
 parseConflict inst = do
   tc1 <- unscopedSingleSig inst conflictTransition1 ""
   tc2 <- unscopedSingleSig inst conflictTransition2 ""
-  pc  <- unscopedSingleSig inst conflictPlace1 ""
-  Conflict
+  pc  <- unscopedSingleSig inst conflictPlaces1 ""
+  flip Conflict (Set.toList pc)
     <$> ((,) <$> asSingleton tc1 <*> asSingleton tc2)
-    <*> asSingleton pc
 
 {-|
 Parses the concurrency Skolem variables for singleton of transitions and returns

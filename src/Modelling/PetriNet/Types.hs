@@ -68,8 +68,8 @@ both transitions (both are having the same source place).
 data PetriConflict a = Conflict {
   -- | The pair of transitions in conflict.
   conflictTrans :: (a, a),
-  -- | Their common source node having not enough to tokens to fire both.
-  conflictPlace :: a
+  -- | The set of source nodes having not enough tokens to fire both transitions.
+  conflictPlaces :: [a]
   }
   deriving (Foldable, Functor, Show, Traversable)
   
@@ -389,6 +389,7 @@ data FindConflictConfig = FindConflictConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
+  , uniqueConflictPlace :: Maybe Bool
   } deriving Show
   
 defaultFindConflictConfig :: FindConflictConfig
@@ -396,17 +397,20 @@ defaultFindConflictConfig = FindConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 3 }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
+  , uniqueConflictPlace = Just True
   }
   
 data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
+  , uniqueConflictPlace :: Maybe Bool
   } deriving Show
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2 }
   , changeConfig = defaultChangeConfig
+  , uniqueConflictPlace = Nothing
   }
   
 data FindConcurrencyConfig = FindConcurrencyConfig

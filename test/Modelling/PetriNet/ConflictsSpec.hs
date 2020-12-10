@@ -86,19 +86,24 @@ testPickConflictConfig = testTaskGeneration
     bc = basicConfig
 
 isValidConflict :: Conflict -> Bool
-isValidConflict c@(Conflict (t1, t2) p)
-  | ('t':x) <- t1, ('t':y) <- t2, x /= y, ('s':_) <- p = True
+isValidConflict c@(Conflict (t1, t2) ps)
+  | ('t':x) <- t1, ('t':y) <- t2, x /= y, all isValidPlace ps = True
   | otherwise                                          = error $ show c
+  where
+    isValidPlace ('s':_) = True
+    isValidPlace _       = False
 
 validFindConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> AdvConfig
   -> [FindConflictConfig]
-validFindConflictConfigs cs aconfig =
-  uncurry (`FindConflictConfig` aconfig) <$> cs
+validFindConflictConfigs cs aconfig = do
+  unique <- [Nothing, Just True, Just False]
+  ($unique) . uncurry (`FindConflictConfig` aconfig) <$> cs
 
 validPickConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> [PickConflictConfig]
-validPickConflictConfigs cs =
-  uncurry PickConflictConfig <$> cs
+validPickConflictConfigs cs = do
+  unique <- [Nothing, Just True, Just False]
+  ($unique) . uncurry PickConflictConfig <$> cs
