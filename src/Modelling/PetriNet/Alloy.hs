@@ -160,64 +160,59 @@ petriNetFindConfl FindConflictConfig {
   advConfig,
   changeConfig,
   uniqueConflictPlace
-  } = [i|module PetriNetConfl
+  } = petriNetConflict basicConfig changeConfig uniqueConflictPlace $ Just advConfig
+
+petriNetPickConfl :: PickConflictConfig -> String
+petriNetPickConfl PickConflictConfig {
+  basicConfig,
+  changeConfig,
+  uniqueConflictPlace
+  } = petriNetConflict basicConfig changeConfig uniqueConflictPlace Nothing
+
+{-|
+Generate code for PetriNet conflict tasks
+-}
+petriNetConflict
+  :: BasicConfig
+  -> ChangeConfig
+  -> Maybe Bool
+  -> Maybe AdvConfig
+  -- ^ Just for find conflict; Nothing for pick conflict
+  -> String
+petriNetConflict basicC changeC muniquePlace specific
+  = [i|module PetriNetConfl
 
 #{modulePetriSignature}
-#{modulePetriAdditions}
+#{maybe "" (const modulePetriAdditions) specific}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName} [#{p} : some Places, #{specCompRelation t1 t2 basicConfig changeConfig}
-
-  #{multiplePlaces uniqueConflictPlace p}
+pred #{conflictPredicateName} [#{p} : some Places, #{defaultActivTrans} #{specCompRelation t1 t2 basicC changeC}
+  #{multiplePlaces}
   #{compConflict t1 t2 p}
-  #{compAdvConstraints advConfig}
-  
+  #{compConstraints}
 }
-run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitwidth basicConfig} Int
 
-
+run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
 |]
   where
+    compConstraints = case specific of
+      Just advC ->
+        compAdvConstraints advC
+      Nothing ->
+        compDefaultConstraints $ atLeastActive basicC
+    defaultActivTrans = "defaultActivTrans : set givenTransitions,"
     t1 = transition1
     t2 = transition2
     p  = places1
-
-multiplePlaces :: Maybe Bool -> String -> String
-multiplePlaces muniquePlace p
-  | muniquePlace == Just True
-  = [i|one #{p}|]
-  | muniquePlace == Just False
-  = [i|not (one \##{p})|]
-  | otherwise
-  = ""
-
-petriNetPickConfl :: PickConflictConfig -> String
-petriNetPickConfl pcc@PickConflictConfig {
-  basicConfig = BasicConfig {atLeastActive},
-  changeConfig,
-  uniqueConflictPlace
-  } = [i|module PetriNetConfl
-
-#{modulePetriSignature}
-#{moduleHelpers}
-#{modulePetriConcepts}
-#{modulePetriConstraints}
-
-pred #{conflictPredicateName} [#{p} : some Places, defaultActivTrans : set givenTransitions, #{specCompRelation t1 t2 (basicConfig(pcc :: PickConflictConfig)) changeConfig}
-
-  #{multiplePlaces uniqueConflictPlace p}
-  #{compConflict t1 t2 p}
-  #{compDefaultConstraints atLeastActive}
-}
-run #{conflictPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(pcc :: PickConflictConfig))} Nodes, #{petriScopeBitwidth (basicConfig(pcc :: PickConflictConfig))} Int
-
-|]
-  where
-    t1 = transition1
-    t2 = transition2
-    p = places1
+    multiplePlaces
+      | muniquePlace == Just True
+      = [i|one #{p}|]
+      | muniquePlace == Just False
+      = [i|not (one #{p})|]
+      | otherwise
+      = ""
 
 --Concurrency--
 concurrencyPredicateName :: String
