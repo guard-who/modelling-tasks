@@ -30,10 +30,20 @@ fun flowChangeAbsolutesSum[from, to : set Nodes] : Int{
   sum f : from, t : to | abs[f.flowChange[t]]
 }
 
+//set tokens should be added to a petri net only
+pred tokenAddOnly[]{
+  all tc : Places.tokenChange | tc > 0
+}
+
 //altogether exactly n tokens should be added
 pred tokensAddedOverall[n : Int]{
   tokenAddOnly
   tokenChangeSum[Places] = n
+}
+
+//set tokens should be removed from a petri net only
+pred tokenRemoveOnly[]{
+  all tc : Places.tokenChange | tc < 0
 }
 
 //altogether exactly n tokens should be removed
@@ -53,10 +63,20 @@ fun flowChangeSum[from, to : set Nodes] : Int{
   sum f : from, t : to | f.flowChange[t]
 }
 
+//set weight can be added to a petri net only
+pred weightAddOnly[]{
+  all change : Nodes.flowChange[Nodes] | change > 0
+}
+
 //altogether exactly n weight should be added
 pred weightAddedOverall[n : Int]{
   weightAddOnly
   flowChangeSum[Nodes,Nodes] = n
+}
+
+//set weight can be removed from a petri net only
+pred weightRemoveOnly[]{
+  all change : Nodes.flowChange[Nodes] | change < 0
 }
 
 //altogether exactly n weight should be removed
