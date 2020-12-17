@@ -313,9 +313,9 @@ compChange ChangeConfig
                   {flowChangeOverall, maxFlowChangePerEdge
                   , tokenChangeOverall, maxTokenChangePerPlace
                   } = [i|
-  flowChangeAbsolutesSum[Nodes,Nodes] = #{flowChangeOverall}
+  #{flowChangeOverall} = (sum f, t : Nodes | abs[f.flowChange[t]])
   maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
-  tokenChangeAbsolutesSum[Places] = #{tokenChangeOverall}
+  #{tokenChangeOverall} = (sum p : Places | abs[p.tokenChange])
   maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
 |]
 

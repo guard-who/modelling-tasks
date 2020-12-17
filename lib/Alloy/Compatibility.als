@@ -13,9 +13,21 @@ pred numberActivatedTransition[n : Int, ts : set Transitions]{
   theActivatedTransitions[ts]
 }
 
+fun defaultTokenSum[places : set givenPlaces] : Int{
+  sum p : places | p.defaultTokens
+}
+
 //sum of tokenChange
 fun tokenChangeSum[places : set Places] : Int{
   sum p : places | p.tokenChange
+}
+
+fun tokenChangeAbsolutesSum[places : set Places] : Int{
+  sum p : places | abs[p.tokenChange]
+}
+
+fun flowChangeAbsolutesSum[from, to : set Nodes] : Int{
+  sum f : from, t : to | abs[f.flowChange[t]]
 }
 
 //altogether exactly n tokens should be added
