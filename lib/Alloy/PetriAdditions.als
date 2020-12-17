@@ -30,6 +30,6 @@ pred noChangesToGivenParts[]{
   no givenNodes.flowChange[givenNodes]
 }
 
-fact noDefaultFlowToAddedNodes {
+fact {
   no Nodes.defaultFlow[addedNodes]
 }
