@@ -21,6 +21,7 @@ import Modelling.PetriNet.Types
 import Control.Monad                    (when)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
+import Data.Maybe                       (isNothing)
 import Data.FileEmbed
 import Data.String.Interpolate
 import Language.Alloy.Call (
@@ -202,7 +203,9 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{pet
         compAdvConstraints advC
       Nothing ->
         compDefaultConstraints $ atLeastActive basicC
-    defaultActivTrans = "defaultActivTrans : set givenTransitions,"
+    defaultActivTrans
+      | isNothing specific = "defaultActivTrans : set givenTransitions,"
+      | otherwise          = ""
     t1 = transition1
     t2 = transition2
     p  = places1
