@@ -280,10 +280,10 @@ compBasicConstraints BasicConfig
                         ,maxTokensOverall,maxTokensPerPlace
                         , minFlowOverall,maxFlowOverall,maxFlowPerEdge
                         } = [i|
-  let t = tokenSum[Places] | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
+  let t = (sum p : Places | p.tokens) | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
   all p : Places | p.tokens =< #{maxTokensPerPlace}
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
-  let flow = flowSum[Nodes,Nodes] | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
+  let flow = (sum f, t : Nodes | f.flow[t]) | flow >= #{minFlowOverall} and #{maxFlowOverall} >= flow
   #activatedTrans >= #{atLeastActive}
   theActivatedTransitions[activatedTrans]
   graphIsConnected[]

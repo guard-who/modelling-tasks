@@ -16,9 +16,9 @@ pred conflict[t1, t2 : Transitions, p : Places]{
   p.tokens < plus[p.flow[t1], p.flow[t2]]
 }
 
-//check if two distinct transitions are concurrent
+//check if given transitions are concurrent
 pred concurrent[ts : set Transitions]{
-  all p : Places | p.tokens >= flowSum[p, ts]
+  all p : Places | p.tokens >= (sum t : ts | p.flow[t])
 }
 
 //check activation under default condition
@@ -36,7 +36,7 @@ pred conflictDefault[t1, t2 : givenTransitions, p : givenPlaces]{
 
 //check concurrent under default condition
 pred concurrentDefault[ts : set givenTransitions]{
-  all p : givenPlaces | p.defaultTokens >= defaultFlowSum[p, ts]
+  all p : givenPlaces | p.defaultTokens >= (sum t : ts | p.defaultFlow[t])
 }
 
 //check if there is a loop between two nodes

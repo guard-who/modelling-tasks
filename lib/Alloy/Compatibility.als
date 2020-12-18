@@ -13,6 +13,10 @@ pred numberActivatedTransition[n : Int, ts : set Transitions]{
   theActivatedTransitions[ts]
 }
 
+fun tokenSum[places : set Places] : Int{
+  sum p : places | p.tokens
+}
+
 fun defaultTokenSum[places : set givenPlaces] : Int{
   sum p : places | p.defaultTokens
 }
@@ -58,9 +62,19 @@ pred perPlaceTokensAddedAtMost[m : Int]{
   all p : Places | p.tokenChange =< m
 }
 
+//total number of flows going from set of nodes to set of nodes
+fun flowSum[from, to : set Nodes] : Int{
+  sum f : from, t : to | f.flow[t]
+}
+
 //total number of flow changes going out from set of nodes to a set of nodes
 fun flowChangeSum[from, to : set Nodes] : Int{
   sum f : from, t : to | f.flowChange[t]
+}
+
+//total number of default flows going out from set of nodes to a set of nodes
+fun defaultFlowSum[from, to : set (givenPlaces + givenTransitions)] : Int{
+  sum f : from, t : to | f.defaultFlow[t]
 }
 
 //set weight can be added to a petri net only
