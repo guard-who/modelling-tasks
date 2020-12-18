@@ -327,6 +327,7 @@ data BasicConfig = BasicConfig
   , minFlowOverall :: Int
   , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
+  , isConnected :: Maybe Bool
   , graphLayout :: GraphvizCommand
   } deriving Show
 
@@ -341,6 +342,7 @@ defaultBasicConfig = BasicConfig
   , minFlowOverall = 6
   , maxFlowOverall = 12
   , maxFlowPerEdge = 2
+  , isConnected = Just True
   , graphLayout = Neato
   }
   

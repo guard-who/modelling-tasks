@@ -202,7 +202,7 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{pet
       Just advC ->
         compAdvConstraints advC
       Nothing ->
-        compDefaultConstraints $ atLeastActive basicC
+        compDefaultConstraints (atLeastActive basicC) (isConnected basicC)
     defaultActivTrans
       | isNothing specific = "defaultActivTrans : set givenTransitions,"
       | otherwise          = ""
@@ -250,8 +250,11 @@ run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Node
 
 petriNetPickConcur :: PickConcurrencyConfig -> String
 petriNetPickConcur p@PickConcurrencyConfig{
-  basicConfig = BasicConfig{atLeastActive}
-  ,changeConfig
+  basicConfig = BasicConfig {
+      atLeastActive,
+      isConnected
+      },
+  changeConfig
   } = [i|module PetriNetConcur
 
 #{modulePetriSignature}
@@ -262,7 +265,7 @@ petriNetPickConcur p@PickConcurrencyConfig{
 pred #{concurrencyPredicateName} [defaultActivTrans : set givenTransitions, #{specCompRelation t1 t2 (basicConfig(p :: PickConcurrencyConfig)) changeConfig}
 
   #{compConcurrency t1 t2}
-  #{compDefaultConstraints atLeastActive}
+  #{compDefaultConstraints atLeastActive isConnected}
 }
 run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicConfig(p :: PickConcurrencyConfig))} Int
 
@@ -275,11 +278,16 @@ run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p ::
 
 -- Needs: activatedTrans : set Transitions
 compBasicConstraints :: BasicConfig -> String
-compBasicConstraints BasicConfig
-                        {atLeastActive,minTokensOverall
-                        ,maxTokensOverall,maxTokensPerPlace
-                        , minFlowOverall,maxFlowOverall,maxFlowPerEdge
-                        } = [i|
+compBasicConstraints BasicConfig {
+  atLeastActive,
+  isConnected,
+  maxFlowOverall,
+  maxFlowPerEdge,
+  maxTokensOverall,
+  maxTokensPerPlace,
+  minFlowOverall,
+  minTokensOverall
+  } = [i|
   let t = (sum p : Places | p.tokens) | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
   all p : Places | p.tokens =< #{maxTokensPerPlace}
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
@@ -287,9 +295,15 @@ compBasicConstraints BasicConfig
     theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
   #activatedTrans >= #{atLeastActive}
   theActivatedTransitions[activatedTrans]
-  graphIsConnected[]
-  
+  #{connected "graphIsConnected" isConnected}
+  #{isolated "noIsolatedNodes" isConnected}
 |]
+
+connected :: String -> Maybe Bool -> String
+connected p = maybe "" $ \c -> (if c then "" else "not ") ++ p
+
+isolated :: String -> Maybe Bool -> String
+isolated p = maybe p $ \c -> if c then "" else p
 
 compAdvConstraints :: AdvConfig -> String
 compAdvConstraints AdvConfig
@@ -302,9 +316,10 @@ compAdvConstraints AdvConfig
 |]
 
 --Needs: defaultActivTrans : set Transitions
-compDefaultConstraints :: Int -> String
-compDefaultConstraints atLeastActive = [i|
-  defaultGraphIsConnected[]
+compDefaultConstraints :: Int -> Maybe Bool -> String
+compDefaultConstraints atLeastActive isConnected = [i|
+  #{connected "defaultGraphIsConnected" isConnected}
+  #{isolated "defaultNoIsolatedNodes" isConnected}
   #defaultActivTrans >= #{atLeastActive}
   theActivatedDefaultTransitions[defaultActivTrans]
 |]

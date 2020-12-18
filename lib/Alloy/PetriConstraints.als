@@ -30,6 +30,10 @@ pred noIsolatedNodes[]{
   all n : Nodes | some n.flow.Int or some n.~(flow.Int)
 }
 
+pred defaultNoIsolatedNodes[]{
+  all n : givenNodes | some n.defaultFlow.Int or some n.~(defaultFlow.Int)
+}
+
 pred graphIsConnected[]{
   all n : Nodes | Nodes = n + n.^(flow.Int + ~(flow.Int))
 }

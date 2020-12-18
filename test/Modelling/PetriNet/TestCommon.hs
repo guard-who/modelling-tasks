@@ -101,7 +101,7 @@ validConfigsForFind = validBasicAndChangeConfigs 2
 
 validBasicAndChangeConfigs :: Int -> Int -> Int -> [(BasicConfig, ChangeConfig)]
 validBasicAndChangeConfigs minala low high =
-  [ (BasicConfig p t ala mintoa maxtoa maxtpp minfoa maxfoa maxfpe Neato,
+  [ (BasicConfig p t ala mintoa maxtoa maxtpp minfoa maxfoa maxfpe iso Neato,
      ChangeConfig tcoa mtcpp fcoa mfcpe
     )
   | p      <- [mlow1 .. min 8 high]
@@ -117,6 +117,7 @@ validBasicAndChangeConfigs minala low high =
   , mtcpp  <- [mlow .. min high maxtpp]
   , tcoa   <- [max mtcpp low .. minimum [high, maxtoa - mintoa, mtcpp * p]]
   , ala    <- [max minala low .. min t high]
+  , iso    <- [Nothing, Just True, Just False]
   ]
   where
     mlow  = max 0 low
