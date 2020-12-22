@@ -1,7 +1,7 @@
 module PetriConcepts
 
 open PetriSignature
-open Helpers
+// open Helpers
 
 //check if a transition is activated
 pred activated[t : Transitions]{

@@ -77,7 +77,6 @@ petriNetRnd input@BasicConfig{places,transitions} advConfig = [i|module PetriNet
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
-#{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 

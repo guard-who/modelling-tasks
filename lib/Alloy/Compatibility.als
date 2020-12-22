@@ -1,6 +1,7 @@
 module Compatibility
 
 open PetriConstraints
+open Helpers
 
 //check if maximum set of concurrent transitions
 pred isMaxConcurrency[ts : set Transitions]{
