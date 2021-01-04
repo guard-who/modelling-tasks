@@ -226,51 +226,48 @@ petriNetFindConcur FindConcurrencyConfig{
   basicConfig,
   advConfig,
   changeConfig
-  } = [i|module PetriNetConcur
-
-#{modulePetriSignature}
-#{modulePetriAdditions}
-#{moduleHelpers}
-#{modulePetriConcepts}
-#{modulePetriConstraints}
-
-pred #{concurrencyPredicateName} [ #{specCompRelation t1 t2 basicConfig changeConfig}
-
-  #{compConcurrency t1 t2}
-  #{compAdvConstraints advConfig}
-  
-}
-run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitwidth basicConfig} Int
-
-
-|]
-  where
-    t1 = transition1
-    t2 = transition2
+  } = petriNetConcurrency basicConfig changeConfig $ Just advConfig
 
 petriNetPickConcur :: PickConcurrencyConfig -> String
-petriNetPickConcur p@PickConcurrencyConfig{
-  basicConfig = BasicConfig {
-      atLeastActive,
-      isConnected
-      },
+petriNetPickConcur PickConcurrencyConfig{
+  basicConfig,
   changeConfig
-  } = [i|module PetriNetConcur
+  } = petriNetConcurrency basicConfig changeConfig Nothing
+
+{-|
+Generate code for PetriNet concurrency tasks
+-}
+petriNetConcurrency
+  :: BasicConfig
+  -> ChangeConfig
+  -> Maybe AdvConfig
+  -- ^ Just for find concurrency; Nothing for pick concurrency
+  -> String
+petriNetConcurrency basicC changeC specific =
+  [i|module PetriNetConcur
 
 #{modulePetriSignature}
+#{maybe "" (const modulePetriAdditions) specific}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{concurrencyPredicateName} [defaultActivTrans : set givenTransitions, #{specCompRelation t1 t2 (basicConfig(p :: PickConcurrencyConfig)) changeConfig}
-
+pred #{concurrencyPredicateName} [#{defaultActivTrans} #{specCompRelation t1 t2 basicC changeC}
   #{compConcurrency t1 t2}
-  #{compDefaultConstraints atLeastActive isConnected}
+  #{compConstraints}
 }
-run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq (basicConfig(p :: PickConcurrencyConfig))} Nodes, #{petriScopeBitwidth (basicConfig(p :: PickConcurrencyConfig))} Int
 
+run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
 |]
   where
+    compConstraints = case specific of
+      Just advC ->
+        compAdvConstraints advC
+      Nothing ->
+        compDefaultConstraints (atLeastActive basicC) (isConnected basicC)
+    defaultActivTrans
+      | isNothing specific = "defaultActivTrans : set givenTransitions,"
+      | otherwise          = ""
     t1 = transition1
     t2 = transition2
 
