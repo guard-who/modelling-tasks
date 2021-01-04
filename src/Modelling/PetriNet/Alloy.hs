@@ -204,7 +204,11 @@ petriNetAlloy basicC changeC muniquePlace specific
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{predicate}[#{place}#{defaultActivTrans}#{specCompRelation t1 t2 basicC changeC}
+pred #{predicate}[#{place}#{defaultActivTrans}activatedTrans : set Transitions, #{t1}, #{t2} : Transitions] {
+  #Places = #{places basicC}
+  #Transitions = #{transitions basicC}
+  #{compBasicConstraints basicC}
+  #{compChange changeC}
   #{maybe "" multiplePlaces muniquePlace}
   #{constraints}
   #{compConstraints}
@@ -216,12 +220,25 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
     compConstraints = case specific of
       Just advC ->
         compAdvConstraints advC
-      Nothing ->
-        compDefaultConstraints (atLeastActive basicC) (isConnected basicC)
+      Nothing -> [i|
+  #{connected "defaultGraphIsConnected" $ isConnected basicC}
+  #{isolated "defaultNoIsolatedNodes" $ isConnected basicC}
+  #defaultActivTrans >= #{atLeastActive basicC}
+  theActivatedDefaultTransitions[defaultActivTrans]|]
     conflict = isJust muniquePlace
+    constraints :: String
     constraints
-      | conflict  = compConflict t1 t2 p
-      | otherwise = compConcurrency t1 t2
+      | conflict  = [i|
+  no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
+  all q : #{p} | conflict[#{t1}, #{t2}, q]
+  no q : (Places - #{p}) | conflict[#{t1}, #{t2}, q]
+  all u,v : Transitions, q : Places |
+    conflict[u,v,q] implies #{t1} + #{t2} = u + v|]
+      | otherwise = [i|
+  no x,y : givenTransitions | concurrentDefault[x+y] and x != y
+  #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
+    and all u,v : Transitions |
+      concurrent[u + v] and u != v implies #{t1} + #{t2} = u + v|]
     defaultActivTrans
       | isNothing specific = "defaultActivTrans : set givenTransitions,"
       | otherwise          = ""
@@ -286,15 +303,6 @@ compAdvConstraints AdvConfig
   #{maybe "" petriSource presenceOfSourceTransitions}
 |]
 
---Needs: defaultActivTrans : set Transitions
-compDefaultConstraints :: Int -> Maybe Bool -> String
-compDefaultConstraints atLeastActive isConnected = [i|
-  #{connected "defaultGraphIsConnected" isConnected}
-  #{isolated "defaultNoIsolatedNodes" isConnected}
-  #defaultActivTrans >= #{atLeastActive}
-  theActivatedDefaultTransitions[defaultActivTrans]
-|]
-
 compChange :: ChangeConfig -> String
 compChange ChangeConfig
                   {flowChangeOverall, maxFlowChangePerEdge
@@ -332,32 +340,6 @@ transition2 = "transition2"
 
 places1 :: String
 places1 = "places"
-
-compConcurrency :: String -> String -> String
-compConcurrency t1 t2 = [i|
-  no x,y : givenTransitions | concurrentDefault[x+y] and x != y
-  #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
-    and all u,v : Transitions |
-      concurrent[u + v] and u != v implies #{t1} + #{t2} = u + v
-|]
-
-compConflict :: String -> String -> String -> String
-compConflict t1 t2 p = [i|
-  no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
-  all q : #{p} | conflict[#{t1}, #{t2}, q]
-  no q : (Places - #{p}) | conflict[#{t1}, #{t2}, q]
-  all u,v : Transitions, q : Places |
-    conflict[u,v,q] implies #{t1} + #{t2} = u + v
-|]
-
-specCompRelation :: String -> String -> BasicConfig -> ChangeConfig -> String
-specCompRelation t1 t2 basic@BasicConfig{places,transitions} change = [i|
-activatedTrans : set Transitions, #{t1}, #{t2} : Transitions] {
-  #Places = #{places}
-  #Transitions = #{transitions}
-  #{compBasicConstraints basic}
-  #{compChange change}
-|]
 
 getAlloyInstances
   :: CallAlloyConfig
