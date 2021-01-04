@@ -21,7 +21,7 @@ import Modelling.PetriNet.Types
 import Control.Monad                    (when)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
-import Data.Maybe                       (isNothing)
+import Data.Maybe                       (isJust, isNothing)
 import Data.FileEmbed
 import Data.String.Interpolate
 import Language.Alloy.Call (
@@ -153,71 +153,21 @@ flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
 conflictPredicateName :: String
 conflictPredicateName = "showConflict"
 
---Conflict--
-
 petriNetFindConfl :: FindConflictConfig -> String
 petriNetFindConfl FindConflictConfig {
   basicConfig,
   advConfig,
   changeConfig,
   uniqueConflictPlace
-  } = petriNetConflict basicConfig changeConfig uniqueConflictPlace $ Just advConfig
+  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) $ Just advConfig
 
 petriNetPickConfl :: PickConflictConfig -> String
 petriNetPickConfl PickConflictConfig {
   basicConfig,
   changeConfig,
   uniqueConflictPlace
-  } = petriNetConflict basicConfig changeConfig uniqueConflictPlace Nothing
+  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) Nothing
 
-{-|
-Generate code for PetriNet conflict tasks
--}
-petriNetConflict
-  :: BasicConfig
-  -> ChangeConfig
-  -> Maybe Bool
-  -> Maybe AdvConfig
-  -- ^ Just for find conflict; Nothing for pick conflict
-  -> String
-petriNetConflict basicC changeC muniquePlace specific
-  = [i|module PetriNetConfl
-
-#{modulePetriSignature}
-#{maybe "" (const modulePetriAdditions) specific}
-#{moduleHelpers}
-#{modulePetriConcepts}
-#{modulePetriConstraints}
-
-pred #{conflictPredicateName} [#{p} : some Places, #{defaultActivTrans} #{specCompRelation t1 t2 basicC changeC}
-  #{multiplePlaces}
-  #{compConflict t1 t2 p}
-  #{compConstraints}
-}
-
-run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
-|]
-  where
-    compConstraints = case specific of
-      Just advC ->
-        compAdvConstraints advC
-      Nothing ->
-        compDefaultConstraints (atLeastActive basicC) (isConnected basicC)
-    defaultActivTrans
-      | isNothing specific = "defaultActivTrans : set givenTransitions,"
-      | otherwise          = ""
-    t1 = transition1
-    t2 = transition2
-    p  = places1
-    multiplePlaces
-      | muniquePlace == Just True
-      = [i|one #{p}|]
-      | muniquePlace == Just False
-      = [i|not (one #{p})|]
-      | otherwise
-      = ""
-
---Concurrency--
 concurrencyPredicateName :: String
 concurrencyPredicateName = "showConcurrency"
 
@@ -226,25 +176,27 @@ petriNetFindConcur FindConcurrencyConfig{
   basicConfig,
   advConfig,
   changeConfig
-  } = petriNetConcurrency basicConfig changeConfig $ Just advConfig
+  } = petriNetAlloy basicConfig changeConfig Nothing $ Just advConfig
 
 petriNetPickConcur :: PickConcurrencyConfig -> String
 petriNetPickConcur PickConcurrencyConfig{
   basicConfig,
   changeConfig
-  } = petriNetConcurrency basicConfig changeConfig Nothing
+  } = petriNetAlloy basicConfig changeConfig Nothing Nothing
 
 {-|
-Generate code for PetriNet concurrency tasks
+Generate code for PetriNet conflict and concurrency tasks
 -}
-petriNetConcurrency
+petriNetAlloy
   :: BasicConfig
   -> ChangeConfig
+  -> Maybe (Maybe Bool)
+  -- ^ Just for conflict task; Nothing for concurrency task
   -> Maybe AdvConfig
-  -- ^ Just for find concurrency; Nothing for pick concurrency
+  -- ^ Just for find task; Nothing for pick task
   -> String
-petriNetConcurrency basicC changeC specific =
-  [i|module PetriNetConcur
+petriNetAlloy basicC changeC muniquePlace specific
+  = [i|module #{moduleName}
 
 #{modulePetriSignature}
 #{maybe "" (const modulePetriAdditions) specific}
@@ -252,12 +204,13 @@ petriNetConcurrency basicC changeC specific =
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{concurrencyPredicateName} [#{defaultActivTrans} #{specCompRelation t1 t2 basicC changeC}
-  #{compConcurrency t1 t2}
+pred #{predicate}[#{place}#{defaultActivTrans}#{specCompRelation t1 t2 basicC changeC}
+  #{maybe "" multiplePlaces muniquePlace}
+  #{constraints}
   #{compConstraints}
 }
 
-run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
+run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
 |]
   where
     compConstraints = case specific of
@@ -265,9 +218,30 @@ run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{
         compAdvConstraints advC
       Nothing ->
         compDefaultConstraints (atLeastActive basicC) (isConnected basicC)
+    conflict = isJust muniquePlace
+    constraints
+      | conflict  = compConflict t1 t2 p
+      | otherwise = compConcurrency t1 t2
     defaultActivTrans
       | isNothing specific = "defaultActivTrans : set givenTransitions,"
       | otherwise          = ""
+    moduleName
+      | conflict  = "PetriNetConfl"
+      | otherwise = "PetriNetConcur"
+    multiplePlaces unique
+      | unique == Just True
+      = [i|one #{p}|]
+      | unique == Just False
+      = [i|not (one #{p})|]
+      | otherwise
+      = ""
+    p  = places1
+    place
+      | conflict  = [i|#{p} : some Places,|]
+      | otherwise = ""
+    predicate
+      | conflict  = conflictPredicateName
+      | otherwise = concurrencyPredicateName
     t1 = transition1
     t2 = transition2
 
