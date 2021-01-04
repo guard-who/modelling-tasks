@@ -1,6 +1,7 @@
 module PetriConstraints
 
 open PetriConcepts
+open Helpers
 
 //check if maximal set of concurrent transitions
 pred maximallyConcurrent[ts : set Transitions]{

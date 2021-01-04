@@ -67,7 +67,7 @@ modulePetriConcepts :: String
 modulePetriConcepts = removeLines 5 $(embedStringFile "lib/Alloy/PetriConcepts.als")
 
 modulePetriConstraints :: String
-modulePetriConstraints = removeLines 4 $(embedStringFile "lib/Alloy/PetriConstraints.als")
+modulePetriConstraints = removeLines 5 $(embedStringFile "lib/Alloy/PetriConstraints.als")
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
@@ -77,6 +77,7 @@ petriNetRnd input@BasicConfig{places,transitions} advConfig = [i|module PetriNet
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
+#{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
