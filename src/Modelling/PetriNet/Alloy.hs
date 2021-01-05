@@ -30,15 +30,15 @@ import Language.Alloy.Call (
 
 petriScopeBitwidth :: BasicConfig -> Int
 petriScopeBitwidth BasicConfig
- {places,transitions,maxFlowOverall,maxTokensOverall} = 
-  floor 
-     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral) 
+ {places,transitions,maxFlowOverall,maxTokensOverall} =
+  floor
+     (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral)
        (maximum [maxFlowOverall,maxTokensOverall,places,transitions])
      )
-  
+
 petriScopeMaxSeq :: BasicConfig -> Int
 petriScopeMaxSeq BasicConfig{places,transitions} = places+transitions
-  
+
 petriLoops :: Bool -> String
 petriLoops = \case
  True  -> "some n : Nodes | selfLoop[n]"
@@ -63,7 +63,7 @@ modulePetriAdditions = removeLines 11 $(embedStringFile "lib/Alloy/PetriAddition
 moduleHelpers :: String
 moduleHelpers = removeLines 4 $(embedStringFile "lib/Alloy/Helpers.als")
 
-modulePetriConcepts :: String 
+modulePetriConcepts :: String
 modulePetriConcepts = removeLines 5 $(embedStringFile "lib/Alloy/PetriConcepts.als")
 
 modulePetriConstraints :: String
@@ -91,7 +91,7 @@ pred showNets [activatedTrans : set Transitions] {
   #Transitions = #{transitions}
   #{compBasicConstraints input}
   #{compAdvConstraints advConfig}
-  
+
 }
 run showNets for exactly #{petriScopeMaxSeq input} Nodes, #{petriScopeBitwidth input} Int
 
@@ -297,7 +297,7 @@ compAdvConstraints :: AdvConfig -> String
 compAdvConstraints AdvConfig
                         { presenceOfSelfLoops, presenceOfSinkTransitions
                         , presenceOfSourceTransitions
-                        } = [i| 
+                        } = [i|
   #{maybe "" petriLoops presenceOfSelfLoops}
   #{maybe "" petriSink presenceOfSinkTransitions}
   #{maybe "" petriSource presenceOfSourceTransitions}
