@@ -1,7 +1,7 @@
 module Modelling.PetriNet.DiagramSpec where
 
-import Modelling.PetriNet.Alloy          (petriNetRnd)
 import Modelling.PetriNet.Diagram
+import Modelling.PetriNet.MatchToMath    (petriNetRnd)
 import Modelling.PetriNet.Types          (defaultBasicConfig,defaultAdvConfig)
 import Modelling.PetriNet.Parser         (parsePetriLike)
 

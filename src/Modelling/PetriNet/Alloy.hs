@@ -14,12 +14,8 @@ module Modelling.PetriNet.Alloy (
   modulePetriConcepts,
   modulePetriConstraints,
   modulePetriSignature,
-  petriNetRnd, petriScopeBitwidth, petriScopeMaxSeq, renderFalse,
+  petriScopeBitwidth, petriScopeMaxSeq,
   ) where
-
-import qualified Data.Map                         as M (
-  foldrWithKey, keys, lookup, partition
-  )
 
 import Modelling.PetriNet.Types
 
@@ -60,81 +56,6 @@ modulePetriConstraints = removeLines 5 $(embedStringFile "lib/Alloy/PetriConstra
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
-
-petriNetRnd :: BasicConfig -> AdvConfig -> String
-petriNetRnd basicC@BasicConfig{places,transitions} advConfig = [i|module PetriNetRnd
-
-#{modulePetriSignature}
-#{modulePetriAdditions}
-#{moduleHelpers}
-#{modulePetriConcepts}
-#{modulePetriConstraints}
-
-fact{
-  no givenPlaces
-  no givenTransitions
-}
-
-pred showNets[#{activated} : set Transitions] {
-  #Places = #{places}
-  #Transitions = #{transitions}
-  #{compBasicConstraints activated basicC}
-  #{compAdvConstraints advConfig}
-}
-run showNets for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
-|]
-  where
-    activated = "activatedTrans"
-
-renderFalse :: PetriLike String -> MathConfig -> String
-renderFalse
-  PetriLike  {allNodes}
-  MathConfig {basicTask, advTask, changeTask} = [i|module FalseNet
-
-#{modulePetriSignature}
-#{moduleHelpers}
-#{modulePetriConcepts}
-#{modulePetriConstraints}
-
-#{places}
-#{transitions}
-
-fact{
-#{initialMark}
-#{defaultFlow}
-}
-
-pred showFalseNets[#{activated} : set Transitions]{
-  #{compBasicConstraints activated basicTask}
-  #{compAdvConstraints advTask}
-  #{compChange changeTask}
-}
-
-run showFalseNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
-|]
-  where
-    (ps, ts)    = M.partition isPlaceNode allNodes
-    activated   = "activatedTrans"
-    places      = unlines [extendLine p "givenPlaces" | p <- M.keys ps]
-    transitions = unlines [extendLine t "givenTransitions" | t <- M.keys ts]
-    initialMark = M.foldrWithKey (\k -> (++) . tokenLine k) "" $ initial <$> ps
-    defaultFlow = M.foldrWithKey (\k _ -> (printFlow k ++)) "" allNodes
-    printFlow :: String -> String
-    printFlow x = M.foldrWithKey
-      (\y flow -> (++) $ flowLine x y $ M.lookup x $ flowIn flow)
-      ""
-      allNodes
-    extendLine :: String -> String -> String
-    extendLine n k = [i|one sig #{n} extends #{k}{}
-|]
-    tokenLine :: String -> Int -> String
-    tokenLine k l = [i|  #{k}.defaultTokens = #{l}
-|]
-    flowLine :: String -> String -> Maybe Int -> String
-    flowLine from to Nothing  = [i|  no #{from}.defaultFlow[#{to}]
-|]
-    flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
-|]
 
 {-|
 A set of constraints enforcing settings of 'BasicConfig'.
