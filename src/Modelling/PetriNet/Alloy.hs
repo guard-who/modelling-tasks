@@ -39,21 +39,6 @@ petriScopeBitwidth BasicConfig
 petriScopeMaxSeq :: BasicConfig -> Int
 petriScopeMaxSeq BasicConfig{places,transitions} = places+transitions
 
-petriLoops :: Bool -> String
-petriLoops = \case
- True  -> "some n : Nodes | selfLoop[n]"
- False -> "no n : Nodes | selfLoop[n]"
-
-petriSink :: Bool -> String
-petriSink = \case
- True  -> "some t : Transitions | sinkTransitions[t]"
- False -> "no t : Transitions | sinkTransitions[t]"
-
-petriSource :: Bool -> String
-petriSource = \case
- True  -> "some t : Transitions | sourceTransitions[t]"
- False -> "no t : Transitions | sourceTransitions[t]"
-
 modulePetriSignature :: String
 modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
 
@@ -135,19 +120,16 @@ run showFalseNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeB
       (\y flow -> (++) $ flowLine x y $ M.lookup x $ flowIn flow)
       ""
       allNodes
-
-extendLine :: String -> String -> String
-extendLine n k = [i|one sig #{n} extends #{k}{}
+    extendLine :: String -> String -> String
+    extendLine n k = [i|one sig #{n} extends #{k}{}
 |]
-
-tokenLine :: String -> Int -> String
-tokenLine k l = [i|  #{k}.defaultTokens = #{l}
+    tokenLine :: String -> Int -> String
+    tokenLine k l = [i|  #{k}.defaultTokens = #{l}
 |]
-
-flowLine :: String -> String -> Maybe Int -> String
-flowLine from to Nothing  = [i|  no #{from}.defaultFlow[#{to}]
+    flowLine :: String -> String -> Maybe Int -> String
+    flowLine from to Nothing  = [i|  no #{from}.defaultFlow[#{to}]
 |]
-flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
+    flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
 |]
 
 conflictPredicateName :: String
@@ -309,6 +291,16 @@ compAdvConstraints AdvConfig
   #{maybe "" petriSink presenceOfSinkTransitions}
   #{maybe "" petriSource presenceOfSourceTransitions}
 |]
+  where
+    petriLoops = \case
+      True  -> "some n : Nodes | selfLoop[n]"
+      False -> "no n : Nodes | selfLoop[n]"
+    petriSink = \case
+      True  -> "some t : Transitions | sinkTransitions[t]"
+      False -> "no t : Transitions | sinkTransitions[t]"
+    petriSource = \case
+      True  -> "some t : Transitions | sourceTransitions[t]"
+      False -> "no t : Transitions | sourceTransitions[t]"
 
 compChange :: ChangeConfig -> String
 compChange ChangeConfig
