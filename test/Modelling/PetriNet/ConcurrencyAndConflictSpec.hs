@@ -9,13 +9,15 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   findConcurrency,
   findConflicts,
   findTaskInstance,
+  parseConcurrency,
+  parseConflict,
+  petriNetFindConcur,
+  petriNetFindConfl,
+  petriNetPickConcur,
+  petriNetPickConfl,
   pickConcurrency,
   pickConflicts,
   pickTaskInstance,
-  )
-import Modelling.PetriNet.Parser        (
-  parseConcurrency,
-  parseConflict,
   )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig),
@@ -42,9 +44,6 @@ import Modelling.PetriNet.TestCommon (
   validAdvConfigs,
   validConfigsForFind,
   validConfigsForPick,
-  )
-import Modelling.PetriNet.Alloy (
-  petriNetFindConcur, petriNetFindConfl, petriNetPickConcur, petriNetPickConfl,
   )
 
 spec :: Spec

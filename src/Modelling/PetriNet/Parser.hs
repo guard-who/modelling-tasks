@@ -6,8 +6,9 @@ into types as 'PetriLike' which allow representing some invalid representations
 of graphs which are similar to Petri nets.
 -}
 module Modelling.PetriNet.Parser (
+  asSingleton,
   convertPetri,
-  parseChange, parseConflict, parseConcurrency, parsePetriLike,
+  parseChange, parsePetriLike,
   parseRenamedPetriLike, petriLikeToGr,
   simpleNameMap, simpleRename, simpleRenameWith,
   ) where
@@ -16,16 +17,12 @@ import qualified Data.Bimap                       as BM (
   fromList, lookup,
   )
 import qualified Data.Set                         as Set (
-  Set, findMin, foldr, lookupMin, null, size, toList,
+  Set, findMin, foldr, lookupMin, null, size,
   )
 import qualified Data.Map.Lazy                    as Map (
   empty, findIndex, foldlWithKey, foldrWithKey, insert, lookup,
   )
 
-import Modelling.PetriNet.Alloy         (
-  conflictTransition1, conflictTransition2, conflictPlaces1,
-  concurrencyTransition1, concurrencyTransition2,
-  )
 import Modelling.PetriNet.Types
 
 import Control.Arrow                    (left, second)
@@ -169,30 +166,6 @@ parseChange inst = do
     tripleToOut (x, y, z) = (x, (y, read $ objectName z))
 
 {-|
-Parses the conflict Skolem variables for singleton of transitions and returns
-both as tuple.
-It returns an error message instead if unexpected behaviour occurs.
--}
-parseConflict :: AlloyInstance -> Either String (PetriConflict Object)
-parseConflict inst = do
-  tc1 <- unscopedSingleSig inst conflictTransition1 ""
-  tc2 <- unscopedSingleSig inst conflictTransition2 ""
-  pc  <- unscopedSingleSig inst conflictPlaces1 ""
-  flip Conflict (Set.toList pc)
-    <$> ((,) <$> asSingleton tc1 <*> asSingleton tc2)
-
-{-|
-Parses the concurrency Skolem variables for singleton of transitions and returns
-both as tuple.
-It returns an error message instead if unexpected behaviour occurs.
--}
-parseConcurrency :: AlloyInstance -> Either String (Concurrent Object)
-parseConcurrency inst = do
-  t1 <- unscopedSingleSig inst concurrencyTransition1 ""
-  t2 <- unscopedSingleSig inst concurrencyTransition2 ""
-  Concurrent <$> ((,) <$> asSingleton t1 <*> asSingleton t2)
-
-{-|
 Convert a singleton 'Set' into its single value.
 Returns a 'Left' error message if the 'Set' is empty or contains more than one
 single element.
@@ -221,11 +194,6 @@ tripleSig :: AlloyInstance -> String -> String -> String
 tripleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   getTriple rd sig
-  
-unscopedSingleSig :: AlloyInstance -> String -> String -> Either String (Set.Set Object)
-unscopedSingleSig inst st nd = do
-  sig <- lookupSig (unscoped st) inst
-  getSingle nd sig
 
 {-|
 Retrieve a simple naming map from a given 'PetriLike'.
