@@ -73,7 +73,7 @@ removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
 
 petriNetRnd :: BasicConfig -> AdvConfig -> String
-petriNetRnd input@BasicConfig{places,transitions} advConfig = [i|module PetriNetRnd
+petriNetRnd basicC@BasicConfig{places,transitions} advConfig = [i|module PetriNetRnd
 
 #{modulePetriSignature}
 #{modulePetriAdditions}
@@ -86,16 +86,16 @@ fact{
   no givenTransitions
 }
 
-pred showNets [activatedTrans : set Transitions] {
+pred showNets[#{activated} : set Transitions] {
   #Places = #{places}
   #Transitions = #{transitions}
-  #{compBasicConstraints input}
+  #{compBasicConstraints activated basicC}
   #{compAdvConstraints advConfig}
-
 }
-run showNets for exactly #{petriScopeMaxSeq input} Nodes, #{petriScopeBitwidth input} Int
-
+run showNets for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
 |]
+  where
+    activated = "activatedTrans"
 
 renderFalse :: PetriLike String -> MathConfig -> String
 renderFalse
@@ -112,12 +112,11 @@ renderFalse
 
 fact{
 #{initialMark}
-
 #{defaultFlow}
 }
 
-pred showFalseNets[activatedTrans : set Transitions]{
-  #{compBasicConstraints basicTask}
+pred showFalseNets[#{activated} : set Transitions]{
+  #{compBasicConstraints activated basicTask}
   #{compAdvConstraints advTask}
   #{compChange changeTask}
 }
@@ -126,6 +125,7 @@ run showFalseNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeB
 |]
   where
     (ps, ts)    = M.partition isPlaceNode allNodes
+    activated   = "activatedTrans"
     places      = unlines [extendLine p "givenPlaces" | p <- M.keys ps]
     transitions = unlines [extendLine t "givenTransitions" | t <- M.keys ts]
     initialMark = M.foldrWithKey (\k -> (++) . tokenLine k) "" $ initial <$> ps
@@ -204,10 +204,10 @@ petriNetAlloy basicC changeC muniquePlace specific
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{predicate}[#{place}#{defaultActivTrans}activatedTrans : set Transitions, #{t1}, #{t2} : Transitions] {
+pred #{predicate}[#{place}#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
   #Places = #{places basicC}
   #Transitions = #{transitions basicC}
-  #{compBasicConstraints basicC}
+  #{compBasicConstraints activated basicC}
   #{compChange changeC}
   #{maybe "" multiplePlaces muniquePlace}
   #{constraints}
@@ -217,14 +217,16 @@ pred #{predicate}[#{place}#{defaultActivTrans}activatedTrans : set Transitions, 
 run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
 |]
   where
+    activated        = "activatedTrans"
+    activatedDefault = "defaultActivTrans"
     compConstraints = case specific of
       Just advC ->
         compAdvConstraints advC
       Nothing -> [i|
   #{connected "defaultGraphIsConnected" $ isConnected basicC}
   #{isolated "defaultNoIsolatedNodes" $ isConnected basicC}
-  #defaultActivTrans >= #{atLeastActive basicC}
-  theActivatedDefaultTransitions[defaultActivTrans]|]
+  ##{activatedDefault} >= #{atLeastActive basicC}
+  theActivatedDefaultTransitions[#{activatedDefault}]|]
     conflict = isJust muniquePlace
     constraints :: String
     constraints
@@ -240,7 +242,7 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   all u,v : Transitions |
     u != v and concurrent[u + v] implies #{t1} + #{t2} = u + v|]
     defaultActivTrans
-      | isNothing specific = "defaultActivTrans : set givenTransitions,"
+      | isNothing specific = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""
     moduleName
       | conflict  = "PetriNetConfl"
@@ -262,11 +264,16 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
     t1 = transition1
     t2 = transition2
 
-----------------------"Building-Kit"----------------------------
-
--- Needs: activatedTrans : set Transitions
-compBasicConstraints :: BasicConfig -> String
-compBasicConstraints BasicConfig {
+{-|
+A set of constraints enforcing settings of 'BasicConfig'.
+-}
+compBasicConstraints
+  :: String
+  -- ^ The name of the Alloy variable for the set of activated Transitions.
+  -> BasicConfig
+  -- ^ the configuration to enforce.
+  -> String
+compBasicConstraints activatedTrans BasicConfig {
   atLeastActive,
   isConnected,
   maxFlowOverall,
@@ -281,8 +288,8 @@ compBasicConstraints BasicConfig {
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
   let theflow = (sum f, t : Nodes | f.flow[t]) |
     theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
-  #activatedTrans >= #{atLeastActive}
-  theActivatedTransitions[activatedTrans]
+  ##{activatedTrans} >= #{atLeastActive}
+  theActivatedTransitions[#{activatedTrans}]
   #{connected "graphIsConnected" isConnected}
   #{isolated "noIsolatedNodes" isConnected}
 |]
