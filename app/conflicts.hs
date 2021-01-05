@@ -3,7 +3,7 @@
 module Main (main) where 
 
 import Common                           (forceErrors, printNetAndInfo)
-import Modelling.PetriNet.Conflicts (
+import Modelling.PetriNet.ConcurrencyAndConflict (
   checkFindConflictConfig,
   checkPickConflictConfig,
   findConflicts,

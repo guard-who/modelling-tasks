@@ -36,8 +36,7 @@ library:
     - Modelling.PetriNet.MatchToMath
     - Modelling.PetriNet.Parser
     - Modelling.PetriNet.Types
-    - Modelling.PetriNet.Conflicts
-    - Modelling.PetriNet.Concurrency
+    - Modelling.PetriNet.ConcurrencyAndConflict
     - Modelling.PetriNet.BasicNetFunctions
   ghc-options:
     - -Wall
