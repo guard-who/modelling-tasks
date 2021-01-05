@@ -235,10 +235,10 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   all u,v : Transitions, q : Places |
     conflict[u,v,q] implies #{t1} + #{t2} = u + v|]
       | otherwise = [i|
-  no x,y : givenTransitions | concurrentDefault[x+y] and x != y
+  no x,y : givenTransitions | x != y and concurrentDefault[x + y]
   #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
-    and all u,v : Transitions |
-      concurrent[u + v] and u != v implies #{t1} + #{t2} = u + v|]
+  all u,v : Transitions |
+    u != v and concurrent[u + v] implies #{t1} + #{t2} = u + v|]
     defaultActivTrans
       | isNothing specific = "defaultActivTrans : set givenTransitions,"
       | otherwise          = ""
