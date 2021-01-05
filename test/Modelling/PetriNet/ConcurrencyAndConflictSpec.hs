@@ -7,13 +7,15 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   checkPickConcurrencyConfig,
   checkPickConflictConfig,
   findConcurrency,
-  findConcurrencyTaskInstance,
   findConflicts,
-  findConflictsTaskInstance,
+  findTaskInstance,
   pickConcurrency,
-  pickConcurrencyTaskInstance,
   pickConflicts,
-  pickConflictsTaskInstance,
+  pickTaskInstance,
+  )
+import Modelling.PetriNet.Parser        (
+  parseConcurrency,
+  parseConflict,
   )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig),
@@ -112,7 +114,7 @@ checkPickConflictInstance = f . fmap snd
 testFindConcurrencyConfig :: [FindConcurrencyConfig] -> Spec
 testFindConcurrencyConfig = testTaskGeneration
   petriNetFindConcur
-  (\i -> findConcurrencyTaskInstance i . graphLayout . bc)
+  (\i -> findTaskInstance parseConcurrency i . graphLayout . bc)
   checkFindConcurrencyInstance
   where
     bc :: FindConcurrencyConfig -> BasicConfig
@@ -121,7 +123,7 @@ testFindConcurrencyConfig = testTaskGeneration
 testFindConflictConfig :: [FindConflictConfig] -> Spec
 testFindConflictConfig = testTaskGeneration
   petriNetFindConfl
-  (\i -> findConflictsTaskInstance i . graphLayout . bc)
+  (\i -> findTaskInstance parseConflict i . graphLayout . bc)
   checkFindConflictInstance
   where
     bc :: FindConflictConfig -> BasicConfig
@@ -130,7 +132,7 @@ testFindConflictConfig = testTaskGeneration
 testPickConcurrencyConfig :: [PickConcurrencyConfig] -> Spec
 testPickConcurrencyConfig = testTaskGeneration
   petriNetPickConcur
-  (\i -> pickConcurrencyTaskInstance i . graphLayout . bc)
+  (\i -> pickTaskInstance parseConcurrency i . graphLayout . bc)
   checkPickConcurrencyInstance
   where
     bc :: PickConcurrencyConfig -> BasicConfig
@@ -139,7 +141,7 @@ testPickConcurrencyConfig = testTaskGeneration
 testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig = testTaskGeneration
   petriNetPickConfl
-  (\i -> pickConflictsTaskInstance i . graphLayout . bc)
+  (\i -> pickTaskInstance parseConflict i . graphLayout . bc)
   checkPickConflictInstance
   where
     bc :: PickConflictConfig -> BasicConfig

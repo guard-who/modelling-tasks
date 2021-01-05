@@ -5,13 +5,11 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   checkFindConcurrencyConfig, checkFindConflictConfig,
   checkPickConcurrencyConfig, checkPickConflictConfig,
   findConcurrency, findConcurrencyTask,
-  findConcurrencyTaskInstance,
   findConflicts, findConflictsTask,
-  findConflictsTaskInstance,
+  findTaskInstance,
   pickConcurrency, pickConcurrencyTask,
-  pickConcurrencyTaskInstance,
   pickConflicts, pickConflictsTask,
-  pickConflictsTaskInstance,
+  pickTaskInstance,
   ) where
 
 import Modelling.PetriNet.Alloy (
@@ -40,53 +38,100 @@ import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Prelude                  (Diagram)
 import Language.Alloy.Call (
-  AlloyInstance, CallAlloyConfig (..), defaultCallAlloyConfig,
+  AlloyInstance, CallAlloyConfig (..), Object, defaultCallAlloyConfig,
   )
-findConcurrency
-  :: Int
-  -> FindConcurrencyConfig
-  -> ExceptT String IO (Diagram B, Maybe (Concurrent String))
-findConcurrency indInst config@FindConcurrencyConfig{ basicConfig } = do
-  list <- getAlloyInstances
-    defaultCallAlloyConfig {
-      maxInstances = Just $ toInteger $ indInst + 1
-      }
-    (petriNetFindConcur config)
-  unless (length list > indInst) $ except $ Left "instance not available"
-  findConcurrencyTaskInstance (list !! indInst) (graphLayout basicConfig)
 
 findConcurrencyTask :: String
 findConcurrencyTask =
   "Which pair of transitions are in concurrency under the initial marking?"
 
-pickConcurrency
-  :: Int
-  -> PickConcurrencyConfig
-  -> ExceptT String IO [(Diagram B, Maybe (Concurrent String))]
-pickConcurrency indInst config@PickConcurrencyConfig{ basicConfig } = do
-  list <- getAlloyInstances
-    defaultCallAlloyConfig {
-      maxInstances = Just $ toInteger $ indInst + 1
-      }
-    (petriNetPickConcur config)
-  unless (length list > indInst) $ except $ Left "instance not available"
-  pickConcurrencyTaskInstance (list !! indInst) (graphLayout basicConfig)
+findConflictsTask :: String
+findConflictsTask =
+  "Which of the following Petrinets doesn't have a conflict?"
 
 pickConcurrencyTask :: String
 pickConcurrencyTask =
    "Which of the following Petri nets does not have a concurrency?"
 
-findConcurrencyTaskInstance :: AlloyInstance -> GraphvizCommand -> ExceptT String IO (Diagram B, Maybe (Concurrent String))
-findConcurrencyTaskInstance = getNetWith parseConcurrency "flow" "tokens"
+pickConflictsTask :: String
+pickConflictsTask =
+  "Which pair of transitions are in conflict under the initial marking?"
 
-pickConcurrencyTaskInstance
-  :: AlloyInstance
-  -> GraphvizCommand
+findConcurrency
+  :: Int
+  -> FindConcurrencyConfig
+  -> ExceptT String IO (Diagram B, Maybe (Concurrent String))
+findConcurrency = taskInstance
+  findTaskInstance
+  petriNetFindConcur
+  parseConcurrency
+  (\c -> graphLayout $ basicConfig (c :: FindConcurrencyConfig))
+
+findConflicts
+  :: Int
+  -> FindConflictConfig
+  -> ExceptT String IO (Diagram B, Maybe Conflict)
+findConflicts = taskInstance
+  findTaskInstance
+  petriNetFindConfl
+  parseConflict
+  (\c -> graphLayout $ basicConfig (c :: FindConflictConfig))
+
+pickConcurrency
+  :: Int
+  -> PickConcurrencyConfig
   -> ExceptT String IO [(Diagram B, Maybe (Concurrent String))]
-pickConcurrencyTaskInstance inst gc = do
-  conc <- getNetWith parseConcurrency "flow" "tokens" inst gc
-  net <- getNetWith parseConcurrency "defaultFlow" "defaultTokens" inst gc
-  return [conc,net]
+pickConcurrency  = taskInstance
+  pickTaskInstance
+  petriNetPickConcur
+  parseConcurrency
+  (\c -> graphLayout $ basicConfig (c :: PickConcurrencyConfig))
+
+pickConflicts
+  :: Int
+  -> PickConflictConfig
+  -> ExceptT String IO [(Diagram B, Maybe Conflict)]
+pickConflicts = taskInstance
+  pickTaskInstance
+  petriNetPickConfl
+  parseConflict
+  (\c -> graphLayout $ basicConfig (c :: PickConflictConfig))
+
+taskInstance
+  :: (f -> AlloyInstance -> GraphvizCommand -> ExceptT String IO a)
+  -> (config -> String)
+  -> f
+  -> (config -> GraphvizCommand)
+  -> Int
+  -> config
+  -> ExceptT String IO a
+taskInstance taskF alloyF parseF layoutF indInst config = do
+  list <- getAlloyInstances
+    defaultCallAlloyConfig {
+      maxInstances = Just $ toInteger $ indInst + 1
+      }
+    (alloyF config)
+  unless (length list > indInst) $ except $ Left "instance not available"
+  taskF parseF (list !! indInst) (layoutF config)
+
+findTaskInstance
+  :: Traversable t
+  => (AlloyInstance -> Either String (t Object))
+  -> AlloyInstance
+  -> GraphvizCommand
+  -> ExceptT String IO (Diagram B, Maybe (t String))
+findTaskInstance parseF = getNetWith parseF "flow" "tokens"
+
+pickTaskInstance
+  :: Traversable t
+  => (AlloyInstance -> Either String (t Object))
+  -> AlloyInstance
+  -> GraphvizCommand
+  -> ExceptT String IO [(Diagram B, Maybe (t String))]
+pickTaskInstance parseF inst gc = do
+  confl <- getNetWith parseF "flow" "tokens" inst gc
+  net   <- getNetWith parseF "defaultFlow" "defaultTokens" inst gc
+  return [confl,net]
 
 checkFindConcurrencyConfig :: FindConcurrencyConfig -> Maybe String
 checkFindConcurrencyConfig FindConcurrencyConfig {
@@ -102,55 +147,6 @@ checkPickConcurrencyConfig PickConcurrencyConfig {
   }
   = checkConfigForPick basicConfig changeConfig
 
-findConflicts
-  :: Int
-  -> FindConflictConfig
-  -> ExceptT String IO (Diagram B, Maybe Conflict)
-findConflicts indInst config@FindConflictConfig{basicConfig} = do
-  list <- getAlloyInstances
-    defaultCallAlloyConfig {
-      maxInstances = Just $ toInteger $ indInst + 1
-      }
-    (petriNetFindConfl config)
-  unless (length list > indInst) $ except $ Left "instance not available"
-  findConflictsTaskInstance (list !! indInst) (graphLayout basicConfig)
-
-findConflictsTask :: String
-findConflictsTask =
-  "Which of the following Petrinets doesn't have a conflict?"
-
-pickConflicts
-  :: Int
-  -> PickConflictConfig
-  -> ExceptT String IO [(Diagram B, Maybe Conflict)]
-pickConflicts indInst  config@PickConflictConfig{basicConfig}= do
-  list <- getAlloyInstances
-    defaultCallAlloyConfig {
-      maxInstances = Just $ toInteger $ indInst + 1
-      }
-    (petriNetPickConfl config)
-  unless (length list > indInst) $ except $ Left "instance not available"
-  pickConflictsTaskInstance (list !! indInst) (graphLayout basicConfig)
-
-findConflictsTaskInstance
-  :: AlloyInstance
-  -> GraphvizCommand
-  -> ExceptT String IO (Diagram B, Maybe Conflict)
-findConflictsTaskInstance = getNet "flow" "tokens"
-
-pickConflictsTaskInstance
-  :: AlloyInstance
-  -> GraphvizCommand
-  -> ExceptT String IO [(Diagram B, Maybe Conflict)]
-pickConflictsTaskInstance inst gc = do
-  confl <- getNet "flow" "tokens" inst gc
-  net   <- getNet "defaultFlow" "defaultTokens" inst gc
-  return [confl,net]
-
-pickConflictsTask :: String
-pickConflictsTask =
-  "Which pair of transitions are in conflict under the initial marking?"
-
 checkFindConflictConfig :: FindConflictConfig -> Maybe String
 checkFindConflictConfig FindConflictConfig {
   basicConfig,
@@ -164,11 +160,3 @@ checkPickConflictConfig PickConflictConfig {
   changeConfig
   }
   = checkConfigForPick basicConfig changeConfig
-
-getNet
-  :: String
-  -> String
-  -> AlloyInstance
-  -> GraphvizCommand
-  -> ExceptT String IO (Diagram B, Maybe Conflict)
-getNet = getNetWith parseConflict
