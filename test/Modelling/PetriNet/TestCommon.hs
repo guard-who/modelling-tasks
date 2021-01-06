@@ -39,7 +39,7 @@ instance Arbitrary RandomGen where
 
 maxJavaInt :: Int
 maxJavaInt = 2 ^ (31 :: Int) - 1
- 
+
 ioPropertyWith :: Int -> (Int -> StdGen -> IO Property) -> Spec
 ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
   it "generates everything required to create the task" $ property $ \g g' ->
@@ -76,14 +76,14 @@ defaultConfigTaskGeneration
   => ExceptT e IO a
   -> (a -> Bool)
   -> Spec
-defaultConfigTaskGeneration generateInst checkInst = do
+defaultConfigTaskGeneration generateInst checkInst =
   context "using its default config" $
     it "generates everything required to create the task" $ do
       result <- runExceptT generateInst
       return (checkInst <$> result) `shouldReturn` Right True
 
 checkConfigs :: (Eq b, Show b) => (a -> Maybe b) -> [a] -> Spec
-checkConfigs check cs = do
+checkConfigs check cs =
   it "contains only valid configs" $
     take 1 (filter (/= Nothing) $ check <$> cs)
     `shouldBe` []

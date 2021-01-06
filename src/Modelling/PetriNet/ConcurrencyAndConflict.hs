@@ -222,14 +222,14 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   where
     activated        = "activatedTrans"
     activatedDefault = "defaultActivTrans"
-    compConstraints = case specific of
-      Just advC ->
-        compAdvConstraints advC
-      Nothing -> [i|
+    compConstraints = maybe
+      [i|
   #{connected "defaultGraphIsConnected" $ isConnected basicC}
   #{isolated "defaultNoIsolatedNodes" $ isConnected basicC}
   ##{activatedDefault} >= #{atLeastActive basicC}
   theActivatedDefaultTransitions[#{activatedDefault}]|]
+      compAdvConstraints
+      specific
     conflict = isJust muniquePlace
     constraints :: String
     constraints

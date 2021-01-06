@@ -18,6 +18,7 @@ import Modelling.PetriNet.Types (
   isPlaceNode, mapPetriLike,
   )
 
+import Control.Arrow                ((&&&))
 import Data.Char                    (isDigit)
 import Data.List                    (intercalate)
 import Data.Maybe                   (fromMaybe)
@@ -124,8 +125,7 @@ tokenChangeLaTeX
   -- ^ The transitions together with their names.
   --   This List should only contain 'TransitionNode's.
   -> [(Formula, Formula)]
-tokenChangeLaTeX ps ts =
-  (\x -> (uncurry inT x, uncurry outT x)) <$> ts
+tokenChangeLaTeX ps ts = (uncurry inT &&& uncurry outT) <$> ts
   where
     inT  n t = mathMode $ "^{\\bullet}" ++ n ++ tkns (flowIn t)
     outT n t = mathMode $ n ++ "^{\\bullet}" ++ tkns (flowOut t)

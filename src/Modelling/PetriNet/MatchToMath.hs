@@ -89,7 +89,7 @@ matchToMathTask switch =
   else "Which of the presented mathematical expressions shows the given Petri net?"
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
-firstM f (p, c) = f p >>= (return . (,c))
+firstM f (p, c) = (,c) <$> f p
 
 checkConfig :: MathConfig -> Maybe String
 checkConfig MathConfig{basicTask,changeTask} = 

@@ -159,7 +159,7 @@ validFindConflictConfigs
   -> [FindConflictConfig]
 validFindConflictConfigs cs aconfig = do
   unique <- [Nothing, Just True, Just False]
-  ($unique) . uncurry (`FindConflictConfig` aconfig) <$> cs
+  ($ unique) . uncurry (`FindConflictConfig` aconfig) <$> cs
 
 validPickConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
@@ -172,7 +172,7 @@ validPickConflictConfigs
   -> [PickConflictConfig]
 validPickConflictConfigs cs = do
   unique <- [Nothing, Just True, Just False]
-  ($unique) . uncurry PickConflictConfig <$> cs
+  ($ unique) . uncurry PickConflictConfig <$> cs
 
 isValidConcurrency :: Concurrent String -> Bool
 isValidConcurrency c@(Concurrent (t1, t2))
