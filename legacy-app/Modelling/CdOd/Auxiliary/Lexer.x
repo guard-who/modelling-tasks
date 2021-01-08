@@ -1,6 +1,6 @@
 {
 
-module Alloy.CdOd.Auxiliary.Lexer (lexer, Token(..)) where
+module Modelling.CdOd.Auxiliary.Lexer (lexer, Token(..)) where
 
 }
 

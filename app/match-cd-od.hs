@@ -1,7 +1,7 @@
 module Main (main) where
 
-import Alloy.CdOd.Types                 (ClassConfig (..))
-import Alloy.CdOd.MatchCdOd             (MatchCdOdConfig (..), matchCdOd)
+import Modelling.CdOd.Types             (ClassConfig (..))
+import Modelling.CdOd.MatchCdOd         (MatchCdOdConfig (..), matchCdOd)
 import EvaluateArgs                     (evaluateArgs)
 
 import System.Environment               (getArgs)

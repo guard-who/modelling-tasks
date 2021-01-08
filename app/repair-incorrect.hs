@@ -1,13 +1,13 @@
 module Main where
 
-import Alloy.CdOd.RepairCd (
+import Modelling.CdOd.RepairCd (
   RepairCdConfig (..),
   RepairCdInstance (..),
   defaultRepairCdConfig,
   phraseChange,
   repairCd,
   )
-import Alloy.CdOd.SelectValidCd
+import Modelling.CdOd.SelectValidCd
   (defaultSelectValidCdConfig, selectValidCd)
 import EvaluateArgs                     (evaluateArgs)
 

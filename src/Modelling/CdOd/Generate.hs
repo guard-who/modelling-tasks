@@ -1,9 +1,9 @@
-module Alloy.CdOd.Generate (
+module Modelling.CdOd.Generate (
   generate,
   ) where
 
-import Alloy.CdOd.Edges                 (checkMultiEdge)
-import Alloy.CdOd.Types
+import Modelling.CdOd.Edges             (checkMultiEdge)
+import Modelling.CdOd.Types
   (AssociationType (..), ClassConfig (..), Connection (..), DiagramEdge)
 
 import Control.Arrow                    (second)

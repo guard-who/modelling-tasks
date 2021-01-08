@@ -1,4 +1,4 @@
-module Alloy.CdOd.Output (
+module Modelling.CdOd.Output (
   drawCdFromSyntax,
   drawOdFromInstance,
   drawOdFromRawInstance,
@@ -8,10 +8,10 @@ module Alloy.CdOd.Output (
 import qualified Data.Map               as M (empty, insert, lookup)
 import qualified Data.Set               as S (toList)
 
-import Alloy.CdOd.Auxiliary.Util        (emptyArr, firstLower, underlinedLabel)
-import Alloy.CdOd.Types
+import Modelling.CdOd.Auxiliary.Util    (emptyArr, firstLower, underlinedLabel)
+import Modelling.CdOd.Types
   (AssociationType(..), Connection(..), DiagramEdge, Syntax)
-import Alloy.CdOd.Edges                 (shouldBeMarked)
+import Modelling.CdOd.Edges             (shouldBeMarked)
 
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz

@@ -1,13 +1,13 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TupleSections #-}
-module Alloy.CdOd.CdAndChanges.Instance (
+module Modelling.CdOd.CdAndChanges.Instance (
   fromInstance,
   ) where
 
 import qualified Data.Map                         as M (lookup)
 import qualified Data.Set                         as S (findMin, size, toList)
 
-import Alloy.CdOd.Types
+import Modelling.CdOd.Types
   (AssociationType (..), Change (..), Connection (..), DiagramEdge)
 
 import Data.List                        (stripPrefix)

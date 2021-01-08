@@ -1,17 +1,17 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Alloy.CdOd.DifferentNames where
+module Modelling.CdOd.DifferentNames where
 
 import qualified Data.Bimap                       as BM
   (filter, fromList, lookup, twist)
 import qualified Data.Map                         as M (empty, insert)
 import qualified Data.Set                         as S (toList)
 
-import Alloy.CdOd.Auxiliary.Util
-import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
-import Alloy.CdOd.Edges                 (fromEdges, renameEdges, toEdges)
-import Alloy.CdOd.Generate              (generate)
-import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
-import Alloy.CdOd.Types (
+import Modelling.CdOd.Auxiliary.Util
+import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
+import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
+import Modelling.CdOd.Generate          (generate)
+import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
+import Modelling.CdOd.Types (
   AssociationType (..),
   ClassConfig (..),
   Connection (..),

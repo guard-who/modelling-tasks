@@ -1,10 +1,10 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Alloy.CdOd.CD2Alloy.Transform (
+module Modelling.CdOd.CD2Alloy.Transform (
   createRunCommand, mergeParts, transform,
   ) where
 
-import Alloy.CdOd.Types                 (Association, AssociationType(..))
+import Modelling.CdOd.Types             (Association, AssociationType(..))
 
 import Data.List
 import Data.FileEmbed

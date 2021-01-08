@@ -4,10 +4,10 @@ module Main where
 import qualified Data.Map                         as M (empty, insert)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
-import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
-import Alloy.CdOd.Edges                 (fromEdges)
-import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
-import Alloy.CdOd.Types
+import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
+import Modelling.CdOd.Edges             (fromEdges)
+import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
+import Modelling.CdOd.Types
   (AssociationType (..), Connection (..), DiagramEdge, Syntax, toOldSyntax)
 
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))

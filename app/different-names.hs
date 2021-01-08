@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Alloy.CdOd.DifferentNames
+import Modelling.CdOd.DifferentNames
   (defaultDifferentNamesConfig, differentNames)
 import EvaluateArgs                     (evaluateArgs)
 

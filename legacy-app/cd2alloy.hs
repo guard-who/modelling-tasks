@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Alloy.CdOd.Auxiliary.Lexer (lexer)
-import Alloy.CdOd.Auxiliary.Parser (parser)
-import Alloy.CdOd.CD2Alloy.Transform (transform)
+import Modelling.CdOd.Auxiliary.Lexer (lexer)
+import Modelling.CdOd.Auxiliary.Parser (parser)
+import Modelling.CdOd.CD2Alloy.Transform (transform)
 
 import Control.Monad
 import Data.Time.LocalTime

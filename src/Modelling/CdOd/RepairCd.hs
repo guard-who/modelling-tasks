@@ -1,18 +1,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
-module Alloy.CdOd.RepairCd where
+module Modelling.CdOd.RepairCd where
 
-import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transformChanges)
+import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transformChanges)
 
 import qualified Data.Map                         as M (empty, insert, fromList)
 
-import Alloy.CdOd.Auxiliary.Util        (getInstances)
-import Alloy.CdOd.CD2Alloy.Transform    (transform)
-import Alloy.CdOd.Edges                 (toEdges)
-import Alloy.CdOd.MatchCdOd             (applyChanges)
-import Alloy.CdOd.Output                (drawCdFromSyntax, drawOdFromInstance)
-import Alloy.CdOd.Types (
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
+import Modelling.CdOd.CD2Alloy.Transform (transform)
+import Modelling.CdOd.Edges             (toEdges)
+import Modelling.CdOd.MatchCdOd         (applyChanges)
+import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
+import Modelling.CdOd.Types (
   AssociationType (..),
   Change (..),
   ClassConfig (..),

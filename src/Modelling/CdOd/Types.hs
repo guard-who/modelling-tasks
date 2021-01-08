@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
-module Alloy.CdOd.Types (
+module Modelling.CdOd.Types (
   Association,
   AssociationType (..),
   Change (..),

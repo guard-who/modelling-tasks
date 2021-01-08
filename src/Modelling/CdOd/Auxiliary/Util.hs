@@ -1,4 +1,4 @@
-module Alloy.CdOd.Auxiliary.Util (
+module Modelling.CdOd.Auxiliary.Util (
   emptyArr, filterFirst, firstLower, firstUpper, getInstances,
   redColor, underlinedLabel,
   ) where

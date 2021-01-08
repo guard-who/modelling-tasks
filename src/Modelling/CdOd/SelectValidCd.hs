@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
-module Alloy.CdOd.SelectValidCd where
+module Modelling.CdOd.SelectValidCd where
 
 import qualified Data.Map                         as M (fromList)
 
-import Alloy.CdOd.RepairCd              (repairIncorrect)
-import Alloy.CdOd.Output                (drawCdFromSyntax)
-import Alloy.CdOd.Types                 (ClassConfig (..))
+import Modelling.CdOd.RepairCd          (repairIncorrect)
+import Modelling.CdOd.Output            (drawCdFromSyntax)
+import Modelling.CdOd.Types             (ClassConfig (..))
 
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Data.Bifunctor                   (second)

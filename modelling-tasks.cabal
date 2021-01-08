@@ -22,19 +22,19 @@ extra-source-files:
 
 library
   exposed-modules:
-      Alloy.CdOd.Auxiliary.Util
-      Alloy.CdOd.CD2Alloy.Transform
-      Alloy.CdOd.CdAndChanges.Instance
-      Alloy.CdOd.CdAndChanges.Transform
-      Alloy.CdOd.DifferentNames
-      Alloy.CdOd.Edges
-      Alloy.CdOd.Generate
-      Alloy.CdOd.MatchCdOd
-      Alloy.CdOd.Mutation
-      Alloy.CdOd.Output
-      Alloy.CdOd.RepairCd
-      Alloy.CdOd.SelectValidCd
-      Alloy.CdOd.Types
+      Modelling.CdOd.Auxiliary.Util
+      Modelling.CdOd.CD2Alloy.Transform
+      Modelling.CdOd.CdAndChanges.Instance
+      Modelling.CdOd.CdAndChanges.Transform
+      Modelling.CdOd.DifferentNames
+      Modelling.CdOd.Edges
+      Modelling.CdOd.Generate
+      Modelling.CdOd.MatchCdOd
+      Modelling.CdOd.Mutation
+      Modelling.CdOd.Output
+      Modelling.CdOd.RepairCd
+      Modelling.CdOd.SelectValidCd
+      Modelling.CdOd.Types
       Modelling.PetriNet.Alloy
       Modelling.PetriNet.Diagram
       Modelling.PetriNet.LaTeX
@@ -77,8 +77,8 @@ library
 executable cd2alloy
   main-is: cd2alloy.hs
   other-modules:
-      Alloy.CdOd.Auxiliary.Lexer
-      Alloy.CdOd.Auxiliary.Parser
+      Modelling.CdOd.Auxiliary.Lexer
+      Modelling.CdOd.Auxiliary.Parser
   hs-source-dirs:
       legacy-app
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
@@ -114,8 +114,8 @@ executable cd2alloy
 executable cd2pic
   main-is: cd2pic.hs
   other-modules:
-      Alloy.CdOd.Auxiliary.Lexer
-      Alloy.CdOd.Auxiliary.Parser
+      Modelling.CdOd.Auxiliary.Lexer
+      Modelling.CdOd.Auxiliary.Parser
   hs-source-dirs:
       legacy-app
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
@@ -302,8 +302,8 @@ executable different-names
 executable instance2pic
   main-is: instance2pic.hs
   other-modules:
-      Alloy.CdOd.Auxiliary.Lexer
-      Alloy.CdOd.Auxiliary.Parser
+      Modelling.CdOd.Auxiliary.Lexer
+      Modelling.CdOd.Auxiliary.Parser
       Paths_modelling_tasks
   hs-source-dirs:
       legacy-app

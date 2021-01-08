@@ -45,19 +45,19 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-    - Alloy.CdOd.Auxiliary.Util
-    - Alloy.CdOd.CD2Alloy.Transform
-    - Alloy.CdOd.CdAndChanges.Instance
-    - Alloy.CdOd.CdAndChanges.Transform
-    - Alloy.CdOd.DifferentNames
-    - Alloy.CdOd.Edges
-    - Alloy.CdOd.Generate
-    - Alloy.CdOd.MatchCdOd
-    - Alloy.CdOd.Mutation
-    - Alloy.CdOd.Output
-    - Alloy.CdOd.RepairCd
-    - Alloy.CdOd.SelectValidCd
-    - Alloy.CdOd.Types
+    - Modelling.CdOd.Auxiliary.Util
+    - Modelling.CdOd.CD2Alloy.Transform
+    - Modelling.CdOd.CdAndChanges.Instance
+    - Modelling.CdOd.CdAndChanges.Transform
+    - Modelling.CdOd.DifferentNames
+    - Modelling.CdOd.Edges
+    - Modelling.CdOd.Generate
+    - Modelling.CdOd.MatchCdOd
+    - Modelling.CdOd.Mutation
+    - Modelling.CdOd.Output
+    - Modelling.CdOd.RepairCd
+    - Modelling.CdOd.SelectValidCd
+    - Modelling.CdOd.Types
     - Modelling.PetriNet.Alloy
     - Modelling.PetriNet.Diagram
     - Modelling.PetriNet.LaTeX
@@ -75,8 +75,8 @@ executables:
       - modelling-tasks
       - time
     other-modules:
-      - Alloy.CdOd.Auxiliary.Lexer
-      - Alloy.CdOd.Auxiliary.Parser
+      - Modelling.CdOd.Auxiliary.Lexer
+      - Modelling.CdOd.Auxiliary.Parser
   cd2pic:
     main: cd2pic.hs
     source-dirs: legacy-app
@@ -84,8 +84,8 @@ executables:
       - array
       - modelling-tasks
     other-modules:
-      - Alloy.CdOd.Auxiliary.Lexer
-      - Alloy.CdOd.Auxiliary.Parser
+      - Modelling.CdOd.Auxiliary.Lexer
+      - Modelling.CdOd.Auxiliary.Parser
   conflicts:
     main: conflicts.hs
     source-dirs: app

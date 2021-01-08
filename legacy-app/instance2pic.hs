@@ -1,7 +1,7 @@
 module Main (main) where
 
-import Alloy.CdOd.Auxiliary.Util
-import Alloy.CdOd.Output
+import Modelling.CdOd.Auxiliary.Util
+import Modelling.CdOd.Output
 
 import Control.Monad (void)
 import Data.GraphViz

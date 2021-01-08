@@ -3,18 +3,18 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
-module Alloy.CdOd.MatchCdOd where
+module Modelling.CdOd.MatchCdOd where
 
-import qualified Alloy.CdOd.CdAndChanges.Transform as Changes (transform)
+import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M
   (alter, empty, foldrWithKey, fromList, lookup, traverseWithKey, union)
 
-import Alloy.CdOd.CD2Alloy.Transform    (createRunCommand, mergeParts, transform)
-import Alloy.CdOd.CdAndChanges.Instance (fromInstance)
-import Alloy.CdOd.Auxiliary.Util        (getInstances, redColor)
-import Alloy.CdOd.Edges (
+import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
+import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
+import Modelling.CdOd.Auxiliary.Util    (getInstances, redColor)
+import Modelling.CdOd.Edges (
   DiagramEdge,
   anyMarkedEdge,
   checkMultiEdge,
@@ -23,12 +23,12 @@ import Alloy.CdOd.Edges (
   renameEdges,
   toEdges,
   )
-import Alloy.CdOd.Generate              (generate)
-import Alloy.CdOd.Mutation
+import Modelling.CdOd.Generate          (generate)
+import Modelling.CdOd.Mutation
   (Target (..), getAllMutationResults, nonTargets)
-import Alloy.CdOd.Output
+import Modelling.CdOd.Output
   (drawCdFromSyntax, drawOdFromInstance, getDirs)
-import Alloy.CdOd.Types (
+import Modelling.CdOd.Types (
   ClassConfig (..),
   Change (..),
   Connection (..),
