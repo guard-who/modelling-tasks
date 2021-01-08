@@ -3,11 +3,11 @@ extra-source-files:
   - alloy/cd/assoclimits.als
   - alloy/cd/generate.als
   - alloy/od/template.als
-  - lib/Alloy/Helpers.als
-  - lib/Alloy/PetriAdditions.als
-  - lib/Alloy/PetriConcepts.als
-  - lib/Alloy/PetriConstraints.als
-  - lib/Alloy/PetriSignature.als
+  - alloy/petri/Helpers.als
+  - alloy/petri/PetriAdditions.als
+  - alloy/petri/PetriConcepts.als
+  - alloy/petri/PetriConstraints.als
+  - alloy/petri/PetriSignature.als
   - README.md
 build-tools:
   - alex

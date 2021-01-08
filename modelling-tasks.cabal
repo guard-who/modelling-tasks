@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.3.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 998a04e07569d35fe4c8399d77a2d70e42b02eaaf0e049d0bd159223630acfde
+-- hash: 9e19d5f9e72eda6af28dfdbbb4bf6dad2e44f435f71d139ad120ccad04343862
 
 name:           modelling-tasks
 version:        0.0.0
@@ -13,11 +13,11 @@ extra-source-files:
     alloy/cd/assoclimits.als
     alloy/cd/generate.als
     alloy/od/template.als
-    lib/Alloy/Helpers.als
-    lib/Alloy/PetriAdditions.als
-    lib/Alloy/PetriConcepts.als
-    lib/Alloy/PetriConstraints.als
-    lib/Alloy/PetriSignature.als
+    alloy/petri/Helpers.als
+    alloy/petri/PetriAdditions.als
+    alloy/petri/PetriConcepts.als
+    alloy/petri/PetriConstraints.als
+    alloy/petri/PetriSignature.als
     README.md
 
 library

@@ -40,19 +40,19 @@ petriScopeMaxSeq :: BasicConfig -> Int
 petriScopeMaxSeq BasicConfig{places,transitions} = places+transitions
 
 modulePetriSignature :: String
-modulePetriSignature = removeLines 2 $(embedStringFile "lib/Alloy/PetriSignature.als")
+modulePetriSignature = removeLines 2 $(embedStringFile "alloy/petri/PetriSignature.als")
 
 modulePetriAdditions :: String
-modulePetriAdditions = removeLines 11 $(embedStringFile "lib/Alloy/PetriAdditions.als")
+modulePetriAdditions = removeLines 11 $(embedStringFile "alloy/petri/PetriAdditions.als")
 
 moduleHelpers :: String
-moduleHelpers = removeLines 4 $(embedStringFile "lib/Alloy/Helpers.als")
+moduleHelpers = removeLines 4 $(embedStringFile "alloy/petri/Helpers.als")
 
 modulePetriConcepts :: String
-modulePetriConcepts = removeLines 5 $(embedStringFile "lib/Alloy/PetriConcepts.als")
+modulePetriConcepts = removeLines 5 $(embedStringFile "alloy/petri/PetriConcepts.als")
 
 modulePetriConstraints :: String
-modulePetriConstraints = removeLines 5 $(embedStringFile "lib/Alloy/PetriConstraints.als")
+modulePetriConstraints = removeLines 5 $(embedStringFile "alloy/petri/PetriConstraints.als")
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
