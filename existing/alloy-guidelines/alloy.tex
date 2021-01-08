@@ -1,0 +1,162 @@
+\documentclass{article}
+
+\usepackage[margin=2cm]{geometry}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{ulem}
+
+\usepackage{tikz}
+\usetikzlibrary{petri}
+
+\usepackage{listings}
+\usepackage{alloy-style}
+\lstset{
+  language=alloy,
+  frame=single,
+  breaklines=true,
+  postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}},
+  basicstyle=\normalsize\ttfamily,
+  % showstringspaces=false,
+  % stringstyle=\ttfamily,
+  % commentstyle=\color{white}
+}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\section*{Concerning multiplicities}
+
+Make multiplicities in signatures explicit.
+For example, write
+\begin{lstlisting}
+  abstract sig Place extends Node
+  {
+    tokens : one Int
+  }
+\end{lstlisting}
+instead of
+\begin{lstlisting}
+  abstract sig Place extends Node
+  {
+    tokens : Int
+  }
+\end{lstlisting}
+That applies also to the ``target side'' of relational bounding expressions.
+For example, write
+\begin{lstlisting}
+  abstract sig Obj
+  {
+    get : FName -> set Obj
+  }
+\end{lstlisting}
+instead of
+\begin{lstlisting}
+  abstract sig Obj
+  {
+    get : FName -> Obj
+  }
+\end{lstlisting}
+Likewise, be explicit about what the intended multiplicity of arguments is in predicate definitions, if it is not \lstinline|one|.
+For example, write
+\begin{lstlisting}
+  pred concurrentlyEnabled[ts : set Transition] {
+    all p : Place | p.tokens >= (sum t : ts | p.flow[t])
+  }
+\end{lstlisting}
+instead of
+\begin{lstlisting}
+  pred concurrentlyEnabled[ts : Transition] {
+    all p : Place | p.tokens >= (sum t : ts | p.flow[t])
+  }
+\end{lstlisting}
+Analogously for function definitions.
+
+\section*{Concerning ``type-checking'' of function/predicate use}
+
+Even though Alloy does not actually check the multiplicities, in particular, scalar vs.\ actual sets, make sure that all uses are consistent with intended multiplicities of arguments in definitions.
+For example, given the definition
+\begin{lstlisting}
+  pred enabled[t : Transition] {
+    all p : Place | p.tokens >= p.flow[t]
+  }
+\end{lstlisting}
+do \emph{not} do something like
+\begin{lstlisting}
+  pred someOtherPredicate[ts : set Transition] {
+    enabled[ts] and ...
+  }
+\end{lstlisting}
+
+\section*{Concerning implicit summing of integer sets}
+
+Do not rely, except in very clear circumstances, on the implicit summing of integer sets in comparison expressions.
+That is, in a comparison like \lstinline|a>=b|, where \lstinline|a| or \lstinline|b| might be an actual set (with possibly more than one element), rather write explicitly \lstinline|a.sum>=b.sum|.
+However,
+\begin{lstlisting}
+  pred enabled[t : Transition] {
+    all p : Place | p.tokens >= p.flow[t]
+  }
+\end{lstlisting}
+is okay, if by the definition of \lstinline|flow| we know that \lstinline|p.flow[t]| is empty or a singleton, so we can avoid writing more explicitly \lstinline|p.flow[t].sum|.
+
+\section*{Concerning arithmetic comparisons}
+
+Always be as strict as possible.
+For example, write
+\begin{lstlisting}
+  pred outComing[t : Transition] {
+    (sum p : Place | t.flow[p]) > 0
+  }
+\end{lstlisting}
+instead of
+\begin{lstlisting}
+  pred outComing[t : Transition] {
+    (sum p : Place | t.flow[p]) != 0
+  }
+\end{lstlisting}
+
+\section*{Concerning precedences in expressions}
+
+Add extra parentheses even when Alloy's precedence rule ``\lstinline|&| binds tighter than \lstinline|=|'' would make it possible to avoid them.
+For example, write
+\begin{lstlisting}
+  fact {
+    all p : Place | (p.flow.Int & Place) = none
+  }
+\end{lstlisting}
+instead of
+\begin{lstlisting}
+  fact {
+    all p : Place | p.flow.Int & Place = none
+  }
+\end{lstlisting}
+
+\section*{Concerning logical operators}
+
+Always use the verbose forms of logical operators, that is, \lstinline|not|, \lstinline|and|, \lstinline|or|, \lstinline|implies|, \lstinline|iff|, instead of their symbolic shorthand forms.
+
+\section*{Concerning arithmetic operators}
+
+Use \lstinline|plus| and \lstinline|minus| instead of \lstinline|add| and \lstinline|sub|.
+
+\section*{Concerning scope}
+
+Always make the scope used explicit.
+For example, write
+\begin{lstlisting}
+  run show for 3
+\end{lstlisting}
+instead of
+\begin{lstlisting}
+  run show
+\end{lstlisting}
+
+\end{document}
+
+% ---------------------------------------------------------------------------- %
+%% Local Variables:
+%% coding: utf-8
+%% ispell-local-dictionary: "british"
+%% End:
