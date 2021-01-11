@@ -19,6 +19,9 @@ jobs:
         plan:
           - { build: stack }
 #          - { build: cabal, ghc: "8.8.3", cabal-install: "latest" }
+        include:
+          - os: ubuntu-latest
+            apt-get: graphviz texlive-base texlive-latex-base
         exclude:
           - os: windows-latest
             plan: { cabal-install: "latest" }
