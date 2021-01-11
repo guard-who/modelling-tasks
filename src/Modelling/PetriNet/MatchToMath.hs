@@ -4,6 +4,7 @@
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.MatchToMath (
+  Graph, Math,
   checkConfig, matchToMath, matchToMathTask,
   petriNetRnd,
   )  where
