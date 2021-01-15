@@ -1,11 +1,26 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Modelling.CdOd.DifferentNames where
+{-# LANGUAGE QuasiQuotes #-}
+module Modelling.CdOd.DifferentNames (
+  DifferentNamesConfig (..),
+  DifferentNamesInstance (..),
+  debug,
+  defaultDifferentNamesConfig,
+  differentNames,
+  differentNamesEvaluation,
+  differentNamesTask,
+  ) where
 
 import qualified Data.Bimap                       as BM
-  (filter, fromList, lookup, twist)
+  (filter, fromList, lookup, toList, twist)
 import qualified Data.Map                         as M (empty, insert)
 import qualified Data.Set                         as S (toList)
 
+import Modelling.Auxiliary.Output (
+  OutputMonad (..),
+  directionsAdvice,
+  hoveringInformation,
+  simplifiedInformation,
+  )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
@@ -25,7 +40,8 @@ import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
 import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
-import Data.List                        (nub, permutations)
+import Data.List                        (nub, permutations, sort)
+import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call
   (AlloyInstance, getTriple, lookupSig, objectName, scoped)
@@ -62,6 +78,37 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     searchSpace      = 10,
     timeout          = Nothing
   }
+
+differentNamesTask :: OutputMonad m => DifferentNamesInstance -> m ()
+differentNamesTask task = do
+  paragraph "Consider the following class diagram"
+  image $ cDiagram task
+  paragraph "and the following object diagram."
+  image $ oDiagram task
+  paragraph [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
+State your answer by giving a mapping of relationships in the CD to links in the OD.
+To state that "foo" in the CD corresponds to "bar" in the OD and "foofoo" in the CD corresponds to "baz" in the OD write it as
+[("foo", "bar"), ("foofoo", "baz")].|]
+  paragraph simplifiedInformation
+  paragraph directionsAdvice
+  paragraph hoveringInformation
+
+differentNamesEvaluation
+  :: OutputMonad m
+  => DifferentNamesInstance
+  -> [(String, String)]
+  -> m ()
+differentNamesEvaluation task cs = do
+  paragraph "Remarks on your solution:"
+  let cs' = nub $ sort cs
+      links = fst <$> cs'
+      rels  = snd <$> cs'
+  assertion (links == nub links) "No relationship is mapped twice?"
+  assertion (rels == nub rels) "No link is mapped twice?"
+  let ms = BM.toList $ mapping task
+  assertion (null $ [c | c <- cs', c `notElem` ms])
+    "Given mappings are correct?"
+  assertion (cs' == ms) "Given mappings are exhaustive?"
 
 differentNames
   :: DifferentNamesConfig

@@ -1,9 +1,22 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
-module Modelling.CdOd.SelectValidCd where
+module Modelling.CdOd.SelectValidCd (
+  SelectValidCdConfig (..),
+  SelectValidCdInstance (..),
+  defaultSelectValidCdConfig,
+  selectValidCd,
+  selectValidCdEvaluation,
+  selectValidCdTask,
+  ) where
 
 import qualified Data.Map                         as M (fromList)
 
+import Modelling.Auxiliary.Output (
+  OutputMonad (..),
+  hoveringInformation,
+  multipleChoice,
+  simplifiedInformation,
+  )
 import Modelling.CdOd.RepairCd          (repairIncorrect)
 import Modelling.CdOd.Output            (drawCdFromSyntax)
 import Modelling.CdOd.Types             (ClassConfig (..))
@@ -41,6 +54,22 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
 newtype SelectValidCdInstance = SelectValidCdInstance {
     classDiagrams   :: Map Int (Bool, FilePath)
   } deriving (Generic, Show)
+
+selectValidCdTask :: OutputMonad m => SelectValidCdInstance -> m ()
+selectValidCdTask task = do
+  paragraph [i|Consider the following class diagram candidates.|]
+  images show snd $ classDiagrams task
+  paragraph [i|Which of these class diagram candidates are valid class diagrams?
+Please state your answer by giving a list of numbers, stating all valid class diagrams.|]
+  paragraph simplifiedInformation
+  paragraph hoveringInformation
+
+selectValidCdEvaluation
+  :: OutputMonad m
+  => SelectValidCdInstance
+  -> [Int]
+  -> m ()
+selectValidCdEvaluation = multipleChoice "class diagrams" . classDiagrams
 
 selectValidCd
   :: SelectValidCdConfig

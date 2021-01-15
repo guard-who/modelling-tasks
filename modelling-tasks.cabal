@@ -3,8 +3,6 @@ cabal-version: 1.12
 -- This file has been generated from package.yaml by hpack version 0.34.3.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 9e19d5f9e72eda6af28dfdbbb4bf6dad2e44f435f71d139ad120ccad04343862
 
 name:           modelling-tasks
 version:        0.0.0
@@ -22,6 +20,7 @@ extra-source-files:
 
 library
   exposed-modules:
+      Modelling.Auxiliary.Output
       Modelling.CdOd.Auxiliary.Util
       Modelling.CdOd.CD2Alloy.Transform
       Modelling.CdOd.CdAndChanges.Instance

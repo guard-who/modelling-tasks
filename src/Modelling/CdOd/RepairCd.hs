@@ -1,12 +1,30 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-module Modelling.CdOd.RepairCd where
+module Modelling.CdOd.RepairCd (
+  RepairCdConfig (..),
+  RepairCdInstance (..),
+  checkRepairCdConfig,
+  constrainConfig,
+  defaultRepairCdConfig,
+  phraseChange,
+  repairCd,
+  repairCdEvaluation,
+  repairCdTask,
+  repairIncorrect,
+  ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transformChanges)
 
 import qualified Data.Map                         as M (empty, insert, fromList)
 
+import Modelling.Auxiliary.Output (
+  OutputMonad (..),
+  hoveringInformation,
+  multipleChoice,
+  simplifiedInformation,
+  )
 import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.CdOd.CD2Alloy.Transform (transform)
 import Modelling.CdOd.Edges             (toEdges)
@@ -32,6 +50,7 @@ import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe)
+import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -120,6 +139,27 @@ defaultRepairCdConfig = RepairCdConfig {
     timeout          = Nothing,
     useNames         = False
   }
+
+checkRepairCdConfig :: RepairCdConfig -> Maybe [Char]
+checkRepairCdConfig config
+  | not (printNames config) && useNames config
+  = Just "use navigations is only possible when printing navigations"
+  | otherwise
+  = Nothing
+
+repairCdTask :: OutputMonad m => RepairCdInstance -> m ()
+repairCdTask task = do
+  paragraph "Consider the following class diagram, which unfortunately is invalid."
+  image $ classDiagram task
+  paragraph [i|Which of the following changes would repair the class diagram?|]
+  enumerate show (phraseChange (withNames task) (withDirections task) . snd) $ changes task
+  paragraph [i|Please state your answer by giving a list of numbers, indicating all changes resulting in a valid class diagram.|]
+  paragraph [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that option 0 and 9 repair the given class diagram.|]
+  paragraph simplifiedInformation
+  paragraph hoveringInformation
+
+repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> m ()
+repairCdEvaluation = multipleChoice "changes" . changes
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int (Bool, Change DiagramEdge),

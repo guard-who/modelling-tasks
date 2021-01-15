@@ -3,14 +3,40 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
-module Modelling.CdOd.MatchCdOd where
+module Modelling.CdOd.MatchCdOd (
+  MatchCdOdConfig (..),
+  MatchCdOdInstance (..),
+  applyChanges,
+  debug,
+  defaultMatchCdOdConfig,
+  getRandomTask',
+  getRandomTask,
+  instancesOfMatch,
+  matchCdOd,
+  matchCdOdEvaluation,
+  matchCdOdTask,
+  ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
-import qualified Data.Map                         as M
-  (alter, empty, foldrWithKey, fromList, lookup, traverseWithKey, union)
+import qualified Data.Map                         as M (
+  alter,
+  differenceWith,
+  empty,
+  foldrWithKey,
+  fromList,
+  lookup,
+  traverseWithKey,
+  union,
+  )
 
+import Modelling.Auxiliary.Output (
+  OutputMonad (..),
+  directionsAdvice,
+  hoveringInformation,
+  simplifiedInformation,
+  )
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
 import Modelling.CdOd.Auxiliary.Util    (getInstances, redColor)
@@ -94,6 +120,32 @@ instancesOfMatch task = nub . sort <$>
   (\o (cs, _) m -> foldr (M.alter (Just . maybe [o] (o:))) m cs)
   M.empty
   (instances task)
+
+matchCdOdTask :: OutputMonad m => MatchCdOdInstance -> m ()
+matchCdOdTask task = do
+  paragraph "Consider the following two class diagrams."
+  images show id $ diagrams task
+  paragraph [i|Which of the following five object diagrams conform to which class diagram?
+An object diagram can conform to neither, either, or both class diagrams.|]
+  images (:[]) snd $ instances task
+  paragraph [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
+Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
+For example [(0, "ab"), (1, "")] expresses that both, object diagram a and b are instances of class diagram 0 but not of class diagram 1.|]
+  paragraph simplifiedInformation
+  when (hasNavigations task) $ paragraph directionsAdvice
+  paragraph hoveringInformation
+
+matchCdOdEvaluation :: (OutputMonad m, Foldable t) => MatchCdOdInstance -> t (Int, [Char]) -> m ()
+matchCdOdEvaluation task is' = do
+  paragraph "Remarks on your solution:"
+  let is = nub . sort <$> foldr (\(c, o) -> M.alter (Just . maybe o (o++)) c) M.empty is'
+  assertion (null $ notInstanceOf is) "Given instances are correct?"
+  assertion (is == instancesOfMatch task) "Given instances are exhaustive?"
+  where
+    notInstanceOf :: Map Int [Char] -> Map Int [Char]
+    notInstanceOf is = M.differenceWith (\f s -> maybeList $ f \\ s) is $ instancesOfMatch task
+    maybeList [] = Nothing
+    maybeList l  = Just l
 
 matchCdOd :: MatchCdOdConfig -> FilePath -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config path segment seed = do
