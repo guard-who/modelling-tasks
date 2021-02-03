@@ -167,7 +167,7 @@ text'
   -> String
   -- ^ what to write
   -> Diagram B
-text' pfont t =
-  textSVG_ (TextOpts pfont INSIDE_H KERN False 18 18) t
+text' pfont =
+  textSVG_ (TextOpts pfont INSIDE_H KERN False 18 18)
   # fc black
   # lc black

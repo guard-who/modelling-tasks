@@ -81,7 +81,7 @@ import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
-debug = False
+debug = True
 
 data MatchCdOdInstance = MatchCdOdInstance {
     diagrams       :: Map Int FilePath,
@@ -135,14 +135,14 @@ For example [(0, "ab"), (1, "")] expresses that both, object diagram a and b are
   when (hasNavigations task) $ paragraph directionsAdvice
   paragraph hoveringInformation
 
-matchCdOdEvaluation :: (OutputMonad m, Foldable t) => MatchCdOdInstance -> t (Int, [Char]) -> m ()
+matchCdOdEvaluation :: (OutputMonad m, Foldable t) => MatchCdOdInstance -> t (Int, String) -> m ()
 matchCdOdEvaluation task is' = do
   paragraph "Remarks on your solution:"
   let is = nub . sort <$> foldr (\(c, o) -> M.alter (Just . maybe o (o++)) c) M.empty is'
   assertion (null $ notInstanceOf is) "Given instances are correct?"
   assertion (is == instancesOfMatch task) "Given instances are exhaustive?"
   where
-    notInstanceOf :: Map Int [Char] -> Map Int [Char]
+    notInstanceOf :: Map Int String -> Map Int String
     notInstanceOf is = M.differenceWith (\f s -> maybeList $ f \\ s) is $ instancesOfMatch task
     maybeList [] = Nothing
     maybeList l  = Just l

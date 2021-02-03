@@ -14,7 +14,6 @@ import Data.String.Interpolate (i)
 import Data.Map (Map)
 import Data.List (nub, sort)
 
-
 hoveringInformation :: String
 hoveringInformation = [i|Please note: hovering over or clicking on edges or their labels highlights both parts.|]
 
@@ -30,7 +29,7 @@ multipleChoice :: (OutputMonad m, Ord a) => String -> Map a (Bool, b) -> [a] -> 
 multipleChoice what solution choices = do
   paragraph "Remarks on your solution:"
   let cs = nub $ sort choices
-  assertion (null $ [c | c <- cs, c `notElem` valid])
+  assertion (null [c | c <- cs, c `notElem` valid])
     $ "Given " ++ what ++ " are correct?"
   assertion (cs ==  valid) $ "Given " ++ what ++ " are exhaustive?"
   where

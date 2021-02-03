@@ -106,7 +106,7 @@ differentNamesEvaluation task cs = do
   assertion (links == nub links) "No relationship is mapped twice?"
   assertion (rels == nub rels) "No link is mapped twice?"
   let ms = BM.toList $ mapping task
-  assertion (null $ [c | c <- cs', c `notElem` ms])
+  assertion (null [c | c <- cs', c `notElem` ms])
     "Given mappings are correct?"
   assertion (cs' == ms) "Given mappings are exhaustive?"
 

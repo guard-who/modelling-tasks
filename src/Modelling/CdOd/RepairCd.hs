@@ -140,7 +140,7 @@ defaultRepairCdConfig = RepairCdConfig {
     useNames         = False
   }
 
-checkRepairCdConfig :: RepairCdConfig -> Maybe [Char]
+checkRepairCdConfig :: RepairCdConfig -> Maybe String
 checkRepairCdConfig config
   | not (printNames config) && useNames config
   = Just "use navigations is only possible when printing navigations"
