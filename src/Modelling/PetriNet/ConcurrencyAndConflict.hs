@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
@@ -40,7 +41,7 @@ import Modelling.PetriNet.Alloy (
 import Modelling.PetriNet.BasicNetFunctions (
   checkConfigForFind, checkConfigForPick,
   )
-import Modelling.PetriNet.Diagram       (getNetWith)
+import Modelling.PetriNet.Diagram       (getDefaultNet, getNet)
 import Modelling.PetriNet.Parser        (
   asSingleton,
   )
@@ -55,6 +56,7 @@ import Modelling.PetriNet.Types         (
   PickConcurrencyConfig (..), PickConflictConfig (..),
   )
 
+import Control.Arrow                    (Arrow (second))
 import Control.Monad                    (unless)
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
@@ -86,7 +88,7 @@ pickConflictsTask =
 findConcurrency
   :: Int
   -> FindConcurrencyConfig
-  -> ExceptT String IO (Diagram B, Maybe (Concurrent String))
+  -> ExceptT String IO (Diagram B, Concurrent String)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
@@ -96,7 +98,7 @@ findConcurrency = taskInstance
 findConflicts
   :: Int
   -> FindConflictConfig
-  -> ExceptT String IO (Diagram B, Maybe Conflict)
+  -> ExceptT String IO (Diagram B, Conflict)
 findConflicts = taskInstance
   findTaskInstance
   petriNetFindConfl
@@ -145,8 +147,8 @@ findTaskInstance
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> GraphvizCommand
-  -> ExceptT String IO (Diagram B, Maybe (t String))
-findTaskInstance parseF = getNetWith parseF "flow" "tokens"
+  -> ExceptT String IO (Diagram B, t String)
+findTaskInstance = getNet
 
 pickTaskInstance
   :: Traversable t
@@ -155,8 +157,8 @@ pickTaskInstance
   -> GraphvizCommand
   -> ExceptT String IO [(Diagram B, Maybe (t String))]
 pickTaskInstance parseF inst gc = do
-  confl <- getNetWith parseF "flow" "tokens" inst gc
-  net   <- getNetWith parseF "defaultFlow" "defaultTokens" inst gc
+  confl <- second Just <$> getNet parseF inst gc
+  net   <- (,Nothing) <$> getDefaultNet inst gc
   return [confl,net]
 
 petriNetFindConfl :: FindConflictConfig -> String

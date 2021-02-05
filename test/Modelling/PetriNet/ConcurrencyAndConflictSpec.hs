@@ -86,17 +86,11 @@ spec = do
     vcfs  = validConfigsForFind 0 6
     vcps  = validConfigsForPick 0 6
 
-checkFindConcurrencyInstance :: (a, Maybe (Concurrent String)) -> Bool
-checkFindConcurrencyInstance = f . snd
-  where
-    f Nothing  = False
-    f (Just c) = isValidConcurrency c
+checkFindConcurrencyInstance :: (a, Concurrent String) -> Bool
+checkFindConcurrencyInstance = isValidConcurrency . snd
 
-checkFindConflictInstance :: (a, Maybe Conflict) -> Bool
-checkFindConflictInstance = f . snd
-  where
-    f Nothing  = False
-    f (Just c) = isValidConflict c
+checkFindConflictInstance :: (a, Conflict) -> Bool
+checkFindConflictInstance = isValidConflict . snd
 
 checkPickConcurrencyInstance :: [(a, Maybe (Concurrent String))] -> Bool
 checkPickConcurrencyInstance = f . fmap snd
