@@ -21,6 +21,7 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig),
+  AlloyConfig (maxInstances, timeout),
   BasicConfig (graphLayout),
   ChangeConfig,
   Concurrent (Concurrent),
@@ -30,6 +31,7 @@ import Modelling.PetriNet.Types (
   PetriConflict (Conflict),
   PickConcurrencyConfig (..),
   PickConflictConfig (PickConflictConfig, basicConfig),
+  defaultAlloyConfig,
   defaultFindConcurrencyConfig,
   defaultFindConflictConfig,
   defaultPickConcurrencyConfig,
@@ -52,28 +54,28 @@ spec = do
     checkConfigs checkFindConcurrencyConfig fccs'
   describe "findConcurrency" $ do
     defaultConfigTaskGeneration
-      (findConcurrency 0 defaultFindConcurrencyConfig)
+      (findConcurrency defaultFindConcurrencyConfig 0 0)
       checkFindConcurrencyInstance
     testFindConcurrencyConfig fccs
   describe "validPickConcurrencyConfigs" $
     checkConfigs checkPickConcurrencyConfig pccs
   describe "pickConcurrency" $ do
     defaultConfigTaskGeneration
-      (pickConcurrency 0 defaultPickConcurrencyConfig)
+      (pickConcurrency defaultPickConcurrencyConfig 0 0)
       checkPickConcurrencyInstance
     testPickConcurrencyConfig pccs
   describe "validFindConflictConfigs" $
     checkConfigs checkFindConflictConfig fcfs'
   describe "findConflicts" $ do
     defaultConfigTaskGeneration
-      (findConflicts 0 defaultFindConflictConfig)
+      (findConflicts defaultFindConflictConfig 0 0)
       checkFindConflictInstance
     testFindConflictConfig fcfs
   describe "validPickConflictConfigs" $
     checkConfigs checkPickConflictConfig pcfs
   describe "pickConflicts" $ do
     defaultConfigTaskGeneration
-      (pickConflicts 0 defaultPickConflictConfig)
+      (pickConflicts defaultPickConflictConfig 0 0)
       checkPickConflictInstance
     testPickConflictConfig pcfs
   where
@@ -145,7 +147,15 @@ validFindConcurrencyConfigs
   -> AdvConfig
   -> [FindConcurrencyConfig]
 validFindConcurrencyConfigs cs aconfig =
-  uncurry (`FindConcurrencyConfig` aconfig) <$> cs
+  uncurry (`FindConcurrencyConfig` aconfig)
+    <$> cs
+    <*> pure alloyTestConfig
+
+alloyTestConfig :: AlloyConfig
+alloyTestConfig = defaultAlloyConfig {
+  maxInstances = Nothing,
+  timeout = Just 500000
+  }
 
 validFindConflictConfigs
   :: [(BasicConfig, ChangeConfig)]

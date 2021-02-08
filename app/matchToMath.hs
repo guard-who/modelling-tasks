@@ -1,7 +1,10 @@
 module Main (main) where
 
-import Common                           (forceErrors, renderPetriNet)
-import Modelling.PetriNet.BasicNetFunctions (instanceInput)
+import Common (
+  forceErrors,
+  instanceInput,
+  renderPetriNet,
+  )
 import Modelling.PetriNet.MatchToMath (
   checkConfig, matchToMath, matchToMathTask,
   )

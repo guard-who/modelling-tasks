@@ -1,12 +1,17 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.ConcurrencyAndConflict (
+  FindConcurrencyInstance (..),
   checkFindConcurrencyConfig, checkFindConflictConfig,
   checkPickConcurrencyConfig, checkPickConflictConfig,
-  findConcurrency, findConcurrencyTask,
+  findConcurrency,
+  findConcurrencyEvaluation,
+  findConcurrencyGenerate,
+  findConcurrencyTask,
   findConflicts, findConflictsTask,
   findTaskInstance,
   parseConcurrency,
@@ -18,11 +23,18 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickTaskInstance,
   ) where
 
+import qualified Modelling.PetriNet.Types         as T (
+  AlloyConfig (maxInstances, timeout)
+  )
+
 import qualified Data.Set                         as Set (
   Set,
   toList,
   )
 
+import Modelling.Auxiliary.Output (
+  OutputMonad (..),
+  )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
   compBasicConstraints,
@@ -47,6 +59,7 @@ import Modelling.PetriNet.Parser        (
   )
 import Modelling.PetriNet.Types         (
   AdvConfig,
+  AlloyConfig,
   BasicConfig (..),
   ChangeConfig,
   Concurrent (Concurrent),
@@ -54,93 +67,183 @@ import Modelling.PetriNet.Types         (
   FindConcurrencyConfig (..), FindConflictConfig (..),
   PetriConflict (Conflict),
   PickConcurrencyConfig (..), PickConflictConfig (..),
+  defaultAlloyConfig,
   )
 
 import Control.Arrow                    (Arrow (second))
-import Control.Monad                    (unless)
+import Control.Monad                    (when)
+import Control.Monad.Random (
+  MonadTrans (lift),
+  Random (randomR),
+  RandomGen,
+  mkStdGen
+  )
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Data.Maybe                       (isJust, isNothing)
 import Data.String.Interpolate          (i)
-import Diagrams.Backend.SVG             (B)
-import Diagrams.Prelude                  (Diagram)
+import Diagrams.Backend.SVG             (B, renderSVG)
+import Diagrams.Prelude                 (Diagram, mkWidth)
+import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
   AlloyInstance, CallAlloyConfig (..), Object,
   defaultCallAlloyConfig, getSingle, lookupSig, unscoped,
   )
+import Text.Read                        (readMaybe)
 
-findConcurrencyTask :: String
-findConcurrencyTask =
-  "Which pair of transitions are in concurrency under the initial marking?"
+data FindConcurrencyInstance = FindConcurrencyInstance {
+  concurrent :: Concurrent String,
+  net :: FilePath,
+  numberOfPlaces :: Int
+  }
+  deriving (Generic, Show)
+
+findConcurrencyTask :: OutputMonad m => FindConcurrencyInstance -> m ()
+findConcurrencyTask task = do
+  paragraph "Considering this Petri net"
+  image $ net task
+  paragraph "Which pair of transitions are in concurrency under the initial marking?"
+
+findConcurrencyEvaluation
+  :: OutputMonad m
+  => FindConcurrencyInstance
+  -> (String, String)
+  -> m ()
+findConcurrencyEvaluation task is = do
+  paragraph "Remarks on your solution:"
+  assertion (isTransition fi && isTransition si)
+    "Given transitions exist in the Petri net?"
+  assertion (ft == fi && st == si || ft == si && st == fi)
+    "Given transitions are concurrent?"
+  where
+    Concurrent (ft, st) = concurrent task
+    (fi, si) = is
+    isTransition xs
+      | 't':xs' <- xs
+      , Just x  <- readMaybe xs'
+      = x >= 1 && x <= numberOfPlaces task
+      | otherwise
+      = False
 
 findConflictsTask :: String
-findConflictsTask =
+findConflictsTask = do
   "Which of the following Petrinets doesn't have a conflict?"
 
 pickConcurrencyTask :: String
-pickConcurrencyTask =
-   "Which of the following Petri nets does not have a concurrency?"
+pickConcurrencyTask = do
+  "Which of the following Petri nets does not have a concurrency?"
 
 pickConflictsTask :: String
-pickConflictsTask =
+pickConflictsTask = do
   "Which pair of transitions are in conflict under the initial marking?"
 
+findConcurrencyGenerate
+  :: FindConcurrencyConfig
+  -> FilePath
+  -> Int
+  -> Int
+  -> ExceptT String IO FindConcurrencyInstance
+findConcurrencyGenerate config path segment seed = do
+  (d, c) <- findConcurrency config segment seed
+  let file = path ++ "petri.svg"
+  lift (renderSVG file (mkWidth 250) d)
+  return $ FindConcurrencyInstance {
+    concurrent = c,
+    net = file,
+    numberOfPlaces = places bc
+    }
+  where
+    bc = basicConfig (config :: FindConcurrencyConfig)
+
 findConcurrency
-  :: Int
-  -> FindConcurrencyConfig
+  :: FindConcurrencyConfig
+  -> Int
+  -> Int
   -> ExceptT String IO (Diagram B, Concurrent String)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
   parseConcurrency
   (\c -> graphLayout $ basicConfig (c :: FindConcurrencyConfig))
+  (\c -> alloyConfig (c :: FindConcurrencyConfig))
 
 findConflicts
-  :: Int
-  -> FindConflictConfig
+  :: FindConflictConfig
+  -> Int
+  -> Int
   -> ExceptT String IO (Diagram B, Conflict)
 findConflicts = taskInstance
   findTaskInstance
   petriNetFindConfl
   parseConflict
   (\c -> graphLayout $ basicConfig (c :: FindConflictConfig))
+  (const defaultAlloyConfig)
 
 pickConcurrency
-  :: Int
-  -> PickConcurrencyConfig
+  :: PickConcurrencyConfig
+  -> Int
+  -> Int
   -> ExceptT String IO [(Diagram B, Maybe (Concurrent String))]
 pickConcurrency  = taskInstance
   pickTaskInstance
   petriNetPickConcur
   parseConcurrency
   (\c -> graphLayout $ basicConfig (c :: PickConcurrencyConfig))
+  (const defaultAlloyConfig)
 
 pickConflicts
-  :: Int
-  -> PickConflictConfig
+  :: PickConflictConfig
+  -> Int
+  -> Int
   -> ExceptT String IO [(Diagram B, Maybe Conflict)]
 pickConflicts = taskInstance
   pickTaskInstance
   petriNetPickConfl
   parseConflict
   (\c -> graphLayout $ basicConfig (c :: PickConflictConfig))
+  (const defaultAlloyConfig)
 
 taskInstance
   :: (f -> AlloyInstance -> GraphvizCommand -> ExceptT String IO a)
   -> (config -> String)
   -> f
   -> (config -> GraphvizCommand)
-  -> Int
+  -> (config -> AlloyConfig)
   -> config
+  -> Int
+  -> Int
   -> ExceptT String IO a
-taskInstance taskF alloyF parseF layoutF indInst config = do
+taskInstance taskF alloyF parseF layoutF alloyC config segment seed = do
+  let g  = mkStdGen seed
+      is = fromIntegral <$> T.maxInstances (alloyC config)
+      x  = randomInSegment segment <$> is <*> pure g
   list <- getAlloyInstances
     defaultCallAlloyConfig {
-      maxInstances = Just $ toInteger $ indInst + 1
+      maxInstances = toInteger . (+1) . fst <$> x,
+      timeout      = T.timeout (alloyC config)
       }
     (alloyF config)
-  unless (length list > indInst) $ except $ Left "instance not available"
-  taskF parseF (list !! indInst) (layoutF config)
+  when (null list) $ except $ Left "no instance available"
+  when (null $ drop segment list)
+    $ except $ Left "instance not available"
+  inst <- case x of
+    Nothing -> return $ randomInstance list g
+    Just (n, g') -> case drop n list of
+      x':_ -> return x'
+      []     -> do
+        when (isNothing $ T.timeout (alloyC config))
+          $ except $ Left "instance not available"
+        return $ randomInstance list g'
+  taskF parseF inst (layoutF config)
+  where
+    randomInstance list g =
+      let (n, _) = randomInSegment segment ((length list - segment) `div` 4) g
+      in list !! n
+
+randomInSegment :: RandomGen g => Int -> Int -> g -> (Int, g)
+randomInSegment segment segLength g = (segment + 4 * x, g')
+  where
+    (x, g') = randomR ((0,) $ pred segLength) g
 
 findTaskInstance
   :: Traversable t
@@ -210,8 +313,8 @@ petriNetAlloy basicC changeC muniquePlace specific
 #{modulePetriConstraints}
 
 pred #{predicate}[#{place}#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
-  #Places = #{places basicC}
-  #Transitions = #{transitions basicC}
+  \#Places = #{places basicC}
+  \#Transitions = #{transitions basicC}
   #{compBasicConstraints activated basicC}
   #{compChange changeC}
   #{maybe "" multiplePlaces muniquePlace}
@@ -228,7 +331,7 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
       [i|
   #{connected "defaultGraphIsConnected" $ isConnected basicC}
   #{isolated "defaultNoIsolatedNodes" $ isConnected basicC}
-  ##{activatedDefault} >= #{atLeastActive basicC}
+  \##{activatedDefault} >= #{atLeastActive basicC}
   theActivatedDefaultTransitions[#{activatedDefault}]|]
       compAdvConstraints
       specific

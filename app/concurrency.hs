@@ -2,17 +2,19 @@
 
 module Main (main) where
 
-import Common                           (printNetAndInfo, forceErrors)
+import Common (
+  forceErrors,
+  instanceInput,
+  printNetAndInfo,
+  )
 import Modelling.PetriNet.ConcurrencyAndConflict (
   checkPickConcurrencyConfig,
   checkFindConcurrencyConfig,
   findConcurrency,
+  findConcurrencyGenerate,
   findConcurrencyTask,
   pickConcurrency,
   pickConcurrencyTask,
-  )
-import Modelling.PetriNet.BasicNetFunctions(
-  instanceInput,
   )
 import Modelling.PetriNet.Types (
   BasicConfig (..), ChangeConfig (..), FindConcurrencyConfig (..),
@@ -54,8 +56,8 @@ mainFind i = forceErrors $ do
   let c = checkFindConcurrencyConfig config
   if isNothing c
   then do
-    conc <- findConcurrency i config
-    lift $ putStrLn findConcurrencyTask
+    conc <- findConcurrency config 0 i
+    findConcurrencyGenerate config "" 0 i >>= lift . findConcurrencyTask
     lift $ printNetAndInfo "" conc
   else
     lift $ print c
@@ -82,7 +84,7 @@ mainPick i = forceErrors $ do
   let c = checkPickConcurrencyConfig config
   if isNothing c
   then do
-    concs <- pickConcurrency i config
+    concs <- pickConcurrency config 0 i
     lift $ putStrLn pickConcurrencyTask
     lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
   else

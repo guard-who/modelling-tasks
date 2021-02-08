@@ -4,11 +4,6 @@ module Modelling.PetriNet.BasicNetFunctions where
 
 import Modelling.PetriNet.Types
 
-instanceInput :: IO Int
-instanceInput = do
-  putStr "Index of wanted Instance: "
-  read <$> getLine
-
 checkBasicConfig :: BasicConfig -> Maybe String
 checkBasicConfig BasicConfig{places,transitions,atLeastActive
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace

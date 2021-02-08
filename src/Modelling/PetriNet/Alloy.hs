@@ -81,7 +81,7 @@ compBasicConstraints activatedTrans BasicConfig {
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
   let theflow = (sum f, t : Nodes | f.flow[t]) |
     theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
-  ##{activatedTrans} >= #{atLeastActive}
+  \##{activatedTrans} >= #{atLeastActive}
   theActivatedTransitions[#{activatedTrans}]
   #{connected "graphIsConnected" isConnected}
   #{isolated "noIsolatedNodes" isConnected}

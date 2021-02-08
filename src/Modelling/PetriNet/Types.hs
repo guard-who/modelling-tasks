@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# Language DeriveTraversable #-}
 {-# Language DuplicateRecordFields #-}
 {-|
@@ -21,6 +22,19 @@ import qualified Data.Set                         as S (empty, union)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (Neato))
 import Data.Map.Lazy                    (Map)
 import Data.Maybe                       (fromMaybe)
+import GHC.Generics                     (Generic)
+
+data AlloyConfig = AlloyConfig {
+  maxInstances :: Maybe Integer,
+  timeout      :: Maybe Int
+  }
+  deriving (Show, Generic)
+
+defaultAlloyConfig :: AlloyConfig
+defaultAlloyConfig = AlloyConfig {
+  maxInstances = Just 500,
+  timeout      = Nothing
+  }
 
 {-|
 A 'PetriChange' where nodes are labelled by strings.
@@ -39,7 +53,7 @@ data PetriChange a = Change {
   --   place to the flow change at the edge between source and target.
   flowChange  :: Map a (Map a Int)
   }
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
 
 {-|
 This function acts like 'fmap' on other 'Functor's.
@@ -71,10 +85,10 @@ data PetriConflict a = Conflict {
   -- | The set of source nodes having not enough tokens to fire both transitions.
   conflictPlaces :: [a]
   }
-  deriving (Foldable, Functor, Show, Traversable)
+  deriving (Foldable, Functor, Generic, Show, Traversable)
   
 newtype Concurrent a = Concurrent (a, a)
-  deriving (Foldable, Functor, Show, Traversable)
+  deriving (Foldable, Functor, Generic, Show, Traversable)
 
 {-|
 A node is part of a Petri like graph (see 'PetriLike').
@@ -95,7 +109,7 @@ data Node a =
   flowIn  :: Map a Int,
   flowOut :: Map a Int
   }
-  deriving Show
+  deriving (Generic, Show)
 
 {-|
 Returns 'Just' the 'initial' tokens of the given 'Node', if it is a 'PlaceNode',
@@ -199,7 +213,7 @@ The 'PetriLike' graph is a valid Petri net only if
 newtype PetriLike a = PetriLike {
   -- | the 'Map' of all 'Node's the Petri net like graph is made of
   allNodes :: Map a (Node a)
-  } deriving Show
+  } deriving (Generic, Show)
 
 {-|
 A 'Functor' like 'fmap' on 'PetriLike'.
@@ -301,12 +315,12 @@ data PetriMath a = PetriMath {
   tokenChangeMath    :: [(a, a)],
   -- | the initial marking (the fifth element of the five tuple)
   initialMarkingMath :: a
-  } deriving (Foldable, Functor, Traversable)
+  } deriving (Foldable, Functor, Generic, Traversable)
 
 data Petri = Petri
   { initialMarking :: Marking
   , trans :: [Transition]
-  } deriving (Eq,Show)
+  } deriving (Eq, Generic, Show)
   
 defaultPetri :: Petri
 defaultPetri = Petri
@@ -329,7 +343,7 @@ data BasicConfig = BasicConfig
   , maxFlowPerEdge :: Int
   , isConnected :: Maybe Bool
   , graphLayout :: GraphvizCommand
-  } deriving Show
+  } deriving (Generic, Show)
 
 defaultBasicConfig :: BasicConfig
 defaultBasicConfig = BasicConfig
@@ -350,7 +364,7 @@ data AdvConfig = AdvConfig
   { presenceOfSelfLoops :: Maybe Bool
   , presenceOfSinkTransitions :: Maybe Bool
   , presenceOfSourceTransitions :: Maybe Bool
-  } deriving Show
+  } deriving (Generic, Show)
   
 defaultAdvConfig :: AdvConfig
 defaultAdvConfig = AdvConfig
@@ -364,7 +378,7 @@ data ChangeConfig = ChangeConfig
   , maxTokenChangePerPlace :: Int
   , flowChangeOverall :: Int
   , maxFlowChangePerEdge :: Int
-  } deriving Show
+  } deriving (Generic, Show)
   
 defaultChangeConfig :: ChangeConfig
 defaultChangeConfig = ChangeConfig
@@ -378,7 +392,7 @@ data MathConfig = MathConfig
   { basicTask :: BasicConfig
   , advTask :: AdvConfig
   , changeTask :: ChangeConfig
-  } deriving Show
+  } deriving (Generic, Show)
   
 defaultMathConfig :: MathConfig
 defaultMathConfig = MathConfig
@@ -392,7 +406,7 @@ data FindConflictConfig = FindConflictConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
   , uniqueConflictPlace :: Maybe Bool
-  } deriving Show
+  } deriving (Generic, Show)
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
@@ -406,7 +420,7 @@ data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
   , uniqueConflictPlace :: Maybe Bool
-  } deriving Show
+  } deriving (Generic, Show)
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
@@ -419,19 +433,21 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
-  } deriving Show
+  , alloyConfig  :: AlloyConfig
+  } deriving (Generic, Show)
   
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 3 }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
+  , alloyConfig  = defaultAlloyConfig
   }
   
 data PickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
-  } deriving Show
+  } deriving (Generic, Show)
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig

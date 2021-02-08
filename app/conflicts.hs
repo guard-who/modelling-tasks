@@ -2,7 +2,11 @@
 
 module Main (main) where 
 
-import Common                           (forceErrors, printNetAndInfo)
+import Common (
+  forceErrors,
+  instanceInput,
+  printNetAndInfo,
+  )
 import Modelling.PetriNet.ConcurrencyAndConflict (
   checkFindConflictConfig,
   checkPickConflictConfig,
@@ -10,9 +14,6 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   findConflictsTask,
   pickConflicts,
   pickConflictsTask,
-  )
-import Modelling.PetriNet.BasicNetFunctions (
-  instanceInput,
   )
 import Modelling.PetriNet.Types         (
   BasicConfig(..), ChangeConfig(..), FindConflictConfig(..),
@@ -37,7 +38,7 @@ main = do
   then if sw == "b" then mainPick i else mainFind i
   else print "There is no negative index"
 
-mainFind ::Int -> IO()
+mainFind :: Int -> IO ()
 mainFind i = forceErrors $ do
   pPrint defaultFindConflictConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
@@ -54,7 +55,7 @@ mainFind i = forceErrors $ do
   let c = checkFindConflictConfig config
   if isNothing c
   then do
-    conflDia <- findConflicts i config
+    conflDia <- findConflicts config 0 i
     lift $ putStrLn findConflictsTask
     lift $ printNetAndInfo "" conflDia
   else
@@ -65,7 +66,7 @@ mainFind i = forceErrors $ do
     cc :: FindConflictConfig -> ChangeConfig
     cc = changeConfig
 
-mainPick :: Int -> IO()
+mainPick :: Int -> IO ()
 mainPick i = forceErrors $ do
   pPrint defaultPickConflictConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
@@ -82,7 +83,7 @@ mainPick i = forceErrors $ do
   let c = checkPickConflictConfig config
   if isNothing c
   then do
-    conflDias <- pickConflicts i config
+    conflDias <- pickConflicts config 0 i
     lift $ putStrLn pickConflictsTask
     lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
   else

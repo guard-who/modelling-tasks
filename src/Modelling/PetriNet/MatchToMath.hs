@@ -116,8 +116,8 @@ fact{
 }
 
 pred showNets[#{activated} : set Transitions] {
-  #Places = #{places}
-  #Transitions = #{transitions}
+  \#Places = #{places}
+  \#Transitions = #{transitions}
   #{compBasicConstraints activated basicC}
   #{compAdvConstraints advConfig}
 }
