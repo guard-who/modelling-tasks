@@ -14,6 +14,7 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   findConcurrencyGenerate,
   findConcurrencyTask,
   pickConcurrency,
+  pickConcurrencyGenerate,
   pickConcurrencyTask,
   )
 import Modelling.PetriNet.Types (
@@ -85,7 +86,7 @@ mainPick i = forceErrors $ do
   if isNothing c
   then do
     concs <- pickConcurrency config 0 i
-    lift $ putStrLn pickConcurrencyTask
+    pickConcurrencyGenerate config "" 0 i >>= lift . pickConcurrencyTask
     lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
   else
     lift $ print c

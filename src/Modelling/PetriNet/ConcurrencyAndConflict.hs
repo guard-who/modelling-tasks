@@ -21,8 +21,11 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   parseConflict,
   petriNetFindConcur, petriNetFindConfl,
   petriNetPickConcur, petriNetPickConfl,
-  pickConcurrency, pickConcurrencyTask,
+  pickConcurrency,
+  pickConcurrencyGenerate,
+  pickConcurrencyTask,
   pickConflicts, pickConflictsTask,
+  pickEvaluation,
   pickTaskInstance,
   ) where
 
@@ -30,6 +33,7 @@ import qualified Modelling.PetriNet.Types         as T (
   AlloyConfig (maxInstances, timeout)
   )
 
+import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as Set (
   Set,
   toList,
@@ -37,6 +41,7 @@ import qualified Data.Set                         as Set (
 
 import Modelling.Auxiliary.Output (
   OutputMonad (..),
+  multipleChoice,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -79,10 +84,12 @@ import Control.Monad.Random (
   MonadTrans (lift),
   Random (randomR),
   RandomGen,
+  evalRandT,
   mkStdGen
   )
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
+import Data.Map                         (Map)
 import Data.Maybe                       (isJust, isNothing)
 import Data.String.Interpolate          (i)
 import Diagrams.Backend.SVG             (B, renderSVG)
@@ -92,12 +99,18 @@ import Language.Alloy.Call (
   AlloyInstance, CallAlloyConfig (..), Object,
   defaultCallAlloyConfig, getSingle, lookupSig, unscoped,
   )
+import System.Random.Shuffle            (shuffleM)
 import Text.Read                        (readMaybe)
 
 data FindInstance a = FindInstance {
   transitionPair :: a,
   net :: FilePath,
   numberOfPlaces :: Int
+  }
+  deriving (Generic, Show)
+
+newtype PickInstance = PickInstance {
+  nets :: Map Int (Bool, FilePath)
   }
   deriving (Generic, Show)
 
@@ -141,11 +154,11 @@ transitionPairEvaluation what n (ft, st) is = do
       | otherwise
       = False
 
-findConflictTask :: OutputMonad m => FindInstance Conflict -> m()
+findConflictTask :: OutputMonad m => FindInstance Conflict -> m ()
 findConflictTask task = do
   paragraph "Considering this Petri net"
   image $ net task
-  paragraph "Which of the following Petrinets doesn't have a conflict?"
+  paragraph "Which pair of transitions are in conflict under the initial marking?"
 
 findConflictEvaluation
   :: OutputMonad m
@@ -157,13 +170,21 @@ findConflictEvaluation task =
   where
     (ft, st) = conflictTrans $ transitionPair task
 
-pickConcurrencyTask :: String
-pickConcurrencyTask = do
-  "Which of the following Petri nets does not have a concurrency?"
+pickConcurrencyTask :: OutputMonad m => PickInstance -> m ()
+pickConcurrencyTask task = do
+  paragraph "Which of the following Petri nets does not have a concurrency?"
+  images show snd $ nets task
+
+pickEvaluation
+  :: OutputMonad m
+  => PickInstance
+  -> [Int]
+  -> m ()
+pickEvaluation = multipleChoice "petri nets" . nets
 
 pickConflictsTask :: String
-pickConflictsTask = do
-  "Which pair of transitions are in conflict under the initial marking?"
+pickConflictsTask =
+  "Which of the following Petrinets does not have a conflict?"
 
 findConcurrencyGenerate
   :: FindConcurrencyConfig
@@ -225,17 +246,45 @@ findConflict = taskInstance
   (\c -> graphLayout $ basicConfig (c :: FindConflictConfig))
   (\c -> alloyConfig (c :: FindConflictConfig))
 
+pickConcurrencyGenerate
+  :: PickConcurrencyConfig
+  -> FilePath
+  -> Int
+  -> Int
+  -> ExceptT String IO PickInstance
+pickConcurrencyGenerate = pickGenerate pickConcurrency "concurrent"
+
+pickGenerate
+  :: (c -> Int -> Int -> ExceptT String IO [(Diagram B, Maybe a)])
+  -> String
+  -> c
+  -> FilePath
+  -> Int
+  -> Int
+  -> ExceptT String IO PickInstance
+pickGenerate pick task config path segment seed = do
+  ns <- pick config segment seed
+  let g  = mkStdGen seed
+  ns'  <- evalRandT (shuffleM ns) g
+  ns'' <- lift $ foldl render (return []) $ zip [1 ..] ns'
+  return $ PickInstance $ M.fromList ns''
+  where
+    render ns (x, (net, m))= do
+      let file = path ++ task ++ "-" ++ show x ++ ".svg"
+      renderSVG file (mkWidth 250) net
+      ((x, (isNothing m, file)) :) <$> ns
+
 pickConcurrency
   :: PickConcurrencyConfig
   -> Int
   -> Int
   -> ExceptT String IO [(Diagram B, Maybe (Concurrent String))]
-pickConcurrency  = taskInstance
+pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
   parseConcurrency
   (\c -> graphLayout $ basicConfig (c :: PickConcurrencyConfig))
-  (const defaultAlloyConfig)
+  (\c -> alloyConfig (c :: PickConcurrencyConfig))
 
 pickConflicts
   :: PickConflictConfig

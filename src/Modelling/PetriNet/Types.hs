@@ -449,10 +449,12 @@ defaultFindConcurrencyConfig = FindConcurrencyConfig
 data PickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
+  , alloyConfig  :: AlloyConfig
   } deriving (Generic, Show)
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2 }
   , changeConfig = defaultChangeConfig
+  , alloyConfig  = defaultAlloyConfig
   }

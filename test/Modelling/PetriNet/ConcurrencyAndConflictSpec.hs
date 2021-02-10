@@ -171,7 +171,7 @@ validPickConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> [PickConcurrencyConfig]
 validPickConcurrencyConfigs cs =
-  uncurry PickConcurrencyConfig <$> cs
+  uncurry PickConcurrencyConfig <$> cs <*> pure alloyTestConfig
 
 validPickConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
