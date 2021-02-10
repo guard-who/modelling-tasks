@@ -5,7 +5,7 @@
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.ConcurrencyAndConflict (
-  FindConcurrencyInstance (..),
+  FindInstance (..),
   checkFindConcurrencyConfig, checkFindConflictConfig,
   checkPickConcurrencyConfig, checkPickConflictConfig,
   findConcurrency,
@@ -94,21 +94,14 @@ import Language.Alloy.Call (
   )
 import Text.Read                        (readMaybe)
 
-data FindConcurrencyInstance = FindConcurrencyInstance {
-  concurrent :: Concurrent String,
+data FindInstance a = FindInstance {
+  transitionPair :: a,
   net :: FilePath,
   numberOfPlaces :: Int
   }
   deriving (Generic, Show)
 
-data FindConflictInstance = FindConflictInstance {
-  conflict :: Conflict,
-  conflictNet :: FilePath,
-  conflictNumberOfPlaces :: Int
-  }
-  deriving (Generic, Show)
-
-findConcurrencyTask :: OutputMonad m => FindConcurrencyInstance -> m ()
+findConcurrencyTask :: OutputMonad m => FindInstance (Concurrent String) -> m ()
 findConcurrencyTask task = do
   paragraph "Considering this Petri net"
   image $ net task
@@ -116,13 +109,13 @@ findConcurrencyTask task = do
 
 findConcurrencyEvaluation
   :: OutputMonad m
-  => FindConcurrencyInstance
+  => FindInstance (Concurrent String)
   -> (String, String)
   -> m ()
 findConcurrencyEvaluation task =
   transitionPairEvaluation "are concurrent" (numberOfPlaces task) (ft, st)
   where
-    Concurrent (ft, st) = concurrent task
+    Concurrent (ft, st) = transitionPair task
 
 transitionPairEvaluation
   :: OutputMonad m
@@ -148,21 +141,21 @@ transitionPairEvaluation what n (ft, st) is = do
       | otherwise
       = False
 
-findConflictTask :: OutputMonad m => FindConflictInstance -> m()
+findConflictTask :: OutputMonad m => FindInstance Conflict -> m()
 findConflictTask task = do
   paragraph "Considering this Petri net"
-  image $ conflictNet task
+  image $ net task
   paragraph "Which of the following Petrinets doesn't have a conflict?"
 
 findConflictEvaluation
   :: OutputMonad m
-  => FindConflictInstance
+  => FindInstance Conflict
   -> (String, String)
   -> m ()
 findConflictEvaluation task =
-  transitionPairEvaluation "have a conflict" (conflictNumberOfPlaces task) (ft, st)
+  transitionPairEvaluation "have a conflict" (numberOfPlaces task) (ft, st)
   where
-    (ft, st) = conflictTrans $ conflict task
+    (ft, st) = conflictTrans $ transitionPair task
 
 pickConcurrencyTask :: String
 pickConcurrencyTask = do
@@ -177,13 +170,13 @@ findConcurrencyGenerate
   -> FilePath
   -> Int
   -> Int
-  -> ExceptT String IO FindConcurrencyInstance
+  -> ExceptT String IO (FindInstance (Concurrent String))
 findConcurrencyGenerate config path segment seed = do
   (d, c) <- findConcurrency config segment seed
   let file = path ++ "concurrent.svg"
   lift (renderSVG file (mkWidth 250) d)
-  return $ FindConcurrencyInstance {
-    concurrent = c,
+  return $ FindInstance {
+    transitionPair = c,
     net = file,
     numberOfPlaces = places bc
     }
@@ -207,15 +200,15 @@ findConflictGenerate
   -> FilePath
   -> Int
   -> Int
-  -> ExceptT String IO FindConflictInstance
+  -> ExceptT String IO (FindInstance Conflict)
 findConflictGenerate config path segment seed = do
   (d, c) <- findConflict config segment seed
   let file = path ++ "conflict.svg"
   lift (renderSVG file (mkWidth 250) d)
-  return $ FindConflictInstance {
-    conflict = c,
-    conflictNet = file,
-    conflictNumberOfPlaces = places bc
+  return $ FindInstance {
+    transitionPair = c,
+    net = file,
+    numberOfPlaces = places bc
     }
   where
     bc = basicConfig (config :: FindConflictConfig)
