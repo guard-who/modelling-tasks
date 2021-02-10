@@ -10,8 +10,9 @@ import Common (
 import Modelling.PetriNet.ConcurrencyAndConflict (
   checkFindConflictConfig,
   checkPickConflictConfig,
-  findConflicts,
-  findConflictsTask,
+  findConflict,
+  findConflictGenerate,
+  findConflictTask,
   pickConflicts,
   pickConflictsTask,
   )
@@ -55,8 +56,8 @@ mainFind i = forceErrors $ do
   let c = checkFindConflictConfig config
   if isNothing c
   then do
-    conflDia <- findConflicts config 0 i
-    lift $ putStrLn findConflictsTask
+    conflDia <- findConflict config 0 i
+    findConflictGenerate config "" 0 i >>= lift . findConflictTask
     lift $ printNetAndInfo "" conflDia
   else
     lift $ print c

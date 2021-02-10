@@ -32,8 +32,8 @@ data AlloyConfig = AlloyConfig {
 
 defaultAlloyConfig :: AlloyConfig
 defaultAlloyConfig = AlloyConfig {
-  maxInstances = Just 500,
-  timeout      = Nothing
+  maxInstances = Just 100,
+  timeout      = Just 50000000
   }
 
 {-|
@@ -406,6 +406,7 @@ data FindConflictConfig = FindConflictConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
   , uniqueConflictPlace :: Maybe Bool
+  , alloyConfig  :: AlloyConfig
   } deriving (Generic, Show)
   
 defaultFindConflictConfig :: FindConflictConfig
@@ -414,6 +415,7 @@ defaultFindConflictConfig = FindConflictConfig
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
   , uniqueConflictPlace = Just True
+  , alloyConfig  = defaultAlloyConfig
   }
   
 data PickConflictConfig = PickConflictConfig

@@ -12,7 +12,10 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   findConcurrencyEvaluation,
   findConcurrencyGenerate,
   findConcurrencyTask,
-  findConflicts, findConflictsTask,
+  findConflict,
+  findConflictEvaluation,
+  findConflictGenerate,
+  findConflictTask,
   findTaskInstance,
   parseConcurrency,
   parseConflict,
@@ -65,7 +68,7 @@ import Modelling.PetriNet.Types         (
   Concurrent (Concurrent),
   Conflict,
   FindConcurrencyConfig (..), FindConflictConfig (..),
-  PetriConflict (Conflict),
+  PetriConflict (Conflict, conflictTrans),
   PickConcurrencyConfig (..), PickConflictConfig (..),
   defaultAlloyConfig,
   )
@@ -98,6 +101,13 @@ data FindConcurrencyInstance = FindConcurrencyInstance {
   }
   deriving (Generic, Show)
 
+data FindConflictInstance = FindConflictInstance {
+  conflict :: Conflict,
+  conflictNet :: FilePath,
+  conflictNumberOfPlaces :: Int
+  }
+  deriving (Generic, Show)
+
 findConcurrencyTask :: OutputMonad m => FindConcurrencyInstance -> m ()
 findConcurrencyTask task = do
   paragraph "Considering this Petri net"
@@ -109,25 +119,50 @@ findConcurrencyEvaluation
   => FindConcurrencyInstance
   -> (String, String)
   -> m ()
-findConcurrencyEvaluation task is = do
-  paragraph "Remarks on your solution:"
-  assertion (isTransition fi && isTransition si)
-    "Given transitions exist in the Petri net?"
-  assertion (ft == fi && st == si || ft == si && st == fi)
-    "Given transitions are concurrent?"
+findConcurrencyEvaluation task =
+  transitionPairEvaluation "are concurrent" (numberOfPlaces task) (ft, st)
   where
     Concurrent (ft, st) = concurrent task
+
+transitionPairEvaluation
+  :: OutputMonad m
+  => String
+  -> Int
+  -> (String, String)
+  -> (String, String)
+  -> m ()
+transitionPairEvaluation what n (ft, st) is = do
+  paragraph "Remarks on your solution:"
+  assertion (isTransition fi)
+    $ fi ++ " is a valid transition of the given Petri net?"
+  assertion (isTransition si)
+    $ si ++ " is a valid transition of the given Petri net?"
+  assertion (ft == fi && st == si || ft == si && st == fi)
+    $ "Given transitions " ++ what ++ "?"
+  where
     (fi, si) = is
     isTransition xs
       | 't':xs' <- xs
       , Just x  <- readMaybe xs'
-      = x >= 1 && x <= numberOfPlaces task
+      = x >= 1 && x <= n
       | otherwise
       = False
 
-findConflictsTask :: String
-findConflictsTask = do
-  "Which of the following Petrinets doesn't have a conflict?"
+findConflictTask :: OutputMonad m => FindConflictInstance -> m()
+findConflictTask task = do
+  paragraph "Considering this Petri net"
+  image $ conflictNet task
+  paragraph "Which of the following Petrinets doesn't have a conflict?"
+
+findConflictEvaluation
+  :: OutputMonad m
+  => FindConflictInstance
+  -> (String, String)
+  -> m ()
+findConflictEvaluation task =
+  transitionPairEvaluation "have a conflict" (conflictNumberOfPlaces task) (ft, st)
+  where
+    (ft, st) = conflictTrans $ conflict task
 
 pickConcurrencyTask :: String
 pickConcurrencyTask = do
@@ -145,7 +180,7 @@ findConcurrencyGenerate
   -> ExceptT String IO FindConcurrencyInstance
 findConcurrencyGenerate config path segment seed = do
   (d, c) <- findConcurrency config segment seed
-  let file = path ++ "petri.svg"
+  let file = path ++ "concurrent.svg"
   lift (renderSVG file (mkWidth 250) d)
   return $ FindConcurrencyInstance {
     concurrent = c,
@@ -167,17 +202,35 @@ findConcurrency = taskInstance
   (\c -> graphLayout $ basicConfig (c :: FindConcurrencyConfig))
   (\c -> alloyConfig (c :: FindConcurrencyConfig))
 
-findConflicts
+findConflictGenerate
+  :: FindConflictConfig
+  -> FilePath
+  -> Int
+  -> Int
+  -> ExceptT String IO FindConflictInstance
+findConflictGenerate config path segment seed = do
+  (d, c) <- findConflict config segment seed
+  let file = path ++ "conflict.svg"
+  lift (renderSVG file (mkWidth 250) d)
+  return $ FindConflictInstance {
+    conflict = c,
+    conflictNet = file,
+    conflictNumberOfPlaces = places bc
+    }
+  where
+    bc = basicConfig (config :: FindConflictConfig)
+
+findConflict
   :: FindConflictConfig
   -> Int
   -> Int
   -> ExceptT String IO (Diagram B, Conflict)
-findConflicts = taskInstance
+findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
   parseConflict
   (\c -> graphLayout $ basicConfig (c :: FindConflictConfig))
-  (const defaultAlloyConfig)
+  (\c -> alloyConfig (c :: FindConflictConfig))
 
 pickConcurrency
   :: PickConcurrencyConfig

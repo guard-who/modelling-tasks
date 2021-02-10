@@ -7,7 +7,7 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   checkPickConcurrencyConfig,
   checkPickConflictConfig,
   findConcurrency,
-  findConflicts,
+  findConflict,
   findTaskInstance,
   parseConcurrency,
   parseConflict,
@@ -68,7 +68,7 @@ spec = do
     checkConfigs checkFindConflictConfig fcfs'
   describe "findConflicts" $ do
     defaultConfigTaskGeneration
-      (findConflicts defaultFindConflictConfig 0 0)
+      (findConflict defaultFindConflictConfig 0 0)
       checkFindConflictInstance
     testFindConflictConfig fcfs
   describe "validPickConflictConfigs" $
@@ -163,7 +163,9 @@ validFindConflictConfigs
   -> [FindConflictConfig]
 validFindConflictConfigs cs aconfig = do
   unique <- [Nothing, Just True, Just False]
-  ($ unique) . uncurry (`FindConflictConfig` aconfig) <$> cs
+  ($ unique) . uncurry (`FindConflictConfig` aconfig)
+    <$> cs
+    <*> pure alloyTestConfig
 
 validPickConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
