@@ -13,8 +13,9 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   findConflict,
   findConflictGenerate,
   findConflictTask,
-  pickConflicts,
-  pickConflictsTask,
+  pickConflict,
+  pickConflictGenerate,
+  pickConflictTask,
   )
 import Modelling.PetriNet.Types         (
   BasicConfig(..), ChangeConfig(..), FindConflictConfig(..),
@@ -84,8 +85,8 @@ mainPick i = forceErrors $ do
   let c = checkPickConflictConfig config
   if isNothing c
   then do
-    conflDias <- pickConflicts config 0 i
-    lift $ putStrLn pickConflictsTask
+    conflDias <- pickConflict config 0 i
+    pickConflictGenerate config "" 0 i >>= lift . pickConflictTask
     lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
   else
     lift $ print c

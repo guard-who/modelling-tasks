@@ -16,7 +16,7 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   petriNetPickConcur,
   petriNetPickConfl,
   pickConcurrency,
-  pickConflicts,
+  pickConflict,
   pickTaskInstance,
   )
 import Modelling.PetriNet.Types (
@@ -75,7 +75,7 @@ spec = do
     checkConfigs checkPickConflictConfig pcfs
   describe "pickConflicts" $ do
     defaultConfigTaskGeneration
-      (pickConflicts defaultPickConflictConfig 0 0)
+      (pickConflict defaultPickConflictConfig 0 0)
       checkPickConflictInstance
     testPickConflictConfig pcfs
   where
@@ -178,7 +178,7 @@ validPickConflictConfigs
   -> [PickConflictConfig]
 validPickConflictConfigs cs = do
   unique <- [Nothing, Just True, Just False]
-  ($ unique) . uncurry PickConflictConfig <$> cs
+  ($ unique) . uncurry PickConflictConfig <$> cs <*> pure alloyTestConfig
 
 isValidConcurrency :: Concurrent String -> Bool
 isValidConcurrency c@(Concurrent (t1, t2))

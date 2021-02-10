@@ -24,7 +24,9 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickConcurrency,
   pickConcurrencyGenerate,
   pickConcurrencyTask,
-  pickConflicts, pickConflictsTask,
+  pickConflict,
+  pickConflictGenerate,
+  pickConflictTask,
   pickEvaluation,
   pickTaskInstance,
   ) where
@@ -75,7 +77,6 @@ import Modelling.PetriNet.Types         (
   FindConcurrencyConfig (..), FindConflictConfig (..),
   PetriConflict (Conflict, conflictTrans),
   PickConcurrencyConfig (..), PickConflictConfig (..),
-  defaultAlloyConfig,
   )
 
 import Control.Arrow                    (Arrow (second))
@@ -182,9 +183,10 @@ pickEvaluation
   -> m ()
 pickEvaluation = multipleChoice "petri nets" . nets
 
-pickConflictsTask :: String
-pickConflictsTask =
-  "Which of the following Petrinets does not have a conflict?"
+pickConflictTask :: OutputMonad m => PickInstance -> m ()
+pickConflictTask task = do
+  paragraph "Which of the following Petrinets does not have a conflict?"
+  images show snd $ nets task
 
 findConcurrencyGenerate
   :: FindConcurrencyConfig
@@ -254,6 +256,14 @@ pickConcurrencyGenerate
   -> ExceptT String IO PickInstance
 pickConcurrencyGenerate = pickGenerate pickConcurrency "concurrent"
 
+pickConflictGenerate
+  :: PickConflictConfig
+  -> FilePath
+  -> Int
+  -> Int
+  -> ExceptT String IO PickInstance
+pickConflictGenerate = pickGenerate pickConflict "conflict"
+
 pickGenerate
   :: (c -> Int -> Int -> ExceptT String IO [(Diagram B, Maybe a)])
   -> String
@@ -286,17 +296,17 @@ pickConcurrency = taskInstance
   (\c -> graphLayout $ basicConfig (c :: PickConcurrencyConfig))
   (\c -> alloyConfig (c :: PickConcurrencyConfig))
 
-pickConflicts
+pickConflict
   :: PickConflictConfig
   -> Int
   -> Int
   -> ExceptT String IO [(Diagram B, Maybe Conflict)]
-pickConflicts = taskInstance
+pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl
   parseConflict
   (\c -> graphLayout $ basicConfig (c :: PickConflictConfig))
-  (const defaultAlloyConfig)
+  (\c -> alloyConfig (c :: PickConflictConfig))
 
 taskInstance
   :: (f -> AlloyInstance -> GraphvizCommand -> ExceptT String IO a)

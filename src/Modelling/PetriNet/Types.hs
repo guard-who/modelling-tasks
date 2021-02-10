@@ -422,6 +422,7 @@ data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
   , uniqueConflictPlace :: Maybe Bool
+  , alloyConfig  :: AlloyConfig
   } deriving (Generic, Show)
 
 defaultPickConflictConfig :: PickConflictConfig
@@ -429,6 +430,7 @@ defaultPickConflictConfig = PickConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2 }
   , changeConfig = defaultChangeConfig
   , uniqueConflictPlace = Nothing
+  , alloyConfig  = defaultAlloyConfig
   }
   
 data FindConcurrencyConfig = FindConcurrencyConfig
