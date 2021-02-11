@@ -6,6 +6,7 @@
 
 module Modelling.PetriNet.ConcurrencyAndConflict (
   FindInstance (..),
+  PickInstance (..),
   checkFindConcurrencyConfig, checkFindConflictConfig,
   checkPickConcurrencyConfig, checkPickConflictConfig,
   findConcurrency,
