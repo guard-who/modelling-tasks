@@ -143,8 +143,8 @@ drawNode pfont (l, Nothing) p  = place
   p
 drawNode pfont (l,Just i) p  = place
   (center (text' pfont l) # translate (r2(0,10))
-    `atop` circle 3 #fc black # translate (r2(-5,-11))
-    `atop` text' pfont (show i :: String) # translate (r2(1,-15))
+    `atop` circle 3 # fc black # translate (r2 (5,-11))
+    `atop` text' pfont (show i) # translate (r2 (-8,-14.7))
     `atop` circle 20 # named l)
   p
 

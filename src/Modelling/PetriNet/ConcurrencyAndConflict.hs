@@ -120,7 +120,7 @@ findConcurrencyTask :: OutputMonad m => FindInstance (Concurrent String) -> m ()
 findConcurrencyTask task = do
   paragraph "Considering this Petri net"
   image $ net task
-  paragraph "Which pair of transitions are in concurrency under the initial marking?"
+  paragraph "Which pair of transitions are concurrently activated under the initial marking?"
 
 findConcurrencyEvaluation
   :: OutputMonad m
@@ -174,7 +174,7 @@ findConflictEvaluation task =
 
 pickConcurrencyTask :: OutputMonad m => PickInstance -> m ()
 pickConcurrencyTask task = do
-  paragraph "Which of the following Petri nets does not have a concurrency?"
+  paragraph "Which of the following Petri nets has two transitions that are concurrently activated?"
   images show snd $ nets task
 
 pickEvaluation
@@ -186,7 +186,7 @@ pickEvaluation = multipleChoice "petri nets" . nets
 
 pickConflictTask :: OutputMonad m => PickInstance -> m ()
 pickConflictTask task = do
-  paragraph "Which of the following Petrinets does not have a conflict?"
+  paragraph "Which of the following Petri nets has two transitions that are in conflict?"
   images show snd $ nets task
 
 findConcurrencyGenerate
@@ -283,7 +283,7 @@ pickGenerate pick task config path segment seed = do
     render ns (x, (net, m))= do
       let file = path ++ task ++ "-" ++ show x ++ ".svg"
       renderSVG file (mkWidth 250) net
-      ((x, (isNothing m, file)) :) <$> ns
+      ((x, (isJust m, file)) :) <$> ns
 
 pickConcurrency
   :: PickConcurrencyConfig
