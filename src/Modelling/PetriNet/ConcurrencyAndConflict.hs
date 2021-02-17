@@ -30,6 +30,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickConflictTask,
   pickEvaluation,
   pickTaskInstance,
+  taskInstance,
   ) where
 
 import qualified Modelling.PetriNet.Types         as T (
@@ -86,6 +87,7 @@ import Control.Monad.Random (
   MonadTrans (lift),
   Random (randomR),
   RandomGen,
+  StdGen,
   evalRandT,
   mkStdGen
   )
@@ -196,7 +198,7 @@ findConcurrencyGenerate
   -> Int
   -> ExceptT String IO (FindInstance (Concurrent String))
 findConcurrencyGenerate config path segment seed = do
-  (d, c) <- findConcurrency config segment seed
+  (d, c) <- fst <$> findConcurrency config segment seed
   let file = path ++ "concurrent.svg"
   lift (renderSVG file (mkWidth 250) d)
   return $ FindInstance {
@@ -211,7 +213,7 @@ findConcurrency
   :: FindConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO (Diagram B, Concurrent String)
+  -> ExceptT String IO ((Diagram B, Concurrent String), StdGen)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
@@ -226,7 +228,7 @@ findConflictGenerate
   -> Int
   -> ExceptT String IO (FindInstance Conflict)
 findConflictGenerate config path segment seed = do
-  (d, c) <- findConflict config segment seed
+  (d, c) <- fst <$> findConflict config segment seed
   let file = path ++ "conflict.svg"
   lift (renderSVG file (mkWidth 250) d)
   return $ FindInstance {
@@ -241,7 +243,7 @@ findConflict
   :: FindConflictConfig
   -> Int
   -> Int
-  -> ExceptT String IO (Diagram B, Conflict)
+  -> ExceptT String IO ((Diagram B, Conflict), StdGen)
 findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
@@ -266,7 +268,7 @@ pickConflictGenerate
 pickConflictGenerate = pickGenerate pickConflict "conflict"
 
 pickGenerate
-  :: (c -> Int -> Int -> ExceptT String IO [(Diagram B, Maybe a)])
+  :: (c -> Int -> Int -> ExceptT String IO ([(Diagram B, Maybe a)], StdGen))
   -> String
   -> c
   -> FilePath
@@ -274,7 +276,7 @@ pickGenerate
   -> Int
   -> ExceptT String IO PickInstance
 pickGenerate pick task config path segment seed = do
-  ns <- pick config segment seed
+  ns <- fst <$> pick config segment seed
   let g  = mkStdGen seed
   ns'  <- evalRandT (shuffleM ns) g
   ns'' <- lift $ foldl render (return []) $ zip [1 ..] ns'
@@ -289,7 +291,7 @@ pickConcurrency
   :: PickConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO [(Diagram B, Maybe (Concurrent String))]
+  -> ExceptT String IO ([(Diagram B, Maybe (Concurrent String))], StdGen)
 pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
@@ -301,7 +303,7 @@ pickConflict
   :: PickConflictConfig
   -> Int
   -> Int
-  -> ExceptT String IO [(Diagram B, Maybe Conflict)]
+  -> ExceptT String IO ([(Diagram B, Maybe Conflict)], StdGen)
 pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl
@@ -318,7 +320,7 @@ taskInstance
   -> config
   -> Int
   -> Int
-  -> ExceptT String IO a
+  -> ExceptT String IO (a, StdGen)
 taskInstance taskF alloyF parseF layoutF alloyC config segment seed = do
   let g  = mkStdGen seed
       is = fromIntegral <$> T.maxInstances (alloyC config)
@@ -332,19 +334,19 @@ taskInstance taskF alloyF parseF layoutF alloyC config segment seed = do
   when (null list) $ except $ Left "no instance available"
   when (null $ drop segment list)
     $ except $ Left "instance not available"
-  inst <- case x of
+  (inst, g') <- case x of
     Nothing -> return $ randomInstance list g
-    Just (n, g') -> case drop n list of
-      x':_ -> return x'
+    Just (n, g'') -> case drop n list of
+      x':_ -> return (x', g'')
       []     -> do
         when (isNothing $ T.timeout (alloyC config))
           $ except $ Left "instance not available"
-        return $ randomInstance list g'
-  taskF parseF inst (layoutF config)
+        return $ randomInstance list g''
+  (,g') <$> taskF parseF inst (layoutF config)
   where
     randomInstance list g =
-      let (n, _) = randomInSegment segment ((length list - segment) `div` 4) g
-      in list !! n
+      let (n, g') = randomInSegment segment ((length list - segment) `div` 4) g
+      in (list !! n, g')
 
 randomInSegment :: RandomGen g => Int -> Int -> g -> (Int, g)
 randomInSegment segment segLength g = (segment + 4 * x, g')

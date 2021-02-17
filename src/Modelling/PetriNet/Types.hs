@@ -387,20 +387,7 @@ defaultChangeConfig = ChangeConfig
   , flowChangeOverall = 2
   , maxFlowChangePerEdge = 1
   }
---------------------------------------------
-data MathConfig = MathConfig 
-  { basicTask :: BasicConfig
-  , advTask :: AdvConfig
-  , changeTask :: ChangeConfig
-  } deriving (Generic, Show)
-  
-defaultMathConfig :: MathConfig
-defaultMathConfig = MathConfig
-  { basicTask = defaultBasicConfig
-  , advTask = defaultAdvConfig
-  , changeTask = defaultChangeConfig{ tokenChangeOverall = 0, maxTokenChangePerPlace = 0 }
-  }
-  
+
 data FindConflictConfig = FindConflictConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig

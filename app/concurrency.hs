@@ -57,7 +57,7 @@ mainFind i = forceErrors $ do
   let c = checkFindConcurrencyConfig config
   if isNothing c
   then do
-    conc <- findConcurrency config 0 i
+    conc <- fst <$> findConcurrency config 0 i
     findConcurrencyGenerate config "" 0 i >>= lift . findConcurrencyTask
     lift $ printNetAndInfo "" conc
   else
@@ -85,7 +85,7 @@ mainPick i = forceErrors $ do
   let c = checkPickConcurrencyConfig config
   if isNothing c
   then do
-    concs <- pickConcurrency config 0 i
+    concs <- fst <$> pickConcurrency config 0 i
     pickConcurrencyGenerate config "" 0 i >>= lift . pickConcurrencyTask
     lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
   else

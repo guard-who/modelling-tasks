@@ -6,11 +6,17 @@ import Common (
   renderPetriNet,
   )
 import Modelling.PetriNet.MatchToMath (
-  checkConfig, matchToMath, matchToMathTask,
+  MathConfig (..),
+  checkConfig,
+  defaultMathConfig,
+  graphToMath,
+  matchToMathTask,
+  mathToGraph
   )
 import Modelling.PetriNet.Types (
-  BasicConfig (..), ChangeConfig (..), MathConfig (..), PetriMath (..),
-  defaultMathConfig,
+  BasicConfig (..),
+  ChangeConfig (..),
+  PetriMath (..),
   )
 
 import Control.Monad                    (when)
@@ -32,10 +38,10 @@ main = forceErrors $ do
   lift $ pPrint defaultMathConfig
   (pls, trns, tknChange, flwChange, sw) <- lift userInput
   let config = defaultMathConfig{
-        basicTask =
-            (basicTask defaultMathConfig) {places = pls, transitions = trns},
-        changeTask =
-            (changeTask defaultMathConfig) {
+        basicConfig =
+            (basicConfig defaultMathConfig) {places = pls, transitions = trns},
+        changeConfig =
+            (changeConfig defaultMathConfig) {
             tokenChangeOverall = tknChange,
                 flowChangeOverall = flwChange}
         }
@@ -45,21 +51,24 @@ main = forceErrors $ do
         | otherwise = True
   i <- lift instanceInput
   when (i < 0) $ error "There is no negative index"
-  (dia, math, falseNets) <- matchToMath i switch config
   lift $ putStrLn $ matchToMathTask switch
-  lift $ renderPetriNet "0" dia
-  saveMathFiles "0" math
-  case falseNets of
-    Right falseTex -> do
-      let writeBoth num (x, y) = do
-            saveMathFiles (show num) x
-            lift $ print y
-      uncurry writeBoth `mapM_` zip [1 :: Integer ..] falseTex
-    Left falseDia  -> lift $ do
-      let writeBoth num (x, y) = do
-            renderPetriNet (show num) x
-            print y
-      uncurry writeBoth `mapM_` zip [1 :: Integer ..] falseDia
+  if switch
+    then do
+    (dia, math, falseDia) <- mathToGraph config 0 i
+    lift $ renderPetriNet "0" dia
+    saveMathFiles "0" math
+    let writeBoth num (x, y) = do
+          renderPetriNet (show num) x
+          print y
+    lift $ uncurry writeBoth `mapM_` zip [1 :: Integer ..] falseDia
+    else do
+    (dia, math, falseTex) <- graphToMath config 0 i
+    lift $ renderPetriNet "0" dia
+    saveMathFiles "0" math
+    let writeBoth num (x, y) = do
+          saveMathFiles (show num) x
+          lift $ print y
+    uncurry writeBoth `mapM_` zip [1 :: Integer ..] falseTex
 
 saveMathFiles :: String -> PetriMath Formula -> ExceptT String IO ()
 saveMathFiles name m = do

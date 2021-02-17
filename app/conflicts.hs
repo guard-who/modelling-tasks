@@ -57,7 +57,7 @@ mainFind i = forceErrors $ do
   let c = checkFindConflictConfig config
   if isNothing c
   then do
-    conflDia <- findConflict config 0 i
+    conflDia <- fst <$> findConflict config 0 i
     findConflictGenerate config "" 0 i >>= lift . findConflictTask
     lift $ printNetAndInfo "" conflDia
   else
@@ -85,7 +85,7 @@ mainPick i = forceErrors $ do
   let c = checkPickConflictConfig config
   if isNothing c
   then do
-    conflDias <- pickConflict config 0 i
+    conflDias <- fst <$> pickConflict config 0 i
     pickConflictGenerate config "" 0 i >>= lift . pickConflictTask
     lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
   else

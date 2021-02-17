@@ -1,11 +1,18 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.MatchToMath (
-  Graph, Math,
-  checkConfig, matchToMath, matchToMathTask,
+  Graph,
+  Math,
+  MathConfig (..),
+  checkConfig,
+  defaultMathConfig,
+  graphToMath,
+  matchToMathTask,
+  mathToGraph,
   petriNetRnd,
   )  where
 
@@ -13,35 +20,6 @@ import qualified Data.Map                         as M (
   foldrWithKey, keys, lookup, partition
   )
 
-import Modelling.PetriNet.BasicNetFunctions (
-  checkBasicConfig, checkChangeConfig
-  )
-import Modelling.PetriNet.Diagram       (drawNet)
-import Modelling.PetriNet.LaTeX         (toPetriMath)
-import Modelling.PetriNet.Parser (
-  parseChange, parseRenamedPetriLike,
-  )
-import Modelling.PetriNet.Types (
-  AdvConfig,
-  BasicConfig (..),
-  Change,
-  MathConfig (..),
-  PetriMath,
-  PetriLike (..),
-  flowIn, initial, isPlaceNode,
-  mapChange,
-  )
-
-import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad.Trans.Class        (lift)
-import Control.Monad.Trans.Except       (ExceptT, except)
-import Data.String.Interpolate          (i)
-import Diagrams.Backend.SVG             (B)
-import Diagrams.Prelude                     (Diagram)
-import Image.LaTeX.Render               (Formula)
-import Language.Alloy.Call (
-  AlloyInstance, getInstances, objectName,
-  )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
   compBasicConstraints,
@@ -54,34 +32,129 @@ import Modelling.PetriNet.Alloy (
   petriScopeBitwidth,
   petriScopeMaxSeq,
   )
+import Modelling.PetriNet.BasicNetFunctions (
+  checkBasicConfig, checkChangeConfig
+  )
+import Modelling.PetriNet.ConcurrencyAndConflict (taskInstance)
+import Modelling.PetriNet.Diagram       (drawNet)
+import Modelling.PetriNet.LaTeX         (toPetriMath)
+import Modelling.PetriNet.Parser (
+  parseChange, parseRenamedPetriLike,
+  )
+import Modelling.PetriNet.Types (
+  AdvConfig,
+  AlloyConfig,
+  BasicConfig (..),
+  Change,
+  ChangeConfig (..),
+  PetriLike (..),
+  PetriMath,
+  defaultAdvConfig,
+  defaultAlloyConfig,
+  defaultBasicConfig,
+  defaultChangeConfig,
+  flowIn, initial, isPlaceNode,
+  mapChange,
+  )
+
+import Control.Applicative              (Alternative ((<|>)))
+import Control.Monad.Random             (StdGen, evalRandT)
+import Control.Monad.Trans.Class        (lift)
+import Control.Monad.Trans.Except       (ExceptT, except)
+import Data.GraphViz                    (GraphvizCommand)
+import Data.String.Interpolate          (i)
+import Diagrams.Backend.SVG             (B)
+import Diagrams.Prelude                     (Diagram)
+import GHC.Generics                     (Generic)
+import Image.LaTeX.Render               (Formula)
+import Language.Alloy.Call (
+  AlloyInstance, getInstances, objectName,
+  )
+import System.Random.Shuffle            (shuffleM)
 
 type Math  = PetriMath Formula
 type Graph = Diagram B
---True Task1 <-> False Task1a
+
+data MathConfig = MathConfig {
+  basicConfig :: BasicConfig,
+  advConfig :: AdvConfig,
+  changeConfig :: ChangeConfig,
+  generatedWrongInstances :: Int,
+  wrongInstances :: Int,
+  alloyConfig :: AlloyConfig
+  } deriving (Generic, Show)
+
+defaultMathConfig :: MathConfig
+defaultMathConfig = MathConfig {
+  basicConfig = defaultBasicConfig,
+  advConfig = defaultAdvConfig,
+  changeConfig = defaultChangeConfig {
+    tokenChangeOverall = 0,
+    maxTokenChangePerPlace = 0
+    },
+  generatedWrongInstances = 50,
+  wrongInstances = 3,
+  alloyConfig = defaultAlloyConfig
+  }
+
+graphToMath
+  :: MathConfig
+  -> Int
+  -> Int
+  -> ExceptT String IO (Diagram B, Math, [(PetriMath Formula, Change)])
+graphToMath = matchToMath toMath
+  where
+    toMath x = except $
+      toPetriMath <$> parseRenamedPetriLike "flow" "tokens" x
+
+mathToGraph
+  :: MathConfig
+  -> Int
+  -> Int
+  -> ExceptT String IO (Diagram B, Math, [(Diagram B, Change)])
+mathToGraph c = matchToMath draw c
+  where
+    draw x = do
+      pl <- except $ parseRenamedPetriLike "flow" "tokens" x
+      drawNet id pl (graphLayout $ basicConfig c)
+
 matchToMath
-  :: Int
-  -> Bool
+  :: (AlloyInstance -> ExceptT String IO a)
   -> MathConfig
-  -> ExceptT String IO (Graph, Math, Either [(Graph, Change)] [(Math, Change)])
-matchToMath indInst switch config@MathConfig{basicTask,advTask} = do
-  list <- lift $ getInstances (Just (toInteger (indInst+1))) (petriNetRnd basicTask advTask)
-  petriLike <- except $ parseRenamedPetriLike "flow" "tokens" (list !! indInst)
-  rightNet  <- drawNet id petriLike (graphLayout basicTask)
+  -> Int
+  -> Int
+  -> ExceptT String IO (Diagram B, Math, [(a, Change)])
+matchToMath toOutput config segment seed = do
+  ((f, net, math), g) <- netMath config segment seed
+  fList <- lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
+  fList' <- take (wrongInstances config) <$> evalRandT (shuffleM fList) g
+  alloyChanges <- except $ mapM addChange fList'
+  changes <- firstM toOutput `mapM` alloyChanges
+  return (net, math, changes)
+
+netMath
+  :: MathConfig
+  -> Int
+  -> Int
+  -> ExceptT String IO ((String, Diagram B, Math), StdGen)
+netMath = taskInstance
+  mathInstance
+  (\c -> petriNetRnd (basicConfig c) (advConfig c))
+  undefined
+  (\c -> graphLayout $ basicConfig (c :: MathConfig))
+  (\c -> alloyConfig (c :: MathConfig))
+
+mathInstance
+  :: MathConfig
+  -> AlloyInstance
+  -> GraphvizCommand
+  -> ExceptT String IO (String, Diagram B, Math)
+mathInstance config inst gc = do
+  petriLike <- except $ parseRenamedPetriLike "flow" "tokens" inst
+  rightNet  <- drawNet id petriLike gc
   let math = toPetriMath petriLike
   let f = renderFalse petriLike config
-  fList <- lift $ getInstances (Just 3) f
-  alloyChanges <- except $ mapM addChange fList
-  if switch
-    then do
-    let draw x = do
-          pl <- except $ parseRenamedPetriLike "flow" "tokens" x
-          drawNet id pl (graphLayout basicTask)
-    drawChanges <- firstM draw `mapM` alloyChanges
-    return (rightNet, math, Left drawChanges)
-    else do
-    let toMath x = toPetriMath <$> parseRenamedPetriLike "flow" "tokens" x
-    mathChanges <- except $ firstM toMath `mapM` alloyChanges
-    return (rightNet, math, Right mathChanges)
+  return (f, rightNet, math)
 
 matchToMathTask :: Bool -> String
 matchToMathTask switch =
@@ -93,8 +166,24 @@ firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
 
 checkConfig :: MathConfig -> Maybe String
-checkConfig MathConfig{basicTask,changeTask} = 
-  checkBasicConfig basicTask <|> checkChangeConfig basicTask changeTask
+checkConfig c@MathConfig {
+  basicConfig,
+  changeConfig
+  } = checkBasicConfig basicConfig
+  <|> checkChangeConfig basicConfig changeConfig
+  <|> checkMathConfig c
+
+checkMathConfig :: MathConfig -> Maybe String
+checkMathConfig MathConfig {
+  generatedWrongInstances,
+  wrongInstances
+  }
+  | wrongInstances < 1
+  = Just "There has to be at least one wrongInstance"
+  | generatedWrongInstances < wrongInstances
+  = Just "generatedWrongInstances has to be higher than wrongInstances"
+  | otherwise
+  = Nothing
 
 addChange :: AlloyInstance -> Either String (AlloyInstance, Change)
 addChange alloy = do
@@ -129,7 +218,7 @@ run showNets for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth 
 renderFalse :: PetriLike String -> MathConfig -> String
 renderFalse
   PetriLike  {allNodes}
-  MathConfig {basicTask, advTask, changeTask} = [i|module FalseNet
+  MathConfig {basicConfig, advConfig, changeConfig} = [i|module FalseNet
 
 #{modulePetriSignature}
 #{moduleHelpers}
@@ -145,12 +234,12 @@ fact{
 }
 
 pred showFalseNets[#{activated} : set Transitions]{
-  #{compBasicConstraints activated basicTask}
-  #{compAdvConstraints advTask}
-  #{compChange changeTask}
+  #{compBasicConstraints activated basicConfig}
+  #{compAdvConstraints advConfig}
+  #{compChange changeConfig}
 }
 
-run showFalseNets for exactly #{petriScopeMaxSeq basicTask} Nodes, #{petriScopeBitwidth basicTask} Int
+run showFalseNets for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitwidth basicConfig} Int
 |]
   where
     (ps, ts)    = M.partition isPlaceNode allNodes
