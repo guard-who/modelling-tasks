@@ -137,12 +137,13 @@ netMath
   -> Int
   -> Int
   -> ExceptT String IO ((String, Diagram B, Math), StdGen)
-netMath = taskInstance
+netMath config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
-  undefined
+  config
   (\c -> graphLayout $ basicConfig (c :: MathConfig))
   (\c -> alloyConfig (c :: MathConfig))
+  config
 
 mathInstance
   :: MathConfig
