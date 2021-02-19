@@ -23,6 +23,7 @@ import Modelling.PetriNet.Types         (
   defaultFindConflictConfig, defaultPickConflictConfig,
   )
 
+import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.Maybe                        (isNothing)
 import System.IO (
@@ -57,7 +58,7 @@ mainFind i = forceErrors $ do
   let c = checkFindConflictConfig config
   if isNothing c
   then do
-    conflDia <- fst <$> findConflict config 0 i
+    conflDia <- evalRandT (findConflict config 0) $ mkStdGen i
     findConflictGenerate config "" 0 i >>= lift . findConflictTask
     lift $ printNetAndInfo "" conflDia
   else
@@ -85,7 +86,7 @@ mainPick i = forceErrors $ do
   let c = checkPickConflictConfig config
   if isNothing c
   then do
-    conflDias <- fst <$> pickConflict config 0 i
+    conflDias <- evalRandT (pickConflict config 0) $ mkStdGen i
     pickConflictGenerate config "" 0 i >>= lift . pickConflictTask
     lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
   else

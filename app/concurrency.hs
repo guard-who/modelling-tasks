@@ -23,6 +23,7 @@ import Modelling.PetriNet.Types (
   defaultFindConcurrencyConfig, defaultPickConcurrencyConfig,
   )
 
+import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (lift)
 import Data.Maybe                        (isNothing)
 import System.IO (
@@ -57,7 +58,7 @@ mainFind i = forceErrors $ do
   let c = checkFindConcurrencyConfig config
   if isNothing c
   then do
-    conc <- fst <$> findConcurrency config 0 i
+    conc <- evalRandT (findConcurrency config 0) $ mkStdGen i
     findConcurrencyGenerate config "" 0 i >>= lift . findConcurrencyTask
     lift $ printNetAndInfo "" conc
   else
@@ -85,7 +86,7 @@ mainPick i = forceErrors $ do
   let c = checkPickConcurrencyConfig config
   if isNothing c
   then do
-    concs <- fst <$> pickConcurrency config 0 i
+    concs <- evalRandT (pickConcurrency config 0) $ mkStdGen i
     pickConcurrencyGenerate config "" 0 i >>= lift . pickConcurrencyTask
     lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
   else

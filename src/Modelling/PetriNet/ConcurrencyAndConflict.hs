@@ -79,6 +79,8 @@ import Modelling.PetriNet.Types         (
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Random (
   MonadTrans (lift),
+  RandT,
+  RandomGen,
   StdGen,
   evalRandT,
   mkStdGen
@@ -189,7 +191,7 @@ findConcurrencyGenerate
   -> Int
   -> ExceptT String IO (FindInstance (Concurrent String))
 findConcurrencyGenerate config path segment seed = do
-  (d, c) <- fst <$> findConcurrency config segment seed
+  (d, c) <- evalRandT (findConcurrency config segment) $ mkStdGen seed
   let file = path ++ "concurrent.svg"
   lift (renderSVG file (mkWidth 250) d)
   return $ FindInstance {
@@ -201,10 +203,10 @@ findConcurrencyGenerate config path segment seed = do
     bc = basicConfig (config :: FindConcurrencyConfig)
 
 findConcurrency
-  :: FindConcurrencyConfig
+  :: RandomGen g
+  => FindConcurrencyConfig
   -> Int
-  -> Int
-  -> ExceptT String IO ((Diagram B, Concurrent String), StdGen)
+  -> RandT g (ExceptT String IO) (Diagram B, Concurrent String)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
@@ -219,7 +221,7 @@ findConflictGenerate
   -> Int
   -> ExceptT String IO (FindInstance Conflict)
 findConflictGenerate config path segment seed = do
-  (d, c) <- fst <$> findConflict config segment seed
+  (d, c) <- evalRandT (findConflict config segment) $ mkStdGen seed
   let file = path ++ "conflict.svg"
   lift (renderSVG file (mkWidth 250) d)
   return $ FindInstance {
@@ -231,10 +233,10 @@ findConflictGenerate config path segment seed = do
     bc = basicConfig (config :: FindConflictConfig)
 
 findConflict
-  :: FindConflictConfig
+  :: RandomGen g
+  => FindConflictConfig
   -> Int
-  -> Int
-  -> ExceptT String IO ((Diagram B, Conflict), StdGen)
+  -> RandT g (ExceptT String IO) (Diagram B, Conflict)
 findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
@@ -259,7 +261,7 @@ pickConflictGenerate
 pickConflictGenerate = pickGenerate pickConflict "conflict"
 
 pickGenerate
-  :: (c -> Int -> Int -> ExceptT String IO ([(Diagram B, Maybe a)], StdGen))
+  :: (c -> Int -> RandT StdGen (ExceptT String IO) [(Diagram B, Maybe a)])
   -> String
   -> c
   -> FilePath
@@ -267,7 +269,7 @@ pickGenerate
   -> Int
   -> ExceptT String IO PickInstance
 pickGenerate pick task config path segment seed = do
-  ns <- fst <$> pick config segment seed
+  ns <- evalRandT (pick config segment) $ mkStdGen seed
   let g  = mkStdGen seed
   ns'  <- evalRandT (shuffleM ns) g
   ns'' <- lift $ foldl render (return []) $ zip [1 ..] ns'
@@ -279,10 +281,10 @@ pickGenerate pick task config path segment seed = do
       ((x, (isJust m, file)) :) <$> ns
 
 pickConcurrency
-  :: PickConcurrencyConfig
+  :: RandomGen g
+  => PickConcurrencyConfig
   -> Int
-  -> Int
-  -> ExceptT String IO ([(Diagram B, Maybe (Concurrent String))], StdGen)
+  -> RandT g (ExceptT String IO) [(Diagram B, Maybe (Concurrent String))]
 pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
@@ -291,10 +293,10 @@ pickConcurrency = taskInstance
   (\c -> alloyConfig (c :: PickConcurrencyConfig))
 
 pickConflict
-  :: PickConflictConfig
+  :: RandomGen g
+  => PickConflictConfig
   -> Int
-  -> Int
-  -> ExceptT String IO ([(Diagram B, Maybe Conflict)], StdGen)
+  -> RandT g (ExceptT String IO) [(Diagram B, Maybe Conflict)]
 pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl

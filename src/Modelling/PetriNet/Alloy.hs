@@ -35,10 +35,10 @@ import qualified Modelling.PetriNet.Types         as T (
 
 import Control.Monad                    (when)
 import Control.Monad.Random (
+  RandT,
   Random (randomR),
   RandomGen,
-  StdGen,
-  mkStdGen
+  liftRandT,
   )
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
@@ -159,43 +159,42 @@ getAlloyInstances config alloy = do
   return list
 
 taskInstance
-  :: (f -> AlloyInstance -> GraphvizCommand -> ExceptT String IO a)
+  :: RandomGen g
+  => (f -> AlloyInstance -> GraphvizCommand -> ExceptT String IO a)
   -> (config -> String)
   -> f
   -> (config -> GraphvizCommand)
   -> (config -> AlloyConfig)
   -> config
   -> Int
-  -> Int
-  -> ExceptT String IO (a, StdGen)
-taskInstance taskF alloyF parseF layoutF alloyC config segment seed = do
-  let g  = mkStdGen seed
-      is = fromIntegral <$> T.maxInstances (alloyC config)
-      x  = randomInSegment segment <$> is <*> pure g
-  list <- getAlloyInstances
+  -> RandT g (ExceptT String IO) a
+taskInstance taskF alloyF parseF layoutF alloyC config segment = do
+  let is = fromIntegral <$> T.maxInstances (alloyC config)
+  x <- sequence $ randomInSegment segment <$> is
+  list <- lift $ getAlloyInstances
     defaultCallAlloyConfig {
-      maxInstances = toInteger . (+1) . fst <$> x,
+      maxInstances = toInteger . (+1) <$> x,
       timeout      = T.timeout (alloyC config)
       }
     (alloyF config)
-  when (null list) $ except $ Left "no instance available"
+  when (null list) $ lift $ except $ Left "no instance available"
   when (null $ drop segment list)
-    $ except $ Left "instance not available"
-  (inst, g') <- case x of
-    Nothing -> return $ randomInstance list g
-    Just (n, g'') -> case drop n list of
-      x':_ -> return (x', g'')
+    $ lift $ except $ Left "instance not available"
+  inst <- case x of
+    Nothing -> randomInstance list
+    Just n -> case drop n list of
+      x':_ -> return x'
       []     -> do
         when (isNothing $ T.timeout (alloyC config))
-          $ except $ Left "instance not available"
-        return $ randomInstance list g''
-  (,g') <$> taskF parseF inst (layoutF config)
+          $ lift $ except $ Left "instance not available"
+        randomInstance list
+  lift $ taskF parseF inst (layoutF config)
   where
-    randomInstance list g =
-      let (n, g') = randomInSegment segment ((length list - segment) `div` 4) g
-      in (list !! n, g')
+    randomInstance list = do
+      n <- randomInSegment segment ((length list - segment) `div` 4)
+      return $ list !! n
 
-randomInSegment :: RandomGen g => Int -> Int -> g -> (Int, g)
-randomInSegment segment segLength g = (segment + 4 * x, g')
-  where
-    (x, g') = randomR ((0,) $ pred segLength) g
+randomInSegment :: (RandomGen g, Monad m) => Int -> Int -> RandT g m Int
+randomInSegment segment segLength = do
+  x <- liftRandT $ return . randomR ((0,) $ pred segLength)
+  return $ segment + 4 * x

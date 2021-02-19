@@ -15,6 +15,7 @@ import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig), BasicConfig (..), ChangeConfig (ChangeConfig),
   )
 
+import Control.Monad.Random             (RandT, evalRandT)
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.GraphViz                    (GraphvizCommand (Neato))
 import GHC.Base                         (maxInt, minInt)
@@ -73,13 +74,14 @@ testTaskGeneration alloyGen taskInst checkInst cs =
 
 defaultConfigTaskGeneration
   :: (Show e, Eq e)
-  => ExceptT e IO a
+  => RandT StdGen (ExceptT e IO) a
+  -> Int
   -> (a -> Bool)
   -> Spec
-defaultConfigTaskGeneration generateInst checkInst =
+defaultConfigTaskGeneration generateInst seed checkInst =
   context "using its default config" $
     it "generates everything required to create the task" $ do
-      result <- runExceptT generateInst
+      result <- runExceptT $ evalRandT generateInst $ mkStdGen seed
       return (checkInst <$> result) `shouldReturn` Right True
 
 checkConfigs :: (Eq b, Show b) => (a -> Maybe b) -> [a] -> Spec

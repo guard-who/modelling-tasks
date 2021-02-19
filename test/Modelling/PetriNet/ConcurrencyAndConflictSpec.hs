@@ -54,28 +54,32 @@ spec = do
     checkConfigs checkFindConcurrencyConfig fccs'
   describe "findConcurrency" $ do
     defaultConfigTaskGeneration
-      (fst <$> findConcurrency defaultFindConcurrencyConfig 0 0)
+      (findConcurrency defaultFindConcurrencyConfig 0)
+      0
       checkFindConcurrencyInstance
     testFindConcurrencyConfig fccs
   describe "validPickConcurrencyConfigs" $
     checkConfigs checkPickConcurrencyConfig pccs
   describe "pickConcurrency" $ do
     defaultConfigTaskGeneration
-      (fst <$> pickConcurrency defaultPickConcurrencyConfig 0 0)
+      (pickConcurrency defaultPickConcurrencyConfig 0)
+      0
       checkPickConcurrencyInstance
     testPickConcurrencyConfig pccs
   describe "validFindConflictConfigs" $
     checkConfigs checkFindConflictConfig fcfs'
   describe "findConflicts" $ do
     defaultConfigTaskGeneration
-      (fst <$> findConflict defaultFindConflictConfig 0 0)
+      (findConflict defaultFindConflictConfig 0)
+      0
       checkFindConflictInstance
     testFindConflictConfig fcfs
   describe "validPickConflictConfigs" $
     checkConfigs checkPickConflictConfig pcfs
   describe "pickConflicts" $ do
     defaultConfigTaskGeneration
-      (fst <$> pickConflict defaultPickConflictConfig 0 0)
+      (pickConflict defaultPickConflictConfig 0)
+      0
       checkPickConflictInstance
     testPickConflictConfig pcfs
   where

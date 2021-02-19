@@ -58,7 +58,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad.Random             (StdGen, evalRandT)
+import Control.Monad.Random             (RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (lift)
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.GraphViz                    (GraphvizCommand)
@@ -102,7 +102,7 @@ graphToMath
   -> Int
   -> Int
   -> ExceptT String IO (Diagram B, Math, [(PetriMath Formula, Change)])
-graphToMath = matchToMath toMath
+graphToMath c segment = evalRandT (matchToMath toMath c segment) . mkStdGen
   where
     toMath x = except $
       toPetriMath <$> parseRenamedPetriLike "flow" "tokens" x
@@ -112,31 +112,31 @@ mathToGraph
   -> Int
   -> Int
   -> ExceptT String IO (Diagram B, Math, [(Diagram B, Change)])
-mathToGraph c = matchToMath draw c
+mathToGraph c segment = evalRandT (matchToMath draw c segment) . mkStdGen
   where
     draw x = do
       pl <- except $ parseRenamedPetriLike "flow" "tokens" x
       drawNet id pl (graphLayout $ basicConfig c)
 
 matchToMath
-  :: (AlloyInstance -> ExceptT String IO a)
+  :: RandomGen g
+  => (AlloyInstance -> ExceptT String IO a)
   -> MathConfig
   -> Int
-  -> Int
-  -> ExceptT String IO (Diagram B, Math, [(a, Change)])
-matchToMath toOutput config segment seed = do
-  ((f, net, math), g) <- netMath config segment seed
-  fList <- lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
-  fList' <- take (wrongInstances config) <$> evalRandT (shuffleM fList) g
-  alloyChanges <- except $ mapM addChange fList'
-  changes <- firstM toOutput `mapM` alloyChanges
+  -> RandT g (ExceptT String IO) (Diagram B, Math, [(a, Change)])
+matchToMath toOutput config segment = do
+  (f, net, math) <- netMath config segment
+  fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
+  fList' <- take (wrongInstances config) <$> shuffleM fList
+  alloyChanges <- lift $ except $ mapM addChange fList'
+  changes <- lift $ firstM toOutput `mapM` alloyChanges
   return (net, math, changes)
 
 netMath
-  :: MathConfig
+  :: RandomGen g
+  => MathConfig
   -> Int
-  -> Int
-  -> ExceptT String IO ((String, Diagram B, Math), StdGen)
+  -> RandT g (ExceptT String IO) (String, Diagram B, Math)
 netMath config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
