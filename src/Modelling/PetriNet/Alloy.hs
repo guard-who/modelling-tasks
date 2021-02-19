@@ -1,11 +1,14 @@
-{-# Language QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 {-# Language DuplicateRecordFields #-}
+{-# Language QuasiQuotes #-}
 
 module Modelling.PetriNet.Alloy (
-  compAdvConstraints, compBasicConstraints, compChange,
+  compAdvConstraints,
+  compBasicConstraints,
+  compChange,
   connected,
   getAlloyInstances,
   isolated,
@@ -14,18 +17,40 @@ module Modelling.PetriNet.Alloy (
   modulePetriConcepts,
   modulePetriConstraints,
   modulePetriSignature,
-  petriScopeBitwidth, petriScopeMaxSeq,
+  petriScopeBitwidth,
+  petriScopeMaxSeq,
+  taskInstance,
   ) where
 
-import Modelling.PetriNet.Types
+import Modelling.PetriNet.Types (
+  AdvConfig (..),
+  AlloyConfig,
+  BasicConfig (..),
+  ChangeConfig (..),
+  )
+
+import qualified Modelling.PetriNet.Types         as T (
+  AlloyConfig (maxInstances, timeout)
+  )
 
 import Control.Monad                    (when)
+import Control.Monad.Random (
+  Random (randomR),
+  RandomGen,
+  StdGen,
+  mkStdGen
+  )
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
-import Data.FileEmbed
-import Data.String.Interpolate
+import Data.FileEmbed                   (embedStringFile)
+import Data.GraphViz                    (GraphvizCommand)
+import Data.Maybe                       (isNothing)
+import Data.String.Interpolate          (i)
 import Language.Alloy.Call (
-  AlloyInstance, CallAlloyConfig, getInstancesWith,
+  AlloyInstance,
+  CallAlloyConfig (maxInstances, timeout),
+  defaultCallAlloyConfig,
+  getInstancesWith,
   )
 
 petriScopeBitwidth :: BasicConfig -> Int
@@ -132,3 +157,45 @@ getAlloyInstances config alloy = do
   list <- lift $ getInstancesWith config alloy
   when (null list) $ except $ Left "no instance available"
   return list
+
+taskInstance
+  :: (f -> AlloyInstance -> GraphvizCommand -> ExceptT String IO a)
+  -> (config -> String)
+  -> f
+  -> (config -> GraphvizCommand)
+  -> (config -> AlloyConfig)
+  -> config
+  -> Int
+  -> Int
+  -> ExceptT String IO (a, StdGen)
+taskInstance taskF alloyF parseF layoutF alloyC config segment seed = do
+  let g  = mkStdGen seed
+      is = fromIntegral <$> T.maxInstances (alloyC config)
+      x  = randomInSegment segment <$> is <*> pure g
+  list <- getAlloyInstances
+    defaultCallAlloyConfig {
+      maxInstances = toInteger . (+1) . fst <$> x,
+      timeout      = T.timeout (alloyC config)
+      }
+    (alloyF config)
+  when (null list) $ except $ Left "no instance available"
+  when (null $ drop segment list)
+    $ except $ Left "instance not available"
+  (inst, g') <- case x of
+    Nothing -> return $ randomInstance list g
+    Just (n, g'') -> case drop n list of
+      x':_ -> return (x', g'')
+      []     -> do
+        when (isNothing $ T.timeout (alloyC config))
+          $ except $ Left "instance not available"
+        return $ randomInstance list g''
+  (,g') <$> taskF parseF inst (layoutF config)
+  where
+    randomInstance list g =
+      let (n, g') = randomInSegment segment ((length list - segment) `div` 4) g
+      in (list !! n, g')
+
+randomInSegment :: RandomGen g => Int -> Int -> g -> (Int, g)
+randomInSegment segment segLength g = (segment + 4 * x, g')
+  where
+    (x, g') = randomR ((0,) $ pred segLength) g

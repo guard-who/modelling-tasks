@@ -31,11 +31,11 @@ import Modelling.PetriNet.Alloy (
   modulePetriSignature,
   petriScopeBitwidth,
   petriScopeMaxSeq,
+  taskInstance,
   )
 import Modelling.PetriNet.BasicNetFunctions (
   checkBasicConfig, checkChangeConfig
   )
-import Modelling.PetriNet.ConcurrencyAndConflict (taskInstance)
 import Modelling.PetriNet.Diagram       (drawNet)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser (

@@ -30,12 +30,8 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickConflictTask,
   pickEvaluation,
   pickTaskInstance,
-  taskInstance,
   ) where
 
-import qualified Modelling.PetriNet.Types         as T (
-  AlloyConfig (maxInstances, timeout)
-  )
 
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as Set (
@@ -52,7 +48,6 @@ import Modelling.PetriNet.Alloy (
   compBasicConstraints,
   compChange,
   connected,
-  getAlloyInstances,
   isolated,
   moduleHelpers,
   modulePetriAdditions,
@@ -61,6 +56,7 @@ import Modelling.PetriNet.Alloy (
   modulePetriSignature,
   petriScopeBitwidth,
   petriScopeMaxSeq,
+  taskInstance,
   )
 import Modelling.PetriNet.BasicNetFunctions (
   checkConfigForFind, checkConfigForPick,
@@ -71,7 +67,6 @@ import Modelling.PetriNet.Parser        (
   )
 import Modelling.PetriNet.Types         (
   AdvConfig,
-  AlloyConfig,
   BasicConfig (..),
   ChangeConfig,
   Concurrent (Concurrent),
@@ -82,16 +77,13 @@ import Modelling.PetriNet.Types         (
   )
 
 import Control.Arrow                    (Arrow (second))
-import Control.Monad                    (when)
 import Control.Monad.Random (
   MonadTrans (lift),
-  Random (randomR),
-  RandomGen,
   StdGen,
   evalRandT,
   mkStdGen
   )
-import Control.Monad.Trans.Except       (ExceptT, except)
+import Control.Monad.Trans.Except       (ExceptT)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Data.Map                         (Map)
 import Data.Maybe                       (isJust, isNothing)
@@ -100,8 +92,7 @@ import Diagrams.Backend.SVG             (B, renderSVG)
 import Diagrams.Prelude                 (Diagram, mkWidth)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
-  AlloyInstance, CallAlloyConfig (..), Object,
-  defaultCallAlloyConfig, getSingle, lookupSig, unscoped,
+  AlloyInstance, Object, getSingle, lookupSig, unscoped,
   )
 import System.Random.Shuffle            (shuffleM)
 import Text.Read                        (readMaybe)
@@ -310,48 +301,6 @@ pickConflict = taskInstance
   parseConflict
   (\c -> graphLayout $ basicConfig (c :: PickConflictConfig))
   (\c -> alloyConfig (c :: PickConflictConfig))
-
-taskInstance
-  :: (f -> AlloyInstance -> GraphvizCommand -> ExceptT String IO a)
-  -> (config -> String)
-  -> f
-  -> (config -> GraphvizCommand)
-  -> (config -> AlloyConfig)
-  -> config
-  -> Int
-  -> Int
-  -> ExceptT String IO (a, StdGen)
-taskInstance taskF alloyF parseF layoutF alloyC config segment seed = do
-  let g  = mkStdGen seed
-      is = fromIntegral <$> T.maxInstances (alloyC config)
-      x  = randomInSegment segment <$> is <*> pure g
-  list <- getAlloyInstances
-    defaultCallAlloyConfig {
-      maxInstances = toInteger . (+1) . fst <$> x,
-      timeout      = T.timeout (alloyC config)
-      }
-    (alloyF config)
-  when (null list) $ except $ Left "no instance available"
-  when (null $ drop segment list)
-    $ except $ Left "instance not available"
-  (inst, g') <- case x of
-    Nothing -> return $ randomInstance list g
-    Just (n, g'') -> case drop n list of
-      x':_ -> return (x', g'')
-      []     -> do
-        when (isNothing $ T.timeout (alloyC config))
-          $ except $ Left "instance not available"
-        return $ randomInstance list g''
-  (,g') <$> taskF parseF inst (layoutF config)
-  where
-    randomInstance list g =
-      let (n, g') = randomInSegment segment ((length list - segment) `div` 4) g
-      in (list !! n, g')
-
-randomInSegment :: RandomGen g => Int -> Int -> g -> (Int, g)
-randomInSegment segment segLength g = (segment + 4 * x, g')
-  where
-    (x, g') = randomR ((0,) $ pred segLength) g
 
 findTaskInstance
   :: Traversable t
