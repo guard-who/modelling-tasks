@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -5,15 +6,18 @@
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.MatchToMath (
-  Graph,
   Math,
   MathConfig (..),
+  MatchInstance (..),
   checkConfig,
   defaultMathConfig,
   graphToMath,
+  graphToMathGenerate,
   matchToMathTask,
   mathToGraph,
+  mathToGraphGenerate,
   petriNetRnd,
+  renderFormula,
   )  where
 
 import qualified Data.Map                         as M (
@@ -48,7 +52,7 @@ import Modelling.PetriNet.Types (
   Change,
   ChangeConfig (..),
   PetriLike (..),
-  PetriMath,
+  PetriMath (..),
   defaultAdvConfig,
   defaultAlloyConfig,
   defaultBasicConfig,
@@ -58,22 +62,39 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad.Random             (RandT, RandomGen, evalRandT, mkStdGen)
+import Control.Monad.Random             (RandT, RandomGen, StdGen, evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (lift)
-import Control.Monad.Trans.Except       (ExceptT, except)
+import Control.Monad.Trans.Except       (ExceptT (ExceptT), except)
+import Data.Bifoldable                  (Bifoldable (bifoldMap))
+import Data.Bifunctor                   (Bifunctor (bimap, second))
+import Data.Bitraversable               (Bitraversable, bimapM)
 import Data.GraphViz                    (GraphvizCommand)
+import Data.Map                         (Map, fromList)
 import Data.String.Interpolate          (i)
-import Diagrams.Backend.SVG             (B)
-import Diagrams.Prelude                     (Diagram)
+import Diagrams.Backend.SVG             (B, renderSVG)
+import Diagrams.Prelude                 (Diagram, mkWidth)
 import GHC.Generics                     (Generic)
-import Image.LaTeX.Render               (Formula)
+import Image.LaTeX.Render               (alterForHTML, imageForFormula, defaultFormulaOptions, defaultEnv, SVG, Formula)
 import Language.Alloy.Call (
   AlloyInstance, getInstances, objectName,
   )
 import System.Random.Shuffle            (shuffleM)
 
-type Math  = PetriMath Formula
-type Graph = Diagram B
+type Math = PetriMath Formula
+
+class NamedParts n where
+  addPartNames :: n a -> n (String, a)
+
+instance NamedParts PetriMath where
+  addPartNames pm = PetriMath {
+    netMath            = ("net", netMath pm),
+    placesMath         = ("places", placesMath pm),
+    transitionsMath    = ("transitions", transitionsMath pm),
+    tokenChangeMath    =
+        [(("in" ++ show n, x), ("out" ++ show n, y))
+        | (n, (x, y)) <- zip [1 :: Integer ..] $ tokenChangeMath pm],
+    initialMarkingMath = ("marking", initialMarkingMath pm)
+    }
 
 data MathConfig = MathConfig {
   basicConfig :: BasicConfig,
@@ -97,12 +118,75 @@ defaultMathConfig = MathConfig {
   alloyConfig = defaultAlloyConfig
   }
 
+data MatchInstance a b = MatchInstance {
+  from :: a,
+  to :: Map Int (Bool, b)
+  }
+  deriving (Bitraversable, Generic, Show)
+
+instance Bifoldable MatchInstance where
+  bifoldMap f g mi = f (from mi) <> foldMap (g . snd) (to mi)
+
+instance Bifunctor MatchInstance where
+  bimap f g mi = MatchInstance (f $ from mi) (second g <$> to mi)
+
+renderFormula :: String -> ExceptT String IO SVG
+renderFormula = ExceptT . (bimap show alterForHTML <$>)
+  . imageForFormula defaultEnv defaultFormulaOptions
+
+evalRandTWith
+  :: Int
+  -> RandT StdGen (ExceptT String IO) a
+  -> ExceptT String IO a
+evalRandTWith = flip evalRandT . mkStdGen
+
+graphToMathGenerate
+  :: MathConfig
+  -> String
+  -> Int
+  -> Int
+  -> ExceptT String IO (MatchInstance FilePath (PetriMath FilePath))
+graphToMathGenerate config path segment seed = do
+  inst <- graphToMath config segment seed
+  bimapM (writeGraph path) (mapM (writeFormula path) . addPartNames) inst
+
+mathToGraphGenerate
+  :: MathConfig
+  -> String
+  -> Int
+  -> Int
+  -> ExceptT String IO (MatchInstance (PetriMath FilePath) FilePath)
+mathToGraphGenerate config path segment seed = do
+  inst <- mathToGraph config segment seed
+  bimapM (mapM (writeFormula path) . addPartNames) (writeGraph path) inst
+
+writeGraph
+  :: String
+  -> Diagram B
+  -> ExceptT String IO FilePath
+writeGraph path d = do
+  let file = path ++ "graph.svg"
+  lift $ renderSVG file (mkWidth 250) d >> return file
+
+writeFormula
+  :: String
+  -> (String, String)
+  -> ExceptT String IO FilePath
+writeFormula path (name, f) = do
+  let file = path ++ name ++ ".svg"
+  svg <- renderFormula f
+  lift $ writeFile file svg
+  return file
+
 graphToMath
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (Diagram B, Math, [(PetriMath Formula, Change)])
-graphToMath c segment = evalRandT (matchToMath toMath c segment) . mkStdGen
+  -> ExceptT String IO (MatchInstance (Diagram B) Math)
+graphToMath c segment seed = evalRandTWith seed $ do
+  (d, m, ms) <- matchToMath toMath c segment
+  ms' <- shuffleM $ (True, m) : [(False, x) | (x, _) <- ms]
+  return $ MatchInstance d $ fromList $ zip [1..] ms'
   where
     toMath x = except $
       toPetriMath <$> parseRenamedPetriLike "flow" "tokens" x
@@ -111,8 +195,11 @@ mathToGraph
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (Diagram B, Math, [(Diagram B, Change)])
-mathToGraph c segment = evalRandT (matchToMath draw c segment) . mkStdGen
+  -> ExceptT String IO (MatchInstance Math (Diagram B))
+mathToGraph c segment seed = evalRandTWith seed $ do
+  (d, m, ds) <- matchToMath draw c segment
+  ds' <- shuffleM $ (True, d) : [(False, x) | (x, _) <- ds]
+  return $ MatchInstance m $ fromList $ zip [1..] ds'
   where
     draw x = do
       pl <- except $ parseRenamedPetriLike "flow" "tokens" x
@@ -125,19 +212,19 @@ matchToMath
   -> Int
   -> RandT g (ExceptT String IO) (Diagram B, Math, [(a, Change)])
 matchToMath toOutput config segment = do
-  (f, net, math) <- netMath config segment
+  (f, net, math) <- netMathInstance config segment
   fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
   fList' <- take (wrongInstances config) <$> shuffleM fList
   alloyChanges <- lift $ except $ mapM addChange fList'
   changes <- lift $ firstM toOutput `mapM` alloyChanges
   return (net, math, changes)
 
-netMath
+netMathInstance
   :: RandomGen g
   => MathConfig
   -> Int
   -> RandT g (ExceptT String IO) (String, Diagram B, Math)
-netMath config = taskInstance
+netMathInstance config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
   config

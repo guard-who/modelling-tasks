@@ -315,7 +315,7 @@ data PetriMath a = PetriMath {
   tokenChangeMath    :: [(a, a)],
   -- | the initial marking (the fifth element of the five tuple)
   initialMarkingMath :: a
-  } deriving (Foldable, Functor, Generic, Traversable)
+  } deriving (Foldable, Functor, Generic, Show, Traversable)
 
 data Petri = Petri
   { initialMarking :: Marking
