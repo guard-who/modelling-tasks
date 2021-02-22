@@ -6,7 +6,7 @@ import Common (
   )
 import Modelling.PetriNet.MatchToMath (
   MathConfig (..),
-  checkConfig,
+  checkMathConfig,
   defaultMathConfig,
   graphToMathGenerate,
   matchToMathTask,
@@ -38,7 +38,7 @@ main = forceErrors $ do
             tokenChangeOverall = tknChange,
                 flowChangeOverall = flwChange}
         }
-  maybe (return ()) throwE $ checkConfig config
+  maybe (return ()) throwE $ checkMathConfig config
   let switch 
         | sw == "b" = False
         | otherwise = True

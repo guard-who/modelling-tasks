@@ -9,7 +9,7 @@ module Modelling.PetriNet.MatchToMath (
   Math,
   MathConfig (..),
   MatchInstance (..),
-  checkConfig,
+  checkMathConfig,
   defaultMathConfig,
   graphToMath,
   graphToMathGenerate,
@@ -253,16 +253,16 @@ matchToMathTask switch =
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
 
-checkConfig :: MathConfig -> Maybe String
-checkConfig c@MathConfig {
+checkMathConfig :: MathConfig -> Maybe String
+checkMathConfig c@MathConfig {
   basicConfig,
   changeConfig
   } = checkBasicConfig basicConfig
   <|> checkChangeConfig basicConfig changeConfig
-  <|> checkMathConfig c
+  <|> checkConfig c
 
-checkMathConfig :: MathConfig -> Maybe String
-checkMathConfig MathConfig {
+checkConfig :: MathConfig -> Maybe String
+checkConfig MathConfig {
   generatedWrongInstances,
   wrongInstances
   }
