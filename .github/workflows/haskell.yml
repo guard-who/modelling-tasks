@@ -131,7 +131,7 @@ jobs:
         set -ex
         case "$BUILD" in
           stack)
-            stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps
+            stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
             ;;
           cabal)
             PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
@@ -165,7 +165,7 @@ jobs:
       run: |
         switch ( "${env:BUILD}" ) {
           "stack" {
-            stack --no-terminal --install-ghc ${env:ARGS} test --bench --only-dependencies
+            stack --no-terminal --install-ghc ${env:ARGS} test --bench --only-dependencies --test-arguments="--maximum-generated-tests=50"
           }
           "cabal" {
             $PACKAGES=Invoke-Expression @'
