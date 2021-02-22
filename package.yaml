@@ -166,3 +166,8 @@ tests:
     - hspec
     - process
     - random
+flags:
+  quick-testing:
+    description: Decreases the testing depth resulting in fewer test cases and thus faster testing
+    manual: true
+    default: false

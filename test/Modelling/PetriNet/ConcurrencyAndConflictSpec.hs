@@ -21,17 +21,15 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig),
-  AlloyConfig (maxInstances, timeout),
   BasicConfig (graphLayout),
   ChangeConfig,
   Concurrent (Concurrent),
   Conflict,
   FindConcurrencyConfig (..),
-  FindConflictConfig (FindConflictConfig, basicConfig),
+  FindConflictConfig (FindConflictConfig, alloyConfig, basicConfig),
   PetriConflict (Conflict),
   PickConcurrencyConfig (..),
-  PickConflictConfig (PickConflictConfig, basicConfig),
-  defaultAlloyConfig,
+  PickConflictConfig (PickConflictConfig, alloyConfig, basicConfig),
   defaultFindConcurrencyConfig,
   defaultFindConflictConfig,
   defaultPickConcurrencyConfig,
@@ -40,13 +38,16 @@ import Modelling.PetriNet.Types (
 
 import Test.Hspec
 import Modelling.PetriNet.TestCommon (
+  alloyTestConfig,
   checkConfigs,
   defaultConfigTaskGeneration,
+  firstInstanceConfig,
   testTaskGeneration,
   validAdvConfigs,
   validConfigsForFind,
   validConfigsForPick,
   )
+import Settings                         (configDepth)
 
 spec :: Spec
 spec = do
@@ -54,7 +55,9 @@ spec = do
     checkConfigs checkFindConcurrencyConfig fccs'
   describe "findConcurrency" $ do
     defaultConfigTaskGeneration
-      (findConcurrency defaultFindConcurrencyConfig 0)
+      (findConcurrency defaultFindConcurrencyConfig {
+          alloyConfig = firstInstanceConfig
+          } 0)
       0
       checkFindConcurrencyInstance
     testFindConcurrencyConfig fccs
@@ -62,7 +65,9 @@ spec = do
     checkConfigs checkPickConcurrencyConfig pccs
   describe "pickConcurrency" $ do
     defaultConfigTaskGeneration
-      (pickConcurrency defaultPickConcurrencyConfig 0)
+      (pickConcurrency defaultPickConcurrencyConfig {
+          alloyConfig = firstInstanceConfig
+          } 0)
       0
       checkPickConcurrencyInstance
     testPickConcurrencyConfig pccs
@@ -70,7 +75,9 @@ spec = do
     checkConfigs checkFindConflictConfig fcfs'
   describe "findConflicts" $ do
     defaultConfigTaskGeneration
-      (findConflict defaultFindConflictConfig 0)
+      (findConflict defaultFindConflictConfig {
+          alloyConfig = firstInstanceConfig
+          } 0)
       0
       checkFindConflictInstance
     testFindConflictConfig fcfs
@@ -78,7 +85,9 @@ spec = do
     checkConfigs checkPickConflictConfig pcfs
   describe "pickConflicts" $ do
     defaultConfigTaskGeneration
-      (pickConflict defaultPickConflictConfig 0)
+      (pickConflict defaultPickConflictConfig {
+          alloyConfig = firstInstanceConfig
+          } 0)
       0
       checkPickConflictInstance
     testPickConflictConfig pcfs
@@ -89,8 +98,8 @@ spec = do
     fcfs' = validFindConflictConfigs vcfs (AdvConfig Nothing Nothing Nothing)
     fcfs  = validAdvConfigs >>= validFindConflictConfigs vcfs
     pcfs  = validPickConflictConfigs vcps
-    vcfs  = validConfigsForFind 0 6
-    vcps  = validConfigsForPick 0 6
+    vcfs  = validConfigsForFind 0 configDepth
+    vcps  = validConfigsForPick 0 configDepth
 
 checkFindConcurrencyInstance :: (a, Concurrent String) -> Bool
 checkFindConcurrencyInstance = isValidConcurrency . snd
@@ -154,12 +163,6 @@ validFindConcurrencyConfigs cs aconfig =
   uncurry (`FindConcurrencyConfig` aconfig)
     <$> cs
     <*> pure alloyTestConfig
-
-alloyTestConfig :: AlloyConfig
-alloyTestConfig = defaultAlloyConfig {
-  maxInstances = Nothing,
-  timeout = Just 500000
-  }
 
 validFindConflictConfigs
   :: [(BasicConfig, ChangeConfig)]

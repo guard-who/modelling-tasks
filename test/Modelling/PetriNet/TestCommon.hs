@@ -2,17 +2,23 @@
 This module provides common functions for testing Petri net modules.
 -}
 module Modelling.PetriNet.TestCommon (
+  alloyTestConfig,
   checkConfigs,
   defaultConfigTaskGeneration,
+  firstInstanceConfig,
   testTaskGeneration,
   validAdvConfigs,
   validConfigsForFind,
   validConfigsForPick,
   ) where
 
+import qualified Language.Alloy.Call              as A (CallAlloyConfig (..))
+
 import Modelling.PetriNet.Alloy         (getAlloyInstances)
 import Modelling.PetriNet.Types (
+  AlloyConfig (..),
   AdvConfig (AdvConfig), BasicConfig (..), ChangeConfig (ChangeConfig),
+  defaultAlloyConfig,
   )
 
 import Control.Monad.Random             (RandT, evalRandT)
@@ -20,9 +26,10 @@ import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.GraphViz                    (GraphvizCommand (Neato))
 import GHC.Base                         (maxInt, minInt)
 import Language.Alloy.Call (
-  AlloyInstance, CallAlloyConfig (..), defaultCallAlloyConfig,
+  AlloyInstance, defaultCallAlloyConfig,
   )
 import System.Random                    (StdGen, mkStdGen, randomR)
+
 import Test.Hspec (
   Spec, context, it, shouldBe, shouldReturn,
   )
@@ -37,6 +44,17 @@ newtype RandomGen = RandomGen { getGen :: StdGen }
 
 instance Arbitrary RandomGen where
   arbitrary = RandomGen . mkStdGen <$> choose (minInt, maxInt)
+
+firstInstanceConfig :: AlloyConfig
+firstInstanceConfig = defaultAlloyConfig {
+  maxInstances = Just 1
+  }
+
+alloyTestConfig :: AlloyConfig
+alloyTestConfig = defaultAlloyConfig {
+  maxInstances = Nothing,
+  timeout = Just 300000
+  }
 
 maxJavaInt :: Int
 maxJavaInt = 2 ^ (31 :: Int) - 1
@@ -62,8 +80,8 @@ testTaskGeneration alloyGen taskInst checkInst cs =
       let (r', g') = randomR (0, maxJavaInt) g
       is <- getAlloyInstances
         defaultCallAlloyConfig {
-           maxInstances = Just $ toInteger r',
-           timeout = Just 5000000
+           A.maxInstances = Just $ toInteger r',
+           A.timeout = Just 5000000
            }
         $ alloyGen conf
       let r'' = if r' >= length is

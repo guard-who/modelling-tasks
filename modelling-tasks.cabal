@@ -18,6 +18,11 @@ extra-source-files:
     alloy/petri/PetriSignature.als
     README.md
 
+flag quick-testing
+  description: Decreases the testing depth resulting in fewer test cases and thus faster testing
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Modelling.Auxiliary.Output
@@ -456,6 +461,7 @@ test-suite modelling-tasks-test
       Modelling.PetriNet.DiagramSpec
       Modelling.PetriNet.MatchToMathSpec
       Modelling.PetriNet.TestCommon
+      Settings
       Paths_modelling_tasks
   hs-source-dirs:
       test
