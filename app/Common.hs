@@ -43,3 +43,6 @@ instance OutputMonad IO where
     (\k x rs -> g k ++ ". file: " ++ f x ++ rs)
     ""
   paragraph     = putStrLn
+  text          = putStr
+  enumerateM p  = foldl (\o (x, e) -> do o; p x; putStr "  "; e) (return ())
+  itemizeM      = foldl (\o x -> do o; putStr " -  "; x) (return ())

@@ -6,16 +6,21 @@
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.MatchToMath (
+  GraphToMathInstance,
   Math,
   MathConfig (..),
   MatchInstance (..),
+  MathToGraphInstance,
   checkMathConfig,
   defaultMathConfig,
   graphToMath,
+  graphToMathEvaluation,
   graphToMathGenerate,
-  matchToMathTask,
+  graphToMathTask,
   mathToGraph,
+  mathToGraphEvaluation,
   mathToGraphGenerate,
+  mathToGraphTask,
   petriNetRnd,
   renderFormula,
   )  where
@@ -24,6 +29,8 @@ import qualified Data.Map                         as M (
   foldrWithKey, keys, lookup, partition
   )
 
+
+import Modelling.Auxiliary.Output       (OutputMonad (..), multipleChoice)
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
   compBasicConstraints,
@@ -69,7 +76,7 @@ import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable, bimapM)
 import Data.GraphViz                    (GraphvizCommand)
-import Data.Map                         (Map, fromList)
+import Data.Map                         (Map, fromList, toList)
 import Data.String.Interpolate          (i)
 import Diagrams.Backend.SVG             (B, renderSVG)
 import Diagrams.Prelude                 (Diagram, mkWidth)
@@ -81,6 +88,9 @@ import Language.Alloy.Call (
 import System.Random.Shuffle            (shuffleM)
 
 type Math = PetriMath Formula
+
+type GraphToMathInstance = MatchInstance FilePath (PetriMath FilePath)
+type MathToGraphInstance = MatchInstance (PetriMath FilePath) FilePath
 
 class NamedParts n where
   addPartNames :: n a -> n (String, a)
@@ -145,7 +155,7 @@ graphToMathGenerate
   -> String
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance FilePath (PetriMath FilePath))
+  -> ExceptT String IO GraphToMathInstance
 graphToMathGenerate config path segment seed = do
   inst <- graphToMath config segment seed
   bimapM (writeGraph path) (mapM (writeFormula path) . addPartNames) inst
@@ -155,7 +165,7 @@ mathToGraphGenerate
   -> String
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance (PetriMath FilePath) FilePath)
+  -> ExceptT String IO MathToGraphInstance
 mathToGraphGenerate config path segment seed = do
   inst <- mathToGraph config segment seed
   bimapM (mapM (writeFormula path) . addPartNames) (writeGraph path) inst
@@ -219,6 +229,9 @@ matchToMath toOutput config segment = do
   changes <- lift $ firstM toOutput `mapM` alloyChanges
   return (net, math, changes)
 
+firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
+firstM f (p, c) = (,c) <$> f p
+
 netMathInstance
   :: RandomGen g
   => MathConfig
@@ -244,14 +257,46 @@ mathInstance config inst gc = do
   let f = renderFalse petriLike config
   return (f, rightNet, math)
 
-matchToMathTask :: Bool -> String
-matchToMathTask switch =
-  if switch
-  then "Which of the presented Petri nets shows the mathematical expression?"
-  else "Which of the presented mathematical expressions shows the given Petri net?"
+graphToMathTask :: OutputMonad m => GraphToMathInstance -> m ()
+graphToMathTask task = do
+  paragraph "Consider this graphical representation of a Petri net:"
+  image $ from task
+  paragraph "Which of the following mathematical expressions represents this Petri net?"
+  enumerateM (text . show) $ second (mathToOutput . snd) <$> toList (to task)
 
-firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
-firstM f (p, c) = (,c) <$> f p
+mathToOutput :: OutputMonad m => PetriMath FilePath -> m ()
+mathToOutput pm = do
+  image $ netMath pm
+  text ", where "
+  image $ placesMath pm
+  text " and "
+  image $ transitionsMath pm
+  text ", as well as:"
+  itemizeM $ image . fst <$> tokenChangeMath pm
+  itemizeM $ image . snd <$> tokenChangeMath pm
+  text "Furthermore, "
+  image $ initialMarkingMath pm
+
+mathToGraphTask :: OutputMonad m => MathToGraphInstance -> m ()
+mathToGraphTask task = do
+  paragraph "Consider this mathematical expression of a Petri net:"
+  mathToOutput $ from task
+  paragraph "Which of the following graphics represents this Petri net?"
+  images show snd $ to task
+
+graphToMathEvaluation
+  :: OutputMonad m
+  => GraphToMathInstance
+  -> [Int]
+  -> m ()
+graphToMathEvaluation = multipleChoice "mathematical representation" . to
+
+mathToGraphEvaluation
+  :: OutputMonad m
+  => MathToGraphInstance
+  -> [Int]
+  -> m ()
+mathToGraphEvaluation = multipleChoice "graphical representation" . to
 
 checkMathConfig :: MathConfig -> Maybe String
 checkMathConfig c@MathConfig {

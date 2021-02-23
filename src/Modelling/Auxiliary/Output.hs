@@ -41,3 +41,6 @@ class Monad m => OutputMonad m where
   image     :: FilePath -> m ()
   images    :: (k -> String) -> (a -> FilePath) -> Map k a -> m ()
   paragraph :: String -> m ()
+  text      :: String -> m ()
+  enumerateM :: (a -> m ()) -> [(a, m ())] -> m ()
+  itemizeM   :: [m ()] -> m ()

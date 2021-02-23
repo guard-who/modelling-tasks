@@ -20,7 +20,7 @@ spec = do
     defaultMathTask (const ()) id graphToMath
   describe "checkConfig" $
     it "checks if the input is in given boundaries for the task" $
-      checkConfig defaultMathConfig `shouldBe` Nothing
+      checkMathConfig defaultMathConfig `shouldBe` Nothing
   where
     defaultMathTask f g task =
       context "using its default config" $
