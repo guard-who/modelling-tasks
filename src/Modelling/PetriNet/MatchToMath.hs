@@ -74,9 +74,9 @@ import Control.Monad.Trans.Class        (lift)
 import Control.Monad.Trans.Except       (ExceptT (ExceptT), except)
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
-import Data.Bitraversable               (Bitraversable, bimapM)
+import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.GraphViz                    (GraphvizCommand)
-import Data.Map                         (Map, fromList, toList)
+import Data.Map                         (Map, fromList, mapWithKey, toList)
 import Data.String.Interpolate          (i)
 import Diagrams.Backend.SVG             (B, renderSVG)
 import Diagrams.Prelude                 (Diagram, mkWidth)
@@ -132,13 +132,18 @@ data MatchInstance a b = MatchInstance {
   from :: a,
   to :: Map Int (Bool, b)
   }
-  deriving (Bitraversable, Generic, Show)
+  deriving (Generic, Show)
 
 instance Bifoldable MatchInstance where
-  bifoldMap f g mi = f (from mi) <> foldMap (g . snd) (to mi)
+  bifoldMap f g (MatchInstance x y) = f x `mappend` foldMap (g . snd) y
 
 instance Bifunctor MatchInstance where
-  bimap f g mi = MatchInstance (f $ from mi) (second g <$> to mi)
+  bimap f g (MatchInstance x y) = MatchInstance (f x) (second g <$> y)
+
+instance Bitraversable MatchInstance where
+  bitraverse f g (MatchInstance x y) = MatchInstance
+    <$> f x
+    <*> traverse (traverse g) y
 
 renderFormula :: String -> ExceptT String IO SVG
 renderFormula = ExceptT . (bimap show alterForHTML <$>)
@@ -158,7 +163,11 @@ graphToMathGenerate
   -> ExceptT String IO GraphToMathInstance
 graphToMathGenerate config path segment seed = do
   inst <- graphToMath config segment seed
-  bimapM (writeGraph path) (mapM (writeFormula path) . addPartNames) inst
+  let inst' = MatchInstance {
+        from = from inst,
+        to   = mapWithKey (\k -> second ((show k,) . addPartNames)) $ to inst
+        }
+  bimapM (writeGraph path "") (\(n, x) -> mapM (writeFormula path n) x) inst'
 
 mathToGraphGenerate
   :: MathConfig
@@ -168,22 +177,29 @@ mathToGraphGenerate
   -> ExceptT String IO MathToGraphInstance
 mathToGraphGenerate config path segment seed = do
   inst <- mathToGraph config segment seed
-  bimapM (mapM (writeFormula path) . addPartNames) (writeGraph path) inst
+  let inst' = MatchInstance {
+        from = addPartNames $ from inst,
+        to   = mapWithKey (\k -> second (show k,)) $ to inst
+        }
+  bimapM (mapM $ writeFormula path "") (uncurry $ writeGraph path) inst'
 
 writeGraph
-  :: String
+  :: FilePath
+  -> String
   -> Diagram B
   -> ExceptT String IO FilePath
-writeGraph path d = do
-  let file = path ++ "graph.svg"
-  lift $ renderSVG file (mkWidth 250) d >> return file
+writeGraph path index d = do
+  let file = path ++ "graph" ++ index ++ ".svg"
+  lift $ renderSVG file (mkWidth 250) d
+  return file
 
 writeFormula
-  :: String
+  :: FilePath
+  -> String
   -> (String, String)
   -> ExceptT String IO FilePath
-writeFormula path (name, f) = do
-  let file = path ++ name ++ ".svg"
+writeFormula path index (name, f) = do
+  let file = path ++ index ++ "-" ++ name ++ ".svg"
   svg <- renderFormula f
   lift $ writeFile file svg
   return file
