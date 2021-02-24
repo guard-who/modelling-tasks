@@ -179,11 +179,20 @@ drawNode _ hideTName pfont (l, Nothing) p  = place
     addTName
       | hideTName = id
       | otherwise = (center (text' pfont l) `atop`)
-drawNode hidePName _ pfont (l,Just i) p  = place
-  (addPName $ circle 3 # fc black # translate (r2 (5,-11))
-    `atop` text' pfont (show i) # translate (r2 (-8,-14.7))
-    `atop` circle 20 # named l)
-  p
+drawNode hidePName _ pfont (l,Just i) p
+  | i<1 = place (circle 20 # named l) p
+  | i<7 = place ((foldl (atop) (circle 1 # lc white)
+                 [circle 3 #
+                  fc black #
+                  translate (r2((6* log (fromIntegral i)),0)) #
+                  rotateBy (x/ fromIntegral i)
+                  | x <- [1..fromIntegral i]]) 
+				  `atop` (circle 20 # named l)) 
+				  p
+  | otherwise = place (addPName $ circle 3 # fc black # translate (r2 (5,-11))
+                       `atop` text' pfont (show i) # translate (r2 (-8,-14.7))
+                       `atop` circle 20 # named l)
+                       p
   where
     addPName
       | hidePName = id
