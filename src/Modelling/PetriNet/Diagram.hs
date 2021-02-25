@@ -181,7 +181,7 @@ drawNode _ hideTName pfont (l, Nothing) p  = place
       | otherwise = (center (text' pfont l) `atop`)
 drawNode hidePName _ pfont (l,Just i) p
   | i<1 = place (circle 20 # named l) p
-  | i<7 = place ((foldl (atop) (circle 1 # lc white)
+  | i<7 = place ((foldl (atop) (circle 0.00001 # lc white)
                  [circle 3 #
                   fc black #
                   translate (r2((6* log (fromIntegral i)),0)) #
