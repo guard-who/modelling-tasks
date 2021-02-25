@@ -103,7 +103,8 @@ instance NamedParts PetriMath where
     tokenChangeMath    =
         [(("in" ++ show n, x), ("out" ++ show n, y))
         | (n, (x, y)) <- zip [1 :: Integer ..] $ tokenChangeMath pm],
-    initialMarkingMath = ("marking", initialMarkingMath pm)
+    initialMarkingMath = ("marking", initialMarkingMath pm),
+    placeOrderMath     = ("order",) <$> placeOrderMath pm
     }
 
 data MathConfig = MathConfig {
@@ -292,6 +293,11 @@ mathToOutput pm = do
   itemizeM $ image . snd <$> tokenChangeMath pm
   text "Furthermore, "
   image $ initialMarkingMath pm
+  case placeOrderMath pm of
+    Nothing -> return ()
+    Just o  -> do
+      text " using the place ordering "
+      image o
 
 mathToGraphTask :: OutputMonad m => MathToGraphInstance -> m ()
 mathToGraphTask task = do

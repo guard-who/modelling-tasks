@@ -35,7 +35,8 @@ toPetriMath pl = PetriMath {
   placesMath         = placesLaTeX places,
   transitionsMath    = transitionsLaTeX $ fst <$> transitions,
   tokenChangeMath    = tokenChangeLaTeX places transitions,
-  initialMarkingMath = initialMarkingLaTeX pnodes
+  initialMarkingMath = initialMarkingLaTeX pnodes,
+  placeOrderMath     = Just $ placeOrderLaTeX places
   }
   where
     (ps, ts)         = M.partition isPlaceNode allNodes
@@ -91,6 +92,12 @@ Wrap the third given 'Formula' between the first and second 'Formula'.
 -}
 wrap :: Formula -> Formula -> Formula -> Formula
 wrap x y zs = [i|#{x}#{zs}#{y}|]
+
+{-|
+Create a LaTeX-'Formula' representing the order of places.
+-}
+placeOrderLaTeX :: [String] -> Formula
+placeOrderLaTeX ps = mathMode [i|#{parenthesise $ intercalate "," ps}|]
 
 {-|
 Create a LaTeX-'Formula' representing the set of given places.

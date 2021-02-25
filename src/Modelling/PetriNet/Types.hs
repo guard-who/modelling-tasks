@@ -314,7 +314,9 @@ data PetriMath a = PetriMath {
        (the third and fourth element of the five tuple) -}
   tokenChangeMath    :: [(a, a)],
   -- | the initial marking (the fifth element of the five tuple)
-  initialMarkingMath :: a
+  initialMarkingMath :: a,
+  -- | the order of places used for notation of token changes ('tokenChangeMath')
+  placeOrderMath     :: Maybe a
   } deriving (Foldable, Functor, Generic, Show, Traversable)
 
 data Petri = Petri
