@@ -60,7 +60,7 @@ toLowerIndexes (x:xs)
     (ys, zs) = span isDigit xs
 
 placesSetName :: String
-placesSetName = "P"
+placesSetName = "S"
 
 transitionsSetName :: String
 transitionsSetName = "T"
