@@ -57,12 +57,13 @@ newtype SelectValidCdInstance = SelectValidCdInstance {
 
 selectValidCdTask :: OutputMonad m => SelectValidCdInstance -> m ()
 selectValidCdTask task = do
-  paragraph [i|Consider the following class diagram candidates.|]
+  paragraph $ text [i|Consider the following class diagram candidates.|]
   images show snd $ classDiagrams task
-  paragraph [i|Which of these class diagram candidates are valid class diagrams?
+  paragraph $ text
+    [i|Which of these class diagram candidates are valid class diagrams?
 Please state your answer by giving a list of numbers, stating all valid class diagrams.|]
-  paragraph simplifiedInformation
-  paragraph hoveringInformation
+  paragraph $ text simplifiedInformation
+  paragraph $ text hoveringInformation
 
 selectValidCdEvaluation
   :: OutputMonad m

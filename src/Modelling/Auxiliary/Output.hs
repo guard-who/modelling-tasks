@@ -27,7 +27,7 @@ Nevertheless you should treat these simplified class representations as valid cl
 
 multipleChoice :: (OutputMonad m, Ord a) => String -> Map a (Bool, b) -> [a] -> m ()
 multipleChoice what solution choices = do
-  paragraph "Remarks on your solution:"
+  paragraph $ text "Remarks on your solution:"
   let cs = nub $ sort choices
   assertion (null [c | c <- cs, c `notElem` valid])
     $ "Given " ++ what ++ " are correct?"
@@ -40,7 +40,7 @@ class Monad m => OutputMonad m where
   enumerate :: (k -> String) -> (a -> String) -> Map k a -> m ()
   image     :: FilePath -> m ()
   images    :: (k -> String) -> (a -> FilePath) -> Map k a -> m ()
-  paragraph :: String -> m ()
+  paragraph :: m () -> m ()
   text      :: String -> m ()
   enumerateM :: (a -> m ()) -> [(a, m ())] -> m ()
   itemizeM   :: [m ()] -> m ()

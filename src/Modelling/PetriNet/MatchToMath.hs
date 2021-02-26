@@ -276,13 +276,16 @@ mathInstance config inst gc = do
 
 graphToMathTask :: OutputMonad m => GraphToMathInstance -> m ()
 graphToMathTask task = do
-  paragraph "Consider this graphical representation of a Petri net:"
+  paragraph $ text "Consider this graphical representation of a Petri net:"
   image $ from task
-  paragraph "Which of the following mathematical expressions represents this Petri net?"
-  enumerateM (text . show) $ second (mathToOutput . snd) <$> toList (to task)
+  paragraph $ text
+    "Which of the following mathematical expressions represents this Petri net?"
+  enumerateM
+    (text . (++ ". ") . show)
+    $ second (mathToOutput . snd) <$> toList (to task)
 
 mathToOutput :: OutputMonad m => PetriMath FilePath -> m ()
-mathToOutput pm = do
+mathToOutput pm = paragraph $ do
   image $ netMath pm
   text ", where "
   image $ placesMath pm
@@ -301,9 +304,9 @@ mathToOutput pm = do
 
 mathToGraphTask :: OutputMonad m => MathToGraphInstance -> m ()
 mathToGraphTask task = do
-  paragraph "Consider this mathematical expression of a Petri net:"
+  paragraph $ text "Consider this mathematical expression of a Petri net:"
   mathToOutput $ from task
-  paragraph "Which of the following graphics represents this Petri net?"
+  paragraph $ text "Which of the following graphics represents this Petri net?"
   images show snd $ to task
 
 graphToMathEvaluation

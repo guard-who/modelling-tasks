@@ -59,6 +59,12 @@ toLowerIndexes (x:xs)
   where
     (ys, zs) = span isDigit xs
 
+placesSetName :: String
+placesSetName = "P"
+
+transitionsSetName :: String
+transitionsSetName = "T"
+
 {-|
 A LaTeX-'Formula' for the basic five tuple representing a Petri net.
 -}
@@ -66,7 +72,9 @@ netLaTeX :: Formula
 netLaTeX = mathMode [i|N = #{tuple}|]
   where
     tuple :: Formula
-    tuple = parenthesise "P, T, ^{\\bullet}(), ()^{\\bullet}, m_0"
+    tuple = parenthesise
+      $  placesSetName ++ ", "
+      ++ transitionsSetName ++ ", ^{\\bullet}(), ()^{\\bullet}, m_0"
 
 {-|
 Switch the mode for the given LaTeX-'Formula' to Math mode while in text mode
@@ -103,13 +111,14 @@ placeOrderLaTeX ps = mathMode [i|#{parenthesise $ intercalate "," ps}|]
 Create a LaTeX-'Formula' representing the set of given places.
 -}
 placesLaTeX :: [String] -> Formula
-placesLaTeX ps = mathMode [i|P = #{brace $ intercalate "," ps}|]
+placesLaTeX ps = mathMode [i|#{placesSetName} = #{brace $ intercalate "," ps}|]
 
 {-|
 Create a LaTeX-'Formula' representing the set of given transitions.
 -}
 transitionsLaTeX :: [String] -> Formula
-transitionsLaTeX ts = mathMode [i|T = #{brace $ intercalate "," ts}|]
+transitionsLaTeX ts =
+  mathMode [i|#{transitionsSetName} = #{brace $ intercalate "," ts}|]
 
 {-|
 Create a LaTeX-'Formula' representing the tuple of the inital marking.

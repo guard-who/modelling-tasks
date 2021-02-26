@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 -- | Common functions for application modules
 module Common (
   forceErrors, instanceInput, printNetAndInfo, renderPetriNet,
@@ -38,11 +39,15 @@ instance OutputMonad IO where
   enumerate g f = putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". " ++ f x ++ "\n" ++ rs)
     ""
-  image         = putStrLn . ("file: " ++)
+  image         = putStr . ("file: " ++)
   images g f    = putStrLn . foldrWithKey
-    (\k x rs -> g k ++ ". file: " ++ f x ++ rs)
+    (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
     ""
-  paragraph     = putStrLn
+  paragraph     = (>> putStrLn "")
   text          = putStr
-  enumerateM p  = foldl (\o (x, e) -> do o; p x; putStr "  "; e) (return ())
-  itemizeM      = foldl (\o x -> do o; putStr " -  "; x) (return ())
+  enumerateM p  = foldl
+    (\o (x, e) -> paragraph $ do o; p x; putStr "  "; e)
+    (return ())
+  itemizeM      = foldl
+    (\o x -> paragraph $ do o; putStr " -  "; x)
+    (return ())

@@ -123,21 +123,23 @@ instancesOfMatch task = nub . sort <$>
 
 matchCdOdTask :: OutputMonad m => MatchCdOdInstance -> m ()
 matchCdOdTask task = do
-  paragraph "Consider the following two class diagrams."
+  paragraph $ text "Consider the following two class diagrams."
   images show id $ diagrams task
-  paragraph [i|Which of the following five object diagrams conform to which class diagram?
+  paragraph $ text
+    [i|Which of the following five object diagrams conform to which class diagram?
 An object diagram can conform to neither, either, or both class diagrams.|]
   images (:[]) snd $ instances task
-  paragraph [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
+  paragraph $ text
+    [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
 Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
 For example [(0, "ab"), (1, "")] expresses that both, object diagram a and b are instances of class diagram 0 but not of class diagram 1.|]
-  paragraph simplifiedInformation
-  when (hasNavigations task) $ paragraph directionsAdvice
-  paragraph hoveringInformation
+  paragraph $ text simplifiedInformation
+  when (hasNavigations task) $ paragraph $ text directionsAdvice
+  paragraph $ text hoveringInformation
 
 matchCdOdEvaluation :: (OutputMonad m, Foldable t) => MatchCdOdInstance -> t (Int, String) -> m ()
 matchCdOdEvaluation task is' = do
-  paragraph "Remarks on your solution:"
+  paragraph $ text "Remarks on your solution:"
   let is = nub . sort <$> foldr (\(c, o) -> M.alter (Just . maybe o (o++)) c) M.empty is'
   assertion (null $ notInstanceOf is) "Given instances are correct?"
   assertion (is == instancesOfMatch task) "Given instances are exhaustive?"

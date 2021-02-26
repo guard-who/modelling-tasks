@@ -149,14 +149,18 @@ checkRepairCdConfig config
 
 repairCdTask :: OutputMonad m => RepairCdInstance -> m ()
 repairCdTask task = do
-  paragraph "Consider the following class diagram, which unfortunately is invalid."
+  paragraph $ text
+    "Consider the following class diagram, which unfortunately is invalid."
   image $ classDiagram task
-  paragraph [i|Which of the following changes would repair the class diagram?|]
+  paragraph $ text
+    [i|Which of the following changes would repair the class diagram?|]
   enumerate show (phraseChange (withNames task) (withDirections task) . snd) $ changes task
-  paragraph [i|Please state your answer by giving a list of numbers, indicating all changes resulting in a valid class diagram.|]
-  paragraph [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that option 0 and 9 repair the given class diagram.|]
-  paragraph simplifiedInformation
-  paragraph hoveringInformation
+  paragraph $ text
+    [i|Please state your answer by giving a list of numbers, indicating all changes resulting in a valid class diagram.|]
+  paragraph $ text
+    [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that option 0 and 9 repair the given class diagram.|]
+  paragraph $ text simplifiedInformation
+  paragraph $ text hoveringInformation
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> m ()
 repairCdEvaluation = multipleChoice "changes" . changes

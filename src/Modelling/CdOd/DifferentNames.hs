@@ -81,17 +81,18 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
 
 differentNamesTask :: OutputMonad m => DifferentNamesInstance -> m ()
 differentNamesTask task = do
-  paragraph "Consider the following class diagram"
+  paragraph $ text "Consider the following class diagram"
   image $ cDiagram task
-  paragraph "and the following object diagram."
+  paragraph $ text "and the following object diagram."
   image $ oDiagram task
-  paragraph [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
+  paragraph $ text
+    [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
 State your answer by giving a mapping of relationships in the CD to links in the OD.
 To state that "foo" in the CD corresponds to "bar" in the OD and "foofoo" in the CD corresponds to "baz" in the OD write it as
 [("foo", "bar"), ("foofoo", "baz")].|]
-  paragraph simplifiedInformation
-  paragraph directionsAdvice
-  paragraph hoveringInformation
+  paragraph $ text simplifiedInformation
+  paragraph $ text directionsAdvice
+  paragraph $ text hoveringInformation
 
 differentNamesEvaluation
   :: OutputMonad m
@@ -99,7 +100,7 @@ differentNamesEvaluation
   -> [(String, String)]
   -> m ()
 differentNamesEvaluation task cs = do
-  paragraph "Remarks on your solution:"
+  paragraph $ text "Remarks on your solution:"
   let cs' = nub $ sort cs
       links = fst <$> cs'
       rels  = snd <$> cs'

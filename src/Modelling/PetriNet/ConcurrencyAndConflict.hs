@@ -113,9 +113,9 @@ newtype PickInstance = PickInstance {
 
 findConcurrencyTask :: OutputMonad m => FindInstance (Concurrent String) -> m ()
 findConcurrencyTask task = do
-  paragraph "Considering this Petri net"
+  paragraph $ text "Considering this Petri net"
   image $ net task
-  paragraph "Which pair of transitions are concurrently activated under the initial marking?"
+  paragraph $ text "Which pair of transitions are concurrently activated under the initial marking?"
 
 findConcurrencyEvaluation
   :: OutputMonad m
@@ -135,7 +135,7 @@ transitionPairEvaluation
   -> (String, String)
   -> m ()
 transitionPairEvaluation what n (ft, st) is = do
-  paragraph "Remarks on your solution:"
+  paragraph $ text "Remarks on your solution:"
   assertion (isTransition fi)
     $ fi ++ " is a valid transition of the given Petri net?"
   assertion (isTransition si)
@@ -153,9 +153,10 @@ transitionPairEvaluation what n (ft, st) is = do
 
 findConflictTask :: OutputMonad m => FindInstance Conflict -> m ()
 findConflictTask task = do
-  paragraph "Considering this Petri net"
+  paragraph $ text "Considering this Petri net"
   image $ net task
-  paragraph "Which pair of transitions are in conflict under the initial marking?"
+  paragraph $ text
+    "Which pair of transitions are in conflict under the initial marking?"
 
 findConflictEvaluation
   :: OutputMonad m
@@ -169,7 +170,8 @@ findConflictEvaluation task =
 
 pickConcurrencyTask :: OutputMonad m => PickInstance -> m ()
 pickConcurrencyTask task = do
-  paragraph "Which of the following Petri nets has two transitions that are concurrently activated?"
+  paragraph $ text
+    "Which of the following Petri nets has two transitions that are concurrently activated?"
   images show snd $ nets task
 
 pickEvaluation
@@ -181,7 +183,8 @@ pickEvaluation = multipleChoice "petri nets" . nets
 
 pickConflictTask :: OutputMonad m => PickInstance -> m ()
 pickConflictTask task = do
-  paragraph "Which of the following Petri nets has two transitions that are in conflict?"
+  paragraph $ text
+    "Which of the following Petri nets has two transitions that are in conflict?"
   images show snd $ nets task
 
 findConcurrencyGenerate
