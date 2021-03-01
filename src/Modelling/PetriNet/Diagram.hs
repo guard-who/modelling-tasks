@@ -180,27 +180,23 @@ drawNode _ hideTName pfont (l, Nothing) p  = place
       | hideTName = id
       | otherwise = (center (text' pfont l) `atop`)
 drawNode hidePName _ pfont (l, Just i) p
-  | i<5 = place (label
-                 `atop` tokens # translate (r2 (0,-9))
-                 `atop` emptyPlace)
-                 p
-  | otherwise = 
-      place
-      (label
-        `atop` circle 3 # fc black # translate (r2 (5,-11))
-        `atop` text' pfont (show i) # translate (r2 (-8,-14.7))
-        `atop` emptyPlace)
-      p 
+  | i<5 = place (label `atop` tokens `atop` emptyPlace) p
+  | otherwise = place (label `atop` 
+                       token # translate (r2 (spacer,0)) `atop`
+                       text' pfont (show i) # translate (r2 (-spacer,-4)) `atop`
+                       emptyPlace)
+                      p 
    where
+       spacer = 9
        emptyPlace = circle 20 # named l
        label
          | hidePName = mempty
-         | otherwise = center (text' pfont l) # translate (r2(0,10))
-       tokens = foldl (atop) mempty [circle 3 #
-                                     fc black #
-                                     translate (r2 ((1.7*(fromIntegral i)),0)) #
-                                     rotateBy (j / fromIntegral i) |
-                                     j <- [1..fromIntegral i]]
+         | otherwise = center (text' pfont l) # translate (r2(0,-3*spacer))
+       token = circle 5 # fc black
+       tokens = foldl (atop) mempty [token #
+                                     translate (r2 (8*sqrt(fromIntegral (i-1)),0)) #
+                                     rotateBy (((fromIntegral j) / (fromIntegral i))) |
+                                     j <- [1..i]]
 
 {-|
 Edges are drawn as arcs between nodes (identified by labels).
