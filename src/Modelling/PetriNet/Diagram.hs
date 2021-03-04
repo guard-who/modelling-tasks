@@ -197,9 +197,7 @@ drawNode hidePName _ pfont (l, Just i) p
          | hidePName = mempty
          | otherwise = center (text' pfont l) # translate (r2(0,-3*spacer))
        token = circle 5 # fc black
-       atopList z [] = z
-       atopList z (x:xs) = let z' = z `atop` x
-                           in seq z' (atopList z' xs)
+       atopList = foldl' atop
 {-|
 Edges are drawn as arcs between nodes (identified by labels).
 -}
