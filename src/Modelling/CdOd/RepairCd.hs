@@ -75,7 +75,7 @@ phraseRelation True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
   Aggregation -> "aggregation "
   Composition -> "composition "
 phraseRelation _ False (from, to, Assoc Association _ l h _)
-  | from == to = [i|an self-association #{selfParticipates}|]
+  | from == to = [i|a self-association #{selfParticipates}|]
   | otherwise  = "an association" ++ participations l from h to
   where
     selfParticipates :: String
@@ -83,7 +83,7 @@ phraseRelation _ False (from, to, Assoc Association _ l h _)
       [i|for #{from} where #{participates l "it"} at one end and #{phraseLimit h} at the other end|]
 phraseRelation _ _ (from, to, Assoc t _ l h _)
   | from == to = case t of
-      Association -> [i|an self-association #{selfParticipates}|]
+      Association -> [i|a self-association #{selfParticipates}|]
       Aggregation -> [i|a self-aggregation #{selfParticipatesPartWhole}|]
       Composition -> [i|a self-composition #{selfParticipatesPartWhole}|]
   | otherwise = (++ participations l from h to) $ case t of
