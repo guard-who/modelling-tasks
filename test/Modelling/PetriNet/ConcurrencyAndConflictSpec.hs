@@ -21,7 +21,7 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig),
-  BasicConfig (graphLayout, hideWeight1),
+  BasicConfig (graphLayout, hidePlaceNames, hideTransitionNames, hideWeight1),
   ChangeConfig,
   Concurrent (Concurrent),
   Conflict,
@@ -121,8 +121,16 @@ checkPickConflictInstance = f . fmap snd
     f [Just x, Nothing] = isValidConflict x
     f _                 = False
 
-addDrawArgs :: (a -> BasicConfig) -> (Bool -> GraphvizCommand -> b) -> a -> b
-addDrawArgs f g c = g (hideWeight1 $ f c) (graphLayout $ f c)
+addDrawArgs
+  :: (a -> BasicConfig)
+  -> (Bool -> Bool -> Bool -> GraphvizCommand -> b)
+  -> a
+  -> b
+addDrawArgs f g c = g
+  (hidePlaceNames $ f c)
+  (hideTransitionNames $ f c)
+  (hideWeight1 $ f c)
+  (graphLayout $ f c)
 
 testFindConcurrencyConfig :: [FindConcurrencyConfig] -> Spec
 testFindConcurrencyConfig = testTaskGeneration

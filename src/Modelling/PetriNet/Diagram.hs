@@ -41,15 +41,19 @@ drawNet
   -> PetriLike a
   -- ^ the graph definition
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -- ^ how to distribute the nodes
   -> ExceptT String IO (Diagram B)
-drawNet labelOf pl hide1 gc = do
+drawNet labelOf pl hidePNames hideTNames hide1 gc = do
   gr    <- except $ left errorMessage $ petriLikeToGr pl
   graph <- lift $ GV.layoutGraph gc gr
   pfont <- lift lin
-  return $ drawGraph labelOf hide1 pfont graph
+  return $ drawGraph labelOf hidePNames hideTNames hide1 pfont graph
   where
     errorMessage x =
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
@@ -59,11 +63,16 @@ getNet
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (Diagram B, t String)
-getNet parseInst inst hide1 gc = do
-  (net, rename) <- getNetWith "flow" "tokens" inst hide1 gc
+getNet parseInst inst hidePNames hideTNames hide1 gc = do
+  (net, rename) <-
+    getNetWith "flow" "tokens" inst hidePNames hideTNames hide1 gc
   conc <- except $ parseInst inst
   rconc <- except $ traverse rename conc
   return (net, rconc)
@@ -71,11 +80,15 @@ getNet parseInst inst hide1 gc = do
 getDefaultNet
   :: AlloyInstance
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (QDiagram B V2 Double Any)
-getDefaultNet inst hide1 gc = fst <$>
-  getNetWith "defaultFlow" "defaultTokens" inst hide1 gc
+getDefaultNet inst hidePNames hideTNames hide1 gc = fst <$>
+  getNetWith "defaultFlow" "defaultTokens" inst hidePNames hideTNames hide1 gc
 
 {-|
 Draws a Petri net like graph using 'drawNet'.
@@ -92,15 +105,19 @@ getNetWith
   -> AlloyInstance
   -- ^ the instance to parse
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -- ^ how to draw the graph
   -> ExceptT String IO (Diagram B, Object -> Either String String)
-getNetWith f t inst hide1 gc = do
+getNetWith f t inst hidePNames hideTNames hide1 gc = do
   pl <- except $ parsePetriLike f t inst
   let rename = simpleRenameWith pl
   pl' <- except $ traversePetriLike rename pl
-  dia <- drawNet id pl' hide1 gc
+  dia <- drawNet id pl' hidePNames hideTNames hide1 gc
   return (dia, rename)
 
 {-|
@@ -112,17 +129,21 @@ drawGraph
   => (a -> String)
   -- ^ how to obtain labels from nodes
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> PreparedFont Double
   -- ^ the font to be used for labels
   -> Gr (AttributeNode (a, Maybe Int)) (AttributeEdge Int)
   -- ^ the graph consisting of nodes and edges
   -> Diagram B
-drawGraph labelOf hide1 pfont graph = gedges # frame 1
+drawGraph labelOf hidePNames hideTNames hide1 pfont graph = gedges # frame 1
   where
     (nodes, edges) = GV.getGraph graph
     gnodes = M.foldlWithKey
-      (\g l p -> g `atop` drawNode pfont (withLabel l) p)
+      (\g l p -> g `atop` drawNode hidePNames hideTNames pfont (withLabel l) p)
       mempty
       nodes
     gedges = foldl
@@ -140,23 +161,33 @@ Places are drawn as circles.
 Each node gets a label.
 -}
 drawNode
-  :: PreparedFont Double
+  :: Bool
+  -- ^ whether to hide place name
+  -> Bool
+  -- ^ whether to hide transition name
+  -> PreparedFont Double
   -- ^ the font to use
   -> (String, Maybe Int)
   -- ^ a node (the first part is used for its label)
   -> Point V2 Double
   -- ^ where to place the node
   -> Diagram B
-drawNode pfont (l, Nothing) p  = place
-  (center (text' pfont l)
-    `atop` rect 20 20 # named l)
+drawNode _ hideTName pfont (l, Nothing) p  = place
+  (addTName $ rect 20 20 # named l)
   p
-drawNode pfont (l,Just i) p  = place
-  (center (text' pfont l) # translate (r2(0,10))
-    `atop` circle 3 # fc black # translate (r2 (5,-11))
+  where
+    addTName
+      | hideTName = id
+      | otherwise = (center (text' pfont l) `atop`)
+drawNode hidePName _ pfont (l,Just i) p  = place
+  (addPName $ circle 3 # fc black # translate (r2 (5,-11))
     `atop` text' pfont (show i) # translate (r2 (-8,-14.7))
     `atop` circle 20 # named l)
   p
+  where
+    addPName
+      | hidePName = id
+      | otherwise = (center (text' pfont l) # translate (r2(0,10)) `atop`)
 
 {-|
 Edges are drawn as arcs between nodes (identified by labels).

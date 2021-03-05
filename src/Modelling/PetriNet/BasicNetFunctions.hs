@@ -4,6 +4,8 @@ module Modelling.PetriNet.BasicNetFunctions where
 
 import Modelling.PetriNet.Types
 
+import Control.Applicative              (Alternative ((<|>)))
+
 checkBasicConfig :: BasicConfig -> Maybe String
 checkBasicConfig BasicConfig{places,transitions,atLeastActive
                    , minTokensOverall,maxTokensOverall,maxTokensPerPlace
@@ -88,21 +90,20 @@ checkCConfig BasicConfig{atLeastActive}
  | otherwise = Nothing
 
 checkConfigForFind :: BasicConfig -> ChangeConfig -> Maybe String
-checkConfigForFind basic change
-  | Just x <- checkCConfig basic
-  = Just x
-  | Just x <- checkBasicConfig basic
-  = Just x
-  | Just x <- checkChangeConfig basic change
-  = Just x
+checkConfigForFind basic change =
+  checkCConfig basic
+  <|> prohibitHideTransitionNames basic
+  <|> checkBasicConfig basic
+  <|> checkChangeConfig basic change
+
+prohibitHideTransitionNames :: BasicConfig -> Maybe String
+prohibitHideTransitionNames bc
+  | hideTransitionNames bc
+  = Just "Transition names are required for this task type"
   | otherwise
   = Nothing
 
 checkConfigForPick :: BasicConfig -> ChangeConfig -> Maybe String
 checkConfigForPick basic change
-  | Just x <- checkBasicConfig basic
-  = Just x
-  | Just x <- checkChangeConfig basic change
-  = Just x
-  | otherwise
-  = Nothing
+  = checkBasicConfig basic
+  <|> checkChangeConfig basic change

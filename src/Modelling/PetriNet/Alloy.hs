@@ -160,7 +160,13 @@ getAlloyInstances config alloy = do
 
 taskInstance
   :: RandomGen g
-  => (f -> AlloyInstance -> Bool -> GraphvizCommand -> ExceptT String IO a)
+  => (f
+    -> AlloyInstance
+    -> Bool
+    -> Bool
+    -> Bool
+    -> GraphvizCommand
+    -> ExceptT String IO a)
   -> (config -> String)
   -> f
   -> (config -> BasicConfig)
@@ -188,8 +194,10 @@ taskInstance taskF alloyF parseF basicC alloyC config segment = do
         when (isNothing $ T.timeout (alloyC config))
           $ lift $ except $ Left "instance not available"
         randomInstance list
-  lift $ taskF parseF inst hide1 layout
+  lift $ taskF parseF inst hidePNames hideTNames hide1 layout
   where
+    hidePNames = hidePlaceNames $ basicC config
+    hideTNames = hideTransitionNames $ basicC config
     hide1  = hideWeight1 $ basicC config
     layout = graphLayout $ basicC config
     randomInstance list = do

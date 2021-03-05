@@ -230,7 +230,13 @@ mathToGraph c segment seed = evalRandTWith seed $ do
   where
     draw x = do
       pl <- except $ parseRenamedPetriLike "flow" "tokens" x
-      drawNet id pl (hideWeight1 $ basicConfig c) (graphLayout $ basicConfig c)
+      drawNet
+        id
+        pl
+        (hidePlaceNames $ basicConfig c)
+        (hideTransitionNames $ basicConfig c)
+        (hideWeight1 $ basicConfig c)
+        (graphLayout $ basicConfig c)
 
 matchToMath
   :: RandomGen g
@@ -266,12 +272,16 @@ mathInstance
   :: MathConfig
   -> AlloyInstance
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (String, Diagram B, Math)
-mathInstance config inst hide1 gc = do
+mathInstance config inst hidePNames hideTNames hide1 gc = do
   petriLike <- except $ parseRenamedPetriLike "flow" "tokens" inst
-  rightNet  <- drawNet id petriLike hide1 gc
+  rightNet  <- drawNet id petriLike hidePNames hideTNames hide1 gc
   let math = toPetriMath petriLike
   let f = renderFalse petriLike config
   return (f, rightNet, math)
@@ -330,8 +340,18 @@ checkMathConfig c@MathConfig {
   basicConfig,
   changeConfig
   } = checkBasicConfig basicConfig
+  <|> prohibitHideNames basicConfig
   <|> checkChangeConfig basicConfig changeConfig
   <|> checkConfig c
+
+prohibitHideNames :: BasicConfig -> Maybe String
+prohibitHideNames bc
+  | hidePlaceNames bc
+  = Just "Place names are required for this task type"
+  | hideTransitionNames bc
+  = Just "Transition names are required for this task type"
+  | otherwise
+  = Nothing
 
 checkConfig :: MathConfig -> Maybe String
 checkConfig MathConfig {

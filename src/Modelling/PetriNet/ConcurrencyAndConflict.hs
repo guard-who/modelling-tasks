@@ -312,6 +312,10 @@ findTaskInstance
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (Diagram B, t String)
@@ -322,12 +326,16 @@ pickTaskInstance
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> Bool
+  -- ^ whether to hide place names
+  -> Bool
+  -- ^ whether to hide transition names
+  -> Bool
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO [(Diagram B, Maybe (t String))]
-pickTaskInstance parseF inst hide1 gc = do
-  confl <- second Just <$> getNet parseF inst hide1 gc
-  net   <- (,Nothing) <$> getDefaultNet inst hide1 gc
+pickTaskInstance parseF inst hidePNames hideTNames hide1 gc = do
+  confl <- second Just <$> getNet parseF inst hidePNames hideTNames hide1 gc
+  net   <- (,Nothing) <$> getDefaultNet inst hidePNames hideTNames hide1 gc
   return [confl,net]
 
 petriNetFindConfl :: FindConflictConfig -> String

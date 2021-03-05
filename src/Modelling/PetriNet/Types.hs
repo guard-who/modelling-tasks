@@ -346,6 +346,8 @@ data BasicConfig = BasicConfig
   , isConnected :: Maybe Bool
   , graphLayout :: GraphvizCommand
   , hideWeight1 :: Bool
+  , hidePlaceNames :: Bool
+  , hideTransitionNames :: Bool
   } deriving (Generic, Show)
 
 defaultBasicConfig :: BasicConfig
@@ -362,6 +364,8 @@ defaultBasicConfig = BasicConfig
   , isConnected = Just True
   , graphLayout = Neato
   , hideWeight1 = True
+  , hidePlaceNames = False
+  , hideTransitionNames = False
   }
   
 data AdvConfig = AdvConfig
