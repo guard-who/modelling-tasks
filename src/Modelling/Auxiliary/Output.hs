@@ -18,7 +18,7 @@ hoveringInformation :: String
 hoveringInformation = [i|Please note: hovering over or clicking on edges or their labels highlights both parts.|]
 
 directionsAdvice :: String
-directionsAdvice = [i|As navigation directions are used, please note that aggregations and composition are navigable from the "part" toward the "whole".|]
+directionsAdvice = [i|As navigation directions are used, please note that aggregations and composition are only navigable from the "part" toward the "whole", i.e they are not navigable in the opposite direction!|]
 
 simplifiedInformation :: String
 simplifiedInformation = [i|Please note: classes are represented simplified here.
