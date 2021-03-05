@@ -91,7 +91,7 @@ State your answer by giving a mapping of relationships in the CD to links in the
 To state that "foo" in the CD corresponds to "bar" in the OD and "foofoo" in the CD corresponds to "baz" in the OD write it as
 [("foo", "bar"), ("foofoo", "baz")].|]
   paragraph $ text
-    [i|Please note: Links are already grouped correctly, i.e. all links with the same name in the OD correspond to exactly one relationship in the CD.
+    [i|Please note: Links are already grouped correctly, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly one relationship name in the CD.
 Furthermore, links are completely grouped, i.e. every link name in the OD corresponds to exactly one relationship name in the CD.
 Thus, every link name and every relationship name should occur exactly once in your mapping.|]
   paragraph $ text simplifiedInformation
