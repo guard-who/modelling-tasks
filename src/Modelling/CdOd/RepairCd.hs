@@ -74,15 +74,32 @@ phraseRelation True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
   Association -> "association "
   Aggregation -> "aggregation "
   Composition -> "composition "
-phraseRelation _ False (from, to, Assoc Association _ l h _) =
-  "an association" ++ participations l from h to
-phraseRelation _ _ (from, to, Assoc t _ l h _) = (++ participations l from h to) $
-  case t of
+phraseRelation _ False (from, to, Assoc Association _ l h _)
+  | from == to = [i|an self-association #{selfParticipates}|]
+  | otherwise  = "an association" ++ participations l from h to
+  where
+    selfParticipates :: String
+    selfParticipates =
+      [i|for #{from} where #{participates l "it"} at one end and #{phraseLimit h} at the other end|]
+phraseRelation _ _ (from, to, Assoc t _ l h _)
+  | from == to = case t of
+      Association -> [i|an self-association #{selfParticipates}|]
+      Aggregation -> [i|a self-aggregation #{selfParticipatesPartWhole}|]
+      Composition -> [i|a self-composition #{selfParticipatesPartWhole}|]
+  | otherwise = (++ participations l from h to) $ case t of
     Association -> "an association from " ++ from ++ " to " ++ to
     Aggregation -> "a relationship that makes " ++ from
       ++ " an aggregation of " ++ to ++ "s"
     Composition -> "a relationship that makes " ++ from
       ++ " a composition of " ++ to ++ "s"
+  where
+    selfParticipates :: String
+    selfParticipates =
+      [i|for #{from} where #{participates l "it"} at its beginning and #{phraseLimit h} at its arrow end|]
+    selfParticipatesPartWhole :: String
+    selfParticipatesPartWhole =
+      [i|for #{from} where #{participates l "it"} as part and #{phraseLimit h} as whole|]
+
 participations
   :: (Int, Maybe Int)
   -> String
