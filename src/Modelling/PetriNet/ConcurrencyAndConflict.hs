@@ -214,7 +214,7 @@ findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
   parseConcurrency
-  (\c -> graphLayout $ basicConfig (c :: FindConcurrencyConfig))
+  (\c -> basicConfig (c :: FindConcurrencyConfig))
   (\c -> alloyConfig (c :: FindConcurrencyConfig))
 
 findConflictGenerate
@@ -244,7 +244,7 @@ findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
   parseConflict
-  (\c -> graphLayout $ basicConfig (c :: FindConflictConfig))
+  (\c -> basicConfig (c :: FindConflictConfig))
   (\c -> alloyConfig (c :: FindConflictConfig))
 
 pickConcurrencyGenerate
@@ -292,7 +292,7 @@ pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
   parseConcurrency
-  (\c -> graphLayout $ basicConfig (c :: PickConcurrencyConfig))
+  (\c -> basicConfig (c :: PickConcurrencyConfig))
   (\c -> alloyConfig (c :: PickConcurrencyConfig))
 
 pickConflict
@@ -304,13 +304,15 @@ pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl
   parseConflict
-  (\c -> graphLayout $ basicConfig (c :: PickConflictConfig))
+  (\c -> basicConfig (c :: PickConflictConfig))
   (\c -> alloyConfig (c :: PickConflictConfig))
 
 findTaskInstance
   :: Traversable t
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (Diagram B, t String)
 findTaskInstance = getNet
@@ -319,11 +321,13 @@ pickTaskInstance
   :: Traversable t
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO [(Diagram B, Maybe (t String))]
-pickTaskInstance parseF inst gc = do
-  confl <- second Just <$> getNet parseF inst gc
-  net   <- (,Nothing) <$> getDefaultNet inst gc
+pickTaskInstance parseF inst hide1 gc = do
+  confl <- second Just <$> getNet parseF inst hide1 gc
+  net   <- (,Nothing) <$> getDefaultNet inst hide1 gc
   return [confl,net]
 
 petriNetFindConfl :: FindConflictConfig -> String

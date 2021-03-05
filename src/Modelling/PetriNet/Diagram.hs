@@ -40,14 +40,16 @@ drawNet
   -- ^ how to obtain labels of the nodes
   -> PetriLike a
   -- ^ the graph definition
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -- ^ how to distribute the nodes
   -> ExceptT String IO (Diagram B)
-drawNet labelOf pl gc = do
+drawNet labelOf pl hide1 gc = do
   gr    <- except $ left errorMessage $ petriLikeToGr pl
   graph <- lift $ GV.layoutGraph gc gr
   pfont <- lift lin
-  return $ drawGraph labelOf pfont graph
+  return $ drawGraph labelOf hide1 pfont graph
   where
     errorMessage x =
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
@@ -56,20 +58,24 @@ getNet
   :: Traversable t
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (Diagram B, t String)
-getNet parseInst inst gc = do
-  (net, rename) <- getNetWith "flow" "tokens" inst gc
+getNet parseInst inst hide1 gc = do
+  (net, rename) <- getNetWith "flow" "tokens" inst hide1 gc
   conc <- except $ parseInst inst
   rconc <- except $ traverse rename conc
   return (net, rconc)
 
 getDefaultNet
   :: AlloyInstance
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (QDiagram B V2 Double Any)
-getDefaultNet inst gc = fst <$>
-  getNetWith "defaultFlow" "defaultTokens" inst gc
+getDefaultNet inst hide1 gc = fst <$>
+  getNetWith "defaultFlow" "defaultTokens" inst hide1 gc
 
 {-|
 Draws a Petri net like graph using 'drawNet'.
@@ -85,14 +91,16 @@ getNetWith
   -- ^ tokens
   -> AlloyInstance
   -- ^ the instance to parse
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -- ^ how to draw the graph
   -> ExceptT String IO (Diagram B, Object -> Either String String)
-getNetWith f t inst gc = do
+getNetWith f t inst hide1 gc = do
   pl <- except $ parsePetriLike f t inst
   let rename = simpleRenameWith pl
   pl' <- except $ traversePetriLike rename pl
-  dia <- drawNet id pl' gc
+  dia <- drawNet id pl' hide1 gc
   return (dia, rename)
 
 {-|
@@ -100,15 +108,17 @@ Obtain the Petri net like graph by drawing Nodes and connections between them
 using the specific functions @drawNode@ and @drawEdge@.
 -}
 drawGraph
-  :: (Ord a, Show b)
+  :: Ord a
   => (a -> String)
   -- ^ how to obtain labels from nodes
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> PreparedFont Double
   -- ^ the font to be used for labels
-  -> Gr (AttributeNode (a, Maybe Int)) (AttributeEdge b)
+  -> Gr (AttributeNode (a, Maybe Int)) (AttributeEdge Int)
   -- ^ the graph consisting of nodes and edges
   -> Diagram B
-drawGraph labelOf pfont graph = gedges # frame 1
+drawGraph labelOf hide1 pfont graph = gedges # frame 1
   where
     (nodes, edges) = GV.getGraph graph
     gnodes = M.foldlWithKey
@@ -116,7 +126,7 @@ drawGraph labelOf pfont graph = gedges # frame 1
       mempty
       nodes
     gedges = foldl
-      (\g (s, t, l, p) -> g # drawEdge pfont l (labelOnly s) (labelOnly t) p)
+      (\g (s, t, l, p) -> g # drawEdge hide1 pfont l (labelOnly s) (labelOnly t) p)
       gnodes
       edges
     withLabel = first labelOf
@@ -152,10 +162,11 @@ drawNode pfont (l,Just i) p  = place
 Edges are drawn as arcs between nodes (identified by labels).
 -}
 drawEdge
-  :: Show a
-  => PreparedFont Double
+  :: Bool
+  -- ^ whether to hide weight of 1
+  -> PreparedFont Double
   -- ^ the font to use
-  -> a
+  -> Int
   -- ^ the edges label
   -> String
   -- ^ label of start node
@@ -166,12 +177,14 @@ drawEdge
   -> Diagram B
   -- ^ the diagram which contains labeled nodes already
   -> Diagram B
-drawEdge f l l1 l2 path d =
+drawEdge hide1 f l l1 l2 path d =
   let opts p = with & arrowShaft .~ (unLoc . head $ pathTrails p)
       points = concat $ pathPoints path
       labelPoint = points !! (length points `div` 2)
-  in connectOutside' (opts path) l1 l2 d
-     `atop` place (text' f $ show l) labelPoint
+      addLabel
+        | hide1 = id
+        | otherwise = (`atop` place (text' f $ show l) labelPoint)
+  in addLabel $ connectOutside' (opts path) l1 l2 d
 
 {-|
 Render text as a diagram.

@@ -230,7 +230,7 @@ mathToGraph c segment seed = evalRandTWith seed $ do
   where
     draw x = do
       pl <- except $ parseRenamedPetriLike "flow" "tokens" x
-      drawNet id pl (graphLayout $ basicConfig c)
+      drawNet id pl (hideWeight1 $ basicConfig c) (graphLayout $ basicConfig c)
 
 matchToMath
   :: RandomGen g
@@ -258,18 +258,20 @@ netMathInstance config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
   config
-  (\c -> graphLayout $ basicConfig (c :: MathConfig))
+  (\c -> basicConfig (c :: MathConfig))
   (\c -> alloyConfig (c :: MathConfig))
   config
 
 mathInstance
   :: MathConfig
   -> AlloyInstance
+  -> Bool
+  -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -> ExceptT String IO (String, Diagram B, Math)
-mathInstance config inst gc = do
+mathInstance config inst hide1 gc = do
   petriLike <- except $ parseRenamedPetriLike "flow" "tokens" inst
-  rightNet  <- drawNet id petriLike gc
+  rightNet  <- drawNet id petriLike hide1 gc
   let math = toPetriMath petriLike
   let f = renderFalse petriLike config
   return (f, rightNet, math)

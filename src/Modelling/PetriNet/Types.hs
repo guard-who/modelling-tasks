@@ -345,6 +345,7 @@ data BasicConfig = BasicConfig
   , maxFlowPerEdge :: Int
   , isConnected :: Maybe Bool
   , graphLayout :: GraphvizCommand
+  , hideWeight1 :: Bool
   } deriving (Generic, Show)
 
 defaultBasicConfig :: BasicConfig
@@ -360,6 +361,7 @@ defaultBasicConfig = BasicConfig
   , maxFlowPerEdge = 2
   , isConnected = Just True
   , graphLayout = Neato
+  , hideWeight1 = True
   }
   
 data AdvConfig = AdvConfig

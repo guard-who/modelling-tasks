@@ -21,7 +21,7 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig),
-  BasicConfig (graphLayout),
+  BasicConfig (graphLayout, hideWeight1),
   ChangeConfig,
   Concurrent (Concurrent),
   Conflict,
@@ -36,7 +36,6 @@ import Modelling.PetriNet.Types (
   defaultPickConflictConfig,
   )
 
-import Test.Hspec
 import Modelling.PetriNet.TestCommon (
   alloyTestConfig,
   checkConfigs,
@@ -48,6 +47,9 @@ import Modelling.PetriNet.TestCommon (
   validConfigsForPick,
   )
 import Settings                         (configDepth)
+
+import Data.GraphViz                    (GraphvizCommand)
+import Test.Hspec
 
 spec :: Spec
 spec = do
@@ -119,10 +121,13 @@ checkPickConflictInstance = f . fmap snd
     f [Just x, Nothing] = isValidConflict x
     f _                 = False
 
+addDrawArgs :: (a -> BasicConfig) -> (Bool -> GraphvizCommand -> b) -> a -> b
+addDrawArgs f g c = g (hideWeight1 $ f c) (graphLayout $ f c)
+
 testFindConcurrencyConfig :: [FindConcurrencyConfig] -> Spec
 testFindConcurrencyConfig = testTaskGeneration
   petriNetFindConcur
-  (\i -> findTaskInstance parseConcurrency i . graphLayout . bc)
+  (addDrawArgs bc . findTaskInstance parseConcurrency)
   checkFindConcurrencyInstance
   where
     bc :: FindConcurrencyConfig -> BasicConfig
@@ -131,7 +136,7 @@ testFindConcurrencyConfig = testTaskGeneration
 testFindConflictConfig :: [FindConflictConfig] -> Spec
 testFindConflictConfig = testTaskGeneration
   petriNetFindConfl
-  (\i -> findTaskInstance parseConflict i . graphLayout . bc)
+  (addDrawArgs bc . findTaskInstance parseConflict)
   checkFindConflictInstance
   where
     bc :: FindConflictConfig -> BasicConfig
@@ -140,7 +145,7 @@ testFindConflictConfig = testTaskGeneration
 testPickConcurrencyConfig :: [PickConcurrencyConfig] -> Spec
 testPickConcurrencyConfig = testTaskGeneration
   petriNetPickConcur
-  (\i -> pickTaskInstance parseConcurrency i . graphLayout . bc)
+  (addDrawArgs bc . pickTaskInstance parseConcurrency)
   checkPickConcurrencyInstance
   where
     bc :: PickConcurrencyConfig -> BasicConfig
@@ -149,7 +154,7 @@ testPickConcurrencyConfig = testTaskGeneration
 testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig = testTaskGeneration
   petriNetPickConfl
-  (\i -> pickTaskInstance parseConflict i . graphLayout . bc)
+  (addDrawArgs bc . pickTaskInstance parseConflict)
   checkPickConflictInstance
   where
     bc :: PickConflictConfig -> BasicConfig
