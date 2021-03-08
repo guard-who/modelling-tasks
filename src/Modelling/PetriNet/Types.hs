@@ -406,7 +406,7 @@ data FindConflictConfig = FindConflictConfig
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 3 }
+  { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
   , uniqueConflictPlace = Just True
@@ -422,7 +422,7 @@ data PickConflictConfig = PickConflictConfig
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 2 }
+  { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
   , changeConfig = defaultChangeConfig
   , uniqueConflictPlace = Nothing
   , alloyConfig  = defaultAlloyConfig
@@ -437,7 +437,7 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 3 }
+  { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
   , alloyConfig  = defaultAlloyConfig
@@ -451,7 +451,7 @@ data PickConcurrencyConfig = PickConcurrencyConfig
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 2 }
+  { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
   , changeConfig = defaultChangeConfig
   , alloyConfig  = defaultAlloyConfig
   }
