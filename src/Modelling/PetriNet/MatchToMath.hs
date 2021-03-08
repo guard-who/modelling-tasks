@@ -361,7 +361,7 @@ checkConfig MathConfig {
   | wrongInstances < 1
   = Just "There has to be at least one wrongInstance"
   | generatedWrongInstances < wrongInstances
-  = Just "generatedWrongInstances has to be higher than wrongInstances"
+  = Just "generatedWrongInstances must not be lower than wrongInstances"
   | otherwise
   = Nothing
 
