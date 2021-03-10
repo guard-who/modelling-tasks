@@ -20,6 +20,7 @@ import Modelling.PetriNet.Types         (PetriLike, traversePetriLike)
 import Control.Arrow                    (ArrowChoice(left), first)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
+import Data.Foldable                    (Foldable (foldl'))
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
 import Diagrams.Backend.SVG             (B)
@@ -158,6 +159,8 @@ Nodes are either Places (having 'Just' tokens), or Transitions (having
 'Nothing').
 Transitions are drawn as squares.
 Places are drawn as circles.
+Places contain circled tokens layout as a ring of tokens or numbered
+if 5 or more tokens are within.
 Each node gets a label.
 -}
 drawNode
@@ -180,24 +183,28 @@ drawNode _ hideTName pfont (l, Nothing) p  = place
       | hideTName = id
       | otherwise = (center (text' pfont l) `atop`)
 drawNode hidePName _ pfont (l, Just i) p
-  | i<5 = place (atopList label ([token #
-                                   translate (r2 (8*sqrt(fromIntegral (i-1)),0)) #
-                                   rotateBy (((fromIntegral j) / (fromIntegral i))) |
-                                   j <- [1..i]]
-                                  ++[emptyPlace]))
-                p
-  | otherwise = place (atopList label [token # translate (r2 (spacer,0)),
-                                       text' pfont (show i) # translate (r2 (-spacer,-4)),
-                                       emptyPlace])
-                      p
-   where
-       spacer = 9
-       emptyPlace = circle 20 # named l
-       label
-         | hidePName = mempty
-         | otherwise = center (text' pfont l) # translate (r2(0,-3*spacer))
-       token = circle 5 # fc black
-       atopList = foldl' atop
+  | i < 5
+  = place (atopList label $ [placeToken j | j <- [1..i]] ++ [emptyPlace]) p
+  | otherwise
+  = place
+    (atopList label [
+        token # translate (r2 (spacer,0)),
+        text' pfont (show i) # translate (r2 (-spacer,-4)),
+        emptyPlace
+        ])
+    p
+  where
+    spacer = 9
+    emptyPlace = circle 20 # named l
+    label
+      | hidePName = mempty
+      | otherwise = center (text' pfont l) # translate (r2 (0, -3 * spacer))
+    token = circle 5 # fc black
+    placeToken j = token
+      # translate (r2 (8 * sqrt(fromIntegral (i - 1)), 0))
+      # rotateBy (fromIntegral j / fromIntegral i)
+    atopList = foldl' atop
+
 {-|
 Edges are drawn as arcs between nodes (identified by labels).
 -}
