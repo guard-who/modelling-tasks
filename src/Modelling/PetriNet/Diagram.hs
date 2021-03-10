@@ -20,9 +20,9 @@ import Modelling.PetriNet.Types         (PetriLike, traversePetriLike)
 import Control.Arrow                    (ArrowChoice(left), first)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
-import Data.Foldable                    (Foldable (foldl'))
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
+import Data.List                        (foldl')
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
@@ -184,10 +184,10 @@ drawNode _ hideTName pfont (l, Nothing) p  = place
       | otherwise = (center (text' pfont l) `atop`)
 drawNode hidePName _ pfont (l, Just i) p
   | i < 5
-  = place (atopList label $ [placeToken j | j <- [1..i]] ++ [emptyPlace]) p
+  = place (foldl' atop label $ [placeToken j | j <- [1..i]] ++ [emptyPlace]) p
   | otherwise
   = place
-    (atopList label [
+    (foldl' atop label [
         token # translate (r2 (spacer,0)),
         text' pfont (show i) # translate (r2 (-spacer,-4)),
         emptyPlace
@@ -203,7 +203,6 @@ drawNode hidePName _ pfont (l, Just i) p
     placeToken j = token
       # translate (r2 (8 * sqrt(fromIntegral (i - 1)), 0))
       # rotateBy (fromIntegral j / fromIntegral i)
-    atopList = foldl' atop
 
 {-|
 Edges are drawn as arcs between nodes (identified by labels).
