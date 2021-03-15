@@ -48,6 +48,13 @@ library
       Modelling.PetriNet.ConcurrencyAndConflict
       Modelling.PetriNet.BasicNetFunctions
   other-modules:
+      Modelling.PetriNet.Reach.Deadlock
+      Modelling.PetriNet.Reach.Draw
+      Modelling.PetriNet.Reach.Property
+      Modelling.PetriNet.Reach.Reach
+      Modelling.PetriNet.Reach.Roll
+      Modelling.PetriNet.Reach.Step
+      Modelling.PetriNet.Reach.Type
       Paths_modelling_tasks
   hs-source-dirs:
       src

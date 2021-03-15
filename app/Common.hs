@@ -51,3 +51,11 @@ instance OutputMonad IO where
   itemizeM      = foldl
     (\o x -> paragraph $ do o; putStr " -  "; x)
     (return ())
+  indent xs     = do
+    putStr ">>>>"
+    xs
+    putStrLn "<<<<"
+  refuse xs     = do
+    xs
+    indent $ text "No"
+    error "refused"
