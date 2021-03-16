@@ -37,6 +37,7 @@ dependencies:
   - filepath
   - graphviz
   - latex-svg-image
+  - mtl
   - random-shuffle
   - split
   - string-interpolate

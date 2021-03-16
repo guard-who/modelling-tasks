@@ -78,6 +78,7 @@ library
     , filepath
     , graphviz
     , latex-svg-image
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -114,6 +115,7 @@ executable cd2alloy
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -151,6 +153,7 @@ executable cd2pic
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -189,6 +192,7 @@ executable check-cds
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -227,6 +231,7 @@ executable concurrency
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , pretty-simple
     , random-shuffle
     , split
@@ -266,6 +271,7 @@ executable conflicts
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , pretty-simple
     , random-shuffle
     , split
@@ -303,6 +309,7 @@ executable different-names
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -340,6 +347,7 @@ executable instance2pic
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -376,6 +384,7 @@ executable match-cd-od
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -414,6 +423,7 @@ executable matchToMath
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , pretty-simple
     , random-shuffle
     , split
@@ -451,6 +461,7 @@ executable repair-incorrect
     , graphviz
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , random-shuffle
     , split
     , string-interpolate
@@ -495,6 +506,7 @@ test-suite modelling-tasks-test
     , hspec
     , latex-svg-image
     , modelling-tasks
+    , mtl
     , process
     , random
     , random-shuffle
