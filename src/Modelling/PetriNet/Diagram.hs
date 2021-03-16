@@ -228,7 +228,7 @@ drawEdge hide1 f l l1 l2 path d =
       points = concat $ pathPoints path
       labelPoint = points !! (length points `div` 2)
       addLabel
-        | hide1 = id
+        | hide1 && l == 1 = id
         | otherwise = (`atop` place (text' f $ show l) labelPoint)
   in addLabel $ connectOutside' (opts path) l1 l2 d
 
