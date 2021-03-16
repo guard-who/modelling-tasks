@@ -20,6 +20,7 @@ import Modelling.Auxiliary.Output (
   directionsAdvice,
   hoveringInformation,
   simplifiedInformation,
+  LangM,
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
@@ -79,7 +80,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     timeout          = Nothing
   }
 
-differentNamesTask :: OutputMonad m => DifferentNamesInstance -> m ()
+differentNamesTask :: OutputMonad m => DifferentNamesInstance -> LangM m
 differentNamesTask task = do
   paragraph $ text "Consider the following class diagram"
   image $ cDiagram task
@@ -93,15 +94,15 @@ To state that "foo" in the CD corresponds to "bar" in the OD and "foofoo" in the
   paragraph $ text
     [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
 Thus, every link name and every relationship name should occur exactly once in your mapping.|]
-  paragraph $ text simplifiedInformation
-  paragraph $ text directionsAdvice
-  paragraph $ text hoveringInformation
+  paragraph simplifiedInformation
+  paragraph directionsAdvice
+  paragraph hoveringInformation
 
 differentNamesEvaluation
   :: OutputMonad m
   => DifferentNamesInstance
   -> [(String, String)]
-  -> m ()
+  -> LangM m
 differentNamesEvaluation task cs = do
   paragraph $ text "Remarks on your solution:"
   let cs' = nub $ sort cs

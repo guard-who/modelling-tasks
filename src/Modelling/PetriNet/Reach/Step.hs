@@ -21,15 +21,16 @@ import qualified Data.Set                         as S (
   )
 
 import Modelling.Auxiliary.Output (
+  LangM',
   OutputMonad (image, indent, paragraph, refuse, text),
- )
+  )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Type (
   Net (capacity, connections, start),
   State (State),
   allNonNegative,
   conforms,
- )
+  )
 
 import Control.Monad                    (foldM, guard, unless)
 import Control.Monad.IO.Class           (MonadIO)
@@ -85,7 +86,7 @@ executes
   :: (MonadIO m, OutputMonad m, Show t, Ord s, Show s, Ord t)
   => Net s t
   -> [t]
-  -> m (State s)
+  -> LangM' m (State s)
 executes n ts = foldM
   (\z (k, t) -> do
       paragraph $ text $ "Schritt" ++ show k
@@ -100,7 +101,7 @@ execute
   -> Net k a
   -> a
   -> State k
-  -> m (State k)
+  -> LangM' m (State k)
 execute i n t z0 = do
   paragraph $ text $ "Transition " ++ show t
   let cs = do

@@ -13,6 +13,7 @@ module Modelling.PetriNet.Reach.Reach where
 import qualified Data.Set                         as S (toList)
 
 import Modelling.Auxiliary.Output (
+  LangM,
   OutputMonad (assertion, image, indent, paragraph, text),
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
@@ -43,7 +44,7 @@ data PetriReach = PetriReach
 verifyReach :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
   => PetriReach
   -> (Net a t, State a)
-  -> m ()
+  -> LangM m
 verifyReach PetriReach (n,s) = do
   validate Default n
   validate Default $ n { start = s }
@@ -52,7 +53,7 @@ reportReach
   :: (MonadIO m, OutputMonad m, Ord s, Ord t, Show s, Show t, Show a)
   => p
   -> (Net s t, a)
-  -> m ()
+  -> LangM m
 reportReach _ (n,goal) = do
   paragraph $ text "Gesucht ist für das Petri-Netz"
   i <- drawToFile "" 0 n
@@ -68,7 +69,7 @@ totalReach :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
   => p
   -> (Net s t, State s)
   -> [t]
-  -> m ()
+  -> LangM m
 totalReach _ (n,goal) ts = do
   paragraph $ text "Startzustand"
   indent $ text $ show (start n)

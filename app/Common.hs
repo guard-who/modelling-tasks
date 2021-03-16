@@ -6,11 +6,12 @@ module Common (
 
 import Modelling.Auxiliary.Output       (OutputMonad (..))
 
+import Control.Monad                    (unless)
+import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Map                         (foldrWithKey)
 import Diagrams.Prelude                 (Diagram, mkWidth)
 import Diagrams.Backend.SVG             (B, renderSVG)
-import Control.Monad                    (unless)
 
 instanceInput :: IO Int
 instanceInput = do
@@ -36,25 +37,25 @@ renderPetriNet x dia = do
 
 instance OutputMonad IO where
   assertion b m = unless b $ error m
-  enumerate g f = putStrLn . foldrWithKey
+  enumerate g f = lift . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". " ++ f x ++ "\n" ++ rs)
     ""
-  image         = putStr . ("file: " ++)
-  images g f    = putStrLn . foldrWithKey
+  image         = lift . putStr . ("file: " ++)
+  images g f    = lift . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
     ""
-  paragraph     = (>> putStrLn "")
-  text          = putStr
+  paragraph     = (>> lift (putStrLn ""))
+  text          = lift . putStr
   enumerateM p  = foldl
-    (\o (x, e) -> paragraph $ do o; p x; putStr "  "; e)
+    (\o (x, e) -> paragraph $ do o; p x; lift $ putStr "  "; e)
     (return ())
   itemizeM      = foldl
-    (\o x -> paragraph $ do o; putStr " -  "; x)
+    (\o x -> paragraph $ do o; lift $ putStr " -  "; x)
     (return ())
   indent xs     = do
-    putStr ">>>>"
+    lift $ putStr ">>>>"
     xs
-    putStrLn "<<<<"
+    lift $ putStrLn "<<<<"
   refuse xs     = do
     xs
     indent $ text "No"

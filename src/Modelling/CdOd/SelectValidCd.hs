@@ -16,6 +16,7 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
+  LangM,
   )
 import Modelling.CdOd.RepairCd          (repairIncorrect)
 import Modelling.CdOd.Output            (drawCdFromSyntax)
@@ -55,21 +56,21 @@ newtype SelectValidCdInstance = SelectValidCdInstance {
     classDiagrams   :: Map Int (Bool, FilePath)
   } deriving (Generic, Show)
 
-selectValidCdTask :: OutputMonad m => SelectValidCdInstance -> m ()
+selectValidCdTask :: OutputMonad m => SelectValidCdInstance -> LangM m
 selectValidCdTask task = do
   paragraph $ text [i|Consider the following class diagram candidates.|]
   images show snd $ classDiagrams task
   paragraph $ text
     [i|Which of these class diagram candidates are valid class diagrams?
 Please state your answer by giving a list of numbers, stating all valid class diagrams.|]
-  paragraph $ text simplifiedInformation
-  paragraph $ text hoveringInformation
+  paragraph simplifiedInformation
+  paragraph hoveringInformation
 
 selectValidCdEvaluation
   :: OutputMonad m
   => SelectValidCdInstance
   -> [Int]
-  -> m ()
+  -> LangM m
 selectValidCdEvaluation = multipleChoice "class diagrams" . classDiagrams
 
 selectValidCd

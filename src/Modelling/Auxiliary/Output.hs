@@ -19,48 +19,93 @@ module Modelling.Auxiliary.Output (
   format,
   toAbort,
   toOutput,
+  LangM,
+  LangM' (LangM),
+  Language (..),
+  english,
+  german,
+  localise,
+  mapLangM,
+  withLang,
   ) where
 
 import qualified Data.Map as M
 
-import Data.String.Interpolate (i)
-import Data.Map (Map)
-import Data.List (nub, sort)
+import Control.Monad (when)
+import Control.Monad.Trans (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (MonadWriter (pass, tell), Writer, execWriter,)
+import Data.List (nub, sort)
+import Data.Map (Map)
+import Data.Maybe (fromMaybe)
+import Data.String.Interpolate (i)
 
-hoveringInformation :: String
-hoveringInformation = [i|Please note: hovering over or clicking on edges or their labels highlights both parts.|]
+hoveringInformation :: OutputMonad m => LangM m
+hoveringInformation = english [i|Please note: hovering over or clicking on edges or their labels highlights both parts.|]
 
-directionsAdvice :: String
-directionsAdvice = [i|As navigation directions are used, please note that aggregations and composition are only navigable from the "part" toward the "whole", i.e they are not navigable in the opposite direction!|]
+directionsAdvice :: OutputMonad m => LangM m
+directionsAdvice = english [i|As navigation directions are used, please note that aggregations and composition are only navigable from the "part" toward the "whole", i.e they are not navigable in the opposite direction!|]
 
-simplifiedInformation :: String
-simplifiedInformation = [i|Please note: classes are represented simplified here.
+simplifiedInformation :: OutputMonad m => LangM m
+simplifiedInformation = english [i|Please note: classes are represented simplified here.
 That means they consist of a single box containing only its class name, but do not contain boxes for attributes and methods.
 Nevertheless you should treat these simplified class representations as valid classes.|]
 
-multipleChoice :: (OutputMonad m, Ord a) => String -> Map a (Bool, b) -> [a] -> m ()
+multipleChoice
+  :: (OutputMonad m, Ord a)
+  => String
+  -> Map a (Bool, b) -> [a]
+  -> LangM m
 multipleChoice what solution choices = do
-  paragraph $ text "Remarks on your solution:"
+  paragraph (english "Remarks on your solution:")
   let cs = nub $ sort choices
-  assertion (null [c | c <- cs, c `notElem` valid])
-    $ "Given " ++ what ++ " are correct?"
-  assertion (cs ==  valid) $ "Given " ++ what ++ " are exhaustive?"
+  correct <- localise [(English, "Given " ++ what ++ " are correct?")]
+  assertion (null [c | c <- cs, c `notElem` valid]) correct
+  exhaustive <- localise [(English, "Given " ++ what ++ " are exhaustive?")]
+  assertion (cs ==  valid) exhaustive
   where
     valid = M.keys $ M.filter ((== True) . fst) solution
 
+data Language = German | English
+  deriving Eq
+
+localise :: OutputMonad m => [(Language, String)] -> LangM' m String
+localise lm = LangM $ \l ->
+  return $ fromMaybe (error "missing translation") $ lookup l lm
+
+english :: OutputMonad m => String -> LangM m
+english t = LangM $ \l -> when (l == English) $ withLang (text t) l
+
+german :: OutputMonad m => String -> LangM m
+german t = LangM $ \l -> when (l == German) $ withLang (text t) l
+
+newtype LangM' m a = LangM { withLang :: Language -> m a}
+type LangM m = LangM' m ()
+
+instance Functor m => Functor (LangM' m) where
+  fmap f (LangM o) = LangM $ fmap f . o
+
+instance Applicative m => Applicative (LangM' m) where
+  pure x = LangM . const $ pure x
+  LangM f <*> LangM x = LangM $ \l -> f l <*> x l
+
+instance Monad m => Monad (LangM' m) where
+  LangM x >>= f = LangM $ \l -> x l >>= (\x' -> withLang (f x') l)
+
+instance MonadTrans LangM' where
+  lift m = LangM $ const m
+
 class Monad m => OutputMonad m where
-  assertion :: Bool -> String -> m ()
-  enumerate :: (k -> String) -> (a -> String) -> Map k a -> m ()
-  image     :: FilePath -> m ()
-  images    :: (k -> String) -> (a -> FilePath) -> Map k a -> m ()
-  paragraph :: m () -> m ()
-  refuse    :: m () -> m ()
-  text      :: String -> m ()
-  enumerateM :: (a -> m ()) -> [(a, m ())] -> m ()
-  itemizeM   :: [m ()] -> m ()
-  indent     :: m () -> m ()
+  assertion :: Bool -> String -> LangM m
+  enumerate :: (k -> String) -> (a -> String) -> Map k a -> LangM m
+  image     :: FilePath -> LangM m
+  images    :: (k -> String) -> (a -> FilePath) -> Map k a -> LangM m
+  paragraph :: LangM m -> LangM m
+  refuse    :: LangM m -> LangM m
+  text      :: String -> LangM m
+  enumerateM :: (a -> LangM m) -> [(a, LangM m)] -> LangM m
+  itemizeM   :: [LangM m] -> LangM m
+  indent     :: LangM m -> LangM m
 
 data Out o = Format o | Abort
 
@@ -78,11 +123,16 @@ getAllOuts r = execWriter $ do
     Nothing -> pass $ return ((), (Abort:))
     Just _ -> return ()
 
-combineReports
+combineReports :: ([[o]] -> o) -> [LangM' (Report o) a] -> LangM' (Report o) ()
+combineReports f oms = LangM $ \l ->
+  let rs = (`withLang` l) <$> oms
+  in combineReports' f rs
+
+combineReports'
   :: ([[o]] -> o)
   -> [Report o a]
   -> Report o ()
-combineReports f rs = Report $ do
+combineReports' f rs = Report $ do
   os <- sequence $ toOut <$> rs
   tell . (:[]) . Format $ f os
   where
@@ -93,7 +143,7 @@ combineWithReports
   -> ([o] -> b)
   -> [Report o a]
   -> Report o ()
-combineWithReports f g = combineReports (f . fmap g)
+combineWithReports f g = combineReports' (f . fmap g)
 
 alignOutput
   :: ([o] -> o)
@@ -129,3 +179,6 @@ toAbort r = Report $ do
   xs  <- MaybeT . return . sequence $ toOutput <$> getAllOuts r
   tell $ Format <$> xs
   MaybeT $ return Nothing
+
+mapLangM :: (m a -> m b) -> LangM' m a -> LangM' m b
+mapLangM f om = LangM $ f . withLang om

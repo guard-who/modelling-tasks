@@ -24,8 +24,8 @@ import qualified Data.Set                         as S (
   size,
   )
 
-
 import Modelling.Auxiliary.Output (
+  LangM,
   OutputMonad(indent, paragraph, refuse, text),
   )
 import Modelling.PetriNet.Reach.Type (
@@ -53,14 +53,14 @@ validates
   :: (Foldable f, OutputMonad m, Show a, Show b, Ord b, Ord a)
   => f Property
   -> Net a b
-  -> m ()
+  -> LangM m
 validates props n = forM_ props $ \prop -> validate prop n
 
 validate
-  :: (OutputMonad f, Show a, Show t, Ord t, Ord a)
+  :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
   => Property
   -> Net a t
-  -> f ()
+  -> LangM m
 validate p n = case p of
   MaxNumPlaces m -> guardBound
     "Anzahl der Stellen"
@@ -143,7 +143,7 @@ validate p n = case p of
         paragraph $ text "nicht definierte Stellen im Startzustand:"
         paragraph $ text $ show out
 
-guardBound :: (Ord a, OutputMonad f, Show a) => String -> a -> a -> f ()
+guardBound :: (Ord a, OutputMonad m, Show a) => String -> a -> a -> LangM m
 guardBound name actual bound =
   when (actual > bound) $
     refuse $ do

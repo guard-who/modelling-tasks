@@ -24,6 +24,7 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
+  LangM,
   )
 import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.CdOd.CD2Alloy.Transform (transform)
@@ -164,7 +165,7 @@ checkRepairCdConfig config
   | otherwise
   = Nothing
 
-repairCdTask :: OutputMonad m => RepairCdInstance -> m ()
+repairCdTask :: OutputMonad m => RepairCdInstance -> LangM m
 repairCdTask task = do
   paragraph $ text
     "Consider the following class diagram, which unfortunately is invalid."
@@ -176,10 +177,10 @@ repairCdTask task = do
     [i|Please state your answer by giving a list of numbers, indicating all changes resulting in a valid class diagram.|]
   paragraph $ text
     [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that option 0 and 9 repair the given class diagram.|]
-  paragraph $ text simplifiedInformation
-  paragraph $ text hoveringInformation
+  paragraph simplifiedInformation
+  paragraph hoveringInformation
 
-repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> m ()
+repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> LangM m
 repairCdEvaluation = multipleChoice "changes" . changes
 
 data RepairCdInstance = RepairCdInstance {

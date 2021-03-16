@@ -36,6 +36,7 @@ import Modelling.Auxiliary.Output (
   directionsAdvice,
   hoveringInformation,
   simplifiedInformation,
+  LangM,
   )
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
@@ -121,7 +122,7 @@ instancesOfMatch task = nub . sort <$>
   M.empty
   (instances task)
 
-matchCdOdTask :: OutputMonad m => MatchCdOdInstance -> m ()
+matchCdOdTask :: OutputMonad m => MatchCdOdInstance -> LangM m
 matchCdOdTask task = do
   paragraph $ text "Consider the following two class diagrams."
   images show id $ diagrams task
@@ -133,11 +134,15 @@ An object diagram can conform to neither, either, or both class diagrams.|]
     [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
 Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
 For example [(0, "ab"), (1, "")] expresses that both, object diagram a and b are instances of class diagram 0 but not of class diagram 1.|]
-  paragraph $ text simplifiedInformation
-  when (hasNavigations task) $ paragraph $ text directionsAdvice
-  paragraph $ text hoveringInformation
+  paragraph simplifiedInformation
+  when (hasNavigations task) $ paragraph directionsAdvice
+  paragraph hoveringInformation
 
-matchCdOdEvaluation :: (OutputMonad m, Foldable t) => MatchCdOdInstance -> t (Int, String) -> m ()
+matchCdOdEvaluation
+  :: (OutputMonad m, Foldable t)
+  => MatchCdOdInstance
+  -> t (Int, String)
+  -> LangM m
 matchCdOdEvaluation task is' = do
   paragraph $ text "Remarks on your solution:"
   let is = nub . sort <$> foldr (\(c, o) -> M.alter (Just . maybe o (o++)) c) M.empty is'

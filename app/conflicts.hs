@@ -7,6 +7,7 @@ import Common (
   instanceInput,
   printNetAndInfo,
   )
+import Modelling.Auxiliary.Output       (LangM' (withLang), Language (English))
 import Modelling.PetriNet.ConcurrencyAndConflict (
   checkFindConflictConfig,
   checkPickConflictConfig,
@@ -59,7 +60,8 @@ mainFind i = forceErrors $ do
   if isNothing c
   then do
     conflDia <- evalRandT (findConflict config 0) $ mkStdGen i
-    findConflictGenerate config "" 0 i >>= lift . findConflictTask
+    t <- findConflictGenerate config "" 0 i
+    lift . (`withLang` English) $ findConflictTask t
     lift $ printNetAndInfo "" conflDia
   else
     lift $ print c
@@ -87,7 +89,8 @@ mainPick i = forceErrors $ do
   if isNothing c
   then do
     conflDias <- evalRandT (pickConflict config 0) $ mkStdGen i
-    pickConflictGenerate config "" 0 i >>= lift . pickConflictTask
+    t <- pickConflictGenerate config "" 0 i
+    lift . (`withLang` English) $ pickConflictTask t
     lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
   else
     lift $ print c

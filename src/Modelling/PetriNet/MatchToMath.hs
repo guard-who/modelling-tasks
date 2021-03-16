@@ -29,8 +29,12 @@ import qualified Data.Map                         as M (
   foldrWithKey, keys, lookup, partition
   )
 
-
-import Modelling.Auxiliary.Output       (OutputMonad (..), multipleChoice)
+import Modelling.Auxiliary.Output       (
+  LangM,
+  OutputMonad (..),
+  english,
+  multipleChoice,
+  )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
   compBasicConstraints,
@@ -286,9 +290,9 @@ mathInstance config inst hidePNames hideTNames hide1 gc = do
   let f = renderFalse petriLike config
   return (f, rightNet, math)
 
-graphToMathTask :: OutputMonad m => GraphToMathInstance -> m ()
+graphToMathTask :: OutputMonad m => GraphToMathInstance -> LangM m
 graphToMathTask task = do
-  paragraph $ text "Consider this graphical representation of a Petri net:"
+  paragraph $ english "Consider this graphical representation of a Petri net:"
   image $ from task
   paragraph $ text
     "Which of the following mathematical expressions represents this Petri net?"
@@ -296,17 +300,17 @@ graphToMathTask task = do
     (text . (++ ". ") . show)
     $ second (mathToOutput . snd) <$> toList (to task)
 
-mathToOutput :: OutputMonad m => PetriMath FilePath -> m ()
+mathToOutput :: OutputMonad m => PetriMath FilePath -> LangM m
 mathToOutput pm = paragraph $ do
   image $ netMath pm
-  text ", where "
+  english ", where "
   image $ placesMath pm
-  text " and "
+  english " and "
   image $ transitionsMath pm
-  text ", as well as:"
+  english ", as well as:"
   itemizeM $ image . fst <$> tokenChangeMath pm
   itemizeM $ image . snd <$> tokenChangeMath pm
-  text "Furthermore, "
+  english "Furthermore, "
   image $ initialMarkingMath pm
   case placeOrderMath pm of
     Nothing -> return ()
@@ -314,7 +318,7 @@ mathToOutput pm = paragraph $ do
       text " using the place ordering "
       image o
 
-mathToGraphTask :: OutputMonad m => MathToGraphInstance -> m ()
+mathToGraphTask :: OutputMonad m => MathToGraphInstance -> LangM m
 mathToGraphTask task = do
   paragraph $ text "Consider this mathematical expression of a Petri net:"
   mathToOutput $ from task
@@ -325,14 +329,14 @@ graphToMathEvaluation
   :: OutputMonad m
   => GraphToMathInstance
   -> [Int]
-  -> m ()
+  -> LangM m
 graphToMathEvaluation = multipleChoice "mathematical representation" . to
 
 mathToGraphEvaluation
   :: OutputMonad m
   => MathToGraphInstance
   -> [Int]
-  -> m ()
+  -> LangM m
 mathToGraphEvaluation = multipleChoice "graphical representation" . to
 
 checkMathConfig :: MathConfig -> Maybe String

@@ -3,6 +3,7 @@ module Modelling.PetriNet.Reach.Draw (drawToFile) where
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (toList)
 
+import Modelling.Auxiliary.Output       (LangM')
 import Modelling.PetriNet.Diagram       (drawNet)
 import Modelling.PetriNet.Reach.Type (
   Net (connections, places, start, transitions),
@@ -13,8 +14,8 @@ import Modelling.PetriNet.Types (
   Node (PlaceNode, TransitionNode),
   )
 
-
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.GraphViz                    (GraphvizCommand (Neato))
 import Data.List                        (group, sort)
@@ -27,10 +28,10 @@ drawToFile
   => FilePath
   -> Int
   -> Net s t
-  -> m FilePath
+  -> LangM' m FilePath
 drawToFile path x net = do
-  graph <- liftIO $ runExceptT $ drawPetriWithDefaults net
-  liftIO $ writeGraph path (show x) $ either error id graph
+  graph <- lift $ liftIO $ runExceptT $ drawPetriWithDefaults net
+  lift $ liftIO $ writeGraph path (show x) $ either error id graph
 
 writeGraph
   :: FilePath

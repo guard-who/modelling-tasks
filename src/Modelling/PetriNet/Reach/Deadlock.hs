@@ -14,6 +14,7 @@ import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList, toList)
 
 import Modelling.Auxiliary.Output (
+  LangM,
   OutputMonad (assertion, image, paragraph, text),
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
@@ -43,14 +44,14 @@ verifyDeadlock
   :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
   => PetriDeadlock
   -> Net a t
-  -> m ()
+  -> LangM m
 verifyDeadlock PetriDeadlock = validate Default
 
 reportDeadlock
   :: (OutputMonad m, MonadIO m, Ord s, Ord t, Show s, Show t)
   => FilePath
   -> Net s t
-  -> m ()
+  -> LangM m
 reportDeadlock path n = do
   paragraph $ text "Gesucht ist für das Petri-Netz"
   g <- drawToFile path 0 n
@@ -67,7 +68,7 @@ totalDeadlock
   :: (OutputMonad m, MonadIO m, Show t, Show s, Ord t, Ord s)
   => Net s t
   -> [t]
-  -> m ()
+  -> LangM m
 totalDeadlock n ts = do
   out <- foldM
       (\z (k,t) -> do

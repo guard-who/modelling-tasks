@@ -4,6 +4,7 @@ import Common (
   forceErrors,
   instanceInput,
   )
+import Modelling.Auxiliary.Output       (LangM'(withLang), Language (English))
 import Modelling.PetriNet.MatchToMath (
   MathConfig (..),
   checkMathConfig,
@@ -48,11 +49,11 @@ main = forceErrors $ do
   if switch
     then do
     inst <- mathToGraphGenerate config "fromMath-" 0 i
-    lift $ mathToGraphTask inst
+    lift $ mathToGraphTask inst `withLang` English
     lift $ print inst
     else do
     inst <- graphToMathGenerate config "toMath-" 0 i
-    lift $ graphToMathTask inst
+    lift $ graphToMathTask inst `withLang` English
     lift $ print inst
 
 userInput :: IO (Int,Int,Int,Int,String)

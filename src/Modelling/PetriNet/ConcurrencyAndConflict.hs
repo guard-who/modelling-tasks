@@ -32,7 +32,6 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickTaskInstance,
   ) where
 
-
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as Set (
   Set,
@@ -42,6 +41,7 @@ import qualified Data.Set                         as Set (
 import Modelling.Auxiliary.Output (
   OutputMonad (..),
   multipleChoice,
+  LangM,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -111,7 +111,7 @@ newtype PickInstance = PickInstance {
   }
   deriving (Generic, Show)
 
-findConcurrencyTask :: OutputMonad m => FindInstance (Concurrent String) -> m ()
+findConcurrencyTask :: OutputMonad m => FindInstance (Concurrent String) -> LangM m
 findConcurrencyTask task = do
   paragraph $ text "Considering this Petri net"
   image $ net task
@@ -121,7 +121,7 @@ findConcurrencyEvaluation
   :: OutputMonad m
   => FindInstance (Concurrent String)
   -> (String, String)
-  -> m ()
+  -> LangM m
 findConcurrencyEvaluation task =
   transitionPairEvaluation "are concurrent" (numberOfPlaces task) (ft, st)
   where
@@ -133,7 +133,7 @@ transitionPairEvaluation
   -> Int
   -> (String, String)
   -> (String, String)
-  -> m ()
+  -> LangM m
 transitionPairEvaluation what n (ft, st) is = do
   paragraph $ text "Remarks on your solution:"
   assertion (isTransition fi)
@@ -151,7 +151,7 @@ transitionPairEvaluation what n (ft, st) is = do
       | otherwise
       = False
 
-findConflictTask :: OutputMonad m => FindInstance Conflict -> m ()
+findConflictTask :: OutputMonad m => FindInstance Conflict -> LangM m
 findConflictTask task = do
   paragraph $ text "Considering this Petri net"
   image $ net task
@@ -162,13 +162,13 @@ findConflictEvaluation
   :: OutputMonad m
   => FindInstance Conflict
   -> (String, String)
-  -> m ()
+  -> LangM m
 findConflictEvaluation task =
   transitionPairEvaluation "have a conflict" (numberOfPlaces task) (ft, st)
   where
     (ft, st) = conflictTrans $ transitionPair task
 
-pickConcurrencyTask :: OutputMonad m => PickInstance -> m ()
+pickConcurrencyTask :: OutputMonad m => PickInstance -> LangM m
 pickConcurrencyTask task = do
   paragraph $ text
     "Which of the following Petri nets has two transitions that are concurrently activated?"
@@ -178,10 +178,10 @@ pickEvaluation
   :: OutputMonad m
   => PickInstance
   -> [Int]
-  -> m ()
+  -> LangM m
 pickEvaluation = multipleChoice "petri nets" . nets
 
-pickConflictTask :: OutputMonad m => PickInstance -> m ()
+pickConflictTask :: OutputMonad m => PickInstance -> LangM m
 pickConflictTask task = do
   paragraph $ text
     "Which of the following Petri nets has two transitions that are in conflict?"
