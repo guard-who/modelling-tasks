@@ -1,4 +1,4 @@
-module Modelling.PetriNet.Reach.Draw (drawToFile) where
+module Modelling.PetriNet.Reach.Draw (drawToFile, toPetriLike) where
 
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (toList)

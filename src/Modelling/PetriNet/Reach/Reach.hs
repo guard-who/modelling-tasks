@@ -51,12 +51,12 @@ verifyReach PetriReach (n,s) = do
 
 reportReach
   :: (MonadIO m, OutputMonad m, Ord s, Ord t, Show s, Show t, Show a)
-  => p
+  => FilePath
   -> (Net s t, a)
   -> LangM m
-reportReach _ (n,goal) = do
+reportReach path (n,goal) = do
   paragraph $ text "Gesucht ist für das Petri-Netz"
-  i <- drawToFile "" 0 n
+  i <- drawToFile path 0 n
   image i
   paragraph $ do
     text "eine Transitionsfolge, durch die der folgende Zustand erreicht wird:"
@@ -66,17 +66,17 @@ initialReach :: p -> (Net s a, b) -> [a]
 initialReach _ (n,_) = reverse $ S.toList $ transitions n
 
 totalReach :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
-  => p
+  => FilePath
   -> (Net s t, State s)
   -> [t]
   -> LangM m
-totalReach _ (n,goal) ts = do
+totalReach path (n,goal) ts = do
   paragraph $ text "Startzustand"
   indent $ text $ show (start n)
   out <- foldM
       (\z (k,t) -> do
          paragraph $ text $ "Schritt" ++ show k
-         Modelling.PetriNet.Reach.Step.execute k n t z)
+         Modelling.PetriNet.Reach.Step.execute path k n t z)
       (start n)
       (zip [1 :: Int ..] ts)
   assertion (out == goal) "Zielzustand erreicht?"

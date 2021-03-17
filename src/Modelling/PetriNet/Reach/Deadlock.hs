@@ -66,14 +66,15 @@ initialDeadlock n = reverse $ S.toList $ transitions n
 
 totalDeadlock
   :: (OutputMonad m, MonadIO m, Show t, Show s, Ord t, Ord s)
-  => Net s t
+  => FilePath
+  -> Net s t
   -> [t]
   -> LangM m
-totalDeadlock n ts = do
+totalDeadlock path n ts = do
   out <- foldM
       (\z (k,t) -> do
          paragraph $ text $ "Schritt" ++ show k
-         Modelling.PetriNet.Reach.Step.execute k n t z)
+         Modelling.PetriNet.Reach.Step.execute path k n t z)
       (start n)
       (zip [1 :: Int ..] ts)
   assertion (null $ successors n out) "Zielzustand hat keine Nachfolger?"

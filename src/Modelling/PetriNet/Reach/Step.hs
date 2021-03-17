@@ -84,25 +84,27 @@ equalling f x y = f x == f y
 
 executes
   :: (MonadIO m, OutputMonad m, Show t, Ord s, Show s, Ord t)
-  => Net s t
+  => FilePath
+  -> Net s t
   -> [t]
   -> LangM' m (State s)
-executes n ts = foldM
+executes path n ts = foldM
   (\z (k, t) -> do
       paragraph $ text $ "Schritt" ++ show k
-      Modelling.PetriNet.Reach.Step.execute k n t z
+      Modelling.PetriNet.Reach.Step.execute path k n t z
   )
   (start n)
   (zip [1 :: Int ..] ts)
 
 execute
   :: (MonadIO m, OutputMonad m, Show a, Show k, Ord a, Ord k)
-  => Int
+  => FilePath
+  -> Int
   -> Net k a
   -> a
   -> State k
   -> LangM' m (State k)
-execute i n t z0 = do
+execute path i n t z0 = do
   paragraph $ text $ "Transition " ++ show t
   let cs = do
         c@(_, t', _) <- connections n
@@ -123,7 +125,7 @@ execute i n t z0 = do
       indent $ text $ show z2
       unless (conforms (capacity n) z2) $ refuse $ text
         "enthält Markierungen, die die Kapazität überschreiten"
-      g <- drawToFile "" i $ n {start = z2}
+      g <- drawToFile path i $ n {start = z2}
       image g
       return z2
     _ -> undefined -- TODO Patern match not required?
