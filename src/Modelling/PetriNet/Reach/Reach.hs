@@ -99,7 +99,7 @@ example = Config {
 
 generateReach :: Config -> Int -> (Net Place Transition, State Place)
 generateReach conf seed =
-  let tries = forM [1 .. 1000] $ \x -> randWith x $ do
+  let tries = eval $ forM [1 :: Int .. 1000] $ const $ do
         let ps = [Place 1 .. Place (numPlaces conf)]
             ts = [Transition 1 .. Transition (numTransitions conf)]
         n <- Modelling.PetriNet.Reach.Roll.net
@@ -116,4 +116,4 @@ generateReach conf seed =
           return ((negate l, d), (n, z'))
   in snd $ minimumBy (comparing fst) $ concat tries
   where
-    randWith x f = evalRand f $ mkStdGen $ seed * 1000 + x
+    eval f = evalRand f $ mkStdGen seed

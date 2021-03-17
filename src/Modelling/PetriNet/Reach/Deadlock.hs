@@ -101,9 +101,9 @@ generateDeadlock conf seed = snd $ tries 1000 conf seed
 tries :: Int -> Config -> Int -> (Int, Net Place Transition)
 tries n conf seed = maximumBy (comparing fst) $ concat out
   where
-    randWith x f = evalRand f $ mkStdGen $ seed * n + x
-    out = forM [1 .. n] $ \x ->
-      randWith x $ Modelling.PetriNet.Reach.Deadlock.try conf
+    eval f = evalRand f $ mkStdGen seed
+    out = eval $ forM [1 .. n] $ const $
+      Modelling.PetriNet.Reach.Deadlock.try conf
 
 try :: MonadRandom m => Config -> m [(Int, Net Place Transition)]
 try conf = do

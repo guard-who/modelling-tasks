@@ -54,7 +54,7 @@ data Net s t = Net {
   capacity :: Capacity s,
   start :: State s
   }
-  deriving (Eq, Generic, Ord, Typeable)
+  deriving (Eq, Generic, Ord, Show, Typeable)
 
 allNonNegative :: State a -> Bool
 allNonNegative (State z) =
@@ -75,8 +75,14 @@ conforms cap (State z) = case cap of
 newtype Place = Place Int
   deriving (Eq, Ord, Typeable, Generic, Enum)
 
+instance Show Place where
+  show (Place p) = "s" ++ show p
+
 newtype Transition = Transition Int
   deriving (Eq, Ord, Typeable, Generic, Enum)
+
+instance Show Transition where
+  show (Transition t) = "t" ++ show t
 
 example :: (Net Place Transition, State Place)
 example =
