@@ -82,7 +82,7 @@ import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
-debug = True
+debug = False
 
 data MatchCdOdInstance = MatchCdOdInstance {
     diagrams       :: Map Int FilePath,
