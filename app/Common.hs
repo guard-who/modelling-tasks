@@ -60,3 +60,4 @@ instance OutputMonad IO where
     xs
     indent $ text "No"
     error "refused"
+  latex         = lift . putStrLn . ("LaTeX: " ++)

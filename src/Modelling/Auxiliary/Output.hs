@@ -106,6 +106,7 @@ class Monad m => OutputMonad m where
   enumerateM :: (a -> LangM m) -> [(a, LangM m)] -> LangM m
   itemizeM   :: [LangM m] -> LangM m
   indent     :: LangM m -> LangM m
+  latex      :: String -> LangM m
 
 data Out o = Format o | Abort
 

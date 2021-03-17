@@ -13,6 +13,8 @@ module Modelling.PetriNet.MatchToMath (
   MathToGraphInstance,
   checkMathConfig,
   defaultMathConfig,
+  formulaFilesFrom,
+  formulaFilesTo,
   graphToMath,
   graphToMathEvaluation,
   graphToMathGenerate,
@@ -93,8 +95,8 @@ import System.Random.Shuffle            (shuffleM)
 
 type Math = PetriMath Formula
 
-type GraphToMathInstance = MatchInstance FilePath (PetriMath FilePath)
-type MathToGraphInstance = MatchInstance (PetriMath FilePath) FilePath
+type GraphToMathInstance = MatchInstance FilePath (PetriMath String)
+type MathToGraphInstance = MatchInstance (PetriMath String) FilePath
 
 class NamedParts n where
   addPartNames :: n a -> n (String, a)
@@ -168,11 +170,13 @@ graphToMathGenerate
   -> ExceptT String IO GraphToMathInstance
 graphToMathGenerate config path segment seed = do
   inst <- graphToMath config segment seed
-  let inst' = MatchInstance {
-        from = from inst,
-        to   = mapWithKey (\k -> second ((show k,) . addPartNames)) $ to inst
-        }
-  bimapM (writeGraph path "") (\(n, x) -> mapM (writeFormula path n) x) inst'
+  writeDia path inst
+
+writeDia
+  :: FilePath
+  -> MatchInstance (Diagram B) b
+  -> ExceptT String IO (MatchInstance FilePath b)
+writeDia path = bimapM (writeGraph path "") return
 
 mathToGraphGenerate
   :: MathConfig
@@ -182,11 +186,44 @@ mathToGraphGenerate
   -> ExceptT String IO MathToGraphInstance
 mathToGraphGenerate config path segment seed = do
   inst <- mathToGraph config segment seed
+  writeDias path inst
+
+writeDias
+  :: FilePath
+  -> MatchInstance a (Diagram B)
+  -> ExceptT String IO (MatchInstance a FilePath)
+writeDias path inst =
+  let inst' = MatchInstance {
+        from = from inst,
+        to   = mapWithKey (\k -> second (show k,)) $ to inst
+        }
+  in bimapM return (uncurry $ writeGraph path) inst'
+
+{-# DEPRECATED formulaFilesTo "not used anymore writeDia used instead" #-}
+formulaFilesTo
+  :: (Traversable t, NamedParts t)
+  => FilePath
+  -> MatchInstance (Diagram B) (t String)
+  -> ExceptT String IO (MatchInstance FilePath (t FilePath))
+formulaFilesTo path inst =
+  let inst' = MatchInstance {
+        from = from inst,
+        to   = mapWithKey (\k -> second ((show k,) . addPartNames)) $ to inst
+        }
+  in bimapM (writeGraph path "") (\(n, x) -> mapM (writeFormula path n) x) inst'
+
+{-# DEPRECATED formulaFilesFrom "not used anymore writeDias used instead" #-}
+formulaFilesFrom
+  :: (NamedParts t, Traversable t)
+  => FilePath
+  -> MatchInstance (t String) (Diagram B)
+  -> ExceptT String IO (MatchInstance (t FilePath) FilePath)
+formulaFilesFrom path inst =
   let inst' = MatchInstance {
         from = addPartNames $ from inst,
         to   = mapWithKey (\k -> second (show k,)) $ to inst
         }
-  bimapM (mapM $ writeFormula path "") (uncurry $ writeGraph path) inst'
+  in bimapM (mapM $ writeFormula path "") (uncurry $ writeGraph path) inst'
 
 writeGraph
   :: FilePath
@@ -298,30 +335,30 @@ graphToMathTask task = do
     "Which of the following mathematical expressions represents this Petri net?"
   enumerateM
     (text . (++ ". ") . show)
-    $ second (mathToOutput . snd) <$> toList (to task)
+    $ second (mathToOutput latex . snd) <$> toList (to task)
 
-mathToOutput :: OutputMonad m => PetriMath FilePath -> LangM m
-mathToOutput pm = paragraph $ do
-  image $ netMath pm
+mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
+mathToOutput f pm = paragraph $ do
+  f $ netMath pm
   english ", where "
-  image $ placesMath pm
+  f $ placesMath pm
   english " and "
-  image $ transitionsMath pm
+  f $ transitionsMath pm
   english ", as well as:"
-  itemizeM $ image . fst <$> tokenChangeMath pm
-  itemizeM $ image . snd <$> tokenChangeMath pm
+  itemizeM $ f . fst <$> tokenChangeMath pm
+  itemizeM $ f . snd <$> tokenChangeMath pm
   english "Furthermore, "
-  image $ initialMarkingMath pm
+  f $ initialMarkingMath pm
   case placeOrderMath pm of
     Nothing -> return ()
     Just o  -> do
       text " using the place ordering "
-      image o
+      f o
 
 mathToGraphTask :: OutputMonad m => MathToGraphInstance -> LangM m
 mathToGraphTask task = do
   paragraph $ text "Consider this mathematical expression of a Petri net:"
-  mathToOutput $ from task
+  mathToOutput latex $ from task
   paragraph $ text "Which of the following graphics represents this Petri net?"
   images show snd $ to task
 
