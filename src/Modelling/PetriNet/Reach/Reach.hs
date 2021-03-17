@@ -24,7 +24,7 @@ import Modelling.PetriNet.Reach.Type (
   Transition (..),
   Place(..),
   Net (transitions, start),
-  Capacity (AllBounded),
+  Capacity (Unbounded),
   State,
   mark,
   )
@@ -93,7 +93,7 @@ example :: Config
 example = Config {
   numPlaces = 4,
   numTransitions = 4,
-  Modelling.PetriNet.Reach.Reach.capacity = AllBounded 1,
+  Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
   transitionLength = 8
   }
 
