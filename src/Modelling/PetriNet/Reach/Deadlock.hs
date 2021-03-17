@@ -87,8 +87,8 @@ data Config = Config {
   }
   deriving (Typeable, Generic)
 
-example :: Config
-example =
+defaultDeadlockConfig :: Config
+defaultDeadlockConfig =
   Config {
   numPlaces = 4,
   numTransitions = 4,

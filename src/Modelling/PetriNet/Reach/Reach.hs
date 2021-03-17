@@ -89,8 +89,8 @@ data Config = Config {
   }
   deriving (Typeable, Generic)
 
-example :: Config
-example = Config {
+defaultReachConfig :: Config
+defaultReachConfig = Config {
   numPlaces = 4,
   numTransitions = 4,
   Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
