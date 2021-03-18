@@ -107,6 +107,7 @@ class Monad m => OutputMonad m where
   itemizeM   :: [LangM m] -> LangM m
   indent     :: LangM m -> LangM m
   latex      :: String -> LangM m
+  code       :: String -> LangM m
 
 data Out o = Format o | Abort
 

@@ -130,10 +130,12 @@ matchCdOdTask task = do
     [i|Which of the following five object diagrams conform to which class diagram?
 An object diagram can conform to neither, either, or both class diagrams.|]
   images (:[]) snd $ instances task
-  paragraph $ text
-    [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
+  paragraph $ do
+    text [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
 Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
-For example, [(0, "ab"), (1, "")] expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 0 and that none of the offered object diagrams are instances of class diagram 1.|]
+For example, |]
+    code [i|[(0, "ab"), (1, "")]|]
+    text [i| expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 0 and that none of the offered object diagrams are instances of class diagram 1.|]
   paragraph simplifiedInformation
   when (hasNavigations task) $ paragraph directionsAdvice
   paragraph hoveringInformation
@@ -198,8 +200,8 @@ getRandomTask'
   -> Maybe Integer
   -> RandT g IO (Map Int Syntax, [([Int], AlloyInstance)])
 getRandomTask' config maxObs search maxIs = do
-  let code = Changes.transform config defaultProperties
-  instas <- liftIO $ getInstances (Just 6000) Nothing code
+  let alloyCode = Changes.transform config defaultProperties
+  instas <- liftIO $ getInstances (Just 6000) Nothing alloyCode
   when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
   ods <- getODsFor maxObs maxIs Nothing rinstas

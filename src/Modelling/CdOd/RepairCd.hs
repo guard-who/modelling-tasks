@@ -175,8 +175,10 @@ repairCdTask task = do
   enumerate show (phraseChange (withNames task) (withDirections task) . snd) $ changes task
   paragraph $ text
     [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
-  paragraph $ text
-    [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that options 0 and 9 each repair the given class diagram.|]
+  paragraph $ do
+    text [i|Answer by giving a comma separated list of all valid options, e.g. |]
+    code "[0, 9]"
+    text [i| would indicate that options 0 and 9 each repair the given class diagram.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
 
@@ -236,13 +238,13 @@ repairIncorrect config maxInsts to = do
   csm     <- shuffleM $ c0 : noChange : l1 .&. noChange : l1 : [e0]
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
 --  config' <- constrainConfig 5 config
-  let code = Changes.transformChanges config (toProperty e0) (Just config)
+  let alloyCode = Changes.transformChanges config (toProperty e0) (Just config)
         $ map toProperty cs
   when debug $ liftIO $ do
     putStrLn $ changeName e0
     print $ map changeName cs
-    writeFile "repair.als" code
-  instas  <- liftIO $ getInstances maxInsts to code
+    writeFile "repair.als" alloyCode
+  instas  <- liftIO $ getInstances maxInsts to alloyCode
   rinstas <- shuffleM instas
   getInstanceWithODs (map isValid cs) rinstas
   where

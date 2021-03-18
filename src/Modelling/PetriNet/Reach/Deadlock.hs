@@ -13,9 +13,10 @@ module Modelling.PetriNet.Reach.Deadlock where
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList, toList)
 
+
 import Modelling.Auxiliary.Output (
   LangM,
-  OutputMonad (assertion, image, paragraph, text),
+  OutputMonad (assertion, code, image, paragraph, text),
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (Property (Default), validate)
@@ -59,6 +60,14 @@ reportDeadlock path n = do
   paragraph $ text $ unlines [
     "eine Transitionsfolge,",
     "die zu eine Markierung ohne Nachfolger (Deadlock) führt."
+    ]
+  paragraph $ text "Geben Sie Ihre Lösung als Auflistung der folgenden Art an:"
+  code $ show [Transition 0, Transition 2, Transition 99]
+  paragraph $ text $ concat [
+    "Wobei diese Angabe bedeuten soll, dass nach dem Feuern von ",
+    show (Transition 0), " danach ", show (Transition 2),
+    " und schließlich ", show (Transition 99),
+    " (in genau dieser Reihenfolge) die gesuchte Markierung erreicht wird."
     ]
 
 initialDeadlock :: Net s a -> [a]

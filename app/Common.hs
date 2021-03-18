@@ -61,3 +61,4 @@ instance OutputMonad IO where
     indent $ text "No"
     error "refused"
   latex         = lift . putStrLn . ("LaTeX: " ++)
+  code          = lift . putStr . (\xs -> " <" ++ xs ++ "> ")
