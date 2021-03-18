@@ -171,7 +171,7 @@ findConflictEvaluation task =
 pickConcurrencyTask :: OutputMonad m => PickInstance -> LangM m
 pickConcurrencyTask task = do
   paragraph $ text
-    "Which of the following Petri nets has two transitions that are concurrently activated?"
+    "Which of the following Petri nets has exactly two transitions that are concurrently activated?"
   images show snd $ nets task
 
 pickEvaluation
@@ -184,7 +184,7 @@ pickEvaluation = multipleChoice "petri nets" . nets
 pickConflictTask :: OutputMonad m => PickInstance -> LangM m
 pickConflictTask task = do
   paragraph $ text
-    "Which of the following Petri nets has two transitions that are in conflict?"
+    "Which of the following Petri nets has exactly two transitions that are in conflict?"
   images show snd $ nets task
 
 findConcurrencyGenerate
