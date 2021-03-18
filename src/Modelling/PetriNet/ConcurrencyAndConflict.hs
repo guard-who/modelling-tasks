@@ -121,6 +121,7 @@ findConcurrencyTask task = do
     text "Stating as answer: "
     code [i|("t0", "t9")|]
     text " would indicate that transitions t0 and t9 are concurrently activated under the initial marking."
+    text " The order of transitions within the tuple does not matter here."
 
 findConcurrencyEvaluation
   :: OutputMonad m
@@ -167,6 +168,7 @@ findConflictTask task = do
     text "Stating as answer: "
     code [i|("t0", "t9")|]
     text " would indicate that transitions t0 and t9 are in conflict under the initial marking."
+    text " The order of transitions within the tuple does not matter here. "
 
 findConflictEvaluation
   :: OutputMonad m
