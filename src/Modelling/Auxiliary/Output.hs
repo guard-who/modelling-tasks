@@ -44,7 +44,7 @@ hoveringInformation :: OutputMonad m => LangM m
 hoveringInformation = english [i|Please note: Hovering over or clicking on edges or their labels highlights both parts.|]
 
 directionsAdvice :: OutputMonad m => LangM m
-directionsAdvice = english [i|As navigation directions are used, please note that aggregations and composition are only navigable from the "part" toward the "whole", i.e. they are not navigable in the opposite direction!|]
+directionsAdvice = english [i|As navigation directions are used, please note that aggregations and compositions are only navigable from the "part" toward the "whole", i.e. they are not navigable in the opposite direction!|]
 
 simplifiedInformation :: OutputMonad m => LangM m
 simplifiedInformation = english [i|Please note: Classes are represented simplified here.
