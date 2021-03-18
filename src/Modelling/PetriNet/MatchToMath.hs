@@ -350,29 +350,30 @@ mathToOutput f pm = paragraph $ do
   f $ placesMath pm
   english " and "
   f $ transitionsMath pm
-  english ", as well as:"
-  itemizeM $ f . fst <$> tokenChangeMath pm
-  itemizeM $ f . snd <$> tokenChangeMath pm
-  english "Furthermore, "
-  f $ initialMarkingMath pm
+  english ", as well as "
   case placeOrderMath pm of
     Nothing -> return ()
     Just o  -> do
       text " using the place ordering "
       f o
+  english ":"
+  itemizeM $ f . fst <$> tokenChangeMath pm
+  itemizeM $ f . snd <$> tokenChangeMath pm
+  english "Moreover, "
+  f $ initialMarkingMath pm
 
 mathToGraphTask :: OutputMonad m => MathToGraphInstance -> LangM m
 mathToGraphTask task = do
-  paragraph $ text "Consider this mathematical expression of a Petri net:"
+  paragraph $ text "Consider this mathematical representation of a Petri net:"
   mathToOutput latex $ from task
-  paragraph $ text "Which of the following graphical representations denotes this Petri net?"
+  paragraph $ text "Which of the following diagrams represents this Petri net?"
   images show snd $ to task
   paragraph $ text
-    [i|Please state your answer by giving the number of the matching representation only.|]
+    [i|Please state your answer by giving the number of the matching diagram only.|]
   paragraph $ do
     text [i|Stating |]
     code "9"
-    text [i| as answer would indicate that representation 9 matches the given mathematical representation (and the other graphical representations don't!).|]
+    text [i| as answer would indicate that diagram 9 matches the given mathematical representation (and the other diagrams don't!).|]
 
 graphToMathEvaluation
   :: OutputMonad m
