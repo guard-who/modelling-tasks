@@ -127,7 +127,7 @@ matchCdOdTask task = do
   paragraph $ text "Consider the following two class diagrams."
   images show id $ diagrams task
   paragraph $ text
-    [i|Which of the following five object diagrams conform to which class diagram?
+    [i|Which of the following five object diagrams conforms to which class diagrams?
 An object diagram can conform to neither, either, or both class diagrams.|]
   images (:[]) snd $ instances task
   paragraph $ do

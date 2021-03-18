@@ -62,7 +62,7 @@ selectValidCdTask task = do
   images show snd $ classDiagrams task
   paragraph $ text
     [i|Which of these class diagram candidates are valid class diagrams?
-Please state your answer by giving a list of numbers, stating all valid class diagrams.|]
+Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
   paragraph $ do
     text [i|For instance |]
     code "[0, 9]"
