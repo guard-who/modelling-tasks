@@ -176,7 +176,7 @@ repairCdTask task = do
   paragraph $ text
     [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
   paragraph $ text
-    [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that option 0 and 9 repair the given class diagram.|]
+    [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that options 0 and 9 each repair the given class diagram.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
 
