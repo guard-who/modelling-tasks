@@ -133,7 +133,7 @@ An object diagram can conform to neither, either, or both class diagrams.|]
   paragraph $ text
     [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
 Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
-For example [(0, "ab"), (1, "")] expresses that both, object diagram a and b are instances of class diagram 0 but not of class diagram 1.|]
+For example, [(0, "ab"), (1, "")] expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 0 and that none of the offered object diagrams are instances of class diagram 1.|]
   paragraph simplifiedInformation
   when (hasNavigations task) $ paragraph directionsAdvice
   paragraph hoveringInformation
