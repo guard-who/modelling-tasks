@@ -55,11 +55,11 @@ reportReach
   -> (Net s t, a)
   -> LangM m
 reportReach path (n,goal) = do
-  paragraph $ text "Gesucht ist für das Petri-Netz"
+  paragraph $ text "Gesucht ist für das Petrinetz"
   i <- drawToFile path 0 n
   image i
   paragraph $ do
-    text "eine Transitionsfolge, durch die der folgende Zustand erreicht wird:"
+    text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
     text $ show goal
 
 initialReach :: p -> (Net s a, b) -> [a]
@@ -71,7 +71,7 @@ totalReach :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
   -> [t]
   -> LangM m
 totalReach path (n,goal) ts = do
-  paragraph $ text "Startzustand"
+  paragraph $ text "Startmarkierung"
   indent $ text $ show (start n)
   out <- foldM
       (\z (k,t) -> do
@@ -79,7 +79,7 @@ totalReach path (n,goal) ts = do
          Modelling.PetriNet.Reach.Step.execute path k n t z)
       (start n)
       (zip [1 :: Int ..] ts)
-  assertion (out == goal) "Zielzustand erreicht?"
+  assertion (out == goal) "Zielmarkierung erreicht?"
 
 data Config = Config {
   numPlaces :: Int,

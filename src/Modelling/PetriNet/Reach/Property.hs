@@ -71,7 +71,7 @@ validate p n = case p of
     (S.size $ transitions n)
     m
   MaxInitialTokens m -> guardBound
-    "Anzahl der Token in Startzustand"
+    "Anzahl der Token unter Startmarkierung"
     (sum $ M.elems $ unState $ start n)
     m
   MaxEdgeMultiplicity m ->
@@ -105,10 +105,10 @@ validate p n = case p of
         refuse $ text $ "Als Kapazität ist vorgeschrieben:" ++ show cap
   Default -> do
     unless (allNonNegative $ start n) $
-      refuse $ text "Startzustand enthält negative Markierungen"
+      refuse $ text "Startmarkierung enthält negative Anzahl an Marken"
     unless (conforms (capacity n) (start n)) $
       refuse $
-        text "Startzustand überschreitet Kapazitäten"
+        text "Startmarkierung überschreitet Kapazitäten"
 
     forM_ (connections n) $ \c@(vor, t, nach) -> do
       unless (S.member t $ transitions n) $
@@ -140,7 +140,7 @@ validate p n = case p of
     let out = S.difference (M.keysSet $ unState $ start n) (places n)
     unless (S.null out) $
       refuse $ do
-        paragraph $ text "nicht definierte Stellen im Startzustand:"
+        paragraph $ text "nicht definierte Stellen der Startmarkierung:"
         paragraph $ text $ show out
 
 guardBound :: (Ord a, OutputMonad m, Show a) => String -> a -> a -> LangM m
@@ -148,4 +148,4 @@ guardBound name actual bound =
   when (actual > bound) $
     refuse $ do
       paragraph $ text $ name ++ '(' : show actual ++ ")"
-      paragraph $ text $ " ist größer als die Schranke" ++ show bound
+      paragraph $ text $ " ist größer als die Schranke " ++ show bound

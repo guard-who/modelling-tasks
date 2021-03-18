@@ -115,16 +115,16 @@ execute path i n t z0 = do
     [(vor, _, nach)] -> do
       let z1 = change pred vor z0
       paragraph $
-        text "Zwischenzustand (nach Einziehen der Marken im Vorbereich)"
+        text "Zwischenmarkierung (nach Einziehen der Marken im Vorbereich)"
       indent $ text $ show z1
       unless (allNonNegative z1) $ refuse $ text
         "enthält negative Markierungen (Transition war nicht aktiviert)"
       let z2 = change succ nach z1
       paragraph $ text
-        "Endzustand (nach Austeilen der Marken im Nachbereich)"
+        "Endmarkierung (nach Austeilen der Marken im Nachbereich)"
       indent $ text $ show z2
       unless (conforms (capacity n) z2) $ refuse $ text
-        "enthält Markierungen, die die Kapazität überschreiten"
+        "enthält mehr Marken, als die Kapazität zulässt"
       g <- drawToFile path i $ n {start = z2}
       image g
       return z2

@@ -53,12 +53,12 @@ reportDeadlock
   -> Net s t
   -> LangM m
 reportDeadlock path n = do
-  paragraph $ text "Gesucht ist für das Petri-Netz"
+  paragraph $ text "Gesucht ist für das Petrinetz"
   g <- drawToFile path 0 n
   image g
   paragraph $ text $ unlines [
     "eine Transitionsfolge,",
-    "die zu einem Zustand ohne Nachfolger (Deadlock) führt."
+    "die zu eine Markierung ohne Nachfolger (Deadlock) führt."
     ]
 
 initialDeadlock :: Net s a -> [a]
@@ -77,7 +77,7 @@ totalDeadlock path n ts = do
          Modelling.PetriNet.Reach.Step.execute path k n t z)
       (start n)
       (zip [1 :: Int ..] ts)
-  assertion (null $ successors n out) "Zielzustand hat keine Nachfolger?"
+  assertion (null $ successors n out) "Zielmarkierung hat keine Nachfolger?"
 
 data Config = Config {
   numPlaces :: Int,
