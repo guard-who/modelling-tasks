@@ -174,7 +174,7 @@ repairCdTask task = do
     [i|Which of the following changes would repair the class diagram?|]
   enumerate show (phraseChange (withNames task) (withDirections task) . snd) $ changes task
   paragraph $ text
-    [i|Please state your answer by giving a list of numbers, indicating all changes resulting in a valid class diagram.|]
+    [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
   paragraph $ text
     [i|Answer by giving a comma separated list of all valid options, e.g. [0, 9] would indicate that option 0 and 9 repair the given class diagram.|]
   paragraph simplifiedInformation
