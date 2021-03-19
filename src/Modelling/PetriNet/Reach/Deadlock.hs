@@ -59,7 +59,7 @@ reportDeadlock path n = do
   image g
   paragraph $ text $ unlines [
     "eine Transitionsfolge,",
-    "die zu eine Markierung ohne Nachfolger (Deadlock) führt."
+    "die zu einer Markierung ohne Nachfolger (Deadlock) führt."
     ]
   paragraph $ text "Geben Sie Ihre Lösung als Auflistung der folgenden Art an:"
   code $ show [Transition 0, Transition 2, Transition 99]

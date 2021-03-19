@@ -332,7 +332,7 @@ graphToMathTask task = do
   paragraph $ english "Consider this graphical representation of a Petri net:"
   image $ from task
   paragraph $ text
-    "Which of the following mathematical representation denotes this Petri net?"
+    "Which of the following mathematical representations denotes this Petri net?"
   enumerateM
     (text . (++ ". ") . show)
     $ second (mathToOutput latex . snd) <$> toList (to task)
@@ -341,7 +341,7 @@ graphToMathTask task = do
   paragraph $ do
     text [i|Stating |]
     code "9"
-    text [i| as answer would indicate that representation 9 matches the given graphical representation. (and the other mathematical representations don't!)|]
+    text [i| as answer would indicate that representation 9 matches the given graphical representation (and the other mathematical representations don't!).|]
 
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
 mathToOutput f pm = paragraph $ do

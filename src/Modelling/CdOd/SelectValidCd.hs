@@ -64,9 +64,9 @@ selectValidCdTask task = do
     [i|Which of these class diagram candidates are valid class diagrams?
 Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
   paragraph $ do
-    text [i|For instance |]
+    text [i|For example, |]
     code "[0, 9]"
-    text [i| would indicate that only class diagram 0 and 9 of the given class diagrams are valid class diagrams.|]
+    text [i| would indicate that only class diagram candidates 0 and 9 of the given ones are valid class diagrams.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
 

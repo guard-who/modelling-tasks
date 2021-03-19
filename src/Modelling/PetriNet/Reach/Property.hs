@@ -71,7 +71,7 @@ validate p n = case p of
     (S.size $ transitions n)
     m
   MaxInitialTokens m -> guardBound
-    "Anzahl der Token unter Startmarkierung"
+    "Anzahl der Token in Startmarkierung"
     (sum $ M.elems $ unState $ start n)
     m
   MaxEdgeMultiplicity m ->
