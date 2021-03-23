@@ -25,12 +25,13 @@ import Diagrams.Prelude                 (mkWidth)
 
 drawToFile
   :: (MonadIO m, Ord s, Ord t, Show s, Show t)
-  => FilePath
+  => Bool
+  -> FilePath
   -> Int
   -> Net s t
   -> LangM' m FilePath
-drawToFile path x net = do
-  graph <- lift $ liftIO $ runExceptT $ drawPetriWithDefaults net
+drawToFile hidePNames path x net = do
+  graph <- lift $ liftIO $ runExceptT $ drawPetriWithDefaults net hidePNames
   lift $ liftIO $ writeGraph path (show x) $ either error id graph
 
 writeGraph
@@ -46,8 +47,9 @@ writeGraph path index d = do
 drawPetriWithDefaults
   :: (Ord s, Ord t, Show s, Show t)
   => Net s t
+  -> Bool
   -> ExceptT String IO (Diagram B)
-drawPetriWithDefaults p = drawPetri p False False True Neato
+drawPetriWithDefaults p hidePNames = drawPetri p hidePNames False True Neato
 
 drawPetri
   :: (Ord s, Ord t, Show s, Show t)

@@ -55,7 +55,7 @@ reportDeadlock
   -> LangM m
 reportDeadlock path n = do
   paragraph $ text "Gesucht ist für das Petrinetz"
-  g <- drawToFile path 0 n
+  g <- drawToFile True path 0 n
   image g
   paragraph $ text $ unlines [
     "eine Transitionsfolge,",
@@ -83,7 +83,7 @@ totalDeadlock path n ts = do
   out <- foldM
       (\z (k,t) -> do
          paragraph $ text $ "Schritt" ++ show k
-         Modelling.PetriNet.Reach.Step.execute path k n t z)
+         Modelling.PetriNet.Reach.Step.execute path True k n t z)
       (start n)
       (zip [1 :: Int ..] ts)
   assertion (null $ successors n out) "Zielmarkierung hat keine Nachfolger?"

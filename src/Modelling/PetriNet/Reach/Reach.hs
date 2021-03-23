@@ -56,7 +56,7 @@ reportReach
   -> LangM m
 reportReach path (n,goal) = do
   paragraph $ text "Gesucht ist für das Petrinetz"
-  i <- drawToFile path 0 n
+  i <- drawToFile False path 0 n
   image i
   paragraph $ do
     text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
@@ -84,7 +84,7 @@ totalReach path (n,goal) ts = do
   out <- foldM
       (\z (k,t) -> do
          paragraph $ text $ "Schritt" ++ show k
-         Modelling.PetriNet.Reach.Step.execute path k n t z)
+         Modelling.PetriNet.Reach.Step.execute path False k n t z)
       (start n)
       (zip [1 :: Int ..] ts)
   assertion (out == goal) "Zielmarkierung erreicht?"
