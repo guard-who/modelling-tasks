@@ -64,10 +64,10 @@ reportReach path (n,goal) = do
   paragraph $ text "Geben Sie Ihre Lösung als Auflistung der folgenden Art an:"
   code $ show [Transition 0, Transition 2, Transition 99]
   paragraph $ text $ concat [
-    "Wobei diese Angabe bedeuten soll, dass nach dem Feuern von ",
-    show (Transition 0), " danach ", show (Transition 2),
-    " und schließlich ", show (Transition 99),
-    " (in genau dieser Reihenfolge) die gesuchte Markierung erreicht wird."
+    "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
+    show (Transition 0), ", danach ", show (Transition 2),
+    ", und schließlich ", show (Transition 99),
+    " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
     ]
 
 initialReach :: p -> (Net s a, b) -> [a]
