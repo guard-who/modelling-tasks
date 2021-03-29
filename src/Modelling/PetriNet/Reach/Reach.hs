@@ -62,11 +62,11 @@ reportReach path (n,goal) = do
     text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
     text $ show goal
   paragraph $ text "Geben Sie Ihre Lösung als Auflistung der folgenden Art an:"
-  code $ show [Transition 0, Transition 2, Transition 99]
+  code $ show [Transition 1, Transition 2, Transition 3]
   paragraph $ text $ concat [
     "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
-    show (Transition 0), ", danach ", show (Transition 2),
-    ", und schließlich ", show (Transition 99),
+    show (Transition 1), ", danach ", show (Transition 2),
+    ", und schließlich ", show (Transition 3),
     " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
     ]
 

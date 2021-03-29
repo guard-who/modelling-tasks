@@ -119,8 +119,8 @@ findConcurrencyTask task = do
   paragraph $ do
     text "Please state your answer by giving a tuple of concurrently activated transitions. "
     text "Stating as answer: "
-    code [i|("t0", "t9")|]
-    text " would indicate that transitions t0 and t9 are concurrently activated under the initial marking."
+    code [i|("t1", "t2")|]
+    text " would indicate that transitions t1 and t2 are concurrently activated under the initial marking."
     text " The order of transitions within the tuple does not matter here."
 
 findConcurrencyEvaluation
@@ -166,8 +166,8 @@ findConflictTask task = do
   paragraph $ do
     text "Please state your answer by giving a tuple of conflicting transitions. "
     text "Stating as answer: "
-    code [i|("t0", "t9")|]
-    text " would indicate that transitions t0 and t9 are in conflict under the initial marking."
+    code [i|("t1", "t2")|]
+    text " would indicate that transitions t1 and t2 are in conflict under the initial marking."
     text " The order of transitions within the tuple does not matter here. "
 
 findConflictEvaluation
@@ -189,8 +189,8 @@ pickConcurrencyTask task = do
     [i|Please state your answer by giving only the number of the Petri net having these concurrently activated transitions.|]
   paragraph $ do
     text [i|Stating |]
-    code "9"
-    text [i| as answer would indicate that Petri net 9 has exactly two transitions that are concurrently activated (and the other Petri nets don't!).|]
+    code "1"
+    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are concurrently activated (and the other Petri nets don't!).|]
 
 pickEvaluation
   :: OutputMonad m
@@ -208,8 +208,8 @@ pickConflictTask task = do
     [i|Please state your answer by giving only the number of the Petri net having these transitions in conflict.|]
   paragraph $ do
     text [i|Stating |]
-    code "9"
-    text [i| as answer would indicate that Petri net 9 has exactly two transitions that are in conflict (and the other Petri nets don't!).|]
+    code "1"
+    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are in conflict (and the other Petri nets don't!).|]
 
 findConcurrencyGenerate
   :: FindConcurrencyConfig

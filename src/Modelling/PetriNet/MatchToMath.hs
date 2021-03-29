@@ -340,8 +340,8 @@ graphToMathTask task = do
     [i|Please state your answer by giving the number of the matching representation only.|]
   paragraph $ do
     text [i|Stating |]
-    code "9"
-    text [i| as answer would indicate that representation 9 matches the given graphical representation (and the other mathematical representations don't!).|]
+    code "1"
+    text [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
 
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
 mathToOutput f pm = paragraph $ do
@@ -372,8 +372,8 @@ mathToGraphTask task = do
     [i|Please state your answer by giving the number of the matching diagram only.|]
   paragraph $ do
     text [i|Stating |]
-    code "9"
-    text [i| as answer would indicate that diagram 9 matches the given mathematical representation (and the other diagrams don't!).|]
+    code "1"
+    text [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]
 
 graphToMathEvaluation
   :: OutputMonad m
