@@ -82,9 +82,9 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
 
 differentNamesTask :: OutputMonad m => DifferentNamesInstance -> LangM m
 differentNamesTask task = do
-  paragraph $ text "Consider the following class diagram"
+  paragraph $ text "Consider the following class diagram:"
   image $ cDiagram task
-  paragraph $ text "and the following object diagram."
+  paragraph $ text "and the following object diagram (which conforms to it):"
   image $ oDiagram task
   paragraph $ do
     text [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
