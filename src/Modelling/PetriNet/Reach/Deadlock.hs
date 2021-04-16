@@ -61,7 +61,7 @@ reportDeadlock path n = do
     "eine Transitionsfolge,",
     "die zu einer Markierung ohne Nachfolger (Deadlock) führt."
     ]
-  paragraph $ text "Geben Sie Ihre Lösung als Auflistung der folgenden Art an:"
+  paragraph $ text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
   code $ show [Transition 1, Transition 2, Transition 3]
   paragraph $ text $ concat [
     "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",

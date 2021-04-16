@@ -61,7 +61,7 @@ reportReach path (n,goal) = do
   paragraph $ do
     text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
     text $ show goal
-  paragraph $ text "Geben Sie Ihre Lösung als Auflistung der folgenden Art an:"
+  paragraph $ text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
   code $ show [Transition 1, Transition 2, Transition 3]
   paragraph $ text $ concat [
     "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
