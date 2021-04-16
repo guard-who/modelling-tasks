@@ -117,11 +117,11 @@ findConcurrencyTask task = do
   image $ net task
   paragraph $ text "Which pair of transitions are concurrently activated under the initial marking?"
   paragraph $ do
-    text "Please state your answer by giving a tuple of concurrently activated transitions. "
+    text "Please state your answer by giving a pair of concurrently activated transitions. "
     text "Stating as answer: "
     code [i|("t1", "t2")|]
     text " would indicate that transitions t1 and t2 are concurrently activated under the initial marking."
-    text " The order of transitions within the tuple does not matter here."
+    text " The order of transitions within the pair does not matter here."
 
 findConcurrencyEvaluation
   :: OutputMonad m
@@ -164,11 +164,11 @@ findConflictTask task = do
   paragraph $ text
     "Which pair of transitions are in conflict under the initial marking?"
   paragraph $ do
-    text "Please state your answer by giving a tuple of conflicting transitions. "
+    text "Please state your answer by giving a pair of conflicting transitions. "
     text "Stating as answer: "
     code [i|("t1", "t2")|]
     text " would indicate that transitions t1 and t2 are in conflict under the initial marking."
-    text " The order of transitions within the tuple does not matter here. "
+    text " The order of transitions within the pair does not matter here. "
 
 findConflictEvaluation
   :: OutputMonad m
