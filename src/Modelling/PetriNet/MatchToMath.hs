@@ -289,9 +289,12 @@ matchToMath toOutput config segment = do
   (f, net, math) <- netMathInstance config segment
   fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
   fList' <- take (wrongInstances config) <$> shuffleM fList
-  alloyChanges <- lift $ except $ mapM addChange fList'
-  changes <- lift $ firstM toOutput `mapM` alloyChanges
-  return (net, math, changes)
+  if wrongInstances config == length fList'
+    then do
+    alloyChanges <- lift $ except $ mapM addChange fList'
+    changes <- lift $ firstM toOutput `mapM` alloyChanges
+    return (net, math, changes)
+    else matchToMath toOutput config segment
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
