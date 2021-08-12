@@ -231,12 +231,9 @@ limitSize (x, Just y ) = y - x
 allFlipTransformations
   :: ClassConfig -> Target -> [DiagramEdge] -> [[DiagramEdge]]
 allFlipTransformations _c t es =
-  [ e' : filter (e /=) es | e <- es, isTargetEdge e t
-                          , e'<- maybeToList $ maybeFlipEdge e]
+  [ flipEdge e : filter (e /=) es | e <- es, isTargetEdge e t ]
   where
-    maybeFlipEdge (s, e, k)
-      | Assoc Association _ sl el _ <- k, sl == el = Nothing
-      | otherwise                                  = Just (e, s, k)
+    flipEdge (s, e, k) = (e, s, k)
 
 allFromInheritances
   :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
