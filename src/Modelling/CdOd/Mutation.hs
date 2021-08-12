@@ -236,9 +236,7 @@ allFlipTransformations _c t es =
   where
     maybeFlipEdge (s, e, k)
       | Assoc Association _ sl el _ <- k, sl == el = Nothing
-      | otherwise                                  = Just (e, s, deleteName k)
-    deleteName Inheritance         = Inheritance
-    deleteName (Assoc k _ sl el b) = Assoc k "" sl el b
+      | otherwise                                  = Just (e, s, k)
 
 allFromInheritances
   :: ClassConfig -> Targets -> [DiagramEdge] -> [[DiagramEdge]]
