@@ -90,8 +90,8 @@ differentNamesTask task = do
   paragraph $ do
     text [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
 State your answer by giving a mapping of relationships in the CD to links in the OD.
-To state that "a" in the CD corresponds to "x" in the OD and "b" in the CD corresponds to "y" in the OD write it as:|]
-    code [i|[("a", "x"), ("b", "y")]|]
+To state that 'a' in the CD corresponds to 'x' in the OD and 'b' in the CD corresponds to 'y' in the OD write it as:|]
+    code $ show [('a', 'x'), ('b', 'y')]
   paragraph $ text
     [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
 Thus, every link name and every relationship name should occur exactly once in your mapping.|]
@@ -102,11 +102,11 @@ Thus, every link name and every relationship name should occur exactly once in y
 differentNamesEvaluation
   :: OutputMonad m
   => DifferentNamesInstance
-  -> [(String, String)]
+  -> [(Char, Char)]
   -> LangM m
 differentNamesEvaluation task cs = do
   paragraph $ text "Remarks on your solution:"
-  let cs' = nub $ sort cs
+  let cs' = nub $ sort $ sortPair <$> cs
       links = fst <$> cs'
       rels  = snd <$> cs'
   assertion (links == nub links) "No relationship is mapped twice?"
@@ -115,6 +115,8 @@ differentNamesEvaluation task cs = do
   assertion (null [c | c <- cs', c `notElem` ms])
     "Given mappings are correct?"
   assertion (cs' == ms) "Given mappings are exhaustive?"
+  where
+    sortPair (x, y) = ([min x y], [max x y])
 
 differentNames
   :: DifferentNamesConfig
