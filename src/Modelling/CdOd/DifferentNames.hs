@@ -127,7 +127,7 @@ differentNames
 differentNames config path segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cd, od, bm) <-
-    evalRandT (getDifferentNamesTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config) (timeout config)) g
+    evalRandT (getDifferentNamesTask config) g
   let backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
                        , t /= Association
                        , n <- BM.lookup n' bm]
@@ -148,16 +148,14 @@ reverseAssociation x = x
 
 getDifferentNamesTask
   :: RandomGen g
-  => ClassConfig
-  -> Int
-  -> Int
-  -> Maybe Integer
-  -> Maybe Int
+  => DifferentNamesConfig
   -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
-getDifferentNamesTask config maxObs sSpace maxIs to = do
-  configs <- withMinimalLabels 3 config
+getDifferentNamesTask config = do
+  configs <- withMinimalLabels 3 $ classConfig config
   continueWithHead configs $ \config' -> do
-    (names, edges') <- generate config' sSpace
+    (names, edges') <- generate
+      config'
+      $ searchSpace config
     let edges  = reverseAssociation <$> edges'
         cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = extractFourParts cd0
@@ -168,12 +166,14 @@ getDifferentNamesTask config maxObs sSpace maxIs to = do
         cds'   = zip [1 :: Integer ..] cds
         partss = map extractFourParts cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
-        onlyCd0 = createRunCommand runCmd (length names) maxObs
+        onlyCd0 = createRunCommand runCmd (length names) $ maxObjects config
         partss' = foldr mergeParts parts0 partss
     when debug . liftIO . void $ drawCd cd0
     when debug . liftIO . void $ drawCd `mapM_` cds'
-    instances  <- liftIO
-      $ getInstances maxIs to (combineParts partss' ++ onlyCd0)
+    instances  <- liftIO $ getInstances
+      (maxInstances config)
+      (timeout config)
+      (combineParts partss' ++ onlyCd0)
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
@@ -193,7 +193,7 @@ getDifferentNamesTask config maxObs sSpace maxIs to = do
       -> (a -> RandT g IO (Syntax, AlloyInstance, Bimap String String))
       -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
     continueWithHead []    _ =
-      getDifferentNamesTask config maxObs sSpace maxIs to
+      getDifferentNamesTask config
     continueWithHead (x:_) f = f x
     usedLabels :: AlloyInstance -> [String]
     usedLabels inst = either error id $ do
