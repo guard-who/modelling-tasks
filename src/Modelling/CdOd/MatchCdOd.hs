@@ -86,7 +86,6 @@ debug = False
 
 data MatchCdOdInstance = MatchCdOdInstance {
     diagrams       :: Map Int FilePath,
-    hasNavigations :: Bool,
     instances      :: Map Char ([Int], FilePath)
   } deriving (Generic, Show)
 
@@ -95,7 +94,6 @@ data MatchCdOdConfig = MatchCdOdConfig {
     maxObjects       :: Int,
     maxInstances     :: Maybe Integer,
     searchSpace      :: Int,
-    printNavigations :: Bool,
     timeout          :: Maybe Int
   } deriving Generic
 
@@ -111,7 +109,6 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
     maxObjects       = 4,
     maxInstances     = Nothing,
     searchSpace      = 10,
-    printNavigations = False,
     timeout          = Nothing
   }
 
@@ -137,7 +134,7 @@ For example, |]
     code [i|[(1, "ab"), (2, "")]|]
     text [i| expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 1 and that none of the offered object diagrams are instances of class diagram 2.|]
   paragraph simplifiedInformation
-  when (hasNavigations task) $ paragraph directionsAdvice
+  paragraph directionsAdvice
   paragraph hoveringInformation
 
 matchCdOdEvaluation
@@ -160,14 +157,10 @@ matchCdOd :: MatchCdOdConfig -> FilePath -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config path segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cds, ods) <- evalRandT (getRandomTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config) (timeout config)) g
-  let dirs
-        | printNavigations config =
-          foldr (M.union . getDirs . toEdges) M.empty cds
-        | otherwise               =
-          M.empty
-  cds' <- (\k c -> drawCdFromSyntax (printNavigations config) True Nothing c (cdFilename k) Svg) `M.traverseWithKey` cds
+  let dirs = foldr (M.union . getDirs . toEdges) M.empty cds
+  cds' <- (\k c -> drawCdFromSyntax True True Nothing c (cdFilename k) Svg) `M.traverseWithKey` cds
   ods' <- (\k (is,o) -> (is,) <$> drawOdFromInstance o Nothing dirs True (odFilename k is) Svg) `M.traverseWithKey` ods
-  return $ MatchCdOdInstance cds' (printNavigations config) ods'
+  return $ MatchCdOdInstance cds' ods'
   where
     cdFilename :: Int -> String
     cdFilename n    = [i|#{path}output-cd#{n}|]

@@ -19,7 +19,6 @@ main = do
             },
           maxObjects       = 4,
           maxInstances     = Nothing,
-          printNavigations = False,
           searchSpace      = 10,
           timeout          = Nothing
         }
