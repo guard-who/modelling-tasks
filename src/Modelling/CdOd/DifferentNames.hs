@@ -31,6 +31,7 @@ import Modelling.CdOd.Types (
   AssociationType (..),
   ClassConfig (..),
   Connection (..),
+  DiagramEdge,
   Syntax,
   toOldSyntax,
   )
@@ -138,6 +139,11 @@ differentNames config path segment seed = do
   od' <- drawOdFromInstance od (Just 1000) navigations True (path ++ "-od") Svg
   return $ DifferentNamesInstance cd' od' bm
 
+reverseAssociation :: DiagramEdge -> DiagramEdge
+reverseAssociation (from, to, e@(Assoc Association _ _ _ _)) =
+  (to, from, e)
+reverseAssociation x = x
+
 getDifferentNamesTask
   :: RandomGen g
   => ClassConfig
@@ -149,8 +155,9 @@ getDifferentNamesTask
 getDifferentNamesTask config maxObs sSpace maxIs to = do
   configs <- withMinimalLabels 3 config
   continueWithHead configs $ \config' -> do
-    (names, edges) <- generate config' sSpace
-    let cd0    = (0 :: Integer, fromEdges names edges)
+    (names, edges') <- generate config' sSpace
+    let edges  = reverseAssociation <$> edges'
+        cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = extractFourParts cd0
         labels = [l | (_, l, _, _, _, _) <- snd $ snd cd0]
         cds    = map
