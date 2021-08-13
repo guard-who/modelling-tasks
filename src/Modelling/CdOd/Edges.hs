@@ -8,7 +8,11 @@ module Modelling.CdOd.Edges (
   -- ** Check sets (reusing single checks)
   checkMultiEdge, checkObvious,
   -- ** Single checks
-  compositionCycles, doubleConnections, inheritanceCycles, multipleInheritances,
+  compositionCycles,
+  doubleConnections,
+  hasAssociationAtOneSuperclass,
+  inheritanceCycles,
+  multipleInheritances,
   selfEdges, wrongLimits,
   anyMarkedEdge, shouldBeMarked
   ) where
@@ -154,3 +158,13 @@ checkObvious :: [DiagramEdge] -> Bool
 checkObvious cs =
      null (selfEdges cs)
   && null (wrongLimits cs)
+
+hasAssociationAtOneSuperclass :: [String] -> [DiagramEdge] -> Bool
+hasAssociationAtOneSuperclass cs es = any inheritanceHasOtherEdge cs
+  where
+    inheritanceHasOtherEdge x = any (x `isInheritedUsing`) es
+      && any (x `hasAssociation`) es
+    isInheritedUsing x (_, e, Inheritance) = x == e
+    isInheritedUsing _ _                   = False
+    hasAssociation _ (_, _, Inheritance) = False
+    hasAssociation x (s, e, _)           = x == s || x == e

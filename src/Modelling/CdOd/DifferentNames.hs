@@ -61,6 +61,7 @@ data DifferentNamesInstance = DifferentNamesInstance {
 data DifferentNamesConfig = DifferentNamesConfig {
     classConfig      :: ClassConfig,
     maxObjects       :: Int,
+    withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
     searchSpace      :: Int,
     timeout          :: Maybe Int
@@ -76,6 +77,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         inheritances = (1, Just 2)
       },
     maxObjects       = 4,
+    withNonTrivialInheritance = Nothing,
     maxInstances     = Nothing,
     searchSpace      = 10,
     timeout          = Nothing
@@ -154,6 +156,7 @@ getDifferentNamesTask config = do
   configs <- withMinimalLabels 3 $ classConfig config
   continueWithHead configs $ \config' -> do
     (names, edges') <- generate
+      (withNonTrivialInheritance config)
       config'
       $ searchSpace config
     let edges  = reverseAssociation <$> edges'

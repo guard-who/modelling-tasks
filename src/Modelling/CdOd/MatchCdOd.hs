@@ -245,7 +245,7 @@ applyChanges insta = do
 
 getRandomCDs :: RandomGen g => ClassConfig -> Int -> RandT g IO (Syntax, Syntax, Syntax, Int)
 getRandomCDs config search = do
-  (names, edges) <- generate config search
+  (names, edges) <- generate Nothing config search
   let cd0 = fromEdges names edges
   -- continueIf (not (anyMarkedEdge cd0)) $ do
   when debug . liftIO . void $ drawCdFromSyntax False True (Just redColor) cd0 "debug-0" Pdf

@@ -2,15 +2,23 @@ module Modelling.CdOd.Generate (
   generate,
   ) where
 
-import Modelling.CdOd.Edges             (checkMultiEdge)
+import Modelling.CdOd.Edges             (
+  checkMultiEdge,
+  hasAssociationAtOneSuperclass
+  )
 import Modelling.CdOd.Types
   (AssociationType (..), ClassConfig (..), Connection (..), DiagramEdge)
 
 import Control.Arrow                    (second)
 import Control.Monad.Random             (MonadRandom, getRandomR)
 
-generate :: MonadRandom m => ClassConfig -> Int -> m ([String], [DiagramEdge])
-generate c searchSpace = do
+generate
+  :: MonadRandom m
+  => Maybe Bool
+  -> ClassConfig
+  -> Int
+  -> m ([String], [DiagramEdge])
+generate withNonTrivialInheritance c searchSpace = do
   ncls <- oneOfFirst searchSpace $ toAvailable $ second Just $ classes c
   nins <- oneOfFirst searchSpace $ toAvailable $ inheritances c
   ncos <- oneOfFirst searchSpace $ toAvailable $ compositions c
@@ -20,12 +28,18 @@ generate c searchSpace = do
     then do
       let names = classNames ncls
       es <- generateEdges names nins ncos nass nags
-      return (names, nameEdges es)
-    else if smallerC == c
-         then error $ "it seems to be impossible to generate such a model"
-              ++ "; check your configuration"
-         else generate smallerC searchSpace
+      let done = return (names, nameEdges es)
+      flip (maybe done) withNonTrivialInheritance $ \b ->
+        if (if b then id else not) $ hasAssociationAtOneSuperclass names es
+        then done
+        else retry
+    else retry
   where
+    retry =
+      if smallerC == c
+      then error $ "it seems to be impossible to generate such a model"
+           ++ "; check your configuration"
+      else generate withNonTrivialInheritance smallerC searchSpace
     smallerC = shrink c searchSpace
     classNames x = map (:[]) $ take x ['A'..]
     toAvailable :: (Int, Maybe Int) -> [Int]
@@ -45,6 +59,8 @@ generate c searchSpace = do
     isPossible cla inh com ass agg
       | inh >= cla                                      = False
       | cla * (cla - 1) `div` 2 < inh + com + ass + agg = False
+      | withNonTrivialInheritance == Just True
+      , inh == 0 || com + ass + agg == 0                = False
       | otherwise                                       = True
 
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
