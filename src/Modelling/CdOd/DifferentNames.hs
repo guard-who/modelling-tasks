@@ -223,6 +223,7 @@ getDifferentNamesTask config = do
 withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
 withMinimalLabels n config
   | n <= lowerLimit = return [config]
+  | Just u <- upperLimit, n > u = return [config]
   | otherwise       = shuffleM
     [ config {
         aggregations = (aggrs, snd (aggregations config)),
@@ -233,6 +234,10 @@ withMinimalLabels n config
     , assos <- range associations  0                          (n - aggrs)
     , comps <- range compositions (max 0 $ n - aggrs - assos) (n - aggrs - assos)]
   where
+    upperLimit = (\x y z -> x + y + z)
+      <$> snd (aggregations config)
+      <*> snd (associations config)
+      <*> snd (compositions config)
     lowerLimit = 0
       + fst (aggregations config)
       + fst (associations config)
