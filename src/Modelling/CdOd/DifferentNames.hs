@@ -11,7 +11,7 @@ module Modelling.CdOd.DifferentNames (
   ) where
 
 import qualified Data.Bimap                       as BM
-  (filter, fromList, lookup, toList, twist)
+  (filter, fromList, lookup, toList, twist, lookupR)
 import qualified Data.Map                         as M (empty, insert)
 import qualified Data.Set                         as S (toList)
 
@@ -40,9 +40,11 @@ import Control.Monad                    (void, when)
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
+import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (nub, permutations, sort)
+import Data.Maybe                       (catMaybes, isJust)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call
@@ -108,17 +110,30 @@ differentNamesEvaluation
   -> LangM m
 differentNamesEvaluation task cs = do
   paragraph $ text "Remarks on your solution:"
-  let cs' = nub $ sort $ sortPair <$> cs
-      links = fst <$> cs'
-      rels  = snd <$> cs'
-  assertion (links == nub links) "No relationship is mapped twice?"
-  assertion (rels == nub rels) "No link is mapped twice?"
+  let ss = catMaybes $ readMapping . bimap (:[]) (:[]) <$> cs
+  assertion (length ss == length cs)
+    "All provided pairs are linking a valid link and a valid relationship"
+  let cs' = catMaybes $ readValidMapping . bimap (:[]) (:[]) <$> cs
   let ms = BM.toList $ mapping task
-  assertion (null [c | c <- cs', c `notElem` ms])
+  assertion (length cs' == length ss)
     "Given mappings are correct?"
-  assertion (cs' == ms) "Given mappings are exhaustive?"
+  assertion (nub (sort cs') == ms) "Given mappings are exhaustive?"
   where
-    sortPair (x, y) = ([min x y], [max x y])
+    m = mapping task
+    readMapping (x, y)
+      | isJust $ BM.lookup x m, isJust $ BM.lookupR y m
+      = Just (x, y)
+      | isJust $ BM.lookup y m, isJust $ BM.lookupR x m
+      = Just (y, x)
+      | otherwise
+      = Nothing
+    readValidMapping (x, y)
+      | Just y' <- BM.lookup x m, isJust $ BM.lookupR y m, y' == y
+      = Just (x, y)
+      | Just x' <- BM.lookup y m, isJust $ BM.lookupR x m, x' == x
+      = Just (y, x)
+      | otherwise
+      = Nothing
 
 differentNames
   :: DifferentNamesConfig
