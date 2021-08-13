@@ -54,7 +54,7 @@ evaluateDifferentNames
   -> [(Char, Char)]
   -- ^ submitted mapping
   -> Either String ()
-evaluateDifferentNames cs cs' = do
+evaluateDifferentNames cs cs' =
   flip withLang English $ differentNamesEvaluation
     DifferentNamesInstance {
       cDiagram = error "cDiagram is undefined",
