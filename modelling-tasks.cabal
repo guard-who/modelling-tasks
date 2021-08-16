@@ -474,6 +474,7 @@ test-suite modelling-tasks-test
   main-is: Spec.hs
   other-modules:
       Modelling.CdOd.DifferentNamesSpec
+      Modelling.CdOd.GenerateSpec
       Modelling.Common
       Modelling.PetriNet.AlloySpec
       Modelling.PetriNet.BasicNetFunctionsSpec
