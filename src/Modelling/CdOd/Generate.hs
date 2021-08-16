@@ -1,16 +1,20 @@
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.Generate (
   generate,
   ) where
 
 import Modelling.CdOd.Edges             (
   checkMultiEdge,
-  hasAssociationAtOneSuperclass
   )
 import Modelling.CdOd.Types
   (AssociationType (..), ClassConfig (..), Connection (..), DiagramEdge)
 
 import Control.Arrow                    (second)
 import Control.Monad.Random             (MonadRandom, getRandomR)
+import Data.List                        (delete, nub)
+import Data.Maybe                       (isNothing)
+import Data.Tuple                       (swap)
+import System.Random.Shuffle            (shuffleM)
 
 generate
   :: MonadRandom m
@@ -26,13 +30,9 @@ generate withNonTrivialInheritance c searchSpace = do
   nags <- oneOfFirst searchSpace $ toAvailable $ aggregations c
   if isPossible ncls nins ncos nass nags
     then do
-      let names = classNames ncls
-      es <- generateEdges names nins ncos nass nags
-      let done = return (names, nameEdges es)
-      flip (maybe done) withNonTrivialInheritance $ \b ->
-        if (if b then id else not) $ hasAssociationAtOneSuperclass names es
-        then done
-        else retry
+      names <- shuffleM $ classNames ncls
+      es <- generateEdges withNonTrivialInheritance names nins ncos nass nags
+      maybe retry (return . (names,) . nameEdges) es
     else retry
   where
     retry =
@@ -61,6 +61,8 @@ generate withNonTrivialInheritance c searchSpace = do
       | cla * (cla - 1) `div` 2 < inh + com + ass + agg = False
       | withNonTrivialInheritance == Just True
       , inh == 0 || com + ass + agg == 0                = False
+      | withNonTrivialInheritance == Just False
+      , (cla - inh) * (cla - inh - 1) `div` 2 < com + ass + agg = False
       | otherwise                                       = True
 
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
@@ -69,38 +71,95 @@ nameEdges es =
   ++ [(s, e, Assoc k [n] m1 m2 b)
      | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] es]
 
+data GenerationConfig = GenerationConfig {
+  available               :: [(String, String)],
+  -- ^ still available edges
+  withNoFurtherConnection :: Bool,
+  -- ^ if superclasses shall have no further connections
+  withConnection          :: Maybe (String, Int)
+  -- ^ a class name which shall be superclass
+  --   and how many steps before connection shall be created
+  --   in order to choose any of composition / association / aggregation
+  } deriving Show
+
+next :: GenerationConfig -> GenerationConfig
+next conf = conf {
+  withConnection = second (\x -> x - 1) <$> withConnection conf
+  }
+
+deletePair :: (String, String) -> GenerationConfig -> GenerationConfig
+deletePair t conf = conf { available = delete t $ available conf }
+
+deleteAllForClass :: String -> GenerationConfig -> GenerationConfig
+deleteAllForClass c conf = conf {
+  available = [(x, y) | (x, y) <- available conf, c /= x, c /= y]
+  }
+
 generateEdges
   :: MonadRandom m
-  => [String]
+  => Maybe Bool
+  -- ^ whether superclasses shall have non trivial inheritances
+  -> [String]
   -> Int
   -> Int
   -> Int
   -> Int
-  -> m [DiagramEdge]
-generateEdges classs inh com ass agg =
-  foldl (\es t -> es >>= flip generateEdge t) (return []) $
-    replicate inh Nothing
+  -> m (Maybe [DiagramEdge])
+generateEdges wnti classs inh com ass agg = fmap (fmap snd) $ foldl
+  (\es t -> es >>= maybe (return Nothing) (`generateEdge` t))
+  (Just . (, []) <$> getConfig)
+  $ replicate inh Nothing
     ++ replicate com (Just Composition)
     ++ replicate ass (Just Association)
     ++ replicate agg (Just Aggregation)
   where
-    oneOf :: MonadRandom m => [a] -> m a
-    oneOf xs = do
+    getConfig = do
+      step <- oneOf $ nub [inh, inh + com, inh + com + ass]
+      return $ GenerationConfig {
+        available = [(x, y) | x <- classs, y <- classs, x > y],
+        withNoFurtherConnection = maybe False not wnti,
+        withConnection          = case wnti of
+          Just True -> Just (head classs, step)
+          _         -> Nothing
+        }
+
+oneOf :: MonadRandom m => [a] -> m a
+oneOf xs = do
       x <- getRandomR (0, length xs - 1)
       return $ xs !! x
-    generateEdge
+
+generateEdge
       :: MonadRandom m
-      => [DiagramEdge]
+      => (GenerationConfig, [DiagramEdge])
       -> Maybe AssociationType
-      -> m [DiagramEdge]
-    generateEdge cs mt = do
-      s <- oneOf classs
-      e <- oneOf $ filter (s /=) classs
+      -> m (Maybe (GenerationConfig, [DiagramEdge]))
+generateEdge (conf, cs) mt
+  | null cs, isNothing mt, Just (cl, _) <- withConnection conf = do
+      t <- oneOf [ (x, y) | (x, y) <- available conf, x == cl || y == cl]
+      let (s, e) = if fst t == cl then swap t else t
+      finish (deletePair t conf, [(s, e, Inheritance)])
+  | otherwise = do
+      t <- oneOf $ case withConnection conf of
+        Just (cl, 0) ->
+          let required = [(x, y) | (x, y) <- available conf, x == cl || y == cl]
+              hasRequiredAlready = null required
+          in if hasRequiredAlready then available conf else required
+        _            -> available conf
+      b <- oneOf [True, False]
+      let (s, e) = if b then t else swap t
       l <- generateLimits mt
       let c = (s, e, l)
       if checkMultiEdge $ c:cs
-        then return $ c:cs
-        else generateEdge cs mt
+        then do
+        let del = if isNothing mt && withNoFurtherConnection conf
+              then deleteAllForClass e
+              else deletePair t
+        finish (del conf, c:cs)
+        else generateEdge (conf, cs) mt
+  where
+    finish (gc, des)
+      | null (available conf) = return Nothing
+      | otherwise             = return $ Just (next gc, des)
     generateLimits :: MonadRandom m => Maybe AssociationType -> m Connection
     generateLimits Nothing            = return Inheritance
     generateLimits (Just Composition) = do
