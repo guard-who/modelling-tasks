@@ -21,7 +21,7 @@ import Modelling.Auxiliary.Output (
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (Property (Default), validate)
 import Modelling.PetriNet.Reach.Roll    (net)
-import Modelling.PetriNet.Reach.Step    (deadlocks, execute, successors)
+import Modelling.PetriNet.Reach.Step    (deadlocks, executes, successors)
 import Modelling.PetriNet.Reach.Type (
   Transition (..),
   Place (..),
@@ -30,7 +30,7 @@ import Modelling.PetriNet.Reach.Type (
   State (State),
   )
 
-import Control.Monad                    (foldM, forM, guard)
+import Control.Monad                    (forM, guard)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
 import Data.List                        (maximumBy)
@@ -80,12 +80,7 @@ totalDeadlock
   -> [t]
   -> LangM m
 totalDeadlock path n ts = do
-  out <- foldM
-      (\z (k,t) -> do
-         paragraph $ text $ "Schritt" ++ show k
-         Modelling.PetriNet.Reach.Step.execute path True k n t z)
-      (start n)
-      (zip [1 :: Int ..] ts)
+  out <- executes path True n ts
   assertion (null $ successors n out) "Zielmarkierung hat keine Nachfolger?"
 
 data Config = Config {

@@ -26,8 +26,11 @@ import qualified Data.Set                         as S (
 
 import Modelling.Auxiliary.Output (
   LangM,
+  LangM' (withLang),
+  Language (English),
   OutputMonad(indent, paragraph, refuse, text),
   )
+import Modelling.PetriNet.Reach.Step    (execute)
 import Modelling.PetriNet.Reach.Type (
   Net (capacity, connections, places, start, transitions),
   Capacity (..),
@@ -36,7 +39,8 @@ import Modelling.PetriNet.Reach.Type (
   conforms,
   )
 
-import Control.Monad                    (forM, forM_, unless, when)
+import Control.Monad                    (foldM, forM, forM_, unless, when)
+import Data.Either                      (fromLeft)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
 
@@ -149,3 +153,23 @@ guardBound name actual bound =
     refuse $ do
       paragraph $ text $ name ++ '(' : show actual ++ ")"
       paragraph $ text $ " ist größer als die Schranke " ++ show bound
+
+{-|
+Checks if the given predicate @p@ is satisfied after (partial) execution
+of the given sequence.
+-}
+satisfiesAtAnyState
+  :: (Ord s, Ord t, Show s, Show t)
+  => (State s -> Bool)
+  -> Net s t
+  -> [t]
+  -> Bool
+satisfiesAtAnyState p n ts =
+  (p (start n) ||) .
+  fromLeft False $ foldM
+    (\z t -> case execute n t z `withLang` English of
+        Nothing -> Left False
+        Just z' -> if p z' then Left True else return z'
+    )
+    (start n)
+    ts

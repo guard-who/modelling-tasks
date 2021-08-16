@@ -31,7 +31,7 @@ module Modelling.Auxiliary.Output (
 
 import qualified Data.Map as M
 
-import Control.Monad (when)
+import Control.Monad                    (foldM, unless, when)
 import Control.Monad.Trans (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (MonadWriter (pass, tell), Writer, execWriter,)
@@ -184,3 +184,17 @@ toAbort r = Report $ do
 
 mapLangM :: (m a -> m b) -> LangM' m a -> LangM' m b
 mapLangM f om = LangM $ f . withLang om
+
+instance OutputMonad Maybe where
+  assertion b _   = unless b $ lift Nothing
+  enumerate _ _ _ = return ()
+  image _         = return ()
+  images _ _ _    = return ()
+  paragraph xs    = xs
+  refuse xs       = xs >> lift Nothing
+  text _          = return ()
+  enumerateM f xs = (\(x, y) -> f x >> y) `mapM_` xs
+  itemizeM xs     = foldM ((>>) . return) () xs
+  indent xs       = xs
+  latex _         = return ()
+  code _          = return ()

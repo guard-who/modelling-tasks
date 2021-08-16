@@ -92,12 +92,12 @@ executes
 executes path hidePNames n ts = foldM
   (\z (k, t) -> do
       paragraph $ text $ "Schritt" ++ show k
-      Modelling.PetriNet.Reach.Step.execute path hidePNames k n t z
+      Modelling.PetriNet.Reach.Step.executeIO path hidePNames k n t z
   )
   (start n)
   (zip [1 :: Int ..] ts)
 
-execute
+executeIO
   :: (MonadIO m, OutputMonad m, Show a, Show k, Ord a, Ord k)
   => FilePath
   -> Bool
@@ -106,7 +106,19 @@ execute
   -> a
   -> State k
   -> LangM' m (State k)
-execute path hidePNames i n t z0 = do
+executeIO path hidePNames i n t z0 = do
+  z2 <- execute n t z0
+  g <- drawToFile hidePNames path i $ n {start = z2}
+  image g
+  return z2
+
+execute
+  :: (OutputMonad m, Show a, Show k, Ord a, Ord k)
+  => Net k a
+  -> a
+  -> State k
+  -> LangM' m (State k)
+execute n t z0 = do
   paragraph $ text $ "Transition " ++ show t
   let cs = do
         c@(_, t', _) <- connections n
@@ -127,8 +139,6 @@ execute path hidePNames i n t z0 = do
       indent $ text $ show z2
       unless (conforms (capacity n) z2) $ refuse $ text
         "enthält mehr Marken, als die Kapazität zulässt"
-      g <- drawToFile hidePNames path i $ n {start = z2}
-      image g
       return z2
     _ -> undefined -- TODO Patern match not required?
 

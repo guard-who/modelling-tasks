@@ -17,9 +17,12 @@ import Modelling.Auxiliary.Output (
   OutputMonad (assertion, code, image, indent, paragraph, text),
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
-import Modelling.PetriNet.Reach.Property (Property (Default), validate)
+import Modelling.PetriNet.Reach.Property (
+  Property (Default),
+  validate,
+  )
 import Modelling.PetriNet.Reach.Roll    (net)
-import Modelling.PetriNet.Reach.Step    (execute, levels)
+import Modelling.PetriNet.Reach.Step    (executes, levels)
 import Modelling.PetriNet.Reach.Type (
   Transition (..),
   Place(..),
@@ -29,7 +32,7 @@ import Modelling.PetriNet.Reach.Type (
   mark,
   )
 
-import Control.Monad                    (foldM, forM)
+import Control.Monad                    (forM)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
@@ -81,12 +84,7 @@ totalReach :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
 totalReach path (n,goal) ts = do
   paragraph $ text "Startmarkierung"
   indent $ text $ show (start n)
-  out <- foldM
-      (\z (k,t) -> do
-         paragraph $ text $ "Schritt" ++ show k
-         Modelling.PetriNet.Reach.Step.execute path False k n t z)
-      (start n)
-      (zip [1 :: Int ..] ts)
+  out <- executes path False n ts
   assertion (out == goal) "Zielmarkierung erreicht?"
 
 data Config = Config {
