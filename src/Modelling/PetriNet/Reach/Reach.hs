@@ -91,7 +91,8 @@ data Config = Config {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
-  transitionLength :: Int
+  maxTransitionLength :: Int,
+  minTransitionLength :: Int
   }
   deriving (Typeable, Generic)
 
@@ -100,7 +101,8 @@ defaultReachConfig = Config {
   numPlaces = 4,
   numTransitions = 4,
   Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
-  transitionLength = 8
+  maxTransitionLength = 8,
+  minTransitionLength = 6
   }
 
 generateReach :: Config -> Int -> (Net Place Transition, State Place)
@@ -114,7 +116,7 @@ generateReach conf seed =
             (Modelling.PetriNet.Reach.Reach.capacity conf)
         return $ do
           (l,zs) <-
-            take (transitionLength conf + 1) $ zip [0 :: Int ..] $ levels n
+            take (maxTransitionLength conf + 1) $ zip [0 :: Int ..] $ levels n
           z' <- zs
           let d = sum $ do
                 p <- ps

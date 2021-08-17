@@ -48,13 +48,13 @@ library
       Modelling.PetriNet.ConcurrencyAndConflict
       Modelling.PetriNet.BasicNetFunctions
       Modelling.PetriNet.Reach.Deadlock
-      Modelling.PetriNet.Reach.Reach
-  other-modules:
-      Modelling.PetriNet.Reach.Draw
       Modelling.PetriNet.Reach.Property
-      Modelling.PetriNet.Reach.Roll
+      Modelling.PetriNet.Reach.Reach
       Modelling.PetriNet.Reach.Step
       Modelling.PetriNet.Reach.Type
+  other-modules:
+      Modelling.PetriNet.Reach.Draw
+      Modelling.PetriNet.Reach.Roll
       Paths_modelling_tasks
   hs-source-dirs:
       src
@@ -481,6 +481,8 @@ test-suite modelling-tasks-test
       Modelling.PetriNet.ConcurrencyAndConflictSpec
       Modelling.PetriNet.DiagramSpec
       Modelling.PetriNet.MatchToMathSpec
+      Modelling.PetriNet.Reach.DeadlockSpec
+      Modelling.PetriNet.Reach.ReachSpec
       Modelling.PetriNet.TestCommon
       Settings
       Paths_modelling_tasks

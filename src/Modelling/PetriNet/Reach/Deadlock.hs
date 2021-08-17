@@ -87,7 +87,8 @@ data Config = Config {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
-  maxTransitionLength :: Int
+  maxTransitionLength :: Int,
+  minTransitionLength :: Int
   }
   deriving (Typeable, Generic)
 
@@ -97,7 +98,8 @@ defaultDeadlockConfig =
   numPlaces = 4,
   numTransitions = 4,
   Modelling.PetriNet.Reach.Deadlock.capacity = Unbounded,
-  maxTransitionLength = 10
+  maxTransitionLength = 10,
+  minTransitionLength = 8
   }
 
 generateDeadlock :: Config -> Int -> Net Place Transition

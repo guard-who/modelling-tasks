@@ -69,7 +69,10 @@ library:
     - Modelling.PetriNet.ConcurrencyAndConflict
     - Modelling.PetriNet.BasicNetFunctions
     - Modelling.PetriNet.Reach.Deadlock
+    - Modelling.PetriNet.Reach.Property
     - Modelling.PetriNet.Reach.Reach
+    - Modelling.PetriNet.Reach.Step
+    - Modelling.PetriNet.Reach.Type
 executables:
   cd2alloy:
     main: cd2alloy.hs
