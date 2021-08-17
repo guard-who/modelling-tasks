@@ -2,6 +2,7 @@ module Modelling.PetriNet.Reach.DeadlockSpec where
 
 import Modelling.PetriNet.Reach.Deadlock (
   Config (..),
+  DeadlockInstance (..),
   defaultDeadlockConfig,
   generateDeadlock,
   )
@@ -25,7 +26,7 @@ spec =
               minTransitionLength = 6
               }
             minL = minTransitionLength config
-            n = generateDeadlock config seed
+            n = petriNet $ generateDeadlock config seed
             ts = transitions n
         in n `shouldSatisfy`
            hasMinTransitionLength (null . successors n) ts minL

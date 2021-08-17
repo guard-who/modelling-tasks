@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 {-|
 originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
@@ -39,6 +40,7 @@ import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
 import Data.List                        (maximumBy)
 import Data.Ord                         (comparing)
 import Data.Typeable                    (Typeable)
+import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 
 data PetriDeadlock = PetriDeadlock
@@ -54,17 +56,23 @@ verifyDeadlock PetriDeadlock = validate Default
 reportDeadlock
   :: (OutputMonad m, MonadIO m, Ord s, Ord t, Show s, Show t)
   => FilePath
-  -> Net s t
+  -> DeadlockInstance s t
   -> LangM m
-reportDeadlock path n = do
+reportDeadlock path inst = do
   paragraph $ text "Gesucht ist für das Petrinetz"
-  g <- drawToFile True path 0 n
+  g <- drawToFile True path 0 $ petriNet inst
   image g
   paragraph $ text $ unlines [
     "eine Transitionsfolge,",
     "die zu einer Markierung ohne Nachfolger (Deadlock) führt."
     ]
-  paragraph $ text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
+  paragraph $ case noLongerThan inst of
+    Nothing -> do
+      text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
+    Just maxL -> do
+      text $ concat [
+        "Geben Sie Ihre Lösung als maximal ", show maxL,
+        "-elementige Auflistung der folgenden Art an:"]
   code $ show [Transition 1, Transition 2, Transition 3]
   paragraph $ text $ concat [
     "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
@@ -72,26 +80,45 @@ reportDeadlock path n = do
     ", und schließlich ", show (Transition 3),
     " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
     ]
+  (`mapM_` withLengthHint inst) $ \len -> paragraph $ text
+    [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{len} Transitionen.|]
+  (`mapM_` withMinLengthHint inst) $ \len -> paragraph $ text
+    [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
 
-initialDeadlock :: Net s a -> [a]
-initialDeadlock n = reverse $ S.toList $ transitions n
+initialDeadlock :: DeadlockInstance s a -> [a]
+initialDeadlock inst = reverse $ S.toList $ transitions $ petriNet inst
 
 totalDeadlock
   :: (OutputMonad m, MonadIO m, Show t, Show s, Ord t, Ord s)
   => FilePath
-  -> Net s t
+  -> DeadlockInstance s t
   -> [t]
   -> LangM m
-totalDeadlock path n ts = do
+totalDeadlock path inst ts = do
+  (`mapM_` noLongerThan inst) $ \maxL ->
+    assertion (length ts <= maxL) $
+      unwords ["Nicht mehr als", show maxL, "Transitionen"]
   out <- executes path True n ts
   assertion (null $ successors n out) "Zielmarkierung hat keine Nachfolger?"
+  where
+    n = petriNet inst
+
+data DeadlockInstance s t = DeadlockInstance {
+  noLongerThan      :: Maybe Int,
+  petriNet          :: Net s t,
+  withLengthHint    :: Maybe Int,
+  withMinLengthHint :: Maybe Int
+  } deriving (Typeable, Generic)
 
 data Config = Config {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
   maxTransitionLength :: Int,
-  minTransitionLength :: Int
+  minTransitionLength :: Int,
+  rejectLongerThan    :: Maybe Int,
+  showLengthHint      :: Bool,
+  showMinLengthHint   :: Bool
   }
   deriving (Typeable, Generic)
 
@@ -102,11 +129,21 @@ defaultDeadlockConfig =
   numTransitions = 4,
   Modelling.PetriNet.Reach.Deadlock.capacity = Unbounded,
   maxTransitionLength = 10,
-  minTransitionLength = 8
+  minTransitionLength = 8,
+  rejectLongerThan    = Nothing,
+  showLengthHint      = True,
+  showMinLengthHint   = True
   }
 
-generateDeadlock :: Config -> Int -> Net Place Transition
-generateDeadlock conf seed = snd $ tries 1000 conf seed
+generateDeadlock :: Config -> Int -> DeadlockInstance Place Transition
+generateDeadlock conf seed = DeadlockInstance {
+  noLongerThan      = rejectLongerThan conf,
+  petriNet          = snd $ tries 1000 conf seed,
+  withLengthHint    =
+    if showLengthHint conf then Just $ maxTransitionLength conf else Nothing,
+  withMinLengthHint =
+    if showMinLengthHint conf then Just $ minTransitionLength conf else Nothing
+  }
 
 tries :: Int -> Config -> Int -> (Int, Net Place Transition)
 tries n conf seed = eval out
