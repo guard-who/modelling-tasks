@@ -129,7 +129,7 @@ try conf = do
       (Modelling.PetriNet.Reach.Deadlock.capacity conf)
   return $ do
     let (no,yeah) = span (null . snd)
-          $ take (maxTransitionLength conf)
+          $ take (maxTransitionLength conf + 1)
           $ zip [0 :: Int ..]
           $ deadlocks n
     guard $ not $ null yeah
