@@ -107,9 +107,8 @@ defaultReachConfig = Config {
 
 generateReach :: Config -> Int -> (Net Place Transition, State Place)
 generateReach conf seed =
-  let tries = eval $ forM [1 :: Int .. 1000] $ const $ do
-        let ps = [Place 1 .. Place (numPlaces conf)]
-            ts = [Transition 1 .. Transition (numTransitions conf)]
+  let ps = [Place 1 .. Place (numPlaces conf)]
+      tries = forM [1 :: Int .. 1000] $ const $ do
         n <- Modelling.PetriNet.Reach.Roll.net
             ps
             ts
@@ -122,6 +121,13 @@ generateReach conf seed =
                 p <- ps
                 return $ abs (mark (start n) p - mark z' p)
           return ((negate l, d), (n, z'))
-  in snd $ minimumBy (comparing fst) $ concat tries
+      out = do
+        xs <- tries
+        let ((l, _), pn) =  minimumBy (comparing fst) $ concat xs
+        if negate l >= minTransitionLength conf
+          then return pn
+          else out
+  in eval out
   where
+    ts = [Transition 1 .. Transition (numTransitions conf)]
     eval f = evalRand f $ mkStdGen seed

@@ -19,7 +19,10 @@ import Modelling.Auxiliary.Output (
   OutputMonad (assertion, code, image, paragraph, text),
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
-import Modelling.PetriNet.Reach.Property (Property (Default), validate)
+import Modelling.PetriNet.Reach.Property (
+  Property (Default),
+  validate,
+  )
 import Modelling.PetriNet.Reach.Roll    (net)
 import Modelling.PetriNet.Reach.Step    (deadlocks, executes, successors)
 import Modelling.PetriNet.Reach.Type (
@@ -106,11 +109,15 @@ generateDeadlock :: Config -> Int -> Net Place Transition
 generateDeadlock conf seed = snd $ tries 1000 conf seed
 
 tries :: Int -> Config -> Int -> (Int, Net Place Transition)
-tries n conf seed = maximumBy (comparing fst) $ concat out
+tries n conf seed = eval out
   where
     eval f = evalRand f $ mkStdGen seed
-    out = eval $ forM [1 .. n] $ const $
-      Modelling.PetriNet.Reach.Deadlock.try conf
+    out = do
+      xs <- forM [1 .. n] $ const $ try conf
+      let (l, pn) = maximumBy (comparing fst) $ concat xs
+      if l >= minTransitionLength conf
+        then return (l, pn)
+        else out
 
 try :: MonadRandom m => Config -> m [(Int, Net Place Transition)]
 try conf = do
