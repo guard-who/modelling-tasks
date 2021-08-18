@@ -66,7 +66,7 @@ reportDeadlock path inst = do
     (noLongerThan inst)
     (withLengthHint inst)
     (withMinLengthHint inst)
-    (Nothing :: Maybe (State Place))
+    Nothing
 
 initialDeadlock :: DeadlockInstance s a -> [a]
 initialDeadlock inst = reverse $ S.toList $ transitions $ petriNet inst

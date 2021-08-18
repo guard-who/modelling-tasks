@@ -64,21 +64,26 @@ reportReach
   -> ReachInstance s t
   -> LangM m
 reportReach path inst = do
-  img <- drawToFile False path (drawUsing inst) 0 $ petriNet inst
+  let n = petriNet inst
+  (g, withoutPlaceNames) <- if showGoalNet inst
+    then (,True) . Left
+         <$> drawToFile True path (drawUsing inst) 0 (n { start = goal inst })
+    else return (Right $ show $ goal inst, False)
+  img <- drawToFile withoutPlaceNames path (drawUsing inst) 0 n
   reportReachFor
     img
     (noLongerThan inst)
     (withLengthHint inst)
     (withMinLengthHint inst)
-    (Just $ goal inst)
+    (Just g)
 
 reportReachFor
-  :: (MonadIO m, OutputMonad m, Show s)
+  :: (MonadIO m, OutputMonad m)
   => FilePath
   -> Maybe Int
   -> Maybe Int
   -> Maybe Int
-  -> Maybe (State s)
+  -> Maybe (Either FilePath String)
   -> LangM m
 reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   paragraph $ text "Gesucht ist für das Petrinetz"
@@ -90,7 +95,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
       ]
     Just g -> do
       text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
-      text $ show g
+      either image text g
   paragraph $ case noLonger of
     Nothing -> do
       text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
@@ -135,9 +140,10 @@ isNoLonger mmaxL ts =
 
 data ReachInstance s t = ReachInstance {
   drawUsing         :: GraphvizCommand,
+  goal              :: State s,
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
-  goal              :: State s,
+  showGoalNet       :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Maybe Int
   } deriving (Typeable, Generic)
@@ -151,7 +157,8 @@ data Config = Config {
   minTransitionLength :: Int,
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
-  showMinLengthHint   :: Bool
+  showMinLengthHint   :: Bool,
+  showTargetNet       :: Bool
   }
   deriving (Typeable, Generic)
 
@@ -165,7 +172,8 @@ defaultReachConfig = Config {
   minTransitionLength = 6,
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
-  showMinLengthHint   = True
+  showMinLengthHint   = True,
+  showTargetNet       = True
   }
 
 generateReach :: Config -> Int -> ReachInstance Place Transition
@@ -193,9 +201,10 @@ generateReach conf seed =
       ((petri, state), cmd) = eval out
   in ReachInstance {
     drawUsing         = cmd,
+    goal              = state,
     noLongerThan      = rejectLongerThan conf,
     petriNet          = petri,
-    goal              = state,
+    showGoalNet       = showTargetNet conf,
     withLengthHint    =
       if showLengthHint conf then Just $ maxTransitionLength conf else Nothing,
     withMinLengthHint =
