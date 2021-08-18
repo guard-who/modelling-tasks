@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 
 {-|
 originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
@@ -13,6 +14,7 @@ module Modelling.PetriNet.Reach.Reach where
 
 import qualified Data.Set                         as S (toList)
 
+import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   LangM,
   OutputMonad (assertion, code, image, indent, paragraph, text),
@@ -37,6 +39,7 @@ import Control.Monad                    (forM)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
+import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (minimumBy)
 import Data.Ord                         (comparing)
 import Data.String.Interpolate          (i)
@@ -61,7 +64,7 @@ reportReach
   -> ReachInstance s t
   -> LangM m
 reportReach path inst = do
-  img <- drawToFile False path 0 $ petriNet inst
+  img <- drawToFile False path (drawUsing inst) 0 $ petriNet inst
   reportReachFor
     img
     (noLongerThan inst)
@@ -119,7 +122,7 @@ totalReach path inst ts = do
   isNoLonger (noLongerThan inst) ts
   paragraph $ text "Startmarkierung"
   indent $ text $ show (start n)
-  out <- executes path False n ts
+  out <- executes path False (drawUsing inst) n ts
   assertion (out == goal inst) "Zielmarkierung erreicht?"
   where
     n = petriNet inst
@@ -131,6 +134,7 @@ isNoLonger mmaxL ts =
       unwords ["Nicht mehr als", show maxL, "Transitionen?"]
 
 data ReachInstance s t = ReachInstance {
+  drawUsing         :: GraphvizCommand,
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
   goal              :: State s,
@@ -142,6 +146,7 @@ data Config = Config {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
+  drawCommands        :: [GraphvizCommand],
   maxTransitionLength :: Int,
   minTransitionLength :: Int,
   rejectLongerThan    :: Maybe Int,
@@ -155,6 +160,7 @@ defaultReachConfig = Config {
   numPlaces = 4,
   numTransitions = 4,
   Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
+  drawCommands        = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork],
   maxTransitionLength = 8,
   minTransitionLength = 6,
   rejectLongerThan    = Nothing,
@@ -182,10 +188,11 @@ generateReach conf seed =
         xs <- tries
         let ((l, _), pn) =  minimumBy (comparing fst) $ concat xs
         if negate l >= minTransitionLength conf
-          then return pn
+          then (pn,) <$> oneOf (drawCommands conf)
           else out
-      (petri, state) = eval out
+      ((petri, state), cmd) = eval out
   in ReachInstance {
+    drawUsing         = cmd,
     noLongerThan      = rejectLongerThan conf,
     petriNet          = petri,
     goal              = state,

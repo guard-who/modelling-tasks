@@ -34,6 +34,7 @@ import Modelling.PetriNet.Reach.Type (
 
 import Control.Monad                    (foldM, guard, unless)
 import Control.Monad.IO.Class           (MonadIO)
+import Data.GraphViz                    (GraphvizCommand)
 
 deadlocks :: Ord s => Net s t -> [[State s]]
 deadlocks n = do
@@ -86,13 +87,14 @@ executes
   :: (MonadIO m, OutputMonad m, Show t, Ord s, Show s, Ord t)
   => FilePath
   -> Bool
+  -> GraphvizCommand
   -> Net s t
   -> [t]
   -> LangM' m (State s)
-executes path hidePNames n ts = foldM
+executes path hidePNames cmd n ts = foldM
   (\z (k, t) -> do
       paragraph $ text $ "Schritt" ++ show k
-      Modelling.PetriNet.Reach.Step.executeIO path hidePNames k n t z
+      Modelling.PetriNet.Reach.Step.executeIO path hidePNames cmd k n t z
   )
   (start n)
   (zip [1 :: Int ..] ts)
@@ -101,14 +103,15 @@ executeIO
   :: (MonadIO m, OutputMonad m, Show a, Show k, Ord a, Ord k)
   => FilePath
   -> Bool
+  -> GraphvizCommand
   -> Int
   -> Net k a
   -> a
   -> State k
   -> LangM' m (State k)
-executeIO path hidePNames i n t z0 = do
+executeIO path hidePNames cmd i n t z0 = do
   z2 <- execute n t z0
-  g <- drawToFile hidePNames path i $ n {start = z2}
+  g <- drawToFile hidePNames path cmd i $ n {start = z2}
   image g
   return z2
 

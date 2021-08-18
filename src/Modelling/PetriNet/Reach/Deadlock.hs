@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TupleSections #-}
 
 {-|
 originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
@@ -13,7 +14,7 @@ module Modelling.PetriNet.Reach.Deadlock where
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList, toList)
 
-
+import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   LangM,
   OutputMonad (assertion),
@@ -37,6 +38,7 @@ import Modelling.PetriNet.Reach.Type (
 import Control.Monad                    (forM, guard)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
+import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (maximumBy)
 import Data.Ord                         (comparing)
 import Data.Typeable                    (Typeable)
@@ -58,7 +60,7 @@ reportDeadlock
   -> DeadlockInstance s t
   -> LangM m
 reportDeadlock path inst = do
-  img <- drawToFile True path 0 $ petriNet inst
+  img <- drawToFile True path (drawUsing inst) 0 $ petriNet inst
   reportReachFor
     img
     (noLongerThan inst)
@@ -77,12 +79,13 @@ totalDeadlock
   -> LangM m
 totalDeadlock path inst ts = do
   isNoLonger (noLongerThan inst) ts
-  out <- executes path True n ts
+  out <- executes path True (drawUsing inst) n ts
   assertion (null $ successors n out) "Zielmarkierung hat keine Nachfolger?"
   where
     n = petriNet inst
 
 data DeadlockInstance s t = DeadlockInstance {
+  drawUsing         :: GraphvizCommand,
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
   withLengthHint    :: Maybe Int,
@@ -93,6 +96,7 @@ data Config = Config {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
+  drawCommands        :: [GraphvizCommand],
   maxTransitionLength :: Int,
   minTransitionLength :: Int,
   rejectLongerThan    :: Maybe Int,
@@ -107,6 +111,7 @@ defaultDeadlockConfig =
   numPlaces = 4,
   numTransitions = 4,
   Modelling.PetriNet.Reach.Deadlock.capacity = Unbounded,
+  drawCommands        = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork],
   maxTransitionLength = 10,
   minTransitionLength = 8,
   rejectLongerThan    = Nothing,
@@ -116,15 +121,18 @@ defaultDeadlockConfig =
 
 generateDeadlock :: Config -> Int -> DeadlockInstance Place Transition
 generateDeadlock conf seed = DeadlockInstance {
+  drawUsing         = cmd,
   noLongerThan      = rejectLongerThan conf,
-  petriNet          = snd $ tries 1000 conf seed,
+  petriNet          = petri,
   withLengthHint    =
     if showLengthHint conf then Just $ maxTransitionLength conf else Nothing,
   withMinLengthHint =
     if showMinLengthHint conf then Just $ minTransitionLength conf else Nothing
   }
+  where
+    (petri, cmd) = tries 1000 conf seed
 
-tries :: Int -> Config -> Int -> (Int, Net Place Transition)
+tries :: Int -> Config -> Int -> (Net Place Transition, GraphvizCommand)
 tries n conf seed = eval out
   where
     eval f = evalRand f $ mkStdGen seed
@@ -132,7 +140,7 @@ tries n conf seed = eval out
       xs <- forM [1 .. n] $ const $ try conf
       let (l, pn) = maximumBy (comparing fst) $ concat xs
       if l >= minTransitionLength conf
-        then return (l, pn)
+        then (pn,) <$> oneOf (drawCommands conf)
         else out
 
 try :: MonadRandom m => Config -> m [(Int, Net Place Transition)]

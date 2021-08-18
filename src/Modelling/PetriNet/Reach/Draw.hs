@@ -17,7 +17,7 @@ import Modelling.PetriNet.Types (
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
-import Data.GraphViz                    (GraphvizCommand (Neato))
+import Data.GraphViz                    (GraphvizCommand)
 import Data.List                        (group, sort)
 import Diagrams                         (Diagram)
 import Diagrams.Backend.SVG             (B, renderSVG)
@@ -27,11 +27,12 @@ drawToFile
   :: (MonadIO m, Ord s, Ord t, Show s, Show t)
   => Bool
   -> FilePath
+  -> GraphvizCommand
   -> Int
   -> Net s t
   -> LangM' m FilePath
-drawToFile hidePNames path x net = do
-  graph <- lift $ liftIO $ runExceptT $ drawPetriWithDefaults net hidePNames
+drawToFile hidePNames path cmd x net = do
+  graph <- lift $ liftIO $ runExceptT $ drawPetriWithDefaults net hidePNames cmd
   lift $ liftIO $ writeGraph path (show x) $ either error id graph
 
 writeGraph
@@ -48,8 +49,9 @@ drawPetriWithDefaults
   :: (Ord s, Ord t, Show s, Show t)
   => Net s t
   -> Bool
+  -> GraphvizCommand
   -> ExceptT String IO (Diagram B)
-drawPetriWithDefaults p hidePNames = drawPetri p hidePNames False True Neato
+drawPetriWithDefaults p hidePNames = drawPetri p hidePNames False True
 
 drawPetri
   :: (Ord s, Ord t, Show s, Show t)
