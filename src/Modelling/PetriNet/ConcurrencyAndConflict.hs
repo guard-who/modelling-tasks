@@ -32,7 +32,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickTaskInstance,
   ) where
 
-import qualified Data.Map                         as M (fromList)
+import qualified Data.Map                         as M (elems, fromList)
 import qualified Data.Set                         as Set (
   Set,
   toList,
@@ -187,10 +187,14 @@ pickConcurrencyTask task = do
   images show snd $ nets task
   paragraph $ text
     [i|Please state your answer by giving only the number of the Petri net having these concurrently activated transitions.|]
+  let plural = wrongInstances task > 1
   paragraph $ do
     text [i|Stating |]
     code "1"
-    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are concurrently activated (and the other Petri nets don't!).|]
+    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are concurrently activated (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
+
+wrongInstances :: PickInstance -> Int
+wrongInstances inst = length [False | (False, _) <- M.elems (nets inst)]
 
 pickEvaluation
   :: OutputMonad m
@@ -206,10 +210,11 @@ pickConflictTask task = do
   images show snd $ nets task
   paragraph $ text
     [i|Please state your answer by giving only the number of the Petri net having these transitions in conflict.|]
+  let plural = wrongInstances task > 1
   paragraph $ do
     text [i|Stating |]
     code "1"
-    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are in conflict (and the other Petri nets don't!).|]
+    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are in conflict (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
 
 findConcurrencyGenerate
   :: FindConcurrencyConfig
