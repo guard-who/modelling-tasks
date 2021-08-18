@@ -3,6 +3,7 @@ module Modelling.CdOd.Generate (
   generate,
   ) where
 
+import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.CdOd.Edges             (
   checkMultiEdge,
   )
@@ -122,11 +123,6 @@ generateEdges wnti classs inh com ass agg = fmap (fmap snd) $ foldl
           Just True -> Just (head classs, step)
           _         -> Nothing
         }
-
-oneOf :: MonadRandom m => [a] -> m a
-oneOf xs = do
-      x <- getRandomR (0, length xs - 1)
-      return $ xs !! x
 
 generateEdge
       :: MonadRandom m

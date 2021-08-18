@@ -53,6 +53,7 @@ library
       Modelling.PetriNet.Reach.Step
       Modelling.PetriNet.Reach.Type
   other-modules:
+      Modelling.Auxiliary.Common
       Modelling.PetriNet.Reach.Draw
       Modelling.PetriNet.Reach.Roll
       Paths_modelling_tasks
