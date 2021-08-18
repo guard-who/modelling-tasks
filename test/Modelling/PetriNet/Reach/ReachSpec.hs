@@ -4,13 +4,18 @@ import qualified Data.Set                         as S
 
 import Modelling.PetriNet.Reach.Reach (
   Config (..),
+  ReachInstance (..),
   defaultReachConfig,
   generateReach,
   )
 import Modelling.PetriNet.Reach.Property (
   satisfiesAtAnyState,
   )
-import Modelling.PetriNet.Reach.Type    (Transition (..), Net (transitions), State)
+import Modelling.PetriNet.Reach.Type (
+  Net (transitions),
+  State,
+  Transition (..),
+  )
 
 import Data.Set                         (Set)
 import Test.Hspec
@@ -26,7 +31,9 @@ spec =
               minTransitionLength = 6
               }
             minL = minTransitionLength config
-            (net, s) = generateReach config seed
+            inst = generateReach config seed
+            net = petriNet inst
+            s = goal inst
             ts = transitions net
         in net `shouldSatisfy` hasMinTransitionLength (s ==) ts minL
 

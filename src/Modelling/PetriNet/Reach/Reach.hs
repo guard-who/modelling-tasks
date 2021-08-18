@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 {-|
 originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
@@ -38,6 +39,7 @@ import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
 import Data.List                        (minimumBy)
 import Data.Ord                         (comparing)
+import Data.String.Interpolate          (i)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
 
@@ -46,25 +48,53 @@ data PetriReach = PetriReach
 
 verifyReach :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
   => PetriReach
-  -> (Net a t, State a)
+  -> ReachInstance a t
   -> LangM m
-verifyReach PetriReach (n,s) = do
+verifyReach PetriReach inst = do
+  let n = petriNet inst
   validate Default n
-  validate Default $ n { start = s }
+  validate Default $ n { start = goal inst }
 
 reportReach
-  :: (MonadIO m, OutputMonad m, Ord s, Ord t, Show s, Show t, Show a)
+  :: (MonadIO m, OutputMonad m, Ord s, Ord t, Show s, Show t)
   => FilePath
-  -> (Net s t, a)
+  -> ReachInstance s t
   -> LangM m
-reportReach path (n,goal) = do
+reportReach path inst = do
+  img <- drawToFile False path 0 $ petriNet inst
+  reportReachFor
+    img
+    (noLongerThan inst)
+    (withLengthHint inst)
+    (withMinLengthHint inst)
+    (Just $ goal inst)
+
+reportReachFor
+  :: (MonadIO m, OutputMonad m, Show s)
+  => FilePath
+  -> Maybe Int
+  -> Maybe Int
+  -> Maybe Int
+  -> Maybe (State s)
+  -> LangM m
+reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   paragraph $ text "Gesucht ist für das Petrinetz"
-  i <- drawToFile False path 0 n
-  image i
-  paragraph $ do
-    text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
-    text $ show goal
-  paragraph $ text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
+  image img
+  paragraph $ case mgoal of
+    Nothing -> paragraph $ text $ unlines [
+      "eine Transitionsfolge,",
+      "die zu einer Markierung ohne Nachfolger (Deadlock) führt."
+      ]
+    Just g -> do
+      text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
+      text $ show g
+  paragraph $ case noLonger of
+    Nothing -> do
+      text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
+    Just maxL -> do
+      text $ concat [
+        "Geben Sie Ihre Lösung als maximal ", show maxL,
+        "-elementige Auflistung der folgenden Art an:"]
   code $ show [Transition 1, Transition 2, Transition 3]
   paragraph $ text $ concat [
     "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
@@ -72,27 +102,51 @@ reportReach path (n,goal) = do
     ", und schließlich ", show (Transition 3),
     " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
     ]
+  (`mapM_` lengthHint) $ \len -> paragraph $ text
+    [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{len} Transitionen.|]
+  (`mapM_` minLengthHint) $ \len -> paragraph $ text
+    [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
 
 initialReach :: p -> (Net s a, b) -> [a]
 initialReach _ (n,_) = reverse $ S.toList $ transitions n
 
 totalReach :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
   => FilePath
-  -> (Net s t, State s)
+  -> ReachInstance s t
   -> [t]
   -> LangM m
-totalReach path (n,goal) ts = do
+totalReach path inst ts = do
+  isNoLonger (noLongerThan inst) ts
   paragraph $ text "Startmarkierung"
   indent $ text $ show (start n)
   out <- executes path False n ts
-  assertion (out == goal) "Zielmarkierung erreicht?"
+  assertion (out == goal inst) "Zielmarkierung erreicht?"
+  where
+    n = petriNet inst
+
+isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
+isNoLonger mmaxL ts =
+  (`mapM_` mmaxL) $ \maxL ->
+    assertion (length ts <= maxL) $
+      unwords ["Nicht mehr als", show maxL, "Transitionen?"]
+
+data ReachInstance s t = ReachInstance {
+  noLongerThan      :: Maybe Int,
+  petriNet          :: Net s t,
+  goal              :: State s,
+  withLengthHint    :: Maybe Int,
+  withMinLengthHint :: Maybe Int
+  } deriving (Typeable, Generic)
 
 data Config = Config {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
   maxTransitionLength :: Int,
-  minTransitionLength :: Int
+  minTransitionLength :: Int,
+  rejectLongerThan    :: Maybe Int,
+  showLengthHint      :: Bool,
+  showMinLengthHint   :: Bool
   }
   deriving (Typeable, Generic)
 
@@ -102,10 +156,13 @@ defaultReachConfig = Config {
   numTransitions = 4,
   Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
   maxTransitionLength = 8,
-  minTransitionLength = 6
+  minTransitionLength = 6,
+  rejectLongerThan    = Nothing,
+  showLengthHint      = True,
+  showMinLengthHint   = True
   }
 
-generateReach :: Config -> Int -> (Net Place Transition, State Place)
+generateReach :: Config -> Int -> ReachInstance Place Transition
 generateReach conf seed =
   let ps = [Place 1 .. Place (numPlaces conf)]
       tries = forM [1 :: Int .. 1000] $ const $ do
@@ -127,7 +184,16 @@ generateReach conf seed =
         if negate l >= minTransitionLength conf
           then return pn
           else out
-  in eval out
+      (petri, state) = eval out
+  in ReachInstance {
+    noLongerThan      = rejectLongerThan conf,
+    petriNet          = petri,
+    goal              = state,
+    withLengthHint    =
+      if showLengthHint conf then Just $ maxTransitionLength conf else Nothing,
+    withMinLengthHint =
+      if showMinLengthHint conf then Just $ minTransitionLength conf else Nothing
+    }
   where
     ts = [Transition 1 .. Transition (numTransitions conf)]
     eval f = evalRand f $ mkStdGen seed
