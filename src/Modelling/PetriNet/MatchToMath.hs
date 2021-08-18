@@ -27,14 +27,14 @@ module Modelling.PetriNet.MatchToMath (
   )  where
 
 import qualified Data.Map                         as M (
-  foldrWithKey, keys, lookup, partition
+  filter, foldrWithKey, keys, lookup, partition,
   )
 
 import Modelling.Auxiliary.Output       (
   LangM,
   OutputMonad (..),
   english,
-  multipleChoice,
+  singleChoice,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -380,16 +380,16 @@ mathToGraphTask task = do
 graphToMathEvaluation
   :: OutputMonad m
   => GraphToMathInstance
-  -> [Int]
+  -> Int
   -> LangM m
-graphToMathEvaluation = multipleChoice "mathematical representation" . to
+graphToMathEvaluation = singleChoice "mathematical representation" . head . M.keys . M.filter fst . to
 
 mathToGraphEvaluation
   :: OutputMonad m
   => MathToGraphInstance
-  -> [Int]
+  -> Int
   -> LangM m
-mathToGraphEvaluation = multipleChoice "graphical representation" . to
+mathToGraphEvaluation = singleChoice "graphical representation" . head . M.keys . M.filter fst . to
 
 checkMathConfig :: MathConfig -> Maybe String
 checkMathConfig c@MathConfig {

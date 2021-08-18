@@ -8,6 +8,7 @@ module Modelling.Auxiliary.Output (
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
+  singleChoice,
   Out (..),
   Report (..),
   abortWith,
@@ -65,6 +66,12 @@ multipleChoice what solution choices = do
   assertion (cs ==  valid) exhaustive
   where
     valid = M.keys $ M.filter ((== True) . fst) solution
+
+singleChoice :: (OutputMonad m, Eq a) => String -> a -> a -> LangM m
+singleChoice what solution choice = do
+  paragraph (english "Remarks on your solution:")
+  correct <- localise [(English, "Chosen " ++ what ++ " is correct?")]
+  assertion (solution == choice) correct
 
 data Language = German | English
   deriving Eq

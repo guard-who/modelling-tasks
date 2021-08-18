@@ -32,7 +32,12 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickTaskInstance,
   ) where
 
-import qualified Data.Map                         as M (elems, fromList)
+import qualified Data.Map                         as M (
+  elems,
+  filter,
+  fromList,
+  keys
+  )
 import qualified Data.Set                         as Set (
   Set,
   toList,
@@ -40,7 +45,7 @@ import qualified Data.Set                         as Set (
 
 import Modelling.Auxiliary.Output (
   OutputMonad (..),
-  multipleChoice,
+  singleChoice,
   LangM,
   )
 import Modelling.PetriNet.Alloy (
@@ -199,9 +204,9 @@ wrongInstances inst = length [False | (False, _) <- M.elems (nets inst)]
 pickEvaluation
   :: OutputMonad m
   => PickInstance
-  -> [Int]
+  -> Int
   -> LangM m
-pickEvaluation = multipleChoice "petri nets" . nets
+pickEvaluation = singleChoice "petri nets" . head . M.keys . M.filter fst . nets
 
 pickConflictTask :: OutputMonad m => PickInstance -> LangM m
 pickConflictTask task = do
