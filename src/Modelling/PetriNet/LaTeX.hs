@@ -74,7 +74,7 @@ netLaTeX = mathMode [i|N = #{tuple}|]
     tuple :: Formula
     tuple = parenthesise
       $  placesSetName ++ ", "
-      ++ transitionsSetName ++ ", ^{\\bullet}(), ()^{\\bullet}, m_0"
+      ++ transitionsSetName ++ ", \\vphantom{()}}^{\\bullet}(), ()^{\\bullet}, m_0"
 
 {-|
 Switch the mode for the given LaTeX-'Formula' to Math mode while in text mode

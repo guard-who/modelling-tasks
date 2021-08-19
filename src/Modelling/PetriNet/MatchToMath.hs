@@ -352,11 +352,11 @@ mathToOutput f pm = paragraph $ do
   f $ placesMath pm
   english " and "
   f $ transitionsMath pm
-  english ", as well as "
+  english ", as well as"
   case placeOrderMath pm of
     Nothing -> return ()
     Just o  -> do
-      text " using the place ordering "
+      english " using the place ordering "
       f o
   english ":"
   itemizeM $ f . fst <$> tokenChangeMath pm
