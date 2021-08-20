@@ -11,7 +11,7 @@ module Modelling.CdOd.DifferentNames (
   ) where
 
 import qualified Data.Bimap                       as BM
-  (filter, fromList, lookup, toList, twist, lookupR)
+  (filter, fromList, keysR, lookup, lookupR, toList, twist)
 import qualified Data.Map                         as M (empty, insert)
 import qualified Data.Set                         as S (toList)
 
@@ -198,7 +198,9 @@ getDifferentNamesTask config = do
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = fromEdges names $ renameEdges (BM.twist bm) edges
           bm' = BM.filter (const (`elem` usedLabels od1)) bm
-      return (cd1, od1, bm')
+      if BM.keysR bm == sort (usedLabels od1)
+        then return (cd1, od1, bm')
+        else getDifferentNamesTask config
   where
     extractFourParts (n, cd) = case transform (toOldSyntax cd) (show n) "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
