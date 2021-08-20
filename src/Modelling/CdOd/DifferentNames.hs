@@ -11,7 +11,7 @@ module Modelling.CdOd.DifferentNames (
   ) where
 
 import qualified Data.Bimap                       as BM
-  (filter, fromList, keysR, lookup, lookupR, toList, twist)
+  (fromList, keysR, lookup, lookupR, toList, twist)
 import qualified Data.Map                         as M (empty, insert)
 import qualified Data.Set                         as S (toList)
 
@@ -34,6 +34,10 @@ import Modelling.CdOd.Types (
   DiagramEdge,
   Od,
   Syntax,
+  renameAssocsInCd,
+  renameClassesInCd,
+  renameClassesInOd,
+  renameLinksInOd,
   toOldSyntax,
   )
 
@@ -42,7 +46,7 @@ import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT)
+import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
@@ -167,8 +171,7 @@ differentNames config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cd, od, bm) <-
     liftIO $ evalRandT (getDifferentNamesTask config) g
-  od' <- alloyInstanceToOd od
-  return $ DifferentNamesInstance cd od' bm
+  return $ DifferentNamesInstance cd od bm
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, e@(Assoc Association _ _ _ _)) =
@@ -178,7 +181,7 @@ reverseAssociation x = x
 getDifferentNamesTask
   :: RandomGen g
   => DifferentNamesConfig
-  -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
+  -> RandT g IO (Syntax, Od, Bimap String String)
 getDifferentNamesTask config = do
   configs <- withMinimalLabels 3 $ classConfig config
   continueWithHead configs $ \config' -> do
@@ -209,9 +212,21 @@ getDifferentNamesTask config = do
       labels' <- shuffleM labels
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = fromEdges names $ renameEdges (BM.twist bm) edges
-          bm' = BM.filter (const (`elem` usedLabels od1)) bm
+          --bm' = BM.filter (const (`elem` usedLabels od1)) bm
       if BM.keysR bm == sort (usedLabels od1)
-        then return (cd1, od1, bm')
+        then do
+        let (assocs, links) = unzip $ BM.toList bm
+        names'  <- shuffleM names
+        assocs' <- shuffleM assocs
+        links'  <- shuffleM links
+        od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
+        let bmNames  = BM.fromList $ zip names names'
+            bmAssocs = BM.fromList $ zip assocs assocs'
+            bmLinks  = BM.fromList $ zip links links'
+            bm'      = BM.fromList $ zip assocs' links'
+        cd2 <- liftIO $ renameClassesInCd bmNames =<< renameAssocsInCd bmAssocs cd1
+        od2 <- liftIO $ renameClassesInOd bmNames =<< renameLinksInOd bmLinks od1'
+        return (cd2, od2, bm')
         else getDifferentNamesTask config
   where
     extractFourParts (n, cd) = case transform (toOldSyntax cd) (show n) "" of
@@ -222,8 +237,8 @@ getDifferentNamesTask config = do
     continueWithHead
       :: RandomGen g
       => [a]
-      -> (a -> RandT g IO (Syntax, AlloyInstance, Bimap String String))
-      -> RandT g IO (Syntax, AlloyInstance, Bimap String String)
+      -> (a -> RandT g IO (Syntax, Od, Bimap String String))
+      -> RandT g IO (Syntax, Od, Bimap String String)
     continueWithHead []    _ =
       getDifferentNamesTask config
     continueWithHead (x:_) f = f x

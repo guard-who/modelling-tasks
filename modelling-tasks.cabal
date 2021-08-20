@@ -74,6 +74,7 @@ library
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -110,6 +111,7 @@ executable cd2alloy
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -148,6 +150,7 @@ executable cd2pic
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -187,6 +190,7 @@ executable check-cds
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -226,6 +230,7 @@ executable concurrency
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -266,6 +271,7 @@ executable conflicts
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -305,6 +311,7 @@ executable different-names
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -343,6 +350,7 @@ executable instance2pic
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -380,6 +388,7 @@ executable match-cd-od
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -419,6 +428,7 @@ executable matchToMath
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -457,6 +467,7 @@ executable repair-incorrect
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , fgl
     , file-embed
     , filepath
@@ -506,6 +517,7 @@ test-suite modelling-tasks-test
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
+    , exceptions
     , fgl
     , file-embed
     , filepath

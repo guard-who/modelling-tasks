@@ -32,6 +32,7 @@ dependencies:
   - diagrams-graphviz
   - diagrams-lib
   - diagrams-svg
+  - exceptions
   - fgl
   - file-embed
   - filepath
