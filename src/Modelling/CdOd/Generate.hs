@@ -6,6 +6,7 @@ module Modelling.CdOd.Generate (
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.CdOd.Edges             (
   checkMultiEdge,
+  hasAssociationAtOneSuperclass,
   )
 import Modelling.CdOd.Types
   (AssociationType (..), ClassConfig (..), Connection (..), DiagramEdge)
@@ -33,7 +34,10 @@ generate withNonTrivialInheritance c searchSpace = do
     then do
       names <- shuffleM $ classNames ncls
       es <- generateEdges withNonTrivialInheritance names nins ncos nass nags
-      maybe retry (return . (names,) . nameEdges) es
+      cd <- maybe retry (return . (names,) . nameEdges) es
+      if maybe False (&& not (uncurry hasAssociationAtOneSuperclass cd)) withNonTrivialInheritance
+        then retry
+        else return cd
     else retry
   where
     retry =
