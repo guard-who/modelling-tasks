@@ -285,6 +285,7 @@ executable different-names
   main-is: different-names.hs
   other-modules:
       EvaluateArgs
+      Common
   hs-source-dirs:
       app
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans

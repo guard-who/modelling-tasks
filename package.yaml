@@ -118,6 +118,7 @@ executables:
       - modelling-tasks
     other-modules:
       - EvaluateArgs
+      - Common
   instance2pic:
     main: instance2pic.hs
     source-dirs: legacy-app

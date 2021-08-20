@@ -26,25 +26,28 @@ import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
 import Modelling.CdOd.Generate          (generate)
-import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
+import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromNodesAndEdges)
 import Modelling.CdOd.Types (
   AssociationType (..),
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
+  Od,
   Syntax,
   toOldSyntax,
   )
 
 import Control.Monad                    (void, when)
-import Control.Monad.IO.Class           (liftIO)
+import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
+import Control.Monad.Trans              (MonadTrans (lift))
+import Control.Monad.Trans.Except       (ExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (nub, permutations, sort)
-import Data.Maybe                       (catMaybes, isJust)
+import Data.Maybe                       (catMaybes, fromMaybe, isJust)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call
@@ -55,8 +58,8 @@ debug :: Bool
 debug = False
 
 data DifferentNamesInstance = DifferentNamesInstance {
-    cDiagram :: FilePath,
-    oDiagram :: FilePath,
+    cDiagram :: Syntax,
+    oDiagram :: Od,
     mapping  :: Bimap String String
   } deriving (Generic, Show)
 
@@ -85,12 +88,31 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     timeout          = Nothing
   }
 
-differentNamesTask :: OutputMonad m => DifferentNamesInstance -> LangM m
-differentNamesTask task = do
+differentNamesTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> DifferentNamesInstance
+  -> LangM m
+differentNamesTask path task = do
+  let cd = cDiagram task
+      od = oDiagram task
+      bm = mapping task
+      backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
+                       , t /= Association
+                       , n <- BM.lookup n' bm]
+      forwards    = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
+                       , t == Association
+                       , n <- BM.lookup n' bm]
+      navigations = foldr (`M.insert` Back)
+                          (foldr (`M.insert` Forward) M.empty forwards)
+                          backwards
+      anonymous = fromMaybe (length (fst od) `div` 3) (Just 1000)
+  cd' <- lift $ liftIO $ drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
+  od' <- lift $ liftIO $ uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od") Svg
   paragraph $ text "Consider the following class diagram:"
-  image $ cDiagram task
+  image cd'
   paragraph $ text "and the following object diagram (which conforms to it):"
-  image $ oDiagram task
+  image od'
   paragraph $ do
     text [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
 State your answer by giving a mapping of relationships in the CD to links in the OD.
@@ -136,27 +158,17 @@ differentNamesEvaluation task cs = do
       = Nothing
 
 differentNames
-  :: DifferentNamesConfig
-  -> String
+  :: MonadIO m
+  => DifferentNamesConfig
   -> Int
   -> Int
-  -> IO DifferentNamesInstance
-differentNames config path segment seed = do
+  -> ExceptT String m DifferentNamesInstance
+differentNames config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cd, od, bm) <-
-    evalRandT (getDifferentNamesTask config) g
-  let backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
-                       , t /= Association
-                       , n <- BM.lookup n' bm]
-      forwards    = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
-                       , t == Association
-                       , n <- BM.lookup n' bm]
-      navigations = foldr (`M.insert` Back)
-                          (foldr (`M.insert` Forward) M.empty forwards)
-                          backwards
-  cd' <- drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
-  od' <- drawOdFromInstance od (Just 1000) navigations True (path ++ "-od") Svg
-  return $ DifferentNamesInstance cd' od' bm
+    liftIO $ evalRandT (getDifferentNamesTask config) g
+  od' <- alloyInstanceToOd od
+  return $ DifferentNamesInstance cd od' bm
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, e@(Assoc Association _ _ _ _)) =

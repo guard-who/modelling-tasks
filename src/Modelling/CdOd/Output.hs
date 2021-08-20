@@ -2,6 +2,7 @@ module Modelling.CdOd.Output (
   drawCdFromSyntax,
   drawOdFromInstance,
   drawOdFromRawInstance,
+  drawOdFromNodesAndEdges,
   getDirs,
   ) where
 

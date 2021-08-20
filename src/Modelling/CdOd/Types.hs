@@ -7,6 +7,7 @@ module Modelling.CdOd.Types (
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
+  Od,
   RelationshipProperties (..),
   Syntax,
   defaultProperties,
@@ -16,6 +17,8 @@ module Modelling.CdOd.Types (
 import Data.Bifunctor                   (first, second)
 import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
+
+type Od = ([String], [(Int, Int, String)])
 
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
 

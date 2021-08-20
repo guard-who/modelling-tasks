@@ -1,15 +1,24 @@
 module Modelling.CdOd.Auxiliary.Util (
+  alloyInstanceToOd,
   emptyArr, filterFirst, firstLower, firstUpper, getInstances,
   redColor, underlinedLabel,
   ) where
+
+import qualified Data.Set                         as S
 
 import Language.Alloy.Call              as Alloy (
   AlloyInstance,
   CallAlloyConfig (..),
   defaultCallAlloyConfig,
   getInstancesWith,
+  getSingle,
+  getTriple,
+  lookupSig,
+  objectName,
+  scoped,
   )
 
+import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Char                        (isUpper, toLower, toUpper)
 import Data.GraphViz                    (X11Color (..))
 import Data.GraphViz.Attributes.Complete (
@@ -22,6 +31,8 @@ import Data.GraphViz.Attributes.Complete (
   )
 import Data.GraphViz.Attributes.HTML    as Html
   (Label, Format (..), Label (Text), TextItem (..))
+import Data.List                        (elemIndex)
+import Data.Maybe                       (fromJust)
 import Data.Text.Lazy                   (pack)
 
 filterFirst :: Eq a => a -> [a] -> [a]
@@ -53,3 +64,18 @@ getInstances mmaxInstances mtimeout = getInstancesWith $ defaultCallAlloyConfig 
   maxInstances = mmaxInstances,
   timeout      = mtimeout
   }
+
+alloyInstanceToOd
+  :: Monad m
+  => AlloyInstance
+  -> ExceptT String m ([String], [(Int, Int, String)])
+alloyInstanceToOd i = except $ do
+  os    <- lookupSig (scoped "this" "Obj") i
+  objs  <- map objectName . S.toList <$> getSingle "" os
+  links <- map (linkOf objs) . S.toList <$> getTriple "get" os
+  return (objs, links)
+  where
+    nameOf   = takeWhile (/= '$') . objectName
+    linkOf objs (x, l, y) =
+      let indexOf z = fromJust $ elemIndex (objectName z) objs
+      in (indexOf x, indexOf y, nameOf l)
