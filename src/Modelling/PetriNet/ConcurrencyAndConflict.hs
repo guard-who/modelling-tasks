@@ -78,7 +78,9 @@ import Modelling.PetriNet.Types         (
   Conflict,
   FindConcurrencyConfig (..), FindConflictConfig (..),
   PetriConflict (Conflict, conflictTrans),
-  PickConcurrencyConfig (..), PickConflictConfig (..),
+  PickConcurrencyConfig (..),
+  PickConfig (..),
+  PickConflictConfig (..),
   )
 
 import Control.Arrow                    (Arrow (second))
@@ -91,9 +93,10 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Control.Monad.Trans.Except       (ExceptT)
+import Data.Either                      (isLeft)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand)
 import Data.Map                         (Map)
-import Data.Maybe                       (isJust, isNothing)
+import Data.Maybe                       (isJust)
 import Data.String.Interpolate          (i)
 import Diagrams.Backend.SVG             (B, renderSVG)
 import Diagrams.Prelude                 (Diagram, mkWidth)
@@ -378,27 +381,28 @@ petriNetFindConfl FindConflictConfig {
   advConfig,
   changeConfig,
   uniqueConflictPlace
-  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) $ Just advConfig
+  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) $ Right advConfig
 
 petriNetPickConfl :: PickConflictConfig -> String
 petriNetPickConfl PickConflictConfig {
   basicConfig,
   changeConfig,
+  pickConfig,
   uniqueConflictPlace
-  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) Nothing
+  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) $ Left pickConfig
 
 petriNetFindConcur :: FindConcurrencyConfig -> String
 petriNetFindConcur FindConcurrencyConfig{
   basicConfig,
   advConfig,
   changeConfig
-  } = petriNetAlloy basicConfig changeConfig Nothing $ Just advConfig
+  } = petriNetAlloy basicConfig changeConfig Nothing $ Right advConfig
 
 petriNetPickConcur :: PickConcurrencyConfig -> String
 petriNetPickConcur PickConcurrencyConfig{
   basicConfig,
   changeConfig
-  } = petriNetAlloy basicConfig changeConfig Nothing Nothing
+  } = petriNetAlloy basicConfig changeConfig Nothing $ Left $ PickConfig $ Just False
 
 {-|
 Generate code for PetriNet conflict and concurrency tasks
@@ -408,19 +412,19 @@ petriNetAlloy
   -> ChangeConfig
   -> Maybe (Maybe Bool)
   -- ^ Just for conflict task; Nothing for concurrency task
-  -> Maybe AdvConfig
-  -- ^ Just for find task; Nothing for pick task
+  -> Either PickConfig AdvConfig
+  -- ^ Right for find task; Left for pick task
   -> String
 petriNetAlloy basicC changeC muniquePlace specific
   = [i|module #{moduleName}
 
 #{modulePetriSignature}
-#{maybe "" (const modulePetriAdditions) specific}
+#{either (const "") (const modulePetriAdditions) specific}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{predicate}[#{place}#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
+pred #{predicate}[#{place}#{defaultActivTrans}#{cons} : set Places, #{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
   \#Places = #{places basicC}
   \#Transitions = #{transitions basicC}
   #{compBasicConstraints activated basicC}
@@ -435,31 +439,38 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   where
     activated        = "activatedTrans"
     activatedDefault = "defaultActivTrans"
-    compConstraints = maybe
-      [i|
+    compConstraints :: String
+    compConstraints = either
+      (\pickC -> [i|
   #{connected "defaultGraphIsConnected" $ isConnected basicC}
   #{isolated "defaultNoIsolatedNodes" $ isConnected basicC}
   \##{activatedDefault} >= #{atLeastActive basicC}
-  theActivatedDefaultTransitions[#{activatedDefault}]|]
-      compAdvConstraints
+  theActivatedDefaultTransitions[#{activatedDefault}]
+  #{withExtra pickC}|])
+      (\advC -> [i|
+  #{compAdvConstraints advC}
+  no #{cons}|])
       specific
     conflict = isJust muniquePlace
+    cons = "defaultCons"
     constraints :: String
     constraints
       | conflict  = [i|
-  no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
-  all q : #{p} | conflict[#{t1}, #{t2}, q]
-  no q : (Places - #{p}) | conflict[#{t1}, #{t2}, q]
+  some #{cons} iff some #{cons} - #{p} and #{p} in #{cons}
+  some #{cons} iff all q : #{p} | conflictDefault[#{t1}, #{t2}, q]
+  no q : #{cons} - #{p} | conflictDefault[#{t1}, #{t2}, q]
+  all z : #{cons} | some x : givenTransitions | one y : givenTransitions - x | conflictDefault[x, y, z]
+  no x,y : givenTransitions, z : givenPlaces - #{cons} | conflictDefault[x,y,z]
   all u,v : Transitions, q : Places |
-    conflict[u,v,q] implies #{t1} + #{t2} = u + v|]
+    conflict[u,v,q] iff #{t1} + #{t2} = u + v and q in #{p}|]
       | otherwise = [i|
   no x,y : givenTransitions | x != y and concurrentDefault[x + y]
   #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
   all u,v : Transitions |
     u != v and concurrent[u + v] implies #{t1} + #{t2} = u + v|]
     defaultActivTrans
-      | isNothing specific = [i|#{activatedDefault} : set givenTransitions,|]
-      | otherwise          = ""
+      | isLeft specific = [i|#{activatedDefault} : set givenTransitions,|]
+      | otherwise       = ""
     moduleName
       | conflict  = "PetriNetConfl"
       | otherwise = "PetriNetConcur"
@@ -479,6 +490,17 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
       | otherwise = concurrencyPredicateName
     t1 = transition1
     t2 = transition2
+    withExtra :: PickConfig -> String
+    withExtra pickC
+      | conflict
+      = [i|#{getOneExtra $ moreThanOneOccurrence pickC} #{cons} - #{p}|]
+      | otherwise = [i|no #{cons}|]
+
+getOneExtra :: Maybe Bool -> String
+getOneExtra mb = case mb of
+  Nothing    -> "lone"
+  Just True  -> "one"
+  Just False -> "no"
 
 concurrencyPredicateName :: String
 concurrencyPredicateName = "showConcurrency"

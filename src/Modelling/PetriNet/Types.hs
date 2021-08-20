@@ -396,6 +396,15 @@ defaultChangeConfig = ChangeConfig
   , maxFlowChangePerEdge = 1
   }
 
+newtype PickConfig = PickConfig {
+  moreThanOneOccurrence :: Maybe Bool
+  } deriving (Generic, Show)
+
+defaultPickConfig :: PickConfig
+defaultPickConfig = PickConfig {
+  moreThanOneOccurrence = Just False
+  }
+
 data FindConflictConfig = FindConflictConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig
@@ -416,6 +425,7 @@ defaultFindConflictConfig = FindConflictConfig
 data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
+  , pickConfig :: PickConfig
   , uniqueConflictPlace :: Maybe Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Show)
@@ -424,6 +434,7 @@ defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
   , changeConfig = defaultChangeConfig
+  , pickConfig = defaultPickConfig
   , uniqueConflictPlace = Nothing
   , alloyConfig  = defaultAlloyConfig
   }
