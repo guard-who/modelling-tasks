@@ -86,7 +86,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         inheritances = (1, Just 2)
       },
     maxObjects       = 4,
-    withNonTrivialInheritance = Nothing,
+    withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
     searchSpace      = 10,
     timeout          = Nothing
