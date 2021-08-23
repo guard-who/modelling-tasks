@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
+{-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.Types (
   Association,
   AssociationType (..),
@@ -122,8 +123,17 @@ renameLinksInOd m od = (fst od,) <$> mapM rename (snd od)
   where
     rename (f, t, l) = (f,t,) <$> BM.lookup l m
 
+{-|
+Renames all the class names by replacing all letters by their new version of
+the given mapping.
+
+Object diagrams contain class names within their object names.
+The class names, being letters at the moment, start the object name.
+Therefore renaming those is sufficient when renaming the classes in ODs.
+There are no empty object diagram names.
+(That is why the non-exhaustive pattern match is safe here.)
+-}
 renameClassesInOd :: MonadThrow m => Bimap String String -> Od -> m Od
 renameClassesInOd m od = (,snd od) <$> mapM rename (fst od)
   where
     rename (l:ls) = (++ ls) <$> BM.lookup [l] m
-    rename []     = BM.lookup [] m
