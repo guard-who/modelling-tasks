@@ -29,7 +29,6 @@ import Modelling.PetriNet.Types (
   FindConflictConfig (FindConflictConfig, alloyConfig, basicConfig),
   PetriConflict (Conflict),
   PickConcurrencyConfig (..),
-  PickConfig (PickConfig),
   PickConflictConfig (PickConflictConfig, alloyConfig, basicConfig),
   defaultFindConcurrencyConfig,
   defaultFindConflictConfig,
@@ -198,14 +197,8 @@ validPickConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> [PickConflictConfig]
 validPickConflictConfigs cs = do
-  (bc, cc) <- cs
-  PickConflictConfig bc cc
-    <$> validPickConfigs
-    <*> [Nothing, Just True, Just False]
-    <*> pure alloyTestConfig
-
-validPickConfigs :: [PickConfig]
-validPickConfigs = PickConfig <$> [Nothing, Just True, Just False]
+  unique <- [Nothing, Just True, Just False]
+  ($ unique) . uncurry PickConflictConfig <$> cs <*> pure alloyTestConfig
 
 isValidConcurrency :: Concurrent String -> Bool
 isValidConcurrency c@(Concurrent (t1, t2))
