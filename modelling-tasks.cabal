@@ -447,6 +447,7 @@ executable matchToMath
 executable repair-incorrect
   main-is: repair-incorrect.hs
   other-modules:
+      Common
       EvaluateArgs
   hs-source-dirs:
       app

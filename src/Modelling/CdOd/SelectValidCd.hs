@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (..),
   SelectValidCdInstance (..),
@@ -9,7 +10,11 @@ module Modelling.CdOd.SelectValidCd (
   selectValidCdTask,
   ) where
 
-import qualified Data.Map                         as M (fromList)
+import qualified Data.Map                         as M (
+  foldrWithKey,
+  fromList,
+  insert,
+  )
 
 import Modelling.Auxiliary.Output (
   OutputMonad (..),
@@ -20,9 +25,11 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.RepairCd          (repairIncorrect)
 import Modelling.CdOd.Output            (drawCdFromSyntax)
-import Modelling.CdOd.Types             (ClassConfig (..))
+import Modelling.CdOd.Types             (ClassConfig (..), Syntax)
 
+import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (evalRandT, mkStdGen)
+import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.GraphViz                    (GraphvizOutput (Svg))
 import Data.Map                         (Map)
@@ -52,14 +59,22 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
     timeout          = Nothing
   }
 
-newtype SelectValidCdInstance = SelectValidCdInstance {
-    classDiagrams   :: Map Int (Bool, FilePath)
+data SelectValidCdInstance = SelectValidCdInstance {
+    classDiagrams   :: Map Int (Bool, Syntax),
+    withNames       :: Bool,
+    withNavigations :: Bool
   } deriving (Generic, Show)
 
-selectValidCdTask :: OutputMonad m => SelectValidCdInstance -> LangM m
-selectValidCdTask task = do
+selectValidCdTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> SelectValidCdInstance
+  -> LangM m
+selectValidCdTask path task = do
   paragraph $ text [i|Consider the following class diagram candidates.|]
-  images show snd $ classDiagrams task
+  cds      <- lift $ liftIO $ sequence $
+    M.foldrWithKey drawCd mempty $ classDiagrams task
+  images show snd cds
   paragraph $ text
     [i|Which of these class diagram candidates are valid class diagrams?
 Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
@@ -69,6 +84,16 @@ Please state your answer by giving a list of numbers, indicating all valid class
     text [i| would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
+  where
+    drawCd x (b, cd) cds =
+      let f = drawCdFromSyntax
+            (withNavigations task)
+            (withNames task)
+            Nothing
+            cd
+            [i|#{path}-#{show x}|]
+            Svg
+      in M.insert x ((b,) <$> f) cds
 
 selectValidCdEvaluation
   :: OutputMonad m
@@ -79,23 +104,15 @@ selectValidCdEvaluation = multipleChoice "class diagrams" . classDiagrams
 
 selectValidCd
   :: SelectValidCdConfig
-  -> FilePath
   -> Int
   -> Int
   -> IO SelectValidCdInstance
-selectValidCd config path segment seed = do
+selectValidCd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (_, chs)  <- evalRandT (repairIncorrect (classConfig config) (maxInstances config) (timeout config)) g
   let cds = map (second snd) chs
-  cds'      <- foldl drawCd (return []) $ zip [1 ..] cds
-  return $ SelectValidCdInstance $ M.fromList cds'
-  where
-    drawCd cds (x, (b, cd)) = do
-      f <- drawCdFromSyntax
-        (printNavigations config)
-        (printNames config)
-        Nothing
-        cd
-        [i|#{path}-#{show x}|]
-        Svg
-      ((x, (b, f)) :) <$> cds
+  return $ SelectValidCdInstance {
+    classDiagrams   = M.fromList $ zip [1 ..] cds,
+    withNames       = printNames config,
+    withNavigations = printNavigations config
+    }

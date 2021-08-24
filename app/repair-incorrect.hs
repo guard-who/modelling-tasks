@@ -1,5 +1,7 @@
 module Main where
 
+import Common                           ()
+import Modelling.Auxiliary.Output       (LangM'(withLang), Language (English))
 import Modelling.CdOd.RepairCd (
   RepairCdConfig (..),
   RepairCdInstance (..),
@@ -8,7 +10,7 @@ import Modelling.CdOd.RepairCd (
   repairCd,
   )
 import Modelling.CdOd.SelectValidCd
-  (defaultSelectValidCdConfig, selectValidCd)
+  (defaultSelectValidCdConfig, selectValidCd, selectValidCdTask)
 import EvaluateArgs                     (evaluateArgs)
 
 import Control.Arrow                    (second)
@@ -27,4 +29,7 @@ main = do
     task <- repairCd defaultRepairCdConfig "repair" s seed
     print $ second (phraseChange name dir) <$> changes task
     print task
-    else selectValidCd defaultSelectValidCdConfig "select" s seed >>= print
+    else do
+    inst <- selectValidCd defaultSelectValidCdConfig s seed
+    print inst
+    selectValidCdTask "select" inst `withLang` English
