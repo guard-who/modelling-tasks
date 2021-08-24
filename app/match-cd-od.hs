@@ -1,10 +1,16 @@
 module Main (main) where
 
+import Common                           ()
 import Modelling.CdOd.Types             (ClassConfig (..))
-import Modelling.CdOd.MatchCdOd         (MatchCdOdConfig (..), matchCdOd)
+import Modelling.CdOd.MatchCdOd (
+  MatchCdOdConfig (..),
+  matchCdOd,
+  matchCdOdTask,
+  )
 import EvaluateArgs                     (evaluateArgs)
 
 import System.Environment               (getArgs)
+import Modelling.Auxiliary.Output       (LangM' (withLang), Language (English))
 
 main :: IO ()
 main = do
@@ -24,4 +30,6 @@ main = do
         }
   putStrLn $ "Seed: " ++ show seed
   putStrLn $ "Segment: " ++ show s
-  matchCdOd config "" s seed >>= print
+  task <- matchCdOd config s seed
+  print task
+  matchCdOdTask "" task `withLang` English

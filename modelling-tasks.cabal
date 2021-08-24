@@ -368,6 +368,7 @@ executable instance2pic
 executable match-cd-od
   main-is: match-cd-od.hs
   other-modules:
+      Common
       EvaluateArgs
   hs-source-dirs:
       app

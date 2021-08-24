@@ -134,6 +134,7 @@ executables:
       - digest
       - modelling-tasks
     other-modules:
+      - Common
       - EvaluateArgs
   matchToMath:
     main: matchToMath.hs

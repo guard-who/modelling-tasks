@@ -40,7 +40,11 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
-import Modelling.CdOd.Auxiliary.Util    (getInstances, redColor)
+import Modelling.CdOd.Auxiliary.Util (
+  alloyInstanceToOd,
+  getInstances,
+  redColor,
+  )
 import Modelling.CdOd.Edges (
   DiagramEdge,
   anyMarkedEdge,
@@ -54,23 +58,26 @@ import Modelling.CdOd.Generate          (generate)
 import Modelling.CdOd.Mutation
   (Target (..), getAllMutationResults, nonTargets)
 import Modelling.CdOd.Output
-  (drawCdFromSyntax, drawOdFromInstance, getDirs)
+  (drawCdFromSyntax, drawOdFromNodesAndEdges, getDirs)
 import Modelling.CdOd.Types (
   ClassConfig (..),
   Change (..),
   Connection (..),
+  Od,
   Syntax,
   defaultProperties,
   toOldSyntax,
   )
 
 import Control.Monad                    (void, when)
+import Control.Monad.Except             (runExceptT)
 #if __GLASGOW_HASKELL__ < 808
 import Control.Monad.Fail               (MonadFail)
 #endif
-import Control.Monad.IO.Class           (liftIO)
+import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
   (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
+import Control.Monad.Trans              (MonadTrans (lift))
 import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
 import Data.List                        ((\\), delete, intercalate, nub, sort)
 import Data.Map                         (Map)
@@ -85,8 +92,8 @@ debug :: Bool
 debug = False
 
 data MatchCdOdInstance = MatchCdOdInstance {
-    diagrams       :: Map Int FilePath,
-    instances      :: Map Char ([Int], FilePath)
+    diagrams       :: Map Int Syntax,
+    instances      :: Map Char ([Int], Od)
   } deriving (Generic, Show)
 
 data MatchCdOdConfig = MatchCdOdConfig {
@@ -119,14 +126,27 @@ instancesOfMatch task = nub . sort <$>
   M.empty
   (instances task)
 
-matchCdOdTask :: OutputMonad m => MatchCdOdInstance -> LangM m
-matchCdOdTask task = do
+matchCdOdTask
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> MatchCdOdInstance
+  -> LangM m
+matchCdOdTask path task = do
+  let dirs = foldr (M.union . getDirs . toEdges) M.empty $ diagrams task
+      anonymous o = length (fst o) `div` 3
+  cds <- lift $ liftIO $
+    (\k c -> drawCdFromSyntax True True Nothing c (cdFilename k) Svg)
+    `M.traverseWithKey` diagrams task
+  ods <- lift $ liftIO $
+    (\k (is,o) -> (is,) <$> uncurry drawOdFromNodesAndEdges
+      o (anonymous o) dirs True (odFilename k is) Svg)
+    `M.traverseWithKey` instances task
   paragraph $ text "Consider the following two class diagrams."
-  images show id $ diagrams task
+  images show id cds
   paragraph $ text
     [i|Which of the following five object diagrams conform to which class diagram?
 An object diagram can conform to neither, either, or both class diagrams.|]
-  images (:[]) snd $ instances task
+  images (:[]) snd ods
   paragraph $ do
     text [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
 Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
@@ -136,6 +156,13 @@ For example, |]
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
+  where
+    cdFilename :: Int -> String
+    cdFilename n    = [i|#{path}output-cd#{n}|]
+    odFilename :: Char -> [Int] -> String
+    odFilename n is = [i|#{path}output-od-#{n}-#{toDescription is 2}|]
+    toDescription x n =
+      intercalate "and" (map show x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)
 
 matchCdOdEvaluation
   :: (OutputMonad m, Foldable t)
@@ -153,21 +180,12 @@ matchCdOdEvaluation task is' = do
     maybeList [] = Nothing
     maybeList l  = Just l
 
-matchCdOd :: MatchCdOdConfig -> FilePath -> Int -> Int -> IO MatchCdOdInstance
-matchCdOd config path segment seed = do
+matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
+matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cds, ods) <- evalRandT (getRandomTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config) (timeout config)) g
-  let dirs = foldr (M.union . getDirs . toEdges) M.empty cds
-  cds' <- (\k c -> drawCdFromSyntax True True Nothing c (cdFilename k) Svg) `M.traverseWithKey` cds
-  ods' <- (\k (is,o) -> (is,) <$> drawOdFromInstance o Nothing dirs True (odFilename k is) Svg) `M.traverseWithKey` ods
-  return $ MatchCdOdInstance cds' ods'
-  where
-    cdFilename :: Int -> String
-    cdFilename n    = [i|#{path}output-cd#{n}|]
-    odFilename :: Char -> [Int] -> String
-    odFilename n is = [i|#{path}output-od-#{n}-#{toDescription is 2}|]
-    toDescription x n =
-      intercalate "and" (map show x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)
+  ods' <- either error id <$> runExceptT (mapM (mapM alloyInstanceToOd) ods)
+  return $ MatchCdOdInstance cds ods'
 
 getRandomTask
   :: RandomGen g
