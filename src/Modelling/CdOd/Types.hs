@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.Types (
@@ -12,11 +12,16 @@ module Modelling.CdOd.Types (
   Od,
   RelationshipProperties (..),
   Syntax,
+  addedAssociation,
+  associationNames,
+  classNames,
   defaultProperties,
   toOldSyntax,
+  renameAssocsInCd,
+  renameAssocsInEdge,
   renameClassesInCd,
   renameClassesInOd,
-  renameAssocsInCd,
+  renameClassesInEdge,
   renameLinksInOd,
   ) where
 
@@ -46,7 +51,7 @@ type DiagramEdge = (String, String, Connection)
 data Change a = Change {
     add    :: Maybe a,
     remove :: Maybe a
-  } deriving (Functor, Generic, Show)
+  } deriving (Foldable, Functor, Generic, Show, Traversable)
 
 data ClassConfig = ClassConfig {
     classes      :: (Int, Int),
@@ -84,6 +89,31 @@ defaultProperties = RelationshipProperties {
 toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
 toOldSyntax = first (map $ second listToMaybe)
 
+classNames :: Syntax -> [String]
+classNames = map fst . fst
+
+associationNames :: Syntax -> [String]
+associationNames = map assocName . snd
+  where
+    assocName (_, x, _, _, _, _) = x
+
+addedAssociation :: Change DiagramEdge -> Maybe String
+addedAssociation c = add c >>= connectionName
+  where
+    connectionName (_, _, Assoc _ n _ _ _) = Just n
+    connectionName (_, _, Inheritance)     = Nothing
+
+renameAssocsInEdge
+  :: MonadThrow m
+  => Bimap String String
+  -> DiagramEdge
+  -> m DiagramEdge
+renameAssocsInEdge m (f, t, a) = (f, t,) <$> renameConnection a
+  where
+    renameConnection Inheritance           = return Inheritance
+    renameConnection (Assoc ct n lf lt im) = (\n' -> Assoc ct n' lf lt im)
+      <$> BM.lookup n m
+
 renameAssocsInCd :: MonadThrow m => Bimap String String -> Syntax -> m Syntax
 renameAssocsInCd m cd = (fst cd,) <$> mapM (renameAssocsInAssociation m) (snd cd)
 
@@ -98,6 +128,14 @@ renameAssocsInAssociation m (t, n, fl, fc, tc, tl) = do
   where
     rename = (`BM.lookup` m)
 
+renameClassesInEdge
+  :: MonadThrow m
+  => Bimap String String
+  -> DiagramEdge
+  -> m DiagramEdge
+renameClassesInEdge m (f, t, a) = (,,a) <$> rename f <*> rename t
+  where
+    rename = (`BM.lookup` m)
 
 renameClassesInCd :: MonadThrow m => Bimap String String -> Syntax -> m Syntax
 renameClassesInCd m cd = (,)

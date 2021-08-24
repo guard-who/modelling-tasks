@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.RepairCd (
   RepairCdConfig (..),
   RepairCdInstance (..),
@@ -17,6 +18,7 @@ module Modelling.CdOd.RepairCd (
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transformChanges)
 
+import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (empty, insert, fromList)
 
 import Modelling.Auxiliary.Output (
@@ -39,7 +41,14 @@ import Modelling.CdOd.Types (
   DiagramEdge,
   RelationshipProperties (..),
   Syntax,
+  addedAssociation,
+  associationNames,
+  classNames,
   defaultProperties,
+  renameAssocsInCd,
+  renameAssocsInEdge,
+  renameClassesInCd,
+  renameClassesInEdge,
   toOldSyntax,
   )
 
@@ -50,8 +59,9 @@ import Control.Monad.Random
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
+import Data.List                        (nub)
 import Data.Map                         (Map)
-import Data.Maybe                       (fromMaybe)
+import Data.Maybe                       (catMaybes, fromMaybe)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
@@ -255,7 +265,21 @@ repairIncorrect config maxInsts to = do
     writeFile "repair.als" alloyCode
   instas  <- liftIO $ getInstances maxInsts to alloyCode
   rinstas <- shuffleM instas
-  getInstanceWithODs (map isValid cs) rinstas
+  inst <- getInstanceWithODs (map isValid cs) rinstas
+  let names = nub $ classNames (fst inst)
+      assocs = nub $ associationNames (fst inst)
+        ++ catMaybes (addedAssociation . fst . snd <$> snd inst)
+  names'  <- shuffleM names
+  assocs' <- shuffleM assocs
+  let bmNames  = BM.fromList $ zip names names'
+      bmAssocs = BM.fromList $ zip assocs assocs'
+      renameCd cd = renameClassesInCd bmNames cd
+        >>= renameAssocsInCd bmAssocs
+      renameEdge e = renameAssocsInEdge bmAssocs e
+        >>= renameClassesInEdge bmNames
+  liftIO $ (,)
+    <$> renameCd (fst inst)
+    <*> mapM (\(b, (c, cd)) -> fmap (b,) . (,) <$> mapM renameEdge c <*> renameCd cd) (snd inst)
   where
     drawCd :: Syntax -> Integer -> IO FilePath
     drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
