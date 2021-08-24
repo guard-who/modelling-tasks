@@ -23,7 +23,11 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   LangM,
   )
-import Modelling.CdOd.RepairCd          (repairIncorrect)
+import Modelling.CdOd.RepairCd (
+  AllowedProperties,
+  allowEverything,
+  repairIncorrect,
+  )
 import Modelling.CdOd.Output            (drawCdFromSyntax)
 import Modelling.CdOd.Types             (ClassConfig (..), Syntax)
 
@@ -37,6 +41,7 @@ import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 
 data SelectValidCdConfig = SelectValidCdConfig {
+    allowedProperties :: AllowedProperties,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     printNames       :: Bool,
@@ -46,6 +51,7 @@ data SelectValidCdConfig = SelectValidCdConfig {
 
 defaultSelectValidCdConfig :: SelectValidCdConfig
 defaultSelectValidCdConfig = SelectValidCdConfig {
+    allowedProperties = allowEverything,
     classConfig = ClassConfig {
         classes      = (4, 4),
         aggregations = (0, Just 2),
@@ -109,7 +115,11 @@ selectValidCd
   -> IO SelectValidCdInstance
 selectValidCd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  (_, chs)  <- evalRandT (repairIncorrect (classConfig config) (maxInstances config) (timeout config)) g
+  (_, chs)  <- flip evalRandT g $ repairIncorrect
+    (allowedProperties config)
+    (classConfig config)
+    (maxInstances config)
+    (timeout config)
   let cds = map (second snd) chs
   return $ SelectValidCdInstance {
     classDiagrams   = M.fromList $ zip [1 ..] cds,

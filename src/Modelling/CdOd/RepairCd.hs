@@ -4,11 +4,13 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.RepairCd (
+  AllowedProperties (..),
   RepairCdConfig (..),
   RepairCdInstance (..),
   checkRepairCdConfig,
   constrainConfig,
   defaultRepairCdConfig,
+  allowEverything,
   phraseChange,
   repairCd,
   repairCdEvaluation,
@@ -145,6 +147,7 @@ isValid :: PropertyChange -> Bool
 isValid p = validityChange p True
 
 data RepairCdConfig = RepairCdConfig {
+    allowedProperties :: AllowedProperties,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     printNames       :: Bool,
@@ -155,6 +158,7 @@ data RepairCdConfig = RepairCdConfig {
 
 defaultRepairCdConfig :: RepairCdConfig
 defaultRepairCdConfig = RepairCdConfig {
+    allowedProperties = allowEverything,
     classConfig = ClassConfig {
         classes      = (4, 4),
         aggregations = (0, Just 2),
@@ -220,7 +224,11 @@ repairCd
   -> IO RepairCdInstance
 repairCd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  (cd, chs) <- evalRandT (repairIncorrect (classConfig config) (maxInstances config) (timeout config)) g
+  (cd, chs) <- flip evalRandT g $ repairIncorrect
+    (allowedProperties config)
+    (classConfig config)
+    (maxInstances config)
+    (timeout config)
   let chs' = map (second fst) chs
   return $ RepairCdInstance
     (M.fromList $ zip [1..] chs')
@@ -246,14 +254,15 @@ constrainConfig n config = do
 
 repairIncorrect
   :: RandomGen g
-  => ClassConfig
+  => AllowedProperties
+  -> ClassConfig
   -> Maybe Integer
   -> Maybe Int
   -> RandT g IO (Syntax, [(Bool, (Change DiagramEdge, Syntax))])
-repairIncorrect config maxInsts to = do
-  e0:_    <- shuffleM illegalChanges
+repairIncorrect allowed config maxInsts to = do
+  e0:_    <- shuffleM $ illegalChanges allowed
   l0:l1:_ <- shuffleM legalChanges
-  c0:_    <- shuffleM allChanges
+  c0:_    <- shuffleM $ allChanges allowed
   csm     <- shuffleM $ c0 : noChange : l1 .&. noChange : l1 : [e0]
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
 --  config' <- constrainConfig 5 config
@@ -293,7 +302,7 @@ repairIncorrect config maxInsts to = do
                               (foldr (`M.insert` Forward) M.empty forwards)
                               backwards
       in drawOdFromInstance od Nothing navigations True ("od-" ++ show x) Pdf
-    getInstanceWithODs _  [] = repairIncorrect config maxInsts to
+    getInstanceWithODs _  [] = repairIncorrect allowed config maxInsts to
     getInstanceWithODs vs (rinsta:rinstas) = do
       (cd, chs, _) <- applyChanges rinsta
       let cds  = zip vs (map snd chs)
@@ -311,8 +320,23 @@ repairIncorrect config maxInsts to = do
       let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) "" ""
       getInstances (Just 1) to (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
-allChanges :: [PropertyChange]
-allChanges = legalChanges ++ illegalChanges
+data AllowedProperties = AllowedProperties {
+  wrongAssociationLimits :: Bool,
+  wrongCompositionLimits :: Bool,
+  inheritanceCycles      :: Bool,
+  compositionCycles      :: Bool
+  }
+
+allowEverything :: AllowedProperties
+allowEverything = AllowedProperties {
+  wrongAssociationLimits = True,
+  wrongCompositionLimits = True,
+  inheritanceCycles = True,
+  compositionCycles = True
+  }
+
+allChanges :: AllowedProperties -> [PropertyChange]
+allChanges c = legalChanges ++ illegalChanges c
 
 noChange :: PropertyChange
 noChange = PropertyChange "none" id id
@@ -346,13 +370,16 @@ legalChanges = [
     -- withMultipleInheritances config
     --   = config { hasMultipleInheritances = True }
 
-illegalChanges :: [PropertyChange]
-illegalChanges = map ($ const False) [
-    PropertyChange "add wrong association" addWrongAssocs,
-    PropertyChange "add wrong composition" addWrongCompositions,
-    PropertyChange "force inheritance cycles" withInheritanceCycles,
+illegalChanges :: AllowedProperties -> [PropertyChange]
+illegalChanges allowed = map ($ const False) $ [
+    PropertyChange "add wrong association" addWrongAssocs
+  | wrongAssociationLimits allowed] ++ [
+    PropertyChange "add wrong composition" addWrongCompositions
+  | wrongCompositionLimits allowed] ++ [
+    PropertyChange "force inheritance cycles" withInheritanceCycles
+  | inheritanceCycles allowed] ++ [
     PropertyChange "force composition cycles" withCompositionCycles
-  ]
+  | compositionCycles allowed]
   where
     addWrongAssocs :: RelationshipProperties -> RelationshipProperties
     addWrongAssocs config@RelationshipProperties {..}
