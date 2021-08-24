@@ -32,6 +32,7 @@ import Control.Monad.Catch              (MonadThrow)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bimapM)
+import Data.List                        (intercalate)
 import Data.List.Split                  (splitOn)
 import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
@@ -167,16 +168,16 @@ renameLinksInOd m od = (fst od,) <$> mapM rename (snd od)
     rename (f, t, l) = (f,t,) <$> BM.lookup l m
 
 {-|
-Renames all the class names by replacing all letters by their new version of
+Renames all the class names by replacing class names by their new version of
 the given mapping.
 
 Object diagrams contain class names within their object names.
-The class names, being letters at the moment, start the object name.
+The class names, start the object name, they are followed by a @$@ sign.
 Therefore renaming those is sufficient when renaming the classes in ODs.
 There are no empty object diagram names.
 (That is why the non-exhaustive pattern match is safe here.)
 -}
 renameClassesInOd :: MonadThrow m => Bimap String String -> Od -> m Od
-renameClassesInOd m od = (,snd od) <$> mapM rename (fst od)
+renameClassesInOd m od = (,snd od) <$> mapM (rename . splitOn "$") (fst od)
   where
-    rename (l:ls) = (++ ls) <$> BM.lookup [l] m
+    rename (l:ls) = (++ intercalate "$" ls) <$> BM.lookup l m
