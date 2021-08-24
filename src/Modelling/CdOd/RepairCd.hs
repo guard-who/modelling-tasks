@@ -44,9 +44,10 @@ import Modelling.CdOd.Types (
   )
 
 import Control.Monad                    (void, when)
-import Control.Monad.IO.Class           (liftIO)
+import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
   (RandomGen, RandT, evalRandT, getRandomR, mkStdGen)
+import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.Map                         (Map)
@@ -165,11 +166,21 @@ checkRepairCdConfig config
   | otherwise
   = Nothing
 
-repairCdTask :: OutputMonad m => RepairCdInstance -> LangM m
-repairCdTask task = do
+repairCdTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> RepairCdInstance
+  -> LangM m
+repairCdTask path task = do
+  cd <- lift . liftIO $ drawCdFromSyntax
+    (withDirections task)
+    (withNames task)
+    Nothing
+    (classDiagram task)
+    path Svg
   paragraph $ text
     "Consider the following class diagram, which unfortunately is invalid."
-  image $ classDiagram task
+  image cd
   paragraph $ text
     [i|Which of the following changes would repair the class diagram?|]
   enumerate show (phraseChange (withNames task) (withDirections task) . snd) $ changes task
@@ -187,25 +198,23 @@ repairCdEvaluation = multipleChoice "changes" . changes
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int (Bool, Change DiagramEdge),
-    classDiagram   :: FilePath,
+    classDiagram   :: Syntax,
     withDirections :: Bool,
     withNames      :: Bool
   } deriving (Generic, Show)
 
 repairCd
   :: RepairCdConfig
-  -> FilePath
   -> Int
   -> Int
   -> IO RepairCdInstance
-repairCd config path segment seed = do
+repairCd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cd, chs) <- evalRandT (repairIncorrect (classConfig config) (maxInstances config) (timeout config)) g
   let chs' = map (second fst) chs
-  cd'       <- drawCdFromSyntax (printNavigations config) (printNames config) Nothing cd path Svg
   return $ RepairCdInstance
     (M.fromList $ zip [1..] chs')
-    cd'
+    cd
     (printNavigations config)
     (printNames config && useNames config)
 
