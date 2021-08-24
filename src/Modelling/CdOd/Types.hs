@@ -16,6 +16,7 @@ module Modelling.CdOd.Types (
   associationNames,
   classNames,
   defaultProperties,
+  linkNames,
   toOldSyntax,
   renameAssocsInCd,
   renameAssocsInEdge,
@@ -31,6 +32,7 @@ import Control.Monad.Catch              (MonadThrow)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bimapM)
+import Data.List.Split                  (splitOn)
 import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
 
@@ -96,6 +98,9 @@ associationNames :: Syntax -> [String]
 associationNames = map assocName . snd
   where
     assocName (_, x, _, _, _, _) = x
+
+linkNames :: Od -> [String]
+linkNames o = head . splitOn "$" <$> fst o
 
 addedAssociation :: Change DiagramEdge -> Maybe String
 addedAssociation c = add c >>= connectionName

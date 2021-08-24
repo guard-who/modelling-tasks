@@ -65,7 +65,14 @@ import Modelling.CdOd.Types (
   Connection (..),
   Od,
   Syntax,
+  associationNames,
+  classNames,
   defaultProperties,
+  linkNames,
+  renameAssocsInCd,
+  renameClassesInCd,
+  renameClassesInOd,
+  renameLinksInOd,
   toOldSyntax,
   )
 
@@ -185,7 +192,18 @@ matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cds, ods) <- evalRandT (getRandomTask (classConfig config) (maxObjects config) (searchSpace config) (maxInstances config) (timeout config)) g
   ods' <- either error id <$> runExceptT (mapM (mapM alloyInstanceToOd) ods)
-  return $ MatchCdOdInstance cds ods'
+  let names  = nub $ concat $ classNames <$> cds
+      assocs = nub $ concat (associationNames <$> cds)
+        ++ concat (linkNames . snd <$> ods')
+  names'  <- shuffleM names
+  assocs' <- shuffleM assocs
+  let bmNames  = BM.fromList $ zip names names'
+      bmAssocs = BM.fromList $ zip assocs assocs'
+      renameCd cd = renameClassesInCd bmNames cd >>= renameAssocsInCd bmAssocs
+      renameOd od = renameClassesInOd bmNames od >>= renameLinksInOd bmAssocs
+  cds'  <- renameCd `mapM` cds
+  ods'' <- mapM renameOd `mapM` ods'
+  return $ MatchCdOdInstance cds' ods''
 
 getRandomTask
   :: RandomGen g
