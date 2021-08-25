@@ -12,10 +12,11 @@ import Data.String.Interpolate          (i)
 
 transform
   :: ([(String, Maybe String)], [Association])
+  -> Maybe Bool
   -> String
   -> String
   -> (String, String, String, String, String)
-transform (classes, associations) index time =
+transform (classes, associations) hasSelfLoops index time =
   (part1, part2, part3, part4, part5)
   where
     template :: String
@@ -52,17 +53,20 @@ module umlp2alloy/CD#{index}Module
 // Properties
 #{predicate index associations classNames}
 |]
-    part5 = createRunCommand ("cd" ++ index) (length classes) 5
+    part5 = createRunCommand hasSelfLoops ("cd" ++ index) (length classes) 5
     classNames = map fst classes
     classesWithDirectSubclasses =
       map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
 
-createRunCommand :: String -> Int -> Int -> String
-createRunCommand command numClasses maxObjects = [i|
+createRunCommand :: Maybe Bool -> String -> Int -> Int -> String
+createRunCommand hasSelfLoops command numClasses maxObjects = [i|
 ///////////////////////////////////////////////////
 // Run commands
 ///////////////////////////////////////////////////
+fact {
+  #{loops}
+}
 
 run { #{command} } for #{maxObjects} Obj, #{intSize} FName, #{intSize} Int
 |]
@@ -72,6 +76,10 @@ run { #{command} } for #{maxObjects} Obj, #{intSize} FName, #{intSize} Int
     intSize' :: Double
     intSize' = logBase 2 $ fromIntegral $
       2 * max (numClasses * maxObjects) (2 * maxObjects) + 1
+    loops            = case hasSelfLoops of
+      Nothing    -> ""
+      Just True  -> "some o : Obj | o in o.get[FName]"
+      Just False -> "no o : Obj | o in o.get[FName]"
 
 associationSigs :: [Association] -> [String]
 associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ name ++ " extends FName {}")

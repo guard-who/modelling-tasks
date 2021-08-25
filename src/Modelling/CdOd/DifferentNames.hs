@@ -68,6 +68,7 @@ data DifferentNamesInstance = DifferentNamesInstance {
   } deriving (Generic, Show)
 
 data DifferentNamesConfig = DifferentNamesConfig {
+    allowSelfLoops   :: Maybe Bool,
     classConfig      :: ClassConfig,
     maxObjects       :: Int,
     withNonTrivialInheritance :: Maybe Bool,
@@ -78,6 +79,7 @@ data DifferentNamesConfig = DifferentNamesConfig {
 
 defaultDifferentNamesConfig :: DifferentNamesConfig
 defaultDifferentNamesConfig = DifferentNamesConfig {
+    allowSelfLoops   = Nothing,
     classConfig  = ClassConfig {
         classes      = (4, 4),
         aggregations = (0, Just 2),
@@ -199,7 +201,11 @@ getDifferentNamesTask config = do
         cds'   = zip [1 :: Integer ..] cds
         partss = map extractFourParts cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
-        onlyCd0 = createRunCommand runCmd (length names) $ maxObjects config
+        onlyCd0 = createRunCommand
+          (allowSelfLoops config)
+          runCmd
+          (length names)
+          $ maxObjects config
         partss' = foldr mergeParts parts0 partss
     when debug . liftIO . void $ drawCd cd0
     when debug . liftIO . void $ drawCd `mapM_` cds'
@@ -229,7 +235,7 @@ getDifferentNamesTask config = do
         return (cd2, od2, bm')
         else getDifferentNamesTask config
   where
-    extractFourParts (n, cd) = case transform (toOldSyntax cd) (show n) "" of
+    extractFourParts (n, cd) = case transform (toOldSyntax cd) (allowSelfLoops config) (show n) "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =

@@ -317,7 +317,7 @@ repairIncorrect allowed config maxInsts to = do
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do
-      let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) "" ""
+      let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) Nothing "" ""
       getInstances (Just 1) to (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
 data AllowedProperties = AllowedProperties {

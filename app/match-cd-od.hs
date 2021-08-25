@@ -16,6 +16,7 @@ main :: IO ()
 main = do
   (s, seed) <- getArgs >>= evaluateArgs
   let config = MatchCdOdConfig {
+          allowSelfLoops = Nothing,
           classConfig = ClassConfig {
               classes      = (4, 4),
               aggregations = (0, Just 2),
