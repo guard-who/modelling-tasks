@@ -15,6 +15,7 @@ module Modelling.CdOd.Types (
   addedAssociation,
   associationNames,
   classNames,
+  classNamesOd,
   defaultProperties,
   linkNames,
   toOldSyntax,
@@ -100,8 +101,11 @@ associationNames = map assocName . snd
   where
     assocName (_, x, _, _, _, _) = x
 
+classNamesOd :: Od -> [String]
+classNamesOd o = head . splitOn "$" <$> fst o
+
 linkNames :: Od -> [String]
-linkNames o = head . splitOn "$" <$> fst o
+linkNames o = (\(_,_,x) -> x) <$> snd o
 
 addedAssociation :: Change DiagramEdge -> Maybe String
 addedAssociation c = add c >>= connectionName
