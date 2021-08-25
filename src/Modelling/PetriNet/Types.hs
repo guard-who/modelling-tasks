@@ -14,7 +14,7 @@ functions to work on and transform Petri net representations.
 module Modelling.PetriNet.Types where
 
 import qualified Data.Map.Lazy                    as M (
-  elems, empty, filter, foldrWithKey, insert, keysSet, lookup,
+  elems, empty, filter, foldrWithKey, insert, keys, keysSet, lookup,
   mapKeys, member, null
   )
 import qualified Data.Set                         as S (empty, union)
@@ -248,6 +248,12 @@ traversePetriLike
   -> f (PetriLike b)
 traversePetriLike f x =
   PetriLike <$> traverseKeyAndValueMap f (traverseNode f) (allNodes x)
+
+transitionNames :: PetriLike k -> [k]
+transitionNames = M.keys . M.filter isTransitionNode . allNodes
+
+placeNames :: PetriLike k -> [k]
+placeNames = M.keys . M.filter isPlaceNode . allNodes
 
 {-|
 Transform a 'PetriLike' graph into a 'Petri' net.

@@ -32,6 +32,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickTaskInstance,
   ) where
 
+import qualified Data.Bimap                       as BM (fromList, lookup)
 import qualified Data.Map                         as M (
   elems,
   filter,
@@ -85,6 +86,9 @@ import Modelling.PetriNet.Types         (
   PetriConflict (Conflict, conflictTrans),
   PetriLike,
   PickConcurrencyConfig (..), PickConflictConfig (..),
+  placeNames,
+  transitionNames,
+  traversePetriLike,
   )
 
 import Control.Arrow                    (Arrow (second))
@@ -98,6 +102,8 @@ import Control.Monad.Random (
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Data.Bitraversable               (bimapM)
+import Data.List                        (nub)
 import Data.Map                         (Map)
 import Data.Maybe                       (isJust, isNothing)
 import Data.String.Interpolate          (i)
@@ -342,6 +348,11 @@ pickGenerate pick bc config segment seed = do
   ns <- evalRandT (pick config segment) $ mkStdGen seed
   let g  = mkStdGen seed
   ns'  <- evalRandT (shuffleM ns) g
+  let ts = nub $ concat $ transitionNames . fst <$> ns'
+      ps = nub $ concat $ placeNames . fst <$> ns'
+  ts' <- shuffleM ts
+  let mapping = BM.fromList $ zip (ps ++ ts) (ps ++ ts')
+  ns'' <- bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
   return $ PickInstance {
     drawPickWith = DrawSettings {
       withPlaceNames = not $ hidePlaceNames $ bc config,
@@ -349,7 +360,7 @@ pickGenerate pick bc config segment seed = do
       with1Weights = not $ hideWeight1 $ bc config,
       withGraphvizCommand = graphLayout $ bc config
       },
-    nets = M.fromList $ zip [1 ..] [(isJust m, n) | (n, m) <- ns']
+    nets = M.fromList $ zip [1 ..] [(isJust m, n) | (n, m) <- ns'']
     }
 
 renderWith
