@@ -5,16 +5,13 @@ module Main (main) where
 import Common (
   forceErrors,
   instanceInput,
-  printNetAndInfo,
   )
 import Modelling.Auxiliary.Output        (LangM' (withLang), Language (English))
 import Modelling.PetriNet.ConcurrencyAndConflict (
   checkPickConcurrencyConfig,
   checkFindConcurrencyConfig,
-  findConcurrency,
   findConcurrencyGenerate,
   findConcurrencyTask,
-  pickConcurrency,
   pickConcurrencyGenerate,
   pickConcurrencyTask,
   )
@@ -24,7 +21,6 @@ import Modelling.PetriNet.Types (
   defaultFindConcurrencyConfig, defaultPickConcurrencyConfig,
   )
 
-import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (lift)
 import Data.Maybe                        (isNothing)
 import System.IO (
@@ -59,10 +55,9 @@ mainFind i = forceErrors $ do
   let c = checkFindConcurrencyConfig config
   if isNothing c
   then do
-    conc <- evalRandT (findConcurrency config 0) $ mkStdGen i
-    t <- findConcurrencyGenerate config "" 0 i
-    lift . (`withLang` English) $ findConcurrencyTask t
-    lift $ printNetAndInfo "" conc
+    t <- findConcurrencyGenerate config 0 i
+    lift . (`withLang` English) $ findConcurrencyTask "" t
+    lift $ print t
   else
     lift $ print c
   where
@@ -88,10 +83,9 @@ mainPick i = forceErrors $ do
   let c = checkPickConcurrencyConfig config
   if isNothing c
   then do
-    concs <- evalRandT (pickConcurrency config 0) $ mkStdGen i
-    t <- pickConcurrencyGenerate config "" 0 i
-    lift . (`withLang` English) $ pickConcurrencyTask t
-    lift $ uncurry printNetAndInfo `mapM_` zip (show <$> [1 :: Integer ..]) concs
+    t <- pickConcurrencyGenerate config 0 i
+    lift . (`withLang` English) $ pickConcurrencyTask "" t
+    lift $ print t
   else
     lift $ print c
   where

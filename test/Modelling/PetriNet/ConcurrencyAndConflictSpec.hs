@@ -26,10 +26,10 @@ import Modelling.PetriNet.Types (
   Concurrent (Concurrent),
   Conflict,
   FindConcurrencyConfig (..),
-  FindConflictConfig (FindConflictConfig, alloyConfig, basicConfig),
+  FindConflictConfig (FindConflictConfig, alloyConfig),
   PetriConflict (Conflict),
   PickConcurrencyConfig (..),
-  PickConflictConfig (PickConflictConfig, alloyConfig, basicConfig),
+  PickConflictConfig (PickConflictConfig, alloyConfig),
   defaultFindConcurrencyConfig,
   defaultFindConflictConfig,
   defaultPickConcurrencyConfig,
@@ -135,38 +135,26 @@ addDrawArgs f g c = g
 testFindConcurrencyConfig :: [FindConcurrencyConfig] -> Spec
 testFindConcurrencyConfig = testTaskGeneration
   petriNetFindConcur
-  (addDrawArgs bc . findTaskInstance parseConcurrency)
+  (findTaskInstance parseConcurrency)
   checkFindConcurrencyInstance
-  where
-    bc :: FindConcurrencyConfig -> BasicConfig
-    bc = basicConfig
 
 testFindConflictConfig :: [FindConflictConfig] -> Spec
 testFindConflictConfig = testTaskGeneration
   petriNetFindConfl
-  (addDrawArgs bc . findTaskInstance parseConflict)
+  (findTaskInstance parseConflict)
   checkFindConflictInstance
-  where
-    bc :: FindConflictConfig -> BasicConfig
-    bc = basicConfig
 
 testPickConcurrencyConfig :: [PickConcurrencyConfig] -> Spec
 testPickConcurrencyConfig = testTaskGeneration
   petriNetPickConcur
-  (addDrawArgs bc . pickTaskInstance parseConcurrency)
+  (pickTaskInstance parseConcurrency)
   checkPickConcurrencyInstance
-  where
-    bc :: PickConcurrencyConfig -> BasicConfig
-    bc = basicConfig
 
 testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig = testTaskGeneration
   petriNetPickConfl
-  (addDrawArgs bc . pickTaskInstance parseConflict)
+  (pickTaskInstance parseConflict)
   checkPickConflictInstance
-  where
-    bc :: PickConflictConfig -> BasicConfig
-    bc = basicConfig
 
 validFindConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]

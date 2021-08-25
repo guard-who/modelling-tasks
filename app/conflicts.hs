@@ -5,16 +5,13 @@ module Main (main) where
 import Common (
   forceErrors,
   instanceInput,
-  printNetAndInfo,
   )
 import Modelling.Auxiliary.Output       (LangM' (withLang), Language (English))
 import Modelling.PetriNet.ConcurrencyAndConflict (
   checkFindConflictConfig,
   checkPickConflictConfig,
-  findConflict,
   findConflictGenerate,
   findConflictTask,
-  pickConflict,
   pickConflictGenerate,
   pickConflictTask,
   )
@@ -24,7 +21,6 @@ import Modelling.PetriNet.Types         (
   defaultFindConflictConfig, defaultPickConflictConfig,
   )
 
-import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.Maybe                        (isNothing)
 import System.IO (
@@ -59,10 +55,9 @@ mainFind i = forceErrors $ do
   let c = checkFindConflictConfig config
   if isNothing c
   then do
-    conflDia <- evalRandT (findConflict config 0) $ mkStdGen i
-    t <- findConflictGenerate config "" 0 i
-    lift . (`withLang` English) $ findConflictTask t
-    lift $ printNetAndInfo "" conflDia
+    t <- findConflictGenerate config 0 i
+    lift . (`withLang` English) $ findConflictTask "" t
+    lift $ print t
   else
     lift $ print c
   where
@@ -88,10 +83,9 @@ mainPick i = forceErrors $ do
   let c = checkPickConflictConfig config
   if isNothing c
   then do
-    conflDias <- evalRandT (pickConflict config 0) $ mkStdGen i
-    t <- pickConflictGenerate config "" 0 i
-    lift . (`withLang` English) $ pickConflictTask t
-    lift $ uncurry printNetAndInfo `mapM_` zip ["0", "1"] conflDias
+    t <- pickConflictGenerate config 0 i
+    lift . (`withLang` English) $ pickConflictTask "" t
+    lift $ print c
   else
     lift $ print c
   where

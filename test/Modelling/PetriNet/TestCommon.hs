@@ -67,7 +67,7 @@ ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
 
 testTaskGeneration
   :: (config -> String)
-  -> (AlloyInstance -> config -> ExceptT String IO inst)
+  -> (AlloyInstance -> ExceptT String IO inst)
   -> (inst -> Bool)
   -> [config]
   -> Spec
@@ -87,7 +87,7 @@ testTaskGeneration alloyGen taskInst checkInst cs =
       let r'' = if r' >= length is
                 then fst $ randomR (0, length is - 1) g'
                 else r'
-      taskInst (is !! r'') conf
+      taskInst (is !! r'')
     return $ isResult checkInst ti
 
 defaultConfigTaskGeneration

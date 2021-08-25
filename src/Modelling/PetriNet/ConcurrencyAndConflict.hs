@@ -36,7 +36,9 @@ import qualified Data.Map                         as M (
   elems,
   filter,
   fromList,
-  keys
+  keys,
+  foldrWithKey,
+  insert,
   )
 import qualified Data.Set                         as Set (
   Set,
@@ -44,9 +46,11 @@ import qualified Data.Set                         as Set (
   )
 
 import Modelling.Auxiliary.Output (
-  OutputMonad (..),
-  singleChoice,
+  LangM',
   LangM,
+  OutputMonad (..),
+  english,
+  singleChoice,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -66,7 +70,7 @@ import Modelling.PetriNet.Alloy (
 import Modelling.PetriNet.BasicNetFunctions (
   checkConfigForFind, checkConfigForPick,
   )
-import Modelling.PetriNet.Diagram       (getDefaultNet, getNet)
+import Modelling.PetriNet.Diagram       (drawNet, getDefaultNet, getNet)
 import Modelling.PetriNet.Parser        (
   asSingleton,
   )
@@ -76,50 +80,59 @@ import Modelling.PetriNet.Types         (
   ChangeConfig,
   Concurrent (Concurrent),
   Conflict,
+  DrawSettings (..),
   FindConcurrencyConfig (..), FindConflictConfig (..),
   PetriConflict (Conflict, conflictTrans),
+  PetriLike,
   PickConcurrencyConfig (..), PickConflictConfig (..),
   )
 
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Random (
-  MonadTrans (lift),
   RandT,
   RandomGen,
   StdGen,
   evalRandT,
   mkStdGen
   )
-import Control.Monad.Trans.Except       (ExceptT)
-import Data.GraphViz.Attributes.Complete (GraphvizCommand)
+import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Trans              (MonadTrans (lift))
+import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Map                         (Map)
 import Data.Maybe                       (isJust, isNothing)
 import Data.String.Interpolate          (i)
-import Diagrams.Backend.SVG             (B, renderSVG)
-import Diagrams.Prelude                 (Diagram, mkWidth)
+import Diagrams.Backend.SVG             (renderSVG)
+import Diagrams.Prelude                 (mkWidth)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
-  AlloyInstance, Object, getSingle, lookupSig, unscoped,
+  AlloyInstance, Object, getSingle, lookupSig, unscoped
   )
 import System.Random.Shuffle            (shuffleM)
 import Text.Read                        (readMaybe)
 
 data FindInstance a = FindInstance {
+  drawFindWith :: DrawSettings,
   transitionPair :: a,
-  net :: FilePath,
+  net :: PetriLike String,
   numberOfPlaces :: Int
   }
-  deriving (Generic, Show)
+  deriving (Generic, Read, Show)
 
-newtype PickInstance = PickInstance {
-  nets :: Map Int (Bool, FilePath)
+data PickInstance = PickInstance {
+  drawPickWith :: DrawSettings,
+  nets :: Map Int (Bool, PetriLike String)
   }
-  deriving (Generic, Show)
+  deriving (Generic, Read, Show)
 
-findConcurrencyTask :: OutputMonad m => FindInstance (Concurrent String) -> LangM m
-findConcurrencyTask task = do
+findConcurrencyTask
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> FindInstance (Concurrent String)
+  -> LangM m
+findConcurrencyTask path task = do
+  pn <- renderWith path "concurrent" (net task) (drawFindWith task)
   paragraph $ text "Considering this Petri net"
-  image $ net task
+  image pn
   paragraph $ text "Which pair of transitions are concurrently activated under the initial marking?"
   paragraph $ do
     text "Please state your answer by giving a pair of concurrently activated transitions. "
@@ -162,10 +175,15 @@ transitionPairEvaluation what n (ft, st) is = do
       | otherwise
       = False
 
-findConflictTask :: OutputMonad m => FindInstance Conflict -> LangM m
-findConflictTask task = do
+findConflictTask
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> FindInstance Conflict
+  -> LangM m
+findConflictTask path task = do
+  pn <- renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ text "Considering this Petri net"
-  image $ net task
+  image pn
   paragraph $ text
     "Which pair of transitions are in conflict under the initial marking?"
   paragraph $ do
@@ -185,11 +203,16 @@ findConflictEvaluation task =
   where
     (ft, st) = conflictTrans $ transitionPair task
 
-pickConcurrencyTask :: OutputMonad m => PickInstance -> LangM m
-pickConcurrencyTask task = do
+pickConcurrencyTask
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> PickInstance
+  -> LangM m
+pickConcurrencyTask path task = do
   paragraph $ text
     "Which of the following Petri nets has exactly one pair of transitions that are concurrently activated?"
-  images show snd $ nets task
+  files <- renderPick path "concurrent" task
+  images show snd files
   paragraph $ text
     [i|Please state your answer by giving only the number of the Petri net having these concurrently activated transitions.|]
   let plural = wrongInstances task > 1
@@ -208,11 +231,16 @@ pickEvaluation
   -> LangM m
 pickEvaluation = singleChoice "petri nets" . head . M.keys . M.filter fst . nets
 
-pickConflictTask :: OutputMonad m => PickInstance -> LangM m
-pickConflictTask task = do
+pickConflictTask
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> PickInstance
+  -> LangM m
+pickConflictTask path task = do
   paragraph $ text
     "Which of the following Petri nets has exactly one pair of transitions that are in conflict?"
-  images show snd $ nets task
+  files <- renderPick path "conflict" task
+  images show snd files
   paragraph $ text
     [i|Please state your answer by giving only the number of the Petri net having these transitions in conflict.|]
   let plural = wrongInstances task > 1
@@ -223,17 +251,20 @@ pickConflictTask task = do
 
 findConcurrencyGenerate
   :: FindConcurrencyConfig
-  -> FilePath
   -> Int
   -> Int
   -> ExceptT String IO (FindInstance (Concurrent String))
-findConcurrencyGenerate config path segment seed = do
+findConcurrencyGenerate config segment seed = do
   (d, c) <- evalRandT (findConcurrency config segment) $ mkStdGen seed
-  let file = path ++ "concurrent.svg"
-  lift (renderSVG file (mkWidth 250) d)
   return $ FindInstance {
+    drawFindWith   = DrawSettings {
+      withPlaceNames = not $ hidePlaceNames bc,
+      withTransitionNames = not $ hideTransitionNames bc,
+      with1Weights = not $ hideWeight1 bc,
+      withGraphvizCommand = graphLayout bc
+      },
     transitionPair = c,
-    net = file,
+    net = d,
     numberOfPlaces = places bc
     }
   where
@@ -243,27 +274,29 @@ findConcurrency
   :: RandomGen g
   => FindConcurrencyConfig
   -> Int
-  -> RandT g (ExceptT String IO) (Diagram B, Concurrent String)
+  -> RandT g (ExceptT String IO) (PetriLike String, Concurrent String)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
   parseConcurrency
-  (\c -> basicConfig (c :: FindConcurrencyConfig))
   (\c -> alloyConfig (c :: FindConcurrencyConfig))
 
 findConflictGenerate
   :: FindConflictConfig
-  -> FilePath
   -> Int
   -> Int
   -> ExceptT String IO (FindInstance Conflict)
-findConflictGenerate config path segment seed = do
+findConflictGenerate config segment seed = do
   (d, c) <- evalRandT (findConflict config segment) $ mkStdGen seed
-  let file = path ++ "conflict.svg"
-  lift (renderSVG file (mkWidth 250) d)
   return $ FindInstance {
+    drawFindWith = DrawSettings {
+      withPlaceNames = not $ hidePlaceNames bc,
+      withTransitionNames = not $ hideTransitionNames bc,
+      with1Weights = not $ hideWeight1 bc,
+      withGraphvizCommand = graphLayout bc
+      },
     transitionPair = c,
-    net = file,
+    net = d,
     numberOfPlaces = places bc
     }
   where
@@ -273,103 +306,124 @@ findConflict
   :: RandomGen g
   => FindConflictConfig
   -> Int
-  -> RandT g (ExceptT String IO) (Diagram B, Conflict)
+  -> RandT g (ExceptT String IO) (PetriLike String, Conflict)
 findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
   parseConflict
-  (\c -> basicConfig (c :: FindConflictConfig))
   (\c -> alloyConfig (c :: FindConflictConfig))
 
 pickConcurrencyGenerate
   :: PickConcurrencyConfig
-  -> FilePath
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickConcurrencyGenerate = pickGenerate pickConcurrency "concurrent"
+pickConcurrencyGenerate = pickGenerate pickConcurrency bc
+  where
+    bc config = basicConfig (config :: PickConcurrencyConfig)
 
 pickConflictGenerate
   :: PickConflictConfig
-  -> FilePath
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickConflictGenerate = pickGenerate pickConflict "conflict"
+pickConflictGenerate = pickGenerate pickConflict bc
+  where
+    bc config = basicConfig (config :: PickConflictConfig)
 
 pickGenerate
-  :: (c -> Int -> RandT StdGen (ExceptT String IO) [(Diagram B, Maybe a)])
-  -> String
+  :: (c -> Int -> RandT StdGen (ExceptT String IO) [(PetriLike String, Maybe a)])
+  -> (c -> BasicConfig)
   -> c
-  -> FilePath
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickGenerate pick task config path segment seed = do
+pickGenerate pick bc config segment seed = do
   ns <- evalRandT (pick config segment) $ mkStdGen seed
   let g  = mkStdGen seed
   ns'  <- evalRandT (shuffleM ns) g
-  ns'' <- lift $ foldl render (return []) $ zip [1 ..] ns'
-  return $ PickInstance $ M.fromList ns''
+  return $ PickInstance {
+    drawPickWith = DrawSettings {
+      withPlaceNames = not $ hidePlaceNames $ bc config,
+      withTransitionNames = not $ hideTransitionNames $ bc config,
+      with1Weights = not $ hideWeight1 $ bc config,
+      withGraphvizCommand = graphLayout $ bc config
+      },
+    nets = M.fromList $ zip [1 ..] [(isJust m, n) | (n, m) <- ns']
+    }
+
+renderWith
+  :: (MonadIO m, OutputMonad m)
+  => String
+  -> String
+  -> PetriLike String
+  -> DrawSettings
+  -> LangM' m FilePath
+renderWith path task net config = do
+  f <- lift $ liftIO $ runExceptT $ do
+    let file = path ++ task ++ ".svg"
+    dia <- drawNet id net
+      (not $ withPlaceNames config)
+      (not $ withTransitionNames config)
+      (not $ with1Weights config)
+      (withGraphvizCommand config)
+    liftIO $ renderSVG file (mkWidth 250) dia
+    return file
+  either
+    (const $ refuse (english "drawing diagram failed") >> return "")
+    return
+    f
+
+renderPick
+  :: (MonadIO m, OutputMonad m)
+  => String
+  -> String
+  -> PickInstance
+  -> LangM' m (Map Int (Bool, String))
+renderPick path task config =
+  M.foldrWithKey render (return mempty) $ nets config
   where
-    render ns (x, (net, m))= do
-      let file = path ++ task ++ "-" ++ show x ++ ".svg"
-      renderSVG file (mkWidth 250) net
-      ((x, (isJust m, file)) :) <$> ns
+    render x (b, net) ns = do
+      file <- renderWith path (task ++ '-' : show x) net (drawPickWith config)
+      M.insert x (b, file) <$> ns
 
 pickConcurrency
   :: RandomGen g
   => PickConcurrencyConfig
   -> Int
-  -> RandT g (ExceptT String IO) [(Diagram B, Maybe (Concurrent String))]
+  -> RandT g (ExceptT String IO) [(PetriLike String, Maybe (Concurrent String))]
 pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
   parseConcurrency
-  (\c -> basicConfig (c :: PickConcurrencyConfig))
   (\c -> alloyConfig (c :: PickConcurrencyConfig))
 
 pickConflict
   :: RandomGen g
   => PickConflictConfig
   -> Int
-  -> RandT g (ExceptT String IO) [(Diagram B, Maybe Conflict)]
+  -> RandT g (ExceptT String IO) [(PetriLike String, Maybe Conflict)]
 pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl
   parseConflict
-  (\c -> basicConfig (c :: PickConflictConfig))
   (\c -> alloyConfig (c :: PickConflictConfig))
 
 findTaskInstance
   :: Traversable t
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
-  -> GraphvizCommand
-  -> ExceptT String IO (Diagram B, t String)
+  -> ExceptT String IO (PetriLike String, t String)
 findTaskInstance = getNet
 
 pickTaskInstance
   :: Traversable t
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
-  -> GraphvizCommand
-  -> ExceptT String IO [(Diagram B, Maybe (t String))]
-pickTaskInstance parseF inst hidePNames hideTNames hide1 gc = do
-  confl <- second Just <$> getNet parseF inst hidePNames hideTNames hide1 gc
-  net   <- (,Nothing) <$> getDefaultNet inst hidePNames hideTNames hide1 gc
+  -> ExceptT String IO [(PetriLike String, Maybe (t String))]
+pickTaskInstance parseF inst = do
+  confl <- second Just <$> getNet parseF inst
+  net   <- (,Nothing) <$> getDefaultNet inst
   return [confl,net]
 
 petriNetFindConfl :: FindConflictConfig -> String

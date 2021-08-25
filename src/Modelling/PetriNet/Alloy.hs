@@ -43,7 +43,6 @@ import Control.Monad.Random (
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.FileEmbed                   (embedStringFile)
-import Data.GraphViz                    (GraphvizCommand)
 import Data.Maybe                       (isNothing)
 import Data.String.Interpolate          (i)
 import Language.Alloy.Call (
@@ -162,19 +161,14 @@ taskInstance
   :: RandomGen g
   => (f
     -> AlloyInstance
-    -> Bool
-    -> Bool
-    -> Bool
-    -> GraphvizCommand
     -> ExceptT String IO a)
   -> (config -> String)
   -> f
-  -> (config -> BasicConfig)
   -> (config -> AlloyConfig)
   -> config
   -> Int
   -> RandT g (ExceptT String IO) a
-taskInstance taskF alloyF parseF basicC alloyC config segment = do
+taskInstance taskF alloyF parseF alloyC config segment = do
   let is = fromIntegral <$> T.maxInstances (alloyC config)
   x <- sequence $ randomInSegment segment <$> is
   list <- lift $ getAlloyInstances
@@ -194,12 +188,8 @@ taskInstance taskF alloyF parseF basicC alloyC config segment = do
         when (isNothing $ T.timeout (alloyC config))
           $ lift $ except $ Left "instance not available"
         randomInstance list
-  lift $ taskF parseF inst hidePNames hideTNames hide1 layout
+  lift $ taskF parseF inst
   where
-    hidePNames = hidePlaceNames $ basicC config
-    hideTNames = hideTransitionNames $ basicC config
-    hide1  = hideWeight1 $ basicC config
-    layout = graphLayout $ basicC config
     randomInstance list = do
       n <- randomInSegment segment ((length list - segment) `div` 4)
       return $ list !! n

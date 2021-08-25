@@ -9,9 +9,9 @@ import Modelling.PetriNet.MatchToMath (
   MathConfig (..),
   checkMathConfig,
   defaultMathConfig,
-  graphToMathGenerate,
+  graphToMath,
   graphToMathTask,
-  mathToGraphGenerate,
+  mathToGraph,
   mathToGraphTask,
   )
 import Modelling.PetriNet.Types (
@@ -48,12 +48,12 @@ main = forceErrors $ do
   when (i < 0) $ error "There is no negative index"
   if switch
     then do
-    inst <- mathToGraphGenerate config "fromMath-" 0 i
-    lift $ mathToGraphTask inst `withLang` English
+    inst <- mathToGraph config 0 i
+    lift $ mathToGraphTask "fromMath-" inst `withLang` English
     lift $ print inst
     else do
-    inst <- graphToMathGenerate config "toMath-" 0 i
-    lift $ graphToMathTask inst `withLang` English
+    inst <- graphToMath config 0 i
+    lift $ graphToMathTask "toMathh-" inst `withLang` English
     lift $ print inst
 
 userInput :: IO (Int,Int,Int,Int,String)

@@ -63,40 +63,25 @@ getNet
   :: Traversable t
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
-  -> GraphvizCommand
-  -> ExceptT String IO (Diagram B, t String)
-getNet parseInst inst hidePNames hideTNames hide1 gc = do
+  -> ExceptT String IO (PetriLike String, t String)
+getNet parseInst inst = do
   (net, rename) <-
-    getNetWith "flow" "tokens" inst hidePNames hideTNames hide1 gc
+    getNetWith "flow" "tokens" inst
   conc <- except $ parseInst inst
   rconc <- except $ traverse rename conc
   return (net, rconc)
 
 getDefaultNet
   :: AlloyInstance
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
-  -> GraphvizCommand
-  -> ExceptT String IO (QDiagram B V2 Double Any)
-getDefaultNet inst hidePNames hideTNames hide1 gc = fst <$>
-  getNetWith "defaultFlow" "defaultTokens" inst hidePNames hideTNames hide1 gc
+  -> ExceptT String IO (PetriLike String)
+getDefaultNet inst= fst <$>
+  getNetWith "defaultFlow" "defaultTokens" inst
 
 {-|
-Draws a Petri net like graph using 'drawNet'.
+Returns a Petri net like graph using 'parsePetriLike'.
 It additionally parses another part of the instance.
 All nodes are renamed using the 'simpleRenameWith' function.
-The renaming is also applied to the additionally parsed instance, that is why
-this instance needs to be 'Traversable'.
+The renaming is also applied to the additionally parsed instance.
 -}
 getNetWith
   :: String
@@ -105,21 +90,12 @@ getNetWith
   -- ^ tokens
   -> AlloyInstance
   -- ^ the instance to parse
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
-  -> GraphvizCommand
-  -- ^ how to draw the graph
-  -> ExceptT String IO (Diagram B, Object -> Either String String)
-getNetWith f t inst hidePNames hideTNames hide1 gc = do
+  -> ExceptT String IO (PetriLike String, Object -> Either String String)
+getNetWith f t inst = do
   pl <- except $ parsePetriLike f t inst
   let rename = simpleRenameWith pl
   pl' <- except $ traversePetriLike rename pl
-  dia <- drawNet id pl' hidePNames hideTNames hide1 gc
-  return (dia, rename)
+  return (pl', rename)
 
 {-|
 Obtain the Petri net like graph by drawing Nodes and connections between them

@@ -109,7 +109,7 @@ data Node a =
   flowIn  :: Map a Int,
   flowOut :: Map a Int
   }
-  deriving (Generic, Show)
+  deriving (Generic, Read, Show)
 
 {-|
 Returns 'Just' the 'initial' tokens of the given 'Node', if it is a 'PlaceNode',
@@ -213,7 +213,7 @@ The 'PetriLike' graph is a valid Petri net only if
 newtype PetriLike a = PetriLike {
   -- | the 'Map' of all 'Node's the Petri net like graph is made of
   allNodes :: Map a (Node a)
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 {-|
 A 'Functor' like 'fmap' on 'PetriLike'.
@@ -455,3 +455,10 @@ defaultPickConcurrencyConfig = PickConcurrencyConfig
   , changeConfig = defaultChangeConfig
   , alloyConfig  = defaultAlloyConfig
   }
+
+data DrawSettings = DrawSettings {
+  withPlaceNames       :: Bool,
+  withTransitionNames  :: Bool,
+  with1Weights         :: Bool,
+  withGraphvizCommand  :: GraphvizCommand
+  } deriving (Generic, Read, Show)

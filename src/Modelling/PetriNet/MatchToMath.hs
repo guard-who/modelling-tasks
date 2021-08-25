@@ -10,17 +10,14 @@ module Modelling.PetriNet.MatchToMath (
   MathConfig (..),
   MatchInstance (..),
   MathToGraphInstance,
+  addPartNames,
   checkMathConfig,
   defaultMathConfig,
-  formulaFilesFrom,
-  formulaFilesTo,
   graphToMath,
   graphToMathEvaluation,
-  graphToMathGenerate,
   graphToMathTask,
   mathToGraph,
   mathToGraphEvaluation,
-  mathToGraphGenerate,
   mathToGraphTask,
   petriNetRnd,
   renderFormula,
@@ -32,6 +29,7 @@ import qualified Data.Map                         as M (
 
 import Modelling.Auxiliary.Output       (
   LangM,
+  LangM',
   OutputMonad (..),
   english,
   singleChoice,
@@ -63,6 +61,7 @@ import Modelling.PetriNet.Types (
   BasicConfig (..),
   Change,
   ChangeConfig (..),
+  DrawSettings (..),
   PetriLike (..),
   PetriMath (..),
   defaultAdvConfig,
@@ -74,17 +73,17 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
+import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (RandT, RandomGen, StdGen, evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (lift)
-import Control.Monad.Trans.Except       (ExceptT (ExceptT), except)
+import Control.Monad.Trans.Except       (ExceptT (ExceptT), except, runExceptT)
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
-import Data.GraphViz                    (GraphvizCommand)
 import Data.Map                         (Map, fromList, mapWithKey, toList)
 import Data.String.Interpolate          (i)
-import Diagrams.Backend.SVG             (B, renderSVG)
-import Diagrams.Prelude                 (Diagram, mkWidth)
+import Diagrams.Backend.SVG             (renderSVG)
+import Diagrams.Prelude                 (mkWidth)
 import GHC.Generics                     (Generic)
 import Image.LaTeX.Render               (alterForHTML, imageForFormula, defaultFormulaOptions, defaultEnv, SVG, Formula)
 import Language.Alloy.Call (
@@ -94,9 +93,10 @@ import System.Random.Shuffle            (shuffleM)
 
 type Math = PetriMath Formula
 
-type GraphToMathInstance = MatchInstance FilePath (PetriMath String)
-type MathToGraphInstance = MatchInstance (PetriMath String) FilePath
+type GraphToMathInstance = MatchInstance (PetriLike String) Math
+type MathToGraphInstance = MatchInstance Math (PetriLike String)
 
+{-# DEPRECATED addPartNames "the whole type class NamedParts will be removed" #-}
 class NamedParts n where
   addPartNames :: n a -> n (String, a)
 
@@ -136,20 +136,25 @@ defaultMathConfig = MathConfig {
 
 data MatchInstance a b = MatchInstance {
   from :: a,
+  drawSettings :: DrawSettings,
   to :: Map Int (Bool, b)
   }
-  deriving (Generic, Show)
+  deriving (Generic, Read, Show)
 
 instance Bifoldable MatchInstance where
-  bifoldMap f g (MatchInstance x y) = f x `mappend` foldMap (g . snd) y
+  bifoldMap f g m@MatchInstance {} = f (from m) `mappend` foldMap (g . snd) (to m)
 
 instance Bifunctor MatchInstance where
-  bimap f g (MatchInstance x y) = MatchInstance (f x) (second g <$> y)
+  bimap f g m@MatchInstance {} = m {
+    from = f $ from m,
+    to   = second g <$> to m
+    }
 
 instance Bitraversable MatchInstance where
-  bitraverse f g (MatchInstance x y) = MatchInstance
-    <$> f x
-    <*> traverse (traverse g) y
+  bitraverse f g m@MatchInstance {} = MatchInstance
+    <$> f (from m)
+    <*> pure (drawSettings m)
+    <*> traverse (traverse g) (to m)
 
 renderFormula :: String -> ExceptT String IO SVG
 renderFormula = ExceptT . (bimap show alterForHTML <$>)
@@ -161,99 +166,69 @@ evalRandTWith
   -> ExceptT String IO a
 evalRandTWith = flip evalRandT . mkStdGen
 
-graphToMathGenerate
-  :: MathConfig
-  -> String
-  -> Int
-  -> Int
-  -> ExceptT String IO GraphToMathInstance
-graphToMathGenerate config path segment seed = do
-  inst <- graphToMath config segment seed
-  writeDia path inst
-
 writeDia
-  :: FilePath
-  -> MatchInstance (Diagram B) b
-  -> ExceptT String IO (MatchInstance FilePath b)
-writeDia path = bimapM (writeGraph path "") return
-
-mathToGraphGenerate
-  :: MathConfig
-  -> String
-  -> Int
-  -> Int
-  -> ExceptT String IO MathToGraphInstance
-mathToGraphGenerate config path segment seed = do
-  inst <- mathToGraph config segment seed
-  writeDias path inst
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> MatchInstance (PetriLike String) b
+  -> LangM' m (MatchInstance FilePath b)
+writeDia path inst = bimapM (writeGraph (drawSettings inst) path "") return inst
 
 writeDias
-  :: FilePath
-  -> MatchInstance a (Diagram B)
-  -> ExceptT String IO (MatchInstance a FilePath)
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> MatchInstance a (PetriLike String)
+  -> LangM' m (MatchInstance a FilePath)
 writeDias path inst =
-  let inst' = MatchInstance {
+  let inst' = inst {
         from = from inst,
         to   = mapWithKey (\k -> second (show k,)) $ to inst
         }
-  in bimapM return (uncurry $ writeGraph path) inst'
-
-{-# DEPRECATED formulaFilesTo "not used anymore writeDia used instead" #-}
-formulaFilesTo
-  :: (Traversable t, NamedParts t)
-  => FilePath
-  -> MatchInstance (Diagram B) (t String)
-  -> ExceptT String IO (MatchInstance FilePath (t FilePath))
-formulaFilesTo path inst =
-  let inst' = MatchInstance {
-        from = from inst,
-        to   = mapWithKey (\k -> second ((show k,) . addPartNames)) $ to inst
-        }
-  in bimapM (writeGraph path "") (\(n, x) -> mapM (writeFormula path n) x) inst'
-
-{-# DEPRECATED formulaFilesFrom "not used anymore writeDias used instead" #-}
-formulaFilesFrom
-  :: (NamedParts t, Traversable t)
-  => FilePath
-  -> MatchInstance (t String) (Diagram B)
-  -> ExceptT String IO (MatchInstance (t FilePath) FilePath)
-formulaFilesFrom path inst =
-  let inst' = MatchInstance {
-        from = addPartNames $ from inst,
-        to   = mapWithKey (\k -> second (show k,)) $ to inst
-        }
-  in bimapM (mapM $ writeFormula path "") (uncurry $ writeGraph path) inst'
+  in bimapM return (uncurry $ writeGraph (drawSettings inst) path) inst'
 
 writeGraph
-  :: FilePath
+  :: (MonadIO m, OutputMonad m)
+  => DrawSettings
+  -> FilePath
   -> String
-  -> Diagram B
-  -> ExceptT String IO FilePath
-writeGraph path index d = do
-  let file = path ++ "graph" ++ index ++ ".svg"
-  lift $ renderSVG file (mkWidth 250) d
-  return file
-
-writeFormula
-  :: FilePath
-  -> String
-  -> (String, String)
-  -> ExceptT String IO FilePath
-writeFormula path index (name, f) = do
-  let file = path ++ index ++ "-" ++ name ++ ".svg"
-  svg <- renderFormula f
-  lift $ writeFile file svg
-  return file
+  -> PetriLike String
+  -> LangM' m FilePath
+writeGraph s path index pl = do
+  file' <- lift $ liftIO $ runExceptT $ do
+    d <- draw
+    let file = path ++ "graph" ++ index ++ ".svg"
+    lift $ renderSVG file (mkWidth 250) d
+    return file
+  either
+    (const $ refuse (english "drawing diagram failed") >> return "")
+    return
+    file'
+  where
+    draw = drawNet
+      id
+      pl
+      (not $ withPlaceNames s)
+      (not $ withTransitionNames s)
+      (not $ with1Weights s)
+      (withGraphvizCommand s)
 
 graphToMath
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance (Diagram B) Math)
+  -> ExceptT String IO (MatchInstance (PetriLike String) Math)
 graphToMath c segment seed = evalRandTWith seed $ do
   (d, m, ms) <- matchToMath toMath c segment
   ms' <- shuffleM $ (True, m) : [(False, x) | (x, _) <- ms]
-  return $ MatchInstance d $ fromList $ zip [1..] ms'
+  return $ MatchInstance {
+    from = d,
+    drawSettings =  DrawSettings {
+      withPlaceNames = not $ hidePlaceNames $ basicConfig c,
+      withTransitionNames = not $ hideTransitionNames $ basicConfig c,
+      with1Weights = not $ hideWeight1 $ basicConfig c,
+      withGraphvizCommand = graphLayout $ basicConfig c
+      },
+    to = fromList $ zip [1..] ms'
+    }
   where
     toMath x = except $
       toPetriMath <$> parseRenamedPetriLike "flow" "tokens" x
@@ -262,28 +237,29 @@ mathToGraph
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance Math (Diagram B))
+  -> ExceptT String IO (MatchInstance Math (PetriLike String))
 mathToGraph c segment seed = evalRandTWith seed $ do
-  (d, m, ds) <- matchToMath draw c segment
+  (d, m, ds) <- matchToMath parse c segment
   ds' <- shuffleM $ (True, d) : [(False, x) | (x, _) <- ds]
-  return $ MatchInstance m $ fromList $ zip [1..] ds'
+  return $ MatchInstance {
+    from = m,
+    drawSettings =  DrawSettings {
+      withPlaceNames = not $ hidePlaceNames $ basicConfig c,
+      withTransitionNames = not $ hideTransitionNames $ basicConfig c,
+      with1Weights = not $ hideWeight1 $ basicConfig c,
+      withGraphvizCommand = graphLayout $ basicConfig c
+      },
+    to = fromList $ zip [1..] ds'
+    }
   where
-    draw x = do
-      pl <- except $ parseRenamedPetriLike "flow" "tokens" x
-      drawNet
-        id
-        pl
-        (hidePlaceNames $ basicConfig c)
-        (hideTransitionNames $ basicConfig c)
-        (hideWeight1 $ basicConfig c)
-        (graphLayout $ basicConfig c)
+    parse x = except $ parseRenamedPetriLike "flow" "tokens" x
 
 matchToMath
   :: RandomGen g
   => (AlloyInstance -> ExceptT String IO a)
   -> MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (Diagram B, Math, [(a, Change)])
+  -> RandT g (ExceptT String IO) (PetriLike String, Math, [(a, Change)])
 matchToMath toOutput config segment = do
   (f, net, math) <- netMathInstance config segment
   fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
@@ -302,37 +278,33 @@ netMathInstance
   :: RandomGen g
   => MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (String, Diagram B, Math)
+  -> RandT g (ExceptT String IO) (String, PetriLike String, Math)
 netMathInstance config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
   config
-  (\c -> basicConfig (c :: MathConfig))
   (\c -> alloyConfig (c :: MathConfig))
   config
 
 mathInstance
   :: MathConfig
   -> AlloyInstance
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
-  -> GraphvizCommand
-  -> ExceptT String IO (String, Diagram B, Math)
-mathInstance config inst hidePNames hideTNames hide1 gc = do
+  -> ExceptT String IO (String, PetriLike String, Math)
+mathInstance config inst = do
   petriLike <- except $ parseRenamedPetriLike "flow" "tokens" inst
-  rightNet  <- drawNet id petriLike hidePNames hideTNames hide1 gc
   let math = toPetriMath petriLike
   let f = renderFalse petriLike config
-  return (f, rightNet, math)
+  return (f, petriLike, math)
 
-graphToMathTask :: OutputMonad m => GraphToMathInstance -> LangM m
-graphToMathTask task = do
+graphToMathTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> GraphToMathInstance
+  -> LangM m
+graphToMathTask path task = do
+  dia <- from <$> writeDia path task
   paragraph $ english "Consider this graphical representation of a Petri net:"
-  image $ from task
+  image dia
   paragraph $ text
     "Which of the following mathematical representations denotes this Petri net?"
   enumerateM
@@ -364,12 +336,17 @@ mathToOutput f pm = paragraph $ do
   english "Moreover, "
   f $ initialMarkingMath pm
 
-mathToGraphTask :: OutputMonad m => MathToGraphInstance -> LangM m
-mathToGraphTask task = do
+mathToGraphTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> MathToGraphInstance
+  -> LangM m
+mathToGraphTask path task = do
+  dias <- to <$>  writeDias path task
   paragraph $ text "Consider this mathematical representation of a Petri net:"
   mathToOutput latex $ from task
   paragraph $ text "Which of the following diagrams represents this Petri net?"
-  images show snd $ to task
+  images show snd dias
   paragraph $ text
     [i|Please state your answer by giving the number of the matching diagram only.|]
   paragraph $ do
