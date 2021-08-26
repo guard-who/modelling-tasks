@@ -351,7 +351,8 @@ pickGenerate pick bc config segment seed = do
   let ts = nub $ concat $ transitionNames . fst <$> ns'
       ps = nub $ concat $ placeNames . fst <$> ns'
   ts' <- shuffleM ts
-  let mapping = BM.fromList $ zip (ps ++ ts) (ps ++ ts')
+  ps' <- shuffleM ps
+  let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
   ns'' <- bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
   return $ PickInstance {
     drawPickWith = DrawSettings {
