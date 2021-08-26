@@ -57,7 +57,7 @@ import Modelling.CdOd.Types (
 import Control.Monad                    (void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
-  (RandomGen, RandT, evalRandT, getRandomR, mkStdGen)
+  (RandT, RandomGen, StdGen, evalRandT, getRandomR, getStdGen, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
@@ -292,7 +292,7 @@ repairIncorrect allowed config maxInsts to = do
   where
     drawCd :: Syntax -> Integer -> IO FilePath
     drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
-    drawOd :: Syntax -> AlloyInstance -> Integer -> IO FilePath
+    drawOd :: Syntax -> AlloyInstance -> Integer -> RandT StdGen IO FilePath
     drawOd cd od x =
       let backwards   = [n | (_, _, Assoc t n _ _ _) <- toEdges cd
                            , t /= Association]
@@ -313,7 +313,8 @@ repairIncorrect allowed config maxInsts to = do
         when debug $ liftIO $ do
           void $ drawCd cd 0
           uncurry drawCd `mapM_` zip (map snd chs) [1 ..]
-          uncurry (drawOd cd . head) `mapM_` zip ods [1 ..]
+          g <- getStdGen
+          flip evalRandT g $ uncurry (drawOd cd . head) `mapM_` zip ods [1 ..]
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do

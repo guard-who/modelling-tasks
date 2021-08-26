@@ -44,7 +44,7 @@ import Modelling.CdOd.Types (
 import Control.Monad                    (void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
-  (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
+  (MonadRandom, RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
@@ -63,6 +63,7 @@ debug = False
 
 data DifferentNamesInstance = DifferentNamesInstance {
     cDiagram :: Syntax,
+    generatorValue :: Int,
     oDiagram :: Od,
     mapping  :: Bimap String String
   } deriving (Generic, Show)
@@ -114,7 +115,8 @@ differentNamesTask path task = do
                           backwards
       anonymous = fromMaybe (length (fst od) `div` 3) (Just 1000)
   cd' <- lift $ liftIO $ drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
-  od' <- lift $ liftIO $ uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od") Svg
+  od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
+    uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od") Svg
   paragraph $ text "Consider the following class diagram:"
   image cd'
   paragraph $ text "and the following object diagram (which conforms to it):"
@@ -170,10 +172,15 @@ differentNames
   -> Int
   -> ExceptT String m DifferentNamesInstance
 differentNames config segment seed = do
-  let g = mkStdGen $ (segment +) $ 4 * seed
-  (cd, od, bm) <-
-    liftIO $ evalRandT (getDifferentNamesTask config) g
-  return $ DifferentNamesInstance cd od bm
+  let gv = (segment +) $ 4 * seed
+      g = mkStdGen gv
+  (cd, od, bm) <- liftIO $ evalRandT (getDifferentNamesTask config) g
+  return $ DifferentNamesInstance {
+    cDiagram  = cd,
+    generatorValue = gv,
+    oDiagram  = od,
+    mapping   = bm
+    }
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, e@(Assoc Association _ _ _ _)) =

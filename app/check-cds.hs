@@ -10,6 +10,8 @@ import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
 import Modelling.CdOd.Types
   (AssociationType (..), Connection (..), DiagramEdge, Syntax, toOldSyntax)
 
+import Control.Monad.IO.Class           (MonadIO(liftIO))
+import Control.Monad.Random             (evalRandT, getStdGen)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
 import Data.Map                         (Map)
 
@@ -92,7 +94,9 @@ drawCdAndOdsFor is c dirs cds cmd = do
   let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
         ++ createRunCommand Nothing cmd 3 3
   ods <- Alloy.getInstances is parts'
-  mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= print)
+  g <- getStdGen
+  flip evalRandT g $
+    mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= liftIO . print)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
     parts = zipWith (\cd i -> getFour $ transform (toOldSyntax cd) Nothing (show i) "") cds [0..]

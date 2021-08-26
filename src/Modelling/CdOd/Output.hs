@@ -14,6 +14,8 @@ import Modelling.CdOd.Types
   (AssociationType(..), Connection(..), DiagramEdge, Syntax)
 import Modelling.CdOd.Edges             (shouldBeMarked)
 
+import Control.Monad.Random             (RandT, RandomGen)
+import Control.Monad.Trans              (MonadTrans(lift))
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
@@ -91,7 +93,15 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
   quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
   addExtension (runGraphviz dotGraph) format (dropExtension file)
 
-drawOdFromInstance :: AlloyInstance -> Maybe Int -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
+drawOdFromInstance
+  :: RandomGen g
+  => AlloyInstance
+  -> Maybe Int
+  -> Map String DirType
+  -> Bool
+  -> FilePath
+  -> GraphvizOutput
+  -> RandT g IO FilePath
 drawOdFromInstance i anonymous =
   let g = either error id $ do
         os    <- lookupSig (scoped "this" "Obj") i
@@ -105,7 +115,14 @@ drawOdFromInstance i anonymous =
       let indexOf z = fromJust $ elemIndex (objectName z) objs
       in (indexOf x, indexOf y, nameOf l)
 
-drawOdFromRawInstance :: String -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
+drawOdFromRawInstance
+  :: RandomGen g
+  => String
+  -> Map String DirType
+  -> Bool
+  -> FilePath
+  -> GraphvizOutput
+  -> RandT g IO FilePath
 drawOdFromRawInstance input =
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
       theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
@@ -113,7 +130,16 @@ drawOdFromRawInstance input =
                  filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
   in drawOdFromNodesAndEdges theNodes theEdges (length theNodes `div` 3)
 
-drawOdFromNodesAndEdges :: [String] -> [(Int, Int, String)] -> Int -> Map String DirType -> Bool -> FilePath -> GraphvizOutput -> IO FilePath
+drawOdFromNodesAndEdges
+  :: RandomGen g
+  => [String]
+  -> [(Int, Int, String)]
+  -> Int
+  -> Map String DirType
+  -> Bool
+  -> FilePath
+  -> GraphvizOutput
+  -> RandT g IO FilePath
 drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file format = do
   let numberedNodes = zip [0..] theNodes
   let graph = mkGraph numberedNodes theEdges :: Gr String String
@@ -125,8 +151,8 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
                    fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
                                         shape BoxShape, Margin $ DVal 0.04, Width 0, Height 0, FontSize 12],
                    fmtEdge = \(_,_,l) -> arrowHeads l ++ [ArrowSize 0.4, FontSize 12] ++ [toLabel l | printNames] }) graph
-  quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
-  addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
+  lift $ quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
+  lift $ addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   where
     removeDollar l = case splitOn "$" l of
       n:xs@(_:_) ->

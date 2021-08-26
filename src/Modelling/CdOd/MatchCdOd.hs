@@ -83,7 +83,7 @@ import Control.Monad.Fail               (MonadFail)
 #endif
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
-  (MonadRandom, RandomGen, RandT, evalRandT, mkStdGen)
+  (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
 import Data.List                        ((\\), delete, intercalate, nub, sort)
@@ -100,6 +100,7 @@ debug = False
 
 data MatchCdOdInstance = MatchCdOdInstance {
     diagrams       :: Map Int Syntax,
+    generatorValue :: Int,
     instances      :: Map Char ([Int], Od)
   } deriving (Generic, Show)
 
@@ -146,7 +147,7 @@ matchCdOdTask path task = do
   cds <- lift $ liftIO $
     (\k c -> drawCdFromSyntax True True Nothing c (cdFilename k) Svg)
     `M.traverseWithKey` diagrams task
-  ods <- lift $ liftIO $
+  ods <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
     (\k (is,o) -> (is,) <$> uncurry drawOdFromNodesAndEdges
       o (anonymous o) dirs True (odFilename k is) Svg)
     `M.traverseWithKey` instances task
@@ -192,7 +193,7 @@ matchCdOdEvaluation task is' = do
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  (cds, ods) <- flip evalRandT g $ getRandomTask
+  (g', (cds, ods)) <- flip evalRandT g $ (,) <$> getRandom <*> getRandomTask
     (classConfig config)
     (allowSelfLoops config)
     (maxObjects config)
@@ -211,7 +212,7 @@ matchCdOd config segment seed = do
       renameOd od = renameClassesInOd bmNames od >>= renameLinksInOd bmAssocs
   cds'  <- renameCd `mapM` cds
   ods'' <- mapM renameOd `mapM` ods'
-  return $ MatchCdOdInstance cds' ods''
+  return $ MatchCdOdInstance cds' g' ods''
 
 getRandomTask
   :: RandomGen g

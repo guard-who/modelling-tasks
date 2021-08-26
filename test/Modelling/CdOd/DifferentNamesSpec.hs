@@ -58,6 +58,7 @@ evaluateDifferentNames cs cs' =
   flip withLang English $ differentNamesEvaluation
     DifferentNamesInstance {
       cDiagram = error "cDiagram is undefined",
+      generatorValue = 1,
       oDiagram = error "oDiagram is undefined",
       mapping = BM.fromList $ bimap (:[]) (:[]) <$> cs
       }

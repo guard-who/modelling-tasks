@@ -4,6 +4,7 @@ import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.Output
 
 import Control.Monad (void)
+import Control.Monad.Random             (evalRandT, mkStdGen)
 import Data.GraphViz
 import Data.Map      (empty)
 
@@ -20,5 +21,6 @@ main = do
 
 drawOd :: FilePath -> GraphvizOutput -> String -> IO ()
 drawOd file format contents = do
-  output <- drawOdFromRawInstance contents empty False file format
+  output <- flip evalRandT (mkStdGen 0) $
+    drawOdFromRawInstance contents empty False file format
   putStrLn $ "Output written to " ++ output
