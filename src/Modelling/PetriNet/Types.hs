@@ -35,7 +35,7 @@ data AlloyConfig = AlloyConfig {
   maxInstances :: Maybe Integer,
   timeout      :: Maybe Int
   }
-  deriving (Show, Generic)
+  deriving (Show, Read, Generic)
 
 defaultAlloyConfig :: AlloyConfig
 defaultAlloyConfig = AlloyConfig {
@@ -373,7 +373,7 @@ data BasicConfig = BasicConfig
   , hideWeight1 :: Bool
   , hidePlaceNames :: Bool
   , hideTransitionNames :: Bool
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 defaultBasicConfig :: BasicConfig
 defaultBasicConfig = BasicConfig
@@ -397,7 +397,7 @@ data AdvConfig = AdvConfig
   { presenceOfSelfLoops :: Maybe Bool
   , presenceOfSinkTransitions :: Maybe Bool
   , presenceOfSourceTransitions :: Maybe Bool
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
   
 defaultAdvConfig :: AdvConfig
 defaultAdvConfig = AdvConfig
@@ -411,7 +411,7 @@ data ChangeConfig = ChangeConfig
   , maxTokenChangePerPlace :: Int
   , flowChangeOverall :: Int
   , maxFlowChangePerEdge :: Int
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
   
 defaultChangeConfig :: ChangeConfig
 defaultChangeConfig = ChangeConfig
@@ -427,7 +427,7 @@ data FindConflictConfig = FindConflictConfig
   , changeConfig :: ChangeConfig
   , uniqueConflictPlace :: Maybe Bool
   , alloyConfig  :: AlloyConfig
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
@@ -443,7 +443,7 @@ data PickConflictConfig = PickConflictConfig
   , changeConfig :: ChangeConfig
   , uniqueConflictPlace :: Maybe Bool
   , alloyConfig  :: AlloyConfig
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
@@ -458,7 +458,7 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
   , alloyConfig  :: AlloyConfig
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
   
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
@@ -472,7 +472,7 @@ data PickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
   , alloyConfig  :: AlloyConfig
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig

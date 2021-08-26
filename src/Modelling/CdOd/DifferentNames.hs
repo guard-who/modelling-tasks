@@ -32,6 +32,7 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
+  NameMapping (NameMapping, nameMapping),
   Od,
   Syntax,
   renameAssocsInCd,
@@ -65,8 +66,8 @@ data DifferentNamesInstance = DifferentNamesInstance {
     cDiagram :: Syntax,
     generatorValue :: Int,
     oDiagram :: Od,
-    mapping  :: Bimap String String
-  } deriving (Generic, Show)
+    mapping  :: NameMapping
+  } deriving (Generic, Read, Show)
 
 data DifferentNamesConfig = DifferentNamesConfig {
     allowSelfLoops   :: Maybe Bool,
@@ -76,7 +77,7 @@ data DifferentNamesConfig = DifferentNamesConfig {
     maxInstances     :: Maybe Integer,
     searchSpace      :: Int,
     timeout          :: Maybe Int
-  } deriving Generic
+  } deriving (Generic, Read, Show)
 
 defaultDifferentNamesConfig :: DifferentNamesConfig
 defaultDifferentNamesConfig = DifferentNamesConfig {
@@ -103,7 +104,7 @@ differentNamesTask
 differentNamesTask path task = do
   let cd = cDiagram task
       od = oDiagram task
-      bm = mapping task
+      bm = nameMapping $ mapping task
       backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
                        , t /= Association
                        , n <- BM.lookup n' bm]
@@ -144,12 +145,12 @@ differentNamesEvaluation task cs = do
   assertion (length ss == length cs)
     "All provided pairs are linking a valid link and a valid relationship"
   let cs' = catMaybes $ readValidMapping . bimap (:[]) (:[]) <$> cs
-  let ms = BM.toList $ mapping task
+  let ms = BM.toList $ nameMapping $ mapping task
   assertion (length cs' == length ss)
     "Given mappings are correct?"
   assertion (nub (sort cs') == ms) "Given mappings are exhaustive?"
   where
-    m = mapping task
+    m = nameMapping $ mapping task
     readMapping (x, y)
       | isJust $ BM.lookup x m, isJust $ BM.lookupR y m
       = Just (x, y)
@@ -179,7 +180,7 @@ differentNames config segment seed = do
     cDiagram  = cd,
     generatorValue = gv,
     oDiagram  = od,
-    mapping   = bm
+    mapping   = NameMapping bm
     }
 
 reverseAssociation :: DiagramEdge -> DiagramEdge

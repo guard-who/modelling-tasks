@@ -154,7 +154,7 @@ data RepairCdConfig = RepairCdConfig {
     printNavigations :: Bool,
     timeout          :: Maybe Int,
     useNames         :: Bool
-  } deriving Generic
+  } deriving (Generic, Read, Show)
 
 defaultRepairCdConfig :: RepairCdConfig
 defaultRepairCdConfig = RepairCdConfig {
@@ -215,7 +215,7 @@ data RepairCdInstance = RepairCdInstance {
     classDiagram   :: Syntax,
     withDirections :: Bool,
     withNames      :: Bool
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 repairCd
   :: RepairCdConfig
@@ -326,7 +326,7 @@ data AllowedProperties = AllowedProperties {
   wrongCompositionLimits :: Bool,
   inheritanceCycles      :: Bool,
   compositionCycles      :: Bool
-  }
+  } deriving (Generic, Read, Show)
 
 allowEverything :: AllowedProperties
 allowEverything = AllowedProperties {

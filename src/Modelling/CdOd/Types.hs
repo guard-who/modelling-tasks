@@ -9,6 +9,7 @@ module Modelling.CdOd.Types (
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
+  NameMapping (..),
   Od,
   RelationshipProperties (..),
   Syntax,
@@ -43,19 +44,28 @@ type Od = ([String], [(Int, Int, String)])
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
 
 data AssociationType = Association | Aggregation | Composition
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic, Read, Show)
 
 data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic, Read, Show)
 
 type Syntax = ([(String, [String])], [Association])
 
 type DiagramEdge = (String, String, Connection)
 
+newtype NameMapping = NameMapping { nameMapping :: Bimap String String }
+  deriving Generic
+
+instance Show NameMapping where
+  show = show . BM.toList . nameMapping
+
+instance Read NameMapping where
+  readsPrec p xs = [(NameMapping $ BM.fromList y, ys) | (y, ys) <- readsPrec p xs]
+
 data Change a = Change {
     add    :: Maybe a,
     remove :: Maybe a
-  } deriving (Foldable, Functor, Generic, Show, Traversable)
+  } deriving (Foldable, Functor, Generic, Read, Show, Traversable)
 
 data ClassConfig = ClassConfig {
     classes      :: (Int, Int),
@@ -63,7 +73,7 @@ data ClassConfig = ClassConfig {
     associations :: (Int, Maybe Int),
     compositions :: (Int, Maybe Int),
     inheritances :: (Int, Maybe Int)
-  } deriving (Eq, Generic)
+  } deriving (Eq, Generic, Read, Show)
 
 data RelationshipProperties = RelationshipProperties {
     wrongAssocs             :: Int,
@@ -75,7 +85,7 @@ data RelationshipProperties = RelationshipProperties {
     hasInheritanceCycles    :: Bool,
     hasCompositionCycles    :: Bool,
     hasMarkedEdges          :: Maybe Bool
-  } deriving Generic
+  } deriving (Generic, Read, Show)
 
 defaultProperties :: RelationshipProperties
 defaultProperties = RelationshipProperties {

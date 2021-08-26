@@ -47,7 +47,7 @@ data SelectValidCdConfig = SelectValidCdConfig {
     printNames       :: Bool,
     printNavigations :: Bool,
     timeout          :: Maybe Int
-  } deriving Generic
+  } deriving (Generic, Read, Show)
 
 defaultSelectValidCdConfig :: SelectValidCdConfig
 defaultSelectValidCdConfig = SelectValidCdConfig {
@@ -69,7 +69,7 @@ data SelectValidCdInstance = SelectValidCdInstance {
     classDiagrams   :: Map Int (Bool, Syntax),
     withNames       :: Bool,
     withNavigations :: Bool
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 selectValidCdTask
   :: (OutputMonad m, MonadIO m)

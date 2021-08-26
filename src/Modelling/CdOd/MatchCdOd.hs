@@ -102,7 +102,7 @@ data MatchCdOdInstance = MatchCdOdInstance {
     diagrams       :: Map Int Syntax,
     generatorValue :: Int,
     instances      :: Map Char ([Int], Od)
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 data MatchCdOdConfig = MatchCdOdConfig {
     allowSelfLoops   :: Maybe Bool,
@@ -111,7 +111,7 @@ data MatchCdOdConfig = MatchCdOdConfig {
     maxInstances     :: Maybe Integer,
     searchSpace      :: Int,
     timeout          :: Maybe Int
-  } deriving Generic
+  } deriving (Generic, Read, Show)
 
 defaultMatchCdOdConfig :: MatchCdOdConfig
 defaultMatchCdOdConfig = MatchCdOdConfig {

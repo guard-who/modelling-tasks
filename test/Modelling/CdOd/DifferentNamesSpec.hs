@@ -12,6 +12,7 @@ import Modelling.CdOd.DifferentNames (
   differentNamesEvaluation,
   DifferentNamesInstance (..)
   )
+import Modelling.CdOd.Types             (NameMapping (NameMapping))
 import Modelling.Common                 ()
 
 import Control.Monad.Random             (mkStdGen, randomRIO)
@@ -60,7 +61,7 @@ evaluateDifferentNames cs cs' =
       cDiagram = error "cDiagram is undefined",
       generatorValue = 1,
       oDiagram = error "oDiagram is undefined",
-      mapping = BM.fromList $ bimap (:[]) (:[]) <$> cs
+      mapping = NameMapping $ BM.fromList $ bimap (:[]) (:[]) <$> cs
       }
     cs'
 
