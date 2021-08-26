@@ -21,7 +21,8 @@ import Modelling.PetriNet.Types (
   defaultAlloyConfig,
   )
 
-import Control.Monad.Random             (RandT, evalRandT)
+import Control.Monad.Random             (RandT, evalRandT, getRandomR)
+import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.GraphViz                    (GraphvizCommand (Neato))
 import GHC.Base                         (maxInt, minInt)
@@ -67,7 +68,7 @@ ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
 
 testTaskGeneration
   :: (config -> String)
-  -> (AlloyInstance -> ExceptT String IO inst)
+  -> (AlloyInstance -> RandT StdGen (ExceptT String IO) inst)
   -> (inst -> Bool)
   -> [config]
   -> Spec
@@ -75,18 +76,18 @@ testTaskGeneration alloyGen taskInst checkInst cs =
   context "using randomly chosen configs"
   $ ioPropertyWith (length cs)
   $ \r g -> do
-    ti <- runExceptT $ do
+    ti <- runExceptT $ flip evalRandT g $ do
       let conf = cs !! r
-      let (r', g') = randomR (0, maxJavaInt) g
-      is <- getAlloyInstances
+      r' <- getRandomR (0, maxJavaInt)
+      is <- lift $ getAlloyInstances
         defaultCallAlloyConfig {
            A.maxInstances = Just $ toInteger r',
            A.timeout = Just 5000000
            }
         $ alloyGen conf
-      let r'' = if r' >= length is
-                then fst $ randomR (0, length is - 1) g'
-                else r'
+      r'' <- if r' >= length is
+        then getRandomR (0, length is - 1)
+        else return r'
       taskInst (is !! r'')
     return $ isResult checkInst ti
 

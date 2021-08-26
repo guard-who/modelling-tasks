@@ -70,6 +70,7 @@ import Modelling.PetriNet.Types (
   defaultChangeConfig,
   flowIn, initial, isPlaceNode,
   mapChange,
+  shuffleNames,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
@@ -217,7 +218,7 @@ graphToMath
   -> Int
   -> ExceptT String IO (MatchInstance (PetriLike String) Math)
 graphToMath c segment seed = evalRandTWith seed $ do
-  (d, m, ms) <- matchToMath toMath c segment
+  (d, m, ms) <- matchToMath toPetriMath c segment
   ms' <- shuffleM $ (True, m) : [(False, x) | (x, _) <- ms]
   return $ MatchInstance {
     from = d,
@@ -229,9 +230,6 @@ graphToMath c segment seed = evalRandTWith seed $ do
       },
     to = fromList $ zip [1..] ms'
     }
-  where
-    toMath x = except $
-      toPetriMath <$> parseRenamedPetriLike "flow" "tokens" x
 
 mathToGraph
   :: MathConfig
@@ -239,7 +237,7 @@ mathToGraph
   -> Int
   -> ExceptT String IO (MatchInstance Math (PetriLike String))
 mathToGraph c segment seed = evalRandTWith seed $ do
-  (d, m, ds) <- matchToMath parse c segment
+  (d, m, ds) <- matchToMath id c segment
   ds' <- shuffleM $ (True, d) : [(False, x) | (x, _) <- ds]
   return $ MatchInstance {
     from = m,
@@ -251,12 +249,10 @@ mathToGraph c segment seed = evalRandTWith seed $ do
       },
     to = fromList $ zip [1..] ds'
     }
-  where
-    parse x = except $ parseRenamedPetriLike "flow" "tokens" x
 
 matchToMath
   :: RandomGen g
-  => (AlloyInstance -> ExceptT String IO a)
+  => (PetriLike String -> a)
   -> MathConfig
   -> Int
   -> RandT g (ExceptT String IO) (PetriLike String, Math, [(a, Change)])
@@ -267,9 +263,12 @@ matchToMath toOutput config segment = do
   if wrongInstances config == length fList'
     then do
     alloyChanges <- lift $ except $ mapM addChange fList'
-    changes <- lift $ firstM toOutput `mapM` alloyChanges
+    changes <- firstM parse `mapM` alloyChanges
     return (net, math, changes)
     else matchToMath toOutput config segment
+  where
+    parse x = fmap toOutput $
+      lift $ except $ parseRenamedPetriLike "flow" "tokens" x
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
@@ -287,14 +286,16 @@ netMathInstance config = taskInstance
   config
 
 mathInstance
-  :: MathConfig
+  :: RandomGen g
+  => MathConfig
   -> AlloyInstance
-  -> ExceptT String IO (String, PetriLike String, Math)
+  -> RandT g (ExceptT String IO) (String, PetriLike String, Math)
 mathInstance config inst = do
-  petriLike <- except $ parseRenamedPetriLike "flow" "tokens" inst
-  let math = toPetriMath petriLike
-  let f = renderFalse petriLike config
-  return (f, petriLike, math)
+  petriLike <- lift $ except $ parseRenamedPetriLike "flow" "tokens" inst
+  petriLike' <- fst <$> shuffleNames petriLike
+  let math = toPetriMath petriLike'
+  let f = renderFalse petriLike' config
+  return (f, petriLike', math)
 
 graphToMathTask
   :: (OutputMonad m, MonadIO m)

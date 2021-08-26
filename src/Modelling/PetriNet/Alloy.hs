@@ -161,7 +161,7 @@ taskInstance
   :: RandomGen g
   => (f
     -> AlloyInstance
-    -> ExceptT String IO a)
+    -> RandT g (ExceptT String IO) a)
   -> (config -> String)
   -> f
   -> (config -> AlloyConfig)
@@ -188,7 +188,7 @@ taskInstance taskF alloyF parseF alloyC config segment = do
         when (isNothing $ T.timeout (alloyC config))
           $ lift $ except $ Left "instance not available"
         randomInstance list
-  lift $ taskF parseF inst
+  taskF parseF inst
   where
     randomInstance list = do
       n <- randomInSegment segment ((length list - segment) `div` 4)

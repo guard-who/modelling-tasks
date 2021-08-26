@@ -87,6 +87,7 @@ import Modelling.PetriNet.Types         (
   PetriLike,
   PickConcurrencyConfig (..), PickConflictConfig (..),
   placeNames,
+  shuffleNames,
   transitionNames,
   traversePetriLike,
   )
@@ -344,16 +345,15 @@ pickGenerate
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickGenerate pick bc config segment seed = do
-  ns <- evalRandT (pick config segment) $ mkStdGen seed
-  let g  = mkStdGen seed
-  ns'  <- evalRandT (shuffleM ns) g
+pickGenerate pick bc config segment seed = flip evalRandT (mkStdGen seed) $ do
+  ns <- pick config segment
+  ns'  <- shuffleM ns
   let ts = nub $ concat $ transitionNames . fst <$> ns'
       ps = nub $ concat $ placeNames . fst <$> ns'
   ts' <- shuffleM ts
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
-  ns'' <- bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
+  ns'' <- lift $ bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
   return $ PickInstance {
     drawPickWith = DrawSettings {
       withPlaceNames = not $ hidePlaceNames $ bc config,
@@ -422,27 +422,22 @@ pickConflict = taskInstance
   (\c -> alloyConfig (c :: PickConflictConfig))
 
 findTaskInstance
-  :: Traversable t
+  :: (RandomGen g, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> ExceptT String IO (PetriLike String, t String)
+  -> RandT g (ExceptT String IO) (PetriLike String, t String)
 findTaskInstance f inst = do
-  (pl, t) <- getNet f inst
-  let ts = transitionNames pl
-      ps = placeNames pl
-  ts' <- shuffleM ts
-  ps' <- shuffleM ps
-  let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
-  pl' <- traversePetriLike (`BM.lookup` mapping) pl
-  t'  <- (`BM.lookup` mapping) `mapM` t
+  (pl, t) <- lift $ getNet f inst
+  (pl', mapping) <- shuffleNames pl
+  t'  <- lift $ (`BM.lookup` mapping) `mapM` t
   return (pl', t')
 
 pickTaskInstance
-  :: Traversable t
+  :: (MonadTrans m, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> ExceptT String IO [(PetriLike String, Maybe (t String))]
-pickTaskInstance parseF inst = do
+  -> m (ExceptT String IO) [(PetriLike String, Maybe (t String))]
+pickTaskInstance parseF inst = lift $ do
   confl <- second Just <$> getNet parseF inst
   net   <- (,Nothing) <$> getDefaultNet inst
   return [confl,net]

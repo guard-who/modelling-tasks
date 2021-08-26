@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DeriveTraversable #-}
 {-# Language DuplicateRecordFields #-}
+{-# LANGUAGE TupleSections #-}
 {-|
 This module provides types to represent Petri nets.
 
@@ -13,16 +14,22 @@ functions to work on and transform Petri net representations.
 -}
 module Modelling.PetriNet.Types where
 
+import qualified Data.Bimap                       as BM (fromList, lookup)
 import qualified Data.Map.Lazy                    as M (
   elems, empty, filter, foldrWithKey, insert, keys, keysSet, lookup,
   mapKeys, member, null
   )
 import qualified Data.Set                         as S (empty, union)
 
+import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Random             (RandomGen, RandT)
+import Control.Monad.Trans              (MonadTrans(lift))
+import Data.Bimap                       (Bimap)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (Neato))
 import Data.Map.Lazy                    (Map)
 import Data.Maybe                       (fromMaybe)
 import GHC.Generics                     (Generic)
+import System.Random.Shuffle            (shuffleM)
 
 data AlloyConfig = AlloyConfig {
   maxInstances :: Maybe Integer,
@@ -254,6 +261,18 @@ transitionNames = M.keys . M.filter isTransitionNode . allNodes
 
 placeNames :: PetriLike k -> [k]
 placeNames = M.keys . M.filter isPlaceNode . allNodes
+
+shuffleNames
+  :: (MonadThrow m, RandomGen g)
+  => PetriLike String
+  -> RandT g m (PetriLike String, Bimap String String)
+shuffleNames pl = do
+  let ts = transitionNames pl
+      ps = placeNames pl
+  ts' <- shuffleM ts
+  ps' <- shuffleM ps
+  let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
+  lift $ (,mapping) <$> traversePetriLike (`BM.lookup` mapping) pl
 
 {-|
 Transform a 'PetriLike' graph into a 'Petri' net.
