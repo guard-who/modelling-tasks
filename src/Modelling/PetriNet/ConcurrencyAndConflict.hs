@@ -426,7 +426,16 @@ findTaskInstance
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> ExceptT String IO (PetriLike String, t String)
-findTaskInstance = getNet
+findTaskInstance f inst = do
+  (pl, t) <- getNet f inst
+  let ts = transitionNames pl
+      ps = placeNames pl
+  ts' <- shuffleM ts
+  ps' <- shuffleM ps
+  let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
+  pl' <- traversePetriLike (`BM.lookup` mapping) pl
+  t'  <- (`BM.lookup` mapping) `mapM` t
+  return (pl', t')
 
 pickTaskInstance
   :: Traversable t
