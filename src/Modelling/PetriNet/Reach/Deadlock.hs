@@ -90,7 +90,7 @@ data DeadlockInstance s t = DeadlockInstance {
   petriNet          :: Net s t,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Maybe Int
-  } deriving (Typeable, Generic)
+  } deriving (Generic, Read, Show, Typeable)
 
 data Config = Config {
   numPlaces :: Int,
@@ -103,7 +103,7 @@ data Config = Config {
   showLengthHint      :: Bool,
   showMinLengthHint   :: Bool
   }
-  deriving (Typeable, Generic)
+  deriving (Generic, Read, Show, Typeable)
 
 defaultDeadlockConfig :: Config
 defaultDeadlockConfig =

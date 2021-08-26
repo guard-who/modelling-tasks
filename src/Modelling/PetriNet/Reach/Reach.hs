@@ -146,7 +146,7 @@ data ReachInstance s t = ReachInstance {
   showGoalNet       :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Maybe Int
-  } deriving (Typeable, Generic)
+  } deriving (Generic, Read, Show, Typeable)
 
 data Config = Config {
   numPlaces :: Int,
@@ -160,7 +160,7 @@ data Config = Config {
   showMinLengthHint   :: Bool,
   showTargetNet       :: Bool
   }
-  deriving (Typeable, Generic)
+  deriving (Generic, Read, Show, Typeable)
 
 defaultReachConfig :: Config
 defaultReachConfig = Config {

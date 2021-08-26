@@ -38,6 +38,11 @@ instance Ord s => Ord (State s) where
 instance Show s => Show (State s) where
   show = show . M.toList . unState
 
+instance (Ord s, Read s) => Read (State s) where
+  readsPrec p xs = do
+    (s, ys) <- readsPrec p xs
+    return (State . M.fromList $ s, ys)
+
 mark :: Ord s => State s -> s -> Int
 mark (State f) s = M.findWithDefault 0 s f
 
@@ -45,7 +50,7 @@ data Capacity s
   = Unbounded
   | AllBounded Int
   | Bounded (Map s Int)
-  deriving (Eq, Generic, Ord, Show, Typeable)
+  deriving (Eq, Generic, Ord, Read, Show, Typeable)
 
 data Net s t = Net {
   places :: Set s,
@@ -54,7 +59,7 @@ data Net s t = Net {
   capacity :: Capacity s,
   start :: State s
   }
-  deriving (Eq, Generic, Ord, Show, Typeable)
+  deriving (Eq, Generic, Ord, Read, Show, Typeable)
 
 allNonNegative :: State a -> Bool
 allNonNegative (State z) =
@@ -78,11 +83,21 @@ newtype Place = Place Int
 instance Show Place where
   show (Place p) = "s" ++ show p
 
+instance Read Place where
+  readsPrec p ('s':xs) = [(Place y, ys) | (y, ys) <- readsPrec p xs]
+  readsPrec _ (_:xs)   = [(error "expected s", xs)]
+  readsPrec _ []       = []
+
 newtype Transition = Transition Int
   deriving (Eq, Ord, Typeable, Generic, Enum)
 
 instance Show Transition where
   show (Transition t) = "t" ++ show t
+
+instance Read Transition where
+  readsPrec p ('t':xs) = [(Transition y, ys) | (y, ys) <- readsPrec p xs]
+  readsPrec _ (_:xs)   = [(error "expected t", xs)]
+  readsPrec _ []       = []
 
 example :: (Net Place Transition, State Place)
 example =
