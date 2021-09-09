@@ -48,7 +48,6 @@ import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
-import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (nub, permutations, sort)
@@ -125,8 +124,8 @@ differentNamesTask path task = do
   paragraph $ do
     text [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
 State your answer by giving a mapping of relationships in the CD to links in the OD.
-To state that 'a' in the CD corresponds to 'x' in the OD and 'b' in the CD corresponds to 'y' in the OD write it as:|]
-    code $ show [('a', 'x'), ('b', 'y')]
+To state that "a" in the CD corresponds to "x" in the OD and "b" in the CD corresponds to "y" in the OD write it as:|]
+    code $ show [("a", "x"), ("b", "y")]
   paragraph $ text
     [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
 Thus, every link name and every relationship name should occur exactly once in your mapping.|]
@@ -137,14 +136,14 @@ Thus, every link name and every relationship name should occur exactly once in y
 differentNamesEvaluation
   :: OutputMonad m
   => DifferentNamesInstance
-  -> [(Char, Char)]
+  -> [(String, String)]
   -> LangM m
 differentNamesEvaluation task cs = do
   paragraph $ text "Remarks on your solution:"
-  let ss = catMaybes $ readMapping . bimap (:[]) (:[]) <$> cs
+  let ss = catMaybes $ readMapping <$> cs
   assertion (length ss == length cs)
     "All provided pairs are linking a valid link and a valid relationship"
-  let cs' = catMaybes $ readValidMapping . bimap (:[]) (:[]) <$> cs
+  let cs' = catMaybes $ readValidMapping <$> cs
   let ms = BM.toList $ nameMapping $ mapping task
   assertion (length cs' == length ss)
     "Given mappings are correct?"
