@@ -69,7 +69,7 @@ reportReach path inst = do
     then (,True) . Left
          <$> drawToFile True path (drawUsing inst) 0 (n { start = goal inst })
     else return (Right $ show $ goal inst, False)
-  img <- drawToFile withoutPlaceNames path (drawUsing inst) 0 n
+  img <- drawToFile withoutPlaceNames path (drawUsing inst) (-1) n
   reportReachFor
     img
     (noLongerThan inst)
