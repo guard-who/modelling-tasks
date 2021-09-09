@@ -34,7 +34,7 @@ import Control.Monad.Catch              (MonadThrow)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bimapM)
-import Data.List                        (intercalate)
+import Data.List                        (intercalate, nub)
 import Data.List.Split                  (splitOn)
 import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
@@ -115,7 +115,7 @@ classNamesOd :: Od -> [String]
 classNamesOd o = head . splitOn "$" <$> fst o
 
 linkNames :: Od -> [String]
-linkNames o = (\(_,_,x) -> x) <$> snd o
+linkNames o = nub $ (\(_,_,x) -> x) `map` snd o
 
 addedAssociation :: Change DiagramEdge -> Maybe String
 addedAssociation c = add c >>= connectionName
