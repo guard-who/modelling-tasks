@@ -194,4 +194,4 @@ There are no empty object diagram names.
 renameClassesInOd :: MonadThrow m => Bimap String String -> Od -> m Od
 renameClassesInOd m od = (,snd od) <$> mapM (rename . splitOn "$") (fst od)
   where
-    rename (l:ls) = (++ intercalate "$" ls) <$> BM.lookup l m
+    rename (l:ls) = (++ '$' : intercalate "$" ls) <$> BM.lookup l m
