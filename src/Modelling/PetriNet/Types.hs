@@ -92,10 +92,10 @@ data PetriConflict a = Conflict {
   -- | The set of source nodes having not enough tokens to fire both transitions.
   conflictPlaces :: [a]
   }
-  deriving (Foldable, Functor, Generic, Show, Traversable)
+  deriving (Foldable, Functor, Generic, Read, Show, Traversable)
   
 newtype Concurrent a = Concurrent (a, a)
-  deriving (Foldable, Functor, Generic, Show, Traversable)
+  deriving (Foldable, Functor, Generic, Read, Show, Traversable)
 
 {-|
 A node is part of a Petri like graph (see 'PetriLike').
@@ -342,12 +342,12 @@ data PetriMath a = PetriMath {
   initialMarkingMath :: a,
   -- | the order of places used for notation of token changes ('tokenChangeMath')
   placeOrderMath     :: Maybe a
-  } deriving (Foldable, Functor, Generic, Show, Traversable)
+  } deriving (Foldable, Functor, Generic, Read, Show, Traversable)
 
 data Petri = Petri
   { initialMarking :: Marking
   , trans :: [Transition]
-  } deriving (Eq, Generic, Show)
+  } deriving (Eq, Generic, Read, Show)
   
 defaultPetri :: Petri
 defaultPetri = Petri

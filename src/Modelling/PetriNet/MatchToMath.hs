@@ -120,7 +120,7 @@ data MathConfig = MathConfig {
   generatedWrongInstances :: Int,
   wrongInstances :: Int,
   alloyConfig :: AlloyConfig
-  } deriving (Generic, Show)
+  } deriving (Generic, Read, Show)
 
 defaultMathConfig :: MathConfig
 defaultMathConfig = MathConfig {
