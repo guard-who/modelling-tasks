@@ -97,9 +97,9 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
       text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
       either image text g
   paragraph $ case noLonger of
-    Nothing -> do
+    Nothing ->
       text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
-    Just maxL -> do
+    Just maxL ->
       text $ concat [
         "Geben Sie Ihre Lösung als maximal ", show maxL,
         "-elementige Auflistung der folgenden Art an:"]

@@ -201,7 +201,7 @@ instance OutputMonad Maybe where
   refuse xs       = xs >> lift Nothing
   text _          = return ()
   enumerateM f xs = (\(x, y) -> f x >> y) `mapM_` xs
-  itemizeM xs     = foldM ((>>) . return) () xs
+  itemizeM        = foldM ((>>) . return) ()
   indent xs       = xs
   latex _         = return ()
   code _          = return ()

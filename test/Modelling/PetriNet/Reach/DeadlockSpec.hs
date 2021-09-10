@@ -18,7 +18,7 @@ import Test.QuickCheck                  (Testable (property))
 
 spec :: Spec
 spec =
-  describe "generateDeadlock" $ do
+  describe "generateDeadlock" $
     it "abides minTransitionLength" $
       property $ \seed ->
         let config = defaultDeadlockConfig {

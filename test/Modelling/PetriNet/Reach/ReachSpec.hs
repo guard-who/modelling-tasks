@@ -23,7 +23,7 @@ import Test.QuickCheck                  (Testable (property))
 
 spec :: Spec
 spec =
-  describe "generateReach" $ do
+  describe "generateReach" $
     it "abides minTransitionLength" $
       property $ \seed ->
         let config = defaultReachConfig {
