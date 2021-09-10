@@ -16,7 +16,6 @@ import Modelling.CdOd.Types             (NameMapping (NameMapping))
 import Modelling.Common                 ()
 
 import Control.Monad.Random             (mkStdGen, randomRIO)
-import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Either                      (isLeft)
 import Data.List (nub)
 import Test.Hspec
@@ -43,16 +42,16 @@ spec =
         in not (null w) && isValidMapping cs
            ==> isLeft $ evaluateDifferentNames cs cs'
 
-flipCoin :: Int -> (Char, Char) -> IO (Char, Char)
+flipCoin :: Int -> (String, String) -> IO (String, String)
 flipCoin g p = do
   setStdGen $ mkStdGen g
   b <- randomRIO (False, True)
   return $ (if b then (\(x, y) -> (y, x)) else id) p
 
 evaluateDifferentNames
-  :: [(Char, Char)]
+  :: [(String, String)]
   -- ^ task instance mapping
-  -> [(Char, Char)]
+  -> [(String, String)]
   -- ^ submitted mapping
   -> Either String ()
 evaluateDifferentNames cs cs' =
@@ -61,7 +60,7 @@ evaluateDifferentNames cs cs' =
       cDiagram = error "cDiagram is undefined",
       generatorValue = 1,
       oDiagram = error "oDiagram is undefined",
-      mapping = NameMapping $ BM.fromList $ bimap (:[]) (:[]) <$> cs
+      mapping = NameMapping $ BM.fromList cs
       }
     cs'
 
