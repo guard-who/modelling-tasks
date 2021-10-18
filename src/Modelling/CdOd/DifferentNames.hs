@@ -8,6 +8,7 @@ module Modelling.CdOd.DifferentNames (
   differentNames,
   differentNamesEvaluation,
   differentNamesTask,
+  newDifferentNamesInstances,
   ) where
 
 import qualified Data.Bimap                       as BM
@@ -35,6 +36,9 @@ import Modelling.CdOd.Types (
   NameMapping (NameMapping, nameMapping),
   Od,
   Syntax,
+  associationNames,
+  classNames,
+  linkNames,
   renameAssocsInCd,
   renameClassesInCd,
   renameClassesInOd,
@@ -43,12 +47,12 @@ import Modelling.CdOd.Types (
   )
 
 import Control.Monad                    (void, when)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
-  (MonadRandom, RandT, RandomGen, evalRandT, mkStdGen)
+  (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
-import Data.Bimap                       (Bimap)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (nub, permutations, sort)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
@@ -172,15 +176,8 @@ differentNames
   -> Int
   -> ExceptT String m DifferentNamesInstance
 differentNames config segment seed = do
-  let gv = (segment +) $ 4 * seed
-      g = mkStdGen gv
-  (cd, od, bm) <- liftIO $ evalRandT (getDifferentNamesTask config) g
-  return $ DifferentNamesInstance {
-    cDiagram  = cd,
-    generatorValue = gv,
-    oDiagram  = od,
-    mapping   = NameMapping bm
-    }
+  let g = mkStdGen (segment + 4 * seed)
+  liftIO $ evalRandT (getDifferentNamesTask config) g
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, e@(Assoc Association _ _ _ _)) =
@@ -190,7 +187,7 @@ reverseAssociation x = x
 getDifferentNamesTask
   :: RandomGen g
   => DifferentNamesConfig
-  -> RandT g IO (Syntax, Od, Bimap String String)
+  -> RandT g IO DifferentNamesInstance
 getDifferentNamesTask config = do
   configs <- withMinimalLabels 3 $ classConfig config
   continueWithHead configs $ \config' -> do
@@ -233,13 +230,14 @@ getDifferentNamesTask config = do
         assocs' <- shuffleM assocs
         links'  <- shuffleM links
         od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
-        let bmNames  = BM.fromList $ zip names names'
-            bmAssocs = BM.fromList $ zip assocs assocs'
-            bmLinks  = BM.fromList $ zip links links'
-            bm'      = BM.fromList $ zip assocs' links'
-        cd2 <- liftIO $ renameClassesInCd bmNames =<< renameAssocsInCd bmAssocs cd1
-        od2 <- liftIO $ renameClassesInOd bmNames =<< renameLinksInOd bmLinks od1'
-        return (cd2, od2, bm')
+        gv <- getRandom
+        let inst =  DifferentNamesInstance {
+              cDiagram  = cd1,
+              generatorValue = gv,
+              oDiagram  = od1',
+              mapping   = NameMapping bm
+              }
+        lift $ renameInstance inst names' assocs' links'
         else getDifferentNamesTask config
   where
     extractFourParts (n, cd) = case transform (toOldSyntax cd) (allowSelfLoops config) (show n) "" of
@@ -250,8 +248,8 @@ getDifferentNamesTask config = do
     continueWithHead
       :: RandomGen g
       => [a]
-      -> (a -> RandT g IO (Syntax, Od, Bimap String String))
-      -> RandT g IO (Syntax, Od, Bimap String String)
+      -> (a -> RandT g IO DifferentNamesInstance)
+      -> RandT g IO DifferentNamesInstance
     continueWithHead []    _ =
       getDifferentNamesTask config
     continueWithHead (x:_) f = f x
@@ -261,6 +259,48 @@ getDifferentNamesTask config = do
       links <- map nameOf . S.toList <$> getTriple "get" os
       return $ nub links
     nameOf (_,l,_) = takeWhile (/= '$') $ objectName l
+
+renameInstance
+  :: MonadThrow m
+  => DifferentNamesInstance
+  -> [String]
+  -> [String]
+  -> [String]
+  -> m DifferentNamesInstance
+renameInstance inst names' assocs' links' = do
+  let cd = cDiagram inst
+      od = oDiagram inst
+      names = classNames cd
+      assocs = associationNames cd
+      links  = linkNames od
+      bmNames  = BM.fromList $ zip names names'
+      bmAssocs = BM.fromList $ zip assocs assocs'
+      bmLinks  = BM.fromList $ zip links links'
+      bm'      = BM.fromList $ zip assocs' links'
+  cd' <- renameClassesInCd bmNames =<< renameAssocsInCd bmAssocs cd
+  od' <- renameClassesInOd bmNames =<< renameLinksInOd bmLinks od
+  return $ DifferentNamesInstance {
+    cDiagram  = cd',
+    generatorValue = generatorValue inst,
+    oDiagram  = od',
+    mapping   = NameMapping bm'
+    }
+
+newDifferentNamesInstances
+  :: (MonadRandom m, MonadThrow m)
+  => DifferentNamesInstance
+  -> m [DifferentNamesInstance]
+newDifferentNamesInstances inst = do
+  let names = classNames $ cDiagram inst
+      assocs = associationNames $ cDiagram inst
+      links  = linkNames $ oDiagram inst
+  names'  <- shuffleM $ tail $ permutations names
+  assocs' <- shuffleM $ tail $ permutations assocs
+  links'  <- shuffleM $ tail $ permutations links
+  sequence
+    [ renameInstance inst ns as ls
+    | (ns, as, ls) <- zip3 names' assocs' links'
+    ]
 
 withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
 withMinimalLabels n config
