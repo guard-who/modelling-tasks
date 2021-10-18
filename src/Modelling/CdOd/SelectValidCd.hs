@@ -8,12 +8,15 @@ module Modelling.CdOd.SelectValidCd (
   selectValidCd,
   selectValidCdEvaluation,
   selectValidCdTask,
+  newSelectValidCdInstances,
   ) where
 
+import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   foldrWithKey,
-  fromList,
+  fromAscList,
   insert,
+  toList,
   )
 
 import Modelling.Auxiliary.Output (
@@ -29,16 +32,27 @@ import Modelling.CdOd.RepairCd (
   repairIncorrect,
   )
 import Modelling.CdOd.Output            (drawCdFromSyntax)
-import Modelling.CdOd.Types             (ClassConfig (..), Syntax)
+import Modelling.CdOd.Types (
+  ClassConfig (..),
+  Syntax,
+  associationNames,
+  classNames,
+  renameAssocsInCd,
+  renameClassesInCd,
+  )
 
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (evalRandT, mkStdGen)
+import Control.Monad.Random.Class       (MonadRandom)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.GraphViz                    (GraphvizOutput (Svg))
+import Data.List                        (nub, permutations)
 import Data.Map                         (Map)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
+import System.Random.Shuffle            (shuffleM)
 
 data SelectValidCdConfig = SelectValidCdConfig {
     allowedProperties :: AllowedProperties,
@@ -122,7 +136,53 @@ selectValidCd config segment seed = do
     (timeout config)
   let cds = map (second snd) chs
   return $ SelectValidCdInstance {
-    classDiagrams   = M.fromList $ zip [1 ..] cds,
+    classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     withNames       = printNames config,
     withNavigations = printNavigations config
     }
+
+shuffleInstance
+  :: MonadRandom m
+  => SelectValidCdInstance
+  -> m SelectValidCdInstance
+shuffleInstance inst = SelectValidCdInstance
+  <$> (M.fromAscList . zipWith replaceId [1..]
+       <$> shuffleM (M.toList $ classDiagrams inst))
+  <*> pure (withNames inst)
+  <*> pure (withNavigations inst)
+  where
+    replaceId x (_, cd) = (x, cd)
+
+renameInstance
+  :: MonadThrow m
+  => SelectValidCdInstance
+  -> [String]
+  -> [String]
+  -> m SelectValidCdInstance
+renameInstance inst names' assocs' = do
+  let cds = classDiagrams inst
+      names = nub $ concat $ classNames . snd <$> cds
+      assocs = nub $ concat $ associationNames . snd <$> cds
+      bmNames  = BM.fromList $ zip names names'
+      bmAssocs = BM.fromList $ zip assocs assocs'
+      renameCd cd = renameClassesInCd bmNames cd >>= renameAssocsInCd bmAssocs
+  cds' <- mapM (mapM renameCd) cds
+  return $ SelectValidCdInstance {
+    classDiagrams   = cds',
+    withNames       = withNames inst,
+    withNavigations = withNavigations inst
+    }
+
+newSelectValidCdInstances
+  :: (MonadRandom m, MonadThrow m)
+  => SelectValidCdInstance
+  -> m [SelectValidCdInstance]
+newSelectValidCdInstances inst = do
+  let names = nub $ concat $ classNames . snd <$> classDiagrams inst
+      assocs = nub $ concat $ associationNames . snd <$> classDiagrams inst
+  names'  <- shuffleM $ tail $ permutations names
+  assocs' <- shuffleM $ tail $ permutations assocs
+  sequence
+    [ renameInstance inst ns as >>= shuffleInstance
+    | (ns, as) <- zip names' (concat $ replicate 5 assocs')
+    ]
