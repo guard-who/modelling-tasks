@@ -32,7 +32,7 @@ module Modelling.Auxiliary.Output (
 
 import qualified Data.Map as M
 
-import Control.Monad                    (foldM, unless, when)
+import Control.Monad                    (foldM, unless, void, when)
 import Control.Monad.Trans (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (MonadWriter (pass, tell), Writer, execWriter,)
@@ -132,10 +132,19 @@ getAllOuts r = execWriter $ do
     Nothing -> pass $ return ((), (Abort:))
     Just _ -> return ()
 
-combineReports :: ([[o]] -> o) -> [LangM' (Report o) a] -> LangM' (Report o) ()
-combineReports f oms = LangM $ \l ->
+combineLangMs :: ([m a] -> m b) -> [LangM' m a] -> LangM' m b
+combineLangMs f oms = LangM $ \l ->
   let rs = (`withLang` l) <$> oms
-  in combineReports' f rs
+  in f rs
+
+combineLangM :: (m a -> m b -> m c) -> LangM' m a -> LangM' m b -> LangM' m c
+combineLangM f x y = LangM $ \l ->
+  let x' = x `withLang` l
+      y' = y `withLang` l
+  in f x' y'
+
+combineReports :: ([[o]] -> o) -> [LangM' (Report o) a] -> LangM' (Report o) ()
+combineReports = combineLangMs . combineReports'
 
 combineReports'
   :: ([[o]] -> o)
@@ -150,15 +159,21 @@ combineReports' f rs = Report $ do
 combineWithReports
   :: ([b] -> o)
   -> ([o] -> b)
-  -> [Report o a]
-  -> Report o ()
-combineWithReports f g = combineReports' (f . fmap g)
+  -> [LangM' (Report o) a]
+  -> LangM' (Report o) ()
+combineWithReports f g = combineLangMs $ combineReports' (f . fmap g)
 
 alignOutput
   :: ([o] -> o)
+  -> LangM' (Report o) a
+  -> LangM' (Report o) ()
+alignOutput = mapLangM . alignOutput'
+
+alignOutput'
+  :: ([o] -> o)
   -> Report o a
   -> Report o ()
-alignOutput f r = Report $ do
+alignOutput' f r = Report $ do
   xs  <- MaybeT . return . sequence $ toOutput <$> getAllOuts r
   tell . (:[]) . Format $ f xs
 
@@ -168,23 +183,30 @@ toOutput (Format x) = Just x
 
 combineTwoReports
   :: ([o] -> [o] -> o)
+  -> LangM' (Report o) a
+  -> LangM' (Report o) b
+  -> LangM' (Report o) ()
+combineTwoReports = combineLangM . combineTwoReports'
+
+combineTwoReports'
+  :: ([o] -> [o] -> o)
   -> Report o a
   -> Report o b
   -> Report o ()
-combineTwoReports f r1 r2 = case sequence $ toOutput <$> getAllOuts r1 of
-  Nothing -> return ()
-  Just x  -> alignOutput (f x) r2
+combineTwoReports' f r1 r2 = case sequence $ toOutput <$> getAllOuts r1 of
+  Nothing -> void r1
+  Just x  -> alignOutput' (f x) r2
 
-format :: o -> Report o ()
-format = Report . tell . (:[]) . Format
+format :: o -> LangM' (Report o) ()
+format = lift . Report . tell . (:[]) . Format
 
-abortWith :: o -> Report o b
+abortWith :: o -> LangM' (Report o) b
 abortWith d = do
   format d
-  Report $ MaybeT (return Nothing)
+  lift $ Report $ MaybeT (return Nothing)
 
-toAbort :: Report o a -> Report o b
-toAbort r = Report $ do
+toAbort :: LangM' (Report o) a -> LangM' (Report o) b
+toAbort = mapLangM $ \r -> Report $ do
   xs  <- MaybeT . return . sequence $ toOutput <$> getAllOuts r
   tell $ Format <$> xs
   MaybeT $ return Nothing
