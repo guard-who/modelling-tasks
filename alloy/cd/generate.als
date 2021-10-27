@@ -155,13 +155,14 @@ pred classDiagram [
   #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
   #{ a : assocs | not validFromLimitsAssoc [a]} + #{ a : assocs | not validToLimitsAssoc [a]} = wrongAssocs
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
-  #{ r : relationships | selfRelationship [r]} = selfRelationships
+  #{ r : assocs | selfRelationship [r]} = selfRelationships
+  no i : inheritances | selfRelationship [i] or (not noDoubleRelationships [i]) or (not noReverseRelationships [i])
   hasDoubleRelationships = True
-    implies not noDoubleRelationships [relationships]
-    else noDoubleRelationships [relationships]
+    implies not noDoubleRelationships [assocs]
+    else noDoubleRelationships [assocs]
   hasReverseRelationships = True
-    implies not noReverseRelationships [relationships]
-    else noReverseRelationships [relationships]
+    implies not noReverseRelationships [assocs]
+    else noReverseRelationships [assocs]
   hasMultipleInheritances = True
      implies not noMultipleInheritances [inheritances]
      else noMultipleInheritances [inheritances]
