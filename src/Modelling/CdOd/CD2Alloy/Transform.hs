@@ -13,10 +13,11 @@ import Data.String.Interpolate          (i)
 transform
   :: ([(String, Maybe String)], [Association])
   -> Maybe Bool
+  -> Bool
   -> String
   -> String
   -> (String, String, String, String, String)
-transform (classes, associations) hasSelfLoops index time =
+transform (classes, associations) hasSelfLoops noIsolationLimitation index time =
   (part1, part2, part3, part4, part5)
   where
     template :: String
@@ -30,6 +31,26 @@ transform (classes, associations) hasSelfLoops index time =
 module umlp2alloy/CD#{index}Module
 
 #{template}
+#{objectsFact}
+///////////////////////////////////////////////////
+// Structures potentially common to multiple CDs
+///////////////////////////////////////////////////
+|]
+    objectsFact :: String
+    objectsFact
+      | noIsolationLimitation
+      = noEmptyInstances
+      | otherwise
+      = limitIsolatedObjects
+    limitIsolatedObjects = [i|
+fact LimitIsolatedObjects {
+  \#Obj > mul[2, \#{o : Obj | no o.get and no get.o}]
+}
+|]
+    noEmptyInstances = [i|
+fact NonEmptyInstancesOnly {
+  some Obj
+}
 |]
     part2 = [i|
 // Concrete names of fields

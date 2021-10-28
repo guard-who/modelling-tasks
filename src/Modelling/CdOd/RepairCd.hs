@@ -151,6 +151,7 @@ data RepairCdConfig = RepairCdConfig {
     allowedProperties :: AllowedProperties,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
+    noIsolationLimit :: Bool,
     printNames       :: Bool,
     printNavigations :: Bool,
     timeout          :: Maybe Int,
@@ -171,6 +172,7 @@ defaultRepairCdConfig = RepairCdConfig {
         inheritances = (1, Just 3)
       },
     maxInstances     = Just 200,
+    noIsolationLimit = False,
     printNames       = True,
     printNavigations = True,
     timeout          = Nothing,
@@ -231,6 +233,7 @@ repairCd config segment seed = do
   (cd, chs) <- flip evalRandT g $ repairIncorrect
     (allowedProperties config)
     (classConfig config)
+    (noIsolationLimit config)
     (maxInstances config)
     (timeout config)
   let chs' = map (second fst) chs
@@ -260,10 +263,11 @@ repairIncorrect
   :: RandomGen g
   => AllowedProperties
   -> ClassConfig
+  -> Bool
   -> Maybe Integer
   -> Maybe Int
   -> RandT g IO (Syntax, [(Bool, (Change DiagramEdge, Syntax))])
-repairIncorrect allowed config maxInsts to = do
+repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:l1:_ <- shuffleM legalChanges
   c0:_    <- shuffleM $ allChanges allowed
@@ -306,7 +310,8 @@ repairIncorrect allowed config maxInsts to = do
                               (foldr (`M.insert` Forward) M.empty forwards)
                               backwards
       in drawOdFromInstance od Nothing navigations True ("od-" ++ show x) Pdf
-    getInstanceWithODs _  [] = repairIncorrect allowed config maxInsts to
+    getInstanceWithODs _  [] =
+      repairIncorrect allowed config noIsolationLimitation maxInsts to
     getInstanceWithODs vs (rinsta:rinstas) = do
       (cd, chs, _) <- applyChanges rinsta
       let cds  = zip vs (map snd chs)
@@ -322,7 +327,8 @@ repairIncorrect allowed config maxInsts to = do
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do
-      let (p1, p2, p3, p4, p5) = transform (toOldSyntax cd) Nothing "" ""
+      let (p1, p2, p3, p4, p5) =
+            transform (toOldSyntax cd) Nothing noIsolationLimitation "" ""
       getInstances (Just 1) to (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
 data AllowedProperties = AllowedProperties {

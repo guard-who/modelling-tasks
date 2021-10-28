@@ -58,6 +58,7 @@ data SelectValidCdConfig = SelectValidCdConfig {
     allowedProperties :: AllowedProperties,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
+    noIsolationLimit :: Bool,
     printNames       :: Bool,
     printNavigations :: Bool,
     timeout          :: Maybe Int
@@ -77,6 +78,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         inheritances = (1, Just 3)
       },
     maxInstances     = Just 200,
+    noIsolationLimit = False,
     printNames       = True,
     printNavigations = True,
     timeout          = Nothing
@@ -135,6 +137,7 @@ selectValidCd config segment seed = do
   (_, chs)  <- flip evalRandT g $ repairIncorrect
     (allowedProperties config)
     (classConfig config)
+    (noIsolationLimit config)
     (maxInstances config)
     (timeout config)
   let cds = map (second snd) chs

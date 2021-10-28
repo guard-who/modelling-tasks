@@ -416,7 +416,7 @@ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops = do
                        ([1,2], instances1and2),
                        ([]   , instancesNot1not2)]
   where
-    getFourParts cd nr = case transform (toOldSyntax cd) selfLoops nr "" of
+    getFourParts cd nr = case transform (toOldSyntax cd) selfLoops False nr "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     runCommand x = createRunCommand selfLoops x numClasses maxObs
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4

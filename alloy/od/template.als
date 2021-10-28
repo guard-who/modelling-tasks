@@ -41,17 +41,3 @@ pred Composition[left : set Obj, lFName : set FName, right : set Obj] {
   // all l1, l2 : left | (#{l1.get[lFName] & l2.get[lFName]} > 0) => l1 = l2
   all r : right | #{l : left, lF : lFName | r in l.get[lF]} =< 1
 }
-
-// This fact is subsumed by LimitIsolatedObjects below.
-//
-// fact NonEmptyInstancesOnly {
-//   some Obj
-// }
-
-fact LimitIsolatedObjects {
-  #Obj > mul[2, #{o : Obj | no o.get and no get.o}]
-}
-
-///////////////////////////////////////////////////
-// Structures potentially common to multiple CDs
-///////////////////////////////////////////////////

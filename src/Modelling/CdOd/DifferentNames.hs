@@ -240,7 +240,8 @@ getDifferentNamesTask config = do
         lift $ renameInstance inst names' assocs' links'
         else getDifferentNamesTask config
   where
-    extractFourParts (n, cd) = case transform (toOldSyntax cd) (allowSelfLoops config) (show n) "" of
+    extractFourParts (n, cd) =
+      case transform (toOldSyntax cd) (allowSelfLoops config) False (show n) "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
