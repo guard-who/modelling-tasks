@@ -79,10 +79,12 @@ data RelationshipProperties = RelationshipProperties {
     wrongAssocs             :: Int,
     wrongCompositions       :: Int,
     selfRelationships       :: Int,
+    selfInheritances        :: Int,
     hasDoubleRelationships  :: Bool,
     hasReverseRelationships :: Bool,
+    hasReverseInheritances  :: Bool,
     hasMultipleInheritances :: Bool,
-    hasInheritanceCycles    :: Bool,
+    hasNonTrivialInheritanceCycles :: Bool,
     hasCompositionCycles    :: Bool,
     hasMarkedEdges          :: Maybe Bool
   } deriving (Generic, Read, Show)
@@ -92,10 +94,12 @@ defaultProperties = RelationshipProperties {
     wrongAssocs             = 0,
     wrongCompositions       = 0,
     selfRelationships       = 0,
+    selfInheritances        = 0,
     hasDoubleRelationships  = False,
     hasReverseRelationships = False,
+    hasReverseInheritances  = False,
     hasMultipleInheritances = False,
-    hasInheritanceCycles    = False,
+    hasNonTrivialInheritanceCycles = False,
     hasCompositionCycles    = False,
     hasMarkedEdges          = Nothing
   }

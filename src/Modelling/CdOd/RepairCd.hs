@@ -19,6 +19,7 @@ module Modelling.CdOd.RepairCd (
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transformChanges)
+import qualified Modelling.CdOd.Types             as T (RelationshipProperties (selfInheritances))
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (empty, insert, fromList)
@@ -158,7 +159,10 @@ data RepairCdConfig = RepairCdConfig {
 
 defaultRepairCdConfig :: RepairCdConfig
 defaultRepairCdConfig = RepairCdConfig {
-    allowedProperties = allowEverything,
+    allowedProperties = allowEverything {
+        reverseInheritances    = False,
+        Modelling.CdOd.RepairCd.selfInheritances = False
+        },
     classConfig = ClassConfig {
         classes      = (4, 4),
         aggregations = (0, Just 2),
@@ -325,7 +329,9 @@ data AllowedProperties = AllowedProperties {
   wrongAssociationLimits :: Bool,
   wrongCompositionLimits :: Bool,
   inheritanceCycles      :: Bool,
-  compositionCycles      :: Bool
+  compositionCycles      :: Bool,
+  reverseInheritances    :: Bool,
+  selfInheritances       :: Bool
   } deriving (Generic, Read, Show)
 
 allowEverything :: AllowedProperties
@@ -333,7 +339,9 @@ allowEverything = AllowedProperties {
   wrongAssociationLimits = True,
   wrongCompositionLimits = True,
   inheritanceCycles = True,
-  compositionCycles = True
+  compositionCycles = True,
+  reverseInheritances = True,
+  selfInheritances = True
   }
 
 allChanges :: AllowedProperties -> [PropertyChange]
@@ -377,8 +385,12 @@ illegalChanges allowed = map ($ const False) $ [
   | wrongAssociationLimits allowed] ++ [
     PropertyChange "add wrong composition" addWrongCompositions
   | wrongCompositionLimits allowed] ++ [
-    PropertyChange "force inheritance cycles" withInheritanceCycles
+    PropertyChange "force inheritance cycles" withNonTrivialInheritanceCycles
   | inheritanceCycles allowed] ++ [
+    PropertyChange "force reverse inheritances" withReverseInheritances
+  | reverseInheritances allowed] ++ [
+    PropertyChange "add self inheritance" addSelfInheritance
+  | Modelling.CdOd.RepairCd.selfInheritances allowed] ++ [
     PropertyChange "force composition cycles" withCompositionCycles
   | compositionCycles allowed]
   where
@@ -388,9 +400,17 @@ illegalChanges allowed = map ($ const False) $ [
     addWrongCompositions :: RelationshipProperties -> RelationshipProperties
     addWrongCompositions config@RelationshipProperties {..}
       = config { wrongCompositions = wrongCompositions + 1 }
-    withInheritanceCycles :: RelationshipProperties -> RelationshipProperties
-    withInheritanceCycles config
-      = config { hasInheritanceCycles = True }
+    addSelfInheritance :: RelationshipProperties -> RelationshipProperties
+    addSelfInheritance config@RelationshipProperties {..}
+      = config { T.selfInheritances = selfInheritances + 1 }
+    withReverseInheritances :: RelationshipProperties -> RelationshipProperties
+    withReverseInheritances config
+      = config { hasReverseInheritances = True }
+    withNonTrivialInheritanceCycles
+      :: RelationshipProperties
+      -> RelationshipProperties
+    withNonTrivialInheritanceCycles config
+      = config { hasNonTrivialInheritanceCycles = True }
     withCompositionCycles :: RelationshipProperties -> RelationshipProperties
     withCompositionCycles config
       = config { hasCompositionCycles = True }

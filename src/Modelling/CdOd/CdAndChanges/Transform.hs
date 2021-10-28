@@ -63,8 +63,10 @@ pred cd {
       Inheritance' = Inheritance - Change.add {
     classDiagram [Assoc', Composition', Inheritance', Relationship',
       #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
+      #{selfInheritances props},
       #{hasDoubleRelationships props}, #{hasReverseRelationships props},
-      #{hasMultipleInheritances props}, #{hasInheritanceCycles props},
+      #{hasReverseInheritances props},
+      #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
       #{hasCompositionCycles props}, #{maybeToAlloySet $ hasMarkedEdges props}]
     #{fst $ associations config} <= \#Association'
     \#Association' <= #{upper $ associations config}
@@ -106,8 +108,10 @@ sig C#{n} extends Change {}
 pred #{change} {
   changeOfFirstCD [C#{n},
     #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
+    #{selfInheritances props},
     #{hasDoubleRelationships props}, #{hasReverseRelationships props},
-    #{hasMultipleInheritances props}, #{hasInheritanceCycles props},
+    #{hasReverseInheritances props},
+    #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
     #{hasCompositionCycles props}, #{maybeToAlloySet $ hasMarkedEdges props}]
 }
 |]

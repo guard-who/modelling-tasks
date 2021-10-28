@@ -27,7 +27,7 @@ import Modelling.Auxiliary.Output (
   LangM,
   )
 import Modelling.CdOd.RepairCd (
-  AllowedProperties,
+  AllowedProperties (..),
   allowEverything,
   repairIncorrect,
   )
@@ -65,7 +65,10 @@ data SelectValidCdConfig = SelectValidCdConfig {
 
 defaultSelectValidCdConfig :: SelectValidCdConfig
 defaultSelectValidCdConfig = SelectValidCdConfig {
-    allowedProperties = allowEverything,
+    allowedProperties = allowEverything {
+        reverseInheritances    = False,
+        selfInheritances       = False
+        },
     classConfig = ClassConfig {
         classes      = (4, 4),
         aggregations = (0, Just 2),

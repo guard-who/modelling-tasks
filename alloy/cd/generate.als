@@ -32,9 +32,11 @@ fun relationship [restriction : set Relationship] : Class -> Class {
   ((~from :> restriction) . (restriction <: to))
 }
 
-pred noInheritanceCycles [is : set Inheritance] {
+pred noNonTrivialInheritanceCycles [is : set Inheritance] {
   let inheritance = relationship [is] |
-  no c : Class | c in c.^inheritance
+  no c : Class |
+     not c in c.inheritance + c.inheritance.inheritance
+     and c in c.^inheritance
 }
 
 pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
@@ -146,29 +148,35 @@ pred classDiagram [
   wrongAssocs : one Int,
   wrongCompositions : one Int,
   selfRelationships : one Int,
+  selfInheritances : one Int,
   hasDoubleRelationships : one Boolean,
   hasReverseRelationships : one Boolean,
+  hasReverseInheritances : one Boolean,
   hasMultipleInheritances : one Boolean,
-  hasInheritanceCycles : one Boolean,
+  hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
   hasMarkedEdges : lone Boolean] {
   #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
   #{ a : assocs | not validFromLimitsAssoc [a]} + #{ a : assocs | not validToLimitsAssoc [a]} = wrongAssocs
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
   #{ r : assocs | selfRelationship [r]} = selfRelationships
-  no i : inheritances | selfRelationship [i] or (not noDoubleRelationships [i]) or (not noReverseRelationships [i])
+  #{ i : inheritances | selfRelationship [i]} = selfInheritances
+  no i : inheritances | not noDoubleRelationships [i]
   hasDoubleRelationships = True
     implies not noDoubleRelationships [assocs]
     else noDoubleRelationships [assocs]
   hasReverseRelationships = True
     implies not noReverseRelationships [assocs]
     else noReverseRelationships [assocs]
+  hasReverseInheritances = True
+    implies not noReverseRelationships [inheritances]
+    else noReverseRelationships [inheritances]
   hasMultipleInheritances = True
      implies not noMultipleInheritances [inheritances]
      else noMultipleInheritances [inheritances]
-  hasInheritanceCycles = True
-    implies not noInheritanceCycles [inheritances]
-    else noInheritanceCycles [inheritances]
+  hasNonTrivialInheritanceCycles = True
+    implies not noNonTrivialInheritanceCycles [inheritances]
+    else noNonTrivialInheritanceCycles [inheritances]
   hasCompositionCycles = True
     implies not noCompositionCycles [inheritances, compositions]
     else noCompositionCycles [inheritances, compositions]
@@ -182,10 +190,12 @@ pred changeOfFirstCD [
   wrongAssocs : one Int,
   wrongCompositions : one Int,
   selfRelationships : one Int,
+  selfInheritances : one Int,
   hasDoubleRelationships : one Boolean,
   hasReverseRelationships : one Boolean,
+  hasReverseInheritances : one Boolean,
   hasMultipleInheritances : one Boolean,
-  hasInheritanceCycles : one Boolean,
+  hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
   hasMarkedEdges : lone Boolean] {
     let Assoc' = Assoc - (Change.add - c.add) - c.remove,
@@ -194,9 +204,9 @@ pred changeOfFirstCD [
         Inheritance' = Inheritance - (Change.add - c.add) - c.remove {
       change[c, Relationship - Change.add]
       classDiagram [Assoc', Composition', Inheritance', Relationship',
-        wrongAssocs, wrongCompositions, selfRelationships,
-        hasDoubleRelationships, hasReverseRelationships,
-        hasMultipleInheritances, hasInheritanceCycles, hasCompositionCycles,
+        wrongAssocs, wrongCompositions, selfRelationships, selfInheritances,
+        hasDoubleRelationships, hasReverseRelationships, hasReverseInheritances,
+        hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,
         hasMarkedEdges]
   }
 }
