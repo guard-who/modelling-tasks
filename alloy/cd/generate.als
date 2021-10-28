@@ -162,6 +162,8 @@ pred classDiagram [
   #{ r : assocs | selfRelationship [r]} = selfRelationships
   #{ i : inheritances | selfRelationship [i]} = selfInheritances
   no i : inheritances | not noDoubleRelationships [i]
+  no i : inheritances, a : assocs |
+    sameDirection [i, a] or reverseRelationship [i, a]
   hasDoubleRelationships = True
     implies not noDoubleRelationships [assocs]
     else noDoubleRelationships [assocs]
