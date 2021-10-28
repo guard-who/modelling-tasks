@@ -19,7 +19,9 @@ module Modelling.CdOd.RepairCd (
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transformChanges)
-import qualified Modelling.CdOd.Types             as T (RelationshipProperties (selfInheritances))
+import qualified Modelling.CdOd.Types             as T (
+  RelationshipProperties (selfInheritances, selfRelationships),
+  )
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (empty, insert, fromList)
@@ -269,9 +271,12 @@ repairIncorrect
   -> RandT g IO (Syntax, [(Bool, (Change DiagramEdge, Syntax))])
 repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
-  l0:l1:_ <- shuffleM legalChanges
+  l0:ls   <- shuffleM $ legalChanges allowed
+  let addLegals
+        | l1:_ <- ls = (l1 .&. noChange :) . (l1 :)
+        | otherwise  = id
   c0:_    <- shuffleM $ allChanges allowed
-  csm     <- shuffleM $ c0 : noChange : l1 .&. noChange : l1 : [e0]
+  csm     <- shuffleM $ c0 : noChange : addLegals [e0]
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
 --  config' <- constrainConfig 5 config
   let alloyCode = Changes.transformChanges config (toProperty e0) (Just config)
@@ -332,26 +337,32 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
       getInstances (Just 1) to (p1 ++ p2 ++ p3 ++ p4 ++ p5)
 
 data AllowedProperties = AllowedProperties {
-  wrongAssociationLimits :: Bool,
-  wrongCompositionLimits :: Bool,
-  inheritanceCycles      :: Bool,
   compositionCycles      :: Bool,
+  doubleRelationships    :: Bool,
+  inheritanceCycles      :: Bool,
   reverseInheritances    :: Bool,
-  selfInheritances       :: Bool
+  reverseRelationships   :: Bool,
+  selfInheritances       :: Bool,
+  selfRelationships      :: Bool,
+  wrongAssociationLimits :: Bool,
+  wrongCompositionLimits :: Bool
   } deriving (Generic, Read, Show)
 
 allowEverything :: AllowedProperties
 allowEverything = AllowedProperties {
-  wrongAssociationLimits = True,
-  wrongCompositionLimits = True,
-  inheritanceCycles = True,
   compositionCycles = True,
+  doubleRelationships    = True,
+  inheritanceCycles      = True,
   reverseInheritances = True,
-  selfInheritances = True
+  reverseRelationships   = True,
+  selfInheritances       = True,
+  selfRelationships      = True,
+  wrongAssociationLimits = True,
+  wrongCompositionLimits = True
   }
 
 allChanges :: AllowedProperties -> [PropertyChange]
-allChanges c = legalChanges ++ illegalChanges c
+allChanges c = legalChanges c ++ illegalChanges c
 
 noChange :: PropertyChange
 noChange = PropertyChange "none" id id
@@ -363,18 +374,19 @@ PropertyChange n1 o1 v1 .&. PropertyChange n2 o2 v2 = PropertyChange
   (o1 . o2)
   (v1 . v2)
 
-legalChanges :: [PropertyChange]
-legalChanges = [
-    noChange,
-    PropertyChange "add one self relationship" addSelfRelationships id,
-    PropertyChange "force double relationships" withDoubleRelationships id,
+legalChanges :: AllowedProperties -> [PropertyChange]
+legalChanges allowed = noChange : [
+    PropertyChange "add one self relationship" addSelfRelationships id
+  | Modelling.CdOd.RepairCd.selfRelationships allowed] ++ [
+    PropertyChange "force double relationships" withDoubleRelationships id
+  | doubleRelationships allowed] ++ [
     PropertyChange "force reverse relationships" withReverseRelationships id
+  | reverseRelationships allowed]
 --    PropertyChange "force multiple inheritances" withMultipleInheritances id
-  ]
   where
     addSelfRelationships :: RelationshipProperties -> RelationshipProperties
     addSelfRelationships config@RelationshipProperties {..}
-      = config { selfRelationships = selfRelationships + 1 }
+      = config { T.selfRelationships = selfRelationships + 1 }
     withDoubleRelationships :: RelationshipProperties -> RelationshipProperties
     withDoubleRelationships config
       = config { hasDoubleRelationships = True }
