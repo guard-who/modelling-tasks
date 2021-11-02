@@ -45,15 +45,21 @@ import Data.Ratio                       ((%))
 import Data.String.Interpolate (i)
 
 hoveringInformation :: OutputMonad m => LangM m
-hoveringInformation = english [i|Please note: Hovering over or clicking on edges or their labels highlights both parts.|]
+hoveringInformation = do
+  english [i|Please note: Hovering over or clicking on edges or their labels highlights both parts.|]
+  german [i|Bitte beachten Sie: Beim Darüberbewegen oder Daraufklicken auf Kanten bzw. ihre Beschriftungen werden beide Teile hervorgehoben.|]
 
 directionsAdvice :: OutputMonad m => LangM m
 directionsAdvice = english [i|As navigation directions are used, please note that aggregations and compositions are only navigable from the "part" toward the "whole", i.e. they are not navigable in the opposite direction!|]
 
 simplifiedInformation :: OutputMonad m => LangM m
-simplifiedInformation = english [i|Please note: Classes are represented simplified here.
+simplifiedInformation = do
+  english [i|Please note: Classes are represented simplified here.
 That means they consist of a single box containing only its class name, but do not contain boxes for attributes and methods.
 Nevertheless you should treat these simplified class representations as valid classes.|]
+  german [i|Bitte beachten Sie: Klassen werden hier vereinfacht dargestellt.
+Das heißt, sie bestehen aus einer einfachen Box, die nur den Klassennamenenthält, aber keine Abschnitte für Attribute oder Methoden.
+Trotzdem sollten Sie diese vereinfachten Klassendarstellungen als valide Klassen ansehen.|]
 
 yesNo :: OutputMonad m => Bool -> String -> LangM m
 yesNo p q = do
@@ -76,12 +82,20 @@ multipleChoice
   -> Map a (Bool, b) -> [a]
   -> Rated m
 multipleChoice what solution choices = do
-  paragraph (english "Remarks on your solution:")
+  paragraph $ do
+    english "Remarks on your solution:"
+    german "Anmerkungen zur eingereichten Lösung:"
   let cs = sort $ nubOrd choices
       points = percentPer solution cs
-  correct <- localise [(English, "Given " ++ what ++ " are correct?")]
+  correct <- localise [
+    (English, "Given " ++ what ++ " are correct?"),
+    (German, "Die angegebenen " ++ what ++ " sind korrekt?")
+    ]
   assertWith points (null [c | c <- cs, c `notElem` valid]) correct
-  exhaustive <- localise [(English, "Given " ++ what ++ " are exhaustive?")]
+  exhaustive <- localise [
+    (English, "Given " ++ what ++ " are exhaustive?"),
+    (German, "Die angegebenen " ++ what ++ " sind vollständig?")
+    ]
   assertWith points (cs ==  valid) exhaustive
   return points
   where

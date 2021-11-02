@@ -27,9 +27,11 @@ import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (empty, insert, fromList)
 
 import Modelling.Auxiliary.Output (
+  Language (English, German),
   OutputMonad (..),
   Rated,
   hoveringInformation,
+  localise,
   multipleChoice,
   simplifiedInformation,
   LangM,
@@ -217,7 +219,12 @@ repairCdTask path task = do
   paragraph hoveringInformation
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
-repairCdEvaluation = multipleChoice "changes" . changes
+repairCdEvaluation inst xs = do
+  chs <- localise [
+    (English, "changes"),
+    (German, "Änderungen")
+    ]
+  multipleChoice chs (changes inst) xs
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int (Bool, Change DiagramEdge),

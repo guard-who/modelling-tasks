@@ -20,9 +20,13 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Output (
+  Language (English, German),
   OutputMonad (..),
   Rated,
+  english,
+  german,
   hoveringInformation,
+  localise,
   multipleChoice,
   simplifiedInformation,
   LangM,
@@ -97,17 +101,23 @@ selectValidCdTask
   -> SelectValidCdInstance
   -> LangM m
 selectValidCdTask path task = do
-  paragraph $ text [i|Consider the following class diagram candidates.|]
+  paragraph $ do
+    english [i|Consider the following class diagram candidates.|]
+    german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten.|]
   cds      <- lift $ liftIO $ sequence $
     M.foldrWithKey drawCd mempty $ classDiagrams task
   images show snd cds
-  paragraph $ text
-    [i|Which of these class diagram candidates are valid class diagrams?
-Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
   paragraph $ do
-    text [i|For example, |]
+    english [i|Which of these class diagram candidates are valid class diagrams?
+Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
+    german [i|Welche dieser Klassendiagrammkandidaten sind valide Klassendiagramme?
+Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültigen Klassendiagramme enthält.|]
+  paragraph $ do
+    english [i|For example, |]
+    german [i|Zum Beispiel |]
     code "[1, 2]"
-    text [i| would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
+    english [i| would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
+    english [i| würde bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
   where
@@ -126,7 +136,12 @@ selectValidCdEvaluation
   => SelectValidCdInstance
   -> [Int]
   -> Rated m
-selectValidCdEvaluation = multipleChoice "class diagrams" . classDiagrams
+selectValidCdEvaluation inst xs = do
+  cds <- localise [
+    (English, "class diagrams"),
+    (German, "Klassendiagramme")
+    ]
+  multipleChoice cds (classDiagrams inst) xs
 
 selectValidCd
   :: SelectValidCdConfig
