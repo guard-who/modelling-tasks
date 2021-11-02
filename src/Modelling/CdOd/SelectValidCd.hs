@@ -5,6 +5,7 @@ module Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (..),
   SelectValidCdInstance (..),
   defaultSelectValidCdConfig,
+  defaultSelectValidCdInstance,
   selectValidCd,
   selectValidCdEvaluation,
   selectValidCdTask,
@@ -208,3 +209,15 @@ newSelectValidCdInstances inst = do
     [ renameInstance inst ns as >>= shuffleInstance
     | (ns, as) <- zip names' (concat $ replicate 5 assocs')
     ]
+
+defaultSelectValidCdInstance :: SelectValidCdInstance
+defaultSelectValidCdInstance = SelectValidCdInstance {
+  classDiagrams = M.fromAscList [
+    (1,(False,([("D",["B"]),("B",["D"]),("A",["C"]),("C",["B"])],[]))),
+    (2,(True,([("D",["B"]),("B",[]),("A",[]),("C",["B"])],[]))),
+    (3,(False,([("D",["B"]),("B",["D"]),("A",["B"]),("C",["B"])],[]))),
+    (4,(True,([("D",[]),("B",["D"]),("A",[]),("C",["B"])],[])))
+    ],
+  withNames = True,
+  withNavigations = True
+  }
