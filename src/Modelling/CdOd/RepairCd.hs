@@ -28,6 +28,7 @@ import qualified Data.Map                         as M (empty, insert, fromList)
 
 import Modelling.Auxiliary.Output (
   OutputMonad (..),
+  Rated,
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
@@ -215,7 +216,7 @@ repairCdTask path task = do
   paragraph simplifiedInformation
   paragraph hoveringInformation
 
-repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> LangM m
+repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
 repairCdEvaluation = multipleChoice "changes" . changes
 
 data RepairCdInstance = RepairCdInstance {

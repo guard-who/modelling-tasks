@@ -4,6 +4,7 @@
 -- | This module provides common skeletons for printing tasks
 module Modelling.Auxiliary.Output (
   OutputMonad (..),
+  Rated,
   directionsAdvice,
   hoveringInformation,
   multipleChoice,
@@ -36,9 +37,11 @@ import Control.Monad                    (foldM, unless, void, when)
 import Control.Monad.Trans (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (MonadWriter (pass, tell), Writer, execWriter,)
-import Data.List (nub, sort)
+import Data.Containers.ListUtils        (nubOrd)
+import Data.List                        (sort)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
+import Data.Ratio                       ((%))
 import Data.String.Interpolate (i)
 
 hoveringInformation :: OutputMonad m => LangM m
@@ -52,18 +55,35 @@ simplifiedInformation = english [i|Please note: Classes are represented simplifi
 That means they consist of a single box containing only its class name, but do not contain boxes for attributes and methods.
 Nevertheless you should treat these simplified class representations as valid classes.|]
 
+yesNo :: OutputMonad m => Bool -> String -> LangM m
+yesNo p q = do
+  paragraph $ text q
+  paragraph $ indent $
+    if p
+    then do
+      english "Yes"
+      german "Ja"
+    else do
+      english "No"
+      german "Nein"
+
+assertWith :: OutputMonad m => Rational -> Bool -> String -> LangM m
+assertWith points = if points >= 1 % 2 then yesNo else assertion
+
 multipleChoice
   :: (OutputMonad m, Ord a)
   => String
   -> Map a (Bool, b) -> [a]
-  -> LangM m
+  -> Rated m
 multipleChoice what solution choices = do
   paragraph (english "Remarks on your solution:")
-  let cs = nub $ sort choices
+  let cs = sort $ nubOrd choices
+      points = percentPer solution cs
   correct <- localise [(English, "Given " ++ what ++ " are correct?")]
-  assertion (null [c | c <- cs, c `notElem` valid]) correct
+  assertWith points (null [c | c <- cs, c `notElem` valid]) correct
   exhaustive <- localise [(English, "Given " ++ what ++ " are exhaustive?")]
-  assertion (cs ==  valid) exhaustive
+  assertWith points (cs ==  valid) exhaustive
+  return points
   where
     valid = M.keys $ M.filter ((== True) . fst) solution
 
@@ -73,12 +93,20 @@ singleChoice what solution choice = do
   correct <- localise [(English, "Chosen " ++ what ++ " is correct?")]
   assertion (solution == choice) correct
 
+percentPer :: Ord a => Map a (Bool, b) -> [a] -> Rational
+percentPer xs = (% toInteger (length xs)) . sum
+  . fmap (\y -> if maybe False fst $ M.lookup y xs then 1 else 0)
+
 data Language = German | English
   deriving Eq
 
 localise :: OutputMonad m => [(Language, String)] -> LangM' m String
 localise lm = LangM $ \l ->
-  return $ fromMaybe (error "missing translation") $ lookup l lm
+  return $ fromMaybe nonExistent $ lookup l lm
+  where
+    nonExistent
+      | null lm   = error "missing translation"
+      | otherwise = snd $ head lm
 
 english :: OutputMonad m => String -> LangM m
 english t = LangM $ \l -> when (l == English) $ withLang (text t) l
@@ -88,6 +116,7 @@ german t = LangM $ \l -> when (l == German) $ withLang (text t) l
 
 newtype LangM' m a = LangM { withLang :: Language -> m a}
 type LangM m = LangM' m ()
+type Rated m = LangM' m Rational
 
 instance Functor m => Functor (LangM' m) where
   fmap f (LangM o) = LangM $ fmap f . o

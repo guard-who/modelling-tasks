@@ -21,6 +21,7 @@ import qualified Data.Map                         as M (
 
 import Modelling.Auxiliary.Output (
   OutputMonad (..),
+  Rated,
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
@@ -124,7 +125,7 @@ selectValidCdEvaluation
   :: OutputMonad m
   => SelectValidCdInstance
   -> [Int]
-  -> LangM m
+  -> Rated m
 selectValidCdEvaluation = multipleChoice "class diagrams" . classDiagrams
 
 selectValidCd
