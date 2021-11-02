@@ -15,6 +15,7 @@ module Modelling.Auxiliary.Output (
   abortWith,
   alignOutput,
   getAllOuts,
+  getOutsWithResult,
   combineReports,
   combineWithReports,
   combineTwoReports,
@@ -36,7 +37,12 @@ import qualified Data.Map as M
 import Control.Monad                    (foldM, unless, void, when)
 import Control.Monad.Trans (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
-import Control.Monad.Writer (MonadWriter (pass, tell), Writer, execWriter,)
+import Control.Monad.Writer (
+  MonadWriter (pass, tell),
+  Writer,
+  execWriter,
+  runWriter,
+  )
 import Data.Containers.ListUtils        (nubOrd)
 import Data.List                        (sort)
 import Data.Map (Map)
@@ -168,12 +174,18 @@ instance Monad (Report o) where
   return = Report . return
   Report r >>= f = Report $ r >>= unReport . f
 
+getOutsWithResult :: Report o a -> (Maybe a, [Out o])
+getOutsWithResult = runWriter . getAllOuts'
+
 getAllOuts :: Report o a -> [Out o]
-getAllOuts r = execWriter $ do
+getAllOuts = execWriter . getAllOuts'
+
+getAllOuts' :: Report o a -> Writer [Out o] (Maybe a)
+getAllOuts' r = do
   x <- runMaybeT $ unReport r
   case x of
-    Nothing -> pass $ return ((), (Abort:))
-    Just _ -> return ()
+    Nothing -> pass $ return (x, (Abort:))
+    Just _ -> return x
 
 combineLangMs :: ([m a] -> m b) -> [LangM' m a] -> LangM' m b
 combineLangMs f oms = LangM $ \l ->
