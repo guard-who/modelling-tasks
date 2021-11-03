@@ -92,7 +92,9 @@ multipleChoice what solution choices = do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
   let cs = sort $ nubOrd choices
-      points = percentPer solution cs
+      points = percentPer
+        (fst <$> solution)
+        (toMapping (M.keys solution) cs)
   correct <- localise [
     (English, "Given " ++ what ++ " are correct?"),
     (German, "Die angegebenen " ++ what ++ " sind korrekt?")
@@ -113,9 +115,20 @@ singleChoice what solution choice = do
   correct <- localise [(English, "Chosen " ++ what ++ " is correct?")]
   assertion (solution == choice) correct
 
-percentPer :: Ord a => Map a (Bool, b) -> [a] -> Rational
+{-|
+Returns a list stating for each element of the first list
+if the element exists within the second list.
+-}
+toMapping :: Eq a => [a] -> [a] -> [(a, Bool)]
+toMapping xs ys = fmap (\x -> (x, x `elem` ys)) xs
+
+{-|
+The relative amount of elements in the list
+being a member of the map with the same value.
+-}
+percentPer :: (Eq a, Ord k) => Map k a -> [(k, a)] -> Rational
 percentPer xs = (% toInteger (length xs)) . sum
-  . fmap (\y -> if maybe False fst $ M.lookup y xs then 1 else 0)
+  . fmap (\(k, y) -> if M.lookup k xs == Just y then 1 else 0)
 
 data Language = German | English
   deriving Eq
