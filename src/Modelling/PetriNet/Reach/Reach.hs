@@ -128,7 +128,7 @@ totalReach path inst ts = do
   paragraph $ text "Startmarkierung"
   indent $ text $ show (start n)
   out <- executes path False (drawUsing inst) n ts
-  assertion (out == goal inst) "Zielmarkierung erreicht?"
+  assertion (out == goal inst) $ text "Zielmarkierung erreicht?"
   where
     n = petriNet inst
 
@@ -136,7 +136,7 @@ isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
 isNoLonger mmaxL ts =
   (`mapM_` mmaxL) $ \maxL ->
     assertion (length ts <= maxL) $
-      unwords ["Nicht mehr als", show maxL, "Transitionen?"]
+      text $ unwords ["Nicht mehr als", show maxL, "Transitionen?"]
 
 data ReachInstance s t = ReachInstance {
   drawUsing         :: GraphvizCommand,

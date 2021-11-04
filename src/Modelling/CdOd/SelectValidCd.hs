@@ -16,6 +16,7 @@ import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   foldrWithKey,
   fromAscList,
+  fromList,
   insert,
   toList,
   )
@@ -27,7 +28,6 @@ import Modelling.Auxiliary.Output (
   english,
   german,
   hoveringInformation,
-  localise,
   multipleChoice,
   simplifiedInformation,
   LangM,
@@ -138,10 +138,10 @@ selectValidCdEvaluation
   -> [Int]
   -> Rated m
 selectValidCdEvaluation inst xs = do
-  cds <- localise [
-    (English, "class diagrams"),
-    (German, "Klassendiagramme")
-    ]
+  let cds = M.fromList [
+        (English, "class diagrams"),
+        (German, "Klassendiagramme")
+        ]
   multipleChoice cds (classDiagrams inst) xs
 
 selectValidCd

@@ -11,7 +11,7 @@ import Control.Monad                    (unless)
 import Control.Monad.Trans              (MonadTrans(lift))
 
 instance OutputMonad (Either String) where
-  assertion b m = unless b (lift $ Left m)
+  assertion b m = unless b (m >> lift (Left "assertion"))
   enumerate _ _ _ = return ()
   image _         = return ()
   images _ _ _    = return ()
@@ -25,3 +25,4 @@ instance OutputMonad (Either String) where
     lift $ Left "refused"
   latex _         = return ()
   code _          = return ()
+  translated _    = return ()

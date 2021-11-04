@@ -194,8 +194,8 @@ matchCdOdEvaluation
 matchCdOdEvaluation task is' = do
   paragraph $ text "Remarks on your solution:"
   let is = nub . sort <$> foldr (\(c, o) -> M.alter (Just . maybe o (o++)) c) M.empty is'
-  assertion (null $ notInstanceOf is) "Given instances are correct?"
-  assertion (is == instancesOfMatch task) "Given instances are exhaustive?"
+  assertion (null $ notInstanceOf is) $ text "Given instances are correct?"
+  assertion (is == instancesOfMatch task) $ text "Given instances are exhaustive?"
   where
     notInstanceOf :: Map Int String -> Map Int String
     notInstanceOf is = M.differenceWith (\f s -> maybeList $ f \\ s) is $ instancesOfMatch task

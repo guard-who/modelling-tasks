@@ -31,7 +31,6 @@ import Modelling.Auxiliary.Output (
   OutputMonad (..),
   Rated,
   hoveringInformation,
-  localise,
   multipleChoice,
   simplifiedInformation,
   LangM,
@@ -220,10 +219,10 @@ repairCdTask path task = do
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
 repairCdEvaluation inst xs = do
-  chs <- localise [
-    (English, "changes"),
-    (German, "Änderungen")
-    ]
+  let chs = M.fromList [
+        (English, "changes"),
+        (German, "Änderungen")
+        ]
   multipleChoice chs (changes inst) xs
 
 data RepairCdInstance = RepairCdInstance {

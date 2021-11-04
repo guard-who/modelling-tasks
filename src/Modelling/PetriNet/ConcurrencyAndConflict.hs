@@ -168,11 +168,11 @@ transitionPairEvaluation
 transitionPairEvaluation what n (ft, st) is = do
   paragraph $ text "Remarks on your solution:"
   assertion (isTransition fi)
-    $ fi ++ " is a valid transition of the given Petri net?"
+    $ text $ fi ++ " is a valid transition of the given Petri net?"
   assertion (isTransition si)
-    $ si ++ " is a valid transition of the given Petri net?"
+    $ text $ si ++ " is a valid transition of the given Petri net?"
   assertion (ft == fi && st == si || ft == si && st == fi)
-    $ "Given transitions " ++ what ++ "?"
+    $ text $ "Given transitions " ++ what ++ "?"
   where
     (fi, si) = is
     isTransition xs

@@ -27,14 +27,14 @@ module Modelling.Auxiliary.Output (
   Language (..),
   english,
   german,
-  localise,
   mapLangM,
+  multiLang,
   withLang,
   ) where
 
 import qualified Data.Map as M
 
-import Control.Monad                    (foldM, unless, void, when)
+import Control.Monad                    (foldM, unless, void)
 import Control.Monad.Trans (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (
@@ -67,9 +67,9 @@ Nevertheless you should treat these simplified class representations as valid cl
 Das heißt, sie bestehen aus einer einfachen Box, die nur den Klassennamenenthält, aber keine Abschnitte für Attribute oder Methoden.
 Trotzdem sollten Sie diese vereinfachten Klassendarstellungen als valide Klassen ansehen.|]
 
-yesNo :: OutputMonad m => Bool -> String -> LangM m
+yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
 yesNo p q = do
-  paragraph $ text q
+  paragraph q
   paragraph $ indent $
     if p
     then do
@@ -79,12 +79,12 @@ yesNo p q = do
       english "No"
       german "Nein"
 
-assertWith :: OutputMonad m => Rational -> Bool -> String -> LangM m
+assertWith :: OutputMonad m => Rational -> Bool -> LangM m -> LangM m
 assertWith points = if points >= 1 % 2 then yesNo else assertion
 
 multipleChoice
   :: (OutputMonad m, Ord a)
-  => String
+  => Map Language String
   -> Map a (Bool, b) -> [a]
   -> Rated m
 multipleChoice what solution choices = do
@@ -95,16 +95,14 @@ multipleChoice what solution choices = do
       points = percentPer
         (fst <$> solution)
         (toMapping (M.keys solution) cs)
-  correct <- localise [
-    (English, "Given " ++ what ++ " are correct?"),
-    (German, "Die angegebenen " ++ what ++ " sind korrekt?")
+  assertWith points (null [c | c <- cs, c `notElem` valid]) $ multiLang [
+    (English, "Given " ++ localise English what ++ " are correct?"),
+    (German, "Die angegebenen " ++ localise German what ++ " sind korrekt?")
     ]
-  assertWith points (null [c | c <- cs, c `notElem` valid]) correct
-  exhaustive <- localise [
-    (English, "Given " ++ what ++ " are exhaustive?"),
-    (German, "Die angegebenen " ++ what ++ " sind vollständig?")
+  assertWith points (cs ==  valid) $ multiLang [
+    (English, "Given " ++ localise English what ++ " are exhaustive?"),
+    (German, "Die angegebenen " ++ localise German what ++ " sind vollständig?")
     ]
-  assertWith points (cs ==  valid) exhaustive
   return points
   where
     valid = M.keys $ M.filter ((== True) . fst) solution
@@ -112,8 +110,8 @@ multipleChoice what solution choices = do
 singleChoice :: (OutputMonad m, Eq a) => String -> a -> a -> LangM m
 singleChoice what solution choice = do
   paragraph (english "Remarks on your solution:")
-  correct <- localise [(English, "Chosen " ++ what ++ " is correct?")]
-  assertion (solution == choice) correct
+  assertion (solution == choice) $
+    multiLang [(English, "Chosen " ++ what ++ " is correct?")]
 
 {-|
 Returns a list stating for each element of the first list
@@ -130,22 +128,24 @@ percentPer :: (Eq a, Ord k) => Map k a -> [(k, a)] -> Rational
 percentPer xs = (% toInteger (length xs)) . sum
   . fmap (\(k, y) -> if M.lookup k xs == Just y then 1 else 0)
 
-data Language = German | English
-  deriving Eq
+data Language = English | German
+  deriving (Eq, Ord)
 
-localise :: OutputMonad m => [(Language, String)] -> LangM' m String
-localise lm = LangM $ \l ->
-  return $ fromMaybe nonExistent $ lookup l lm
+multiLang :: OutputMonad m => [(Language, String)] -> LangM m
+multiLang = translated . M.fromList
+
+localise :: Language -> Map Language String -> String
+localise l lm = fromMaybe nonExistent $ M.lookup l lm
   where
     nonExistent
       | null lm   = error "missing translation"
-      | otherwise = snd $ head lm
+      | otherwise = snd $ M.findMin lm
 
 english :: OutputMonad m => String -> LangM m
-english t = LangM $ \l -> when (l == English) $ withLang (text t) l
+english = translated . M.singleton English
 
 german :: OutputMonad m => String -> LangM m
-german t = LangM $ \l -> when (l == German) $ withLang (text t) l
+german = translated . M.singleton German
 
 newtype LangM' m a = LangM { withLang :: Language -> m a}
 type LangM m = LangM' m ()
@@ -165,7 +165,7 @@ instance MonadTrans LangM' where
   lift m = LangM $ const m
 
 class Monad m => OutputMonad m where
-  assertion :: Bool -> String -> LangM m
+  assertion :: Bool -> LangM m -> LangM m
   enumerate :: (k -> String) -> (a -> String) -> Map k a -> LangM m
   image     :: FilePath -> LangM m
   images    :: (k -> String) -> (a -> FilePath) -> Map k a -> LangM m
@@ -177,8 +177,12 @@ class Monad m => OutputMonad m where
   indent     :: LangM m -> LangM m
   latex      :: String -> LangM m
   code       :: String -> LangM m
+  translated :: Map Language String -> LangM m
 
-data Out o = Format o | Abort
+data Out o =
+  Abort |
+  Format o |
+  Localised (Map Language String)
 
 newtype Report o r = Report { unReport :: MaybeT (Writer [Out o]) r }
   deriving newtype (Applicative, Functor)
@@ -211,59 +215,73 @@ combineLangM f x y = LangM $ \l ->
       y' = y `withLang` l
   in f x' y'
 
-combineReports :: ([[o]] -> o) -> [LangM' (Report o) a] -> LangM' (Report o) ()
-combineReports = combineLangMs . combineReports'
+combineReports
+  :: (Map Language String -> o)
+  -> ([[o]] -> o)
+  -> [LangM' (Report o) a]
+  -> LangM' (Report o) ()
+combineReports l = combineLangMs . combineReports' l
 
 combineReports'
-  :: ([[o]] -> o)
+  :: (Map Language String -> o)
+  -> ([[o]] -> o)
   -> [Report o a]
   -> Report o ()
-combineReports' f rs = Report $ do
+combineReports' l f rs = Report $ do
   os <- sequence $ toOut <$> rs
   tell . (:[]) . Format $ f os
   where
-    toOut r = MaybeT . return . sequence $ toOutput <$> getAllOuts r
+    toOut r = MaybeT . return . sequence $ toOutput l <$> getAllOuts r
 
 combineWithReports
-  :: ([b] -> o)
+  :: (Map Language String -> o)
+  -> ([b] -> o)
   -> ([o] -> b)
   -> [LangM' (Report o) a]
   -> LangM' (Report o) ()
-combineWithReports f g = combineLangMs $ combineReports' (f . fmap g)
+combineWithReports l f g = combineLangMs $ combineReports' l (f . fmap g)
 
 alignOutput
-  :: ([o] -> o)
+  :: (Map Language String -> o)
+  -> ([o] -> o)
   -> LangM' (Report o) a
   -> LangM' (Report o) ()
-alignOutput = mapLangM . alignOutput'
+alignOutput l = mapLangM . alignOutput' l
 
 alignOutput'
-  :: ([o] -> o)
+  :: (Map Language String -> o)
+  -> ([o] -> o)
   -> Report o a
   -> Report o ()
-alignOutput' f r = Report $ do
-  xs  <- MaybeT . return . sequence $ toOutput <$> getAllOuts r
+alignOutput' l f r = Report $ do
+  xs  <- MaybeT . return . sequence $ toOutput l <$> getAllOuts r
   tell . (:[]) . Format $ f xs
 
-toOutput :: Out o -> Maybe o
-toOutput Abort      = Nothing
-toOutput (Format x) = Just x
+toOutput
+  :: (Map Language String -> o)
+  -> Out o
+  -> Maybe o
+toOutput _ Abort         = Nothing
+toOutput _ (Format x)    = Just x
+toOutput f (Localised x) = Just $ f x
 
 combineTwoReports
-  :: ([o] -> [o] -> o)
+  :: (Map Language String -> o)
+  -> ([o] -> [o] -> o)
   -> LangM' (Report o) a
   -> LangM' (Report o) b
   -> LangM' (Report o) ()
-combineTwoReports = combineLangM . combineTwoReports'
+combineTwoReports l = combineLangM . combineTwoReports' l
 
 combineTwoReports'
-  :: ([o] -> [o] -> o)
+  :: (Map Language String -> o)
+  -> ([o] -> [o] -> o)
   -> Report o a
   -> Report o b
   -> Report o ()
-combineTwoReports' f r1 r2 = case sequence $ toOutput <$> getAllOuts r1 of
+combineTwoReports' l f r1 r2 = case sequence $ toOutput l <$> getAllOuts r1 of
   Nothing -> void r1
-  Just x  -> alignOutput' (f x) r2
+  Just x  -> alignOutput' l (f x) r2
 
 format :: o -> LangM' (Report o) ()
 format = lift . Report . tell . (:[]) . Format
@@ -273,9 +291,12 @@ abortWith d = do
   format d
   lift $ Report $ MaybeT (return Nothing)
 
-toAbort :: LangM' (Report o) a -> LangM' (Report o) b
-toAbort = mapLangM $ \r -> Report $ do
-  xs  <- MaybeT . return . sequence $ toOutput <$> getAllOuts r
+toAbort
+  :: (Map Language String -> o)
+  -> LangM' (Report o) a
+  -> LangM' (Report o) b
+toAbort l = mapLangM $ \r -> Report $ do
+  xs  <- MaybeT . return . sequence $ toOutput l <$> getAllOuts r
   tell $ Format <$> xs
   MaybeT $ return Nothing
 
@@ -295,3 +316,4 @@ instance OutputMonad Maybe where
   indent xs       = xs
   latex _         = return ()
   code _          = return ()
+  translated _    = return ()

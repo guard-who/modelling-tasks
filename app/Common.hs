@@ -4,12 +4,15 @@ module Common (
   forceErrors, instanceInput, printNetAndInfo, renderPetriNet,
   ) where
 
-import Modelling.Auxiliary.Output       (OutputMonad (..))
+import qualified Data.Map                         as M (lookup)
+
+import Modelling.Auxiliary.Output       (LangM' (LangM), OutputMonad (..))
 
 import Control.Monad                    (unless)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Map                         (foldrWithKey)
+import Data.Maybe                       (fromMaybe)
 import Diagrams.Prelude                 (Diagram, mkWidth)
 import Diagrams.Backend.SVG             (B, renderSVG)
 
@@ -36,7 +39,7 @@ renderPetriNet x dia = do
     name = x ++ "petri.svg"
 
 instance OutputMonad IO where
-  assertion b m = unless b $ error m
+  assertion b m = unless b $ m >> error ""
   enumerate g f = lift . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". " ++ f x ++ "\n" ++ rs)
     ""
@@ -62,3 +65,6 @@ instance OutputMonad IO where
     error "refused"
   latex         = lift . putStrLn . ("LaTeX: " ++)
   code          = lift . putStr . (\xs -> " <" ++ xs ++ "> ")
+  translated lm = do
+    l <- LangM return
+    text . fromMaybe "" $ M.lookup l lm

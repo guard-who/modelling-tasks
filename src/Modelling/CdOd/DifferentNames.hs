@@ -145,13 +145,13 @@ differentNamesEvaluation
 differentNamesEvaluation task cs = do
   paragraph $ text "Remarks on your solution:"
   let ss = catMaybes $ readMapping <$> cs
-  assertion (length ss == length cs)
+  assertion (length ss == length cs) $ text
     "All provided pairs are linking a valid link and a valid relationship"
   let cs' = catMaybes $ readValidMapping <$> cs
   let ms = BM.toList $ nameMapping $ mapping task
-  assertion (length cs' == length ss)
+  assertion (length cs' == length ss) $ text
     "Given mappings are correct?"
-  assertion (nub (sort cs') == ms) "Given mappings are exhaustive?"
+  assertion (nub (sort cs') == ms) $ text "Given mappings are exhaustive?"
   where
     m = nameMapping $ mapping task
     readMapping (x, y)

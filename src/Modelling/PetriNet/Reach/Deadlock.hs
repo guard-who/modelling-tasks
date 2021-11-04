@@ -17,7 +17,7 @@ import qualified Data.Set                         as S (fromList, toList)
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   LangM,
-  OutputMonad (assertion),
+  OutputMonad (assertion, text),
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
@@ -80,7 +80,7 @@ totalDeadlock
 totalDeadlock path inst ts = do
   isNoLonger (noLongerThan inst) ts
   out <- executes path True (drawUsing inst) n ts
-  assertion (null $ successors n out) "Zielmarkierung hat keine Nachfolger?"
+  assertion (null $ successors n out) $ text "Zielmarkierung hat keine Nachfolger?"
   where
     n = petriNet inst
 
