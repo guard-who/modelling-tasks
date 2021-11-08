@@ -51,7 +51,9 @@ import Modelling.Auxiliary.Output (
   LangM,
   OutputMonad (..),
   english,
+  german,
   singleChoice,
+  translate,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -382,7 +384,10 @@ renderWith path task net config = do
     liftIO $ renderSVG file (mkWidth 250) dia
     return file
   either
-    (const $ refuse (english "drawing diagram failed") >> return "")
+    (const $ (>> return "") $ refuse $ translate $ do
+      english "Drawing diagram failed!"
+      german "Diagrammzeichnen fehlgeschlagen!"
+    )
     return
     f
 

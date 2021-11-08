@@ -29,13 +29,15 @@ module Modelling.Auxiliary.Output (
   german,
   mapLangM,
   multiLang,
+  translate,
   withLang,
   ) where
 
 import qualified Data.Map as M
 
 import Control.Monad                    (foldM, unless, void)
-import Control.Monad.Trans (MonadTrans (lift))
+import Control.Monad.State              (State, execState, modify)
+import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (
   MonadWriter (pass, tell),
@@ -51,15 +53,16 @@ import Data.Ratio                       ((%))
 import Data.String.Interpolate (i)
 
 hoveringInformation :: OutputMonad m => LangM m
-hoveringInformation = do
+hoveringInformation = translate $ do
   english [i|Please note: Hovering over or clicking on edges or their labels highlights both parts.|]
   german [i|Bitte beachten Sie: Beim Darüberbewegen oder Daraufklicken auf Kanten bzw. ihre Beschriftungen werden beide Teile hervorgehoben.|]
 
 directionsAdvice :: OutputMonad m => LangM m
-directionsAdvice = english [i|As navigation directions are used, please note that aggregations and compositions are only navigable from the "part" toward the "whole", i.e. they are not navigable in the opposite direction!|]
+directionsAdvice = translate $
+  english [i|As navigation directions are used, please note that aggregations and compositions are only navigable from the "part" toward the "whole", i.e. they are not navigable in the opposite direction!|]
 
 simplifiedInformation :: OutputMonad m => LangM m
-simplifiedInformation = do
+simplifiedInformation = translate $ do
   english [i|Please note: Classes are represented simplified here.
 That means they consist of a single box containing only its class name, but do not contain boxes for attributes and methods.
 Nevertheless you should treat these simplified class representations as valid classes.|]
@@ -70,14 +73,14 @@ Trotzdem sollten Sie diese vereinfachten Klassendarstellungen als valide Klassen
 yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
 yesNo p q = do
   paragraph q
-  paragraph $ indent $
+  paragraph $ indent $ translate $
     if p
     then do
-      english "Yes"
-      german "Ja"
+      english "Yes."
+      german "Ja."
     else do
-      english "No"
-      german "Nein"
+      english "No."
+      german "Nein."
 
 assertWith :: OutputMonad m => Rational -> Bool -> LangM m -> LangM m
 assertWith points = if points >= 1 % 2 then yesNo else assertion
@@ -88,7 +91,7 @@ multipleChoice
   -> Map a (Bool, b) -> [a]
   -> Rated m
 multipleChoice what solution choices = do
-  paragraph $ do
+  paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
   let cs = sort $ nubOrd choices
@@ -109,7 +112,8 @@ multipleChoice what solution choices = do
 
 singleChoice :: (OutputMonad m, Eq a) => String -> a -> a -> LangM m
 singleChoice what solution choice = do
-  paragraph (english "Remarks on your solution:")
+  paragraph $ translate $
+    english "Remarks on your solution:"
   assertion (solution == choice) $
     multiLang [(English, "Chosen " ++ what ++ " is correct?")]
 
@@ -129,7 +133,7 @@ percentPer xs = (% toInteger (length xs)) . sum
   . fmap (\(k, y) -> if M.lookup k xs == Just y then 1 else 0)
 
 data Language = English | German
-  deriving (Eq, Ord)
+  deriving (Enum, Eq, Ord)
 
 multiLang :: OutputMonad m => [(Language, String)] -> LangM m
 multiLang = translated . M.fromList
@@ -141,11 +145,14 @@ localise l lm = fromMaybe nonExistent $ M.lookup l lm
       | null lm   = error "missing translation"
       | otherwise = snd $ M.findMin lm
 
-english :: OutputMonad m => String -> LangM m
-english = translated . M.singleton English
+translate :: OutputMonad m => State (Map Language String) a -> LangM m
+translate = translated . flip execState M.empty
 
-german :: OutputMonad m => String -> LangM m
-german = translated . M.singleton German
+english :: String -> State (Map Language String) ()
+english = modify . M.insert English
+
+german :: String -> State (Map Language String) ()
+german = modify . M.insert German
 
 newtype LangM' m a = LangM { withLang :: Language -> m a}
 type LangM m = LangM' m ()

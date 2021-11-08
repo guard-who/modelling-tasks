@@ -32,7 +32,9 @@ import Modelling.Auxiliary.Output       (
   LangM',
   OutputMonad (..),
   english,
+  german,
   singleChoice,
+  translate,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -200,7 +202,10 @@ writeGraph s path index pl = do
     lift $ renderSVG file (mkWidth 250) d
     return file
   either
-    (const $ refuse (english "drawing diagram failed") >> return "")
+    (const $ (>> return "") $ refuse $ translate $ do
+      english "Drawing diagram failed!"
+      german "Diagrammzeichnen fehlgeschlagen!"
+    )
     return
     file'
   where
@@ -304,7 +309,8 @@ graphToMathTask
   -> LangM m
 graphToMathTask path task = do
   dia <- from <$> writeDia path task
-  paragraph $ english "Consider this graphical representation of a Petri net:"
+  paragraph $ translate $
+    english "Consider this graphical representation of a Petri net:"
   image dia
   paragraph $ text
     "Which of the following mathematical representations denotes this Petri net?"
@@ -321,20 +327,20 @@ graphToMathTask path task = do
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
 mathToOutput f pm = paragraph $ do
   f $ netMath pm
-  english ", where "
+  translate $ english ", where "
   f $ placesMath pm
-  english " and "
+  translate $ english " and "
   f $ transitionsMath pm
-  english ", as well as"
+  translate $ english ", as well as"
   case placeOrderMath pm of
     Nothing -> return ()
     Just o  -> do
-      english " using the place ordering "
+      translate $ english " using the place ordering "
       f o
-  english ":"
+  translate $ english ":"
   itemizeM $ f . fst <$> tokenChangeMath pm
   itemizeM $ f . snd <$> tokenChangeMath pm
-  english "Moreover, "
+  translate $ english "Moreover, "
   f $ initialMarkingMath pm
 
 mathToGraphTask
