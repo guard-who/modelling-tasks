@@ -116,12 +116,12 @@ Please state your answer by giving a list of numbers, indicating all valid class
 Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültigen Klassendiagramme enthält.|]
   paragraph $ do
     translate $ do
-      english [i|For example, |]
-      german [i|Zum Beispiel |]
+      english [i|For example,|]
+      german [i|Zum Beispiel|]
     code "[1, 2]"
     translate $ do
-      english [i| would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
-      german [i| würde bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
+      english [i|would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
+      german [i|würde bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
   where

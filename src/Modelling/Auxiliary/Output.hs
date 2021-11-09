@@ -67,7 +67,7 @@ simplifiedInformation = translate $ do
 That means they consist of a single box containing only its class name, but do not contain boxes for attributes and methods.
 Nevertheless you should treat these simplified class representations as valid classes.|]
   german [i|Bitte beachten Sie: Klassen werden hier vereinfacht dargestellt.
-Das heißt, sie bestehen aus einer einfachen Box, die nur den Klassennamenenthält, aber keine Abschnitte für Attribute oder Methoden.
+Das heißt, sie bestehen aus einer einfachen Box, die nur den Klassennamen enthält, aber keine Abschnitte für Attribute oder Methoden.
 Trotzdem sollten Sie diese vereinfachten Klassendarstellungen als valide Klassen ansehen.|]
 
 yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
