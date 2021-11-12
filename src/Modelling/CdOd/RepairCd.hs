@@ -10,6 +10,7 @@ module Modelling.CdOd.RepairCd (
   checkRepairCdConfig,
   constrainConfig,
   defaultRepairCdConfig,
+  defaultRepairCdInstance,
   allowEverything,
   phraseChange,
   repairCd,
@@ -251,6 +252,36 @@ repairCd config segment seed = do
     cd
     (printNavigations config)
     (printNames config && useNames config)
+
+defaultRepairCdInstance :: RepairCdInstance
+defaultRepairCdInstance = RepairCdInstance {
+  changes = M.fromList [
+    (1,(False,Change {
+          add = Just ("A","D",Assoc Composition "s" (1,Just 1) (2,Nothing) False),
+          remove = Just ("A","D",Assoc Composition "v" (1,Just 1) (0,Nothing) False)
+          })),
+    (2,(False,Change {
+          add = Just ("C","A",Assoc Aggregation "t" (2,Just 2) (1,Nothing) False),
+          remove = Nothing
+          })),
+    (3,(True,Change {
+          add = Just ("B","D",Assoc Composition "z" (1,Just 1) (0,Nothing) False),
+          remove = Just ("D","B",Assoc Composition "x" (1,Just 1) (0,Nothing) False)
+          })),
+    (4,(True,Change {
+          add = Just ("A","B",Assoc Composition "u" (1,Just 1) (0,Just 2) False),
+          remove = Just ("B","A",Assoc Composition "w" (1,Just 1) (0,Just 2) False)
+          }))
+    ],
+  classDiagram = (
+    [("A",[]),("D",[]),("B",[]),("C",[])],
+    [(Composition,"v",(1,Just 1),"A","D",(0,Nothing)),
+     (Composition,"x",(1,Just 1),"D","B",(0,Nothing)),
+     (Composition,"w",(1,Just 1),"B","A",(0,Just 2)),
+     (Association,"y",(0,Just 2),"C","A",(2,Nothing))]),
+  withDirections = False,
+  withNames = True
+  }
 
 constrainConfig :: RandomGen g => Int -> ClassConfig -> RandT g IO ClassConfig
 constrainConfig n config = do
