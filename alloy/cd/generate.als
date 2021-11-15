@@ -157,7 +157,7 @@ pred classDiagram [
   hasCompositionCycles : one Boolean,
   hasMarkedEdges : lone Boolean] {
   #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
-  #{ a : assocs | not validFromLimitsAssoc [a]} + #{ a : assocs | not validToLimitsAssoc [a]} = wrongAssocs
+  #{ a : assocs | not validFromLimitsAssoc [a] iff validToLimitsAssoc [a]} = wrongAssocs
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
   #{ r : assocs | selfRelationship [r]} = selfRelationships
   #{ i : inheritances | selfRelationship [i]} = selfInheritances
