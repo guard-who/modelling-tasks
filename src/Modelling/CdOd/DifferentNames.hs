@@ -40,6 +40,7 @@ import Modelling.Auxiliary.Output (
   multipleChoice,
   simplifiedInformation,
   translations,
+  translate,
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
@@ -141,18 +142,28 @@ differentNamesTask path task = do
   cd' <- lift $ liftIO $ drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
     uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od") Svg
-  paragraph $ text "Consider the following class diagram:"
+  paragraph $ translate $ do
+    english "Consider the following class diagram:"
+    german "Betrachten Sie das folgende Kalssendiagramm:"
   image cd'
-  paragraph $ text "and the following object diagram (which conforms to it):"
+  paragraph $ translate $ do
+    english "and the following object diagram (which conforms to it):"
+    german "und das folgende (dazu passende) Objektdiagramm:"
   image od'
   paragraph $ do
-    text [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
+    translate $ do
+      english [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
 State your answer by giving a mapping of relationships in the CD to links in the OD.
 To state that "a" in the CD corresponds to "x" in the OD and "b" in the CD corresponds to "y" in the OD write it as:|]
+      german [i|Welche Beziehung im Klassendiagramm (CD) entspricht welchen Links im Objektdiagramm (OD)?
+Geben Sie Ihre Antwort als eine Zuordnung von Beziehungen im CD zu Links im OD an.
+Um anzugeben, dass "a" im CD zu "x" im OD und "b" im CD zu "y" im OD korrespondieren, schreiben Sie es als:|]
     code $ show [("a", "x"), ("b", "y")]
-  paragraph $ text
-    [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
+  paragraph $ translate $ do
+    english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
 Thus, every link name and every relationship name should occur exactly once in your mapping.|]
+    german [i|Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert, d.h. alle Links mit dem selben Namen (and auch nur Links mit dem selben Namen!) im OD entsprechen genau dem selben Beziehungsnamen im CD.
+Deshalb sollte jeder Linkname and jeder Beziehungsname genau einmal in Ihrer Zuordnung auftauchen.|]
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
@@ -164,10 +175,12 @@ differentNamesSyntax
   -> LangM m
 differentNamesSyntax task cs = addPretext $ do
   let l = length $ catMaybes $ readMapping m <$> cs
-  assertion (l == length cs) $ text
-    "All provided pairs are linking a valid link and a valid relationship"
-  assertion (l == nubLengthOn fst && l == nubLengthOn snd) $ text
-    "All provided pairs are non-overlapping"
+  assertion (l == length cs) $ translate $ do
+    english "All provided pairs are linking a valid link and a valid relationship"
+    german "Alle angegebenen Paare ordnen einen gültigen Link einer gültigen Beziehung zu"
+  assertion (l == nubLengthOn fst && l == nubLengthOn snd) $ translate $ do
+    english "All provided pairs are non-overlapping"
+    german "Alle angegebenen Paare sind nicht überlappend"
   where
     nubLengthOn f = length (nubOrd (map f cs))
     m = nameMapping $ mapping task
