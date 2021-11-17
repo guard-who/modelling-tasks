@@ -25,6 +25,7 @@ import Modelling.Auxiliary.Output (
   Language (English, German),
   OutputMonad (..),
   Rated,
+  addPretext,
   english,
   german,
   hoveringInformation,
@@ -140,12 +141,12 @@ selectValidCdEvaluation
   => SelectValidCdInstance
   -> [Int]
   -> Rated m
-selectValidCdEvaluation inst xs = do
+selectValidCdEvaluation inst xs = addPretext $ do
   let cds = M.fromList [
         (English, "class diagrams"),
         (German, "Klassendiagramme")
         ]
-  multipleChoice cds (classDiagrams inst) xs
+  multipleChoice cds (fst <$> classDiagrams inst) xs
 
 selectValidCd
   :: SelectValidCdConfig

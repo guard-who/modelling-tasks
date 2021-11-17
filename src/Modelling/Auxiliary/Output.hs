@@ -5,6 +5,7 @@
 module Modelling.Auxiliary.Output (
   OutputMonad (..),
   Rated,
+  addPretext,
   directionsAdvice,
   hoveringInformation,
   multipleChoice,
@@ -30,6 +31,7 @@ module Modelling.Auxiliary.Output (
   mapLangM,
   multiLang,
   translate,
+  translations,
   withLang,
   ) where
 
@@ -85,18 +87,22 @@ yesNo p q = do
 assertWith :: OutputMonad m => Rational -> Bool -> LangM m -> LangM m
 assertWith points = if points >= 1 % 2 then yesNo else assertion
 
-multipleChoice
-  :: (OutputMonad m, Ord a)
-  => Map Language String
-  -> Map a (Bool, b) -> [a]
-  -> Rated m
-multipleChoice what solution choices = do
+addPretext :: OutputMonad m => LangM' m a -> LangM' m a
+addPretext = (>>) $
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
+
+multipleChoice
+  :: (OutputMonad m, Ord a)
+  => Map Language String
+  -> Map a Bool
+  -> [a]
+  -> Rated m
+multipleChoice what solution choices = do
   let cs = sort $ nubOrd choices
       points = percentPer
-        (fst <$> solution)
+        solution
         (toMapping (M.keys solution) cs)
   assertWith points (null [c | c <- cs, c `notElem` valid]) $ multiLang [
     (English, "Given " ++ localise English what ++ " are correct?"),
@@ -108,12 +114,10 @@ multipleChoice what solution choices = do
     ]
   return points
   where
-    valid = M.keys $ M.filter ((== True) . fst) solution
+    valid = M.keys $ M.filter (== True) solution
 
 singleChoice :: (OutputMonad m, Eq a) => String -> a -> a -> LangM m
 singleChoice what solution choice = do
-  paragraph $ translate $
-    english "Remarks on your solution:"
   assertion (solution == choice) $
     multiLang [(English, "Chosen " ++ what ++ " is correct?")]
 
@@ -146,7 +150,10 @@ localise l lm = fromMaybe nonExistent $ M.lookup l lm
       | otherwise = snd $ M.findMin lm
 
 translate :: OutputMonad m => State (Map Language String) a -> LangM m
-translate = translated . flip execState M.empty
+translate = translated . translations
+
+translations :: State (Map k a1) a2 -> Map k a1
+translations = flip execState M.empty
 
 english :: String -> State (Map Language String) ()
 english = modify . M.insert English

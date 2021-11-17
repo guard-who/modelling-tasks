@@ -31,6 +31,7 @@ import Modelling.Auxiliary.Output (
   Language (English, German),
   OutputMonad (..),
   Rated,
+  addPretext,
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
@@ -219,12 +220,12 @@ repairCdTask path task = do
   paragraph hoveringInformation
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
-repairCdEvaluation inst xs = do
+repairCdEvaluation inst xs = addPretext $ do
   let chs = M.fromList [
         (English, "changes"),
         (German, "Änderungen")
         ]
-  multipleChoice chs (changes inst) xs
+  multipleChoice chs (fst <$> changes inst) xs
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int (Bool, Change DiagramEdge),

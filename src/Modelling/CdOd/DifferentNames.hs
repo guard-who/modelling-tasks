@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (..),
   DifferentNamesInstance (..),
@@ -7,21 +8,38 @@ module Modelling.CdOd.DifferentNames (
   defaultDifferentNamesConfig,
   differentNames,
   differentNamesEvaluation,
+  differentNamesSyntax,
   differentNamesTask,
   newDifferentNamesInstances,
   ) where
 
-import qualified Data.Bimap                       as BM
-  (fromList, keysR, lookup, lookupR, toList, twist)
-import qualified Data.Map                         as M (empty, insert)
+import qualified Data.Bimap                       as BM (
+  fromList,
+  keysR,
+  lookup,
+  lookupR,
+  toAscList,
+  twist,
+  )
+import qualified Data.Map                         as M (
+  empty,
+  fromAscList,
+  insert,
+  )
 import qualified Data.Set                         as S (toList)
 
 import Modelling.Auxiliary.Output (
-  OutputMonad (..),
-  directionsAdvice,
-  hoveringInformation,
-  simplifiedInformation,
   LangM,
+  OutputMonad (..),
+  Rated,
+  addPretext,
+  directionsAdvice,
+  english,
+  german,
+  hoveringInformation,
+  multipleChoice,
+  simplifiedInformation,
+  translations,
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
@@ -53,6 +71,8 @@ import Control.Monad.Random
   (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Data.Bimap                       (Bimap)
+import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (nub, permutations, sort)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
@@ -137,37 +157,42 @@ Thus, every link name and every relationship name should occur exactly once in y
   paragraph directionsAdvice
   paragraph hoveringInformation
 
-differentNamesEvaluation
+differentNamesSyntax
   :: OutputMonad m
   => DifferentNamesInstance
   -> [(String, String)]
   -> LangM m
-differentNamesEvaluation task cs = do
-  paragraph $ text "Remarks on your solution:"
-  let ss = catMaybes $ readMapping <$> cs
-  assertion (length ss == length cs) $ text
+differentNamesSyntax task cs = addPretext $ do
+  let l = length $ catMaybes $ readMapping m <$> cs
+  assertion (l == length cs) $ text
     "All provided pairs are linking a valid link and a valid relationship"
-  let cs' = catMaybes $ readValidMapping <$> cs
-  let ms = BM.toList $ nameMapping $ mapping task
-  assertion (length cs' == length ss) $ text
-    "Given mappings are correct?"
-  assertion (nub (sort cs') == ms) $ text "Given mappings are exhaustive?"
+  assertion (l == nubLengthOn fst && l == nubLengthOn snd) $ text
+    "All provided pairs are non-overlapping"
   where
+    nubLengthOn f = length (nubOrd (map f cs))
     m = nameMapping $ mapping task
-    readMapping (x, y)
-      | isJust $ BM.lookup x m, isJust $ BM.lookupR y m
-      = Just (x, y)
-      | isJust $ BM.lookup y m, isJust $ BM.lookupR x m
-      = Just (y, x)
-      | otherwise
-      = Nothing
-    readValidMapping (x, y)
-      | Just y' <- BM.lookup x m, isJust $ BM.lookupR y m, y' == y
-      = Just (x, y)
-      | Just x' <- BM.lookup y m, isJust $ BM.lookupR x m, x' == x
-      = Just (y, x)
-      | otherwise
-      = Nothing
+
+readMapping :: Ord a => Bimap a a -> (a, a) -> Maybe (a, a)
+readMapping m (x, y)
+  | isJust $ BM.lookup x m, isJust $ BM.lookupR y m
+  = Just (x, y)
+  | isJust $ BM.lookup y m, isJust $ BM.lookupR x m
+  = Just (y, x)
+  | otherwise
+  = Nothing
+
+differentNamesEvaluation
+  :: OutputMonad m
+  => DifferentNamesInstance
+  -> [(String, String)]
+  -> Rated m
+differentNamesEvaluation task cs = do
+  let what = translations $ do
+        german "Zuordnungen"
+        english "mappings"
+      m = nameMapping $ mapping task
+      ms = M.fromAscList $ map (,True) $ BM.toAscList m
+  multipleChoice what ms (catMaybes $ readMapping m <$> cs)
 
 differentNames
   :: MonadIO m
@@ -225,7 +250,7 @@ getDifferentNamesTask config = do
           --bm' = BM.filter (const (`elem` usedLabels od1)) bm
       if BM.keysR bm == sort (usedLabels od1)
         then do
-        let (assocs, links) = unzip $ BM.toList bm
+        let (assocs, links) = unzip $ BM.toAscList bm
         names'  <- shuffleM names
         assocs' <- shuffleM assocs
         links'  <- shuffleM links
