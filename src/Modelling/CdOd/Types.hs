@@ -9,6 +9,7 @@ module Modelling.CdOd.Types (
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
+  Name (..),
   NameMapping (..),
   Od,
   RelationshipProperties (..),
@@ -18,7 +19,9 @@ module Modelling.CdOd.Types (
   classNames,
   classNamesOd,
   defaultProperties,
+  fromNameMapping,
   linkNames,
+  toNameMapping,
   toOldSyntax,
   renameAssocsInCd,
   renameAssocsInEdge,
@@ -34,10 +37,12 @@ import Control.Monad.Catch              (MonadThrow)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bimapM)
+import Data.Char                        (isAlphaNum)
 import Data.List                        (intercalate, nub)
 import Data.List.Split                  (splitOn)
 import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
+import Text.ParserCombinators.ReadP     (many1, readP_to_S, satisfy, skipSpaces)
 
 type Od = ([String], [(Int, Int, String)])
 
@@ -53,8 +58,23 @@ type Syntax = ([(String, [String])], [Association])
 
 type DiagramEdge = (String, String, Connection)
 
-newtype NameMapping = NameMapping { nameMapping :: Bimap String String }
+newtype Name = Name { unName :: String }
+  deriving (Eq, Generic, Ord)
+
+instance Show Name where
+  show = unName
+
+instance Read Name where
+  readsPrec _ = readP_to_S $ skipSpaces >> Name <$> many1 (satisfy isAlphaNum)
+
+newtype NameMapping = NameMapping { nameMapping :: Bimap Name Name }
   deriving Generic
+
+fromNameMapping :: NameMapping -> Bimap String String
+fromNameMapping = BM.mapMonotonic unName . BM.mapMonotonicR unName . nameMapping
+
+toNameMapping :: Bimap String String -> NameMapping
+toNameMapping = NameMapping . BM.mapMonotonic Name . BM.mapMonotonicR Name
 
 instance Show NameMapping where
   show = show . BM.toList . nameMapping

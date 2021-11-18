@@ -8,6 +8,7 @@ module Modelling.CdOd.DifferentNames (
   defaultDifferentNamesConfig,
   differentNames,
   differentNamesEvaluation,
+  differentNamesInitial,
   differentNamesSyntax,
   differentNamesTask,
   newDifferentNamesInstances,
@@ -52,16 +53,19 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
-  NameMapping (NameMapping, nameMapping),
+  Name (Name),
+  NameMapping (nameMapping),
   Od,
   Syntax,
   associationNames,
   classNames,
+  fromNameMapping,
   linkNames,
   renameAssocsInCd,
   renameClassesInCd,
   renameClassesInOd,
   renameLinksInOd,
+  toNameMapping,
   toOldSyntax,
   )
 
@@ -72,6 +76,7 @@ import Control.Monad.Random
   (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
@@ -128,7 +133,7 @@ differentNamesTask
 differentNamesTask path task = do
   let cd = cDiagram task
       od = oDiagram task
-      bm = nameMapping $ mapping task
+      bm = fromNameMapping $ mapping task
       backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
                        , t /= Association
                        , n <- BM.lookup n' bm]
@@ -154,11 +159,11 @@ differentNamesTask path task = do
     translate $ do
       english [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
 State your answer by giving a mapping of relationships in the CD to links in the OD.
-To state that "a" in the CD corresponds to "x" in the OD and "b" in the CD corresponds to "y" in the OD write it as:|]
+To state that a in the CD corresponds to x in the OD and b in the CD corresponds to y in the OD write it as:|]
       german [i|Welche Beziehung im Klassendiagramm (CD) entspricht welchen Links im Objektdiagramm (OD)?
 Geben Sie Ihre Antwort als eine Zuordnung von Beziehungen im CD zu Links im OD an.
-Um anzugeben, dass "a" im CD zu "x" im OD und "b" im CD zu "y" im OD korrespondieren, schreiben Sie es als:|]
-    code $ show [("a", "x"), ("b", "y")]
+Um anzugeben, dass a im CD zu x im OD und b im CD zu y im OD korrespondieren, schreiben Sie es als:|]
+    code $ show differentNamesInitial
   paragraph $ translate $ do
     english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
 Thus, every link name and every relationship name should occur exactly once in your mapping.|]
@@ -168,10 +173,13 @@ Deshalb sollte jeder Linkname and jeder Beziehungsname genau einmal in Ihrer Zuo
   paragraph directionsAdvice
   paragraph hoveringInformation
 
+differentNamesInitial :: [(Name, Name)]
+differentNamesInitial = bimap Name Name <$> [("a", "x"), ("b", "y")]
+
 differentNamesSyntax
   :: OutputMonad m
   => DifferentNamesInstance
-  -> [(String, String)]
+  -> [(Name, Name)]
   -> LangM m
 differentNamesSyntax task cs = addPretext $ do
   let l = length $ catMaybes $ readMapping m <$> cs
@@ -197,7 +205,7 @@ readMapping m (x, y)
 differentNamesEvaluation
   :: OutputMonad m
   => DifferentNamesInstance
-  -> [(String, String)]
+  -> [(Name, Name)]
   -> Rated m
 differentNamesEvaluation task cs = do
   let what = translations $ do
@@ -273,7 +281,7 @@ getDifferentNamesTask config = do
               cDiagram  = cd1,
               generatorValue = gv,
               oDiagram  = od1',
-              mapping   = NameMapping bm
+              mapping   = toNameMapping bm
               }
         lift $ renameInstance inst names' assocs' links'
         else getDifferentNamesTask config
@@ -322,7 +330,7 @@ renameInstance inst names' assocs' links' = do
     cDiagram  = cd',
     generatorValue = generatorValue inst,
     oDiagram  = od',
-    mapping   = NameMapping bm'
+    mapping   = toNameMapping bm'
     }
 
 newDifferentNamesInstances

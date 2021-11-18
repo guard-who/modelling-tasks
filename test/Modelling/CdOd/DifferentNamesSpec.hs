@@ -10,13 +10,15 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.DifferentNames (
   differentNamesEvaluation,
+  differentNamesInitial,
   differentNamesSyntax,
   DifferentNamesInstance (..)
   )
-import Modelling.CdOd.Types             (NameMapping (NameMapping))
+import Modelling.CdOd.Types             (Name (Name, unName), toNameMapping)
 import Modelling.Common                 ()
 
 import Control.Monad.Random             (mkStdGen, randomRIO)
+import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Either                      (isLeft)
 import Data.List (nub)
 import Data.Ratio                       ((%))
@@ -29,6 +31,9 @@ import System.Random.Shuffle            (shuffleM)
 spec :: Spec
 spec =
   describe "differentNamesEvaluation" $ do
+    it "accepts the initial example" $
+      let cs = bimap unName unName <$> differentNamesInitial
+      in Right 1 == evaluateDifferentNames cs cs
     it "accepts correct solutions" $
       property $ \cs g -> not (null cs) && isValidMapping cs
         ==> ioProperty $ do
@@ -66,10 +71,11 @@ evaluateDifferentNames cs cs' = flip withLang English $ do
         cDiagram = error "cDiagram is undefined",
         generatorValue = 1,
         oDiagram = error "oDiagram is undefined",
-        mapping = NameMapping $ BM.fromList cs
+        mapping = toNameMapping $ BM.fromList cs
         }
-  differentNamesSyntax i cs'
-  differentNamesEvaluation i cs'
+      cs'' = bimap Name Name <$> cs'
+  differentNamesSyntax i cs''
+  differentNamesEvaluation i cs''
 
 isValidMapping :: (Eq a, Eq b) => [(a, b)] -> Bool
 isValidMapping cs
