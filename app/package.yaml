@@ -1,0 +1,85 @@
+name: modelling-tasks-apps
+build-tools:
+  - alex
+  - happy
+ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Widentities
+  - -Wredundant-constraints
+  - -Werror
+  - -Wwarn=incomplete-uni-patterns
+  - -Wwarn=orphans
+dependencies:
+ - MonadRandom
+ - base
+ - containers
+ - diagrams-lib
+ - diagrams-svg
+ - mtl
+ - transformers
+executables:
+  check-cds:
+    main: check-cds.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - call-alloy
+      - digest
+      - graphviz
+      - modelling-tasks
+  conflicts:
+    main: conflicts.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - digest
+      - modelling-tasks
+      - pretty-simple
+  concurrency:
+    main: concurrency.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - digest
+      - modelling-tasks
+      - pretty-simple
+  different-names:
+    main: different-names.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - digest
+      - modelling-tasks
+    other-modules:
+      - EvaluateArgs
+      - Common
+  match-cd-od:
+    main: match-cd-od.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - digest
+      - modelling-tasks
+    other-modules:
+      - Common
+      - EvaluateArgs
+  matchToMath:
+    main: matchToMath.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - digest
+      - modelling-tasks
+      - pretty-simple
+  repair-incorrect:
+    main: repair-incorrect.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - digest
+      - modelling-tasks
+    other-modules:
+      - Common
+      - EvaluateArgs

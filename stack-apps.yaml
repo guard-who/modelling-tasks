@@ -1,6 +1,8 @@
 resolver: lts-16.11
 packages:
   - .
+  - app
+  - legacy-app
 flags:
   modelling-tasks:
     quick-testing: true

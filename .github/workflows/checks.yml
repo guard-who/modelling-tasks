@@ -1,0 +1,24 @@
+name: Haskell CI
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+  pull_request:
+    branches:
+      - dev
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: stack.yaml has no additions to stack-apps.yaml
+      run: ! comm -23 stack.yaml stack-apps.yaml | grep .
+
+    - name: stack-app.yaml has some additions to stack.yaml
+      run: comm -13 stack.yaml stack-apps.yaml | grep .

@@ -1,0 +1,45 @@
+name: modelling-task-legacy-apps
+build-tools:
+  - alex
+  - happy
+ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Widentities
+  - -Wredundant-constraints
+  - -Werror
+  - -Wwarn=incomplete-uni-patterns
+  - -Wwarn=orphans
+dependencies:
+  - base
+executables:
+  cd2alloy:
+    main: cd2alloy.hs
+    source-dirs: .
+    dependencies:
+      - array
+      - modelling-tasks
+      - time
+    other-modules:
+      - Modelling.CdOd.Auxiliary.Lexer
+      - Modelling.CdOd.Auxiliary.Parser
+  cd2pic:
+    main: cd2pic.hs
+    source-dirs: .
+    dependencies:
+      - array
+      - graphviz
+      - modelling-tasks
+    other-modules:
+      - Modelling.CdOd.Auxiliary.Lexer
+      - Modelling.CdOd.Auxiliary.Parser
+  instance2pic:
+    main: instance2pic.hs
+    source-dirs: .
+    dependencies:
+      - MonadRandom
+      - array
+      - containers
+      - graphviz
+      - modelling-tasks
