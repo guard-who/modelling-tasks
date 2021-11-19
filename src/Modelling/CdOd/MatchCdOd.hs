@@ -14,6 +14,7 @@ module Modelling.CdOd.MatchCdOd (
   instancesOfMatch,
   matchCdOd,
   matchCdOdEvaluation,
+  matchCdOdSyntax,
   matchCdOdTask,
   newMatchCdOdInstances,
   ) where
@@ -23,11 +24,12 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M (
   alter,
-  differenceWith,
   empty,
   foldrWithKey,
   fromAscList,
   fromList,
+  insert,
+  keys,
   lookup,
   toList,
   traverseWithKey,
@@ -37,13 +39,16 @@ import qualified Data.Map                         as M (
 import Modelling.Auxiliary.Output (
   LangM,
   OutputMonad (..),
+  Rated,
   addPretext,
   directionsAdvice,
   english,
   german,
   hoveringInformation,
+  multipleChoice,
   simplifiedInformation,
   translate,
+  translations,
   )
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
@@ -95,10 +100,12 @@ import Control.Monad.Random
   (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bitraversable               (bimapM)
+import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
 import Data.List (
   (\\),
   delete,
+  insert,
   intercalate,
   nub,
   permutations,
@@ -204,27 +211,39 @@ Zum Beispiel drückt |]
 matchCdOdInitial :: [(Int, Letters)]
 matchCdOdInitial = [(1, Letters "ab"), (2, Letters "")]
 
-matchCdOdEvaluation
+matchCdOdSyntax
   :: (OutputMonad m, Foldable t, Functor t)
   => MatchCdOdInstance
   -> t (Int, Letters)
   -> LangM m
-matchCdOdEvaluation task is' = addPretext $ do
-  let is = Letters . nub . sort
-        <$> foldr
-          (\(c, o) -> M.alter (Just . maybe o (o++)) c)
-          M.empty
-          (fmap lettersList <$> is')
-  assertion (null $ notInstanceOf is) $ text "Given instances are correct?"
-  assertion (is == instancesOfMatch task) $ text "Given instances are exhaustive?"
+matchCdOdSyntax task sub = addPretext $ do
+  assertion (all availableCd $ fst <$> sub) $ translate $ do
+    english "Referenced class diagrams were provided within task"
+    german "Referenzierte Klassendiagramme sind Bestandteil der Aufgabenstellung"
+  assertion (all (all availableOd) $ lettersList . snd <$> sub) $ translate $ do
+    english "Referenced object diagrams were provided within task"
+    german "Referenced Objektdiagramme sind Bestandteil der Aufgabenstellung"
   where
-    notInstanceOf :: Map Int Letters -> Map Int Letters
-    notInstanceOf is = M.differenceWith
-      (\f s -> Letters <$> maybeList (lettersList f \\ lettersList s))
-      is
-      $ instancesOfMatch task
-    maybeList [] = Nothing
-    maybeList l  = Just l
+    availableCd = (`elem` M.keys (diagrams task))
+    availableOd = (`elem` M.keys (instances task))
+
+matchCdOdEvaluation
+  :: (OutputMonad m, Foldable t)
+  => MatchCdOdInstance
+  -> t (Int, Letters)
+  -> Rated m
+matchCdOdEvaluation task sub' = do
+  let sub = toMatching sub'
+      correct = foldr (`M.insert` True) M.empty $ toMatching $ M.toList
+        $ instancesOfMatch task
+      what = translations $ do
+        english "instances"
+        german "Instanzen"
+  multipleChoice what correct sub
+  where
+    toMatching :: (Ord x, Foldable f) => f (x, Letters) -> [(x, Char)]
+    toMatching = nubOrd .
+      foldr (\(c, ys) xs -> foldr (insert . (c,)) xs (lettersList ys)) []
 
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
