@@ -9,6 +9,7 @@ module Modelling.CdOd.Types (
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
+  Letters (..),
   Name (..),
   NameMapping (..),
   Od,
@@ -37,12 +38,18 @@ import Control.Monad.Catch              (MonadThrow)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bimapM)
-import Data.Char                        (isAlphaNum)
+import Data.Char                        (isAlpha, isAlphaNum)
 import Data.List                        (intercalate, nub)
 import Data.List.Split                  (splitOn)
 import Data.Maybe                       (listToMaybe)
 import GHC.Generics                     (Generic)
-import Text.ParserCombinators.ReadP     (many1, readP_to_S, satisfy, skipSpaces)
+import Text.ParserCombinators.ReadP (
+  many1,
+  readP_to_S,
+  satisfy,
+  sepBy,
+  skipSpaces,
+  )
 
 type Od = ([String], [(Int, Int, String)])
 
@@ -66,6 +73,16 @@ instance Show Name where
 
 instance Read Name where
   readsPrec _ = readP_to_S $ skipSpaces >> Name <$> many1 (satisfy isAlphaNum)
+
+newtype Letters = Letters { lettersList :: String }
+  deriving (Eq, Generic)
+
+instance Show Letters where
+  show = lettersList
+
+instance Read Letters where
+  readsPrec _ = readP_to_S $ skipSpaces >> Letters
+    <$> sepBy (satisfy isAlpha) skipSpaces
 
 newtype NameMapping = NameMapping { nameMapping :: Bimap Name Name }
   deriving Generic
