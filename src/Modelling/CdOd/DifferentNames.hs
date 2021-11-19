@@ -149,7 +149,7 @@ differentNamesTask path task = do
     uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od") Svg
   paragraph $ translate $ do
     english "Consider the following class diagram:"
-    german "Betrachten Sie das folgende Kalssendiagramm:"
+    german "Betrachten Sie das folgende Klassendiagramm:"
   image cd'
   paragraph $ translate $ do
     english "and the following object diagram (which conforms to it):"

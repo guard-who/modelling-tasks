@@ -35,11 +35,15 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Output (
+  LangM,
   OutputMonad (..),
+  addPretext,
   directionsAdvice,
+  english,
+  german,
   hoveringInformation,
   simplifiedInformation,
-  LangM,
+  translate,
   )
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
@@ -164,18 +168,28 @@ matchCdOdTask path task = do
     (\k (is,o) -> (is,) <$> uncurry drawOdFromNodesAndEdges
       o (anonymous o) dirs True (odFilename k is) Svg)
     `M.traverseWithKey` instances task
-  paragraph $ text "Consider the following two class diagrams."
+  paragraph $ translate $ do
+    english "Consider the following two class diagrams."
+    german "Betrachten Sie die folgenden zwei Klassendiagramme."
   images show id cds
-  paragraph $ text
-    [i|Which of the following five object diagrams conform to which class diagram?
+  paragraph $ translate $ do
+    english [i|Which of the following five object diagrams conform to which class diagram?
 An object diagram can conform to neither, either, or both class diagrams.|]
+    german [i|Welche der folgenden fünf Objektdiagramme passen zu welchem Klassendiagramm?
+Ein Objektdiagramm kann zu keinem, einem oder beiden Klassendiagrammen passen.|]
   images (:[]) snd ods
   paragraph $ do
-    text [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and a string of object diagram letters.
+    translate $ do
+      english [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and object diagram letters.
 Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
 For example, |]
+      english [i|Bitte geben Sie Ihre Antwort in Form einer Liste von Paaren an, die jeweils aus einer Klassendiagrammnummer und aus Objektdiagrammbuchstaben bestehen.
+Jedes Paar gibt an, dass die genannten Objektdiagramme zu dem jeweiligen Klassendiagramm passen.
+Zum Beispiel drückt |]
     code $ show matchCdOdInitial
-    text [i| expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 1 and that none of the offered object diagrams are instances of class diagram 2.|]
+    translate $ do
+      english [i|expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 1 and that none of the offered object diagrams are instances of class diagram 2.|]
+      english [i|aus, dass unter den angebotenen Auswahlmöglichkeiten genau die Objektdiagramme a und b Instanzen des Klassendiagramms 1 sind und dass keines der angebotenen Objektdiagramme Instanz des Klassendiagramms 2 ist.|]
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
@@ -195,8 +209,7 @@ matchCdOdEvaluation
   => MatchCdOdInstance
   -> t (Int, Letters)
   -> LangM m
-matchCdOdEvaluation task is' = do
-  paragraph $ text "Remarks on your solution:"
+matchCdOdEvaluation task is' = addPretext $ do
   let is = Letters . nub . sort
         <$> foldr
           (\(c, o) -> M.alter (Just . maybe o (o++)) c)

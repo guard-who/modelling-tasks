@@ -60,8 +60,9 @@ hoveringInformation = translate $ do
   german [i|Bitte beachten Sie: Beim Darüberbewegen oder Daraufklicken auf Kanten bzw. ihre Beschriftungen werden beide Teile hervorgehoben.|]
 
 directionsAdvice :: OutputMonad m => LangM m
-directionsAdvice = translate $
+directionsAdvice = translate $ do
   english [i|As navigation directions are used, please note that aggregations and compositions are only navigable from the "part" toward the "whole", i.e. they are not navigable in the opposite direction!|]
+  german [i|Da Navigationsrichtungen verwendet werden, beachten Sie bitte, dass Aggregationen und Kompositionen nur vom "Teil" zum "Ganzen" navigierbar sind, d.h. sie sind nicht in der entgegengesetzten Richtung navigierbar!|]
 
 simplifiedInformation :: OutputMonad m => LangM m
 simplifiedInformation = translate $ do
