@@ -6,6 +6,7 @@ module Modelling.CdOd.DifferentNames (
   DifferentNamesInstance (..),
   debug,
   defaultDifferentNamesConfig,
+  defaultDifferentNamesInstance,
   differentNames,
   differentNamesEvaluation,
   differentNamesInitial,
@@ -233,6 +234,24 @@ reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, e@(Assoc Association _ _ _ _)) =
   (to, from, e)
 reverseAssociation x = x
+
+defaultDifferentNamesInstance :: DifferentNamesInstance
+defaultDifferentNamesInstance = DifferentNamesInstance {
+  anonymousObjects = True,
+  cDiagram = (
+    [("A",[]),("D",["A"]),("B",[]),("C",["D"])],
+    [(Aggregation,"b",(0,Nothing),"D","B",(1,Just 1)),
+     (Association,"c",(0,Just 2),"C","A",(0,Just 2)),
+     (Composition,"a",(1,Just 1),"A","B",(2,Nothing))
+    ]
+    ),
+  generatorValue = -3894126834283525023,
+  oDiagram = (
+    ["C$0","B$0","B$1","B$2"],
+    [(0,1,"y"),(0,2,"y"),(0,3,"y"),(0,0,"x"),(0,3,"z")]
+    ),
+  mapping = toNameMapping $ BM.fromList [("a","z"),("b","y"),("c","x")]
+  }
 
 getDifferentNamesTask
   :: RandomGen g
