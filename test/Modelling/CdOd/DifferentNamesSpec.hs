@@ -68,6 +68,7 @@ evaluateDifferentNames
   -> Either String Rational
 evaluateDifferentNames cs cs' = flip withLang English $ do
   let i = DifferentNamesInstance {
+        anonymousObjects = error "anonymousObjects is undefined",
         cDiagram = error "cDiagram is undefined",
         generatorValue = 1,
         oDiagram = error "oDiagram is undefined",

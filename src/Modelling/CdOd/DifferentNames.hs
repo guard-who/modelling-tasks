@@ -92,6 +92,7 @@ debug :: Bool
 debug = False
 
 data DifferentNamesInstance = DifferentNamesInstance {
+    anonymousObjects :: Bool,
     cDiagram :: Syntax,
     generatorValue :: Int,
     oDiagram :: Od,
@@ -104,6 +105,7 @@ data DifferentNamesConfig = DifferentNamesConfig {
     maxObjects       :: Int,
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
+    onlyAnonymousObjects :: Bool,
     searchSpace      :: Int,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
@@ -119,6 +121,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         inheritances = (1, Just 2)
       },
     maxObjects       = 4,
+    onlyAnonymousObjects = True,
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
     searchSpace      = 10,
@@ -143,7 +146,8 @@ differentNamesTask path task = do
       navigations = foldr (`M.insert` Back)
                           (foldr (`M.insert` Forward) M.empty forwards)
                           backwards
-      anonymous = fromMaybe (length (fst od) `div` 3) (Just 1000)
+      anonymous = fromMaybe (length (fst od) `div` 3)
+        (if anonymousObjects task then Just 1000 else Nothing)
   cd' <- lift $ liftIO $ drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
     uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od") Svg
@@ -278,6 +282,7 @@ getDifferentNamesTask config = do
         od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
         gv <- getRandom
         let inst =  DifferentNamesInstance {
+              anonymousObjects = onlyAnonymousObjects config,
               cDiagram  = cd1,
               generatorValue = gv,
               oDiagram  = od1',
@@ -327,6 +332,7 @@ renameInstance inst names' assocs' links' = do
   cd' <- renameClassesInCd bmNames =<< renameAssocsInCd bmAssocs cd
   od' <- renameClassesInOd bmNames =<< renameLinksInOd bmLinks od
   return $ DifferentNamesInstance {
+    anonymousObjects = anonymousObjects inst,
     cDiagram  = cd',
     generatorValue = generatorValue inst,
     oDiagram  = od',
