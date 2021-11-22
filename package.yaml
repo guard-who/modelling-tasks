@@ -38,6 +38,7 @@ dependencies:
   - graphviz
   - latex-svg-image
   - mtl
+  - parsec
   - random-shuffle
   - split
   - string-interpolate

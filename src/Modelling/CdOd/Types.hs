@@ -22,17 +22,23 @@ module Modelling.CdOd.Types (
   defaultProperties,
   fromNameMapping,
   linkNames,
-  toNameMapping,
-  toOldSyntax,
+  parseLettersPrec,
+  parseNamePrec,
   renameAssocsInCd,
   renameAssocsInEdge,
   renameClassesInCd,
-  renameClassesInOd,
   renameClassesInEdge,
+  renameClassesInOd,
   renameLinksInOd,
+  showLetters,
+  showName,
+  toNameMapping,
+  toOldSyntax,
   ) where
 
 import qualified Data.Bimap                       as BM
+
+import Modelling.Auxiliary.Common       (skipSpaces)
 
 import Control.Monad.Catch              (MonadThrow)
 import Data.Bifunctor                   (first, second)
@@ -44,12 +50,11 @@ import Data.List.Split                  (splitOn)
 import Data.Maybe                       (listToMaybe)
 import Data.String                      (IsString (fromString))
 import GHC.Generics                     (Generic)
-import Text.ParserCombinators.ReadP (
+import Text.ParserCombinators.Parsec (
+  Parser,
   many1,
-  readP_to_S,
   satisfy,
   sepBy,
-  skipSpaces,
   )
 
 type Od = ([String], [(Int, Int, String)])
@@ -67,29 +72,32 @@ type Syntax = ([(String, [String])], [Association])
 type DiagramEdge = (String, String, Connection)
 
 newtype Name = Name { unName :: String }
-  deriving (Eq, Generic, Ord)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 instance IsString Name where
   fromString = Name
 
-instance Show Name where
-  show = unName
+showName :: Name -> String
+showName = unName
 
-instance Read Name where
-  readsPrec _ = readP_to_S $ skipSpaces >> Name <$> many1 (satisfy isAlphaNum)
+parseNamePrec :: Int -> Parser Name
+parseNamePrec _ = do
+  skipSpaces
+  Name <$> many1 (satisfy isAlphaNum)
 
 newtype Letters = Letters { lettersList :: String }
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 instance IsString Letters where
   fromString = Letters
 
-instance Show Letters where
-  show = lettersList
+showLetters :: Letters -> String
+showLetters = lettersList
 
-instance Read Letters where
-  readsPrec _ = readP_to_S $ skipSpaces >> Letters
-    <$> sepBy (satisfy isAlpha) skipSpaces
+parseLettersPrec :: Int -> Parser Letters
+parseLettersPrec _ = do
+  skipSpaces
+  Letters <$> sepBy (satisfy isAlpha) skipSpaces
 
 newtype NameMapping = NameMapping { nameMapping :: Bimap Name Name }
   deriving Generic

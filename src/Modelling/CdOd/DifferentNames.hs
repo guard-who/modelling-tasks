@@ -66,6 +66,7 @@ import Modelling.CdOd.Types (
   renameClassesInCd,
   renameClassesInOd,
   renameLinksInOd,
+  showName,
   toNameMapping,
   toOldSyntax,
   )
@@ -129,6 +130,14 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     timeout          = Nothing
   }
 
+newtype ShowName = ShowName { showName' :: Name }
+
+instance Show ShowName where
+  show = showName . showName'
+
+showMapping :: [(Name, Name)] -> String
+showMapping = show . fmap (bimap ShowName ShowName)
+
 differentNamesTask
   :: (OutputMonad m, MonadIO m)
   => FilePath
@@ -168,7 +177,7 @@ To state that a in the CD corresponds to x in the OD and b in the CD corresponds
       german [i|Welche Beziehung im Klassendiagramm (CD) entspricht welchen Links im Objektdiagramm (OD)?
 Geben Sie Ihre Antwort als eine Zuordnung von Beziehungen im CD zu Links im OD an.
 Um anzugeben, dass a im CD zu x im OD und b im CD zu y im OD korrespondieren, schreiben Sie es als:|]
-    code $ show differentNamesInitial
+    code $ showMapping differentNamesInitial
   paragraph $ translate $ do
     english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
 Thus, every link name and every relationship name should occur exactly once in your mapping.|]

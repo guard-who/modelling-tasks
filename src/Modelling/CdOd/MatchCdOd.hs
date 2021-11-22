@@ -88,6 +88,7 @@ import Modelling.CdOd.Types (
   renameClassesInCd,
   renameClassesInOd,
   renameLinksInOd,
+  showLetters,
   toOldSyntax,
   )
 
@@ -107,6 +108,7 @@ import Control.Monad.Random (
   mkStdGen,
   )
 import Control.Monad.Trans              (MonadTrans (lift))
+import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
@@ -201,7 +203,7 @@ For example, |]
       english [i|Bitte geben Sie Ihre Antwort in Form einer Liste von Paaren an, die jeweils aus einer Klassendiagrammnummer und aus Objektdiagrammbuchstaben bestehen.
 Jedes Paar gibt an, dass die genannten Objektdiagramme zu dem jeweiligen Klassendiagramm passen.
 Zum Beispiel drückt |]
-    code $ show matchCdOdInitial
+    code $ showMatching matchCdOdInitial
     translate $ do
       english [i|expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 1 and that none of the offered object diagrams are instances of class diagram 2.|]
       english [i|aus, dass unter den angebotenen Auswahlmöglichkeiten genau die Objektdiagramme a und b Instanzen des Klassendiagramms 1 sind und dass keines der angebotenen Objektdiagramme Instanz des Klassendiagramms 2 ist.|]
@@ -215,6 +217,14 @@ Zum Beispiel drückt |]
     odFilename n is = [i|#{path}output-od-#{n}-#{toDescription is 2}|]
     toDescription x n =
       intercalate "and" (map show x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)
+
+newtype ShowLetters = ShowLetters { showLetters' :: Letters }
+
+instance Show ShowLetters where
+  show = showLetters . showLetters'
+
+showMatching :: [(Int, Letters)] -> String
+showMatching = show . fmap (second ShowLetters)
 
 matchCdOdInitial :: [(Int, Letters)]
 matchCdOdInitial = [(1, Letters "ab"), (2, Letters "")]

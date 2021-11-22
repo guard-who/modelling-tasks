@@ -80,6 +80,7 @@ library
     , graphviz
     , latex-svg-image
     , mtl
+    , parsec
     , random-shuffle
     , split
     , string-interpolate
@@ -130,6 +131,7 @@ test-suite modelling-tasks-test
     , latex-svg-image
     , modelling-tasks
     , mtl
+    , parsec
     , process
     , random
     , random-shuffle
