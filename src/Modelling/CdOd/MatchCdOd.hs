@@ -98,8 +98,14 @@ import Control.Monad.Except             (runExceptT)
 import Control.Monad.Fail               (MonadFail)
 #endif
 import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Random
-  (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  evalRandT,
+  mapRandT,
+  mkStdGen,
+  )
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
@@ -250,21 +256,30 @@ matchCdOdEvaluation task sub' = do
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  (g', (cds, ods)) <- flip evalRandT g $ (,) <$> getRandom <*> getRandomTask
+  evalRandT (getMatchCdOdTask config) g
+
+getMatchCdOdTask
+  :: (RandomGen g, MonadIO m, MonadFail m, MonadThrow m)
+  => MatchCdOdConfig
+  -> RandT g m MatchCdOdInstance
+getMatchCdOdTask config = do
+  (cds, ods) <- mapRandT liftIO $ getRandomTask
     (classConfig config)
     (allowSelfLoops config)
     (maxObjects config)
     (searchSpace config)
     (maxInstances config)
     (timeout config)
-  ods' <- either error id <$> runExceptT (mapM (mapM alloyInstanceToOd) ods)
-  let names  = nub $ concat $ classNames <$> cds
-      assocs = nub $ concat (associationNames <$> cds)
+  ods' <- runExceptT (mapM (mapM alloyInstanceToOd) ods)
+    >>= either fail return
+  let names  = nubOrd $ concat $ classNames <$> cds
+      assocs = nubOrd $ concat (associationNames <$> cds)
         ++ concat (linkNames . snd <$> ods')
   names'  <- shuffleM names
   assocs' <- shuffleM assocs
+  g' <- getRandom
   let inst = MatchCdOdInstance cds g' ods'
-  renameInstance inst names' assocs'
+  lift $ renameInstance inst names' assocs'
 
 defaultMatchCdOdInstance :: MatchCdOdInstance
 defaultMatchCdOdInstance = MatchCdOdInstance {
@@ -309,9 +324,9 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
   }
 
 newMatchCdOdInstances
-  :: (MonadFail m, MonadRandom m, MonadThrow m)
+  :: (MonadFail m, MonadRandom m, MonadThrow m, RandomGen g)
   => MatchCdOdInstance
-  -> m [MatchCdOdInstance]
+  -> RandT g m [MatchCdOdInstance]
 newMatchCdOdInstances inst = do
   let names = nub $ concat $ classNames <$> diagrams inst
       assocs = nub $ concat (associationNames <$> diagrams inst)
@@ -319,7 +334,7 @@ newMatchCdOdInstances inst = do
   names'  <- shuffleM $ tail $ permutations names
   assocs' <- shuffleM $ tail $ permutations assocs
   sequence
-    [ renameInstance inst ns as >>= shuffleInstance
+    [ lift $ renameInstance inst ns as >>= shuffleInstance
     | (ns, as) <- zip names' (concat $ replicate 3 assocs')
     ]
 
