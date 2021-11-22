@@ -9,6 +9,7 @@ module Modelling.CdOd.MatchCdOd (
   applyChanges,
   debug,
   defaultMatchCdOdConfig,
+  defaultMatchCdOdInstance,
   getRandomTask',
   getRandomTask,
   instancesOfMatch,
@@ -72,6 +73,7 @@ import Modelling.CdOd.Mutation
 import Modelling.CdOd.Output
   (drawCdFromSyntax, drawOdFromNodesAndEdges, getDirs)
 import Modelling.CdOd.Types (
+  AssociationType (Association, Composition),
   ClassConfig (..),
   Change (..),
   Connection (..),
@@ -263,6 +265,48 @@ matchCdOd config segment seed = do
   assocs' <- shuffleM assocs
   let inst = MatchCdOdInstance cds g' ods'
   renameInstance inst names' assocs'
+
+defaultMatchCdOdInstance :: MatchCdOdInstance
+defaultMatchCdOdInstance = MatchCdOdInstance {
+  diagrams = M.fromList [
+    (1,(
+      [("C",[]),("A",["C"]),("D",[]),("B",[])],
+      [(Association,"z",(2,Just 2),"B","C",(1,Just 2)),
+       (Association,"y",(0,Just 2),"B","D",(0,Just 2)),
+       (Composition,"x",(1,Just 1),"C","D",(0,Just 2))
+      ]
+    )),
+    (2,(
+      [("C",[]),("A",["C"]),("D",[]),("B",[])],
+      [(Composition,"x",(1,Just 1),"C","D",(1,Just 2)),
+       (Association,"y",(0,Just 2),"B","D",(0,Just 2))
+      ]
+    ))
+    ],
+  generatorValue = 7777369639206507645,
+  instances = M.fromList [
+    ('a',([1],(
+      ["B$0","B$1","C$0","D$0"],
+      [(0,2,"z"),(1,2,"z"),(1,3,"y"),(2,3,"x")]
+    ))),
+    ('b',([1],(
+      ["B$0","B$1","C$0","D$0"],
+      [(0,2,"z"),(1,2,"z"),(2,3,"x")]
+    ))),
+    ('c',([2],(
+      ["A$0","C$0","D$0","D$1"],
+      [(0,2,"x"),(1,3,"x")]
+    ))),
+    ('d',([2],(
+      ["A$0","B$0","D$0"],
+      [(0,2,"x")]
+    ))),
+    ('e',([],(
+      ["A$0","B$0","D$0"],
+      [(0,2,"x"),(1,0,"z"),(1,2,"y")]
+    )))
+    ]
+  }
 
 newMatchCdOdInstances
   :: (MonadFail m, MonadRandom m, MonadThrow m)
