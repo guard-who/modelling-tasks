@@ -42,6 +42,7 @@ import Data.Char                        (isAlpha, isAlphaNum)
 import Data.List                        (intercalate, nub)
 import Data.List.Split                  (splitOn)
 import Data.Maybe                       (listToMaybe)
+import Data.String                      (IsString (fromString))
 import GHC.Generics                     (Generic)
 import Text.ParserCombinators.ReadP (
   many1,
@@ -68,6 +69,9 @@ type DiagramEdge = (String, String, Connection)
 newtype Name = Name { unName :: String }
   deriving (Eq, Generic, Ord)
 
+instance IsString Name where
+  fromString = Name
+
 instance Show Name where
   show = unName
 
@@ -76,6 +80,9 @@ instance Read Name where
 
 newtype Letters = Letters { lettersList :: String }
   deriving (Eq, Generic)
+
+instance IsString Letters where
+  fromString = Letters
 
 instance Show Letters where
   show = lettersList
