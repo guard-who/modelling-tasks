@@ -227,7 +227,7 @@ differentNamesEvaluation task cs = do
         english "mappings"
       m = nameMapping $ mapping task
       ms = M.fromAscList $ map (,True) $ BM.toAscList m
-  multipleChoice what ms (catMaybes $ readMapping m <$> cs)
+  multipleChoice what Nothing ms (catMaybes $ readMapping m <$> cs)
 
 differentNames
   :: MonadIO m

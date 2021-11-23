@@ -37,7 +37,7 @@ module Modelling.Auxiliary.Output (
 
 import qualified Data.Map as M
 
-import Control.Monad                    (foldM, unless, void)
+import Control.Monad                    (foldM, unless, void, when)
 import Control.Monad.State              (State, execState, modify)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
@@ -48,6 +48,7 @@ import Control.Monad.Writer (
   runWriter,
   )
 import Data.Containers.ListUtils        (nubOrd)
+import Data.Foldable                    (for_)
 import Data.List                        (sort)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
@@ -85,9 +86,6 @@ yesNo p q = do
       english "No."
       german "Nein."
 
-assertWith :: OutputMonad m => Rational -> Bool -> LangM m -> LangM m
-assertWith points = if points >= 1 % 2 then yesNo else assertion
-
 addPretext :: OutputMonad m => LangM' m a -> LangM' m a
 addPretext = (>>) $
   paragraph $ translate $ do
@@ -97,22 +95,30 @@ addPretext = (>>) $
 multipleChoice
   :: (OutputMonad m, Ord a)
   => Map Language String
+  -> Maybe String
   -> Map a Bool
   -> [a]
   -> Rated m
-multipleChoice what solution choices = do
+multipleChoice what msolutionString solution choices = do
   let cs = sort $ nubOrd choices
       points = percentPer
         solution
         (toMapping (M.keys solution) cs)
-  assertWith points (null [c | c <- cs, c `notElem` valid]) $ multiLang [
+  yesNo (null [c | c <- cs, c `notElem` valid]) $ multiLang [
     (English, "Given " ++ localise English what ++ " are correct?"),
     (German, "Die angegebenen " ++ localise German what ++ " sind korrekt?")
     ]
-  assertWith points (cs ==  valid) $ multiLang [
+  yesNo (cs ==  valid) $ multiLang [
     (English, "Given " ++ localise English what ++ " are exhaustive?"),
     (German, "Die angegebenen " ++ localise German what ++ " sind vollständig?")
     ]
+  for_ msolutionString $ \solutionString ->
+    when (points /= 1) $ paragraph $ do
+      translate $ do
+        english "The correct solution is:"
+        german "Die richtige Lösung ist:"
+      code solutionString
+  assertion (points >= 1 % 2) $ return ()
   return points
   where
     valid = M.keys $ M.filter (== True) solution

@@ -14,10 +14,12 @@ module Modelling.CdOd.SelectValidCd (
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
+  filter,
   foldrWithKey,
   fromAscList,
   fromList,
   insert,
+  keys,
   toList,
   )
 
@@ -146,7 +148,8 @@ selectValidCdEvaluation inst xs = addPretext $ do
         (English, "class diagrams"),
         (German, "Klassendiagramme")
         ]
-  multipleChoice cds (fst <$> classDiagrams inst) xs
+      solution = fst <$> classDiagrams inst
+  multipleChoice cds (Just $ show $ M.keys $ M.filter id solution) solution xs
 
 selectValidCd
   :: SelectValidCdConfig

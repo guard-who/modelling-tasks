@@ -25,7 +25,13 @@ import qualified Modelling.CdOd.Types             as T (
   )
 
 import qualified Data.Bimap                       as BM (fromList)
-import qualified Data.Map                         as M (empty, insert, fromList)
+import qualified Data.Map                         as M (
+  empty,
+  filter,
+  fromList,
+  insert,
+  keys,
+  )
 
 import Modelling.Auxiliary.Output (
   Language (English, German),
@@ -225,7 +231,8 @@ repairCdEvaluation inst xs = addPretext $ do
         (English, "changes"),
         (German, "Änderungen")
         ]
-  multipleChoice chs (fst <$> changes inst) xs
+      solution = fst <$> changes inst
+  multipleChoice chs (Just $ show $ M.keys $ M.filter id solution) solution xs
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int (Bool, Change DiagramEdge),
