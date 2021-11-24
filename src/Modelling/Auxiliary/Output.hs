@@ -118,7 +118,7 @@ multipleChoice what msolutionString solution choices = do
         english "The correct solution is:"
         german "Die richtige Lösung ist:"
       code solutionString
-  assertion (points >= 1 % 2) $ return ()
+  unless (points >= 1 % 2) $ refuse $ return ()
   return points
   where
     valid = M.keys $ M.filter (== True) solution
