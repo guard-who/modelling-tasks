@@ -93,6 +93,8 @@ import Modelling.PetriNet.Types         (
   transitionNames,
   traversePetriLike,
   )
+  
+import Modelling.PetriNet.Reach.Group (groupSVG)
 
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Random (
@@ -382,6 +384,7 @@ renderWith path task net config = do
       (not $ with1Weights config)
       (withGraphvizCommand config)
     liftIO $ renderSVG file (mkWidth 250) dia
+    liftIO $ groupSVG file
     return file
   either
     (const $ (>> return "") $ refuse $ translate $ do

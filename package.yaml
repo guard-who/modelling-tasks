@@ -44,6 +44,8 @@ dependencies:
   - string-interpolate
   - text
   - transformers
+  - hxt
+  - xml-conduit
 library:
   source-dirs: src
   exposed-modules:

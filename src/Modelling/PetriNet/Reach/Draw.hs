@@ -13,7 +13,7 @@ import Modelling.PetriNet.Types (
   PetriLike (PetriLike),
   Node (PlaceNode, TransitionNode),
   )
-
+import Modelling.PetriNet.Reach.Group (groupSVG)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
@@ -43,6 +43,7 @@ writeGraph
 writeGraph path index d = do
   let file = path ++ "graph" ++ index ++ ".svg"
   renderSVG file (mkWidth 250) d
+  groupSVG file
   return file
 
 drawPetriWithDefaults

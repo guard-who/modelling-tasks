@@ -23,13 +23,15 @@ import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
 import Data.List                        (foldl')
-import Diagrams.Backend.SVG             (B)
+import Data.Maybe
+import Diagrams.Backend.SVG             (B, svgClass, SVG)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
 import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance, Object)
+import Data.Data (Typeable)
 
 {-| Create a 'Diagram's graph of a Petri net like graph definition ('PetriLike')
 by distributing places and transitions using GraphViz.
@@ -152,7 +154,7 @@ drawNode
   -- ^ where to place the node
   -> Diagram B
 drawNode _ hideTName pfont (l, Nothing) p  = place
-  (addTName $ rect 20 20 # named l)
+  (addTName $ rect 20 20 # named l # svgClass "rect")
   p
   where
     addTName
@@ -171,11 +173,11 @@ drawNode hidePName _ pfont (l, Just i) p
     p
   where
     spacer = 9
-    emptyPlace = circle 20 # named l
+    emptyPlace = circle 20 # named l # svgClass "node"
     label
       | hidePName = mempty
-      | otherwise = center (text' pfont l) # translate (r2 (0, -3 * spacer))
-    token = circle 5 # fc black
+      | otherwise = center (text' pfont l) # translate (r2 (0, -3 * spacer)) # svgClass "nlabel"
+    token = circle 5 # fc black # svgClass "token"
     placeToken j = token
       # translate (r2 (8 * sqrt(fromIntegral (i - 1)), 0))
       # rotateBy (fromIntegral j / fromIntegral i)
@@ -205,8 +207,25 @@ drawEdge hide1 f l l1 l2 path d =
       labelPoint = points !! (length points `div` 2)
       addLabel
         | hide1 && l == 1 = id
-        | otherwise = (`atop` place (text' f $ show l) labelPoint)
-  in addLabel $ connectOutside' (opts path) l1 l2 d
+        | otherwise = atop (place (text' f $ show l) labelPoint # svgClass "label")
+  in addLabel (connectOutside'' (opts path) l1 l2 d) # svgClass "."
+
+connectOutside'' ::  (IsName nm1, IsName nm2, RealFloat n,
+                           Typeable n, Show n) =>
+                          ArrowOpts n
+                          -> nm1
+                          -> nm2
+                          -> QDiagram SVG V2 n Any
+                          -> QDiagram SVG V2 n Any
+connectOutside'' opts n1 n2 =
+  withName n1 $ \b1 ->
+  withName n2 $ \b2 ->
+    let v = location b2 .-. location b1
+        midpoint = location b1 .+^ (v ^/ 2)
+        s' = fromMaybe (location b1) $ traceP midpoint (negated v) b1
+        e' = fromMaybe (location b2) $ traceP midpoint v b2
+    in
+      atop (arrowBetween' opts s' e' # svgClass "edge")
 
 {-|
 Render text as a diagram.
