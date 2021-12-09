@@ -31,6 +31,9 @@ import System.FilePath                  (dropExtension)
 import System.IO.Unsafe                 (unsafePerformIO)
 import System.Random.Shuffle            (shuffleM)
 
+debug :: Bool
+debug = False
+
 connectionArrow :: Bool -> Bool -> Maybe Attribute -> Connection -> [Attribute]
 connectionArrow _ _ _ Inheritance =
   [arrowTo emptyArr]
@@ -41,9 +44,14 @@ connectionArrow _ printNames marking (Assoc Composition name from to isMarked) =
        (1, Just 1) -> []
        (0, Just 1) -> [TailLabel (mult from)]
        (0, Nothing)-> [TailLabel $ toLabelValue "0..*"]
-       (_, _)      -> unsafePerformIO $ do
-         putStrLn "invalid composition multiplicity"
-         return [TailLabel (mult from)]
+       (_, _)      -> (
+         if debug
+         then \x -> unsafePerformIO $ do
+           putStrLn "invalid composition multiplicity"
+           return x
+         else id
+         )
+         [TailLabel (mult from)]
 connectionArrow printNavigations printNames marking (Assoc a name from to isMarked) =
   printArrow a
   ++ [TailLabel (mult from), HeadLabel (mult to)]

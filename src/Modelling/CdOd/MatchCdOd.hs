@@ -200,13 +200,13 @@ Ein Objektdiagramm kann zu keinem, einem oder beiden Klassendiagrammen passen.|]
       english [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and object diagram letters.
 Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
 For example, |]
-      english [i|Bitte geben Sie Ihre Antwort in Form einer Liste von Paaren an, die jeweils aus einer Klassendiagrammnummer und aus Objektdiagrammbuchstaben bestehen.
+      german [i|Bitte geben Sie Ihre Antwort in Form einer Liste von Paaren an, die jeweils aus einer Klassendiagrammnummer und aus Objektdiagrammbuchstaben bestehen.
 Jedes Paar gibt an, dass die genannten Objektdiagramme zu dem jeweiligen Klassendiagramm passen.
 Zum Beispiel drückt |]
     code $ showMatching matchCdOdInitial
     translate $ do
       english [i|expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 1 and that none of the offered object diagrams are instances of class diagram 2.|]
-      english [i|aus, dass unter den angebotenen Auswahlmöglichkeiten genau die Objektdiagramme a und b Instanzen des Klassendiagramms 1 sind und dass keines der angebotenen Objektdiagramme Instanz des Klassendiagramms 2 ist.|]
+      german [i|aus, dass unter den angebotenen Auswahlmöglichkeiten genau die Objektdiagramme a und b Instanzen des Klassendiagramms 1 sind und dass keines der angebotenen Objektdiagramme Instanz des Klassendiagramms 2 ist.|]
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
