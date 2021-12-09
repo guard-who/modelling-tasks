@@ -100,7 +100,7 @@ parseLettersPrec _ = do
   Letters <$> sepBy (satisfy isAlpha) skipSpaces
 
 newtype NameMapping = NameMapping { nameMapping :: Bimap Name Name }
-  deriving Generic
+  deriving (Eq, Generic)
 
 fromNameMapping :: NameMapping -> Bimap String String
 fromNameMapping = BM.mapMonotonic unName . BM.mapMonotonicR unName . nameMapping

@@ -12,24 +12,46 @@ import Modelling.CdOd.DifferentNames (
   differentNamesEvaluation,
   differentNamesInitial,
   differentNamesSyntax,
-  DifferentNamesInstance (..)
+  DifferentNamesInstance (..),
+  defaultDifferentNamesInstance,
+  renameInstance,
   )
-import Modelling.CdOd.Types             (Name (Name, unName), toNameMapping)
+import Modelling.CdOd.Types (
+  Name (Name, unName),
+  associationNames,
+  classNames,
+  fromNameMapping,
+  linkNames,
+  toNameMapping,
+  )
 import Modelling.Common                 ()
 
 import Control.Monad.Random             (mkStdGen, randomRIO)
 import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Char                        (toUpper)
+import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isLeft)
 import Data.List (nub)
+import Data.Maybe                       (fromJust)
 import Data.Ratio                       ((%))
 import Data.Tuple                       (swap)
 import Test.Hspec
-import Test.QuickCheck                  (Testable (property), (==>), (===), ioProperty)
+import Test.QuickCheck (
+  (===),
+  (==>),
+  Arbitrary (arbitrary),
+  Property,
+  Testable (property),
+  ioProperty,
+  oneof,
+  sized,
+  vectorOf,
+  )
 import System.Random                    (setStdGen)
 import System.Random.Shuffle            (shuffleM)
 
 spec :: Spec
-spec =
+spec = do
   describe "differentNamesEvaluation" $ do
     it "accepts the initial example" $
       let cs = bimap unName unName <$> differentNamesInitial
@@ -53,6 +75,55 @@ spec =
         let cs' = cs ++ w
         in not (null w) && isValidMapping cs
            ==> isLeft $ evaluateDifferentNames cs cs'
+  describe "renameInstance" $ do
+    it "is reversable" $ renameProperty $ \inst mrinst _ _ ->
+        let cd = cDiagram inst
+            od = oDiagram inst
+            names = classNames cd
+            assocs = associationNames cd
+            links  = linkNames od
+        in (Just inst ==)
+           $ mrinst
+           >>= (\x -> renameInstance x names assocs links)
+    it "renames solution" $ renameProperty $ \inst mrinst as ls ->
+      let rename xs ys = Name . fromJust . (`lookup` zip xs ys)
+          origMap = bimap
+            (rename (associationNames $ cDiagram inst) as)
+            (rename (linkNames $ oDiagram inst) ls)
+            <$> (BM.toList $ fromNameMapping $ mapping inst)
+      in (Right 1 ==)
+         $ maybe (Left "instance could not be renamed") return mrinst
+         >>= \rinst -> differentNamesEvaluation rinst origMap `withLang` English
+           :: Either String Rational
+
+renameProperty ::
+  Testable prop =>
+  (DifferentNamesInstance
+    -> Maybe DifferentNamesInstance
+    -> [String]
+    -> [String]
+    -> prop)
+  -> Property
+renameProperty p = property $ \n1 n2 n3 n4 a1 a2 a3 l1 l2 l3 ->
+  let inst = defaultDifferentNamesInstance
+      ns = map unName [n1, n2, n3, n4]
+      as = map unName [a1, a2, a3]
+      ls = map unName [l1, l2, l3]
+      distinct xs = length (nubOrd xs) == length xs
+      mrinst = renameInstance inst ns as ls
+  in distinct ns && distinct as && distinct ls
+     ==> p inst mrinst as ls
+
+instance Arbitrary Name where
+  arbitrary = sized $ \s -> Name <$> (
+    (:)
+    <$> oneof (map return letters)
+    <*> vectorOf s (oneof $ map return $ letters ++ ['0'..'9'])
+    )
+    where
+      lowers = ['a'..'z']
+      uppers = map toUpper lowers
+      letters = lowers ++ uppers
 
 flipCoin :: Int -> (String, String) -> IO (String, String)
 flipCoin g p = do

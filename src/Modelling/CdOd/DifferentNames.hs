@@ -13,6 +13,7 @@ module Modelling.CdOd.DifferentNames (
   differentNamesSyntax,
   differentNamesTask,
   newDifferentNamesInstances,
+  renameInstance,
   ) where
 
 import qualified Data.Bimap                       as BM (
@@ -99,7 +100,7 @@ data DifferentNamesInstance = DifferentNamesInstance {
     generatorValue :: Int,
     oDiagram :: Od,
     mapping  :: NameMapping
-  } deriving (Generic, Read, Show)
+  } deriving (Eq, Generic, Read, Show)
 
 data DifferentNamesConfig = DifferentNamesConfig {
     allowSelfLoops   :: Maybe Bool,
@@ -259,7 +260,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
     ["C$0","B$0","B$1","B$2"],
     [(0,1,"y"),(0,2,"y"),(0,3,"y"),(0,0,"x"),(0,3,"z")]
     ),
-  mapping = toNameMapping $ BM.fromList [("a","z"),("b","y"),("c","x")]
+  mapping = toNameMapping $ BM.fromList [("a","y"),("b","z"),("c","x")]
   }
 
 getDifferentNamesTask
@@ -353,10 +354,16 @@ renameInstance inst names' assocs' links' = do
       names = classNames cd
       assocs = associationNames cd
       links  = linkNames od
+      bm = BM.toAscList $ fromNameMapping $ mapping inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       bmLinks  = BM.fromList $ zip links links'
-      bm'      = BM.fromList $ zip assocs' links'
+      bm'      = BM.fromList
+        [ (a', l')
+        | (a, l) <- bm
+        , a' <- BM.lookup a bmAssocs
+        , l' <- BM.lookup l bmLinks
+        ]
   cd' <- renameClassesInCd bmNames =<< renameAssocsInCd bmAssocs cd
   od' <- renameClassesInOd bmNames =<< renameLinksInOd bmLinks od
   return $ DifferentNamesInstance {
