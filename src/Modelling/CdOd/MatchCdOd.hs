@@ -12,7 +12,6 @@ module Modelling.CdOd.MatchCdOd (
   defaultMatchCdOdInstance,
   getRandomTask',
   getRandomTask,
-  instancesOfMatch,
   matchCdOd,
   matchCdOdEvaluation,
   matchCdOdSyntax,
@@ -24,12 +23,9 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M (
-  alter,
   empty,
-  foldrWithKey,
   fromAscList,
   fromList,
-  insert,
   keys,
   lookup,
   toList,
@@ -115,11 +111,9 @@ import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
 import Data.List (
   (\\),
   delete,
-  insert,
   intercalate,
   nub,
   permutations,
-  sort,
   )
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
@@ -163,12 +157,12 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
     timeout          = Nothing
   }
 
-instancesOfMatch :: MatchCdOdInstance -> Map Int Letters
-instancesOfMatch task = Letters . nub . sort <$>
-  M.foldrWithKey
-  (\o (cs, _) m -> foldr (M.alter (Just . maybe [o] (o:))) m cs)
-  M.empty
-  (instances task)
+toMatching :: Map Char [Int] -> Map (Int, Char) Bool
+toMatching m =
+  M.fromList [((cd, od), any (cd `elem`) $ M.lookup od m) | cd <- cds, od <- ods]
+  where
+    cds = take 2 [1 ..]
+    ods = take 5 ['a' ..]
 
 matchCdOdTask
   :: (MonadIO m, OutputMonad m)
@@ -251,17 +245,16 @@ matchCdOdEvaluation
   -> t (Int, Letters)
   -> Rated m
 matchCdOdEvaluation task sub' = do
-  let sub = toMatching sub'
-      correct = foldr (`M.insert` True) M.empty $ toMatching $ M.toList
-        $ instancesOfMatch task
+  let sub = toMatching' sub'
+      matching = toMatching $ fst <$> instances task
       what = translations $ do
         english "instances"
         german "Instanzen"
-  multipleChoice what Nothing correct sub
+  multipleChoice what Nothing matching sub
   where
-    toMatching :: (Ord x, Foldable f) => f (x, Letters) -> [(x, Char)]
-    toMatching = nubOrd .
-      foldr (\(c, ys) xs -> foldr (insert . (c,)) xs (lettersList ys)) []
+    toMatching' :: Foldable f => f (Int, Letters) -> [(Int, Char)]
+    toMatching' =
+      foldr (\(c, ys) xs -> foldr ((:) . (c,)) xs (lettersList ys)) []
 
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
