@@ -92,13 +92,15 @@ import Language.Alloy.Call
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
-debug = False
+debug = True
+--debug = False
 
 data DifferentNamesInstance = DifferentNamesInstance {
     anonymousObjects :: Bool,
     cDiagram :: Syntax,
     generatorValue :: Int,
     oDiagram :: Od,
+    showSolution :: Bool,
     mapping  :: NameMapping
   } deriving (Eq, Generic, Read, Show)
 
@@ -109,6 +111,7 @@ data DifferentNamesConfig = DifferentNamesConfig {
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
     onlyAnonymousObjects :: Bool,
+    printSolution    :: Bool,
     searchSpace      :: Int,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
@@ -125,6 +128,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
       },
     maxObjects       = 4,
     onlyAnonymousObjects = True,
+    printSolution    = False,
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
     searchSpace      = 10,
@@ -228,7 +232,11 @@ differentNamesEvaluation task cs = do
         english "mappings"
       m = nameMapping $ mapping task
       ms = M.fromAscList $ map (,True) $ BM.toAscList m
-  multipleChoice what Nothing ms (catMaybes $ readMapping m <$> cs)
+      solution =
+        if showSolution task
+        then Just $ showMapping $ BM.toAscList m
+        else Nothing
+  multipleChoice what solution ms (catMaybes $ readMapping m <$> cs)
 
 differentNames
   :: MonadIO m
@@ -260,6 +268,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
     ["C$0","B$0","B$1","B$2"],
     [(0,1,"y"),(0,2,"y"),(0,3,"y"),(0,0,"x"),(0,3,"z")]
     ),
+  showSolution = False,
   mapping = toNameMapping $ BM.fromList [("a","y"),("b","z"),("c","x")]
   }
 
@@ -315,6 +324,7 @@ getDifferentNamesTask config = do
               cDiagram  = cd1,
               generatorValue = gv,
               oDiagram  = od1',
+              showSolution = printSolution config,
               mapping   = toNameMapping bm
               }
         lift $ renameInstance inst names' assocs' links'
@@ -371,6 +381,7 @@ renameInstance inst names' assocs' links' = do
     cDiagram  = cd',
     generatorValue = generatorValue inst,
     oDiagram  = od',
+    showSolution = showSolution inst,
     mapping   = toNameMapping bm'
     }
 

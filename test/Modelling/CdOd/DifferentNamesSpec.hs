@@ -143,6 +143,7 @@ evaluateDifferentNames cs cs' = flip withLang English $ do
         cDiagram = error "cDiagram is undefined",
         generatorValue = 1,
         oDiagram = error "oDiagram is undefined",
+        showSolution = True,
         mapping = toNameMapping $ BM.fromList cs
         }
       cs'' = bimap Name Name <$> cs'
