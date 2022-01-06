@@ -17,6 +17,7 @@ module Modelling.CdOd.DifferentNames (
   ) where
 
 import qualified Data.Bimap                       as BM (
+  filter,
   fromList,
   keysR,
   lookup,
@@ -83,7 +84,7 @@ import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
-import Data.List                        (nub, permutations, sort)
+import Data.List                        (permutations, sort)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
@@ -101,7 +102,8 @@ data DifferentNamesInstance = DifferentNamesInstance {
     generatorValue :: Int,
     oDiagram :: Od,
     showSolution :: Bool,
-    mapping  :: NameMapping
+    mapping  :: NameMapping,
+    usesAllRelationships :: Maybe Bool
   } deriving (Eq, Generic, Read, Show)
 
 data DifferentNamesConfig = DifferentNamesConfig {
@@ -113,7 +115,8 @@ data DifferentNamesConfig = DifferentNamesConfig {
     onlyAnonymousObjects :: Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
-    timeout          :: Maybe Int
+    timeout          :: Maybe Int,
+    useAllRelationships :: Maybe Bool
   } deriving (Generic, Read, Show)
 
 defaultDifferentNamesConfig :: DifferentNamesConfig
@@ -132,7 +135,8 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
     searchSpace      = 10,
-    timeout          = Nothing
+    timeout          = Nothing,
+    useAllRelationships = Just True
   }
 
 newtype ShowName = ShowName { showName' :: Name }
@@ -184,10 +188,15 @@ Geben Sie Ihre Antwort als eine Zuordnung von Beziehungen im CD zu Links im OD a
 Um anzugeben, dass a im CD zu x im OD und b im CD zu y im OD korrespondieren, schreiben Sie es als:|]
     code $ showMapping differentNamesInitial
   paragraph $ translate $ do
-    english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.
-Thus, every link name and every relationship name should occur exactly once in your mapping.|]
-    german [i|Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert, d.h. alle Links mit dem selben Namen (and auch nur Links mit dem selben Namen!) im OD entsprechen genau dem selben Beziehungsnamen im CD.
-Deshalb sollte jeder Linkname and jeder Beziehungsname genau einmal in Ihrer Zuordnung auftauchen.|]
+    english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.|]
+    german [i|Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert, d.h. alle Links mit dem selben Namen (and auch nur Links mit dem selben Namen!) im OD entsprechen genau dem selben Beziehungsnamen im CD.|]
+  paragraph $ translate $ if maybe False id $ usesAllRelationships task
+    then do
+    english [i|Thus, every link name and every relationship name should occur exactly once in your mapping.|]
+    german [i|Deshalb sollte jeder Linkname and jeder Beziehungsname genau einmal in Ihrer Zuordnung auftauchen.|]
+    else do
+    english [i|Thus, every link name should occur exactly once in your mapping.|]
+    german [i|Deshalb sollte jeder Linkname genau einmal in Ihrer Zuordnung auftauchen.|]
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
@@ -269,7 +278,8 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
     [(0,1,"y"),(0,2,"y"),(0,3,"y"),(0,0,"x"),(0,3,"z")]
     ),
   showSolution = False,
-  mapping = toNameMapping $ BM.fromList [("a","y"),("b","z"),("c","x")]
+  mapping = toNameMapping $ BM.fromList [("a","y"),("b","z"),("c","x")],
+  usesAllRelationships = Just True
   }
 
 getDifferentNamesTask
@@ -310,8 +320,9 @@ getDifferentNamesTask config = do
       labels' <- shuffleM labels
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = fromEdges names $ renameEdges (BM.twist bm) edges
-          --bm' = BM.filter (const (`elem` usedLabels od1)) bm
-      if BM.keysR bm == sort (usedLabels od1)
+          bm' = BM.filter (const (`elem` usedLabels od1)) bm
+      if maybe (const True) (\x -> if x then id else not) (useAllRelationships config)
+         $ BM.keysR bm == sort (usedLabels od1)
         then do
         let (assocs, links) = unzip $ BM.toAscList bm
         names'  <- shuffleM names
@@ -325,7 +336,8 @@ getDifferentNamesTask config = do
               generatorValue = gv,
               oDiagram  = od1',
               showSolution = printSolution config,
-              mapping   = toNameMapping bm
+              mapping   = toNameMapping bm',
+              usesAllRelationships = useAllRelationships config
               }
         lift $ renameInstance inst names' assocs' links'
         else getDifferentNamesTask config
@@ -348,7 +360,7 @@ getDifferentNamesTask config = do
     usedLabels inst = either error id $ do
       os    <- lookupSig (scoped "this" "Obj") inst
       links <- map nameOf . S.toList <$> getTriple "get" os
-      return $ nub links
+      return $ nubOrd links
     nameOf (_,l,_) = takeWhile (/= '$') $ objectName l
 
 renameInstance
@@ -382,7 +394,8 @@ renameInstance inst names' assocs' links' = do
     generatorValue = generatorValue inst,
     oDiagram  = od',
     showSolution = showSolution inst,
-    mapping   = toNameMapping bm'
+    mapping   = toNameMapping bm',
+    usesAllRelationships = usesAllRelationships inst
     }
 
 newDifferentNamesInstances
