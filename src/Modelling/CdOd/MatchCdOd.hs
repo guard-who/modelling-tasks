@@ -23,7 +23,9 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M (
+  adjust,
   empty,
+  foldrWithKey,
   fromAscList,
   fromList,
   keys,
@@ -129,7 +131,8 @@ debug = False
 data MatchCdOdInstance = MatchCdOdInstance {
     diagrams       :: Map Int Syntax,
     generatorValue :: Int,
-    instances      :: Map Char ([Int], Od)
+    instances      :: Map Char ([Int], Od),
+    showSolution   :: Bool
   } deriving (Generic, Read, Show)
 
 data MatchCdOdConfig = MatchCdOdConfig {
@@ -137,6 +140,7 @@ data MatchCdOdConfig = MatchCdOdConfig {
     classConfig      :: ClassConfig,
     maxObjects       :: Int,
     maxInstances     :: Maybe Integer,
+    printSolution    :: Bool,
     searchSpace      :: Int,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
@@ -153,6 +157,7 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       },
     maxObjects       = 4,
     maxInstances     = Nothing,
+    printSolution    = False,
     searchSpace      = 10,
     timeout          = Nothing
   }
@@ -246,12 +251,21 @@ matchCdOdEvaluation
   -> Rated m
 matchCdOdEvaluation task sub' = do
   let sub = toMatching' sub'
-      matching = toMatching $ fst <$> instances task
+      sol = fst <$> instances task
+      matching = toMatching sol
       what = translations $ do
         english "instances"
         german "Instanzen"
-  multipleChoice what Nothing matching sub
+      solution =
+        if showSolution task
+        then Just $ show $ M.toList $ reverseMapping sol
+        else Nothing
+  multipleChoice what solution matching sub
   where
+    reverseMapping :: Map Char [Int] -> Map Int ShowLetters
+    reverseMapping = fmap (fmap $ ShowLetters . Letters) . M.foldrWithKey
+      (\x ys xs -> foldr (M.adjust (x:)) xs ys)
+      $ M.fromList [(1, []), (2, [])]
     toMatching' :: Foldable f => f (Int, Letters) -> [(Int, Char)]
     toMatching' =
       foldr (\(c, ys) xs -> foldr ((:) . (c,)) xs (lettersList ys)) []
@@ -281,7 +295,12 @@ getMatchCdOdTask config = do
   names'  <- shuffleM names
   assocs' <- shuffleM assocs
   g' <- getRandom
-  let inst = MatchCdOdInstance cds g' ods'
+  let inst = MatchCdOdInstance {
+        diagrams       = cds,
+        generatorValue = g',
+        instances      = ods',
+        showSolution   = printSolution config
+        }
   lift $ renameInstance inst names' assocs'
 
 defaultMatchCdOdInstance :: MatchCdOdInstance
@@ -323,7 +342,8 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
       ["A$0","B$0","D$0"],
       [(0,2,"x"),(1,0,"z"),(1,2,"y")]
     )))
-    ]
+    ],
+  showSolution = False
   }
 
 newMatchCdOdInstances
@@ -358,7 +378,8 @@ shuffleInstance inst = do
   return $ MatchCdOdInstance {
     diagrams = M.fromAscList cds',
     generatorValue = generatorValue inst,
-    instances = M.fromAscList ods'
+    instances = M.fromAscList ods',
+    showSolution = showSolution inst
     }
 
 renameInstance
@@ -382,7 +403,8 @@ renameInstance inst names' assocs' = do
   return $ MatchCdOdInstance {
     diagrams = cds',
     generatorValue = generatorValue inst,
-    instances = ods'
+    instances = ods',
+    showSolution = showSolution inst
     }
 
 getRandomTask
