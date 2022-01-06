@@ -26,6 +26,7 @@ main = do
             },
           maxObjects       = 4,
           maxInstances     = Nothing,
+          printSolution    = False,
           searchSpace      = 10,
           timeout          = Nothing
         }
