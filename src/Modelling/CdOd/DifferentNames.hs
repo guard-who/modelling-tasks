@@ -184,7 +184,7 @@ Um anzugeben, dass a im CD zu x im OD und b im CD zu y im OD korrespondieren, sc
   paragraph $ translate $ do
     english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.|]
     german [i|Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert, d.h. alle Links mit dem selben Namen (and auch nur Links mit dem selben Namen!) im OD entsprechen genau dem selben Beziehungsnamen im CD.|]
-  paragraph $ translate $ if maybe False id $ usesAllRelationships task
+  paragraph $ translate $ if fromMaybe False $ usesAllRelationships task
     then do
     english [i|Thus, every link name and every relationship name should occur exactly once in your mapping.|]
     german [i|Deshalb sollte jeder Linkname and jeder Beziehungsname genau einmal in Ihrer Zuordnung auftauchen.|]
