@@ -252,8 +252,8 @@ differentNames config segment seed = do
   liftIO $ evalRandT (getDifferentNamesTask config) g
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
-reverseAssociation (from, to, e@(Assoc Association _ _ _ _)) =
-  (to, from, e)
+reverseAssociation (from, to, Assoc Association n lf lt im) =
+  (to, from, Assoc Association n lt lf im)
 reverseAssociation x = x
 
 defaultDifferentNamesInstance :: DifferentNamesInstance
