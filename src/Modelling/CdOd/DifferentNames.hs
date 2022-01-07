@@ -156,15 +156,9 @@ differentNamesTask path task = do
   let cd = cDiagram task
       od = oDiagram task
       bm = fromNameMapping $ mapping task
-      backwards   = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
-                       , t /= Association
+      backwards   = [n | (_, _, Assoc _ n' _ _ _) <- toEdges cd
                        , n <- BM.lookup n' bm]
-      forwards    = [n | (_, _, Assoc t n' _ _ _) <- toEdges cd
-                       , t == Association
-                       , n <- BM.lookup n' bm]
-      navigations = foldr (`M.insert` Back)
-                          (foldr (`M.insert` Forward) M.empty forwards)
-                          backwards
+      navigations = foldr (`M.insert` Back) M.empty backwards
       anonymous = fromMaybe (length (fst od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)
   cd' <- lift $ liftIO $ drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
@@ -319,7 +313,7 @@ getDifferentNamesTask config = do
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
-          cd1 = fromEdges names $ renameEdges (BM.twist bm) edges
+          cd1 = fromEdges names $ renameEdges (BM.twist bm) edges'
           bm' = BM.filter (const (`elem` usedLabels od1)) bm
       if maybe (const True) (\x -> if x then id else not) (useAllRelationships config)
          $ BM.keysR bm == sort (usedLabels od1)
