@@ -93,8 +93,7 @@ import Language.Alloy.Call
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
-debug = True
---debug = False
+debug = False
 
 data DifferentNamesInstance = DifferentNamesInstance {
     anonymousObjects :: Bool,
