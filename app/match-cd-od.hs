@@ -16,7 +16,6 @@ main :: IO ()
 main = do
   (s, seed) <- getArgs >>= evaluateArgs
   let config = MatchCdOdConfig {
-          allowSelfLoops = Nothing,
           classConfig = ClassConfig {
               classes      = (4, 4),
               aggregations = (0, Just 2),
@@ -26,6 +25,7 @@ main = do
             },
           maxObjects       = 4,
           maxInstances     = Nothing,
+          presenceOfLinkSelfLoops = Nothing,
           printSolution    = False,
           searchSpace      = 10,
           timeout          = Nothing

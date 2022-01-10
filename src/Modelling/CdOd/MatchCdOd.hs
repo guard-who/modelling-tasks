@@ -136,10 +136,10 @@ data MatchCdOdInstance = MatchCdOdInstance {
   } deriving (Generic, Read, Show)
 
 data MatchCdOdConfig = MatchCdOdConfig {
-    allowSelfLoops   :: Maybe Bool,
     classConfig      :: ClassConfig,
     maxObjects       :: Int,
     maxInstances     :: Maybe Integer,
+    presenceOfLinkSelfLoops :: Maybe Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
     timeout          :: Maybe Int
@@ -147,7 +147,6 @@ data MatchCdOdConfig = MatchCdOdConfig {
 
 defaultMatchCdOdConfig :: MatchCdOdConfig
 defaultMatchCdOdConfig = MatchCdOdConfig {
-    allowSelfLoops   = Nothing,
     classConfig  = ClassConfig {
         classes      = (4, 4),
         aggregations = (0, Just 2),
@@ -157,6 +156,7 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       },
     maxObjects       = 4,
     maxInstances     = Nothing,
+    presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
     searchSpace      = 10,
     timeout          = Nothing
@@ -282,7 +282,7 @@ getMatchCdOdTask
 getMatchCdOdTask config = do
   (cds, ods) <- mapRandT liftIO $ getRandomTask
     (classConfig config)
-    (allowSelfLoops config)
+    (presenceOfLinkSelfLoops config)
     (maxObjects config)
     (searchSpace config)
     (maxInstances config)

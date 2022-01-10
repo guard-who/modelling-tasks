@@ -106,12 +106,12 @@ data DifferentNamesInstance = DifferentNamesInstance {
   } deriving (Eq, Generic, Read, Show)
 
 data DifferentNamesConfig = DifferentNamesConfig {
-    allowSelfLoops   :: Maybe Bool,
     classConfig      :: ClassConfig,
     maxObjects       :: Int,
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
     onlyAnonymousObjects :: Bool,
+    presenceOfLinkSelfLoops :: Maybe Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
     timeout          :: Maybe Int,
@@ -120,7 +120,6 @@ data DifferentNamesConfig = DifferentNamesConfig {
 
 defaultDifferentNamesConfig :: DifferentNamesConfig
 defaultDifferentNamesConfig = DifferentNamesConfig {
-    allowSelfLoops   = Nothing,
     classConfig  = ClassConfig {
         classes      = (4, 4),
         aggregations = (0, Just 2),
@@ -130,6 +129,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
       },
     maxObjects       = 4,
     onlyAnonymousObjects = True,
+    presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
@@ -297,7 +297,7 @@ getDifferentNamesTask config = do
         partss = map extractFourParts cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand
-          (allowSelfLoops config)
+          (presenceOfLinkSelfLoops config)
           runCmd
           (length names)
           $ maxObjects config
@@ -336,7 +336,7 @@ getDifferentNamesTask config = do
         else getDifferentNamesTask config
   where
     extractFourParts (n, cd) =
-      case transform (toOldSyntax cd) (allowSelfLoops config) False (show n) "" of
+      case transform (toOldSyntax cd) (presenceOfLinkSelfLoops config) False (show n) "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
