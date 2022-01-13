@@ -54,7 +54,7 @@ import Text.ParserCombinators.Parsec (
   Parser,
   many1,
   satisfy,
-  sepBy,
+  endBy,
   )
 
 type Od = ([String], [(Int, Int, String)])
@@ -97,7 +97,7 @@ showLetters = lettersList
 parseLettersPrec :: Int -> Parser Letters
 parseLettersPrec _ = do
   skipSpaces
-  Letters <$> sepBy (satisfy isAlpha) skipSpaces
+  Letters <$> endBy (satisfy isAlpha) skipSpaces
 
 newtype NameMapping = NameMapping { nameMapping :: Bimap Name Name }
   deriving (Eq, Generic)
