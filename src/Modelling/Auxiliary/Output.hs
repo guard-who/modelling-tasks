@@ -123,10 +123,17 @@ multipleChoice what msolutionString solution choices = do
   where
     valid = M.keys $ M.filter (== True) solution
 
-singleChoice :: (OutputMonad m, Eq a) => String -> a -> a -> LangM m
-singleChoice what solution choice =
-  assertion (solution == choice) $
-    multiLang [(English, "Chosen " ++ what ++ " is correct?")]
+singleChoice
+  :: (OutputMonad m, Eq a)
+  => Map Language String
+  -> a
+  -> a
+  -> Rated m
+singleChoice what solution choice = do
+  assertion (solution == choice) $ multiLang [
+    (English, "Chosen " ++ localise English what ++ " is correct?"),
+    (English, "Die gewählte " ++ localise German what ++ " ist korrekt?")]
+  return 1
 
 {-|
 Returns a list stating for each element of the first list

@@ -50,10 +50,12 @@ import Modelling.Auxiliary.Output (
   LangM',
   LangM,
   OutputMonad (..),
+  Rated,
   english,
   german,
   singleChoice,
   translate,
+  translations,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -239,8 +241,12 @@ pickEvaluation
   :: OutputMonad m
   => PickInstance
   -> Int
-  -> LangM m
-pickEvaluation = singleChoice "petri nets" . head . M.keys . M.filter fst . nets
+  -> Rated m
+pickEvaluation = do
+  let what = translations $ do
+        english "petri net"
+        german "Petrinetz"
+  singleChoice what . head . M.keys . M.filter fst . nets
 
 pickConflictTask
   :: (MonadIO m, OutputMonad m)

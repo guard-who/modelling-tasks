@@ -31,10 +31,12 @@ import Modelling.Auxiliary.Output       (
   LangM,
   LangM',
   OutputMonad (..),
+  Rated,
   english,
   german,
   singleChoice,
   translate,
+  translations,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -309,38 +311,55 @@ graphToMathTask
   -> LangM m
 graphToMathTask path task = do
   dia <- from <$> writeDia path task
-  paragraph $ translate $
+  paragraph $ translate $ do
     english "Consider this graphical representation of a Petri net:"
+    german "Betrachten Sie die folgende grafische Darstellung eines Petrinetzes:"
   image dia
-  paragraph $ text
-    "Which of the following mathematical representations denotes this Petri net?"
+  paragraph $ translate $ do
+    english "Which of the following mathematical representations denotes this Petri net?"
+    german "Welche der folgenden mathematischen Repräsenationen formalisiert dieses Petrinetz?"
   enumerateM
     (text . (++ ". ") . show)
     $ second (mathToOutput latex . snd) <$> toList (to task)
-  paragraph $ text
-    [i|Please state your answer by giving the number of the matching representation only.|]
+  paragraph $ translate $ do
+    english [i|Please state your answer by giving the number of the matching representation only.|]
+    german [i|Geben Sie Ihre Antwort durch Eingabe der Zahl der passenden Repräsentation an.|]
   paragraph $ do
-    text [i|Stating |]
+    translate $ do
+      english [i|Stating |]
+      german [i|Die Eingabe von |]
     code "1"
-    text [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
+    translate $ do
+      english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
+      german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegeben grafischen Darstellung passen würde (und alle anderen Repräsentationen nicht!).|]
 
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
 mathToOutput f pm = paragraph $ do
   f $ netMath pm
-  translate $ english ", where "
+  translate $ do
+    english ", where "
+    german ", mit "
   f $ placesMath pm
-  translate $ english " and "
+  translate $ do
+    english " and "
+    german " und "
   f $ transitionsMath pm
-  translate $ english ", as well as"
+  translate $ do
+    english ", as well as"
+    german ", sowie"
   case placeOrderMath pm of
     Nothing -> return ()
     Just o  -> do
-      translate $ english " using the place ordering "
+      translate $ do
+        english " using the place ordering "
+        german " mit der Stellenreihenfolge "
       f o
   translate $ english ":"
   itemizeM $ f . fst <$> tokenChangeMath pm
   itemizeM $ f . snd <$> tokenChangeMath pm
-  translate $ english "Moreover, "
+  translate $ do
+    english "Moreover, "
+    german "und "
   f $ initialMarkingMath pm
 
 mathToGraphTask
@@ -350,30 +369,47 @@ mathToGraphTask
   -> LangM m
 mathToGraphTask path task = do
   dias <- to <$>  writeDias path task
-  paragraph $ text "Consider this mathematical representation of a Petri net:"
+  paragraph $ translate $ do
+    english "Consider this mathematical representation of a Petri net:"
+    german "Betrachten Sie diese mathematische Repräsentation eines Petrinetzes:"
   mathToOutput latex $ from task
-  paragraph $ text "Which of the following diagrams represents this Petri net?"
+  paragraph $ translate $ do
+    english "Which of the following diagrams represents this Petri net?"
+    german "Welche der folgenden Diagramme stellt dieses Petrinetz dar?"
   images show snd dias
-  paragraph $ text
-    [i|Please state your answer by giving the number of the matching diagram only.|]
+  paragraph $ translate $ do
+    english [i|Please state your answer by giving the number of the matching diagram only.|]
+    german [i|Geben Sie Ihre Antwort durch Eingabe der Zahl des passenden Diagramms an.|]
   paragraph $ do
-    text [i|Stating |]
+    translate $ do
+      english [i|Stating |]
+      german [i|Die Eingabe von |]
     code "1"
-    text [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]
+    translate $ do
+      english [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]
+      german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegeben mathematischen Representation passen würde (und alle anderen Diagramme nicht!).|]
 
 graphToMathEvaluation
   :: OutputMonad m
   => GraphToMathInstance
   -> Int
-  -> LangM m
-graphToMathEvaluation = singleChoice "mathematical representation" . head . M.keys . M.filter fst . to
+  -> Rated m
+graphToMathEvaluation = do
+  let what = translations $ do
+        english "mathematical representation"
+        german "mathematische Repräsentation"
+  singleChoice what . head . M.keys . M.filter fst . to
 
 mathToGraphEvaluation
   :: OutputMonad m
   => MathToGraphInstance
   -> Int
-  -> LangM m
-mathToGraphEvaluation = singleChoice "graphical representation" . head . M.keys . M.filter fst . to
+  -> Rated m
+mathToGraphEvaluation = do
+  let what = translations $ do
+        english "graphical representation"
+        german "grafischen Repräsentation"
+  singleChoice what . head . M.keys . M.filter fst . to
 
 checkMathConfig :: MathConfig -> Maybe String
 checkMathConfig c@MathConfig {
