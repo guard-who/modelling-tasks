@@ -129,11 +129,11 @@ formatSVG (x:xs) ys = formatSVG rest ((x{ paths = gpaths }):ys)
                   rest
                     | isLabelOrEdge x = filter (not . equalGroup (svgClass x) . svgClass) xs
                     | otherwise = dropWhile (equalGroup (svgClass x) . svgClass) xs
-                  isLabelOrEdge z = let fx = T.filter (/='.') (svgClass z) in fx == "label" || fx == "edge"
+                  isLabelOrEdge z = let fx = T.filter (/='.') (svgClass z) in fx == "elabel" || fx == "edge"
 
 equalGroup :: T.Text -> T.Text -> Bool
 equalGroup x y
-  | (fx == "edge" || fx == "label") && (fy == "label" || fy == "edge") && sameLength = True
+  | (fx == "edge" || fx == "elabel") && (fy == "elabel" || fy == "edge") && sameLength = True
   | (fx == "node") && (fy == "token" || fy == "nlabel") = True
   | (fx == "rect") && (fy == "") = True
   | otherwise = False
