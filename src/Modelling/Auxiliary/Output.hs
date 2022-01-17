@@ -38,6 +38,7 @@ module Modelling.Auxiliary.Output (
 import qualified Data.Map as M
 
 import Control.Monad                    (foldM, unless, void, when)
+import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.State              (State, execState, modify)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
@@ -178,6 +179,9 @@ german = modify . M.insert German
 newtype LangM' m a = LangM { withLang :: Language -> m a}
 type LangM m = LangM' m ()
 type Rated m = LangM' m Rational
+
+instance MonadIO m => MonadIO (LangM' m) where
+  liftIO = LangM . const . liftIO
 
 instance Functor m => Functor (LangM' m) where
   fmap f (LangM o) = LangM $ fmap f . o
