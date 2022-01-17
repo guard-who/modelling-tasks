@@ -55,6 +55,7 @@ import Modelling.PetriNet.BasicNetFunctions (
   checkBasicConfig, checkChangeConfig
   )
 import Modelling.PetriNet.Diagram       (drawNet)
+import Modelling.PetriNet.Reach.Group   (groupSVG)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser (
   parseChange, parseRenamedPetriLike,
@@ -202,6 +203,7 @@ writeGraph s path index pl = do
     d <- draw
     let file = path ++ "graph" ++ index ++ ".svg"
     lift $ renderSVG file (mkWidth 250) d
+    lift $ groupSVG file
     return file
   either
     (const $ (>> return "") $ refuse $ translate $ do
