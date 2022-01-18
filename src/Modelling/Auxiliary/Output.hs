@@ -114,6 +114,16 @@ multipleChoice what msolutionString solution choices = do
     (English, "Given " ++ localise English what ++ " are exhaustive?"),
     (German, "Die angegebenen " ++ localise German what ++ " sind vollständig?")
     ]
+  printSolutionAndAssert msolutionString points
+  where
+    valid = M.keys $ M.filter (== True) solution
+
+printSolutionAndAssert
+  :: OutputMonad m
+  => Maybe String
+  -> Rational
+  -> Rated m
+printSolutionAndAssert msolutionString points = do
   for_ msolutionString $ \solutionString ->
     when (points /= 1) $ paragraph $ do
       translate $ do
@@ -122,20 +132,21 @@ multipleChoice what msolutionString solution choices = do
       code solutionString
   unless (points >= 1 % 2) $ refuse $ return ()
   return points
-  where
-    valid = M.keys $ M.filter (== True) solution
 
 singleChoice
   :: (OutputMonad m, Eq a)
   => Map Language String
+  -> Maybe String
   -> a
   -> a
   -> Rated m
-singleChoice what solution choice = do
-  assertion (solution == choice) $ multiLang [
+singleChoice what msolutionString solution choice = do
+  let correct = solution == choice
+      points = if correct then 1 else 0
+  yesNo correct $ multiLang [
     (English, "Chosen " ++ localise English what ++ " is correct?"),
     (English, "Die gewählte " ++ localise German what ++ " ist korrekt?")]
-  return 1
+  printSolutionAndAssert msolutionString points
 
 {-|
 Returns a list stating for each element of the first list

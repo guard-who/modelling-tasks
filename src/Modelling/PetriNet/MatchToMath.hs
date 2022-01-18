@@ -30,6 +30,7 @@ import qualified Data.Map                         as M (
 import Modelling.Auxiliary.Output       (
   LangM,
   LangM',
+  Language,
   OutputMonad (..),
   Rated,
   english,
@@ -80,7 +81,14 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Random             (RandT, RandomGen, StdGen, evalRandT, mkStdGen)
+import Control.Monad.Random             (
+  MonadRandom,
+  RandT,
+  RandomGen,
+  StdGen,
+  evalRandT,
+  mkStdGen,
+  )
 import Control.Monad.Trans.Class        (lift)
 import Control.Monad.Trans.Except       (ExceptT (ExceptT), except, runExceptT)
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
@@ -123,6 +131,7 @@ data MathConfig = MathConfig {
   advConfig :: AdvConfig,
   changeConfig :: ChangeConfig,
   generatedWrongInstances :: Int,
+  printSolution :: Bool,
   wrongInstances :: Int,
   alloyConfig :: AlloyConfig
   } deriving (Generic, Read, Show)
@@ -136,6 +145,7 @@ defaultMathConfig = MathConfig {
     maxTokenChangePerPlace = 0
     },
   generatedWrongInstances = 50,
+  printSolution = False,
   wrongInstances = 3,
   alloyConfig = defaultAlloyConfig
   }
@@ -143,6 +153,7 @@ defaultMathConfig = MathConfig {
 data MatchInstance a b = MatchInstance {
   from :: a,
   drawSettings :: DrawSettings,
+  showSolution :: Bool,
   to :: Map Int (Bool, b)
   }
   deriving (Generic, Read, Show)
@@ -160,6 +171,7 @@ instance Bitraversable MatchInstance where
   bitraverse f g m@MatchInstance {} = MatchInstance
     <$> f (from m)
     <*> pure (drawSettings m)
+    <*> pure (showSolution m)
     <*> traverse (traverse g) (to m)
 
 renderFormula :: String -> ExceptT String IO SVG
@@ -228,17 +240,7 @@ graphToMath
   -> ExceptT String IO (MatchInstance (PetriLike String) Math)
 graphToMath c segment seed = evalRandTWith seed $ do
   (d, m, ms) <- matchToMath toPetriMath c segment
-  ms' <- shuffleM $ (True, m) : [(False, x) | (x, _) <- ms]
-  return $ MatchInstance {
-    from = d,
-    drawSettings =  DrawSettings {
-      withPlaceNames = not $ hidePlaceNames $ basicConfig c,
-      withTransitionNames = not $ hideTransitionNames $ basicConfig c,
-      with1Weights = not $ hideWeight1 $ basicConfig c,
-      withGraphvizCommand = graphLayout $ basicConfig c
-      },
-    to = fromList $ zip [1..] ms'
-    }
+  matchMathInstance c d m $ fst <$> ms
 
 mathToGraph
   :: MathConfig
@@ -247,16 +249,27 @@ mathToGraph
   -> ExceptT String IO (MatchInstance Math (PetriLike String))
 mathToGraph c segment seed = evalRandTWith seed $ do
   (d, m, ds) <- matchToMath id c segment
-  ds' <- shuffleM $ (True, d) : [(False, x) | (x, _) <- ds]
+  matchMathInstance c m d $ fst <$> ds
+
+matchMathInstance
+  :: MonadRandom m
+  => MathConfig
+  -> a
+  -> b
+  -> [b]
+  -> m (MatchInstance a b)
+matchMathInstance c x y ys = do
+  ys' <- shuffleM $ (True, y) : ((False,) <$> ys)
   return $ MatchInstance {
-    from = m,
+    from = x,
     drawSettings =  DrawSettings {
       withPlaceNames = not $ hidePlaceNames $ basicConfig c,
       withTransitionNames = not $ hideTransitionNames $ basicConfig c,
       with1Weights = not $ hideWeight1 $ basicConfig c,
       withGraphvizCommand = graphLayout $ basicConfig c
       },
-    to = fromList $ zip [1..] ds'
+    showSolution = printSolution c,
+    to = fromList $ zip [1..] ys'
     }
 
 matchToMath
@@ -400,7 +413,7 @@ graphToMathEvaluation = do
   let what = translations $ do
         english "mathematical representation"
         german "mathematische Repräsentation"
-  singleChoice what . head . M.keys . M.filter fst . to
+  evaluation what
 
 mathToGraphEvaluation
   :: OutputMonad m
@@ -411,7 +424,21 @@ mathToGraphEvaluation = do
   let what = translations $ do
         english "graphical representation"
         german "grafischen Repräsentation"
-  singleChoice what . head . M.keys . M.filter fst . to
+  evaluation what
+
+evaluation
+  :: OutputMonad m
+  => Map Language String
+  -> MatchInstance a b
+  -> Int
+  -> Rated m
+evaluation what task = do
+  let solution = head . M.keys . M.filter fst $ to task
+      msolution =
+        if showSolution task
+        then Just $ show solution
+        else Nothing
+  singleChoice what msolution solution
 
 checkMathConfig :: MathConfig -> Maybe String
 checkMathConfig c@MathConfig {

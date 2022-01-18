@@ -293,7 +293,7 @@ pickEvaluation = do
   let what = translations $ do
         english "petri net"
         german "Petrinetz"
-  singleChoice what . head . M.keys . M.filter fst . nets
+  singleChoice what Nothing . head . M.keys . M.filter fst . nets
 
 pickConflictTask
   :: (MonadIO m, OutputMonad m)
