@@ -54,6 +54,7 @@ import Modelling.Auxiliary.Output (
   Rated,
   english,
   german,
+  hoveringInformation,
   localise,
   singleChoice,
   translate,
@@ -167,6 +168,7 @@ findConcurrencyTask path task = do
     translate $ do
       english "The order of transitions within the pair does not matter here."
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
+  paragraph hoveringInformation
 
 findConcurrencyEvaluation
   :: OutputMonad m
@@ -239,6 +241,7 @@ findConflictTask path task = do
     translate $ do
       english "The order of transitions within the pair does not matter here."
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
+  paragraph hoveringInformation
 
 findConflictEvaluation
   :: OutputMonad m
@@ -280,6 +283,7 @@ pickConcurrencyTask path task = do
             then "die anderen Petrinetze dies nicht tun"
             else "das andere Petrinetz dies nicht tut")
         ++ ")."
+  paragraph hoveringInformation
 
 wrongInstances :: PickInstance -> Int
 wrongInstances inst = length [False | (False, _) <- M.elems (nets inst)]
@@ -322,6 +326,7 @@ pickConflictTask path task = do
             then "die anderen Petrinetze dies nicht tun"
             else "das andere Petrinetz dies nicht tut")
         ++ ")."
+  paragraph hoveringInformation
 
 findConcurrencyGenerate
   :: FindConcurrencyConfig

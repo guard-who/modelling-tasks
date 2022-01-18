@@ -35,6 +35,7 @@ import Modelling.Auxiliary.Output       (
   Rated,
   english,
   german,
+  hoveringInformation,
   singleChoice,
   translate,
   translations,
@@ -347,6 +348,7 @@ graphToMathTask path task = do
     translate $ do
       english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
       german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegeben grafischen Darstellung passen würde (und alle anderen Repräsentationen nicht!).|]
+  paragraph hoveringInformation
 
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
 mathToOutput f pm = paragraph $ do
@@ -403,6 +405,7 @@ mathToGraphTask path task = do
     translate $ do
       english [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]
       german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegeben mathematischen Representation passen würde (und alle anderen Diagramme nicht!).|]
+  paragraph hoveringInformation
 
 graphToMathEvaluation
   :: OutputMonad m

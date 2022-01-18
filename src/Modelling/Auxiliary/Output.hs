@@ -59,8 +59,8 @@ import Data.String.Interpolate (i)
 
 hoveringInformation :: OutputMonad m => LangM m
 hoveringInformation = translate $ do
-  english [i|Please note: Hovering over or clicking on edges or their labels highlights both parts.|]
-  german [i|Bitte beachten Sie: Beim Darüberbewegen oder Daraufklicken auf Kanten bzw. ihre Beschriftungen werden beide Teile hervorgehoben.|]
+  english [i|Please note: Hovering over or clicking on edges / nodes or their labels highlights the respective matching parts.|]
+  german [i|Bitte beachten Sie: Beim Bewegen über oder Klicken auf Kanten / Knoten bzw. ihre Beschriftungen werden die jeweils zusammengehörenden Komponenten hervorgehoben.|]
 
 directionsAdvice :: OutputMonad m => LangM m
 directionsAdvice = translate $ do
