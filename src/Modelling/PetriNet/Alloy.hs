@@ -101,10 +101,20 @@ compBasicConstraints activatedTrans BasicConfig {
   minTokensOverall
   } = [i|
   let t = (sum p : Places | p.tokens) | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
-  all p : Places | p.tokens =< #{maxTokensPerPlace}
+  some tokenChange
+    implies
+      let t = (sum p : Places | p.defaultTokens) |
+        t = 0 or t >= #{minTokensOverall} and t <= #{maxTokensOverall}
+  all p : Places |
+    p.tokens =< #{maxTokensPerPlace} and p.defaultTokens =< #{maxTokensPerPlace}
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
+  all weight : Nodes.defaultFlow[Nodes] | weight =< #{maxFlowPerEdge}
   let theflow = (sum f, t : Nodes | f.flow[t]) |
     theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
+  some defaultFlow
+    implies
+      let theflow = (sum f, t : Nodes | f.defaultFlow[t]) |
+        theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
   \##{activatedTrans} >= #{atLeastActive}
   theActivatedTransitions[#{activatedTrans}]
   #{connected "graphIsConnected" isConnected}
