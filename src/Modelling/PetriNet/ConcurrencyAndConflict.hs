@@ -49,10 +49,12 @@ import qualified Data.Set                         as Set (
 import Modelling.Auxiliary.Output (
   LangM',
   LangM,
+  Language (English, German),
   OutputMonad (..),
   Rated,
   english,
   german,
+  localise,
   singleChoice,
   translate,
   translations,
@@ -95,7 +97,7 @@ import Modelling.PetriNet.Types         (
   transitionNames,
   traversePetriLike,
   )
-  
+
 import Modelling.PetriNet.Reach.Group (groupSVG)
 
 import Control.Arrow                    (Arrow (second))
@@ -144,41 +146,61 @@ findConcurrencyTask
   -> LangM m
 findConcurrencyTask path task = do
   pn <- renderWith path "concurrent" (net task) (drawFindWith task)
-  paragraph $ text "Considering this Petri net"
+  paragraph $ translate $ do
+    english "Considering this Petri net"
+    german "Betrachten Sie dieses Petrinetz"
   image pn
-  paragraph $ text "Which pair of transitions are concurrently activated under the initial marking?"
+  paragraph $ translate $ do
+    english "Which pair of transitions are concurrently activated under the initial marking?"
+    german "Welches Paar von Transitionen hat unter der Startmarkierung nebenläufig aktivierte Transitionen?"
   paragraph $ do
-    text "Please state your answer by giving a pair of concurrently activated transitions. "
-    text "Stating as answer: "
+    translate $ do
+      english "Please state your answer by giving a pair of concurrently activated transitions. "
+      german "Geben Sie Ihre Antwort durch Eingabe eines Paars von nebenläufig aktivierten Transitionen an. "
+    translate $ do
+      english [i|Stating |]
+      german [i|Die Eingabe von |]
     code [i|("t1", "t2")|]
-    text " would indicate that transitions t1 and t2 are concurrently activated under the initial marking."
-    text " The order of transitions within the pair does not matter here."
+    translate $ do
+      english " as answer would indicate that transitions t1 and t2 are concurrently activated under the initial marking. "
+      german " als Antwort würde bedeuten, dass Transitionen t1 und t2 unter der Startmarkierung nebenläufig aktiviert sind. "
+    translate $ do
+      english "The order of transitions within the pair does not matter here."
+      german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
 
 findConcurrencyEvaluation
   :: OutputMonad m
   => FindInstance (Concurrent String)
   -> (String, String)
   -> LangM m
-findConcurrencyEvaluation task =
-  transitionPairEvaluation "are concurrent" (numberOfPlaces task) (ft, st)
+findConcurrencyEvaluation task = do
+  let what = translations $ do
+        english "are concurrent activated"
+        german "sind nebenläufig aktiviert"
+  transitionPairEvaluation what (numberOfPlaces task) (ft, st)
   where
     Concurrent (ft, st) = transitionPair task
 
 transitionPairEvaluation
   :: OutputMonad m
-  => String
+  => Map Language String
   -> Int
   -> (String, String)
   -> (String, String)
   -> LangM m
 transitionPairEvaluation what n (ft, st) is = do
-  paragraph $ text "Remarks on your solution:"
-  assertion (isTransition fi)
-    $ text $ fi ++ " is a valid transition of the given Petri net?"
-  assertion (isTransition si)
-    $ text $ si ++ " is a valid transition of the given Petri net?"
-  assertion (ft == fi && st == si || ft == si && st == fi)
-    $ text $ "Given transitions " ++ what ++ "?"
+  paragraph $ translate $ do
+    english "Remarks on your solution:"
+    german "Anmerkungen zu Ihrer Lösung:"
+  assertion (isTransition fi) $ translate $ do
+    english $ fi ++ " is a valid transition of the given Petri net?"
+    german $ fi ++ " ist eine gültige Transition des gegebenen Petrinets?"
+  assertion (isTransition si) $ translate $ do
+    english $ si ++ " is a valid transition of the given Petri net?"
+    german $ si ++ " ist eine gültige Transition des gegebenen Petrinets?"
+  assertion (ft == fi && st == si || ft == si && st == fi) $ translate $ do
+    english $ "Given transitions " ++ localise English what ++ "?"
+    german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
   where
     (fi, si) = is
     isTransition xs
@@ -195,24 +217,39 @@ findConflictTask
   -> LangM m
 findConflictTask path task = do
   pn <- renderWith path "conflict" (net task) (drawFindWith task)
-  paragraph $ text "Considering this Petri net"
+  paragraph $ translate $ do
+    english "Considering this Petri net"
+    german "Betrachten Sie folgendes Petrinetz"
   image pn
-  paragraph $ text
-    "Which pair of transitions are in conflict under the initial marking?"
+  paragraph $ translate $ do
+    english "Which pair of transitions are in conflict under the initial marking?"
+    german "Welches Paar von Transitionen hat unter der Startmarkierung in Konflikt stehende Transitionen?"
   paragraph $ do
-    text "Please state your answer by giving a pair of conflicting transitions. "
-    text "Stating as answer: "
+    translate $ do
+      english "Please state your answer by giving a pair of conflicting transitions. "
+      german "Geben Sie Ihre Antwort durch Eingabe eines Paars von in Konflikt stehenden Transitionen an. "
+    translate $ do
+      english [i|Stating |]
+      german [i|Die Eingabe von |]
     code [i|("t1", "t2")|]
     text " would indicate that transitions t1 and t2 are in conflict under the initial marking."
-    text " The order of transitions within the pair does not matter here. "
+    translate $ do
+      english " as answer would indicate that transitions t1 and t2 are in conflict under the initial marking. "
+      german " als Antwort würde bedeuten, dass Transitionen t1 und t2 unter der Startmarkierung in Konflikt stehen. "
+    translate $ do
+      english "The order of transitions within the pair does not matter here."
+      german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
 
 findConflictEvaluation
   :: OutputMonad m
   => FindInstance Conflict
   -> (String, String)
   -> LangM m
-findConflictEvaluation task =
-  transitionPairEvaluation "have a conflict" (numberOfPlaces task) (ft, st)
+findConflictEvaluation task = do
+  let what = translations $ do
+        english "have a conflict"
+        german "haben einen Konflikt"
+  transitionPairEvaluation what (numberOfPlaces task) (ft, st)
   where
     (ft, st) = conflictTrans $ transitionPair task
 
@@ -222,17 +259,27 @@ pickConcurrencyTask
   -> PickInstance
   -> LangM m
 pickConcurrencyTask path task = do
-  paragraph $ text
-    "Which of the following Petri nets has exactly one pair of transitions that are concurrently activated?"
+  paragraph $ translate $ do
+    english "Which of the following Petri nets has exactly one pair of transitions that are concurrently activated?"
+    german "Welches dieser Petrinetze hat genau ein Paar von Transitionen, die nebenläufig aktiviert sind."
   files <- renderPick path "concurrent" task
   images show snd files
-  paragraph $ text
-    [i|Please state your answer by giving only the number of the Petri net having these concurrently activated transitions.|]
+  paragraph $ translate $ do
+    english "Please state your answer by giving only the number of the Petri net having these concurrently activated transitions. "
+    german "Geben Sie Ihre Antwort durch Eingabe der Zahl des Petrinetzes an, das diese nebenläufig aktivierten Transitionen hat. "
   let plural = wrongInstances task > 1
   paragraph $ do
-    text [i|Stating |]
+    translate $ do
+      english [i|Stating |]
+      german [i|Die Eingabe von |]
     code "1"
-    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are concurrently activated (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
+    translate $ do
+      english [i| as answer would indicate that Petri net 1 has exactly two transitions that are concurrently activated (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
+      german $ "als Antwort würde bedeuten, dass Petrinetz 1 genau zwei nebenläufig aktivierte Transitionen hat (und dass "
+        ++ (if plural
+            then "die anderen Petrinetze dies nicht tun"
+            else "das andere Petrinetz dies nicht tut")
+        ++ ")."
 
 wrongInstances :: PickInstance -> Int
 wrongInstances inst = length [False | (False, _) <- M.elems (nets inst)]
@@ -254,17 +301,27 @@ pickConflictTask
   -> PickInstance
   -> LangM m
 pickConflictTask path task = do
-  paragraph $ text
-    "Which of the following Petri nets has exactly one pair of transitions that are in conflict?"
+  paragraph $ translate $ do
+    english "Which of the following Petri nets has exactly one pair of transitions that are in conflict?"
+    german "Welches dieser Petrinetze hat genau ein Paar von Transitionen, die in Konflikt stehen."
   files <- renderPick path "conflict" task
   images show snd files
-  paragraph $ text
-    [i|Please state your answer by giving only the number of the Petri net having these transitions in conflict.|]
+  paragraph $ translate $ do
+    english "Please state your answer by giving only the number of the Petri net having these transitions in conflict. "
+    german "Geben Sie Ihre Antwort durch Eingabe der Zahl des Petrinetzes an, das diese in Konflikt stehenden Transitionen hat. "
   let plural = wrongInstances task > 1
   paragraph $ do
-    text [i|Stating |]
+    translate $ do
+      english [i|Stating |]
+      german [i|Die Eingabe von |]
     code "1"
-    text [i| as answer would indicate that Petri net 1 has exactly two transitions that are in conflict (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
+    translate $ do
+      english [i| as answer would indicate that Petri net 1 has exactly two transitions that are in conflict (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
+      german $ "als Antwort würde bedeuten, dass Petrinetz 1 genau zwei in Konflikt stehende Transitionen hat (und dass "
+        ++ (if plural
+            then "die anderen Petrinetze dies nicht tun"
+            else "das andere Petrinetz dies nicht tut")
+        ++ ")."
 
 findConcurrencyGenerate
   :: FindConcurrencyConfig

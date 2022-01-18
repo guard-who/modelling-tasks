@@ -28,6 +28,7 @@ module Modelling.Auxiliary.Output (
   Language (..),
   english,
   german,
+  localise,
   mapLangM,
   multiLang,
   translate,
