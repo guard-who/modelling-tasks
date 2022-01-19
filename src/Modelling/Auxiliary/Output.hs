@@ -106,11 +106,12 @@ multipleChoice what msolutionString solution choices = do
       points = percentPer
         solution
         (toMapping (M.keys solution) cs)
-  yesNo (null [c | c <- cs, c `notElem` valid]) $ multiLang [
+      isCorrect = null [c | c <- cs, c `notElem` valid]
+  yesNo isCorrect $ multiLang [
     (English, "Given " ++ localise English what ++ " are correct?"),
     (German, "Die angegebenen " ++ localise German what ++ " sind korrekt?")
     ]
-  yesNo (cs ==  valid) $ multiLang [
+  when isCorrect $ yesNo (cs ==  valid) $ multiLang [
     (English, "Given " ++ localise English what ++ " are exhaustive?"),
     (German, "Die angegebenen " ++ localise German what ++ " sind vollständig?")
     ]
