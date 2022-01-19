@@ -202,7 +202,10 @@ drawEdge
   -- ^ the diagram which contains labeled nodes already
   -> Diagram B
 drawEdge hide1 f l l1 l2 path d =
-  let opts p = with & arrowShaft .~ (unLoc . head $ pathTrails p)
+  let opts p = with
+        & arrowShaft .~ (unLoc . head $ pathTrails p)
+        & arrowHead .~ arrowheadTriangle (150 @@ deg)
+        & headGap .~ (tiny / 2)
       points = concat $ pathPoints path
       labelPoint = points !! (length points `div` 2)
       addLabel
