@@ -159,7 +159,7 @@ drawNode _ hideTName pfont (l, Nothing) p  = place
   where
     addTName
       | hideTName = id
-      | otherwise = (center (text' pfont l) `atop`)
+      | otherwise = (center (text' pfont 18 l) `atop`)
 drawNode hidePName _ pfont (l, Just i) p
   | i < 5
   = place (foldl' atop label $ [placeToken j | j <- [1..i]] ++ [emptyPlace]) p
@@ -167,7 +167,7 @@ drawNode hidePName _ pfont (l, Just i) p
   = place
     (foldl' atop label [
         token # translate (r2 (spacer,0)),
-        text' pfont (show i) # translate (r2 (-spacer,-4)),
+        text' pfont 20 (show i) # translate (r2 (-spacer,-4)),
         emptyPlace
         ])
     p
@@ -176,7 +176,7 @@ drawNode hidePName _ pfont (l, Just i) p
     emptyPlace = circle 20 # named l # svgClass "node"
     label
       | hidePName = mempty
-      | otherwise = center (text' pfont l) # translate (r2 (0, -3 * spacer)) # svgClass "nlabel"
+      | otherwise = center (text' pfont 18 l) # translate (r2 (0, -3 * spacer)) # svgClass "nlabel"
     token = circle 5 # fc black # svgClass "token"
     placeToken j = token
       # translate (r2 (8 * sqrt(fromIntegral (i - 1)), 0))
@@ -210,7 +210,7 @@ drawEdge hide1 f l l1 l2 path d =
       labelPoint = points !! (length points `div` 2)
       addLabel
         | hide1 && l == 1 = id
-        | otherwise = atop (place (text' f $ show l) labelPoint # svgClass "elabel")
+        | otherwise = atop (place (text' f 20 $ show l) labelPoint # svgClass "elabel")
   in addLabel (connectOutside'' (opts path) l1 l2 d) # svgClass "."
 
 connectOutside'' ::  (IsName nm1, IsName nm2, RealFloat n,
@@ -236,10 +236,12 @@ Render text as a diagram.
 text'
   :: PreparedFont Double
   -- ^ which font to use
+  -> Double
+  -- ^ font size
   -> String
   -- ^ what to write
   -> Diagram B
-text' pfont =
-  textSVG_ (TextOpts pfont INSIDE_H KERN False 18 18)
+text' pfont s =
+  textSVG_ (TextOpts pfont INSIDE_H KERN False s s)
   # fc black
   # lc black
