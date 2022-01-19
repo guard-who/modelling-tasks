@@ -205,11 +205,11 @@ differentNamesSyntax
 differentNamesSyntax task cs = addPretext $ do
   let l = length $ catMaybes $ readMapping m <$> cs
   assertion (l == length cs) $ translate $ do
-    english "All provided pairs are linking a valid link and a valid relationship"
-    german "Alle angegebenen Paare ordnen einen gültigen Link einer gültigen Beziehung zu"
+    english "All provided pairs are matching a valid link and a valid relationship?"
+    german "Alle angegebenen Paare ordnen einen gültigen Link einer gültigen Beziehung zu?"
   assertion (l == nubLengthOn fst && l == nubLengthOn snd) $ translate $ do
-    english "All provided pairs are non-overlapping"
-    german "Alle angegebenen Paare sind nicht überlappend"
+    english "All provided pairs are non-overlapping?"
+    german "Alle angegebenen Paare sind nicht überlappend?"
   where
     nubLengthOn f = length (nubOrd (map f cs))
     m = nameMapping $ mapping task

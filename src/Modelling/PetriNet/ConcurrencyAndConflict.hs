@@ -153,7 +153,7 @@ findConcurrencyTask path task = do
   image pn
   paragraph $ translate $ do
     english "Which pair of transitions are concurrently activated under the initial marking?"
-    german "Welches Paar von Transitionen hat unter der Startmarkierung nebenläufig aktivierte Transitionen?"
+    german "Welches Paar von Transitionen ist unter der Startmarkierung nebenläufig aktiviert?"
   paragraph $ do
     translate $ do
       english "Please state your answer by giving a pair of concurrently activated transitions. "
@@ -196,10 +196,10 @@ transitionPairEvaluation what n (ft, st) is = do
     german "Anmerkungen zu Ihrer Lösung:"
   assertion (isTransition fi) $ translate $ do
     english $ fi ++ " is a valid transition of the given Petri net?"
-    german $ fi ++ " ist eine gültige Transition des gegebenen Petrinets?"
+    german $ fi ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
   assertion (isTransition si) $ translate $ do
     english $ si ++ " is a valid transition of the given Petri net?"
-    german $ si ++ " ist eine gültige Transition des gegebenen Petrinets?"
+    german $ si ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
   assertion (ft == fi && st == si || ft == si && st == fi) $ translate $ do
     english $ "Given transitions " ++ localise English what ++ "?"
     german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
@@ -225,7 +225,7 @@ findConflictTask path task = do
   image pn
   paragraph $ translate $ do
     english "Which pair of transitions are in conflict under the initial marking?"
-    german "Welches Paar von Transitionen hat unter der Startmarkierung in Konflikt stehende Transitionen?"
+    german "Welches Paar von Transitionen steht unter der Startmarkierung in Konflikt?"
   paragraph $ do
     translate $ do
       english "Please state your answer by giving a pair of conflicting transitions. "
@@ -264,12 +264,12 @@ pickConcurrencyTask
 pickConcurrencyTask path task = do
   paragraph $ translate $ do
     english "Which of the following Petri nets has exactly one pair of transitions that are concurrently activated?"
-    german "Welches dieser Petrinetze hat genau ein Paar von Transitionen, die nebenläufig aktiviert sind."
+    german "Welches dieser Petrinetze hat genau ein Paar von Transitionen, die nebenläufig aktiviert sind?"
   files <- renderPick path "concurrent" task
   images show snd files
   paragraph $ translate $ do
     english "Please state your answer by giving only the number of the Petri net having these concurrently activated transitions. "
-    german "Geben Sie Ihre Antwort durch Eingabe der Zahl des Petrinetzes an, das diese nebenläufig aktivierten Transitionen hat. "
+    german "Geben Sie Ihre Antwort durch Eingabe der Nummer des Petrinetzes an, das diese nebenläufig aktivierten Transitionen hat. "
   let plural = wrongInstances task > 1
   paragraph $ do
     translate $ do
@@ -307,12 +307,12 @@ pickConflictTask
 pickConflictTask path task = do
   paragraph $ translate $ do
     english "Which of the following Petri nets has exactly one pair of transitions that are in conflict?"
-    german "Welches dieser Petrinetze hat genau ein Paar von Transitionen, die in Konflikt stehen."
+    german "Welches dieser Petrinetze hat genau ein Paar von Transitionen, die in Konflikt stehen?"
   files <- renderPick path "conflict" task
   images show snd files
   paragraph $ translate $ do
     english "Please state your answer by giving only the number of the Petri net having these transitions in conflict. "
-    german "Geben Sie Ihre Antwort durch Eingabe der Zahl des Petrinetzes an, das diese in Konflikt stehenden Transitionen hat. "
+    german "Geben Sie Ihre Antwort durch Eingabe der Nummer des Petrinetzes an, das diese in Konflikt stehenden Transitionen hat. "
   let plural = wrongInstances task > 1
   paragraph $ do
     translate $ do

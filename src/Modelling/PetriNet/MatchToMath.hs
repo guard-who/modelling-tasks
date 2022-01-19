@@ -333,13 +333,13 @@ graphToMathTask path task = do
   image dia
   paragraph $ translate $ do
     english "Which of the following mathematical representations denotes this Petri net?"
-    german "Welche der folgenden mathematischen Repräsenationen formalisiert dieses Petrinetz?"
+    german "Welche der folgenden mathematischen Repräsentationen formalisiert dieses Petrinetz?"
   enumerateM
     (text . (++ ". ") . show)
     $ second (mathToOutput latex . snd) <$> toList (to task)
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching representation only.|]
-    german [i|Geben Sie Ihre Antwort durch Eingabe der Zahl der passenden Repräsentation an.|]
+    german [i|Geben Sie Ihre Antwort durch Eingabe der Nummer der passenden Repräsentation an.|]
   paragraph $ do
     translate $ do
       english [i|Stating |]
@@ -347,7 +347,7 @@ graphToMathTask path task = do
     code "1"
     translate $ do
       english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
-      german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegeben grafischen Darstellung passen würde (und alle anderen Repräsentationen nicht!).|]
+      german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegebenen grafischen Darstellung passt würde (und alle anderen Repräsentationen nicht!).|]
   paragraph hoveringInformation
 
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
@@ -396,7 +396,7 @@ mathToGraphTask path task = do
   images show snd dias
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching diagram only.|]
-    german [i|Geben Sie Ihre Antwort durch Eingabe der Zahl des passenden Diagramms an.|]
+    german [i|Geben Sie Ihre Antwort durch Eingabe der Nummer des passenden Diagramms an.|]
   paragraph $ do
     translate $ do
       english [i|Stating |]
@@ -404,7 +404,7 @@ mathToGraphTask path task = do
     code "1"
     translate $ do
       english [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]
-      german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegeben mathematischen Representation passen würde (und alle anderen Diagramme nicht!).|]
+      german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegebenen mathematischen Repräsentation passen würde (und alle anderen Diagramme nicht!).|]
   paragraph hoveringInformation
 
 graphToMathEvaluation
