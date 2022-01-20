@@ -64,8 +64,7 @@ import Modelling.PetriNet.Alloy (
   compAdvConstraints,
   compBasicConstraints,
   compChange,
-  connected,
-  isolated,
+  defaultConstraints,
   moduleHelpers,
   modulePetriAdditions,
   modulePetriConcepts,
@@ -582,11 +581,7 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
     activated        = "activatedTrans"
     activatedDefault = "defaultActivTrans"
     compConstraints = maybe
-      [i|
-  #{connected "defaultGraphIsConnected" $ isConnected basicC}
-  #{isolated "defaultNoIsolatedNodes" $ isConnected basicC}
-  \##{activatedDefault} >= #{atLeastActive basicC}
-  theActivatedDefaultTransitions[#{activatedDefault}]|]
+      (defaultConstraints activatedDefault basicC)
       compAdvConstraints
       specific
     conflict = isJust muniquePlace

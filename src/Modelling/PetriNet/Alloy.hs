@@ -10,6 +10,7 @@ module Modelling.PetriNet.Alloy (
   compBasicConstraints,
   compChange,
   connected,
+  defaultConstraints,
   getAlloyInstances,
   isolated,
   moduleHelpers,
@@ -83,6 +84,7 @@ removeLines n = unlines . drop n . lines
 
 {-|
 A set of constraints enforcing settings of 'BasicConfig'.
+(Besides 'defaultConstraints')
 -}
 compBasicConstraints
   :: String
@@ -101,25 +103,46 @@ compBasicConstraints activatedTrans BasicConfig {
   minTokensOverall
   } = [i|
   let t = (sum p : Places | p.tokens) | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
-  some tokenChange
-    implies
-      let t = (sum p : Places | p.defaultTokens) |
-        t = 0 or t >= #{minTokensOverall} and t <= #{maxTokensOverall}
-  all p : Places |
-    p.tokens =< #{maxTokensPerPlace} and p.defaultTokens =< #{maxTokensPerPlace}
+  all p : Places | p.tokens =< #{maxTokensPerPlace}
   all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
-  all weight : Nodes.defaultFlow[Nodes] | weight =< #{maxFlowPerEdge}
   let theflow = (sum f, t : Nodes | f.flow[t]) |
     theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
-  some defaultFlow
-    implies
-      let theflow = (sum f, t : Nodes | f.defaultFlow[t]) |
-        theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
   \##{activatedTrans} >= #{atLeastActive}
   theActivatedTransitions[#{activatedTrans}]
   #{connected "graphIsConnected" isConnected}
   #{isolated "noIsolatedNodes" isConnected}
 |]
+
+{-|
+A set of constraints enforcing settings of 'BasicConfig' for the net under
+default conditions.
+-}
+defaultConstraints
+  :: String
+  -- ^ The name of the Alloy variable for the set of default activated Transitions.
+  -> BasicConfig
+  -- ^ the configuration to enforce.
+  -> String
+defaultConstraints activatedDefault BasicConfig {
+  atLeastActive,
+  isConnected,
+  maxFlowOverall,
+  maxFlowPerEdge,
+  maxTokensOverall,
+  maxTokensPerPlace,
+  minFlowOverall,
+  minTokensOverall
+  } = [i|
+  let t = (sum p : Places | p.defaultTokens) |
+    t >= #{minTokensOverall} and t <= #{maxTokensOverall}
+  all p : Places | p.defaultTokens =< #{maxTokensPerPlace}
+  all weight : Nodes.defaultFlow[Nodes] | weight =< #{maxFlowPerEdge}
+  let theflow = (sum f, t : Nodes | f.defaultFlow[t]) |
+    theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
+  \##{activatedDefault} >= #{atLeastActive}
+  theActivatedDefaultTransitions[#{activatedDefault}]
+  #{connected "defaultGraphIsConnected" isConnected}
+  #{isolated "defaultNoIsolatedNodes" isConnected}|]
 
 connected :: String -> Maybe Bool -> String
 connected p = maybe "" $ \c -> (if c then "" else "not ") ++ p
