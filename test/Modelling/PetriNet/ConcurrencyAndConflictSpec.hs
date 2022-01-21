@@ -121,6 +121,10 @@ checkPickConflictInstance = f . fmap snd
     f [Just x, Nothing] = isValidConflict x
     f _                 = False
 
+{-|
+Beware: calling this function is only safe if the list of ''graphLayout's
+is not empty.
+-}
 addDrawArgs
   :: (a -> BasicConfig)
   -> (Bool -> Bool -> Bool -> GraphvizCommand -> b)
@@ -130,7 +134,7 @@ addDrawArgs f g c = g
   (hidePlaceNames $ f c)
   (hideTransitionNames $ f c)
   (hideWeight1 $ f c)
-  (graphLayout $ f c)
+  (head $ graphLayout $ f c)
 
 testFindConcurrencyConfig :: [FindConcurrencyConfig] -> Spec
 testFindConcurrencyConfig = testTaskGeneration

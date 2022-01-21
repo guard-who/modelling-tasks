@@ -71,12 +71,14 @@ import Modelling.PetriNet.Types (
   DrawSettings (..),
   PetriLike (..),
   PetriMath (..),
+  PetriNet,
   defaultAdvConfig,
   defaultAlloyConfig,
   defaultBasicConfig,
   defaultChangeConfig,
   flowIn, initial, isPlaceNode,
   mapChange,
+  randomDrawSettings,
   shuffleNames,
   )
 
@@ -108,8 +110,8 @@ import System.Random.Shuffle            (shuffleM)
 
 type Math = PetriMath Formula
 
-type GraphToMathInstance = MatchInstance (PetriLike String) Math
-type MathToGraphInstance = MatchInstance Math (PetriLike String)
+type GraphToMathInstance = MatchInstance PetriNet Math
+type MathToGraphInstance = MatchInstance Math PetriNet
 
 {-# DEPRECATED addPartNames "the whole type class NamedParts will be removed" #-}
 class NamedParts n where
@@ -153,7 +155,6 @@ defaultMathConfig = MathConfig {
 
 data MatchInstance a b = MatchInstance {
   from :: a,
-  drawSettings :: DrawSettings,
   showSolution :: Bool,
   to :: Map Int (Bool, b)
   }
@@ -171,7 +172,6 @@ instance Bifunctor MatchInstance where
 instance Bitraversable MatchInstance where
   bitraverse f g m@MatchInstance {} = MatchInstance
     <$> f (from m)
-    <*> pure (drawSettings m)
     <*> pure (showSolution m)
     <*> traverse (traverse g) (to m)
 
@@ -188,21 +188,21 @@ evalRandTWith = flip evalRandT . mkStdGen
 writeDia
   :: (OutputMonad m, MonadIO m)
   => FilePath
-  -> MatchInstance (PetriLike String) b
+  -> MatchInstance PetriNet b
   -> LangM' m (MatchInstance FilePath b)
-writeDia path inst = bimapM (writeGraph (drawSettings inst) path "") return inst
+writeDia path = bimapM (\(n, ds) -> writeGraph ds path "" n) return
 
 writeDias
   :: (OutputMonad m, MonadIO m)
   => FilePath
-  -> MatchInstance a (PetriLike String)
+  -> MatchInstance a PetriNet
   -> LangM' m (MatchInstance a FilePath)
 writeDias path inst =
   let inst' = inst {
         from = from inst,
         to   = mapWithKey (\k -> second (show k,)) $ to inst
         }
-  in bimapM return (uncurry $ writeGraph (drawSettings inst) path) inst'
+  in bimapM return (\(l, (n, d)) -> writeGraph d path l n) inst'
 
 writeGraph
   :: (MonadIO m, OutputMonad m)
@@ -238,19 +238,21 @@ graphToMath
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance (PetriLike String) Math)
+  -> ExceptT String IO (MatchInstance PetriNet Math)
 graphToMath c segment seed = evalRandTWith seed $ do
-  (d, m, ms) <- matchToMath toPetriMath c segment
+  (d, m, ms) <- matchToMath (return . toPetriMath) c segment
   matchMathInstance c d m $ fst <$> ms
 
 mathToGraph
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance Math (PetriLike String))
+  -> ExceptT String IO (MatchInstance Math PetriNet)
 mathToGraph c segment seed = evalRandTWith seed $ do
-  (d, m, ds) <- matchToMath id c segment
+  (d, m, ds) <- matchToMath addDrawingSettings c segment
   matchMathInstance c m d $ fst <$> ds
+  where
+    addDrawingSettings p = (p,) <$> randomDrawSettings (basicConfig c)
 
 matchMathInstance
   :: MonadRandom m
@@ -263,22 +265,16 @@ matchMathInstance c x y ys = do
   ys' <- shuffleM $ (True, y) : ((False,) <$> ys)
   return $ MatchInstance {
     from = x,
-    drawSettings =  DrawSettings {
-      withPlaceNames = not $ hidePlaceNames $ basicConfig c,
-      withTransitionNames = not $ hideTransitionNames $ basicConfig c,
-      with1Weights = not $ hideWeight1 $ basicConfig c,
-      withGraphvizCommand = graphLayout $ basicConfig c
-      },
     showSolution = printSolution c,
     to = fromList $ zip [1..] ys'
     }
 
 matchToMath
   :: RandomGen g
-  => (PetriLike String -> a)
+  => (PetriLike String -> RandT g (ExceptT String IO) a)
   -> MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (PetriLike String, Math, [(a, Change)])
+  -> RandT g (ExceptT String IO) (PetriNet, Math, [(a, Change)])
 matchToMath toOutput config segment = do
   (f, net, math) <- netMathInstance config segment
   fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
@@ -287,11 +283,14 @@ matchToMath toOutput config segment = do
     then do
     alloyChanges <- lift $ except $ mapM addChange fList'
     changes <- firstM parse `mapM` alloyChanges
-    return (net, math, changes)
+    ds <- randomDrawSettings bc
+    return ((net, ds), math, changes)
     else matchToMath toOutput config segment
   where
-    parse x = fmap toOutput $
-      lift $ except $ parseRenamedPetriLike "flow" "tokens" x
+    bc = basicConfig config
+    parse x = do
+      pl <- lift $ except $ parseRenamedPetriLike "flow" "tokens" x
+      toOutput pl
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p

@@ -21,11 +21,13 @@ import qualified Data.Map.Lazy                    as M (
   )
 import qualified Data.Set                         as S (empty, union)
 
+import Modelling.Auxiliary.Common       (oneOf)
+
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Random             (RandomGen, RandT)
+import Control.Monad.Random             (MonadRandom, RandT, RandomGen)
 import Control.Monad.Trans              (MonadTrans(lift))
 import Data.Bimap                       (Bimap)
-import Data.GraphViz.Attributes.Complete (GraphvizCommand (Neato))
+import Data.GraphViz.Attributes.Complete (GraphvizCommand (..))
 import Data.Map.Lazy                    (Map)
 import Data.Maybe                       (fromMaybe)
 import GHC.Generics                     (Generic)
@@ -369,7 +371,7 @@ data BasicConfig = BasicConfig
   , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
   , isConnected :: Maybe Bool
-  , graphLayout :: GraphvizCommand
+  , graphLayout :: [GraphvizCommand]
   , hideWeight1 :: Bool
   , hidePlaceNames :: Bool
   , hideTransitionNames :: Bool
@@ -387,7 +389,7 @@ defaultBasicConfig = BasicConfig
   , maxFlowOverall = 12
   , maxFlowPerEdge = 2
   , isConnected = Just True
-  , graphLayout = Neato
+  , graphLayout = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork]
   , hideWeight1 = True
   , hidePlaceNames = False
   , hideTransitionNames = False
@@ -487,3 +489,17 @@ data DrawSettings = DrawSettings {
   with1Weights         :: Bool,
   withGraphvizCommand  :: GraphvizCommand
   } deriving (Generic, Read, Show)
+
+type PetriNet = (PetriLike String, DrawSettings)
+
+drawSettingsWithCommand :: BasicConfig -> GraphvizCommand -> DrawSettings
+drawSettingsWithCommand config c = DrawSettings {
+  withPlaceNames = not $ hidePlaceNames config,
+  withTransitionNames = not $ hideTransitionNames config,
+  with1Weights = not $ hideWeight1 config,
+  withGraphvizCommand = c
+  }
+
+randomDrawSettings :: MonadRandom m => BasicConfig -> m DrawSettings
+randomDrawSettings config =
+  drawSettingsWithCommand config <$> oneOf (graphLayout config)

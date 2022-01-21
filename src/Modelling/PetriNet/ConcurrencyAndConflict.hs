@@ -47,6 +47,7 @@ import qualified Data.Set                         as Set (
   toList,
   )
 
+import Modelling.Auxiliary.Common                 (oneOf)
 import Modelling.Auxiliary.Output (
   LangM',
   LangM,
@@ -93,8 +94,10 @@ import Modelling.PetriNet.Types         (
   FindConcurrencyConfig (..), FindConflictConfig (..),
   PetriConflict (Conflict, conflictTrans),
   PetriLike,
+  PetriNet,
   PickConcurrencyConfig (..), PickConflictConfig (..),
   placeNames,
+  randomDrawSettings,
   shuffleNames,
   transitionNames,
   traversePetriLike,
@@ -135,9 +138,8 @@ data FindInstance a = FindInstance {
   }
   deriving (Generic, Read, Show)
 
-data PickInstance = PickInstance {
-  drawPickWith :: DrawSettings,
-  nets :: Map Int (Bool, PetriLike String)
+newtype PickInstance = PickInstance {
+  nets :: Map Int (Bool, PetriNet)
   }
   deriving (Generic, Read, Show)
 
@@ -340,14 +342,15 @@ findConcurrencyGenerate
   -> Int
   -> Int
   -> ExceptT String IO (FindInstance (Concurrent String))
-findConcurrencyGenerate config segment seed = do
-  (d, c) <- evalRandT (findConcurrency config segment) $ mkStdGen seed
+findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
+  (d, c) <- findConcurrency config segment
+  gc <- oneOf $ graphLayout bc
   return $ FindInstance {
     drawFindWith   = DrawSettings {
       withPlaceNames = not $ hidePlaceNames bc,
       withTransitionNames = not $ hideTransitionNames bc,
       with1Weights = not $ hideWeight1 bc,
-      withGraphvizCommand = graphLayout bc
+      withGraphvizCommand = gc
       },
     transitionPair = c,
     net = d,
@@ -372,14 +375,15 @@ findConflictGenerate
   -> Int
   -> Int
   -> ExceptT String IO (FindInstance Conflict)
-findConflictGenerate config segment seed = do
-  (d, c) <- evalRandT (findConflict config segment) $ mkStdGen seed
+findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
+  (d, c) <- findConflict config segment
+  gc <- oneOf $ graphLayout bc
   return $ FindInstance {
     drawFindWith = DrawSettings {
       withPlaceNames = not $ hidePlaceNames bc,
       withTransitionNames = not $ hideTransitionNames bc,
       with1Weights = not $ hideWeight1 bc,
-      withGraphvizCommand = graphLayout bc
+      withGraphvizCommand = gc
       },
     transitionPair = c,
     net = d,
@@ -433,14 +437,9 @@ pickGenerate pick bc config segment seed = flip evalRandT (mkStdGen seed) $ do
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
   ns'' <- lift $ bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
+  ns''' <- mapM (\(n, m) -> (n,,m) <$> randomDrawSettings (bc config)) ns''
   return $ PickInstance {
-    drawPickWith = DrawSettings {
-      withPlaceNames = not $ hidePlaceNames $ bc config,
-      withTransitionNames = not $ hideTransitionNames $ bc config,
-      with1Weights = not $ hideWeight1 $ bc config,
-      withGraphvizCommand = graphLayout $ bc config
-      },
-    nets = M.fromList $ zip [1 ..] [(isJust m, n) | (n, m) <- ns'']
+    nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | (n, d, m) <- ns''']
     }
 
 renderWith
@@ -478,8 +477,8 @@ renderPick
 renderPick path task config =
   M.foldrWithKey render (return mempty) $ nets config
   where
-    render x (b, net) ns = do
-      file <- renderWith path (task ++ '-' : show x) net (drawPickWith config)
+    render x (b, (net, ds)) ns = do
+      file <- renderWith path (task ++ '-' : show x) net ds
       M.insert x (b, file) <$> ns
 
 pickConcurrency
