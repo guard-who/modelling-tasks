@@ -17,6 +17,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   findConflictEvaluation,
   findConflictGenerate,
   findConflictTask,
+  findInitial,
   findTaskInstance,
   parseConcurrency,
   parseConflict,
@@ -81,6 +82,7 @@ import Modelling.PetriNet.Diagram       (drawNet, getDefaultNet, getNet)
 import Modelling.PetriNet.Parser        (
   asSingleton,
   )
+import Modelling.PetriNet.Reach.Type    (Transition (Transition))
 import Modelling.PetriNet.Types         (
   AdvConfig,
   BasicConfig (..),
@@ -160,14 +162,19 @@ findConcurrencyTask path task = do
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
-    code [i|("t1", "t2")|]
+    code $ show findInitial
     translate $ do
-      english " as answer would indicate that transitions t1 and t2 are concurrently activated under the initial marking. "
-      german " als Antwort würde bedeuten, dass Transitionen t1 und t2 unter der Startmarkierung nebenläufig aktiviert sind. "
+      let t1 = show $ fst findInitial
+          t2 = show $ snd findInitial
+      english [i| as answer would indicate that transitions #{t1} and #{t2} are concurrently activated under the initial marking. |]
+      german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung nebenläufig aktiviert sind. |]
     translate $ do
       english "The order of transitions within the pair does not matter here."
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
   paragraph hoveringInformation
+
+findInitial :: (Transition, Transition)
+findInitial = (Transition 0, Transition 1)
 
 findConcurrencyEvaluation
   :: OutputMonad m
@@ -232,11 +239,12 @@ findConflictTask path task = do
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
-    code [i|("t1", "t2")|]
-    text " would indicate that transitions t1 and t2 are in conflict under the initial marking."
+    code $ show findInitial
     translate $ do
-      english " as answer would indicate that transitions t1 and t2 are in conflict under the initial marking. "
-      german " als Antwort würde bedeuten, dass Transitionen t1 und t2 unter der Startmarkierung in Konflikt stehen. "
+      let t1 = show $ fst findInitial
+          t2 = show $ snd findInitial
+      english [i| as answer would indicate that transitions #{t1} and #{t2} are in conflict under the initial marking. |]
+      german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung in Konflikt stehen. |]
     translate $ do
       english "The order of transitions within the pair does not matter here."
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
