@@ -7,9 +7,18 @@ import Modelling.PetriNet.Types
 import Control.Applicative              (Alternative ((<|>)))
 
 checkBasicConfig :: BasicConfig -> Maybe String
-checkBasicConfig BasicConfig{places,transitions,atLeastActive
-                   , minTokensOverall,maxTokensOverall,maxTokensPerPlace
-                   , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
+checkBasicConfig BasicConfig{
+  atLeastActive,
+  graphLayout,
+  maxFlowOverall,
+  maxFlowPerEdge,
+  maxTokensOverall,
+  maxTokensPerPlace,
+  minFlowOverall,
+  minTokensOverall,
+  places,
+  transitions
+  }
  | places <= 0
   = Just "The number of places must be positive."
  | places > 8
@@ -44,6 +53,8 @@ checkBasicConfig BasicConfig{places,transitions,atLeastActive
   = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
  | transitions + places > 1 + minFlowOverall 
   = Just "The number of transitions and places exceeds 'minFlowOverall' too much to create a connected net."
+ | null graphLayout
+ = Just "At least one graph layout needs to be provided."
  | otherwise
   = Nothing
   
@@ -103,7 +114,15 @@ prohibitHideTransitionNames bc
   | otherwise
   = Nothing
 
-checkConfigForPick :: BasicConfig -> ChangeConfig -> Maybe String
-checkConfigForPick basic change
+checkConfigForPick :: Bool -> BasicConfig -> ChangeConfig -> Maybe String
+checkConfigForPick useDifferent basic change
   = checkBasicConfig basic
   <|> checkChangeConfig basic change
+  <|> checkGraphLayouts useDifferent basic
+
+checkGraphLayouts :: Bool -> BasicConfig -> Maybe String
+checkGraphLayouts useDifferent bc
+  | useDifferent && length (graphLayout bc) <= 2
+  = Just "useDifferentGraphLayouts may only be set if graphLayout is set to at least two layouts"
+  | otherwise
+  = Nothing

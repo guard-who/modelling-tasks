@@ -96,6 +96,7 @@ import Modelling.PetriNet.Types         (
   PetriLike,
   PetriNet,
   PickConcurrencyConfig (..), PickConflictConfig (..),
+  drawSettingsWithCommand,
   placeNames,
   randomDrawSettings,
   shuffleNames,
@@ -408,27 +409,30 @@ pickConcurrencyGenerate
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickConcurrencyGenerate = pickGenerate pickConcurrency bc
+pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud
   where
     bc config = basicConfig (config :: PickConcurrencyConfig)
+    ud config = useDifferentGraphLayouts (config :: PickConcurrencyConfig)
 
 pickConflictGenerate
   :: PickConflictConfig
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickConflictGenerate = pickGenerate pickConflict bc
+pickConflictGenerate = pickGenerate pickConflict bc ud
   where
     bc config = basicConfig (config :: PickConflictConfig)
+    ud config = useDifferentGraphLayouts (config :: PickConflictConfig)
 
 pickGenerate
   :: (c -> Int -> RandT StdGen (ExceptT String IO) [(PetriLike String, Maybe a)])
   -> (c -> BasicConfig)
+  -> (c -> Bool)
   -> c
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickGenerate pick bc config segment seed = flip evalRandT (mkStdGen seed) $ do
+pickGenerate pick bc useDifferent config segment seed = flip evalRandT (mkStdGen seed) $ do
   ns <- pick config segment
   ns'  <- shuffleM ns
   let ts = nub $ concat $ transitionNames . fst <$> ns'
@@ -437,10 +441,16 @@ pickGenerate pick bc config segment seed = flip evalRandT (mkStdGen seed) $ do
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
   ns'' <- lift $ bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
-  ns''' <- mapM (\(n, m) -> (n,,m) <$> randomDrawSettings (bc config)) ns''
+  s <- drawSettingsWithCommand (bc config) <$> oneOf (graphLayout $ bc config)
+  ns''' <- mapM (\(n, m) -> (n,,m) <$> getDrawingSettings s) ns''
   return $ PickInstance {
     nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | (n, d, m) <- ns''']
     }
+  where
+    getDrawingSettings s =
+      if useDifferent config
+      then randomDrawSettings (bc config)
+      else return s
 
 renderWith
   :: (MonadIO m, OutputMonad m)
@@ -700,9 +710,10 @@ checkFindConcurrencyConfig FindConcurrencyConfig {
 checkPickConcurrencyConfig :: PickConcurrencyConfig -> Maybe String
 checkPickConcurrencyConfig PickConcurrencyConfig {
   basicConfig,
-  changeConfig
+  changeConfig,
+  useDifferentGraphLayouts
   }
-  = checkConfigForPick basicConfig changeConfig
+  = checkConfigForPick useDifferentGraphLayouts basicConfig changeConfig
 
 checkFindConflictConfig :: FindConflictConfig -> Maybe String
 checkFindConflictConfig FindConflictConfig {
@@ -714,6 +725,7 @@ checkFindConflictConfig FindConflictConfig {
 checkPickConflictConfig :: PickConflictConfig -> Maybe String
 checkPickConflictConfig PickConflictConfig {
   basicConfig,
-  changeConfig
+  changeConfig,
+  useDifferentGraphLayouts
   }
-  = checkConfigForPick basicConfig changeConfig
+  = checkConfigForPick useDifferentGraphLayouts basicConfig changeConfig

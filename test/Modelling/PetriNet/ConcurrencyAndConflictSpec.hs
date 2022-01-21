@@ -183,14 +183,17 @@ validPickConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> [PickConcurrencyConfig]
 validPickConcurrencyConfigs cs =
-  uncurry PickConcurrencyConfig <$> cs <*> pure alloyTestConfig
+  uncurry PickConcurrencyConfig <$> cs <*> pure False <*> pure alloyTestConfig
 
 validPickConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> [PickConflictConfig]
 validPickConflictConfigs cs = do
   unique <- [Nothing, Just True, Just False]
-  ($ unique) . uncurry PickConflictConfig <$> cs <*> pure alloyTestConfig
+  ($ unique) . uncurry PickConflictConfig
+    <$> cs
+    <*> pure False
+    <*> pure alloyTestConfig
 
 isValidConcurrency :: Concurrent String -> Bool
 isValidConcurrency c@(Concurrent (t1, t2))

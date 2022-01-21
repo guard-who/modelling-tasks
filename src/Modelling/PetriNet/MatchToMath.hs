@@ -11,6 +11,7 @@ module Modelling.PetriNet.MatchToMath (
   MatchInstance (..),
   MathToGraphInstance,
   addPartNames,
+  checkGraphToMathConfig,
   checkMathConfig,
   defaultMathConfig,
   graphToMath,
@@ -27,6 +28,7 @@ import qualified Data.Map                         as M (
   filter, foldrWithKey, keys, lookup, partition,
   )
 
+import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output       (
   LangM,
   LangM',
@@ -54,7 +56,9 @@ import Modelling.PetriNet.Alloy (
   taskInstance,
   )
 import Modelling.PetriNet.BasicNetFunctions (
-  checkBasicConfig, checkChangeConfig
+  checkBasicConfig,
+  checkChangeConfig,
+  checkGraphLayouts,
   )
 import Modelling.PetriNet.Diagram       (drawNet)
 import Modelling.PetriNet.Reach.Group   (groupSVG)
@@ -76,6 +80,7 @@ import Modelling.PetriNet.Types (
   defaultAlloyConfig,
   defaultBasicConfig,
   defaultChangeConfig,
+  drawSettingsWithCommand,
   flowIn, initial, isPlaceNode,
   mapChange,
   randomDrawSettings,
@@ -135,6 +140,7 @@ data MathConfig = MathConfig {
   changeConfig :: ChangeConfig,
   generatedWrongInstances :: Int,
   printSolution :: Bool,
+  useDifferentGraphLayouts :: Bool,
   wrongInstances :: Int,
   alloyConfig :: AlloyConfig
   } deriving (Generic, Read, Show)
@@ -149,6 +155,7 @@ defaultMathConfig = MathConfig {
     },
   generatedWrongInstances = 50,
   printSolution = False,
+  useDifferentGraphLayouts = False,
   wrongInstances = 3,
   alloyConfig = defaultAlloyConfig
   }
@@ -249,10 +256,15 @@ mathToGraph
   -> Int
   -> ExceptT String IO (MatchInstance Math PetriNet)
 mathToGraph c segment seed = evalRandTWith seed $ do
-  (d, m, ds) <- matchToMath addDrawingSettings c segment
+  s <- drawSettingsWithCommand (basicConfig c)
+    <$> oneOf (graphLayout $ basicConfig c)
+  (d, m, ds) <- matchToMath (addDrawingSettings s) c segment
   matchMathInstance c m d $ fst <$> ds
   where
-    addDrawingSettings p = (p,) <$> randomDrawSettings (basicConfig c)
+    addDrawingSettings s p = (p,) <$>
+      if useDifferentGraphLayouts c
+      then randomDrawSettings (basicConfig c)
+      else return s
 
 matchMathInstance
   :: MonadRandom m
@@ -442,14 +454,25 @@ evaluation what task = do
         else Nothing
   singleChoice what msolution solution
 
+checkGraphToMathConfig :: MathConfig -> Maybe String
+checkGraphToMathConfig c@MathConfig {
+  useDifferentGraphLayouts
+  }
+  | useDifferentGraphLayouts
+  = Just "Setting useDifferentGraphLayouts to True is not supported for this task type."
+  | otherwise
+  = checkMathConfig c
+
 checkMathConfig :: MathConfig -> Maybe String
 checkMathConfig c@MathConfig {
   basicConfig,
-  changeConfig
+  changeConfig,
+  useDifferentGraphLayouts
   } = checkBasicConfig basicConfig
   <|> prohibitHideNames basicConfig
   <|> checkChangeConfig basicConfig changeConfig
   <|> checkConfig c
+  <|> checkGraphLayouts useDifferentGraphLayouts basicConfig
 
 prohibitHideNames :: BasicConfig -> Maybe String
 prohibitHideNames bc
