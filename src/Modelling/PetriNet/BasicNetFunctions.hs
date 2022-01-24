@@ -114,15 +114,17 @@ prohibitHideTransitionNames bc
   | otherwise
   = Nothing
 
-checkConfigForPick :: Bool -> BasicConfig -> ChangeConfig -> Maybe String
-checkConfigForPick useDifferent basic change
+checkConfigForPick :: Bool -> Int -> BasicConfig -> ChangeConfig -> Maybe String
+checkConfigForPick useDifferent wrongInstances basic change
   = checkBasicConfig basic
   <|> checkChangeConfig basic change
-  <|> checkGraphLayouts useDifferent basic
+  <|> checkGraphLayouts useDifferent wrongInstances basic
 
-checkGraphLayouts :: Bool -> BasicConfig -> Maybe String
-checkGraphLayouts useDifferent bc
+checkGraphLayouts :: Bool -> Int -> BasicConfig -> Maybe String
+checkGraphLayouts useDifferent wrongInstances bc
   | useDifferent && length (graphLayout bc) <= 2
-  = Just "useDifferentGraphLayouts may only be set if graphLayout is set to at least two layouts"
+  = Just "The parameter 'useDifferentGraphLayouts' may only be set if 'graphLayout' is set to at least two layouts."
+  | useDifferent && length (graphLayout bc) >= wrongInstances
+  = Just "The parameter 'graphLayout' has to contain at least as many entries as the number of 'wrongInstances' if 'useDifferentGraphLayouts' is set."
   | otherwise
   = Nothing

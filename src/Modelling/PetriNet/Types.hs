@@ -504,6 +504,26 @@ drawSettingsWithCommand config c = DrawSettings {
   withGraphvizCommand = c
   }
 
+{-|
+Provides a 'DrawSetting' by using 'drawSettingsWithCommand' and randomly picking
+one of the provided 'graphLayout's.
+-}
 randomDrawSettings :: MonadRandom m => BasicConfig -> m DrawSettings
 randomDrawSettings config =
   drawSettingsWithCommand config <$> oneOf (graphLayout config)
+
+{-|
+Provides a list of 'DrawSettings' with as many entries as specified by randomly
+picking while ensuring as few repetitions of provided 'graphLayout's as possible.
+-}
+manyRandomDrawSettings
+  :: MonadRandom m
+  => BasicConfig
+  -- ^ providing layouts to pick from
+  -> Int
+  -- ^ how many entries to return
+  -> m [DrawSettings]
+manyRandomDrawSettings config n = map (drawSettingsWithCommand config) <$> do
+  let gls = graphLayout config
+  gls' <- shuffleM gls
+  shuffleM $ take n $ concat $ repeat gls'

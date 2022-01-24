@@ -82,12 +82,14 @@ import Modelling.PetriNet.Types (
   defaultChangeConfig,
   drawSettingsWithCommand,
   flowIn, initial, isPlaceNode,
+  manyRandomDrawSettings,
   mapChange,
   randomDrawSettings,
   shuffleNames,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
+import Control.Arrow                    (first)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (
   MonadRandom,
@@ -247,7 +249,8 @@ graphToMath
   -> Int
   -> ExceptT String IO (MatchInstance PetriNet Math)
 graphToMath c segment seed = evalRandTWith seed $ do
-  (d, m, ms) <- matchToMath (return . toPetriMath) c segment
+  ds <- randomDrawSettings (basicConfig c)
+  (d, m, ms) <- matchToMath ds (map toPetriMath) c segment
   matchMathInstance c d m $ fst <$> ms
 
 mathToGraph
@@ -256,15 +259,17 @@ mathToGraph
   -> Int
   -> ExceptT String IO (MatchInstance Math PetriNet)
 mathToGraph c segment seed = evalRandTWith seed $ do
-  s <- drawSettingsWithCommand (basicConfig c)
-    <$> oneOf (graphLayout $ basicConfig c)
-  (d, m, ds) <- matchToMath (addDrawingSettings s) c segment
+  (x, xs) <- second (flip zip) <$>
+    if useDifferentGraphLayouts c
+    then do
+      (x':xs') <- manyRandomDrawSettings (basicConfig c) (wrongInstances c + 1)
+      return (x', xs')
+    else do
+      s <- drawSettingsWithCommand (basicConfig c)
+        <$> oneOf (graphLayout $ basicConfig c)
+      return (s, replicate (wrongInstances c) s)
+  (d, m, ds) <- matchToMath x xs c segment
   matchMathInstance c m d $ fst <$> ds
-  where
-    addDrawingSettings s p = (p,) <$>
-      if useDifferentGraphLayouts c
-      then randomDrawSettings (basicConfig c)
-      else return s
 
 matchMathInstance
   :: MonadRandom m
@@ -283,11 +288,12 @@ matchMathInstance c x y ys = do
 
 matchToMath
   :: RandomGen g
-  => (PetriLike String -> RandT g (ExceptT String IO) a)
+  => DrawSettings
+  -> ([PetriLike String] -> [a])
   -> MathConfig
   -> Int
   -> RandT g (ExceptT String IO) (PetriNet, Math, [(a, Change)])
-matchToMath toOutput config segment = do
+matchToMath ds toOutput config segment = do
   (f, net, math) <- netMathInstance config segment
   fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
   fList' <- take (wrongInstances config) <$> shuffleM fList
@@ -295,14 +301,12 @@ matchToMath toOutput config segment = do
     then do
     alloyChanges <- lift $ except $ mapM addChange fList'
     changes <- firstM parse `mapM` alloyChanges
-    ds <- randomDrawSettings bc
-    return ((net, ds), math, changes)
-    else matchToMath toOutput config segment
+    let changes' = uncurry zip $ first toOutput (unzip changes)
+    return ((net, ds), math, changes')
+    else matchToMath ds toOutput config segment
   where
-    bc = basicConfig config
-    parse x = do
-      pl <- lift $ except $ parseRenamedPetriLike "flow" "tokens" x
-      toOutput pl
+    parse x =
+      lift $ except $ parseRenamedPetriLike "flow" "tokens" x
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
@@ -467,12 +471,13 @@ checkMathConfig :: MathConfig -> Maybe String
 checkMathConfig c@MathConfig {
   basicConfig,
   changeConfig,
-  useDifferentGraphLayouts
+  useDifferentGraphLayouts,
+  wrongInstances
   } = checkBasicConfig basicConfig
   <|> prohibitHideNames basicConfig
   <|> checkChangeConfig basicConfig changeConfig
   <|> checkConfig c
-  <|> checkGraphLayouts useDifferentGraphLayouts basicConfig
+  <|> checkGraphLayouts useDifferentGraphLayouts wrongInstances basicConfig
 
 prohibitHideNames :: BasicConfig -> Maybe String
 prohibitHideNames bc

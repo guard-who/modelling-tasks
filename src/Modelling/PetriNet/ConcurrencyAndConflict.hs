@@ -96,7 +96,7 @@ import Modelling.PetriNet.Types         (
   PetriLike,
   PetriNet,
   PickConcurrencyConfig (..), PickConflictConfig (..),
-  drawSettingsWithCommand,
+  manyRandomDrawSettings,
   placeNames,
   randomDrawSettings,
   shuffleNames,
@@ -295,8 +295,13 @@ pickConcurrencyTask path task = do
         ++ ")."
   paragraph hoveringInformation
 
+-- TODO: replace 'wrong' in 'pickGenerate' by 'wrongInstances'
+-- if this value might be greater than 1 on task generation.
 wrongInstances :: PickInstance -> Int
 wrongInstances inst = length [False | (False, _) <- M.elems (nets inst)]
+
+wrong :: Int
+wrong = 1
 
 pickEvaluation
   :: OutputMonad m
@@ -441,16 +446,16 @@ pickGenerate pick bc useDifferent config segment seed = flip evalRandT (mkStdGen
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
   ns'' <- lift $ bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
-  s <- drawSettingsWithCommand (bc config) <$> oneOf (graphLayout $ bc config)
-  ns''' <- mapM (\(n, m) -> (n,,m) <$> getDrawingSettings s) ns''
+  s <- randomDrawSettings (bc config)
+  ns''' <- addDrawingSettings s ns''
   return $ PickInstance {
-    nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | (n, d, m) <- ns''']
+    nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- ns''']
     }
   where
-    getDrawingSettings s =
+    addDrawingSettings s ps = zip ps <$>
       if useDifferent config
-      then randomDrawSettings (bc config)
-      else return s
+      then manyRandomDrawSettings (bc config) (wrong + 1)
+      else return $ replicate (wrong + 1) s
 
 renderWith
   :: (MonadIO m, OutputMonad m)
@@ -713,7 +718,7 @@ checkPickConcurrencyConfig PickConcurrencyConfig {
   changeConfig,
   useDifferentGraphLayouts
   }
-  = checkConfigForPick useDifferentGraphLayouts basicConfig changeConfig
+  = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
 
 checkFindConflictConfig :: FindConflictConfig -> Maybe String
 checkFindConflictConfig FindConflictConfig {
@@ -728,4 +733,4 @@ checkPickConflictConfig PickConflictConfig {
   changeConfig,
   useDifferentGraphLayouts
   }
-  = checkConfigForPick useDifferentGraphLayouts basicConfig changeConfig
+  = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
