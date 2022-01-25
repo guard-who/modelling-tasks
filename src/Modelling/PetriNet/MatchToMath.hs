@@ -16,9 +16,11 @@ module Modelling.PetriNet.MatchToMath (
   defaultMathConfig,
   graphToMath,
   graphToMathEvaluation,
+  graphToMathSyntax,
   graphToMathTask,
   mathToGraph,
   mathToGraphEvaluation,
+  mathToGraphSyntax,
   mathToGraphTask,
   petriNetRnd,
   renderFormula,
@@ -422,6 +424,16 @@ mathToGraphTask path task = do
       german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegebenen mathematischen Repräsentation passen würde (und alle anderen Diagramme nicht!).|]
   paragraph hoveringInformation
 
+graphToMathSyntax
+  :: OutputMonad m
+  => GraphToMathInstance
+  -> Int
+  -> LangM m
+graphToMathSyntax task x =
+  assertion (1 <= x && x <= length (to task)) $ translate $ do
+    english "The given mathematical representation is part of the task?"
+    german "Die angegebene mathematische Repräsentation ist Bestandteil der Aufgabenstellung?"
+
 graphToMathEvaluation
   :: OutputMonad m
   => GraphToMathInstance
@@ -433,6 +445,16 @@ graphToMathEvaluation = do
         german "mathematische Repräsentation"
   evaluation what
 
+mathToGraphSyntax
+  :: OutputMonad m
+  => MathToGraphInstance
+  -> Int
+  -> LangM m
+mathToGraphSyntax task x =
+  assertion (1 <= x && x <= length (to task)) $ translate $ do
+    english "Given graphical representation is part of the task?"
+    german "Die angegebene grafische Darstellung ist Bestandteil der Aufgabenstellung?"
+
 mathToGraphEvaluation
   :: OutputMonad m
   => MathToGraphInstance
@@ -441,7 +463,7 @@ mathToGraphEvaluation
 mathToGraphEvaluation = do
   let what = translations $ do
         english "graphical representation"
-        german "grafischen Repräsentation"
+        german "grafische Darstellung"
   evaluation what
 
 evaluation
