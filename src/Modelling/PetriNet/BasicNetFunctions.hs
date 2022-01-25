@@ -122,9 +122,7 @@ checkConfigForPick useDifferent wrongInstances basic change
 
 checkGraphLayouts :: Bool -> Int -> BasicConfig -> Maybe String
 checkGraphLayouts useDifferent wrongInstances bc
-  | useDifferent && length (graphLayout bc) <= 2
-  = Just "The parameter 'useDifferentGraphLayouts' may only be set if 'graphLayout' is set to at least two layouts."
-  | useDifferent && length (graphLayout bc) >= wrongInstances
-  = Just "The parameter 'graphLayout' has to contain at least as many entries as the number of 'wrongInstances' if 'useDifferentGraphLayouts' is set."
+  | useDifferent && length (graphLayout bc) <= wrongInstances
+  = Just "The parameter 'graphLayout' has to contain more entries than the number of 'wrongInstances' if 'useDifferentGraphLayouts' is set."
   | otherwise
   = Nothing
