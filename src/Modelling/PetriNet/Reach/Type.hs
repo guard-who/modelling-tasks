@@ -18,10 +18,14 @@ import qualified Data.Map                         as M (
   )
 import qualified Data.Set                         as S (fromList)
 
+import Modelling.Auxiliary.Common       (parseInt)
+
+import Control.Monad                    (void)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
+import Text.ParserCombinators.Parsec    (Parser, char, skipMany, space)
 
 type Connection s t = ([s], t, [s])
 
@@ -78,26 +82,38 @@ conforms cap (State z) = case cap of
     (M.toList z)
 
 newtype Place = Place Int
-  deriving (Eq, Ord, Typeable, Generic, Enum)
+  deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable)
 
-instance Show Place where
-  show (Place p) = "s" ++ show p
+newtype ShowPlace = ShowPlace Place
 
-instance Read Place where
-  readsPrec p ('s':xs) = [(Place y, ys) | (y, ys) <- readsPrec p xs]
-  readsPrec _ (_:xs)   = [(error "expected s", xs)]
-  readsPrec _ []       = []
+instance Show ShowPlace where
+  show (ShowPlace (Place p)) = "s" ++ show p
+
+showPlace :: Place -> String
+showPlace = show . ShowPlace
+
+parsePlacePrec :: Int -> Parser Place
+parsePlacePrec _ = do
+  skipMany space
+  void $ char 's'
+  Place <$> parseInt
 
 newtype Transition = Transition Int
-  deriving (Eq, Ord, Typeable, Generic, Enum)
+  deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable)
 
-instance Show Transition where
-  show (Transition t) = "t" ++ show t
+newtype ShowTransition = ShowTransition Transition
 
-instance Read Transition where
-  readsPrec p ('t':xs) = [(Transition y, ys) | (y, ys) <- readsPrec p xs]
-  readsPrec _ (_:xs)   = [(error "expected t", xs)]
-  readsPrec _ []       = []
+instance Show ShowTransition where
+  show (ShowTransition (Transition t)) = "t" ++ show t
+
+showTransition :: Transition -> String
+showTransition = show . ShowTransition
+
+parseTransitionPrec :: Int -> Parser Transition
+parseTransitionPrec _ = do
+  skipMany space
+  void $ char 't'
+  Transition <$> parseInt
 
 example :: (Net Place Transition, State Place)
 example =

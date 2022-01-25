@@ -83,7 +83,10 @@ import Modelling.PetriNet.Diagram       (drawNet, getDefaultNet, getNet)
 import Modelling.PetriNet.Parser        (
   asSingleton,
   )
-import Modelling.PetriNet.Reach.Type    (Transition (Transition))
+import Modelling.PetriNet.Reach.Type (
+  ShowTransition (ShowTransition),
+  Transition (Transition),
+  )
 import Modelling.PetriNet.Types         (
   AdvConfig,
   BasicConfig (..),
@@ -117,6 +120,7 @@ import Control.Monad.Random (
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bitraversable               (bimapM)
 import Data.List                        (nub)
 import Data.Map                         (Map)
@@ -165,16 +169,19 @@ findConcurrencyTask path task = do
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
-    code $ show findInitial
+    code $ show findInitialShow
     translate $ do
-      let t1 = show $ fst findInitial
-          t2 = show $ snd findInitial
+      let t1 = show $ fst findInitialShow
+          t2 = show $ snd findInitialShow
       english [i| as answer would indicate that transitions #{t1} and #{t2} are concurrently activated under the initial marking. |]
       german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung nebenläufig aktiviert sind. |]
     translate $ do
       english "The order of transitions within the pair does not matter here."
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
   paragraph hoveringInformation
+
+findInitialShow :: (ShowTransition, ShowTransition)
+findInitialShow = bimap ShowTransition ShowTransition findInitial
 
 findInitial :: (Transition, Transition)
 findInitial = (Transition 0, Transition 1)
@@ -242,10 +249,10 @@ findConflictTask path task = do
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
-    code $ show findInitial
+    code $ show findInitialShow
     translate $ do
-      let t1 = show $ fst findInitial
-          t2 = show $ snd findInitial
+      let t1 = show $ fst findInitialShow
+          t2 = show $ snd findInitialShow
       english [i| as answer would indicate that transitions #{t1} and #{t2} are in conflict under the initial marking. |]
       german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung in Konflikt stehen. |]
     translate $ do

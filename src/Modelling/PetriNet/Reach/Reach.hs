@@ -27,6 +27,7 @@ import Modelling.PetriNet.Reach.Property (
 import Modelling.PetriNet.Reach.Roll    (net)
 import Modelling.PetriNet.Reach.Step    (executes, levels)
 import Modelling.PetriNet.Reach.Type (
+  ShowTransition (ShowTransition),
   Transition (..),
   Place(..),
   Net (transitions, start),
@@ -103,11 +104,11 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
       text $ concat [
         "Geben Sie Ihre Lösung als maximal ", show maxL,
         "-elementige Auflistung der folgenden Art an:"]
-  code $ show [Transition 1, Transition 2, Transition 3]
+  code $ show $ map ShowTransition [Transition 1, Transition 2, Transition 3]
   paragraph $ text $ concat [
     "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
-    show (Transition 1), ", danach ", show (Transition 2),
-    ", und schließlich ", show (Transition 3),
+    show (ShowTransition $ Transition 1), ", danach ", show (ShowTransition $ Transition 2),
+    ", und schließlich ", show (ShowTransition $ Transition 3),
     " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
     ]
   (`mapM_` lengthHint) $ \len -> paragraph $ text
