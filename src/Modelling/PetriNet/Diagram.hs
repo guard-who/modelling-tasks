@@ -126,11 +126,18 @@ drawGraph labelOf hidePNames hideTNames hide1 pfont graph = gedges # frame 1
       mempty
       nodes
     gedges = foldl
-      (\g (s, t, l, p) -> g # drawEdge hide1 pfont l (labelOnly s) (labelOnly t) p)
+      (\g (s, t, l, p) -> g
+        # drawEdge hide1 pfont l (labelOnly s) (labelOnly t) (nonEmpty s t p g)
+      )
       gnodes
       edges
     withLabel = first labelOf
     labelOnly = labelOf . fst
+    nonEmpty s t p g =
+      let (x, y, z) = fromJust $ pointsFromTo (labelOnly s) (labelOnly t) g
+      in case pathPoints p of
+        [] -> fromVertices [x, y, z]
+        _  -> p
 
 {-|
 Nodes are either Places (having 'Just' tokens), or Transitions (having
@@ -213,6 +220,21 @@ drawEdge hide1 f l l1 l2 path d =
         | otherwise = atop (place (text' f 20 $ show l) labelPoint # svgClass "elabel")
   in addLabel (connectOutside'' (opts path) l1 l2 d) # svgClass "."
 
+pointsFromTo
+  :: (IsName n1, IsName n2, Metric v, RealFloat n, Semigroup m)
+  => n1
+  -> n2
+  -> QDiagram b v n m
+  -> Maybe (Point v n, Point v n, Point v n)
+pointsFromTo n1 n2 g = do
+  b1 <- lookupName n1 g
+  b2 <- lookupName n2 g
+  let v = location b2 .-. location b1
+      midpoint = location b1 .+^ (v ^/ 2)
+      s' = fromMaybe (location b1) $ traceP midpoint (negated v) b1
+      e' = fromMaybe (location b2) $ traceP midpoint v b2
+  return (s', midpoint, e')
+
 connectOutside'' ::  (IsName nm1, IsName nm2, RealFloat n,
                            Typeable n, Show n) =>
                           ArrowOpts n
@@ -220,15 +242,10 @@ connectOutside'' ::  (IsName nm1, IsName nm2, RealFloat n,
                           -> nm2
                           -> QDiagram SVG V2 n Any
                           -> QDiagram SVG V2 n Any
-connectOutside'' opts n1 n2 =
-  withName n1 $ \b1 ->
-  withName n2 $ \b2 ->
-    let v = location b2 .-. location b1
-        midpoint = location b1 .+^ (v ^/ 2)
-        s' = fromMaybe (location b1) $ traceP midpoint (negated v) b1
-        e' = fromMaybe (location b2) $ traceP midpoint v b2
-    in
-      atop (arrowBetween' opts s' e' # svgClass "edge")
+connectOutside'' opts n1 n2 g =
+  let (s', _, e') = fromJust $ pointsFromTo n1 n2 g
+  in arrowBetween' opts s' e' # svgClass "edge"
+     `atop` g
 
 {-|
 Render text as a diagram.
