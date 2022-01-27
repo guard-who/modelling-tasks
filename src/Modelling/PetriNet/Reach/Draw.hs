@@ -21,7 +21,7 @@ import Data.GraphViz                    (GraphvizCommand)
 import Data.List                        (group, sort)
 import Diagrams                         (Diagram)
 import Diagrams.Backend.SVG             (B, renderSVG)
-import Diagrams.Prelude                 (mkWidth)
+import Diagrams.Prelude                 (dims2D)
 
 drawToFile
   :: (MonadIO m, Ord s, Ord t, Show s, Show t)
@@ -42,7 +42,7 @@ writeGraph
   -> IO FilePath
 writeGraph path index d = do
   let file = path ++ "graph" ++ index ++ ".svg"
-  renderSVG file (mkWidth 250) d
+  renderSVG file (dims2D 400 400) d
   groupSVG file
   return file
 

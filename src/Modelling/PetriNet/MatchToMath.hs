@@ -109,7 +109,7 @@ import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.Map                         (Map, fromList, mapWithKey, toList)
 import Data.String.Interpolate          (i)
 import Diagrams.Backend.SVG             (renderSVG)
-import Diagrams.Prelude                 (mkWidth)
+import Diagrams.Prelude                 (dims2D)
 import GHC.Generics                     (Generic)
 import Image.LaTeX.Render               (alterForHTML, imageForFormula, defaultFormulaOptions, defaultEnv, SVG, Formula)
 import Language.Alloy.Call (
@@ -226,7 +226,7 @@ writeGraph s path index pl = do
   file' <- lift $ liftIO $ runExceptT $ do
     d <- draw
     let file = path ++ "graph" ++ index ++ ".svg"
-    lift $ renderSVG file (mkWidth 250) d
+    lift $ renderSVG file (dims2D 400 400) d
     lift $ groupSVG file
     return file
   either
