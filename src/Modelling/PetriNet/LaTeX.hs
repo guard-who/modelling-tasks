@@ -69,19 +69,12 @@ transitionsSetName = "T"
 A LaTeX-'Formula' for the basic five tuple representing a Petri net.
 -}
 netLaTeX :: Formula
-netLaTeX = mathMode [i|N = #{tuple}|]
+netLaTeX = [i|N = #{tuple}|]
   where
     tuple :: Formula
     tuple = parenthesise
       $  placesSetName ++ ", "
       ++ transitionsSetName ++ ", \\vphantom{()}^{\\bullet}(), ()^{\\bullet}, m_0"
-
-{-|
-Switch the mode for the given LaTeX-'Formula' to Math mode while in text mode
-and vice versa otherwise.
--}
-mathMode :: Formula -> Formula
-mathMode = wrap "$" "$"
 
 {-|
 Wrap the given LaTeX-'Formula' into parentheses.
@@ -105,20 +98,20 @@ wrap x y zs = [i|#{x}#{zs}#{y}|]
 Create a LaTeX-'Formula' representing the order of places.
 -}
 placeOrderLaTeX :: [String] -> Formula
-placeOrderLaTeX ps = mathMode [i|#{parenthesise $ intercalate "," ps}|]
+placeOrderLaTeX ps = [i|#{parenthesise $ intercalate "," ps}|]
 
 {-|
 Create a LaTeX-'Formula' representing the set of given places.
 -}
 placesLaTeX :: [String] -> Formula
-placesLaTeX ps = mathMode [i|#{placesSetName} = #{brace $ intercalate "," ps}|]
+placesLaTeX ps = [i|#{placesSetName} = #{brace $ intercalate "," ps}|]
 
 {-|
 Create a LaTeX-'Formula' representing the set of given transitions.
 -}
 transitionsLaTeX :: [String] -> Formula
 transitionsLaTeX ts =
-  mathMode [i|#{transitionsSetName} = #{brace $ intercalate "," ts}|]
+  [i|#{transitionsSetName} = #{brace $ intercalate "," ts}|]
 
 {-|
 Create a LaTeX-'Formula' representing the tuple of the inital marking.
@@ -127,7 +120,7 @@ initialMarkingLaTeX
   :: [Node a]
   -- ^ A list of nodes which should only contain 'PlaceNode's.
   -> Formula
-initialMarkingLaTeX ns = mathMode $ "m_0 = "
+initialMarkingLaTeX ns = "m_0 = "
   ++ parenthesise (intercalate "," $ show . initial <$> ns)
 
 {-|
@@ -143,7 +136,7 @@ tokenChangeLaTeX
   -> [(Formula, Formula)]
 tokenChangeLaTeX ps ts = (uncurry inT &&& uncurry outT) <$> ts
   where
-    inT  n t = mathMode $ "^{\\bullet}" ++ n ++ tkns (flowIn t)
-    outT n t = mathMode $ n ++ "^{\\bullet}" ++ tkns (flowOut t)
+    inT  n t = "^{\\bullet}" ++ n ++ tkns (flowIn t)
+    outT n t = n ++ "^{\\bullet}" ++ tkns (flowOut t)
     tkns xs  = " = " ++ parenthesise (intercalate "," $ show <$> flowList xs)
     flowList xs = (\x -> fromMaybe 0 $ M.lookup x xs) <$> ps
