@@ -43,6 +43,7 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
+import Data.Char                        (toUpper)
 import Data.FileEmbed                   (embedStringFile)
 import Data.Maybe                       (isNothing)
 import Data.String.Interpolate          (i)
@@ -92,26 +93,7 @@ compBasicConstraints
   -> BasicConfig
   -- ^ the configuration to enforce.
   -> String
-compBasicConstraints activatedTrans BasicConfig {
-  atLeastActive,
-  isConnected,
-  maxFlowOverall,
-  maxFlowPerEdge,
-  maxTokensOverall,
-  maxTokensPerPlace,
-  minFlowOverall,
-  minTokensOverall
-  } = [i|
-  let t = (sum p : Places | p.tokens) | t >= #{minTokensOverall} and t <= #{maxTokensOverall}
-  all p : Places | p.tokens =< #{maxTokensPerPlace}
-  all weight : Nodes.flow[Nodes] | weight =< #{maxFlowPerEdge}
-  let theflow = (sum f, t : Nodes | f.flow[t]) |
-    theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
-  \##{activatedTrans} >= #{atLeastActive}
-  theActivatedTransitions[#{activatedTrans}]
-  #{connected "graphIsConnected" isConnected}
-  #{isolated "noIsolatedNodes" isConnected}
-|]
+compBasicConstraints = enforceConstraints False
 
 {-|
 A set of constraints enforcing settings of 'BasicConfig' for the net under
@@ -123,7 +105,17 @@ defaultConstraints
   -> BasicConfig
   -- ^ the configuration to enforce.
   -> String
-defaultConstraints activatedDefault BasicConfig {
+defaultConstraints = enforceConstraints True
+
+enforceConstraints
+  :: Bool
+  -- ^ If to generate constraints under default conditions.
+  -> String
+  -- ^ The name of the Alloy variable for the set of activated Transitions.
+  -> BasicConfig
+  -- ^ the configuration to enforce.
+  -> String
+enforceConstraints underDefault activated BasicConfig {
   atLeastActive,
   isConnected,
   maxFlowOverall,
@@ -133,16 +125,26 @@ defaultConstraints activatedDefault BasicConfig {
   minFlowOverall,
   minTokensOverall
   } = [i|
-  let t = (sum p : Places | p.defaultTokens) |
+  let t = (sum p : #{places} | p.#{tokens}) |
     t >= #{minTokensOverall} and t <= #{maxTokensOverall}
-  all p : Places | p.defaultTokens =< #{maxTokensPerPlace}
-  all weight : Nodes.defaultFlow[Nodes] | weight =< #{maxFlowPerEdge}
-  let theflow = (sum f, t : Nodes | f.defaultFlow[t]) |
+  all p : #{places} | p.#{tokens} =< #{maxTokensPerPlace}
+  all weight : #{nodes}.#{flow}[#{nodes}] | weight =< #{maxFlowPerEdge}
+  let theflow = (sum f, t : #{nodes} | f.#{flow}[t]) |
     theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
-  \##{activatedDefault} >= #{atLeastActive}
-  theActivatedDefaultTransitions[#{activatedDefault}]
-  #{connected "defaultGraphIsConnected" isConnected}
-  #{isolated "defaultNoIsolatedNodes" isConnected}|]
+  \##{activated} >= #{atLeastActive}
+  theActivated#{upperFirst which}Transitions[#{activated}]
+  #{connected (prepend "graphIsConnected") isConnected}
+  #{isolated (prepend "noIsolatedNodes") isConnected}|]
+  where
+    (given, prepend, which)
+      | underDefault = (("given" ++), (which ++) . upperFirst, "default")
+      | otherwise    = (id, id, "")
+    flow = prepend "flow"
+    nodes = given "Nodes"
+    places = given "Places"
+    tokens = prepend "tokens"
+    upperFirst []     = []
+    upperFirst (x:xs) = toUpper x:xs
 
 connected :: String -> Maybe Bool -> String
 connected p = maybe "" $ \c -> (if c then "" else "not ") ++ p
