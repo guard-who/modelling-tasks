@@ -13,7 +13,9 @@ module Modelling.PetriNet.MatchToMath (
   addPartNames,
   checkGraphToMathConfig,
   checkMathConfig,
+  defaultGraphToMathInstance,
   defaultMathConfig,
+  defaultMathToGraphInstance,
   graphToMath,
   graphToMathEvaluation,
   graphToMathSyntax,
@@ -27,7 +29,7 @@ module Modelling.PetriNet.MatchToMath (
   )  where
 
 import qualified Data.Map                         as M (
-  filter, foldrWithKey, keys, lookup, partition,
+  empty, filter, foldrWithKey, keys, lookup, partition,
   )
 
 import Modelling.Auxiliary.Common       (oneOf)
@@ -78,12 +80,16 @@ import Modelling.PetriNet.Types (
   PetriLike (..),
   PetriMath (..),
   PetriNet,
+  Node (PlaceNode, TransitionNode),
   defaultAdvConfig,
   defaultAlloyConfig,
   defaultBasicConfig,
   defaultChangeConfig,
   drawSettingsWithCommand,
-  flowIn, initial, isPlaceNode,
+  flowIn,
+  flowOut,
+  initial,
+  isPlaceNode,
   manyRandomDrawSettings,
   mapChange,
   randomDrawSettings,
@@ -106,6 +112,7 @@ import Control.Monad.Trans.Except       (ExceptT (ExceptT), except, runExceptT)
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
+import Data.GraphViz                    (GraphvizCommand (Circo, Dot, Fdp, Sfdp))
 import Data.Map                         (Map, fromList, mapWithKey, toList)
 import Data.String.Interpolate          (i)
 import Diagrams.Backend.SVG             (renderSVG)
@@ -601,3 +608,171 @@ run showFalseNets for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScop
 |]
     flowLine from to (Just f) = [i|  #{from}.defaultFlow[#{to}] = #{f}
 |]
+
+defaultGraphToMathInstance :: GraphToMathInstance
+defaultGraphToMathInstance = MatchInstance {
+  from = (
+    PetriLike {
+      allNodes = fromList [
+        ("s1",PlaceNode {initial = 2, flowIn = M.empty, flowOut = fromList [("t3",1)]}),
+        ("s2",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",1),("t2",1)]}),
+        ("s3",PlaceNode {initial = 1, flowIn = fromList [("t1",1),("t3",1)], flowOut = M.empty}),
+        ("s4",PlaceNode {initial = 0, flowIn = fromList [("t2",1)], flowOut = M.empty}),
+        ("t1",TransitionNode {flowIn = fromList [("s2",1)], flowOut = fromList [("s3",1)]}),
+        ("t2",TransitionNode {flowIn = fromList [("s2",1)], flowOut = fromList [("s4",1)]}),
+        ("t3",TransitionNode {flowIn = fromList [("s1",1)], flowOut = fromList [("s3",1)]})
+        ]
+      },
+    DrawSettings {
+      withPlaceNames = True,
+      withTransitionNames = True,
+      with1Weights = False,
+      withGraphvizCommand = Sfdp
+      }
+    ),
+  showSolution = False,
+  to = fromList [
+    (1,(False,PetriMath {
+      netMath = "N = \\left(S, T, \\vphantom{()}^{\\bullet}(), ()^{\\bullet}, m_0\\right)",
+      placesMath = "S = \\left\\{s_{1},s_{2},s_{3},s_{4}\\right\\}",
+      transitionsMath = "T = \\left\\{t_{1},t_{2},t_{3}\\right\\}",
+      tokenChangeMath = [
+        ("^{\\bullet}t_{1} = \\left(0,1,0,0\\right)","t_{1}^{\\bullet} = \\left(0,0,1,0\\right)"),
+        ("^{\\bullet%}t_{2} = \\left(0,1,0,0\\right)","t_{2}^{\\bullet} = \\left(1,0,0,1\\right)"),
+        ("^{\\bullet}t_{3} = \\left(1,0,0,0\\right)","t_{3}^{\\bullet} = \\left(0,0,1,1\\right)")
+        ],
+      initialMarkingMath = "m_0 = \\left(2,0,1,0\\right)",
+      placeOrderMath = Just "\\left(s_{1},s_{2},s_{3},s_{4}\\right)"
+      })),
+    (2,(False,PetriMath {
+      netMath = "N = \\left(S, T, \\vphantom{()}^{\\bullet}(), ()^{\\bullet}, m_0\\right)",
+      placesMath = "S = \\left\\{s_{1},s_{2},s_{3},s_{4}\\right\\}",
+      transitionsMath = "T = \\left\\{t_{1},t_{2},t_{3}\\right\\}",
+      tokenChangeMath = [
+        ("^{\\bullet}t_{1} = \\left(0,1,0,0\\right)","t_{1}^{\\bullet} = \\left(1,0,1,0\\right)"),
+        ("^{\\bullet}t_{2} = \\left(0,1,0,0\\right)","t_{2}^{\\bullet} = \\left(0,0,0,1\\right)"),
+        ("^{\\bullet}t_{3} = \\left(1,0,0,0\\right)","t_{3}^{\\bullet} = \\left(0,0,1,1\\right)")
+        ],
+      initialMarkingMath = "m_0 = \\left(2,0,1,0\\right)",
+      placeOrderMath = Just "\\left(s_{1},s_{2},s_{3},s_{4}\\right)"
+      })),
+    (3,(False,PetriMath {
+      netMath = "N = \\left(S, T, \\vphantom{()}^{\\bullet}(), ()^{\\bullet}, m_0\\right)",
+      placesMath = "S = \\left\\{s_{1},s_{2},s_{3},s_{4}\\right\\}",
+      transitionsMath = "T = \\left\\{t_{1},t_{2},t_{3}\\right\\}",
+      tokenChangeMath = [
+        ("^{\\bullet}t_{1} = \\left(0,1,0,0\\right)","t_{1}^{\\bullet} = \\left(1,0,0,0\\right)"),
+        ("^{\\bullet}t_{2} = \\left(0,1,0,0\\right)","t_{2}^{\\bullet} = \\left(0,0,0,1\\right)"),
+        ("^{\\bullet}t_{3} = \\left(1,0,0,0\\right)","t_{3}^{\\bullet} = \\left(0,0,1,0\\right)")
+        ],
+      initialMarkingMath = "m_0 = \\left(2,0,1,0\\right)",
+      placeOrderMath = Just "\\left(s_{1},s_{2},s_{3},s_{4}\\right)"
+      })),
+    (4,(True,PetriMath {
+      netMath = "N = \\left(S, T, \\vphantom{()}^{\\bullet}(), ()^{\\bullet}, m_0\\right)",
+      placesMath = "S = \\left\\{s_{1},s_{2},s_{3},s_{4}\\right\\}",
+      transitionsMath = "T = \\left\\{t_{1},t_{2},t_{3}\\right\\}",
+      tokenChangeMath = [
+        ("^{\\bullet}t_{1} = \\left(0,1,0,0\\right)","t_{1}^{\\bullet} = \\left(0,0,1,0\\right)"),
+        ("^{\\bullet}t_{2} = \\left(0,1,0,0\\right)","t_{2}^{\\bullet} = \\left(0,0,0,1\\right)"),
+        ("^{\\bullet}t_{3} = \\left(1,0,0,0\\right)","t_{3}^{\\bullet} = \\left(0,0,1,0\\right)")
+        ],
+      initialMarkingMath = "m_0 = \\left(2,0,1,0\\right)",
+      placeOrderMath = Just "\\left(s_{1},s_{2},s_{3},s_{4}\\right)"
+      }))
+    ]
+  }
+
+defaultMathToGraphInstance :: MathToGraphInstance
+defaultMathToGraphInstance = MatchInstance {
+  from = PetriMath {
+    netMath = "N = \\left(S, T, \\vphantom{()}^{\\bullet}(), ()^{\\bullet}, m_0\\right)",
+    placesMath = "S = \\left\\{s_{1},s_{2},s_{3},s_{4}\\right\\}",
+    transitionsMath = "T = \\left\\{t_{1},t_{2},t_{3}\\right\\}",
+    tokenChangeMath = [
+      ("^{\\bullet}t_{1} = \\left(0,0,1,0\\right)","t_{1}^{\\bullet} = \\left(1,0,0,0\\right)"),
+      ("^{\\bullet}t_{2} = \\left(0,0,0,1\\right)","t_{2}^{\\bullet} = \\left(0,1,0,0\\right)"),
+      ("^{\\bullet}t_{3} = \\left(0,0,1,0\\right)","t_{3}^{\\bullet} = \\left(0,0,0,1\\right)")
+      ],
+    initialMarkingMath = "m_0 = \\left(1,1,0,1\\right)",
+    placeOrderMath = Just "\\left(s_{1},s_{2},s_{3},s_{4}\\right)"
+    },
+  showSolution = False,
+  to = fromList [
+    (1,(True,(
+      PetriLike {
+        allNodes = fromList [
+          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",1)], flowOut = M.empty}),
+          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t2",1)], flowOut = M.empty}),
+          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",1),("t3",1)]}),
+          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
+          ("t1",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s1",1)]}),
+          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
+          ("t3",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s4",1)]})
+          ]
+        },
+      DrawSettings {
+        withPlaceNames = True,
+        withTransitionNames = True,
+        with1Weights = False,
+        withGraphvizCommand = Dot
+        }
+      ))),
+    (2,(False,(
+      PetriLike {
+        allNodes = fromList [
+          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",1)], flowOut = M.empty}),
+          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t2",1)], flowOut = M.empty}),
+          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",2),("t3",2)]}),
+          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
+          ("t1",TransitionNode {flowIn = fromList [("s3",2)], flowOut = fromList [("s1",1)]}),
+          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
+          ("t3",TransitionNode {flowIn = fromList [("s3",2)], flowOut = fromList [("s4",1)]})
+          ]
+        },
+      DrawSettings {
+        withPlaceNames = True,
+        withTransitionNames = True,
+        with1Weights = False,
+        withGraphvizCommand = Sfdp
+        }
+      ))),
+    (3,(False,(
+      PetriLike {
+        allNodes = fromList [
+          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",2)], flowOut = M.empty}),
+          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t1",1),("t2",1)], flowOut = M.empty}),
+          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",1),("t3",1)]}),
+          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
+          ("t1",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s1",2),("s2",1)]}),
+          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
+          ("t3",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s4",1)]})
+          ]
+        },
+      DrawSettings {
+        withPlaceNames = True,
+        withTransitionNames = True,
+        with1Weights = False,
+        withGraphvizCommand = Circo}
+      ))),
+    (4,(False,(
+      PetriLike {
+        allNodes = fromList [
+          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",2)], flowOut = M.empty}),
+          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t2",1)], flowOut = M.empty}),
+          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",2),("t3",1)]}),
+          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
+          ("t1",TransitionNode {flowIn = fromList [("s3",2)], flowOut = fromList [("s1",2)]}),
+          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
+          ("t3",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s4",1)]})
+          ]
+        },
+      DrawSettings {
+        withPlaceNames = True,
+        withTransitionNames = True,
+        with1Weights = False,
+        withGraphvizCommand = Fdp
+        }
+      )))
+    ]
+  }
