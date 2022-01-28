@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {-|
 Provides the ability to render Petri nets.
 -}
@@ -18,20 +20,29 @@ import Modelling.PetriNet.Parser (
 import Modelling.PetriNet.Types         (PetriLike, traversePetriLike)
 
 import Control.Arrow                    (ArrowChoice(left), first)
+import Control.Monad                    (when)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
+import Data.Data                        (Typeable)
+import Data.FileEmbed                   (embedFile)
 import Data.List                        (foldl')
 import Data.Maybe
 import Diagrams.Backend.SVG             (B, svgClass, SVG)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
 import Graphics.SVGFonts
-  (Spacing (..), TextOpts (..), Mode (..), lin, textSVG_)
-import Graphics.SVGFonts.ReadFont       (PreparedFont)
+  (Spacing (..), TextOpts (..), Mode (..), textSVG_)
+import Graphics.SVGFonts.ReadFont       (PreparedFont, loadFont')
 import Language.Alloy.Call              (AlloyInstance, Object)
-import Data.Data (Typeable)
+
+lin :: IO (PreparedFont Double)
+lin = do
+  let s = $(embedFile "fonts/LinLibertine.svg")
+      (errors, font') = loadFont' "LinLibertine.svg" s
+  when (errors /= "") (putStrLn errors)
+  return font'
 
 {-| Create a 'Diagram's graph of a Petri net like graph definition ('PetriLike')
 by distributing places and transitions using GraphViz.
