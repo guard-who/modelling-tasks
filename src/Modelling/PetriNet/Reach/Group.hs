@@ -119,9 +119,9 @@ getSVGAttributes = atTag "svg" >>>
 applyClass :: SVGGroup -> [Path]
 applyClass x = [ p{ pClass = T.filter (/='.') (svgClass x), pFillOpacity = fillOpacity x } | p <- paths x]
 
-formatSVG :: [SVGGroup] -> [SVGGroup] -> [SVGGroup]
-formatSVG [] ys = ys
-formatSVG (x:xs) ys = formatSVG rest ((x{ paths = gpaths }):ys)
+formatSVG :: [SVGGroup] -> [SVGGroup]
+formatSVG []     = []
+formatSVG (x:xs) = x{ paths = gpaths } : formatSVG rest
                 where
                   gpaths 
                     | isLabelOrEdge x = concatMap applyClass (filter (equalGroup (svgClass x) . svgClass) (x:xs))
@@ -159,4 +159,7 @@ groupSVG :: FilePath -> IO ()
 groupSVG svgPath = do
   s <- readFile svgPath
   (x:_) <- runX (parseXML (removeDoctype False s) >>> getSVGAttributes)
-  Te.writeFile svgPath (XML.renderText XML.def $ XML.Document (XML.Prologue [] Nothing []) (buildSVG x{groups = formatSVG (groups x) []}) [])
+  Te.writeFile svgPath $ XML.renderText XML.def $ XML.Document
+    (XML.Prologue [] Nothing [])
+    (buildSVG x{groups = formatSVG (groups x)})
+    []
