@@ -638,7 +638,7 @@ defaultGraphToMathInstance = MatchInstance {
       transitionsMath = "T = \\left\\{t_{1},t_{2},t_{3}\\right\\}",
       tokenChangeMath = [
         ("^{\\bullet}t_{1} = \\left(0,1,0,0\\right)","t_{1}^{\\bullet} = \\left(0,0,1,0\\right)"),
-        ("^{\\bullet%}t_{2} = \\left(0,1,0,0\\right)","t_{2}^{\\bullet} = \\left(1,0,0,1\\right)"),
+        ("^{\\bullet}t_{2} = \\left(0,1,0,0\\right)","t_{2}^{\\bullet} = \\left(1,0,0,1\\right)"),
         ("^{\\bullet}t_{3} = \\left(1,0,0,0\\right)","t_{3}^{\\bullet} = \\left(0,0,1,1\\right)")
         ],
       initialMarkingMath = "m_0 = \\left(2,0,1,0\\right)",
