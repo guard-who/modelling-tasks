@@ -26,6 +26,7 @@ dependencies:
   - SVGFonts
   - base
   - bimap
+  - bytestring
   - call-alloy >= 0.2.0.4 && < 0.3
   - containers
   - diagrams-graphviz
@@ -42,6 +43,7 @@ dependencies:
   - random-shuffle
   - split
   - string-interpolate
+  - svg-builder
   - text
   - transformers
   - hxt

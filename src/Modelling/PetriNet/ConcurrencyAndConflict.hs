@@ -87,6 +87,7 @@ import Modelling.PetriNet.Reach.Type (
   ShowTransition (ShowTransition),
   Transition (Transition),
   )
+import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types         (
   AdvConfig,
   BasicConfig (..),
@@ -107,8 +108,6 @@ import Modelling.PetriNet.Types         (
   traversePetriLike,
   )
 
-import Modelling.PetriNet.Reach.Group (groupSVG)
-
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Random (
   RandT,
@@ -126,8 +125,6 @@ import Data.List                        (nub)
 import Data.Map                         (Map)
 import Data.Maybe                       (isJust, isNothing)
 import Data.String.Interpolate          (i)
-import Diagrams.Backend.SVG             (renderSVG)
-import Diagrams.Prelude                 (dims2D)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
   AlloyInstance, Object, getSingle, lookupSig, unscoped
@@ -479,8 +476,7 @@ renderWith path task net config = do
       (not $ withTransitionNames config)
       (not $ with1Weights config)
       (withGraphvizCommand config)
-    liftIO $ renderSVG file (dims2D 400 400) dia
-    liftIO $ groupSVG file
+    liftIO $ writeSVG file dia
     return file
   either
     (const $ (>> return "") $ refuse $ translate $ do

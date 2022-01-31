@@ -54,6 +54,7 @@ library
       Modelling.PetriNet.Reach.Type
   other-modules:
       Modelling.Auxiliary.Common
+      Modelling.Auxiliary.Diagrams
       Modelling.PetriNet.Reach.Draw
       Modelling.PetriNet.Reach.Group
       Modelling.PetriNet.Reach.Roll
@@ -69,6 +70,7 @@ library
     , SVGFonts
     , base
     , bimap
+    , bytestring
     , call-alloy >=0.2.0.4 && <0.3
     , containers
     , diagrams-graphviz
@@ -86,6 +88,7 @@ library
     , random-shuffle
     , split
     , string-interpolate
+    , svg-builder
     , text
     , transformers
     , xml-conduit
@@ -120,6 +123,7 @@ test-suite modelling-tasks-test
     , SVGFonts
     , base
     , bimap
+    , bytestring
     , call-alloy >=0.2.0.4 && <0.3
     , containers
     , diagrams-graphviz
@@ -141,6 +145,7 @@ test-suite modelling-tasks-test
     , random-shuffle
     , split
     , string-interpolate
+    , svg-builder
     , text
     , transformers
     , xml-conduit

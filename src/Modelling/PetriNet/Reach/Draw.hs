@@ -5,6 +5,7 @@ import qualified Data.Set                         as S (toList)
 
 import Modelling.Auxiliary.Output       (LangM')
 import Modelling.PetriNet.Diagram       (drawNet)
+import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Reach.Type (
   Net (connections, places, start, transitions),
   mark,
@@ -13,15 +14,14 @@ import Modelling.PetriNet.Types (
   PetriLike (PetriLike),
   Node (PlaceNode, TransitionNode),
   )
-import Modelling.PetriNet.Reach.Group (groupSVG)
+
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.GraphViz                    (GraphvizCommand)
 import Data.List                        (group, sort)
 import Diagrams                         (Diagram)
-import Diagrams.Backend.SVG             (B, renderSVG)
-import Diagrams.Prelude                 (dims2D)
+import Diagrams.Backend.SVG             (B)
 
 drawToFile
   :: (MonadIO m, Ord s, Ord t, Show s, Show t)
@@ -42,8 +42,7 @@ writeGraph
   -> IO FilePath
 writeGraph path index d = do
   let file = path ++ "graph" ++ index ++ ".svg"
-  renderSVG file (dims2D 400 400) d
-  groupSVG file
+  writeSVG file d
   return file
 
 drawPetriWithDefaults

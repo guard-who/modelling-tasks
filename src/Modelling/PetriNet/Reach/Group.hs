@@ -1,6 +1,18 @@
 {-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, OverloadedLists #-}
 
-module Modelling.PetriNet.Reach.Group (groupSVG) where
+module Modelling.PetriNet.Reach.Group (writeSVG) where
+
+import qualified Data.ByteString.Lazy             as LBS (ByteString, unpack)
+import qualified Data.Text.IO                     as T (writeFile)
+import qualified Data.Text.Lazy                   as LT (Text, toStrict)
+
+import Modelling.Auxiliary.Diagrams               (renderSVG)
+
+import Data.ByteString.Internal                   (w2c)
+import Data.Data                                  (Typeable)
+import Diagrams.Backend.SVG                       (SVG)
+import Diagrams.Prelude                           (QDiagram)
+import Diagrams.TwoD                              (V2, dims2D)
 
 import Text.XML.HXT.Core
     ( returnA,
@@ -24,7 +36,6 @@ import Text.XML.HXT.Core
 
 import Data.Tree.NTree.TypeDefs (NTree)
 
-import qualified Data.Text.Lazy.IO as Te
 import qualified Text.XML as XML
 
 import qualified Data.Text as T (Text, pack, filter, length)
@@ -155,11 +166,20 @@ removeDoctype True (c:cs)
   | c == '>' = cs
   | otherwise = removeDoctype True cs
 
-groupSVG :: FilePath -> IO ()
-groupSVG svgPath = do
-  s <- readFile svgPath
+groupSVG :: LBS.ByteString -> IO LT.Text
+groupSVG s' = do
+  let s = w2c <$> LBS.unpack s'
   (x:_) <- runX (parseXML (removeDoctype False s) >>> getSVGAttributes)
-  Te.writeFile svgPath $ XML.renderText XML.def $ XML.Document
+  return $ XML.renderText XML.def $ XML.Document
     (XML.Prologue [] Nothing [])
     (buildSVG x{groups = formatSVG (groups x)})
     []
+
+writeSVG
+  :: (Show n, Typeable n, RealFloat n, Monoid m)
+  => FilePath
+  -> QDiagram SVG V2 n m
+  -> IO ()
+writeSVG file g = do
+  svg <- groupSVG $ renderSVG (dims2D 400 400) g
+  T.writeFile file $ LT.toStrict svg
