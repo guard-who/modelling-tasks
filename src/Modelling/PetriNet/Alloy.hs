@@ -226,7 +226,7 @@ taskInstance taskF alloyF parseF alloyC config segment = do
   taskF parseF inst
   where
     randomInstance list = do
-      n <- randomInSegment segment ((length list - segment) `div` 4)
+      n <- randomInSegment segment (1 + ((length list - segment - 1) `div` 4))
       return $ list !! n
 
 randomInSegment :: (RandomGen g, Monad m) => Int -> Int -> RandT g m Int
