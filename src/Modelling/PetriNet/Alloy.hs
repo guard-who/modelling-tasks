@@ -45,7 +45,6 @@ import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Char                        (toUpper)
 import Data.FileEmbed                   (embedStringFile)
-import Data.Maybe                       (isNothing)
 import Data.String.Interpolate          (i)
 import Language.Alloy.Call (
   AlloyInstance,
@@ -204,25 +203,22 @@ taskInstance
   -> Int
   -> RandT g (ExceptT String IO) a
 taskInstance taskF alloyF parseF alloyC config segment = do
-  let is = fromIntegral <$> T.maxInstances (alloyC config)
-  x <- sequence $ randomInSegment segment <$> is
+  let is = T.maxInstances (alloyC config)
   list <- lift $ getAlloyInstances
     defaultCallAlloyConfig {
-      maxInstances = toInteger . (+1) <$> x,
+      maxInstances = is,
       timeout      = T.timeout (alloyC config)
       }
     (alloyF config)
-  when (null list) $ lift $ except $ Left "no instance available"
   when (null $ drop segment list)
     $ lift $ except $ Left "instance not available"
-  inst <- case x of
+  inst <- case fromIntegral <$> is of
     Nothing -> randomInstance list
-    Just n -> case drop n list of
-      x':_ -> return x'
-      []     -> do
-        when (isNothing $ T.timeout (alloyC config))
-          $ lift $ except $ Left "instance not available"
-        randomInstance list
+    Just n -> do
+      x <- randomInSegment segment n
+      case drop x list of
+        x':_ -> return x'
+        []   -> randomInstance list
   taskF parseF inst
   where
     randomInstance list = do
