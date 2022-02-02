@@ -368,7 +368,7 @@ graphToMathTask path task = do
     code "1"
     translate $ do
       english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
-      german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegebenen grafischen Darstellung passt würde (und alle anderen Repräsentationen nicht!).|]
+      german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegebenen grafischen Darstellung passen würde (und alle anderen Repräsentationen nicht!).|]
   paragraph hoveringInformation
 
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
@@ -413,7 +413,7 @@ mathToGraphTask path task = do
   mathToOutput latex $ from task
   paragraph $ translate $ do
     english "Which of the following diagrams represents this Petri net?"
-    german "Welche der folgenden Diagramme stellt dieses Petrinetz dar?"
+    german "Welches der folgenden Diagramme stellt dieses Petrinetz dar?"
   images show snd dias
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching diagram only.|]
