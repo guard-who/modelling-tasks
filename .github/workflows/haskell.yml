@@ -11,7 +11,7 @@ on:
       - master
 
 jobs:
-  build:
+  build_and_test:
     strategy:
       matrix:
 #        os: [ubuntu-latest, macOS-latest, windows-latest]
@@ -126,7 +126,7 @@ jobs:
         BUILD: ${{ matrix.plan.build }}
       if: contains(matrix.os, 'windows')
 
-    - name: Build on unix
+    - name: Build and test on unix
       run: |
         set -ex
         case "$BUILD" in
@@ -160,7 +160,7 @@ jobs:
         CABALVER: ${{ matrix.plan.cabal-install }}
       if: contains(matrix.os, 'windows') == false
 
-    - name: Build on windows
+    - name: Build and test on windows
       shell: powershell
       run: |
         switch ( "${env:BUILD}" ) {
