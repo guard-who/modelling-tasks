@@ -79,14 +79,19 @@ Trotzdem sollten Sie diese vereinfachten Klassendarstellungen als valide Klassen
 yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
 yesNo p q = do
   paragraph q
-  paragraph $ indent $ translate $
-    if p
-    then do
-      english "Yes."
-      german "Ja."
-    else do
-      english "No."
-      german "Nein."
+  paragraph $ indent $ localised code $ translations $
+      if p
+      then do
+        english "Yes."
+        german "Ja."
+      else do
+        english "No."
+        german "Nein."
+
+localised :: (String -> LangM' m a) -> Map Language String -> LangM' m a
+localised f ts = LangM $ \l ->
+  let t = localise l ts
+  in f t `withLang` l
 
 addPretext :: OutputMonad m => LangM' m a -> LangM' m a
 addPretext = (>>) $
@@ -146,7 +151,7 @@ singleChoice what msolutionString solution choice = do
       points = if correct then 1 else 0
   yesNo correct $ multiLang [
     (English, "Chosen " ++ localise English what ++ " is correct?"),
-    (English, "Die gewählte " ++ localise German what ++ " ist korrekt?")]
+    (German, "Die gewählte " ++ localise German what ++ " ist korrekt?")]
   printSolutionAndAssert msolutionString points
 
 {-|
