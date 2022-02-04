@@ -3,6 +3,7 @@
 module Modelling.PetriNet.Reach.Group (writeSVG) where
 
 import qualified Data.ByteString.Lazy             as LBS (ByteString, unpack)
+import qualified Data.Map                         as M (fromList)
 import qualified Data.Text.IO                     as T (writeFile)
 import qualified Data.Text.Lazy                   as LT (Text, toStrict)
 
@@ -155,7 +156,11 @@ equalGroup x y
 buildSVG :: SVGOptions -> XML.Element
 buildSVG svg = XML.Element "svg" [("xmlns", xmlns svg), ("height", height svg), ("stroke-opacity", iStrokeOpacity svg), ("viewBox", viewBox svg), ("font-size", fontSize svg), ("width", width svg), ("xmlns:xlink", xmlnsXlink svg), ("stroke", iStroke svg), ("version", version svg)]
   [ XML.NodeElement $ XML.Element "g" [("stroke-linejoin", strokeLinejoin gr), ("stroke-opacity", strokeOpacity gr), ("fill-opacity", fillOpacity gr), ("stroke", stroke gr), ("stroke-width", strokeWidth gr), ("fill", fill gr), ("stroke-linecap", strokeLinecap gr), ("stroke-miterlimit", strokeMiterlimit gr)]
-   [ XML.NodeElement $ XML.Element "path" [("d", d ps), ("class", pClass ps), ("fill-opacity", pFillOpacity ps)] [] | ps <- paths gr] | gr <- groups svg ]
+  [ XML.NodeElement $ XML.Element "path" (M.fromList $
+      [("d", d ps), ("class", pClass ps), ("fill-opacity", pFillOpacity ps)]
+      ++ [("fill", "none") | pFillOpacity ps == "0.0"])
+    []
+  | ps <- paths gr] | gr <- groups svg ]
 
 removeDoctype :: Bool -> String -> String
 removeDoctype _ "" = ""
