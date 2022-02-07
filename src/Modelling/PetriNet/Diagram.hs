@@ -172,7 +172,7 @@ drawNode
   -- ^ where to place the node
   -> Diagram B
 drawNode _ hideTName pfont (l, Nothing) p  = place
-  (addTName $ rect 20 20 # named l # svgClass "rect")
+  (addTName $ rect 20 20 # lwL 0.5 # named l # svgClass "rect")
   p
   where
     addTName
@@ -191,11 +191,11 @@ drawNode hidePName _ pfont (l, Just i) p
     p
   where
     spacer = 9
-    emptyPlace = circle 20 # named l # svgClass "node"
+    emptyPlace = circle 20 # lwL 0.5 # named l # svgClass "node"
     label
       | hidePName = mempty
       | otherwise = center (text' pfont 18 l) # translate (r2 (0, -3 * spacer)) # svgClass "nlabel"
-    token = circle 5 # fc black # svgClass "token"
+    token = circle 5 # fc black # lwL 0 # svgClass "token"
     placeToken j = token
       # translate (r2 (8 * sqrt(fromIntegral (i - 1)), 0))
       # rotateBy (fromIntegral j / fromIntegral i)
@@ -229,7 +229,7 @@ drawEdge hide1 f l l1 l2 path d =
       addLabel
         | hide1 && l == 1 = id
         | otherwise = atop (place (text' f 20 $ show l) labelPoint # svgClass "elabel")
-  in addLabel (connectOutside'' (opts path) l1 l2 d) # svgClass "."
+  in addLabel (connectOutside'' (opts path) l1 l2 d # lwL 0.5) # svgClass "."
 
 pointsFromTo
   :: (IsName n1, IsName n2, Metric v, RealFloat n, Semigroup m)
@@ -273,3 +273,4 @@ text' pfont s =
   textSVG_ (TextOpts pfont INSIDE_H KERN False s s)
   # fc black
   # lc black
+  # lwL 0.4
