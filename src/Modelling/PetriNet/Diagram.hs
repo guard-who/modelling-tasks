@@ -220,16 +220,19 @@ drawEdge
   -- ^ the diagram which contains labeled nodes already
   -> Diagram B
 drawEdge hide1 f l l1 l2 path d =
-  let opts p = with
-        & arrowShaft .~ (unLoc . head $ pathTrails p)
+  let opts = with
+        & arrowShaft .~ unLoc trail
         & arrowHead .~ arrowheadTriangle (150 @@ deg)
         & headGap .~ (tiny / 2)
-      points = concat $ pathPoints path
-      labelPoint = points !! (length points `div` 2)
+      trail = head $ pathTrails path
+      labelPoint :: Point V2 Double
+      labelPoint = trail `atParam` 0.4 .-^ 8 *^ n
+        where
+          n = trail `normalAtParam` 0.4
       addLabel
         | hide1 && l == 1 = id
-        | otherwise = atop (place (text' f 20 $ show l) labelPoint # svgClass "elabel")
-  in addLabel (connectOutside'' (opts path) l1 l2 d # lwL 0.5) # svgClass "."
+        | otherwise = atop (place (centerXY $ text' f 20 $ show l) labelPoint # svgClass "elabel")
+  in addLabel (connectOutside'' opts l1 l2 d # lwL 0.5) # svgClass "."
 
 pointsFromTo
   :: (IsName n1, IsName n2, Metric v, RealFloat n, Semigroup m)
