@@ -217,22 +217,43 @@ drawEdge
   -> Path V2 Double
   -- ^ the path along which to align the edge
   -> Diagram B
-  -- ^ the diagram which contains labeled nodes already
+  -- ^ the diagram which contains labelled nodes already
   -> Diagram B
 drawEdge hide1 f l l1 l2 path d =
   let opts = with
         & arrowShaft .~ unLoc trail
         & arrowHead .~ arrowheadTriangle (150 @@ deg)
         & headGap .~ (tiny / 2)
-      trail = head $ pathTrails path
       labelPoint :: Point V2 Double
-      labelPoint = trail `atParam` 0.4 .-^ 8 *^ n
+      labelPoint = trail `atParam` 0.5 .-^ 8 *^ n
         where
-          n = trail `normalAtParam` 0.4
+          n = trail `normalAtParam` 0.5
       addLabel
         | hide1 && l == 1 = id
         | otherwise = atop (place (centerXY $ text' f 20 $ show l) labelPoint # svgClass "elabel")
   in addLabel (connectOutside'' opts l1 l2 d # lwL 0.5) # svgClass "."
+  where
+    vector point label = maybeToList $
+      (\(b, _, e) -> straight $ unP e - unP b)
+      <$> pointsTo point label d
+    trail = onTrail addEdgePart id `mapLoc` head (pathTrails path)
+    points = head $ pathPoints path
+    addEdgePart = onLineSegments $ \xs ->
+      vector (head points) l1 ++ xs ++ vector (last points) l2
+
+pointsTo
+  :: (IsName name, Metric v, RealFloat n, Semigroup m)
+  => Point v n
+  -> name
+  -> QDiagram b v n m
+  -> Maybe (Point v n, Point v n, Point v n)
+pointsTo x n g = do
+  b <- lookupName n g
+  let v = location b .-. x
+      midpoint = x .+^ (v ^/ 2)
+      s' = fromMaybe x $ traceP midpoint (negated v) x
+      e' = fromMaybe (location b) $ traceP midpoint v b
+  return (s', midpoint, e')
 
 pointsFromTo
   :: (IsName n1, IsName n2, Metric v, RealFloat n, Semigroup m)
