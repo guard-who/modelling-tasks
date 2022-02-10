@@ -223,37 +223,37 @@ drawEdge hide1 f l l1 l2 path d =
   let opts = with
         & arrowShaft .~ unLoc trail
         & arrowHead .~ arrowheadTriangle (150 @@ deg)
-        & headGap .~ (tiny / 2)
+        & headGap .~ local 0.005
+        & headLength .~ local 10
       labelPoint :: Point V2 Double
-      labelPoint = trail `atParam` 0.5 .-^ 8 *^ n
+      labelPoint = trail `atParam` 0.4 .-^ 8 *^ n
         where
-          n = trail `normalAtParam` 0.5
+          n = trail `normalAtParam` 0.4
       addLabel
         | hide1 && l == 1 = id
         | otherwise = atop (place (centerXY $ text' f 20 $ show l) labelPoint # svgClass "elabel")
   in addLabel (connectOutside'' opts l1 l2 d # lwL 0.5) # svgClass "."
   where
-    vector point label = maybeToList $
-      (\(b, _, e) -> straight $ unP e - unP b)
-      <$> pointsTo point label d
-    trail = onTrail addEdgePart id `mapLoc` head (pathTrails path)
-    points = head $ pathPoints path
-    addEdgePart = onLineSegments $ \xs ->
-      vector (head points) l1 ++ xs ++ vector (last points) l2
-
-pointsTo
-  :: (IsName name, Metric v, RealFloat n, Semigroup m)
-  => Point v n
-  -> name
-  -> QDiagram b v n m
-  -> Maybe (Point v n, Point v n, Point v n)
-pointsTo x n g = do
-  b <- lookupName n g
-  let v = location b .-. x
-      midpoint = x .+^ (v ^/ 2)
-      s' = fromMaybe x $ traceP midpoint (negated v) x
-      e' = fromMaybe (location b) $ traceP midpoint v b
-  return (s', midpoint, e')
+    scaleAndPositionTrail
+      :: Point V2 Double
+      -> Point V2 Double
+      -> Point V2 Double
+      -> Point V2 Double
+      -> Located (Trail V2 Double)
+      -> Located (Trail V2 Double)
+    scaleAndPositionTrail pos e oldPos oldE x = scale
+      (distanceA e pos / distanceA oldPos oldE)
+      (unLoc x)
+      `at` pos
+    trail =
+      let x = head $ pathTrails path
+          points = head $ pathPoints path
+          oldPos = head points
+          oldE = last points
+      in maybe
+           x
+           (\(pos, _, e) -> scaleAndPositionTrail pos e oldPos oldE x)
+           $ pointsFromTo l1 l2 d
 
 pointsFromTo
   :: (IsName n1, IsName n2, Metric v, RealFloat n, Semigroup m)
