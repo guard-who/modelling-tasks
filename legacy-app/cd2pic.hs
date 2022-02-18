@@ -1,6 +1,7 @@
 module Main (main) where
 
-import Modelling.CdOd.Auxiliary.Util
+import Modelling.Auxiliary.Common (upperFirst)
+import Modelling.CdOd.Auxiliary.Util (redColor)
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.Output
@@ -25,8 +26,8 @@ main = do
   case args' of
     [] -> getContents >>= \contents -> run printNames redColor contents "output" Pdf
     [file] -> readFile file >>= \contents -> run printNames redColor contents file Pdf
-    [file, format] -> readFile file >>= \contents -> run printNames redColor contents file (read (firstUpper format))
-    [file, format, x] -> readFile file >>= \contents -> run printNames (specialStyle !! read x) contents file (read (firstUpper format))
+    [file, format] -> readFile file >>= \contents -> run printNames redColor contents file (read (upperFirst format))
+    [file, format, x] -> readFile file >>= \contents -> run printNames (specialStyle !! read x) contents file (read (upperFirst format))
     _ -> error "zu viele Parameter"
   where
     stripPrintNamesArg ("-p":args) = (True, args)

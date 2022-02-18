@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Modelling.CdOd.Auxiliary.Util
+import Modelling.Auxiliary.Common (upperFirst)
 import Modelling.CdOd.Output
 
 import Control.Monad (void)
@@ -16,7 +16,7 @@ main = do
   void $ case args of
    [] -> getContents >>= drawOd "output" Pdf
    [file] -> readFile file >>= drawOd file Pdf
-   [file, format] -> readFile file >>= drawOd file (read (firstUpper format))
+   [file, format] -> readFile file >>= drawOd file (read (upperFirst format))
    _ -> error "zu viele Parameter"
 
 drawOd :: FilePath -> GraphvizOutput -> String -> IO ()

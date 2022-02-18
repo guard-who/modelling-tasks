@@ -48,7 +48,7 @@ import qualified Data.Set                         as Set (
   toList,
   )
 
-import Modelling.Auxiliary.Common                 (oneOf)
+import Modelling.Auxiliary.Common                 (oneOf, upperFirst)
 import Modelling.Auxiliary.Output (
   LangM',
   LangM,
@@ -636,37 +636,44 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   no q : (Places - #{p}) | conflict[#{t1}, #{t2}, q]
   all u,v : Transitions, q : Places |
     conflict[u,v,q] implies #{t1} + #{t2} = u + v
-  #{preconditions}
-  #{conflictDistractor}|]
+  #{preconditions ""}
+  #{preconditions "Default"}
+  #{conflictDistractor "" ""}
+  #{conflictDistractor "given" "default"}|]
       | otherwise = [i|
   no x,y : givenTransitions | x != y and concurrentDefault[x + y]
   #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
   all u,v : Transitions |
     u != v and concurrent[u + v] implies #{t1} + #{t2} = u + v|]
-    preconditions = flip foldMap (addConflictCommonPreconditions conflictConfig)
+    preconditions :: String -> String
+    preconditions which = flip foldMap (addConflictCommonPreconditions conflictConfig)
       $ \case
-      True  -> [i|some (commonPreconditions[#{t1}, #{t2}] - #{p})|] :: String
-      False -> [i|no (commonPreconditions[#{t1}, #{t2}] - #{p})|]
-    conflictDistractor = flip foldMap (withConflictDistractors conflictConfig) $ \x ->
-      [i|let ts = Transitions - #{t1} - #{t2} |
-    |]
-      ++ if x
-        then let op = conflictDistractorAddExtraPreconditions conflictConfig
+      True  -> [i|some (common#{which}Preconditions[#{t1}, #{t2}] - #{p})|]
+      False -> [i|no (common#{which}Preconditions[#{t1}, #{t2}] - #{p})|]
+    conflictDistractor :: String -> String -> String
+    conflictDistractor what which = flip foldMap (withConflictDistractors conflictConfig) $ \x ->
+      [i|let ts = #{what}Transitions - #{t1} - #{t2} |
+    |] ++
+        let op = conflictDistractorAddExtraPreconditions conflictConfig
                    & maybe ">=" (bool "=" ">")
-                 distractorConflictLike = conflictDistractorOnlyConflictLike conflictConfig
-                   & bool "" [i|all p : ps | p.tokens >= p.flow[t1] and p.tokens >= p.flow[t2]
-        some p : ps | p.tokens < plus[p.flow[t1], p.flow[t2]]|]
-                 distractorConcurrentLike = conflictDistractorOnlyConcurrentLike conflictConfig
-                   & bool "" [i|all p : ps | p.tokens >= plus[p.flow[t1], p.flow[t2]]|]
-             in [i|some t1 : ts | one t2 : ts - t1 |
-      let ps = commonPreconditions[t1, t2] {
+            prepend = if null which then id else (which ++) . upperFirst
+            tokens  = prepend "tokens"
+            flow    = prepend "flow"
+            distractorConflictLike = conflictDistractorOnlyConflictLike conflictConfig
+              & bool "" [i|all p : ps | p.#{tokens} >= p.#{flow}[t1] and p.#{tokens} >= p.#{flow}[t2]
+        some p : ps | p.#{tokens} < plus[p.#{flow}[t1], p.#{flow}[t2]]|]
+            distractorConcurrentLike = conflictDistractorOnlyConcurrentLike conflictConfig
+              & bool "" [i|all p : ps | p.#{tokens} >= plus[p.#{flow}[t1], p.#{flow}[t2]]|]
+        in if x
+        then [i|some t1 : ts | one t2 : ts - t1 |
+      let ps = common#{upperFirst which}Preconditions[t1, t2] {
         \#ps #{op} \##{p}
         #{distractorConflictLike}
         #{distractorConcurrentLike}
       }|]
         else [i|no t1, t2 : ts |
-      let ps = commonPreconditions[t1, t2] |
-        \#ps > 1 and all p : ps | p.tokens >= p.flow[t1] and p.tokens >= p.flow[t2]|]
+      let ps = common#{upperFirst which}Preconditions[t1, t2] |
+        \#ps > 1 and all p : ps | p.#{tokens} >= p.#{flow}[t1] and p.#{tokens} >= p.#{flow}[t2]|]
     defaultActivTrans
       | isNothing specific = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""

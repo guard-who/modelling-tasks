@@ -9,7 +9,8 @@ module Modelling.CdOd.Output (
 import qualified Data.Map               as M (empty, insert, lookup)
 import qualified Data.Set               as S (toList)
 
-import Modelling.CdOd.Auxiliary.Util    (emptyArr, firstLower, underlinedLabel)
+import Modelling.Auxiliary.Common       (lowerFirst)
+import Modelling.CdOd.Auxiliary.Util    (emptyArr, underlinedLabel)
 import Modelling.CdOd.Types
   (AssociationType(..), Connection(..), DiagramEdge, Syntax)
 import Modelling.CdOd.Edges             (shouldBeMarked)
@@ -166,7 +167,7 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
       n:xs@(_:_) ->
         let z  = last xs
             ys = intercalate "$" $ init xs
-        in firstLower n ++ ys ++ (if z == "0" then "" else z)
+        in lowerFirst n ++ ys ++ (if z == "0" then "" else z)
       _          -> l
     arrowHeads l = case M.lookup l navigations of
       Nothing  -> [edgeEnds NoDir]

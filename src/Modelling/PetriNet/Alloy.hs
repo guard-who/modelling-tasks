@@ -23,6 +23,7 @@ module Modelling.PetriNet.Alloy (
   taskInstance,
   ) where
 
+import Modelling.Auxiliary.Common       (upperFirst)
 import Modelling.PetriNet.Types (
   AdvConfig (..),
   AlloyConfig,
@@ -43,7 +44,6 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
-import Data.Char                        (toUpper)
 import Data.FileEmbed                   (embedStringFile)
 import Data.String.Interpolate          (i)
 import Language.Alloy.Call (
@@ -142,8 +142,6 @@ enforceConstraints underDefault activated BasicConfig {
     nodes = given "Nodes"
     places = given "Places"
     tokens = prepend "tokens"
-    upperFirst []     = []
-    upperFirst (x:xs) = toUpper x:xs
 
 connected :: String -> Maybe Bool -> String
 connected p = maybe "" $ \c -> (if c then "" else "not ") ++ p

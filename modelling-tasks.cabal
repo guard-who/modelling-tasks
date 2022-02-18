@@ -25,6 +25,7 @@ flag quick-testing
 
 library
   exposed-modules:
+      Modelling.Auxiliary.Common
       Modelling.Auxiliary.Output
       Modelling.CdOd.Auxiliary.Util
       Modelling.CdOd.CD2Alloy.Transform
@@ -53,7 +54,6 @@ library
       Modelling.PetriNet.Reach.Step
       Modelling.PetriNet.Reach.Type
   other-modules:
-      Modelling.Auxiliary.Common
       Modelling.Auxiliary.Diagrams
       Modelling.PetriNet.Reach.Draw
       Modelling.PetriNet.Reach.Group

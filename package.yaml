@@ -51,6 +51,7 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
+    - Modelling.Auxiliary.Common
     - Modelling.Auxiliary.Output
     - Modelling.CdOd.Auxiliary.Util
     - Modelling.CdOd.CD2Alloy.Transform

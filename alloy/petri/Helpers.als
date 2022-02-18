@@ -9,3 +9,7 @@ fun abs[n : Int] : Int {
 fun commonPreconditions[t1, t2 : Transitions] : set Places {
   flow.Int.t1 & flow.Int.t2
 }
+
+fun commonDefaultPreconditions[t1, t2 : Transitions] : set Places {
+  defaultFlow.Int.t1 & defaultFlow.Int.t2
+}
