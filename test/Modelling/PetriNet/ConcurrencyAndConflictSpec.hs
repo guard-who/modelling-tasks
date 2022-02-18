@@ -19,12 +19,17 @@ import Modelling.PetriNet.ConcurrencyAndConflict (
   pickConflict,
   pickTaskInstance,
   )
+
+import Modelling.PetriNet.BasicNetFunctions (
+  checkConflictConfig,
+  )
 import Modelling.PetriNet.Types (
   AdvConfig (AdvConfig),
   BasicConfig (graphLayout, hidePlaceNames, hideTransitionNames, hideWeight1),
   ChangeConfig,
   Concurrent (Concurrent),
   Conflict,
+  ConflictConfig (ConflictConfig),
   FindConcurrencyConfig (..),
   FindConflictConfig (FindConflictConfig, alloyConfig),
   PetriConflict (Conflict),
@@ -49,6 +54,7 @@ import Modelling.PetriNet.TestCommon (
 import Settings                         (configDepth)
 
 import Data.GraphViz                    (GraphvizCommand)
+import Data.Maybe                       (isNothing)
 import Test.Hspec
 
 spec :: Spec
@@ -174,10 +180,21 @@ validFindConflictConfigs
   -> AdvConfig
   -> [FindConflictConfig]
 validFindConflictConfigs cs aconfig = do
-  unique <- [Nothing, Just True, Just False]
-  ($ unique) . uncurry (`FindConflictConfig` aconfig)
-    <$> cs
+  (bc, ch) <- cs
+  FindConflictConfig bc aconfig ch
+    <$> validConflictConfigs bc
+    <*> [Nothing, Just True, Just False]
     <*> pure alloyTestConfig
+
+validConflictConfigs :: BasicConfig -> [ConflictConfig]
+validConflictConfigs bc = filter (isNothing . checkConflictConfig bc) $ do
+  precon <- [Nothing, Just False, Just True]
+  [ ConflictConfig precon distr Nothing False False
+    | distr <- [Nothing, Just False]]
+    ++ [ ConflictConfig precon (Just True) distrPrecon distrConfl distrConcur
+       | distrPrecon <- [Nothing, Just False, Just True]
+       , distrConfl  <- [False, True]
+       , let distrConcur = not distrConfl]
 
 validPickConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
@@ -189,9 +206,10 @@ validPickConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> [PickConflictConfig]
 validPickConflictConfigs cs = do
-  unique <- [Nothing, Just True, Just False]
-  ($ unique) . uncurry PickConflictConfig
-    <$> cs
+  (bc, ch) <- cs
+  PickConflictConfig bc ch
+    <$> validConflictConfigs bc
+    <*> [Nothing, Just True, Just False]
     <*> pure False
     <*> pure alloyTestConfig
 

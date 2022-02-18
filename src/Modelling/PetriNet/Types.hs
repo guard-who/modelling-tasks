@@ -423,10 +423,36 @@ defaultChangeConfig = ChangeConfig
   , maxFlowChangePerEdge = 1
   }
 
+data ConflictConfig = ConflictConfig {
+  -- | to enforce (no) extra places being common preconditions
+  -- (but not in conflict) for the transitions in conflict
+  addConflictCommonPreconditions        :: Maybe Bool,
+  -- | to enforce the (non-)existence of conflict distractors
+  withConflictDistractors               :: Maybe Bool,
+  -- | to enforce the (non-)existence of more common preconditions
+  -- than places in conflict for at least one distractor
+  conflictDistractorAddExtraPreconditions :: Maybe Bool,
+  -- | to enforce that at least one distractor looks conflict like
+  conflictDistractorOnlyConflictLike    :: Bool,
+  -- | to enforce that at least one distractor looks concurrent like
+  conflictDistractorOnlyConcurrentLike  :: Bool
+  }
+  deriving (Generic, Read, Show)
+
+defaultConflictConfig :: ConflictConfig
+defaultConflictConfig = ConflictConfig {
+  addConflictCommonPreconditions        = Nothing,
+  withConflictDistractors               = Nothing,
+  conflictDistractorAddExtraPreconditions = Nothing,
+  conflictDistractorOnlyConflictLike    = False,
+  conflictDistractorOnlyConcurrentLike  = False
+  }
+
 data FindConflictConfig = FindConflictConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
+  , conflictConfig :: ConflictConfig
   , uniqueConflictPlace :: Maybe Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
@@ -436,6 +462,7 @@ defaultFindConflictConfig = FindConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
+  , conflictConfig = defaultConflictConfig
   , uniqueConflictPlace = Just True
   , alloyConfig  = defaultAlloyConfig
   }
@@ -443,6 +470,7 @@ defaultFindConflictConfig = FindConflictConfig
 data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
+  , conflictConfig :: ConflictConfig
   , uniqueConflictPlace :: Maybe Bool
   , useDifferentGraphLayouts :: Bool
   , alloyConfig  :: AlloyConfig
@@ -452,6 +480,7 @@ defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
   , changeConfig = defaultChangeConfig
+  , conflictConfig = defaultConflictConfig
   , uniqueConflictPlace = Nothing
   , useDifferentGraphLayouts = False
   , alloyConfig  = defaultAlloyConfig

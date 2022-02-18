@@ -3,6 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Modelling.PetriNet.ConcurrencyAndConflict (
   FindInstance (..),
@@ -77,7 +78,7 @@ import Modelling.PetriNet.Alloy (
   taskInstance,
   )
 import Modelling.PetriNet.BasicNetFunctions (
-  checkConfigForFind, checkConfigForPick,
+  checkConfigForFind, checkConfigForPick, checkConflictConfig
   )
 import Modelling.PetriNet.Diagram       (drawNet, getDefaultNet, getNet)
 import Modelling.PetriNet.Parser        (
@@ -94,6 +95,7 @@ import Modelling.PetriNet.Types         (
   ChangeConfig,
   Concurrent (Concurrent),
   Conflict,
+  ConflictConfig (..),
   DrawSettings (..),
   FindConcurrencyConfig (..), FindConflictConfig (..),
   PetriConflict (Conflict, conflictTrans),
@@ -108,6 +110,7 @@ import Modelling.PetriNet.Types         (
   traversePetriLike,
   )
 
+import Control.Applicative              ((<|>))
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Random (
   RandT,
@@ -121,9 +124,11 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bitraversable               (bimapM)
+import Data.Bool                        (bool)
+import Data.Function                    ((&))
 import Data.List                        (nub)
 import Data.Map                         (Map)
-import Data.Maybe                       (isJust, isNothing)
+import Data.Maybe                       (fromJust, isJust, isNothing)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
@@ -547,15 +552,27 @@ petriNetFindConfl FindConflictConfig {
   basicConfig,
   advConfig,
   changeConfig,
+  conflictConfig,
   uniqueConflictPlace
-  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) $ Just advConfig
+  }
+  = petriNetAlloy
+    basicConfig
+    changeConfig
+    (Just (conflictConfig, uniqueConflictPlace))
+    $ Just advConfig
 
 petriNetPickConfl :: PickConflictConfig -> String
 petriNetPickConfl PickConflictConfig {
   basicConfig,
   changeConfig,
+  conflictConfig,
   uniqueConflictPlace
-  } = petriNetAlloy basicConfig changeConfig (Just uniqueConflictPlace) Nothing
+  }
+  = petriNetAlloy
+    basicConfig
+    changeConfig
+    (Just (conflictConfig, uniqueConflictPlace))
+    Nothing
 
 petriNetFindConcur :: FindConcurrencyConfig -> String
 petriNetFindConcur FindConcurrencyConfig{
@@ -576,7 +593,7 @@ Generate code for PetriNet conflict and concurrency tasks
 petriNetAlloy
   :: BasicConfig
   -> ChangeConfig
-  -> Maybe (Maybe Bool)
+  -> Maybe (ConflictConfig, Maybe Bool)
   -- ^ Just for conflict task; Nothing for concurrency task
   -> Maybe AdvConfig
   -- ^ Just for find task; Nothing for pick task
@@ -595,7 +612,7 @@ pred #{predicate}[#{place}#{defaultActivTrans}#{activated} : set Transitions, #{
   \#Transitions = #{transitions basicC}
   #{compBasicConstraints activated basicC}
   #{compChange changeC}
-  #{maybe "" multiplePlaces muniquePlace}
+  #{maybe "" (multiplePlaces . snd) muniquePlace}
   #{constraints}
   #{compConstraints}
 }
@@ -610,6 +627,7 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
       compAdvConstraints
       specific
     conflict = isJust muniquePlace
+    conflictConfig = fst $ fromJust muniquePlace
     constraints :: String
     constraints
       | conflict  = [i|
@@ -617,12 +635,38 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   all q : #{p} | conflict[#{t1}, #{t2}, q]
   no q : (Places - #{p}) | conflict[#{t1}, #{t2}, q]
   all u,v : Transitions, q : Places |
-    conflict[u,v,q] implies #{t1} + #{t2} = u + v|]
+    conflict[u,v,q] implies #{t1} + #{t2} = u + v
+  #{preconditions}
+  #{conflictDistractor}|]
       | otherwise = [i|
   no x,y : givenTransitions | x != y and concurrentDefault[x + y]
   #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
   all u,v : Transitions |
     u != v and concurrent[u + v] implies #{t1} + #{t2} = u + v|]
+    preconditions = flip foldMap (addConflictCommonPreconditions conflictConfig)
+      $ \case
+      True  -> [i|some (commonPreconditions[#{t1}, #{t2}] - #{p})|] :: String
+      False -> [i|no (commonPreconditions[#{t1}, #{t2}] - #{p})|]
+    conflictDistractor = flip foldMap (withConflictDistractors conflictConfig) $ \x ->
+      [i|let ts = Transitions - #{t1} - #{t2} |
+    |]
+      ++ if x
+        then let op = conflictDistractorAddExtraPreconditions conflictConfig
+                   & maybe ">=" (bool "=" ">")
+                 distractorConflictLike = conflictDistractorOnlyConflictLike conflictConfig
+                   & bool "" [i|all p : ps | p.tokens >= p.flow[t1] and p.tokens >= p.flow[t2]
+        some p : ps | p.tokens < plus[p.flow[t1], p.flow[t2]]|]
+                 distractorConcurrentLike = conflictDistractorOnlyConcurrentLike conflictConfig
+                   & bool "" [i|all p : ps | p.tokens >= plus[p.flow[t1], p.flow[t2]]|]
+             in [i|some t1 : ts | one t2 : ts - t1 |
+      let ps = commonPreconditions[t1, t2] {
+        \#ps #{op} \##{p}
+        #{distractorConflictLike}
+        #{distractorConcurrentLike}
+      }|]
+        else [i|no t1, t2 : ts |
+      let ps = commonPreconditions[t1, t2] |
+        \#ps > 1 and all p : ps | p.tokens >= p.flow[t1] and p.tokens >= p.flow[t2]|]
     defaultActivTrans
       | isNothing specific = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""
@@ -726,14 +770,18 @@ checkPickConcurrencyConfig PickConcurrencyConfig {
 checkFindConflictConfig :: FindConflictConfig -> Maybe String
 checkFindConflictConfig FindConflictConfig {
   basicConfig,
-  changeConfig
+  changeConfig,
+  conflictConfig
   }
   = checkConfigForFind basicConfig changeConfig
+  <|> checkConflictConfig basicConfig conflictConfig
 
 checkPickConflictConfig :: PickConflictConfig -> Maybe String
 checkPickConflictConfig PickConflictConfig {
   basicConfig,
   changeConfig,
+  conflictConfig,
   useDifferentGraphLayouts
   }
   = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
+  <|> checkConflictConfig basicConfig conflictConfig

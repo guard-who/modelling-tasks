@@ -126,3 +126,42 @@ checkGraphLayouts useDifferent wrongInstances bc
   = Just "The parameter 'graphLayout' has to contain more entries than the number of 'wrongInstances' if 'useDifferentGraphLayouts' is set."
   | otherwise
   = Nothing
+
+checkConflictConfig :: BasicConfig -> ConflictConfig -> Maybe String
+checkConflictConfig bc ConflictConfig {
+  addConflictCommonPreconditions,
+  withConflictDistractors,
+  conflictDistractorAddExtraPreconditions,
+  conflictDistractorOnlyConflictLike,
+  conflictDistractorOnlyConcurrentLike
+  }
+  | Just True <- withConflictDistractors
+  , conflictDistractorOnlyConflictLike == conflictDistractorOnlyConcurrentLike
+  = Just "Either 'conflictDistractorOnlyConflictLike' or 'conflictDistractorOnlyConcurrentLike' hast to be set!"
+  | Just True <- withConflictDistractors
+  , places bc < minPlaces
+  = Just $ "Your current conflict configuration requires at least "
+    ++ show minPlaces ++ " places."
+  | Just True <- withConflictDistractors
+  , transitions bc < minTransitions
+  = Just $ "Your current conflict configuration requires at least "
+    ++ show minTransitions ++ " transitions."
+  | Just True <- withConflictDistractors
+  = Nothing
+  | Just {} <- conflictDistractorAddExtraPreconditions
+  = Just "The parameter 'conflictDistractorAddExtraPreconditions' can only be set, if 'withConflictDistractors' is enforced."
+  | conflictDistractorOnlyConflictLike
+  = Just "The parameter 'conflictDistractorOnlyConflictLike' can only be set, if 'withConflictDistractors' is enforced."
+  | conflictDistractorOnlyConcurrentLike
+  = Just "The parameter 'conflictDistractorOnlyConcurrentLike' can only be set, if 'withConflictDistractors' is enforced."
+  | otherwise
+  = Nothing
+  where
+    minPlaces = (2 +) . sum $
+      [1 |  Just True == addConflictCommonPreconditions]
+      ++ [1 | Just True ==  withConflictDistractors]
+      ++ [1
+         | Just True == withConflictDistractors
+         , Just True == conflictDistractorAddExtraPreconditions]
+    minTransitions = 2 + sum
+      [2 | Just True == withConflictDistractors]
