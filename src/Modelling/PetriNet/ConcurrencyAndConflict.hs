@@ -13,10 +13,12 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   findConcurrency,
   findConcurrencyEvaluation,
   findConcurrencyGenerate,
+  findConcurrencySyntax,
   findConcurrencyTask,
   findConflict,
   findConflictEvaluation,
   findConflictGenerate,
+  findConflictSyntax,
   findConflictTask,
   findInitial,
   findTaskInstance,
@@ -189,11 +191,18 @@ findInitialShow = bimap ShowTransition ShowTransition findInitial
 findInitial :: (Transition, Transition)
 findInitial = (Transition 0, Transition 1)
 
+findConcurrencySyntax
+  :: OutputMonad m
+  => FindInstance (Concurrent String)
+  -> (String, String)
+  -> LangM' m ()
+findConcurrencySyntax task = transitionPairSyntax $ numberOfPlaces task
+
 findConcurrencyEvaluation
   :: OutputMonad m
   => FindInstance (Concurrent String)
   -> (String, String)
-  -> LangM m
+  -> Rated m
 findConcurrencyEvaluation task = do
   let what = translations $ do
         english "are concurrent activated"
@@ -202,14 +211,12 @@ findConcurrencyEvaluation task = do
   where
     Concurrent (ft, st) = transitionPair task
 
-transitionPairEvaluation
-  :: OutputMonad m
-  => Map Language String
-  -> Int
+transitionPairSyntax
+  :: (OutputMonad m, Read a, Ord a, Num a)
+  => a
   -> (String, String)
-  -> (String, String)
-  -> LangM m
-transitionPairEvaluation what n (ft, st) is = do
+  -> LangM' m ()
+transitionPairSyntax n (fi, si) = do
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zu Ihrer Lösung:"
@@ -219,17 +226,26 @@ transitionPairEvaluation what n (ft, st) is = do
   assertion (isTransition si) $ translate $ do
     english $ si ++ " is a valid transition of the given Petri net?"
     german $ si ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
-  assertion (ft == fi && st == si || ft == si && st == fi) $ translate $ do
-    english $ "Given transitions " ++ localise English what ++ "?"
-    german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
   where
-    (fi, si) = is
     isTransition xs
       | 't':xs' <- xs
       , Just x  <- readMaybe xs'
       = x >= 1 && x <= n
       | otherwise
       = False
+
+transitionPairEvaluation
+  :: OutputMonad m
+  => Map Language String
+  -> Int
+  -> (String, String)
+  -> (String, String)
+  -> Rated m
+transitionPairEvaluation what n (ft, st) (fi, si) = do
+  assertion (ft == fi && st == si || ft == si && st == fi) $ translate $ do
+    english $ "Given transitions " ++ localise English what ++ "?"
+    german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
+  return 1
 
 findConflictTask
   :: (MonadIO m, OutputMonad m)
@@ -263,11 +279,18 @@ findConflictTask path task = do
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
   paragraph hoveringInformation
 
+findConflictSyntax
+  :: OutputMonad m
+  => FindInstance Conflict
+  -> (String, String)
+  -> LangM' m ()
+findConflictSyntax task = transitionPairSyntax $ numberOfPlaces task
+
 findConflictEvaluation
   :: OutputMonad m
   => FindInstance Conflict
   -> (String, String)
-  -> LangM m
+  -> Rated m
 findConflictEvaluation task = do
   let what = translations $ do
         english "have a conflict"
