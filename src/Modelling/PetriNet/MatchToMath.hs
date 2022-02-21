@@ -57,6 +57,7 @@ import Modelling.PetriNet.Alloy (
   modulePetriSignature,
   petriScopeBitwidth,
   petriScopeMaxSeq,
+  signatures,
   taskInstance,
   )
 import Modelling.PetriNet.BasicNetFunctions (
@@ -539,6 +540,7 @@ petriNetRnd basicC@BasicConfig{places,transitions} advConfig = [i|module PetriNe
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
+#{signatures "added" places transitions}
 
 fact{
   no givenPlaces

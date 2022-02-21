@@ -20,6 +20,7 @@ module Modelling.PetriNet.Alloy (
   modulePetriSignature,
   petriScopeBitwidth,
   petriScopeMaxSeq,
+  signatures,
   taskInstance,
   ) where
 
@@ -45,6 +46,7 @@ import Control.Monad.Random (
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.FileEmbed                   (embedStringFile)
+import Data.List                        (intercalate)
 import Data.String.Interpolate          (i)
 import Language.Alloy.Call (
   AlloyInstance,
@@ -188,6 +190,23 @@ getAlloyInstances config alloy = do
   list <- lift $ getInstancesWith config alloy
   when (null list) $ except $ Left "no instance available"
   return list
+
+{-|
+Generates signatures of the given kind, number of places and transitions.
+-}
+signatures
+  :: String
+  -- ^ What kind of signatures to generate (e.g. @places@)
+  -> Int
+  -- ^ How many places of that kind
+  -> Int
+  -- ^ How many transitions of that kind
+  -> String
+signatures what places transitions = intercalate "\n"
+  $  [ [i|one sig P#{x} extends #{what}Places {}|]
+     | x <- [1 .. places]]
+  ++ [ [i|one sig T#{x} extends #{what}Transitions {}|]
+     | x <- [1 .. transitions]]
 
 taskInstance
   :: RandomGen g

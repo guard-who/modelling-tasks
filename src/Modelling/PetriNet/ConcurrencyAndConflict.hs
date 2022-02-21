@@ -75,6 +75,7 @@ import Modelling.PetriNet.Alloy (
   modulePetriSignature,
   petriScopeBitwidth,
   petriScopeMaxSeq,
+  signatures,
   taskInstance,
   )
 import Modelling.PetriNet.BasicNetFunctions (
@@ -602,7 +603,7 @@ petriNetAlloy basicC changeC muniquePlace specific
   = [i|module #{moduleName}
 
 #{modulePetriSignature}
-#{maybe "" (const modulePetriAdditions) specific}
+#{maybe sigs (const modulePetriAdditions) specific}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
@@ -694,6 +695,7 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
     predicate
       | conflict  = conflictPredicateName
       | otherwise = concurrencyPredicateName
+    sigs = signatures "given" (places basicC) (transitions basicC)
     t1 = transition1
     t2 = transition2
 
