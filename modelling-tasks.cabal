@@ -47,6 +47,7 @@ library
       Modelling.PetriNet.Parser
       Modelling.PetriNet.Types
       Modelling.PetriNet.ConcurrencyAndConflict
+      Modelling.PetriNet.ConflictPlaces
       Modelling.PetriNet.BasicNetFunctions
       Modelling.PetriNet.Reach.Deadlock
       Modelling.PetriNet.Reach.Property
@@ -83,6 +84,7 @@ library
     , graphviz
     , hxt
     , latex-svg-image
+    , lens
     , mtl
     , parsec
     , random-shuffle
@@ -137,6 +139,7 @@ test-suite modelling-tasks-test
     , hspec
     , hxt
     , latex-svg-image
+    , lens
     , modelling-tasks
     , mtl
     , parsec

@@ -3,6 +3,14 @@ module Modelling.Auxiliary.Common where
 import Control.Monad.Random (MonadRandom (getRandomR))
 import Data.Char                        (digitToInt, isSpace, toLower, toUpper)
 import Data.Foldable                    (Foldable (foldl'))
+import Data.Function                    ((&))
+import Control.Lens (
+  LensRules,
+  (.~),
+  lensField,
+  lensRules,
+  mappingNamer,
+  )
 import Text.ParserCombinators.Parsec (
   Parser,
   digit,
@@ -30,3 +38,6 @@ lowerFirst (x:xs) = toLower x : xs
 upperFirst :: String -> String
 upperFirst []     = []
 upperFirst (x:xs) = toUpper x : xs
+
+lensRulesL :: LensRules
+lensRulesL = lensRules & lensField .~ mappingNamer (pure . ('l':) . upperFirst)

@@ -28,11 +28,11 @@ import Modelling.PetriNet.Types (
   BasicConfig (graphLayout, hidePlaceNames, hideTransitionNames, hideWeight1),
   ChangeConfig,
   Concurrent (Concurrent),
-  Conflict,
   ConflictConfig (ConflictConfig),
   FindConcurrencyConfig (..),
   FindConflictConfig (FindConflictConfig, alloyConfig),
   PetriConflict (Conflict),
+  PetriConflict' (PetriConflict'),
   PickConcurrencyConfig (..),
   PickConflictConfig (PickConflictConfig, alloyConfig),
   defaultFindConcurrencyConfig,
@@ -112,7 +112,7 @@ spec = do
 checkFindConcurrencyInstance :: (a, Concurrent String) -> Bool
 checkFindConcurrencyInstance = isValidConcurrency . snd
 
-checkFindConflictInstance :: (a, Conflict) -> Bool
+checkFindConflictInstance :: (a, PetriConflict' String) -> Bool
 checkFindConflictInstance = isValidConflict . snd
 
 checkPickConcurrencyInstance :: [(a, Maybe (Concurrent String))] -> Bool
@@ -121,7 +121,7 @@ checkPickConcurrencyInstance = f . fmap snd
     f [Just x, Nothing] = isValidConcurrency x
     f _                 = False
 
-checkPickConflictInstance :: [(a, Maybe Conflict)] -> Bool
+checkPickConflictInstance :: [(a, Maybe (PetriConflict' String))] -> Bool
 checkPickConflictInstance = f . fmap snd
   where
     f [Just x, Nothing] = isValidConflict x
@@ -218,8 +218,8 @@ isValidConcurrency c@(Concurrent (t1, t2))
   | ('t':x) <- t1, ('t':y) <- t2, x /= y = True
   | otherwise                            = error $ show c
 
-isValidConflict :: Conflict -> Bool
-isValidConflict c@(Conflict (t1, t2) ps)
+isValidConflict :: PetriConflict' String -> Bool
+isValidConflict c@(PetriConflict' (Conflict (t1, t2) ps))
   | ('t':x) <- t1, ('t':y) <- t2, x /= y, all isValidPlace ps = True
   | otherwise                                          = error $ show c
   where

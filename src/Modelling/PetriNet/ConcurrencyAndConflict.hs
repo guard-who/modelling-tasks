@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -34,6 +35,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickConflictTask,
   pickEvaluation,
   pickTaskInstance,
+  renderWith,
   ) where
 
 import qualified Data.Bimap                       as BM (fromList, lookup)
@@ -90,6 +92,8 @@ import Modelling.PetriNet.Parser        (
 import Modelling.PetriNet.Reach.Type (
   ShowTransition (ShowTransition),
   Transition (Transition),
+  parsePlacePrec,
+  parseTransitionPrec,
   )
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types         (
@@ -102,9 +106,11 @@ import Modelling.PetriNet.Types         (
   DrawSettings (..),
   FindConcurrencyConfig (..), FindConflictConfig (..),
   PetriConflict (Conflict, conflictTrans),
+  PetriConflict' (PetriConflict', toPetriConflict),
   PetriLike,
   PetriNet,
   PickConcurrencyConfig (..), PickConflictConfig (..),
+  lConflictPlaces,
   manyRandomDrawSettings,
   placeNames,
   randomDrawSettings,
@@ -114,7 +120,8 @@ import Modelling.PetriNet.Types         (
   )
 
 import Control.Applicative              ((<|>))
-import Control.Arrow                    (Arrow (second))
+import Control.Arrow                    (Arrow (second), ArrowChoice (left))
+import Control.Lens                     (over)
 import Control.Monad.Random (
   RandT,
   RandomGen,
@@ -124,10 +131,11 @@ import Control.Monad.Random (
   )
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
-import Data.Bitraversable               (bimapM)
+import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.Bool                        (bool)
+import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))
 import Data.List                        (nub)
 import Data.Map                         (Map)
@@ -138,15 +146,17 @@ import Language.Alloy.Call (
   AlloyInstance, Object, getSingle, lookupSig, unscoped
   )
 import System.Random.Shuffle            (shuffleM)
-import Text.Read                        (readMaybe)
+import Text.Parsec                      (parse)
+import Text.Parsec.String               (Parser)
 
 data FindInstance a = FindInstance {
   drawFindWith :: DrawSettings,
-  transitionPair :: a,
+  toFind :: a,
   net :: PetriLike String,
-  numberOfPlaces :: Int
+  numberOfPlaces :: Int,
+  numberOfTransitions :: Int
   }
-  deriving (Generic, Read, Show)
+  deriving (Functor, Generic, Read, Show)
 
 newtype PickInstance = PickInstance {
   nets :: Map Int (Bool, PetriNet)
@@ -156,7 +166,7 @@ newtype PickInstance = PickInstance {
 findConcurrencyTask
   :: (MonadIO m, OutputMonad m)
   => FilePath
-  -> FindInstance (Concurrent String)
+  -> FindInstance (Concurrent Transition)
   -> LangM m
 findConcurrencyTask path task = do
   pn <- renderWith path "concurrent" (net task) (drawFindWith task)
@@ -193,55 +203,49 @@ findInitial = (Transition 0, Transition 1)
 
 findConcurrencySyntax
   :: OutputMonad m
-  => FindInstance (Concurrent String)
-  -> (String, String)
+  => FindInstance (Concurrent Transition)
+  -> (Transition, Transition)
   -> LangM' m ()
-findConcurrencySyntax task = transitionPairSyntax $ numberOfPlaces task
+findConcurrencySyntax task = toFindSyntax $ numberOfTransitions task
 
 findConcurrencyEvaluation
   :: OutputMonad m
-  => FindInstance (Concurrent String)
-  -> (String, String)
+  => FindInstance (Concurrent Transition)
+  -> (Transition, Transition)
   -> Rated m
 findConcurrencyEvaluation task = do
   let what = translations $ do
         english "are concurrent activated"
         german "sind nebenläufig aktiviert"
-  transitionPairEvaluation what (numberOfPlaces task) (ft, st)
+  toFindEvaluation what (ft, st)
   where
-    Concurrent (ft, st) = transitionPair task
+    Concurrent (ft, st) = toFind task
 
-transitionPairSyntax
-  :: (OutputMonad m, Read a, Ord a, Num a)
-  => a
-  -> (String, String)
+toFindSyntax
+  :: OutputMonad m
+  => Int
+  -> (Transition, Transition)
   -> LangM' m ()
-transitionPairSyntax n (fi, si) = do
+toFindSyntax n (fi, si) = do
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zu Ihrer Lösung:"
-  assertion (isTransition fi) $ translate $ do
-    english $ fi ++ " is a valid transition of the given Petri net?"
-    german $ fi ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
-  assertion (isTransition si) $ translate $ do
-    english $ si ++ " is a valid transition of the given Petri net?"
-    german $ si ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
+  assertTransition fi
+  assertTransition si
   where
-    isTransition xs
-      | 't':xs' <- xs
-      , Just x  <- readMaybe xs'
-      = x >= 1 && x <= n
-      | otherwise
-      = False
+    assertTransition t = assertion (isValidTransition t) $ translate $ do
+      let t' = show $ ShowTransition t
+      english $ t' ++ " is a valid transition of the given Petri net?"
+      german $ t' ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
+    isValidTransition (Transition x) = x >= 1 && x <= n
 
-transitionPairEvaluation
-  :: OutputMonad m
+toFindEvaluation
+  :: (Eq a, OutputMonad m)
   => Map Language String
-  -> Int
-  -> (String, String)
-  -> (String, String)
+  -> (a, a)
+  -> (a, a)
   -> Rated m
-transitionPairEvaluation what n (ft, st) (fi, si) = do
+toFindEvaluation what (ft, st) (fi, si) = do
   assertion (ft == fi && st == si || ft == si && st == fi) $ translate $ do
     english $ "Given transitions " ++ localise English what ++ "?"
     german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
@@ -282,22 +286,22 @@ findConflictTask path task = do
 findConflictSyntax
   :: OutputMonad m
   => FindInstance Conflict
-  -> (String, String)
+  -> (Transition, Transition)
   -> LangM' m ()
-findConflictSyntax task = transitionPairSyntax $ numberOfPlaces task
+findConflictSyntax task = toFindSyntax $ numberOfTransitions task
 
 findConflictEvaluation
   :: OutputMonad m
   => FindInstance Conflict
-  -> (String, String)
+  -> (Transition, Transition)
   -> Rated m
 findConflictEvaluation task = do
   let what = translations $ do
         english "have a conflict"
         german "haben einen Konflikt"
-  transitionPairEvaluation what (numberOfPlaces task) (ft, st)
+  toFindEvaluation what (ft, st)
   where
-    (ft, st) = conflictTrans $ transitionPair task
+    (ft, st) = conflictTrans $ toFind task
 
 pickConcurrencyTask
   :: (MonadIO m, OutputMonad m)
@@ -380,10 +384,13 @@ findConcurrencyGenerate
   :: FindConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO (FindInstance (Concurrent String))
+  -> ExceptT String IO (FindInstance (Concurrent Transition))
 findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConcurrency config segment
   gc <- oneOf $ graphLayout bc
+  c' <- lift $ except $ traverse
+     (parseWith parseTransitionPrec)
+     c
   return $ FindInstance {
     drawFindWith   = DrawSettings {
       withPlaceNames = not $ hidePlaceNames bc,
@@ -391,9 +398,10 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
       with1Weights = not $ hideWeight1 bc,
       withGraphvizCommand = gc
       },
-    transitionPair = c,
+    toFind = c',
     net = d,
-    numberOfPlaces = places bc
+    numberOfPlaces = places bc,
+    numberOfTransitions = transitions bc
     }
   where
     bc = basicConfig (config :: FindConcurrencyConfig)
@@ -417,6 +425,10 @@ findConflictGenerate
 findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConflict config segment
   gc <- oneOf $ graphLayout bc
+  c' <- lift $ except $ bitraverse
+    (parseWith parsePlacePrec)
+    (parseWith parseTransitionPrec)
+    $ toPetriConflict c
   return $ FindInstance {
     drawFindWith = DrawSettings {
       withPlaceNames = not $ hidePlaceNames bc,
@@ -424,18 +436,22 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
       with1Weights = not $ hideWeight1 bc,
       withGraphvizCommand = gc
       },
-    transitionPair = c,
+    toFind = over lConflictPlaces nubOrd c',
     net = d,
-    numberOfPlaces = places bc
+    numberOfPlaces = places bc,
+    numberOfTransitions = transitions bc
     }
   where
     bc = basicConfig (config :: FindConflictConfig)
+
+parseWith :: (Int -> Parser a) -> String -> Either String a
+parseWith f = left show . parse (f 0) ""
 
 findConflict
   :: RandomGen g
   => FindConflictConfig
   -> Int
-  -> RandT g (ExceptT String IO) (PetriLike String, Conflict)
+  -> RandT g (ExceptT String IO) (PetriLike String, PetriConflict' String)
 findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
@@ -543,7 +559,7 @@ pickConflict
   :: RandomGen g
   => PickConflictConfig
   -> Int
-  -> RandT g (ExceptT String IO) [(PetriLike String, Maybe Conflict)]
+  -> RandT g (ExceptT String IO) [(PetriLike String, Maybe (PetriConflict' String))]
 pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl
@@ -760,12 +776,12 @@ Parses the conflict Skolem variables for singleton of transitions and returns
 both as tuple.
 It returns an error message instead if unexpected behaviour occurs.
 -}
-parseConflict :: AlloyInstance -> Either String (PetriConflict Object)
+parseConflict :: AlloyInstance -> Either String (PetriConflict' Object)
 parseConflict inst = do
   tc1 <- unscopedSingleSig inst conflictTransition1 ""
   tc2 <- unscopedSingleSig inst conflictTransition2 ""
   pc  <- unscopedSingleSig inst conflictPlaces1 ""
-  flip Conflict (Set.toList pc)
+  PetriConflict' . flip Conflict (Set.toList pc)
     <$> ((,) <$> asSingleton tc1 <*> asSingleton tc2)
 
 {-|

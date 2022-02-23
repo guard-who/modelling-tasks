@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DeriveTraversable #-}
 {-# Language DuplicateRecordFields #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-|
 This module provides types to represent Petri nets.
@@ -14,6 +15,8 @@ functions to work on and transform Petri net representations.
 -}
 module Modelling.PetriNet.Types where
 
+import qualified Modelling.PetriNet.Reach.Type    as Petri (Transition)
+
 import qualified Data.Bimap                       as BM (fromList, lookup)
 import qualified Data.Map.Lazy                    as M (
   elems, empty, filter, foldrWithKey, insert, keys, keysSet, lookup,
@@ -21,8 +24,10 @@ import qualified Data.Map.Lazy                    as M (
   )
 import qualified Data.Set                         as S (empty, union)
 
-import Modelling.Auxiliary.Common       (oneOf)
+import Modelling.Auxiliary.Common       (lensRulesL, oneOf)
+import Modelling.PetriNet.Reach.Type    (Place)
 
+import Control.Lens                     (makeLensesWith)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom, RandT, RandomGen)
 import Control.Monad.Trans              (MonadTrans(lift))
@@ -32,6 +37,9 @@ import Data.Map.Lazy                    (Map)
 import Data.Maybe                       (fromMaybe)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
+import Data.Bifoldable                  (Bifoldable (bifoldMap))
+import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Bitraversable               (Bitraversable (bitraverse))
 
 data AlloyConfig = AlloyConfig {
   maxInstances :: Maybe Integer,
@@ -81,20 +89,47 @@ mapChange f (Change tc fc) =
 {-|
 A 'PetriConflict' where nodes are labelled by strings.
 -}
-type Conflict = PetriConflict String
+type Conflict = PetriConflict Place Petri.Transition
+
+newtype PetriConflict' x = PetriConflict' {
+  toPetriConflict :: PetriConflict x x
+  }
+  deriving (Generic, Read, Show)
+
+instance Functor PetriConflict' where
+  fmap f = PetriConflict' . bimap f f . toPetriConflict
+
+instance Foldable PetriConflict' where
+  foldMap f = bifoldMap f f . toPetriConflict
+
+instance Traversable PetriConflict' where
+  traverse f = fmap PetriConflict' . bitraverse f f . toPetriConflict
 
 {-|
 A 'PetriConflict' describes a conflict between two transitions.
 It occurs when the number of tokens at the source place are not enough to fire
 both transitions (both are having the same source place).
 -}
-data PetriConflict a = Conflict {
+data PetriConflict p t = Conflict {
   -- | The pair of transitions in conflict.
-  conflictTrans :: (a, a),
+  conflictTrans :: (t, t),
   -- | The set of source nodes having not enough tokens to fire both transitions.
-  conflictPlaces :: [a]
+  conflictPlaces :: [p]
   }
-  deriving (Foldable, Functor, Generic, Read, Show, Traversable)
+  deriving (Generic, Read, Show)
+
+makeLensesWith lensRulesL ''PetriConflict
+
+instance Bifunctor PetriConflict where
+  bimap f g (Conflict ts as) = Conflict (bimap g g ts) (f <$> as)
+
+instance Bifoldable PetriConflict where
+  bifoldMap f g (Conflict ts as) = foldMap f as <> bifoldMap g g ts
+
+instance Bitraversable PetriConflict where
+  bitraverse f g (Conflict ts as) = Conflict
+    <$> bitraverse g g ts
+    <*> traverse f as
   
 newtype Concurrent a = Concurrent (a, a)
   deriving (Foldable, Functor, Generic, Read, Show, Traversable)
