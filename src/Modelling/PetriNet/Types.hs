@@ -412,6 +412,8 @@ data BasicConfig = BasicConfig
   , hideTransitionNames :: Bool
   } deriving (Generic, Read, Show)
 
+makeLensesWith lensRulesL ''BasicConfig
+
 defaultBasicConfig :: BasicConfig
 defaultBasicConfig = BasicConfig
   { places = 4
@@ -492,6 +494,8 @@ data FindConflictConfig = FindConflictConfig
   , uniqueConflictPlace :: Maybe Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
+
+makeLensesWith lensRulesL ''FindConflictConfig
   
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig

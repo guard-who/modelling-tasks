@@ -51,13 +51,13 @@ checkBasicConfig BasicConfig{
   = Just "The parameter 'maxFlowPerEdge' must not be larger than 'maxFlowOverall'."
  | maxFlowOverall > 2 * places * transitions * maxFlowPerEdge
   = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
- | transitions + places > 1 + minFlowOverall 
+ | transitions + places > 1 + minFlowOverall
   = Just "The number of transitions and places exceeds 'minFlowOverall' too much to create a connected net."
  | null graphLayout
  = Just "At least one graph layout needs to be provided."
  | otherwise
   = Nothing
-  
+
 checkChangeConfig :: BasicConfig -> ChangeConfig -> Maybe String
 checkChangeConfig BasicConfig
                    {places,transitions
@@ -66,7 +66,7 @@ checkChangeConfig BasicConfig
                 ChangeConfig
                    {tokenChangeOverall, flowChangeOverall
                    , maxFlowChangePerEdge, maxTokenChangePerPlace}
-                 
+
  | tokenChangeOverall < 0
   = Just "The parameter 'tokenChangeOverall' must be non-negative."
  | maxTokenChangePerPlace < 0
@@ -97,7 +97,7 @@ checkChangeConfig BasicConfig
 checkCConfig :: BasicConfig  -> Maybe String
 checkCConfig BasicConfig{atLeastActive}
  | atLeastActive < 2
-  = Just "The parameter 'atLeastActive' must be at least 2 to create the task." 
+  = Just "The parameter 'atLeastActive' must be at least 2 to create the task."
  | otherwise = Nothing
 
 checkConfigForFind :: BasicConfig -> ChangeConfig -> Maybe String
@@ -106,6 +106,13 @@ checkConfigForFind basic change =
   <|> prohibitHideTransitionNames basic
   <|> checkBasicConfig basic
   <|> checkChangeConfig basic change
+
+prohibitHidePlaceNames :: BasicConfig -> Maybe String
+prohibitHidePlaceNames bc
+  | hidePlaceNames bc
+  = Just "Place names are required for this task type."
+  | otherwise
+  = Nothing
 
 prohibitHideTransitionNames :: BasicConfig -> Maybe String
 prohibitHideTransitionNames bc

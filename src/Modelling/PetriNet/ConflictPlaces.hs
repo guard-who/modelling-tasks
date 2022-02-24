@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
@@ -14,6 +15,11 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   translate,
   translations,
+  )
+import Modelling.PetriNet.BasicNetFunctions (
+  checkConfigForFind,
+  checkConflictConfig,
+  prohibitHidePlaceNames,
   )
 import Modelling.PetriNet.ConcurrencyAndConflict (
   ConflictPlaces,
@@ -34,13 +40,22 @@ import Modelling.PetriNet.Reach.Type (
   parsePlacePrec,
   parseTransitionPrec,
   )
-import Modelling.PetriNet.Types         (Conflict, conflictPlaces)
+import Modelling.PetriNet.Types (
+  Conflict,
+  FindConflictConfig (..),
+  defaultFindConcurrencyConfig,
+  defaultFindConflictConfig,
+  lBasicConfig,
+  lHidePlaceNames,
+  )
 
 import Control.Applicative              ((<|>))
+import Control.Lens                     ((.~))
 import Control.Monad                    (forM_, void)
 import Control.Monad.IO.Class           (MonadIO)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Containers.ListUtils        (nubOrd)
+import Data.Function                    ((&))
 import Data.List                        (partition)
 import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
@@ -139,3 +154,17 @@ parseConflictPlacesPrec _  = do
       *> char '['
       *> parsePlacePrec 0 `endBy1` (spaces <* optional (char ','))
       <*  char ']'
+
+defaultFindConflictPlacesConfig :: FindConflictConfig
+defaultFindConflictPlacesConfig = defaultFindConflictConfig
+  & lBasicConfig . lHidePlaceNames .~ False
+
+checkFindConflictPlacesConfig :: FindConflictConfig -> Maybe String
+checkFindConflictPlacesConfig FindConflictConfig {
+  basicConfig,
+  changeConfig,
+  conflictConfig
+  }
+  = prohibitHidePlaceNames basicConfig
+  <|> checkConfigForFind basicConfig changeConfig
+  <|> checkConflictConfig basicConfig conflictConfig
