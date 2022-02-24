@@ -9,12 +9,15 @@ module Modelling.Auxiliary.Output (
   directionsAdvice,
   hoveringInformation,
   multipleChoice,
+  printSolutionAndAssert,
   simplifiedInformation,
   singleChoice,
+  singleChoiceSyntax,
   Out (..),
   Report (..),
   abortWith,
   alignOutput,
+  continueOrAbort,
   getAllOuts,
   getOutsWithResult,
   combineReports,
@@ -53,7 +56,7 @@ import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (for_)
 import Data.List                        (sort)
 import Data.Map (Map)
-import Data.Maybe (fromMaybe)
+import Data.Maybe                       (fromMaybe, isJust)
 import Data.Ratio                       ((%))
 import Data.String.Interpolate (i)
 
@@ -75,6 +78,15 @@ Nevertheless you should treat these simplified class representations as valid cl
   german [i|Bitte beachten Sie: Klassen werden hier vereinfacht dargestellt.
 Das heißt, sie bestehen aus einer einfachen Box, die nur den Klassennamen enthält, aber keine Abschnitte für Attribute oder Methoden.
 Trotzdem sollten Sie diese vereinfachten Klassendarstellungen als valide Klassen ansehen.|]
+
+{-|
+If argument is True,
+it will continue after assertion,
+otherwise it will stop if assertion fails.
+-}
+continueOrAbort :: OutputMonad m => Bool -> Bool -> LangM m -> LangM m
+continueOrAbort True  = yesNo
+continueOrAbort False = assertion
 
 yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
 yesNo p q = do
@@ -139,6 +151,18 @@ printSolutionAndAssert msolutionString points = do
   unless (points >= 1 % 2) $ refuse $ return ()
   return points
 
+singleChoiceSyntax
+  :: (OutputMonad m, Eq a)
+  => Bool
+  -> [a]
+  -> a
+  -> LangM m
+singleChoiceSyntax withSolution options choice = do
+  let assert = continueOrAbort withSolution
+  assert (choice `elem` options) $ translate $ do
+    english "Chosen option is available?"
+    german "Gewählte option ist verfügbar?"
+
 singleChoice
   :: (OutputMonad m, Eq a)
   => Map Language String
@@ -149,7 +173,8 @@ singleChoice
 singleChoice what msolutionString solution choice = do
   let correct = solution == choice
       points = if correct then 1 else 0
-  yesNo correct $ multiLang [
+      assert = continueOrAbort $ isJust msolutionString
+  assert correct $ multiLang [
     (English, "Chosen " ++ localise English what ++ " is correct?"),
     (German, "Die gewählte " ++ localise German what ++ " ist korrekt?")]
   printSolutionAndAssert msolutionString points

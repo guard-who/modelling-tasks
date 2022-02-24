@@ -53,6 +53,7 @@ import Modelling.PetriNet.TestCommon (
   )
 import Settings                         (configDepth)
 
+import Control.Lens.Lens                ((??))
 import Data.GraphViz                    (GraphvizCommand)
 import Data.Maybe                       (isNothing)
 import Test.Hspec
@@ -173,7 +174,8 @@ validFindConcurrencyConfigs
 validFindConcurrencyConfigs cs aconfig =
   uncurry (`FindConcurrencyConfig` aconfig)
     <$> cs
-    <*> pure alloyTestConfig
+    ?? False
+    ?? alloyTestConfig
 
 validFindConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
@@ -183,6 +185,7 @@ validFindConflictConfigs cs aconfig = do
   (bc, ch) <- cs
   FindConflictConfig bc aconfig ch
     <$> validConflictConfigs bc
+    <*> pure False
     <*> [Nothing, Just True, Just False]
     <*> pure alloyTestConfig
 
@@ -199,8 +202,11 @@ validConflictConfigs bc = filter (isNothing . checkConflictConfig bc) $ do
 validPickConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> [PickConcurrencyConfig]
-validPickConcurrencyConfigs cs =
-  uncurry PickConcurrencyConfig <$> cs <*> pure False <*> pure alloyTestConfig
+validPickConcurrencyConfigs cs = uncurry PickConcurrencyConfig
+  <$> cs
+  ?? False
+  ?? False
+  ?? alloyTestConfig
 
 validPickConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
@@ -209,9 +215,10 @@ validPickConflictConfigs cs = do
   (bc, ch) <- cs
   PickConflictConfig bc ch
     <$> validConflictConfigs bc
-    <*> [Nothing, Just True, Just False]
     <*> pure False
-    <*> pure alloyTestConfig
+    <*> [Nothing, Just True, Just False]
+    ?? False
+    ?? alloyTestConfig
 
 isValidConcurrency :: Concurrent String -> Bool
 isValidConcurrency c@(Concurrent (t1, t2))

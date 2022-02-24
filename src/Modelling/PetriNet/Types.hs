@@ -488,6 +488,7 @@ data FindConflictConfig = FindConflictConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
   , conflictConfig :: ConflictConfig
+  , printSolution :: Bool
   , uniqueConflictPlace :: Maybe Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
@@ -498,6 +499,7 @@ defaultFindConflictConfig = FindConflictConfig
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
   , conflictConfig = defaultConflictConfig
+  , printSolution = False
   , uniqueConflictPlace = Just True
   , alloyConfig  = defaultAlloyConfig
   }
@@ -506,6 +508,7 @@ data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
   , conflictConfig :: ConflictConfig
+  , printSolution :: Bool
   , uniqueConflictPlace :: Maybe Bool
   , useDifferentGraphLayouts :: Bool
   , alloyConfig  :: AlloyConfig
@@ -516,6 +519,7 @@ defaultPickConflictConfig = PickConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
   , changeConfig = defaultChangeConfig
   , conflictConfig = defaultConflictConfig
+  , printSolution = False
   , uniqueConflictPlace = Nothing
   , useDifferentGraphLayouts = False
   , alloyConfig  = defaultAlloyConfig
@@ -525,6 +529,7 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
+  , printSolution :: Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
   
@@ -533,12 +538,14 @@ defaultFindConcurrencyConfig = FindConcurrencyConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
+  , printSolution = False
   , alloyConfig  = defaultAlloyConfig
   }
   
 data PickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
+  , printSolution :: Bool
   , useDifferentGraphLayouts :: Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
@@ -547,6 +554,7 @@ defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
   , changeConfig = defaultChangeConfig
+  , printSolution = False
   , useDifferentGraphLayouts = False
   , alloyConfig  = defaultAlloyConfig
   }

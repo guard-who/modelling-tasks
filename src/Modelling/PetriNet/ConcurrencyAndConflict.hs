@@ -3,14 +3,17 @@
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Modelling.PetriNet.ConcurrencyAndConflict (
+  ConflictPlaces,
   FindInstance (..),
   PickInstance (..),
   checkFindConcurrencyConfig, checkFindConflictConfig,
   checkPickConcurrencyConfig, checkPickConflictConfig,
+  conflictPlacesShow,
   findConcurrency,
   findConcurrencyEvaluation,
   findConcurrencyGenerate,
@@ -19,6 +22,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   findConflict,
   findConflictEvaluation,
   findConflictGenerate,
+  findConflictPlacesEvaluation,
   findConflictSyntax,
   findConflictTask,
   findInitial,
@@ -34,6 +38,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickConflictGenerate,
   pickConflictTask,
   pickEvaluation,
+  pickSyntax,
   pickTaskInstance,
   renderWith,
   ) where
@@ -59,11 +64,15 @@ import Modelling.Auxiliary.Output (
   Language (English, German),
   OutputMonad (..),
   Rated,
+  addPretext,
+  continueOrAbort,
   english,
   german,
   hoveringInformation,
   localise,
+  printSolutionAndAssert,
   singleChoice,
+  singleChoiceSyntax,
   translate,
   translations,
   )
@@ -90,6 +99,8 @@ import Modelling.PetriNet.Parser        (
   asSingleton,
   )
 import Modelling.PetriNet.Reach.Type (
+  Place,
+  ShowPlace (ShowPlace),
   ShowTransition (ShowTransition),
   Transition (Transition),
   parsePlacePrec,
@@ -110,6 +121,7 @@ import Modelling.PetriNet.Types         (
   PetriLike,
   PetriNet,
   PickConcurrencyConfig (..), PickConflictConfig (..),
+  conflictPlaces,
   lConflictPlaces,
   manyRandomDrawSettings,
   placeNames,
@@ -121,7 +133,8 @@ import Modelling.PetriNet.Types         (
 
 import Control.Applicative              ((<|>))
 import Control.Arrow                    (Arrow (second), ArrowChoice (left))
-import Control.Lens                     (over)
+import Control.Lens                     ((.~), makeLensesFor, over)
+import Control.Monad                    (forM_, unless)
 import Control.Monad.Random (
   RandT,
   RandomGen,
@@ -137,9 +150,10 @@ import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))
-import Data.List                        (nub)
+import Data.List                        (nub, partition)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, isJust, isNothing)
+import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
@@ -154,12 +168,16 @@ data FindInstance a = FindInstance {
   toFind :: a,
   net :: PetriLike String,
   numberOfPlaces :: Int,
-  numberOfTransitions :: Int
+  numberOfTransitions :: Int,
+  showSolution :: Bool
   }
   deriving (Functor, Generic, Read, Show)
 
-newtype PickInstance = PickInstance {
-  nets :: Map Int (Bool, PetriNet)
+makeLensesFor [("toFind", "lToFind")] ''FindInstance
+
+data PickInstance = PickInstance {
+  nets :: Map Int (Bool, PetriNet),
+  showSolution :: Bool
   }
   deriving (Generic, Read, Show)
 
@@ -206,50 +224,62 @@ findConcurrencySyntax
   => FindInstance (Concurrent Transition)
   -> (Transition, Transition)
   -> LangM' m ()
-findConcurrencySyntax task = toFindSyntax $ numberOfTransitions task
+findConcurrencySyntax task = toFindSyntax withSol $ numberOfTransitions task
+  where
+    withSol = showSolution (task :: FindInstance (Concurrent Transition))
 
 findConcurrencyEvaluation
   :: OutputMonad m
   => FindInstance (Concurrent Transition)
   -> (Transition, Transition)
   -> Rated m
-findConcurrencyEvaluation task = do
+findConcurrencyEvaluation task x = do
   let what = translations $ do
         english "are concurrent activated"
         german "sind nebenläufig aktiviert"
-  toFindEvaluation what (ft, st)
+  result <- toFindEvaluation what withSol concur x
+  uncurry printSolutionAndAssert result
   where
-    Concurrent (ft, st) = toFind task
+    Concurrent concur = toFind task
+    withSol = showSolution (task :: FindInstance (Concurrent Transition))
 
 toFindSyntax
   :: OutputMonad m
-  => Int
+  => Bool
+  -> Int
   -> (Transition, Transition)
   -> LangM' m ()
-toFindSyntax n (fi, si) = do
-  paragraph $ translate $ do
-    english "Remarks on your solution:"
-    german "Anmerkungen zu Ihrer Lösung:"
+toFindSyntax withSol n (fi, si) = addPretext $ do
   assertTransition fi
   assertTransition si
   where
-    assertTransition t = assertion (isValidTransition t) $ translate $ do
+    assert = continueOrAbort withSol
+    assertTransition t = assert (isValidTransition t) $ translate $ do
       let t' = show $ ShowTransition t
       english $ t' ++ " is a valid transition of the given Petri net?"
       german $ t' ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
     isValidTransition (Transition x) = x >= 1 && x <= n
 
 toFindEvaluation
-  :: (Eq a, OutputMonad m)
+  :: (Num a, OutputMonad m)
   => Map Language String
-  -> (a, a)
-  -> (a, a)
-  -> Rated m
-toFindEvaluation what (ft, st) (fi, si) = do
-  assertion (ft == fi && st == si || ft == si && st == fi) $ translate $ do
+  -> Bool
+  -> (Transition, Transition)
+  -> (Transition, Transition)
+  -> LangM' m (Maybe String, a)
+toFindEvaluation what withSol (ft, st) (fi, si) = do
+  let correct = ft == fi && st == si || ft == si && st == fi
+      points = if correct then 1 else 0
+      msolutionString =
+        if withSol
+        then Just $ show $ bimap ShowTransition ShowTransition (ft, st)
+        else Nothing
+  assert correct $ translate $ do
     english $ "Given transitions " ++ localise English what ++ "?"
     german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
-  return 1
+  return (msolutionString, points)
+  where
+    assert = continueOrAbort withSol
 
 findConflictTask
   :: (MonadIO m, OutputMonad m)
@@ -288,20 +318,60 @@ findConflictSyntax
   => FindInstance Conflict
   -> (Transition, Transition)
   -> LangM' m ()
-findConflictSyntax task = toFindSyntax $ numberOfTransitions task
+findConflictSyntax task = toFindSyntax withSol $ numberOfTransitions task
+  where
+    withSol = showSolution (task :: FindInstance Conflict)
 
 findConflictEvaluation
   :: OutputMonad m
   => FindInstance Conflict
   -> (Transition, Transition)
   -> Rated m
-findConflictEvaluation task = do
+findConflictEvaluation task x = findConflictPlacesEvaluation
+  (task & lToFind . lConflictPlaces .~ [])
+  (x, [])
+
+type ConflictPlaces = ((Transition, Transition), [Place])
+
+conflictPlacesShow
+  :: ConflictPlaces
+  -> ((ShowTransition, ShowTransition), [ShowPlace])
+conflictPlacesShow = bimap
+  (bimap ShowTransition ShowTransition)
+  (fmap ShowPlace)
+
+findConflictPlacesEvaluation
+  :: OutputMonad m
+  => FindInstance Conflict
+  -> ConflictPlaces
+  -> Rated m
+findConflictPlacesEvaluation task (conflict, ps) = do
   let what = translations $ do
         english "have a conflict"
         german "haben einen Konflikt"
-  toFindEvaluation what (ft, st)
+  (ms, res) <- toFindEvaluation what withSol conf conflict
+  unless (null sources || res == 0) $ do
+    forM_ ps' $ \x -> assert (x `elem` sources) $ translate $ do
+      let x' = show $ ShowPlace x
+      english $ x' ++ " is reason for the conflict?"
+      german $ x' ++ " ist auslösende Stelle für den Konflikt?"
+    assert (ps' == sources) $ translate $ do
+      english "The given solution is correct and complete?"
+      german "Die angegebene Lösung ist korrekt und vollständig?"
+  let result = min res $ (base - len sources + len correct - len wrong') % base
+  printSolutionAndAssert (fixSolution <$> ms) result
   where
-    (ft, st) = conflictTrans $ toFind task
+    assert = continueOrAbort withSol
+    conf = conflictTrans $ toFind task
+    sources = conflictPlaces (toFind task)
+    fixSolution
+      | null sources = id
+      | otherwise    = const $ show $ conflictPlacesShow (conf, sources)
+    withSol = showSolution (task :: FindInstance Conflict)
+    ps' = nubOrd ps
+    (correct, wrong') = partition (`elem` sources) ps
+    base = fromIntegral $ 2 + numberOfPlaces task
+    len = fromIntegral . length
 
 pickConcurrencyTask
   :: (MonadIO m, OutputMonad m)
@@ -340,16 +410,33 @@ wrongInstances inst = length [False | (False, _) <- M.elems (nets inst)]
 wrong :: Int
 wrong = 1
 
+pickSyntax
+  :: OutputMonad m
+  => PickInstance
+  -> Int
+  -> LangM m
+pickSyntax task = singleChoiceSyntax withSol options
+  where
+    options = M.keys . M.filter fst $ nets task
+    withSol = showSolution (task :: PickInstance)
+
 pickEvaluation
   :: OutputMonad m
   => PickInstance
   -> Int
   -> Rated m
-pickEvaluation = do
+pickEvaluation task = do
   let what = translations $ do
         english "petri net"
         german "Petrinetz"
-  singleChoice what Nothing . head . M.keys . M.filter fst . nets
+  singleChoice what msolutionString solution
+  where
+    msolutionString =
+      if withSol
+      then Just $ show solution
+      else Nothing
+    solution = head . M.keys . M.filter fst $ nets task
+    withSol = showSolution (task :: PickInstance)
 
 pickConflictTask
   :: (MonadIO m, OutputMonad m)
@@ -401,7 +488,8 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
     toFind = c',
     net = d,
     numberOfPlaces = places bc,
-    numberOfTransitions = transitions bc
+    numberOfTransitions = transitions bc,
+    showSolution = printSolution (config :: FindConcurrencyConfig)
     }
   where
     bc = basicConfig (config :: FindConcurrencyConfig)
@@ -439,7 +527,8 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     toFind = over lConflictPlaces nubOrd c',
     net = d,
     numberOfPlaces = places bc,
-    numberOfTransitions = transitions bc
+    numberOfTransitions = transitions bc,
+    showSolution = printSolution (config :: FindConflictConfig)
     }
   where
     bc = basicConfig (config :: FindConflictConfig)
@@ -463,30 +552,33 @@ pickConcurrencyGenerate
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud
+pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud ws
   where
     bc config = basicConfig (config :: PickConcurrencyConfig)
     ud config = useDifferentGraphLayouts (config :: PickConcurrencyConfig)
+    ws config = printSolution (config :: PickConcurrencyConfig)
 
 pickConflictGenerate
   :: PickConflictConfig
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickConflictGenerate = pickGenerate pickConflict bc ud
+pickConflictGenerate = pickGenerate pickConflict bc ud ws
   where
     bc config = basicConfig (config :: PickConflictConfig)
     ud config = useDifferentGraphLayouts (config :: PickConflictConfig)
+    ws config = printSolution (config :: PickConflictConfig)
 
 pickGenerate
   :: (c -> Int -> RandT StdGen (ExceptT String IO) [(PetriLike String, Maybe a)])
   -> (c -> BasicConfig)
   -> (c -> Bool)
+  -> (c -> Bool)
   -> c
   -> Int
   -> Int
   -> ExceptT String IO PickInstance
-pickGenerate pick bc useDifferent config segment seed = flip evalRandT (mkStdGen seed) $ do
+pickGenerate pick bc useDifferent withSol config segment seed = flip evalRandT (mkStdGen seed) $ do
   ns <- pick config segment
   ns'  <- shuffleM ns
   let ts = nub $ concat $ transitionNames . fst <$> ns'
@@ -498,7 +590,8 @@ pickGenerate pick bc useDifferent config segment seed = flip evalRandT (mkStdGen
   s <- randomDrawSettings (bc config)
   ns''' <- addDrawingSettings s ns''
   return $ PickInstance {
-    nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- ns''']
+    nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- ns'''],
+    showSolution = withSol config
     }
   where
     addDrawingSettings s ps = zip ps <$>

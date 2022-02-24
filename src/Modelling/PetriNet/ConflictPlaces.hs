@@ -8,6 +8,7 @@ import Modelling.Auxiliary.Output (
   LangM,
   OutputMonad (..),
   Rated,
+  continueOrAbort,
   english,
   german,
   hoveringInformation,
@@ -15,7 +16,9 @@ import Modelling.Auxiliary.Output (
   translations,
   )
 import Modelling.PetriNet.ConcurrencyAndConflict (
+  ConflictPlaces,
   FindInstance (..),
+  conflictPlacesShow,
   drawFindWith,
   findConflictEvaluation,
   findConflictSyntax,
@@ -49,8 +52,6 @@ import Text.Parsec (
   spaces,
   )
 import Text.Parsec.String               (Parser)
-
-type ConflictPlaces = ((Transition, Transition), [Place])
 
 findConflictPlacesTask
   :: (MonadIO m, OutputMonad m)
@@ -101,33 +102,13 @@ findConflictPlacesSyntax
   -> LangM' m ()
 findConflictPlacesSyntax task (conflict, ps) = do
   findConflictSyntax task conflict
-  forM_ ps $ \x -> assertion (isValidPlace x) $ translate $ do
+  forM_ ps $ \x -> assert (isValidPlace x) $ translate $ do
     let x' = show $ ShowPlace x
     english $ x' ++ " is a valid place of the given Petri net?"
     german $ x' ++ " ist eine gültige Stelle des gegebenen Petrinetzes?"
   where
     isValidPlace (Place x) = x >= 1 && x <= numberOfPlaces task
-
-findConflictPlacesEvaluation
-  :: OutputMonad m
-  => FindInstance Conflict
-  -> ConflictPlaces
-  -> Rated m
-findConflictPlacesEvaluation task (conflict, ps)= do
-  let ps' = nubOrd ps
-      sources = conflictPlaces (toFind task)
-      (correct, wrong) = partition (`elem` sources) ps
-      base = fromIntegral $ 2 + numberOfPlaces task
-      len = fromIntegral . length
-  _ <- findConflictEvaluation task conflict
-  forM_ ps' $ \x -> assertion (x `elem` sources) $ translate $ do
-    let x' = show $ ShowPlace x
-    english $ x' ++ " is reason for the conflict?"
-    german $ x' ++ " ist auslösende Stelle für den Konflikt?"
-  assertion (ps' == sources) $ translate $ do
-    english "The given solution is correct and complete?"
-    german "Die angegebene Lösung ist korrekt und vollständig?"
-  return $ (base - len sources + len correct - len wrong) % base
+    assert = continueOrAbort $ showSolution task
 
 parseConflictPlacesPrec :: Int -> Parser ConflictPlaces
 parseConflictPlacesPrec _  = do
@@ -158,10 +139,3 @@ parseConflictPlacesPrec _  = do
       *> char '['
       *> parsePlacePrec 0 `endBy1` (spaces <* optional (char ','))
       <*  char ']'
-
-conflictPlacesShow
-  :: ConflictPlaces
-  -> ((ShowTransition, ShowTransition), [ShowPlace])
-conflictPlacesShow = bimap
-  (bimap ShowTransition ShowTransition)
-  (fmap ShowPlace)
