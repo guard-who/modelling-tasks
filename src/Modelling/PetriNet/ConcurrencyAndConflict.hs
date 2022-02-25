@@ -71,6 +71,7 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   localise,
   printSolutionAndAssert,
+  recoverFrom,
   singleChoice,
   singleChoiceSyntax,
   translate,
@@ -131,7 +132,7 @@ import Modelling.PetriNet.Types         (
   traversePetriLike,
   )
 
-import Control.Applicative              ((<|>))
+import Control.Applicative              (Alternative, (<|>))
 import Control.Arrow                    (Arrow (second), ArrowChoice (left))
 import Control.Lens                     ((.~), makeLensesFor, over)
 import Control.Monad                    (forM_, unless)
@@ -323,7 +324,7 @@ findConflictSyntax task = toFindSyntax withSol $ numberOfTransitions task
     withSol = showSolution (task :: FindInstance Conflict)
 
 findConflictEvaluation
-  :: OutputMonad m
+  :: (Alternative m, OutputMonad m)
   => FindInstance Conflict
   -> (Transition, Transition)
   -> Rated m
@@ -341,7 +342,7 @@ conflictPlacesShow = bimap
   (fmap ShowPlace)
 
 findConflictPlacesEvaluation
-  :: OutputMonad m
+  :: (Alternative m, OutputMonad m)
   => FindInstance Conflict
   -> ConflictPlaces
   -> Rated m
@@ -350,7 +351,7 @@ findConflictPlacesEvaluation task (conflict, ps) = do
         english "have a conflict"
         german "haben einen Konflikt"
   (ms, res) <- toFindEvaluation what withSol conf conflict
-  unless (null sources || res == 0) $ do
+  recoverFrom $ unless (null sources || res == 0) $ do
     forM_ ps' $ \x -> assert (x `elem` sources) $ translate $ do
       let x' = show $ ShowPlace x
       english $ x' ++ " is reason for the conflict?"

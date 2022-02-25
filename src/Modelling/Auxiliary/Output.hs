@@ -10,6 +10,7 @@ module Modelling.Auxiliary.Output (
   hoveringInformation,
   multipleChoice,
   printSolutionAndAssert,
+  recoverFrom,
   simplifiedInformation,
   singleChoice,
   singleChoiceSyntax,
@@ -41,6 +42,7 @@ module Modelling.Auxiliary.Output (
 
 import qualified Data.Map as M
 
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    (foldM, unless, void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.State              (State, execState, modify)
@@ -260,11 +262,14 @@ data Out o =
   Localised (Map Language String)
 
 newtype Report o r = Report { unReport :: MaybeT (Writer [Out o]) r }
-  deriving newtype (Applicative, Functor)
+  deriving newtype (Alternative, Applicative, Functor)
 
 instance Monad (Report o) where
   return = Report . return
   Report r >>= f = Report $ r >>= unReport . f
+
+recoverFrom :: Alternative m => LangM m -> LangM m
+recoverFrom x = LangM $ \l -> (x `withLang` l) <|> pure ()
 
 getOutsWithResult :: Report o a -> (Maybe a, [Out o])
 getOutsWithResult = runWriter . getAllOuts'
