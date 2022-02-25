@@ -78,6 +78,7 @@ library
     , diagrams-lib
     , diagrams-svg
     , exceptions
+    , extra
     , fgl
     , file-embed
     , filepath
@@ -132,6 +133,7 @@ test-suite modelling-tasks-test
     , diagrams-lib
     , diagrams-svg
     , exceptions
+    , extra
     , fgl
     , file-embed
     , filepath

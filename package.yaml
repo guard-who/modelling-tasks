@@ -33,6 +33,7 @@ dependencies:
   - diagrams-lib
   - diagrams-svg
   - exceptions
+  - extra
   - fgl
   - file-embed
   - filepath

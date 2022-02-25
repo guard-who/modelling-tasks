@@ -151,7 +151,8 @@ import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))
-import Data.List                        (nub, partition)
+import Data.List                        (partition)
+import Data.List.Extra                  (nubSort)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, isJust, isNothing)
 import Data.Ratio                       ((%))
@@ -369,7 +370,7 @@ findConflictPlacesEvaluation task (conflict, ps) = do
       | null sources = id
       | otherwise    = const $ show $ conflictPlacesShow (conf, sources)
     withSol = showSolution (task :: FindInstance Conflict)
-    ps' = nubOrd ps
+    ps' = nubSort ps
     (correct, wrong') = partition (`elem` sources) ps
     base = fromIntegral $ 2 + numberOfPlaces task
     len = fromIntegral . length
@@ -525,7 +526,7 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
       with1Weights = not $ hideWeight1 bc,
       withGraphvizCommand = gc
       },
-    toFind = over lConflictPlaces nubOrd c',
+    toFind = over lConflictPlaces nubSort c',
     net = d,
     numberOfPlaces = places bc,
     numberOfTransitions = transitions bc,
@@ -582,8 +583,8 @@ pickGenerate
 pickGenerate pick bc useDifferent withSol config segment seed = flip evalRandT (mkStdGen seed) $ do
   ns <- pick config segment
   ns'  <- shuffleM ns
-  let ts = nub $ concat $ transitionNames . fst <$> ns'
-      ps = nub $ concat $ placeNames . fst <$> ns'
+  let ts = nubOrd $ concat $ transitionNames . fst <$> ns'
+      ps = nubOrd $ concat $ placeNames . fst <$> ns'
   ts' <- shuffleM ts
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
