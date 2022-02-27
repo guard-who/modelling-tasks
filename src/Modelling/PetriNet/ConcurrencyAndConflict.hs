@@ -105,7 +105,7 @@ import Modelling.PetriNet.Parser        (
   asSingleton,
   )
 import Modelling.PetriNet.Reach.Type (
-  Place,
+  Place (Place),
   ShowPlace (ShowPlace),
   ShowTransition (ShowTransition),
   Transition (Transition),
