@@ -14,6 +14,10 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   checkFindConcurrencyConfig, checkFindConflictConfig,
   checkPickConcurrencyConfig, checkPickConflictConfig,
   conflictPlacesShow,
+  defaultFindConcurrencyInstance,
+  defaultFindConflictInstance,
+  defaultPickConcurrencyInstance,
+  defaultPickConflictInstance,
   findConcurrency,
   findConcurrencyEvaluation,
   findConcurrencyGenerate,
@@ -46,6 +50,7 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
 import qualified Data.Bimap                       as BM (fromList, lookup)
 import qualified Data.Map                         as M (
   elems,
+  empty,
   filter,
   fromList,
   keys,
@@ -117,9 +122,10 @@ import Modelling.PetriNet.Types         (
   ConflictConfig (..),
   DrawSettings (..),
   FindConcurrencyConfig (..), FindConflictConfig (..),
+  Node (..),
   PetriConflict (Conflict, conflictTrans),
   PetriConflict' (PetriConflict', toPetriConflict),
-  PetriLike,
+  PetriLike (PetriLike, allNodes),
   PetriNet,
   PickConcurrencyConfig (..), PickConflictConfig (..),
   conflictPlaces,
@@ -151,6 +157,7 @@ import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))
+import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
 import Data.List                        (partition)
 import Data.List.Extra                  (nubSort)
 import Data.Map                         (Map)
@@ -928,3 +935,144 @@ checkPickConflictConfig PickConflictConfig {
   }
   = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
   <|> checkConflictConfig basicConfig conflictConfig
+
+defaultPickConflictInstance :: PickInstance
+defaultPickConflictInstance = PickInstance {
+  nets = M.fromList [
+    (1,(False,(
+      PetriLike {
+        allNodes = M.fromList [
+          ("s1",PlaceNode {initial = 0, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.empty}),
+          ("s2",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t2",1)]}),
+          ("s3",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1)], flowOut = M.empty}),
+          ("s4",PlaceNode {initial = 0, flowIn = M.fromList [("t1",1)], flowOut = M.fromList [("t3",2)]}),
+          ("t1",TransitionNode {flowIn = M.empty, flowOut = M.fromList [("s1",1),("s3",1),("s4",1)]}),
+          ("t2",TransitionNode {flowIn = M.fromList [("s2",1)], flowOut = M.fromList [("s1",1)]}),
+          ("t3",TransitionNode {flowIn = M.fromList [("s4",2)], flowOut = M.empty})]
+        },
+      DrawSettings {
+        withPlaceNames = False,
+        withTransitionNames = False,
+        with1Weights = False,
+        withGraphvizCommand = Fdp
+        }
+      ))),
+    (2,(True,(
+      PetriLike {
+        allNodes = M.fromList [
+          ("s1",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.empty}),
+          ("s2",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t1",1),("t2",1)]}),
+          ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.empty}),
+          ("s4",PlaceNode {initial = 0, flowIn = M.fromList [("t1",1)], flowOut = M.fromList [("t3",2)]}),
+          ("t1",TransitionNode {flowIn = M.fromList [("s2",1)], flowOut = M.fromList [("s1",1),("s3",1),("s4",1)]}),
+          ("t2",TransitionNode {flowIn = M.fromList [("s2",1)], flowOut = M.fromList [("s1",1),("s3",1)]}),
+          ("t3",TransitionNode {flowIn = M.fromList [("s4",2)], flowOut = M.empty})]
+        },
+      DrawSettings {
+        withPlaceNames = False,
+        withTransitionNames = False,
+        with1Weights = False,
+        withGraphvizCommand = Fdp
+        }
+      )))
+    ],
+  showSolution = False
+  }
+
+defaultPickConcurrencyInstance :: PickInstance
+defaultPickConcurrencyInstance = PickInstance {
+  nets = M.fromList [
+    (1,(False,(
+      PetriLike {
+        allNodes = M.fromList [
+          ("s1",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1)], flowOut = M.fromList [("t1",2),("t2",1),("t3",1)]}),
+          ("s2",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.empty}),
+          ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.fromList [("t1",1)]}),
+          ("s4",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.empty}),
+          ("t1",TransitionNode {flowIn = M.fromList [("s1",2),("s3",1)], flowOut = M.fromList [("s1",1),("s4",1)]}),
+          ("t2",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s4",1)]}),
+          ("t3",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s2",1),("s3",1)]})
+          ]
+        },
+      DrawSettings {
+        withPlaceNames = False,
+        withTransitionNames = False,
+        with1Weights = False,
+        withGraphvizCommand = Fdp
+        }
+      ))),
+    (2,(True,(
+      PetriLike {
+        allNodes = M.fromList [
+          ("s1",PlaceNode {initial = 2, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.fromList [("t1",2),("t2",1),("t3",1)]}),
+          ("s2",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.empty}),
+          ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.fromList [("t1",1)]}),
+          ("s4",PlaceNode {initial = 2, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.fromList [("t2",1)]}),
+          ("t1",TransitionNode {flowIn = M.fromList [("s1",2),("s3",1)], flowOut = M.fromList [("s1",1),("s4",1)]}),
+          ("t2",TransitionNode {flowIn = M.fromList [("s1",1),("s4",1)], flowOut = M.fromList [("s1",1),("s4",1)]}),
+          ("t3",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s2",1),("s3",1)]})
+          ]
+        },
+      DrawSettings {
+        withPlaceNames = False,
+        withTransitionNames = False,
+        with1Weights = False,
+        withGraphvizCommand = Fdp
+        }
+      )))
+    ],
+  showSolution = False
+  }
+
+defaultFindConflictInstance :: FindInstance Conflict
+defaultFindConflictInstance = FindInstance {
+  drawFindWith = DrawSettings {
+    withPlaceNames = False,
+    withTransitionNames = True,
+    with1Weights = False,
+    withGraphvizCommand = Circo
+    },
+  toFind = Conflict {
+    conflictTrans = (Transition 1,Transition 3),
+    conflictPlaces = [Place 4]
+    },
+  net = PetriLike {
+    allNodes = M.fromList [
+      ("s1",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t1",1)]}),
+      ("s2",PlaceNode {initial = 0, flowIn = M.fromList [("t1",2)], flowOut = M.empty}),
+      ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t1",2),("t2",1),("t3",1)], flowOut = M.empty}),
+      ("s4",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t1",1),("t3",1)]}),
+      ("t1",TransitionNode {flowIn = M.fromList [("s1",1),("s4",1)], flowOut = M.fromList [("s2",2),("s3",2)]}),
+      ("t2",TransitionNode {flowIn = M.empty, flowOut = M.fromList [("s3",1)]}),
+      ("t3",TransitionNode {flowIn = M.fromList [("s4",1)], flowOut = M.fromList [("s3",1)]})
+      ]
+    },
+  numberOfPlaces = 4,
+  numberOfTransitions = 3,
+  showSolution = False
+  }
+
+defaultFindConcurrencyInstance :: FindInstance (Concurrent Transition)
+defaultFindConcurrencyInstance = FindInstance {
+  drawFindWith = DrawSettings {
+    withPlaceNames = False,
+    withTransitionNames = True,
+    with1Weights = False,
+    withGraphvizCommand = Circo
+    },
+  toFind = Concurrent (Transition 1,Transition 3),
+  net = PetriLike {
+    allNodes = M.fromList [
+      ("s1",PlaceNode {initial = 2, flowIn = M.empty, flowOut = M.fromList [("t1",1),("t2",2),("t3",1)]}),
+      ("s2",PlaceNode {initial = 1, flowIn = M.fromList [("t2",1),("t3",2)], flowOut = M.empty}),
+      ("s3",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1)], flowOut = M.fromList [("t3",1)]}),
+      ("s4",PlaceNode {initial = 0, flowIn = M.fromList [("t2",2)], flowOut = M.empty}),
+      ("t1",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s3",1)]}),
+      ("t2",TransitionNode {flowIn = M.fromList [("s1",2)], flowOut = M.fromList [("s2",1),("s4",2)]}),
+      ("t3",TransitionNode {flowIn = M.fromList [("s1",1),("s3",1)], flowOut = M.fromList [("s2",2)]})
+      ]
+    },
+  numberOfPlaces = 4,
+  numberOfTransitions = 3,
+  showSolution = False
+  }

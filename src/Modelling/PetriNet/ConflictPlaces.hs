@@ -4,6 +4,8 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 module Modelling.PetriNet.ConflictPlaces where
 
+import qualified Data.Map                         as M (empty, fromList)
+
 import Modelling.Auxiliary.Output (
   LangM',
   LangM,
@@ -36,13 +38,17 @@ import Modelling.PetriNet.Reach.Type (
   Place (Place),
   ShowPlace (ShowPlace),
   ShowTransition (ShowTransition),
-  Transition,
+  Transition (Transition),
   parsePlacePrec,
   parseTransitionPrec,
   )
 import Modelling.PetriNet.Types (
   Conflict,
+  DrawSettings (..),
   FindConflictConfig (..),
+  Node (..),
+  PetriConflict (..),
+  PetriLike (..),
   defaultFindConcurrencyConfig,
   defaultFindConflictConfig,
   lBasicConfig,
@@ -56,6 +62,7 @@ import Control.Monad.IO.Class           (MonadIO)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))
+import Data.GraphViz.Commands           (GraphvizCommand (Circo))
 import Data.List                        (partition)
 import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
@@ -168,3 +175,31 @@ checkFindConflictPlacesConfig FindConflictConfig {
   = prohibitHidePlaceNames basicConfig
   <|> checkConfigForFind basicConfig changeConfig
   <|> checkConflictConfig basicConfig conflictConfig
+
+defaultFindConflictPlacesInstance :: FindInstance Conflict
+defaultFindConflictPlacesInstance = FindInstance {
+  drawFindWith = DrawSettings {
+    withPlaceNames = True,
+    withTransitionNames = True,
+    with1Weights = False,
+    withGraphvizCommand = Circo
+    },
+  toFind = Conflict {
+    conflictTrans = (Transition 1,Transition 3),
+    conflictPlaces = [Place 4]
+    },
+  net = PetriLike {
+    allNodes = M.fromList [
+      ("s1",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t1",1)]}),
+      ("s2",PlaceNode {initial = 0, flowIn = M.fromList [("t1",2)], flowOut = M.empty}),
+      ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t1",2),("t2",1),("t3",1)], flowOut = M.empty}),
+      ("s4",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t1",1),("t3",1)]}),
+      ("t1",TransitionNode {flowIn = M.fromList [("s1",1),("s4",1)], flowOut = M.fromList [("s2",2),("s3",2)]}),
+      ("t2",TransitionNode {flowIn = M.empty, flowOut = M.fromList [("s3",1)]}),
+      ("t3",TransitionNode {flowIn = M.fromList [("s4",1)], flowOut = M.fromList [("s3",1)]})
+      ]
+    },
+  numberOfPlaces = 4,
+  numberOfTransitions = 3,
+  showSolution = False
+  }
