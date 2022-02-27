@@ -426,7 +426,7 @@ pickSyntax
   -> LangM m
 pickSyntax task = singleChoiceSyntax withSol options
   where
-    options = M.keys . M.filter fst $ nets task
+    options = M.keys $ nets task
     withSol = showSolution (task :: PickInstance)
 
 pickEvaluation
