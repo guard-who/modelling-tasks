@@ -14,23 +14,35 @@ import qualified Data.Map                         as M (
   findWithDefault,
   fromList,
   lookup,
+  mapKeys,
   toList,
   )
-import qualified Data.Set                         as S (fromList)
+import qualified Data.Set                         as S (fromList, map)
 
-import Modelling.Auxiliary.Common       (parseInt)
+import Modelling.Auxiliary.Common       (parseInt, skipSpaces)
 
 import Control.Monad                    (void)
+import Data.List                        (intercalate)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
-import Text.ParserCombinators.Parsec    (Parser, char, skipMany, space)
+import Text.ParserCombinators.Parsec (
+  Parser,
+  char,
+  optional,
+  sepBy,
+  skipMany,
+  space,
+  )
 
 type Connection s t = ([s], t, [s])
 
 newtype State s = State {unState :: Map s Int}
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
+
+mapState :: Ord b => (a -> b) -> State a -> State b
+mapState f (State x) = State { unState = M.mapKeys f x }
 
 instance Ord s => Eq (State s) where
   State f == State g = M.filter (/= 0) f == M.filter (/= 0) g
@@ -56,6 +68,11 @@ data Capacity s
   | Bounded (Map s Int)
   deriving (Eq, Generic, Ord, Read, Show, Typeable)
 
+mapCapacity :: Ord a => (s -> a) -> Capacity s -> Capacity a
+mapCapacity _ Unbounded      = Unbounded
+mapCapacity _ (AllBounded x) = AllBounded x
+mapCapacity f (Bounded m)    = Bounded $ M.mapKeys f m
+
 data Net s t = Net {
   places :: Set s,
   transitions :: Set t,
@@ -64,6 +81,17 @@ data Net s t = Net {
   start :: State s
   }
   deriving (Eq, Generic, Ord, Read, Show, Typeable)
+
+bimapNet :: (Ord a, Ord b) => (s -> a) -> (t -> b) -> Net s t -> Net a b
+bimapNet f g x = Net {
+  places      = S.map f (places x),
+  transitions = S.map g (transitions x),
+  connections = bimapConnection <$> connections x,
+  capacity    = mapCapacity f $ capacity x,
+  start       = mapState f $ start x
+  }
+  where
+    bimapConnection (w, y, z) = (f <$> w, g y, f <$> z)
 
 allNonNegative :: State a -> Bool
 allNonNegative (State z) =
@@ -85,6 +113,7 @@ newtype Place = Place Int
   deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable)
 
 newtype ShowPlace = ShowPlace Place
+  deriving (Eq, Ord)
 
 instance Show ShowPlace where
   show (ShowPlace (Place p)) = "s" ++ show p
@@ -96,12 +125,13 @@ parsePlacePrec :: Int -> Parser Place
 parsePlacePrec _ = do
   skipMany space
   void $ char 's'
-  Place <$> parseInt
+  Place <$> parseInt <* skipMany space
 
 newtype Transition = Transition Int
   deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable)
 
 newtype ShowTransition = ShowTransition Transition
+  deriving (Eq, Ord)
 
 instance Show ShowTransition where
   show (ShowTransition (Transition t)) = "t" ++ show t
@@ -113,7 +143,27 @@ parseTransitionPrec :: Int -> Parser Transition
 parseTransitionPrec _ = do
   skipMany space
   void $ char 't'
-  Transition <$> parseInt
+  Transition <$> parseInt <* skipMany space
+
+newtype TransitionsList = TransitionsList {
+  transitionsList :: [Transition]
+  }
+  deriving Generic
+
+instance Show TransitionsList where
+  show (TransitionsList ts) =
+    '['
+    : intercalate ", " (map showTransition ts)
+    ++ "]"
+
+parseTransitionsListPrec :: Int -> Parser TransitionsList
+parseTransitionsListPrec _ = do
+  skipSpaces
+  optional $ char '['
+  ts <- parseTransitionPrec 0 `sepBy` optional (char ',')
+  skipSpaces
+  optional $ char ']' >> skipSpaces
+  return $ TransitionsList ts
 
 example :: (Net Place Transition, State Place)
 example =

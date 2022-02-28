@@ -24,15 +24,19 @@ import Modelling.PetriNet.Reach.Property (
   Property (Default),
   validate,
   )
-import Modelling.PetriNet.Reach.Reach   (isNoLonger, reportReachFor)
+import Modelling.PetriNet.Reach.Reach   (isNoLonger, reportReachFor, transitionsValid)
 import Modelling.PetriNet.Reach.Roll    (net)
 import Modelling.PetriNet.Reach.Step    (deadlocks, executes, successors)
 import Modelling.PetriNet.Reach.Type (
-  Transition (..),
-  Place (..),
-  Net (..),
   Capacity (Unbounded),
+  Net (..),
+  Place (..),
+  ShowPlace (ShowPlace),
+  ShowTransition (ShowTransition),
   State (State),
+  Transition (..),
+  TransitionsList (TransitionsList),
+  bimapNet,
   )
 
 import Control.Monad                    (forM, guard)
@@ -44,22 +48,18 @@ import Data.Ord                         (comparing)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
 
-data PetriDeadlock = PetriDeadlock
-  deriving (Typeable, Generic)
-
 verifyDeadlock
   :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
-  => PetriDeadlock
-  -> Net a t
+  => DeadlockInstance a t
   -> LangM m
-verifyDeadlock PetriDeadlock = validate Default
+verifyDeadlock = validate Default . petriNet
 
-reportDeadlock
+deadlockTask
   :: (OutputMonad m, MonadIO m, Ord s, Ord t, Show s, Show t)
   => FilePath
   -> DeadlockInstance s t
   -> LangM m
-reportDeadlock path inst = do
+deadlockTask path inst = do
   img <- drawToFile True path (drawUsing inst) 0 $ petriNet inst
   reportReachFor
     img
@@ -68,16 +68,23 @@ reportDeadlock path inst = do
     (withMinLengthHint inst)
     Nothing
 
-initialDeadlock :: DeadlockInstance s a -> [a]
-initialDeadlock inst = reverse $ S.toList $ transitions $ petriNet inst
+deadlockInitial :: DeadlockInstance s Transition -> TransitionsList
+deadlockInitial = TransitionsList . reverse . S.toList . transitions . petriNet
 
-totalDeadlock
+deadlockSyntax
+  :: OutputMonad m
+  => DeadlockInstance s Transition
+  -> [Transition]
+  -> LangM m
+deadlockSyntax = transitionsValid . petriNet
+
+deadlockEvaluation
   :: (OutputMonad m, MonadIO m, Show t, Show s, Ord t, Ord s)
   => FilePath
   -> DeadlockInstance s t
   -> [t]
   -> LangM m
-totalDeadlock path inst ts = do
+deadlockEvaluation path inst ts = do
   isNoLonger (noLongerThan inst) ts
   out <- executes path True (drawUsing inst) n ts
   assertion (null $ successors n out) $ text "Zielmarkierung hat keine Nachfolger?"
@@ -92,7 +99,26 @@ data DeadlockInstance s t = DeadlockInstance {
   withMinLengthHint :: Maybe Int
   } deriving (Generic, Read, Show, Typeable)
 
-data Config = Config {
+bimapDeadlockInstance
+  :: (Ord a, Ord b)
+  => (s -> a)
+  -> (t -> b)
+  -> DeadlockInstance s t
+  -> DeadlockInstance a b
+bimapDeadlockInstance f g x = DeadlockInstance {
+    drawUsing         = drawUsing x,
+    noLongerThan      = noLongerThan x,
+    petriNet          = bimapNet f g (petriNet x),
+    withLengthHint    = withLengthHint x,
+    withMinLengthHint = withMinLengthHint x
+    }
+
+toShowDeadlockInstance
+  :: DeadlockInstance Place Transition
+  -> DeadlockInstance ShowPlace ShowTransition
+toShowDeadlockInstance = bimapDeadlockInstance ShowPlace ShowTransition
+
+data DeadlockConfig = DeadlockConfig {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
@@ -105,9 +131,9 @@ data Config = Config {
   }
   deriving (Generic, Read, Show, Typeable)
 
-defaultDeadlockConfig :: Config
+defaultDeadlockConfig :: DeadlockConfig
 defaultDeadlockConfig =
-  Config {
+  DeadlockConfig {
   numPlaces = 4,
   numTransitions = 4,
   Modelling.PetriNet.Reach.Deadlock.capacity = Unbounded,
@@ -119,7 +145,7 @@ defaultDeadlockConfig =
   showMinLengthHint   = True
   }
 
-generateDeadlock :: Config -> Int -> DeadlockInstance Place Transition
+generateDeadlock :: DeadlockConfig -> Int -> DeadlockInstance Place Transition
 generateDeadlock conf seed = DeadlockInstance {
   drawUsing         = cmd,
   noLongerThan      = rejectLongerThan conf,
@@ -132,7 +158,7 @@ generateDeadlock conf seed = DeadlockInstance {
   where
     (petri, cmd) = tries 1000 conf seed
 
-tries :: Int -> Config -> Int -> (Net Place Transition, GraphvizCommand)
+tries :: Int -> DeadlockConfig -> Int -> (Net Place Transition, GraphvizCommand)
 tries n conf seed = eval out
   where
     eval f = evalRand f $ mkStdGen seed
@@ -143,7 +169,7 @@ tries n conf seed = eval out
         then (pn,) <$> oneOf (drawCommands conf)
         else out
 
-try :: MonadRandom m => Config -> m [(Int, Net Place Transition)]
+try :: MonadRandom m => DeadlockConfig -> m [(Int, Net Place Transition)]
 try conf = do
   let ps = [Place 1 .. Place (numPlaces conf)]
       ts = [Transition 1 .. Transition (numTransitions conf)]

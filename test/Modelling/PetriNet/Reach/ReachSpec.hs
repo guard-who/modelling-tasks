@@ -3,7 +3,7 @@ module Modelling.PetriNet.Reach.ReachSpec where
 import qualified Data.Set                         as S
 
 import Modelling.PetriNet.Reach.Reach (
-  Config (..),
+  ReachConfig (..),
   ReachInstance (..),
   defaultReachConfig,
   generateReach,

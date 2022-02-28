@@ -18,6 +18,9 @@ import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   LangM,
   OutputMonad (assertion, code, image, indent, paragraph, text),
+  english,
+  german,
+  translate,
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
@@ -27,44 +30,45 @@ import Modelling.PetriNet.Reach.Property (
 import Modelling.PetriNet.Reach.Roll    (net)
 import Modelling.PetriNet.Reach.Step    (executes, levels)
 import Modelling.PetriNet.Reach.Type (
-  ShowTransition (ShowTransition),
-  Transition (..),
-  Place(..),
-  Net (transitions, start),
   Capacity (Unbounded),
+  Net (start, transitions),
+  Place (..),
+  ShowPlace (ShowPlace),
+  ShowTransition (ShowTransition),
   State,
+  Transition (..),
+  TransitionsList (TransitionsList),
+  bimapNet,
+  mapState,
   mark,
   )
 
-import Control.Monad                    (forM)
+import Control.Monad                    (forM, forM_)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (minimumBy)
+import Data.List.Extra                  (nubSort)
 import Data.Ord                         (comparing)
 import Data.String.Interpolate          (i)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
 
-data PetriReach = PetriReach
-  deriving (Generic, Typeable)
-
 verifyReach :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
-  => PetriReach
-  -> ReachInstance a t
+  => ReachInstance a t
   -> LangM m
-verifyReach PetriReach inst = do
+verifyReach inst = do
   let n = petriNet inst
   validate Default n
   validate Default $ n { start = goal inst }
 
-reportReach
+reachTask
   :: (MonadIO m, OutputMonad m, Ord s, Ord t, Show s, Show t)
   => FilePath
   -> ReachInstance s t
   -> LangM m
-reportReach path inst = do
+reachTask path inst = do
   let n = petriNet inst
   (g, withoutPlaceNames) <- if showGoalNet inst
     then (,True) . Left
@@ -116,15 +120,32 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   (`mapM_` minLengthHint) $ \len -> paragraph $ text
     [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
 
-initialReach :: p -> (Net s a, b) -> [a]
-initialReach _ (n,_) = reverse $ S.toList $ transitions n
+reachInitial :: ReachInstance s Transition -> TransitionsList
+reachInitial = TransitionsList . reverse . S.toList . transitions . petriNet
 
-totalReach :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
+reachSyntax
+  :: OutputMonad m
+  => ReachInstance s Transition
+  -> [Transition]
+  -> LangM m
+reachSyntax inst = transitionsValid (petriNet inst)
+
+transitionsValid :: OutputMonad m => Net s Transition -> [Transition] -> LangM m
+transitionsValid n =
+  mapM_ assertTransition . nubSort
+  where
+    assertTransition t = assertion (isValidTransition t) $ translate $ do
+      let t' = show $ ShowTransition t
+      english $ t' ++ " is a valid transition of the given Petri net?"
+      german $ t' ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
+    isValidTransition =  (`elem` transitions n)
+
+reachEvaluation :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
   => FilePath
   -> ReachInstance s t
   -> [t]
   -> LangM m
-totalReach path inst ts = do
+reachEvaluation path inst ts = do
   isNoLonger (noLongerThan inst) ts
   paragraph $ text "Startmarkierung"
   indent $ text $ show (start n)
@@ -135,7 +156,7 @@ totalReach path inst ts = do
 
 isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
 isNoLonger mmaxL ts =
-  (`mapM_` mmaxL) $ \maxL ->
+  forM_ mmaxL $ \maxL ->
     assertion (length ts <= maxL) $
       text $ unwords ["Nicht mehr als", show maxL, "Transitionen?"]
 
@@ -149,7 +170,28 @@ data ReachInstance s t = ReachInstance {
   withMinLengthHint :: Maybe Int
   } deriving (Generic, Read, Show, Typeable)
 
-data Config = Config {
+bimapReachInstance
+  :: (Ord a, Ord b)
+  => (s -> a)
+  -> (t -> b)
+  -> ReachInstance s t
+  -> ReachInstance a b
+bimapReachInstance f g x = ReachInstance {
+    drawUsing         = drawUsing x,
+    goal              = mapState f (goal x),
+    noLongerThan      = noLongerThan x,
+    petriNet          = bimapNet f g (petriNet x),
+    showGoalNet       = showGoalNet x,
+    withLengthHint    = withLengthHint x,
+    withMinLengthHint = withMinLengthHint x
+    }
+
+toShowReachInstance
+  :: ReachInstance Place Transition
+  -> ReachInstance ShowPlace ShowTransition
+toShowReachInstance = bimapReachInstance ShowPlace ShowTransition
+
+data ReachConfig = ReachConfig {
   numPlaces :: Int,
   numTransitions :: Int,
   capacity :: Capacity Place,
@@ -163,8 +205,8 @@ data Config = Config {
   }
   deriving (Generic, Read, Show, Typeable)
 
-defaultReachConfig :: Config
-defaultReachConfig = Config {
+defaultReachConfig :: ReachConfig
+defaultReachConfig = ReachConfig {
   numPlaces = 4,
   numTransitions = 4,
   Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
@@ -177,7 +219,7 @@ defaultReachConfig = Config {
   showTargetNet       = True
   }
 
-generateReach :: Config -> Int -> ReachInstance Place Transition
+generateReach :: ReachConfig -> Int -> ReachInstance Place Transition
 generateReach conf seed =
   let ps = [Place 1 .. Place (numPlaces conf)]
       tries = forM [1 :: Int .. 1000] $ const $ do

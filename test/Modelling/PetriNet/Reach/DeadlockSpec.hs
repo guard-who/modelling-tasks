@@ -1,7 +1,7 @@
 module Modelling.PetriNet.Reach.DeadlockSpec where
 
 import Modelling.PetriNet.Reach.Deadlock (
-  Config (..),
+  DeadlockConfig (..),
   DeadlockInstance (..),
   defaultDeadlockConfig,
   generateDeadlock,
