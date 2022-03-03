@@ -41,6 +41,7 @@ import qualified Text.XML as XML
 
 import qualified Data.Text as T (Text, pack, filter, length)
 import Data.List (isPrefixOf)
+import Data.Maybe                       (maybeToList)
 
 data SVGOptions = SVGOptions
   { xmlns, height, iStrokeOpacity, viewBox, fontSize, width, xmlnsXlink, iStroke, version :: T.Text,
@@ -52,8 +53,13 @@ data SVGGroup = SVGGroup
     paths :: [Path] }
   deriving (Show, Eq)
 
-data Path = Path
-  { d, pClass, pFillOpacity :: T.Text }
+data Path = Path {
+  d                 :: T.Text,
+  pClass            :: T.Text,
+  pFill             :: Maybe T.Text,
+  pFillOpacity      :: T.Text,
+  pStroke           :: Maybe T.Text
+  }
   deriving (Show, Eq)
 
 parseXML :: String -> IOStateArrow s b XmlTree
@@ -96,10 +102,18 @@ getPath :: ArrowXml cat => cat (NTree XNode) Path
 getPath = atTag "path" >>>
   proc p -> do
     dAtt <- getAttrValue "d" -< p
-    returnA -< Path
-      { d = T.pack dAtt,
-        pClass = "default",
-        pFillOpacity = "0" }
+    pFillAtt <- getAttrValue "fill" -< p
+    pStrokeAtt <- getAttrValue "stroke" -< p
+    returnA -< Path {
+      d = T.pack dAtt,
+      pClass = "default",
+      pFill = mText pFillAtt,
+      pFillOpacity = "0",
+      pStroke = mText pStrokeAtt
+      }
+  where
+    mText [] = Nothing
+    mText xs = Just $ T.pack xs
 
 getSVGAttributes :: ArrowXml cat => cat (NTree XNode) SVGOptions
 getSVGAttributes = atTag "svg" >>>
@@ -129,7 +143,16 @@ getSVGAttributes = atTag "svg" >>>
       }
 
 applyClass :: SVGGroup -> [Path]
-applyClass x = [ p{ pClass = T.filter (/='.') (svgClass x), pFillOpacity = fillOpacity x } | p <- paths x]
+applyClass x = [ modify p | p <- paths x]
+  where
+    modify p = p {
+      pClass = T.filter (/='.') (svgClass x),
+      pFill = mString $ fill x,
+      pFillOpacity = fillOpacity x,
+      pStroke = mString $ stroke x
+      }
+    mString [] = Nothing
+    mString xs = Just xs
 
 formatSVG :: [SVGGroup] -> [SVGGroup]
 formatSVG []     = []
@@ -158,7 +181,11 @@ buildSVG svg = XML.Element "svg" [("xmlns", xmlns svg), ("height", height svg), 
   [ XML.NodeElement $ XML.Element "g" [("stroke-linejoin", strokeLinejoin gr), ("stroke-opacity", strokeOpacity gr), ("fill-opacity", fillOpacity gr), ("stroke", stroke gr), ("stroke-width", strokeWidth gr), ("fill", fill gr), ("stroke-linecap", strokeLinecap gr), ("stroke-miterlimit", strokeMiterlimit gr)]
   [ XML.NodeElement $ XML.Element "path" (M.fromList $
       [("d", d ps), ("class", pClass ps), ("fill-opacity", pFillOpacity ps)]
-      ++ [("fill", "none") | pFillOpacity ps == "0.0"])
+      ++ [("fill", x)
+         | pFillOpacity ps /= "0.0", x <- maybeToList $ pFill ps, x /= fill gr]
+      ++ [("fill", "none") | pFillOpacity ps == "0.0"]
+      ++ [("stroke", x) | x <- maybeToList $ pStroke ps, x /= stroke gr]
+      )
     []
   | ps <- paths gr] | gr <- groups svg ]
 
