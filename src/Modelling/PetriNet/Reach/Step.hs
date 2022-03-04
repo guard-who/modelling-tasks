@@ -23,6 +23,9 @@ import qualified Data.Set                         as S (
 import Modelling.Auxiliary.Output (
   LangM',
   OutputMonad (image, indent, paragraph, refuse, text),
+  english,
+  german,
+  translate,
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Type (
@@ -93,7 +96,9 @@ executes
   -> LangM' m (State s)
 executes path hidePNames cmd n ts = foldM
   (\z (k, t) -> do
-      paragraph $ text $ "Schritt" ++ show k
+      paragraph $ translate $ do
+        english $ "Step " ++ show k
+        german $ "Schritt " ++ show k
       Modelling.PetriNet.Reach.Step.executeIO path hidePNames cmd k n t z
   )
   (start n)
@@ -128,20 +133,28 @@ execute n t z0 = do
         guard $ t' == t
         return c
   case cs of
-    [] -> refuse (text "existiert nicht") >> return z0
+    [] -> do
+      refuse $ translate $ do
+        english "does not exist!"
+        german "existiert nicht!"
+      return z0
     [(vor, _, nach)] -> do
       let z1 = change pred vor z0
-      paragraph $
-        text "Zwischenmarkierung (nach Einziehen der Marken im Vorbereich)"
+      paragraph $ translate $ do
+        english "Intermediate marking (after collecting tokens)"
+        german "Zwischenmarkierung (nach Einziehen der Marken im Vorbereich)"
       indent $ text $ show z1
-      unless (allNonNegative z1) $ refuse $ text
-        "enthält negative Markierungen (Transition war nicht aktiviert)"
+      unless (allNonNegative z1) $ refuse $ translate $ do
+        english "contains negative markings (transition was not activated)!"
+        german "enthält negative Markierungen (Transition war nicht aktiviert)!"
       let z2 = change succ nach z1
-      paragraph $ text
-        "Endmarkierung (nach Austeilen der Marken im Nachbereich)"
+      paragraph $ translate $ do
+        english "Final marking (after distributing tokens)"
+        german "Endmarkierung (nach Austeilen der Marken im Nachbereich)"
       indent $ text $ show z2
-      unless (conforms (capacity n) z2) $ refuse $ text
-        "enthält mehr Marken, als die Kapazität zulässt"
+      unless (conforms (capacity n) z2) $ refuse $ translate $ do
+        english "contains more tokens than capacity permits!"
+        german "enthält mehr Marken, als die Kapazität zulässt!"
       return z2
     _ -> undefined -- TODO Patern match not required?
 

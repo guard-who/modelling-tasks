@@ -21,6 +21,7 @@ import Modelling.Auxiliary.Output (
   english,
   german,
   translate,
+  hoveringInformation,
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
@@ -91,34 +92,52 @@ reportReachFor
   -> Maybe (Either FilePath String)
   -> LangM m
 reportReachFor img noLonger lengthHint minLengthHint mgoal = do
-  paragraph $ text "Gesucht ist für das Petrinetz"
+  paragraph $ translate $ do
+    english "For the Petri net"
+    german "Gesucht ist für das Petrinetz"
   image img
   paragraph $ case mgoal of
-    Nothing -> paragraph $ text $ unlines [
-      "eine Transitionsfolge,",
-      "die zu einer Markierung ohne Nachfolger (Deadlock) führt."
-      ]
+    Nothing -> translate $ do
+      english "a transition sequence is searched, which leads to a marking without successors (deadlock)."
+      german "eine Transitionsfolge, die zu einer Markierung ohne Nachfolger (Deadlock) führt."
     Just g -> do
-      text "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
+      translate $ do
+        english "a transitions sequence is searched, which leads to the following marking:"
+        german "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
       either image text g
   paragraph $ case noLonger of
-    Nothing ->
-      text "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
-    Just maxL ->
-      text $ concat [
+    Nothing -> translate $ do
+      english "State your answer as a (arbitrarily short or long) sequence of the following kind:"
+      german "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
+    Just maxL -> translate $ do
+      english $ concat [
+        "State your solution as a ", show maxL,
+        "-ary sequence of the following kind:"]
+      german $ concat [
         "Geben Sie Ihre Lösung als maximal ", show maxL,
         "-elementige Auflistung der folgenden Art an:"]
-  code $ show $ map ShowTransition [Transition 1, Transition 2, Transition 3]
-  paragraph $ text $ concat [
-    "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
-    show (ShowTransition $ Transition 1), ", danach ", show (ShowTransition $ Transition 2),
-    ", und schließlich ", show (ShowTransition $ Transition 3),
-    " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
-    ]
-  (`mapM_` lengthHint) $ \len -> paragraph $ text
-    [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{len} Transitionen.|]
-  (`mapM_` minLengthHint) $ \len -> paragraph $ text
-    [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
+  let (t1, t2, t3) = (Transition 1, Transition 2, Transition 3)
+      showT = show . ShowTransition
+      (st1, st2, st3) = (showT t1, showT t2, showT t3)
+  code $ show $ TransitionsList [t1, t2, t3]
+  paragraph $ translate $ do
+    english $ concat [
+      "This statement should mean, that after firing",
+      st1, ", then ", st2, ", and finally ", st3,
+      " (in exactly this order), the searched marking is reached."
+      ]
+    german $ concat [
+      "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
+      st1, ", danach ", st2, ", und schließlich ", st3,
+      " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
+      ]
+  forM_ lengthHint $ \len -> paragraph $ translate $ do
+    english [i|Hint: There is a solution with not more than #{len} transitions.|]
+    german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{len} Transitionen.|]
+  forM_ minLengthHint $ \len -> paragraph $ translate $ do
+    english [i|Hint: There is no solution with less than #{len} transitions.|]
+    german [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
+  hoveringInformation
 
 reachInitial :: ReachInstance s Transition -> TransitionsList
 reachInitial = TransitionsList . reverse . S.toList . transitions . petriNet
@@ -147,18 +166,23 @@ reachEvaluation :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
   -> LangM m
 reachEvaluation path inst ts = do
   isNoLonger (noLongerThan inst) ts
-  paragraph $ text "Startmarkierung"
+  paragraph $ translate $ do
+    english "Start marking:"
+    german "Startmarkierung:"
   indent $ text $ show (start n)
   out <- executes path False (drawUsing inst) n ts
-  assertion (out == goal inst) $ text "Zielmarkierung erreicht?"
+  assertion (out == goal inst) $ translate $ do
+    english "Reached targeted marking?"
+    german "Zielmarkierung erreicht?"
   where
     n = petriNet inst
 
 isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
 isNoLonger mmaxL ts =
   forM_ mmaxL $ \maxL ->
-    assertion (length ts <= maxL) $
-      text $ unwords ["Nicht mehr als", show maxL, "Transitionen?"]
+    assertion (length ts <= maxL) $ translate $ do
+      english $ unwords ["Not more than ", show maxL, "transitions provided?"]
+      german $ unwords ["Nicht mehr als", show maxL, "Transitionen angegeben?"]
 
 data ReachInstance s t = ReachInstance {
   drawUsing         :: GraphvizCommand,
