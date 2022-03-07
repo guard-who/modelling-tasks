@@ -104,11 +104,11 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   image img
   paragraph $ case mgoal of
     Nothing -> translate $ do
-      english "a transition sequence is searched, which leads to a marking without successors (deadlock)."
+      english "a transition sequence is sought, which leads to a marking without successors (deadlock)."
       german "eine Transitionsfolge, die zu einer Markierung ohne Nachfolger (Deadlock) führt."
     Just g -> do
       translate $ do
-        english "a transitions sequence is searched, which leads to the following marking:"
+        english "a transitions sequence is sought, which leads to the following marking:"
         german "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
       either image text g
   paragraph $ case noLonger of
@@ -130,7 +130,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
     english $ concat [
       "This statement should mean, that after firing",
       st1, ", then ", st2, ", and finally ", st3,
-      " (in exactly this order), the searched marking is reached."
+      " (in exactly this order), the sought marking is reached."
       ]
     german $ concat [
       "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
