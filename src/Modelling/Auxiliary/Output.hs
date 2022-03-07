@@ -11,6 +11,7 @@ module Modelling.Auxiliary.Output (
   multipleChoice,
   printSolutionAndAssert,
   recoverFrom,
+  recoverWith,
   simplifiedInformation,
   singleChoice,
   singleChoiceSyntax,
@@ -38,6 +39,7 @@ module Modelling.Auxiliary.Output (
   translate,
   translations,
   withLang,
+  yesNo,
   ) where
 
 import qualified Data.Map as M
@@ -270,6 +272,9 @@ instance Monad (Report o) where
 
 recoverFrom :: Alternative m => LangM m -> LangM m
 recoverFrom x = LangM $ \l -> (x `withLang` l) <|> pure ()
+
+recoverWith :: Alternative m => a -> LangM' m b -> LangM' m (Either a b)
+recoverWith x m = LangM $ \l -> (Right <$> (m `withLang` l)) <|> pure (Left x)
 
 getOutsWithResult :: Report o a -> (Maybe a, [Out o])
 getOutsWithResult = runWriter . getAllOuts'

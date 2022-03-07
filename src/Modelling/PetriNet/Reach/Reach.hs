@@ -17,11 +17,13 @@ import qualified Data.Set                         as S (toList)
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   LangM,
-  OutputMonad (assertion, code, image, indent, paragraph, text),
+  OutputMonad (assertion, code, image, indent, paragraph, refuse, text),
+  Rated,
   english,
   german,
-  translate,
   hoveringInformation,
+  translate,
+  yesNo,
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
@@ -44,14 +46,17 @@ import Modelling.PetriNet.Reach.Type (
   mark,
   )
 
-import Control.Monad                    (forM, forM_)
+import Control.Applicative              (Alternative)
+import Control.Monad                    (forM, forM_, unless, when)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
+import Data.Either                      (isRight)
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (minimumBy)
 import Data.List.Extra                  (nubSort)
 import Data.Ord                         (comparing)
+import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
@@ -159,23 +164,47 @@ transitionsValid n =
       german $ t' ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
     isValidTransition =  (`elem` transitions n)
 
-reachEvaluation :: (MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
+reachEvaluation
+  :: (Alternative m, MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
   => FilePath
   -> ReachInstance s t
   -> [t]
-  -> LangM m
+  -> Rated m
 reachEvaluation path inst ts = do
   isNoLonger (noLongerThan inst) ts
   paragraph $ translate $ do
     english "Start marking:"
     german "Startmarkierung:"
   indent $ text $ show (start n)
-  out <- executes path False (drawUsing inst) n ts
-  assertion (out == goal inst) $ translate $ do
+  eout <- executes path False (drawUsing inst) n ts
+  when (isRight eout) $ yesNo (eout == Right (goal inst)) $ translate $ do
     english "Reached targeted marking?"
     german "Zielmarkierung erreicht?"
+  assertReachPoints ((==) . goal) minLength inst ts eout
   where
     n = petriNet inst
+
+assertReachPoints
+  :: OutputMonad m
+  => (i -> a -> Bool)
+  -> (i -> Int)
+  -> i
+  -> [b]
+  -> Either Int a
+  -> Rated m
+assertReachPoints p len inst ts eout = do
+  let points = either
+        partly
+        (\x -> if p inst x then 1 else partly $ length ts)
+        eout
+  unless (points >= 1 % 3) $ refuse $ return ()
+  return points
+  where
+    partly x = partiallyCorrect x $ len inst
+    partiallyCorrect x y = min 0.6 $
+      if y == 0
+      then 0
+      else toInteger x % toInteger y
 
 isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
 isNoLonger mmaxL ts =
@@ -187,6 +216,7 @@ isNoLonger mmaxL ts =
 data ReachInstance s t = ReachInstance {
   drawUsing         :: GraphvizCommand,
   goal              :: State s,
+  minLength         :: Int,
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
   showGoalNet       :: Bool,
@@ -203,6 +233,7 @@ bimapReachInstance
 bimapReachInstance f g x = ReachInstance {
     drawUsing         = drawUsing x,
     goal              = mapState f (goal x),
+    minLength         = minLength x,
     noLongerThan      = noLongerThan x,
     petriNet          = bimapNet f g (petriNet x),
     showGoalNet       = showGoalNet x,
@@ -269,6 +300,7 @@ generateReach conf seed =
   in ReachInstance {
     drawUsing         = cmd,
     goal              = state,
+    minLength         = minTransitionLength conf,
     noLongerThan      = rejectLongerThan conf,
     petriNet          = petri,
     showGoalNet       = showTargetNet conf,

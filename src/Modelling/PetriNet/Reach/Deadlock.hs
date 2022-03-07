@@ -17,17 +17,24 @@ import qualified Data.Set                         as S (fromList, toList)
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   LangM,
-  OutputMonad (assertion),
+  OutputMonad,
+  Rated,
   english,
   german,
   translate,
+  yesNo,
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
   Property (Default),
   validate,
   )
-import Modelling.PetriNet.Reach.Reach   (isNoLonger, reportReachFor, transitionsValid)
+import Modelling.PetriNet.Reach.Reach   (
+  assertReachPoints,
+  isNoLonger,
+  reportReachFor,
+  transitionsValid,
+  )
 import Modelling.PetriNet.Reach.Roll    (net)
 import Modelling.PetriNet.Reach.Step    (deadlocks, executes, successors)
 import Modelling.PetriNet.Reach.Type (
@@ -42,9 +49,12 @@ import Modelling.PetriNet.Reach.Type (
   bimapNet,
   )
 
-import Control.Monad                    (forM, guard)
+import Control.Applicative              (Alternative)
+import Control.Monad                    (forM, guard, when)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
+import Data.Either                      (isRight)
+import Data.Either.Extra                (fromRight')
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (maximumBy)
 import Data.Ord                         (comparing)
@@ -82,22 +92,25 @@ deadlockSyntax
 deadlockSyntax = transitionsValid . petriNet
 
 deadlockEvaluation
-  :: (OutputMonad m, MonadIO m, Show t, Show s, Ord t, Ord s)
+  :: (Alternative m, OutputMonad m, MonadIO m, Show t, Show s, Ord t, Ord s)
   => FilePath
   -> DeadlockInstance s t
   -> [t]
-  -> LangM m
+  -> Rated m
 deadlockEvaluation path inst ts = do
   isNoLonger (noLongerThan inst) ts
-  out <- executes path True (drawUsing inst) n ts
-  assertion (null $ successors n out) $ translate $ do
-    english "Reached marking has no successors?"
-    german "Zielmarkierung hat keine Nachfolger?"
+  eout <- executes path True (drawUsing inst) n ts
+  when (isRight eout) $ yesNo (null $ successors n $ fromRight' eout) $
+    translate $ do
+      english "Reached marking has no successors?"
+      german "Zielmarkierung hat keine Nachfolger?"
+  assertReachPoints (const $ null . successors n) minLength inst ts eout
   where
     n = petriNet inst
 
 data DeadlockInstance s t = DeadlockInstance {
   drawUsing         :: GraphvizCommand,
+  minLength         :: Int,
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
   withLengthHint    :: Maybe Int,
@@ -112,6 +125,7 @@ bimapDeadlockInstance
   -> DeadlockInstance a b
 bimapDeadlockInstance f g x = DeadlockInstance {
     drawUsing         = drawUsing x,
+    minLength         = minLength x,
     noLongerThan      = noLongerThan x,
     petriNet          = bimapNet f g (petriNet x),
     withLengthHint    = withLengthHint x,
@@ -153,6 +167,7 @@ defaultDeadlockConfig =
 generateDeadlock :: DeadlockConfig -> Int -> DeadlockInstance Place Transition
 generateDeadlock conf seed = DeadlockInstance {
   drawUsing         = cmd,
+  minLength         = minTransitionLength conf,
   noLongerThan      = rejectLongerThan conf,
   petriNet          = petri,
   withLengthHint    =

@@ -25,6 +25,7 @@ import Modelling.Auxiliary.Output (
   OutputMonad (image, indent, paragraph, refuse, text),
   english,
   german,
+  recoverWith,
   translate,
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
@@ -35,6 +36,7 @@ import Modelling.PetriNet.Reach.Type (
   conforms,
   )
 
+import Control.Applicative              (Alternative)
 import Control.Monad                    (foldM, guard, unless)
 import Control.Monad.IO.Class           (MonadIO)
 import Data.GraphViz                    (GraphvizCommand)
@@ -87,22 +89,23 @@ equalling f x y = f x == f y
 --executesPlain n ts = result $ executes n ts
 
 executes
-  :: (MonadIO m, OutputMonad m, Show t, Ord s, Show s, Ord t)
+  :: (Alternative m, MonadIO m, OutputMonad m, Show t, Ord s, Show s, Ord t)
   => FilePath
   -> Bool
   -> GraphvizCommand
   -> Net s t
   -> [t]
-  -> LangM' m (State s)
+  -> LangM' m (Either Int (State s))
 executes path hidePNames cmd n ts = foldM
-  (\z (k, t) -> do
+  (\z (k, t) -> either (return . Left) (step k t) z)
+  (Right $ start n)
+  (zip [1 :: Int ..] ts)
+  where
+    step k t z = recoverWith (k - 1) $ do
       paragraph $ translate $ do
         english $ "Step " ++ show k
         german $ "Schritt " ++ show k
       Modelling.PetriNet.Reach.Step.executeIO path hidePNames cmd k n t z
-  )
-  (start n)
-  (zip [1 :: Int ..] ts)
 
 executeIO
   :: (MonadIO m, OutputMonad m, Show a, Show k, Ord a, Ord k)
