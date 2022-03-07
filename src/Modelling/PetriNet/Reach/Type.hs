@@ -171,14 +171,14 @@ example =
     places = S.fromList [Place 1, Place 2, Place 3, Place 4],
     transitions = S.fromList [Transition 1, Transition 2, Transition 3, Transition 4],
     connections = [
-        ([Place 3], Transition 1, [Place 2, Place 3]),
+        ([Place 3, Place 4], Transition 1, [Place 2]),
         ([Place 4], Transition 2, [Place 3]),
         ([Place 1], Transition 3, [Place 4]),
         ([Place 2], Transition 4, [Place 1])
     ],
-    capacity = AllBounded 1,
+    capacity = Unbounded,
     start = State $ M.fromList
-      [(Place 1, 1), (Place 2, 0), (Place 3, 0), (Place 4, 0)]
+      [(Place 1, 3), (Place 2, 0), (Place 3, 0), (Place 4, 0)]
     },
-   State $ M.fromList [(Place 1, 1), (Place 2, 1), (Place 3, 1), (Place 4, 1)]
+   State $ M.fromList [(Place 1, 0), (Place 2, 0), (Place 3, 1), (Place 4, 0)]
   )

@@ -47,6 +47,7 @@ import Modelling.PetriNet.Reach.Type (
   Transition (..),
   TransitionsList (TransitionsList),
   bimapNet,
+  example,
   )
 
 import Control.Applicative              (Alternative)
@@ -162,6 +163,16 @@ defaultDeadlockConfig =
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
   showMinLengthHint   = True
+  }
+
+defaultDeadlockInstance :: DeadlockInstance Place Transition
+defaultDeadlockInstance = DeadlockInstance {
+  drawUsing         = Circo,
+  minLength         = 6,
+  noLongerThan      = Nothing,
+  petriNet          = fst example,
+  withLengthHint    = Just 9,
+  withMinLengthHint = Just 6
   }
 
 generateDeadlock :: DeadlockConfig -> Int -> DeadlockInstance Place Transition

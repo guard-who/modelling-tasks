@@ -42,6 +42,7 @@ import Modelling.PetriNet.Reach.Type (
   Transition (..),
   TransitionsList (TransitionsList),
   bimapNet,
+  example,
   mapState,
   mark,
   )
@@ -273,6 +274,18 @@ defaultReachConfig = ReachConfig {
   showMinLengthHint   = True,
   showTargetNet       = True
   }
+
+defaultReachInstance :: ReachInstance Place Transition
+defaultReachInstance = ReachInstance {
+  drawUsing         = Circo,
+  goal              = snd example,
+  minLength         = 12,
+  noLongerThan      = Nothing,
+  petriNet          = fst example,
+  showGoalNet       = True,
+  withLengthHint    = Just 12,
+  withMinLengthHint = Nothing
+}
 
 generateReach :: ReachConfig -> Int -> ReachInstance Place Transition
 generateReach conf seed =
