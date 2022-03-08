@@ -91,12 +91,11 @@ equalling f x y = f x == f y
 executes
   :: (Alternative m, MonadIO m, OutputMonad m, Show t, Ord s, Show s, Ord t)
   => FilePath
-  -> Bool
   -> GraphvizCommand
   -> Net s t
   -> [t]
   -> LangM' m (Either Int (State s))
-executes path hidePNames cmd n ts = foldM
+executes path cmd n ts = foldM
   (\z (k, t) -> either (return . Left) (step k t) z)
   (Right $ start n)
   (zip [1 :: Int ..] ts)
@@ -105,21 +104,20 @@ executes path hidePNames cmd n ts = foldM
       paragraph $ translate $ do
         english $ "Step " ++ show k
         german $ "Schritt " ++ show k
-      Modelling.PetriNet.Reach.Step.executeIO path hidePNames cmd k n t z
+      executeIO path cmd k n t z
 
 executeIO
   :: (MonadIO m, OutputMonad m, Show a, Show k, Ord a, Ord k)
   => FilePath
-  -> Bool
   -> GraphvizCommand
   -> Int
   -> Net k a
   -> a
   -> State k
   -> LangM' m (State k)
-executeIO path hidePNames cmd i n t z0 = do
+executeIO path cmd i n t z0 = do
   z2 <- execute n t z0
-  g <- drawToFile hidePNames path cmd i $ n {start = z2}
+  g <- drawToFile False path cmd i $ n {start = z2}
   image g
   return z2
 

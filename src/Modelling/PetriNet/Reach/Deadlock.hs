@@ -100,7 +100,7 @@ deadlockEvaluation
   -> Rated m
 deadlockEvaluation path inst ts = do
   isNoLonger (noLongerThan inst) ts
-  eout <- executes path True (drawUsing inst) n ts
+  eout <- executes path (drawUsing inst) n ts
   when (isRight eout) $ yesNo (null $ successors n $ fromRight' eout) $
     translate $ do
       english "Reached marking has no successors?"

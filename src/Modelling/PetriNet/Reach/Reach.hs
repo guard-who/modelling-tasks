@@ -110,15 +110,15 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
       translate $ do
         english "a transitions sequence is sought, which leads to the following marking:"
         german "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
-      either image text g
+      paragraph $ either image text g
   paragraph $ case noLonger of
     Nothing -> translate $ do
       english "State your answer as a (arbitrarily short or long) sequence of the following kind:"
       german "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
     Just maxL -> translate $ do
       english $ concat [
-        "State your solution as a ", show maxL,
-        "-ary sequence of the following kind:"]
+        "State your solution as a sequence of the following kind that does not exceed ",
+        show maxL," elements:"]
       german $ concat [
         "Geben Sie Ihre Lösung als maximal ", show maxL,
         "-elementige Auflistung der folgenden Art an:"]
@@ -128,7 +128,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   code $ show $ TransitionsList [t1, t2, t3]
   paragraph $ translate $ do
     english $ concat [
-      "This statement should mean, that after firing",
+      "This statement should mean, that after firing ",
       st1, ", then ", st2, ", and finally ", st3,
       " (in exactly this order), the sought marking is reached."
       ]
@@ -177,7 +177,7 @@ reachEvaluation path inst ts = do
     english "Start marking:"
     german "Startmarkierung:"
   indent $ text $ show (start n)
-  eout <- executes path False (drawUsing inst) n ts
+  eout <- executes path (drawUsing inst) n ts
   when (isRight eout) $ yesNo (eout == Right (goal inst)) $ translate $ do
     english "Reached targeted marking?"
     german "Zielmarkierung erreicht?"

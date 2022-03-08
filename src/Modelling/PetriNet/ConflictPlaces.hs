@@ -91,8 +91,8 @@ findConflictPlacesTask path task = do
     german "Welches Paar von Transitionen steht wegen welcher konfliktauslösenden Stellen unter der Startmarkierung in Konflikt?"
   paragraph $ do
     translate $ do
-      english "Please state your answer by giving a pair of conflicting transitions and a list of places being sources of the conflict."
-      german "Geben Sie Ihre Antwort durch Eingabe eines Paars von in Konflikt stehenden Transitionen und einer Liste von Stellen, die den Konflikt auslösen, an. "
+      english "Please state your answer by giving a pair of conflicting transitions and the list of all the places being sources of the conflict."
+      german "Geben Sie Ihre Antwort durch Eingabe eines Paars von in Konflikt stehenden Transitionen und die Liste aller Stellen, die den Konflikt auslösen, an. "
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
@@ -103,12 +103,16 @@ findConflictPlacesTask path task = do
             (fmap show)
             conflictInitialShow
       english [i| as answer would indicate that transitions #{t1} and #{t2} are in conflict under the initial marking
-and that places #{p1} and #{p2} are the reason for the conflict. |]
+and that places #{p1} and #{p2} are all the common places within the preconditions,
+which do not have enough tokens in order to fire #{t1} and #{t2} concurrently. |]
       german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung in Konflikt stehen
-und dass die Stellen #{p1} und #{p2} den Konflikt auslösen. |]
+und dass die Stellen #{p1} und #{p2} alle gemeinsamen Stellen in den Vorbedingungen sind,
+die jeweils nicht ausreichenden Marken zum gleichzeitigen Feuern der Transitionen #{t1} und #{t2} haben. |]
     translate $ do
-      english "The order of transitions within the pair does not matter here."
-      german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
+      english [i|The order of transitions within the pair does not matter here.
+Furthermore, the order of places within the lisiting of places being the sources of the coflict is irrelevant.|]
+      german [i|Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle.
+Die Reihenfolge der Stellen innerhalb der Auflistung der den Konflikt auslösenden stellen spielt ebenso keine Rolle.|]
   paragraph hoveringInformation
 
 conflictInitial :: ConflictPlaces
