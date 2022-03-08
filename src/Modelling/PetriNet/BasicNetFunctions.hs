@@ -75,8 +75,8 @@ checkChangeConfig BasicConfig
   = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'tokenChangeOverall'."
  | maxTokenChangePerPlace > maxTokensPerPlace
   = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'maxTokensPerPlace'."
- | tokenChangeOverall > maxTokensOverall - minTokensOverall
-  = Just "With 'tokenChangeOverall', stay within the range of tokens overall."
+ | tokenChangeOverall > 2 * maxTokensOverall
+  = Just "The parameter 'tokenChangeOverall' is set unreasonably high, given the maximal tokens overall."
  | maxTokenChangePerPlace * places < tokenChangeOverall
   = Just "The parameter 'tokenChangeOverall' is set unreasonably high, given the per-place parameter."
  | flowChangeOverall < 0
@@ -87,8 +87,8 @@ checkChangeConfig BasicConfig
   = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'flowChangeOverall'."
  | maxFlowChangePerEdge > maxFlowPerEdge
   = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'maxFlowPerEdge'."
- | flowChangeOverall > maxFlowOverall - minFlowOverall
-  = Just "With 'flowChangeOverall', stay within the range of flow overall."
+ | flowChangeOverall > 2 * maxFlowOverall
+  = Just "The parameter 'flowChangeOverall' is set unreasonable high, given the maximal flow overall."
  | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall
   = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
  | otherwise
