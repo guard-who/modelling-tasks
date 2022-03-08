@@ -61,8 +61,8 @@ checkBasicConfig BasicConfig{
 checkChangeConfig :: BasicConfig -> ChangeConfig -> Maybe String
 checkChangeConfig BasicConfig
                    {places,transitions
-                   , minTokensOverall,maxTokensOverall,maxTokensPerPlace
-                   , minFlowOverall,maxFlowOverall,maxFlowPerEdge}
+                   ,maxTokensOverall,maxTokensPerPlace
+                   ,maxFlowOverall,maxFlowPerEdge}
                 ChangeConfig
                    {tokenChangeOverall, flowChangeOverall
                    , maxFlowChangePerEdge, maxTokenChangePerPlace}
