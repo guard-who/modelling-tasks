@@ -1,3 +1,5 @@
+{-# OPTIONS -Wno-error=unused-imports #-}
+{-# OPTIONS -Wno-error=unused-matches #-}
 {-|
 originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
 based on revision: ad25a990816a162fdd13941ff889653f22d6ea0a
@@ -117,8 +119,9 @@ executeIO
   -> LangM' m (State k)
 executeIO path cmd i n t z0 = do
   z2 <- execute n t z0
-  g <- drawToFile False path cmd i $ n {start = z2}
-  image g
+  -- disable drawing for exam
+  --g <- drawToFile False path cmd i $ n {start = z2}
+  --image g
   return z2
 
 execute
