@@ -35,7 +35,7 @@ import Modelling.PetriNet.Reach.Reach   (
   reportReachFor,
   transitionsValid,
   )
-import Modelling.PetriNet.Reach.Roll    (net)
+import Modelling.PetriNet.Reach.Roll    (netLimits)
 import Modelling.PetriNet.Reach.Step    (deadlocks, executes, successors)
 import Modelling.PetriNet.Reach.Type (
   Capacity (Unbounded),
@@ -51,6 +51,7 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Applicative              (Alternative)
+import Data.Bifunctor                   (Bifunctor (second))
 import Control.Monad                    (forM, guard, when)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
@@ -58,6 +59,7 @@ import Data.Either                      (isRight)
 import Data.Either.Extra                (fromRight')
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (maximumBy)
+import Data.Maybe                       (fromMaybe)
 import Data.Ord                         (comparing)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
@@ -145,6 +147,8 @@ data DeadlockConfig = DeadlockConfig {
   drawCommands        :: [GraphvizCommand],
   maxTransitionLength :: Int,
   minTransitionLength :: Int,
+  postconditionsRange :: (Int, Maybe Int),
+  preconditionsRange  :: (Int, Maybe Int),
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
   showMinLengthHint   :: Bool
@@ -160,6 +164,8 @@ defaultDeadlockConfig =
   drawCommands        = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork],
   maxTransitionLength = 10,
   minTransitionLength = 8,
+  postconditionsRange = (0, Nothing),
+  preconditionsRange  = (0, Nothing),
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
   showMinLengthHint   = True
@@ -204,7 +210,7 @@ try :: MonadRandom m => DeadlockConfig -> m [(Int, Net Place Transition)]
 try conf = do
   let ps = [Place 1 .. Place (numPlaces conf)]
       ts = [Transition 1 .. Transition (numTransitions conf)]
-  n <- Modelling.PetriNet.Reach.Roll.net
+  n <- netLimits vLow vHigh nLow nHigh
       ps
       ts
       (Modelling.PetriNet.Reach.Deadlock.capacity conf)
@@ -215,6 +221,10 @@ try conf = do
           $ deadlocks n
     guard $ not $ null yeah
     return (length no, n)
+  where
+    fixMaximum = second (min (numPlaces conf) . fromMaybe maxBound)
+    (vLow, vHigh) = fixMaximum $ preconditionsRange conf
+    (nLow, nHigh) = fixMaximum $ postconditionsRange conf
 
 expl :: Net Int Int
 expl =

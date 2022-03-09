@@ -3,7 +3,7 @@ originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
 based on revision: ad25a990816a162fdd13941ff889653f22d6ea0a
 based on file: collection/src/Petri/Roll.hs
 -}
-module Modelling.PetriNet.Reach.Roll where
+module Modelling.PetriNet.Reach.Roll (net, netLimits) where
 
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList)
@@ -17,11 +17,21 @@ import Modelling.PetriNet.Reach.Type (
 
 import Control.Monad                    (forM)
 import Control.Monad.Random.Class       (MonadRandom (getRandomR))
+import System.Random.Shuffle            (shuffleM)
 
 net :: (MonadRandom m, Ord s, Ord t) => [s] -> [t] -> Capacity s -> m (Net s t)
-net ps ts cap = do
+net = netConns conn
+
+netConns
+  :: (MonadRandom m, Ord s, Ord t)
+  => ([s] -> [t] -> m [Connection s t])
+  -> [s]
+  -> [t]
+  -> Capacity s
+  -> m (Net s t)
+netConns conns ps ts cap = do
   s <- state ps
-  cs <- conn ps ts
+  cs <- conns ps ts
   return $ Net {
     places      = S.fromList ps,
     transitions = S.fromList ts,
@@ -54,3 +64,34 @@ selection xs = do
   f <- getRandomR (False, True)
   xs' <- if f then selection $ pre ++ post else return []
   return $ x : xs'
+
+netLimits
+  :: (MonadRandom m, Ord s, Ord t)
+  => Int
+  -> Int
+  -> Int
+  -> Int
+  -> [s]
+  -> [t]
+  -> Capacity s
+  -> m (Net s t)
+netLimits vLow vHigh nLow nHigh = netConns $ connLimits vLow vHigh nLow nHigh
+
+connLimits
+  :: MonadRandom m
+  => Int
+  -> Int
+  -> Int
+  -> Int
+  -> [s]
+  -> [t]
+  -> m [Connection s t]
+connLimits vLow vHigh nLow nHigh ps ts = forM ts $ \t -> do
+  vor <- takeRandom vLow vHigh ps
+  nach <- takeRandom nLow nHigh ps
+  return (vor, t, nach)
+
+takeRandom :: MonadRandom m => Int -> Int -> [a] -> m [a]
+takeRandom low high xs  = take
+  <$> getRandomR (low, high)
+  <*> shuffleM xs

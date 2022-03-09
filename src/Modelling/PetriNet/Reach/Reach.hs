@@ -30,7 +30,7 @@ import Modelling.PetriNet.Reach.Property (
   Property (Default),
   validate,
   )
-import Modelling.PetriNet.Reach.Roll    (net)
+import Modelling.PetriNet.Reach.Roll    (netLimits)
 import Modelling.PetriNet.Reach.Step    (executes, levels)
 import Modelling.PetriNet.Reach.Type (
   Capacity (Unbounded),
@@ -52,10 +52,12 @@ import Control.Monad                    (forM, forM_, unless, when)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
+import Data.Bifunctor                   (Bifunctor (second))
 import Data.Either                      (isRight)
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (minimumBy)
 import Data.List.Extra                  (nubSort)
+import Data.Maybe                       (fromMaybe)
 import Data.Ord                         (comparing)
 import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
@@ -254,6 +256,8 @@ data ReachConfig = ReachConfig {
   drawCommands        :: [GraphvizCommand],
   maxTransitionLength :: Int,
   minTransitionLength :: Int,
+  postconditionsRange :: (Int, Maybe Int),
+  preconditionsRange  :: (Int, Maybe Int),
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
   showMinLengthHint   :: Bool,
@@ -269,6 +273,8 @@ defaultReachConfig = ReachConfig {
   drawCommands        = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork],
   maxTransitionLength = 8,
   minTransitionLength = 6,
+  postconditionsRange = (0, Nothing),
+  preconditionsRange  = (0, Nothing),
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
   showMinLengthHint   = True,
@@ -291,7 +297,7 @@ generateReach :: ReachConfig -> Int -> ReachInstance Place Transition
 generateReach conf seed =
   let ps = [Place 1 .. Place (numPlaces conf)]
       tries = forM [1 :: Int .. 1000] $ const $ do
-        n <- Modelling.PetriNet.Reach.Roll.net
+        n <- netLimits vLow vHigh nLow nHigh
             ps
             ts
             (Modelling.PetriNet.Reach.Reach.capacity conf)
@@ -323,5 +329,8 @@ generateReach conf seed =
       if showMinLengthHint conf then Just $ minTransitionLength conf else Nothing
     }
   where
+    fixMaximum = second (min (numPlaces conf) . fromMaybe maxBound)
+    (vLow, vHigh) = fixMaximum $ preconditionsRange conf
+    (nLow, nHigh) = fixMaximum $ postconditionsRange conf
     ts = [Transition 1 .. Transition (numTransitions conf)]
     eval f = evalRand f $ mkStdGen seed
