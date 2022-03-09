@@ -8,16 +8,19 @@ import Modelling.CdOd.Types             (Association, AssociationType(..))
 
 import Data.List
 import Data.FileEmbed
+import Data.Maybe                       (catMaybes, isJust)
 import Data.String.Interpolate          (i)
 
 transform
   :: ([(String, Maybe String)], [Association])
   -> Maybe Bool
   -> Bool
+  -> Maybe Int
+  -> Maybe Int
   -> String
   -> String
   -> (String, String, String, String, String)
-transform (classes, associations) hasSelfLoops noIsolationLimitation index time =
+transform (classes, associations) hasSelfLoops noIsolationLimitation minLinks maxLinks index time =
   (part1, part2, part3, part4, part5)
   where
     template :: String
@@ -32,6 +35,7 @@ module umlp2alloy/CD#{index}Module
 
 #{template}
 #{objectsFact}
+#{limitLinks}
 ///////////////////////////////////////////////////
 // Structures potentially common to multiple CDs
 ///////////////////////////////////////////////////
@@ -52,6 +56,16 @@ fact NonEmptyInstancesOnly {
   some Obj
 }
 |]
+    withJusts f xs
+      | any isJust xs = f $ catMaybes xs
+      | otherwise     = ""
+    limitLinks = withJusts (\ps -> [i|
+fact LimitLinks {
+#{unlines ps}
+}
+|]) [
+      ("  #get >= " ++) . show <$> minLinks,
+      ("  #get <= " ++) . show <$> maxLinks]
     part2 = [i|
 // Concrete names of fields
 #{unlines (associationSigs associations)}

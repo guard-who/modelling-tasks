@@ -137,8 +137,10 @@ data MatchCdOdInstance = MatchCdOdInstance {
 
 data MatchCdOdConfig = MatchCdOdConfig {
     classConfig      :: ClassConfig,
+    maxLinks         :: Maybe Int,
     maxObjects       :: Int,
     maxInstances     :: Maybe Integer,
+    minLinks         :: Maybe Int,
     presenceOfLinkSelfLoops :: Maybe Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
@@ -154,8 +156,10 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
         compositions = (0, Just 1),
         inheritances = (1, Just 2)
       },
+    maxLinks         = Just 16,
     maxObjects       = 4,
     maxInstances     = Nothing,
+    minLinks         = Just 10,
     presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
     searchSpace      = 10,
@@ -283,6 +287,8 @@ getMatchCdOdTask config = do
   (cds, ods) <- mapRandT liftIO $ getRandomTask
     (classConfig config)
     (presenceOfLinkSelfLoops config)
+    (minLinks config)
+    (maxLinks config)
     (maxObjects config)
     (searchSpace config)
     (maxInstances config)
@@ -411,34 +417,38 @@ getRandomTask
   :: RandomGen g
   => ClassConfig
   -> Maybe Bool
+  -> Maybe Int
+  -> Maybe Int
   -> Int
   -> Int
   -> Maybe Integer
   -> Maybe Int
   -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
-getRandomTask config selfLoops maxObs search maxIs to = do
+getRandomTask config selfLoops minLns maxLns maxObs search maxIs to = do
   (cd1, cd2, cd3, numClasses) <- getRandomCDs config search
-  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops
+  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops minLns maxLns
   mrinstas <- takeRandomInstances instas
   case mrinstas of
-    Nothing      -> getRandomTask config selfLoops maxObs search maxIs to
+    Nothing      -> getRandomTask config selfLoops minLns maxLns maxObs search maxIs to
     Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
 
 getRandomTask'
   :: RandomGen g
   => ClassConfig
   -> Maybe Bool
+  -> Maybe Int
+  -> Maybe Int
   -> Int
   -> Int
   -> Maybe Integer
   -> RandT g IO (Map Int Syntax, [([Int], AlloyInstance)])
-getRandomTask' config selfLoops maxObs search maxIs = do
+getRandomTask' config selfLoops minLns maxLns maxObs search maxIs = do
   let alloyCode = Changes.transform config defaultProperties
   instas <- liftIO $ getInstances (Just 6000) Nothing alloyCode
   when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
-  ods <- getODsFor maxObs maxIs Nothing selfLoops rinstas
-  maybe (getRandomTask' config selfLoops maxObs search maxIs) return ods
+  ods <- getODsFor maxObs maxIs Nothing selfLoops minLns maxLns rinstas
+  maybe (getRandomTask' config selfLoops minLns maxLns maxObs search maxIs) return ods
 
 getODsFor
   :: RandomGen g
@@ -446,15 +456,17 @@ getODsFor
   -> Maybe Integer
   -> Maybe Int
   -> Maybe Bool
+  -> Maybe Int
+  -> Maybe Int
   -> [AlloyInstance]
   -> RandT g IO (Maybe (Map Int Syntax, [([Int], AlloyInstance)]))
-getODsFor _      _     _  _         []       = return Nothing
-getODsFor maxObs maxIs to selfLoops (cd:cds) = do
+getODsFor _      _     _  _         _      _      []       = return Nothing
+getODsFor maxObs maxIs to selfLoops minLns maxLns (cd:cds) = do
   (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
-  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops
+  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops minLns maxLns
   mrinstas <- takeRandomInstances instas
   case mrinstas of
-    Nothing      -> getODsFor maxObs maxIs to selfLoops cds
+    Nothing      -> getODsFor maxObs maxIs to selfLoops minLns maxLns cds
     Just rinstas -> return $ Just (M.fromList [(1, cd1), (2, cd2)], rinstas)
 
 applyChanges
@@ -519,8 +531,10 @@ getODInstances
   -> Syntax
   -> Int
   -> Maybe Bool
+  -> Maybe Int
+  -> Maybe Int
   -> IO (Map [Int] [AlloyInstance])
-getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops = do
+getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops minLns maxLns = do
   -- TODO remove `toOldSyntax`
   let parts1 = getFourParts cd1 "1"
       parts2 = getFourParts cd2 "2"
@@ -543,7 +557,7 @@ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops = do
                        ([1,2], instances1and2),
                        ([]   , instancesNot1not2)]
   where
-    getFourParts cd nr = case transform (toOldSyntax cd) selfLoops False nr "" of
+    getFourParts cd nr = case transform (toOldSyntax cd) selfLoops False minLns maxLns nr "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     runCommand x = createRunCommand selfLoops x numClasses maxObs
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4

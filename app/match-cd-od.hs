@@ -23,8 +23,10 @@ main = do
               compositions = (0, Just 1),
               inheritances = (1, Just 2)
             },
+          maxLinks         = Nothing,
           maxObjects       = 4,
           maxInstances     = Nothing,
+          minLinks         = Nothing,
           presenceOfLinkSelfLoops = Nothing,
           printSolution    = False,
           searchSpace      = 10,

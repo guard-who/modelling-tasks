@@ -107,7 +107,9 @@ data DifferentNamesInstance = DifferentNamesInstance {
 
 data DifferentNamesConfig = DifferentNamesConfig {
     classConfig      :: ClassConfig,
+    maxLinks         :: Maybe Int,
     maxObjects       :: Int,
+    minLinks         :: Maybe Int,
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
     onlyAnonymousObjects :: Bool,
@@ -127,7 +129,9 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         compositions = (0, Just 1),
         inheritances = (1, Just 2)
       },
+    maxLinks         = Just 16,
     maxObjects       = 4,
+    minLinks         = Just 10,
     onlyAnonymousObjects = True,
     presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
@@ -336,7 +340,7 @@ getDifferentNamesTask config = do
         else getDifferentNamesTask config
   where
     extractFourParts (n, cd) =
-      case transform (toOldSyntax cd) (presenceOfLinkSelfLoops config) False (show n) "" of
+      case transform (toOldSyntax cd) (presenceOfLinkSelfLoops config) False (minLinks config) (maxLinks config) (show n) "" of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
