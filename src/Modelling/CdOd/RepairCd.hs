@@ -15,6 +15,7 @@ module Modelling.CdOd.RepairCd (
   phraseChange,
   repairCd,
   repairCdEvaluation,
+  repairCdSyntax,
   repairCdTask,
   repairIncorrect,
   ) where
@@ -37,11 +38,12 @@ import Modelling.Auxiliary.Output (
   Language (English, German),
   OutputMonad (..),
   Rated,
+  LangM,
   addPretext,
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
-  LangM,
+  singleChoiceSyntax,
   )
 import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.CdOd.CD2Alloy.Transform (transform)
@@ -67,7 +69,7 @@ import Modelling.CdOd.Types (
   toOldSyntax,
   )
 
-import Control.Monad                    (void, when)
+import Control.Monad                    (forM_, void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random
   (RandT, RandomGen, StdGen, evalRandT, getRandomR, getStdGen, mkStdGen)
@@ -224,6 +226,10 @@ repairCdTask path task = do
     text [i| would indicate that options 1 and 2 each repair the given class diagram.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
+
+repairCdSyntax :: OutputMonad m => RepairCdInstance -> [Int] -> LangM m
+repairCdSyntax inst xs =
+  forM_ xs $ singleChoiceSyntax True (M.keys $ changes inst)
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
 repairCdEvaluation inst xs = addPretext $ do

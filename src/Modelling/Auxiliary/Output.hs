@@ -156,7 +156,7 @@ printSolutionAndAssert msolutionString points = do
   return points
 
 singleChoiceSyntax
-  :: (OutputMonad m, Eq a)
+  :: (OutputMonad m, Eq a, Show a)
   => Bool
   -> [a]
   -> a
@@ -164,8 +164,9 @@ singleChoiceSyntax
 singleChoiceSyntax withSolution options choice = do
   let assert = continueOrAbort withSolution
   assert (choice `elem` options) $ translate $ do
-    english "Chosen option is available?"
-    german "Gewählte Option ist verfügbar?"
+    let c = show choice
+    english $ "Chosen option " ++ c  ++ " is available?"
+    german $ "Gewählte Option " ++ c ++ " ist verfügbar?"
 
 singleChoice
   :: (OutputMonad m, Eq a)

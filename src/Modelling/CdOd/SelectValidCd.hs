@@ -8,6 +8,7 @@ module Modelling.CdOd.SelectValidCd (
   defaultSelectValidCdInstance,
   selectValidCd,
   selectValidCdEvaluation,
+  selectValidCdSyntax,
   selectValidCdTask,
   newSelectValidCdInstances,
   ) where
@@ -24,6 +25,7 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Output (
+  LangM,
   Language (English, German),
   OutputMonad (..),
   Rated,
@@ -33,7 +35,7 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
-  LangM,
+  singleChoiceSyntax,
   translate,
   )
 import Modelling.CdOd.RepairCd (
@@ -53,7 +55,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Random             (evalRandT, mkStdGen)
+import Control.Monad.Random             (evalRandT, forM_, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
@@ -99,6 +101,10 @@ data SelectValidCdInstance = SelectValidCdInstance {
     withNames       :: Bool,
     withNavigations :: Bool
   } deriving (Generic, Read, Show)
+
+selectValidCdSyntax :: OutputMonad m => SelectValidCdInstance -> [Int] -> LangM m
+selectValidCdSyntax inst xs =
+  forM_ xs $ singleChoiceSyntax True (M.keys $ classDiagrams inst)
 
 selectValidCdTask
   :: (OutputMonad m, MonadIO m)
