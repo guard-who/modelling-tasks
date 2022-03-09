@@ -165,7 +165,7 @@ singleChoiceSyntax withSolution options choice = do
   let assert = continueOrAbort withSolution
   assert (choice `elem` options) $ translate $ do
     english "Chosen option is available?"
-    german "Gewählte option ist verfügbar?"
+    german "Gewählte Option ist verfügbar?"
 
 singleChoice
   :: (OutputMonad m, Eq a)
@@ -180,7 +180,7 @@ singleChoice what msolutionString solution choice = do
       assert = continueOrAbort $ isJust msolutionString
   assert correct $ multiLang [
     (English, "Chosen " ++ localise English what ++ " is correct?"),
-    (German, "Die gewählte " ++ localise German what ++ " ist korrekt?")]
+    (German, "Der/die/das gewählte " ++ localise German what ++ " ist korrekt?")]
   printSolutionAndAssert msolutionString points
 
 {-|
