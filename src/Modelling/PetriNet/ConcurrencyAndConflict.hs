@@ -244,7 +244,7 @@ findConcurrencyEvaluation
   -> Rated m
 findConcurrencyEvaluation task x = do
   let what = translations $ do
-        english "are concurrent activated"
+        english "are concurrently activated"
         german "sind nebenläufig aktiviert"
   result <- toFindEvaluation what withSol concur x
   uncurry printSolutionAndAssert result

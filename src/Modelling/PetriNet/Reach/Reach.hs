@@ -128,7 +128,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   code $ show $ TransitionsList [t1, t2, t3]
   paragraph $ translate $ do
     english $ concat [
-      "This statement should mean, that after firing ",
+      "This statement should mean that after firing ",
       st1, ", then ", st2, ", and finally ", st3,
       " (in exactly this order), the sought marking is reached."
       ]
