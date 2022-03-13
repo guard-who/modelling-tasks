@@ -100,7 +100,7 @@ import Modelling.PetriNet.Alloy (
 import Modelling.PetriNet.BasicNetFunctions (
   checkConfigForFind, checkConfigForPick, checkConflictConfig
   )
-import Modelling.PetriNet.Diagram       (drawNet, getDefaultNet, getNet)
+import Modelling.PetriNet.Diagram       (cacheNet, getDefaultNet, getNet)
 import Modelling.PetriNet.Parser        (
   asSingleton,
   )
@@ -112,7 +112,6 @@ import Modelling.PetriNet.Reach.Type (
   parsePlacePrec,
   parseTransitionPrec,
   )
-import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types         (
   AdvConfig,
   BasicConfig (..),
@@ -617,14 +616,11 @@ renderWith
   -> LangM' m FilePath
 renderWith path task net config = do
   f <- lift $ liftIO $ runExceptT $ do
-    let file = path ++ task ++ ".svg"
-    dia <- drawNet id net
+    cacheNet (path ++ task) id net
       (not $ withPlaceNames config)
       (not $ withTransitionNames config)
       (not $ with1Weights config)
       (withGraphvizCommand config)
-    liftIO $ writeSVG file dia
-    return file
   either
     (const $ (>> return "") $ refuse $ translate $ do
       english "Drawing diagram failed!"

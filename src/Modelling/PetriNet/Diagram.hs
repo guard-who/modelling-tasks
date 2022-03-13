@@ -4,11 +4,15 @@
 Provides the ability to render Petri nets.
 -}
 module Modelling.PetriNet.Diagram (
+  cacheNet,
   drawNet,
   getDefaultNet,
   getNet,
   ) where
 
+import qualified Data.ByteString                  as BS (readFile, writeFile)
+import qualified Data.ByteString.Lazy             as LBS (fromStrict)
+import qualified Data.ByteString.UTF8             as BS (fromString)
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
@@ -17,15 +21,22 @@ import Modelling.PetriNet.Parser (
   petriLikeToGr,
   simpleRenameWith,
   )
-import Modelling.PetriNet.Types         (PetriLike, traversePetriLike)
+import Modelling.PetriNet.Reach.Group   (writeSVG)
+import Modelling.PetriNet.Types (
+  PetriLike,
+  traversePetriLike,
+  mapPetriLike,
+  )
 
 import Control.Arrow                    (ArrowChoice(left), first)
 import Control.Monad                    (when)
+import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
 import Data.Data                        (Typeable)
+import Data.Digest.Pure.SHA             (sha512, showDigest)
 import Data.FileEmbed                   (embedFile)
 import Data.List                        (foldl')
 import Data.Maybe
@@ -36,6 +47,7 @@ import Graphics.SVGFonts
   (Spacing (..), TextOpts (..), Mode (..), textSVG_)
 import Graphics.SVGFonts.ReadFont       (PreparedFont, loadFont')
 import Language.Alloy.Call              (AlloyInstance, Object)
+import System.Directory                 (doesFileExist)
 
 lin :: IO (PreparedFont Double)
 lin = do
@@ -43,6 +55,43 @@ lin = do
       (errors, font') = loadFont' "LinLibertine.svg" s
   when (errors /= "") (putStrLn errors)
   return font'
+
+cacheNet
+  :: Ord a
+  => String
+  -> (a -> String)
+  -> PetriLike a
+  -> Bool
+  -> Bool
+  -> Bool
+  -> GraphvizCommand
+  -> ExceptT String IO FilePath
+cacheNet path labelOf pl hidePNames hideTNames hide1 gc = (svg <$) . cache $ do
+  dia <- drawNet labelOf pl hidePNames hideTNames hide1 gc
+  liftIO $ writeSVG svg dia
+  where
+    cache create = do
+      let create' = create >> liftIO (BS.writeFile petri pl')
+      isFile <- liftIO $ doesFileExist svg
+      if isFile
+        then do
+          f <- liftIO $ BS.readFile petri
+          when (f /= pl') $ do
+            liftIO $ appendFile (path ++ "busted.txt") petriId
+            create'
+        else create'
+    pl' = BS.fromString (show (mapPetriLike labelOf pl))
+    petriId = path ++ "petri" ++ showDigest (sha512 $ LBS.fromStrict pl')
+    petri = petriId ++ ".hs"
+    svg = petriId
+      ++ short hidePNames
+      ++ short hideTNames
+      ++ short hide1
+      ++ short gc
+      ++ ".svg"
+
+short :: Enum a => a -> String
+short x = show $ fromEnum x
 
 {-| Create a 'Diagram's graph of a Petri net like graph definition ('PetriLike')
 by distributing places and transitions using GraphViz.

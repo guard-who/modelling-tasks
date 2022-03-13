@@ -23,6 +23,7 @@ ghc-options:
   - -Wwarn=orphans
 dependencies:
   - MonadRandom
+  - SHA
   - SVGFonts
   - base
   - bimap
@@ -32,6 +33,7 @@ dependencies:
   - diagrams-graphviz
   - diagrams-lib
   - diagrams-svg
+  - directory
   - exceptions
   - extra
   - fgl
@@ -48,6 +50,7 @@ dependencies:
   - svg-builder
   - text
   - transformers
+  - utf8-string
   - hxt
   - xml-conduit
 library:

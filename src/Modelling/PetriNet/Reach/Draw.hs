@@ -4,8 +4,7 @@ import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (toList)
 
 import Modelling.Auxiliary.Output       (LangM')
-import Modelling.PetriNet.Diagram       (drawNet)
-import Modelling.PetriNet.Reach.Group   (writeSVG)
+import Modelling.PetriNet.Diagram       (cacheNet)
 import Modelling.PetriNet.Reach.Type (
   Net (connections, places, start, transitions),
   mark,
@@ -17,11 +16,9 @@ import Modelling.PetriNet.Types (
 
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans.Class        (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Control.Monad.Trans.Except       (runExceptT)
 import Data.GraphViz                    (GraphvizCommand)
 import Data.List                        (group, sort)
-import Diagrams                         (Diagram)
-import Diagrams.Backend.SVG             (B)
 
 drawToFile
   :: (MonadIO m, Ord s, Ord t, Show s, Show t)
@@ -31,37 +28,15 @@ drawToFile
   -> Int
   -> Net s t
   -> LangM' m FilePath
-drawToFile hidePNames path cmd x net = do
-  graph <- lift $ liftIO $ runExceptT $ drawPetriWithDefaults net hidePNames cmd
-  lift $ liftIO $ writeGraph path (show x) $ either error id graph
-
-writeGraph
-  :: FilePath
-  -> String
-  -> Diagram B
-  -> IO FilePath
-writeGraph path index d = do
-  let file = path ++ "graph" ++ index ++ ".svg"
-  writeSVG file d
-  return file
-
-drawPetriWithDefaults
-  :: (Ord s, Ord t, Show s, Show t)
-  => Net s t
-  -> Bool
-  -> GraphvizCommand
-  -> ExceptT String IO (Diagram B)
-drawPetriWithDefaults p hidePNames = drawPetri p hidePNames False True
-
-drawPetri
-  :: (Ord s, Ord t, Show s, Show t)
-  => Net s t
-  -> Bool
-  -> Bool
-  -> Bool
-  -> GraphvizCommand
-  -> ExceptT String IO (Diagram B)
-drawPetri = drawNet id . toPetriLike show show
+drawToFile hidePNames path cmd x net = fmap (either error id) $
+  lift $ liftIO $ runExceptT $ cacheNet
+    (path ++ "graph" ++ show x)
+    id
+    (toPetriLike show show net)
+    hidePNames
+    False
+    True
+    cmd
 
 {-|
 Requires two functions that provide unique ids for places and nodes.

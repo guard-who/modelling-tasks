@@ -65,12 +65,11 @@ import Modelling.PetriNet.BasicNetFunctions (
   checkChangeConfig,
   checkGraphLayouts,
   )
-import Modelling.PetriNet.Diagram       (drawNet)
+import Modelling.PetriNet.Diagram       (cacheNet)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser (
   parseChange, parseRenamedPetriLike,
   )
-import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types (
   AdvConfig,
   AlloyConfig,
@@ -230,10 +229,7 @@ writeGraph
   -> LangM' m FilePath
 writeGraph s path index pl = do
   file' <- lift $ liftIO $ runExceptT $ do
-    d <- draw
-    let file = path ++ "graph" ++ index ++ ".svg"
-    lift $ writeSVG file d
-    return file
+    draw $ path ++ "graph" ++ index
   either
     (const $ (>> return "") $ refuse $ translate $ do
       english "Drawing diagram failed!"
@@ -242,7 +238,8 @@ writeGraph s path index pl = do
     return
     file'
   where
-    draw = drawNet
+    draw p = cacheNet
+      p
       id
       pl
       (not $ withPlaceNames s)
