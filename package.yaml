@@ -1,4 +1,4 @@
-name: ba-ma-template
+name: ba-athena-schulz
 extra-source-files: []
 dependencies:
   - base
@@ -22,9 +22,9 @@ executables:
     main: default.hs
     source-dirs: app
     dependencies:
-      - ba-ma-template
+      - ba-athena-schulz
 tests:
-  ba-ma-template-test:
+  ba-athena-schulz-test:
     main: Spec.hs
     source-dirs:
       - test
@@ -33,5 +33,5 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - ba-ma-template
+      - ba-athena-schulz
       - hspec
