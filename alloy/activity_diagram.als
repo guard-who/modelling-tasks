@@ -107,8 +107,8 @@ pred scenario{
 	permitEntryOnlyViaFork
 	restrictNumberOfDecisionOrMergeNodes
 	some (DecisionNodes + MergeNodes)
-	#Regions = 2
-	one EndNodes //Not necessary
+	#Regions = 3
+	some EndNodes //Not necessary
 	one StartNodes //Not necessary
 	EndNodes not in allContainedNodes //Not necessary
 	StartNodes not in allContainedNodes //Not necessary
@@ -125,4 +125,4 @@ pred scenario{
 	#Nodes >= 8
 }
 
-run scenario for  15 but 6 Int, exactly 1 StartNodes, exactly 1 EndNodes,  exactly 2 Regions, 0 HierarchicalStates, exactly 1 RegionsStates, exactly 1 ForkNodes, exactly 1 JoinNodes, 0 HistoryNodes
+run scenario for 15 but 6 Int, exactly 1 StartNodes,  exactly 3 Regions, 0 HierarchicalStates, exactly 1 RegionsStates, exactly 1 ForkNodes, exactly 1 JoinNodes, 0 HistoryNodes
