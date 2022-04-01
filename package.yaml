@@ -2,7 +2,10 @@ name: ba-athena-schulz
 extra-source-files: []
 dependencies:
   - base
+  - call-alloy
+  - containers
   - extra
+  - mtl
 default-extensions:
   - TupleSections
   - DuplicateRecordFields
