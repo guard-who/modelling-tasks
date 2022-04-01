@@ -9,6 +9,13 @@ abstract sig ActionObjectNodes extends NormalStates {}
 	//EmptyTrigger =  (Flows <: from) . this  . label //Dont need named edges
 }
 
+//Represents an action node
+abstract sig ActionNodes extends ActionObjectNodes {}
+
+//Represents an object node
+abstract sig ObjectNodes extends ActionObjectNodes {}
+
+
 //Represents a decision node
 abstract sig DecisionNodes extends NormalStates {}
 {
@@ -82,8 +89,8 @@ pred restrictNumberOfDecisionOrMergeNodes {
 pred scenario{
 	restrictAllowedNodeTypes
 	actionObjectNodesHaveDistinctNames
-	edgesFromDecisionNodesHaveDistinctLabels
-	flowsToMergeNodeOriginateFromDecisionNode
+	//edgesFromDecisionNodesHaveDistinctLabels //already established in transition_rules.als
+	//flowsToMergeNodeOriginateFromDecisionNode //Not completely necessary and a bit slow
 	noRegionNames
 	regionsAreFlat
 	permitExitOnlyViaJoin
