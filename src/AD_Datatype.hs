@@ -1,6 +1,12 @@
-data Connection = Connection Integer Integer String 
+module AD_Datatype (
+    ADConnection(..),
+    ADNodes(..),
+    UMLActivityDiagram(..)
+) where 
 
-data ActivityNodes =
+data ADConnection = Connection Integer Integer String deriving (Show, Eq)
+
+data ADNodes =
     ActivityNode {
         label :: Integer,
         name :: String
@@ -26,12 +32,12 @@ data ActivityNodes =
     }
     | FlowEndNode {
         label :: Integer
-    }
+    } deriving (Show, Eq)
 
 
-data UMLActitiyDiagram = 
-    UMLActitiyDiagram {
-        nodes :: [ActivityNodes],
-        connections :: [Connection],
-        startNodes :: [Integer]
-    }
+data UMLActivityDiagram =
+    UMLActivityDiagram {
+      nodes :: [ADNodes],
+      connections :: [ADConnection],
+      startNodes :: [Integer]
+    } deriving (Show, Eq)
