@@ -1,6 +1,16 @@
 module project/alloy/activity_diagram // It is used to generate state diagrams that can be converted to activity diagrams
 
-open project/sd_generate/alloy/sd/uml_state_diagram as uml_state_diagram
+//No history_rules, since our diagram doesnt use history nodes
+open project/sd_generate/alloy/sd/components_sig as components // import all signatures
+open project/sd_generate/alloy/sd/startstate_rules // import constraints of start states
+open project/sd_generate/alloy/sd/endstate_rules // import constraints of end states
+open project/sd_generate/alloy/sd/region_rules // import constraints of regions and region states
+open project/sd_generate/alloy/sd/node_rules // import constraints of fork and join nodes
+open project/sd_generate/alloy/sd/reachability_rules // import constraints of reachability
+open project/sd_generate/alloy/sd/transition_rules // import constraints of transition labels
+open project/sd_generate/alloy/sd/substate_rules // import constraints of "substates"
+open project/sd_generate/alloy/sd/name_rules // import constraints of names
+
 
 //Represents an action or object node
 abstract sig ActionObjectNodes extends NormalStates {} 
