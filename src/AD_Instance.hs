@@ -2,25 +2,33 @@ module AD_Instance (
   parseInstance
 ) where 
 
-import qualified Data.Map               as M (fromAscList, elems, lookup, empty, insert, fromList)
-import qualified Data.Set               as S (unions, mapMonotonic, union, toAscList, partition, map, filter, member)
+import qualified Data.Map               as M (fromAscList, elems, lookup, fromList)
+import qualified Data.Set               as S (unions, mapMonotonic, fromAscList, toAscList, map, filter, member)
 
 import AD_Datatype (
-  UMLActivityDiagram(UMLActivityDiagram),
+  ADConnection(ADConnection),
+  ADNode(..),
+  UMLActivityDiagram(..),
   )
 
 import Control.Monad.Error.Class        (MonadError (throwError))
-
+import Data.List.Extra                  (nubOrd)
+import Data.Map                         (Map)
+import Data.Maybe (
+  fromMaybe,
+  fromJust,
+  )
 import Data.Set                         (Set)
 import Data.String                      (IsString (fromString))
-
-
+import Data.Tuple.Extra                 (uncurry3)
 import Language.Alloy.Call (
+  getDoubleAs,
   getSingleAs,
   lookupSig,
   scoped,
   AlloyInstance,
   )
+
 
 
 newtype ComponentName = ComponentName String
@@ -78,7 +86,6 @@ data Nodes = Nodes {
   stNodes :: Set StartNode
 } deriving Show
 
-{- Not used yet
 toSet :: Nodes -> Set Node
 toSet ns = S.unions [
   ANode `S.mapMonotonic` aNodes ns,
@@ -90,7 +97,6 @@ toSet ns = S.unions [
   ENode `S.mapMonotonic` eNodes ns,
   StNode `S.mapMonotonic` stNodes ns
   ]
- -}
 
  --To be finished later
 parseInstance :: (MonadError s m, IsString s)
@@ -106,9 +112,16 @@ parseInstance scope insta = do
   joinNodes <- getAs "JoinNodes" JoinNode
   endNodes <- getAs "EndNodes" EndNode
   startNodes <- getAs "StartNodes" StartNode
-  let nodes = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes endNodes startNodes
-  cnames <- fmap (M.fromAscList . S.toAscList) . getNames scope insta nodes "States" ComponentName
-  return (UMLActivityDiagram [] [] [])
+  let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes endNodes startNodes
+  cnames <- fmap (M.fromAscList . S.toAscList) $ getNames scope insta nodes' "States" ComponentName
+  let components = enumerateComponents $ toSet nodes'
+      names = M.fromList $ zip (nubOrd $ M.elems cnames) $ pure <$> ['A'..]
+      getName x = fromMaybe "" $ M.lookup x cnames >>= (`M.lookup` names)
+  conns <- getConnections scope insta nodes'
+  let labelOf = getLabelOf components
+      conns' = S.map (\(x, y, z) -> (labelOf x, labelOf y, z)) conns
+      activityDiagram = setToActivityDiagram getName components conns'
+  return activityDiagram
   where
     getAs
       :: (IsString s, MonadError s m, Ord a)
@@ -117,6 +130,42 @@ parseInstance scope insta = do
       -> m (Set a)
     getAs = getX scope insta
 
+
+enumerateComponents :: Set Node -> Set (Node, Int)
+enumerateComponents s = S.fromAscList $ zip (S.toAscList s) [1..]
+
+getLabelOf :: Set (Node, Int) -> Node -> Int
+getLabelOf s n = fromJust $ M.lookup n (M.fromAscList $ S.toAscList s)
+
+setToActivityDiagram
+  :: (Node -> String)
+  -> Set (Node, Int)
+  -> Set (Int, Int, String)
+  -> UMLActivityDiagram
+setToActivityDiagram getName components conns = UMLActivityDiagram {
+  nodes = map (convertToADNode getName) (S.toAscList components),
+  connections = uncurry3 ADConnection <$> S.toAscList conns
+}
+    
+convertToADNode :: (Node -> String) -> (Node, Int) -> ADNode 
+convertToADNode getName tuple = case node of 
+  ANode {} -> ADActionNode {
+    label = l,
+    name = getName node
+    }
+  ONode {} -> ADObjectNode {
+    label = l,
+    name = getName node
+    }
+  DNode {} -> ADDecisionNode { label = l }
+  MNode {} -> ADMergeNode { label = l }
+  FNode {} -> ADForkNode { label = l }
+  JNode {} -> ADJoinNode { label = l }
+  ENode {} -> ADActivityEndNode { label = l }
+  StNode {} -> ADStartNode { label = l }
+  where 
+    node = fst tuple
+    l = snd tuple
 
 
 toX :: (String -> a) -> String -> Int -> a
@@ -147,6 +196,42 @@ getNames
 getNames scope insta ns n f = do
   named <- lookupSig (scoped scope n) insta
   getDoubleAs "name" (toNode ns) (returnX f) named
+
+getConnections
+  :: (MonadError s m, IsString s)
+  => String
+  -> AlloyInstance
+  -> Nodes
+  -> m (Set (Node, Node, String))
+getConnections scope insta ns = do
+  triggerNames  <- lookupSig (scoped scope "TriggerNames") insta
+  triggers <-  getSingleAs "" (returnX TriggerName) triggerNames
+  realFlows  <- lookupSig (scoped scope "Flows") insta
+  protoFlows <- lookupSig (scoped scope "ProtoFlows") insta
+  flows <- getSingleAs "" (returnX Trigger) realFlows
+  from <- only fst flows <$> getDoubleAs
+    "from"
+    (returnX Trigger)
+    (toNode ns)
+    protoFlows
+  to <- M.fromAscList . S.toAscList . only fst flows
+    <$> getDoubleAs "to" (returnX Trigger) (toNode ns) protoFlows
+  tlabel <- M.fromAscList . S.toAscList . only snd triggers .  only fst flows
+    <$> getDoubleAs
+      "label"
+      (returnX Trigger)
+      (returnX TriggerName)
+      realFlows
+  let labelMap :: Map TriggerName String
+      labelMap = M.fromAscList . zip (S.toAscList triggers) $ pure <$> ['a'..]
+  return $ link to tlabel labelMap from
+  where
+    only f xs = S.filter $ (`S.member` xs) . f
+    link to lbs lm = S.map $ \(x, f) -> (
+      f,
+      fromJust $ M.lookup x to,
+      fromMaybe "" $ M.lookup x lbs >>= (`M.lookup` lm)
+      )
 
 toNode
   :: (MonadError s m, IsString s)
