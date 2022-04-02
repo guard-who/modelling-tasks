@@ -1,45 +1,45 @@
 module AD_Datatype (
   ADConnection(..),
-  ADNodes(..),
+  ADNode(..),
   UMLActivityDiagram(..)
 ) where 
 
-data ADConnection = ADConnection Integer Integer String deriving (Show, Eq)
+data ADConnection = ADConnection Int Int String deriving (Show, Eq)
 
-data ADNodes =
-  ActionNode {
-    label :: Integer,
+data ADNode =
+  ADActionNode {
+    label :: Int,
     name :: String
   }
-  | ObjectNode {
-      label :: Integer,
+  | ADObjectNode {
+      label :: Int,
       name :: String
   } 
-  | DecisionNode {
-      label :: Integer
+  | ADDecisionNode {
+      label :: Int
   } 
-  | MergeNode {
-      label :: Integer
+  | ADMergeNode {
+      label :: Int
   }
-  | ForkNode {
-      label :: Integer
+  | ADForkNode {
+      label :: Int
   }
-  | JoinNode {
-      label :: Integer
+  | ADJoinNode {
+      label :: Int
   }
-  | ActivityEndNode {
-      label :: Integer
+  | ADActivityEndNode {
+      label :: Int
   }
-  | FlowEndNode {
-      label :: Integer
+  | ADFlowEndNode {
+      label :: Int
   }
-  | StartNode {
-      label :: Integer
+  | ADStartNode {
+      label :: Int
   } deriving (Show, Eq)
 
 
 data UMLActivityDiagram =
   UMLActivityDiagram {
-    nodes :: [ADNodes],
+    nodes :: [ADNode],
     connections :: [ADConnection]
   } deriving (Show, Eq)
