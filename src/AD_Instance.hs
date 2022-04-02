@@ -2,7 +2,8 @@ module AD_Instance (
   parseInstance
 ) where 
 
--- import Data.Set               as S (mapMonotonic, unions)
+import qualified Data.Map               as M (fromAscList, elems, lookup, empty, insert, fromList)
+import qualified Data.Set               as S (unions, mapMonotonic, union, toAscList, partition, map, filter, member)
 
 import AD_Datatype (
   UMLActivityDiagram(UMLActivityDiagram),
@@ -106,6 +107,7 @@ parseInstance scope insta = do
   endNodes <- getAs "EndNodes" EndNode
   startNodes <- getAs "StartNodes" StartNode
   let nodes = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes endNodes startNodes
+  cnames <- fmap (M.fromAscList . S.toAscList) . getNames scope insta nodes "States" ComponentName
   return (UMLActivityDiagram [] [] [])
   where
     getAs
@@ -133,3 +135,37 @@ getX
 getX scope insta n f =
   lookupSig (scoped scope n) insta
   >>= getSingleAs "" (returnX f)
+
+getNames
+  :: (MonadError s m, IsString s, Ord a)
+  => String
+  -> AlloyInstance
+  -> Nodes
+  -> String
+  -> (String -> a)
+  -> m (Set (Node, a))
+getNames scope insta ns n f = do
+  named <- lookupSig (scoped scope n) insta
+  getDoubleAs "name" (toNode ns) (returnX f) named
+
+toNode
+  :: (MonadError s m, IsString s)
+  => Nodes
+  -> String
+  -> Int
+  -> m Node
+toNode ns x i = ifX ANode ActionNode aNodes
+  $ ifX ONode ObjectNode oNodes
+  $ ifX DNode DecisionNode dNodes
+  $ ifX MNode MergeNode mNodes
+  $ ifX FNode ForkNode fNodes
+  $ ifX JNode JoinNode jNodes
+  $ ifX ENode EndNode eNodes
+  $ ifX StNode StartNode stNodes
+  $ throwError $ fromString $ "unknown node x$" ++ show i
+  where
+    ifX f g which h =
+      let node = toX g x i
+      in if node `S.member` which ns
+         then return $ f node
+         else h
