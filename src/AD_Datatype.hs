@@ -4,7 +4,7 @@ module AD_Datatype (
   UMLActivityDiagram(..)
 ) where 
 
-data ADConnection = ADConnection Int Int String deriving (Show, Eq)
+data ADConnection = ADConnection Int Int String deriving (Show, Eq, Ord)
 
 data ADNode =
   ADActionNode {
