@@ -8,7 +8,18 @@ import AD_Datatype (
   UMLActivityDiagram(UMLActivityDiagram),
   )
 
+import Control.Monad.Error.Class        (MonadError (throwError))
+
 import Data.Set                         (Set)
+import Data.String                      (IsString (fromString))
+
+
+import Language.Alloy.Call (
+  getSingleAs,
+  lookupSig,
+  scoped,
+  AlloyInstance,
+  )
 
 
 newtype ComponentName = ComponentName String
@@ -80,6 +91,45 @@ toSet ns = S.unions [
   ]
  -}
 
- --Stub to be implemented later
-parseInstance :: UMLActivityDiagram
-parseInstance = UMLActivityDiagram [] [] []
+ --To be finished later
+parseInstance :: (MonadError s m, IsString s)
+  => String
+  -> AlloyInstance
+  -> m UMLActivityDiagram
+parseInstance scope insta = do  
+  actionNodes <- getAs "ActionNodes" ActionNode
+  objectNodes <- getAs "ObjectNodes" ObjectNode
+  decisionNodes <- getAs "DecisionNodes" DecisionNode
+  mergeNodes <- getAs "MergeNodes" MergeNode
+  forkNodes <- getAs "ForkNodes" ForkNode
+  joinNodes <- getAs "JoinNodes" JoinNode
+  endNodes <- getAs "EndNodes" EndNode
+  startNodes <- getAs "StartNodes" StartNode
+  let nodes = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes endNodes startNodes
+  return (UMLActivityDiagram [] [] [])
+  where
+    getAs
+      :: (IsString s, MonadError s m, Ord a)
+      => String
+      -> (String -> a)
+      -> m (Set a)
+    getAs = getX scope insta
+
+
+
+toX :: (String -> a) -> String -> Int -> a
+toX f x = f . (x ++) . ('$':) . show
+
+returnX :: Monad m => (String -> a) -> String -> Int -> m a
+returnX x y = return . toX x y
+
+getX
+  :: (MonadError s m, IsString s, Ord a)
+  => String
+  -> AlloyInstance
+  -> String
+  -> (String -> a)
+  -> m (Set a)
+getX scope insta n f =
+  lookupSig (scoped scope n) insta
+  >>= getSingleAs "" (returnX f)
