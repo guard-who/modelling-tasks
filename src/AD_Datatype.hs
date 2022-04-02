@@ -41,5 +41,5 @@ data ADNodes =
 data UMLActivityDiagram =
   UMLActivityDiagram {
     nodes :: [ADNodes],
-    connections :: [ADConnection],
+    connections :: [ADConnection]
   } deriving (Show, Eq)
