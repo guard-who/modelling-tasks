@@ -7,7 +7,7 @@ module AD_Datatype (
 data ADConnection = ADConnection Integer Integer String deriving (Show, Eq)
 
 data ADNodes =
-  ActivityNode {
+  ActionNode {
     label :: Integer,
     name :: String
   }
