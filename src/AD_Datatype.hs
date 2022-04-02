@@ -32,6 +32,9 @@ data ADNodes =
   }
   | FlowEndNode {
       label :: Integer
+  }
+  | StartNode {
+      label :: Integer
   } deriving (Show, Eq)
 
 
@@ -39,5 +42,4 @@ data UMLActivityDiagram =
   UMLActivityDiagram {
     nodes :: [ADNodes],
     connections :: [ADConnection],
-    startNodes :: [Integer]
   } deriving (Show, Eq)
