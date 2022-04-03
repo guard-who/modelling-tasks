@@ -2,6 +2,7 @@ name: ba-athena-schulz
 extra-source-files: []
 dependencies:
   - base
+  - bytestring
   - call-alloy
   - containers
   - extra
@@ -16,11 +17,19 @@ default-extensions:
   - ScopedTypeVariables
 library:
   source-dirs: src
-  exposed-modules: []
+  exposed-modules: 
+    - AD_Datatype
+    - AD_Instance
   ghc-options:
     - -Wall
     - -Werror
 executables:
+  parseAndShow:
+    main: parseAndShow.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
+      - pretty-simple
   default:
     main: default.hs
     source-dirs: app
