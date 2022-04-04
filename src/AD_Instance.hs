@@ -55,7 +55,10 @@ newtype ForkNode = ForkNode String
 newtype JoinNode = JoinNode String
   deriving (Eq, Ord, Read, Show)
 
-newtype EndNode = EndNode String
+newtype ActivityEndNode = ActivityEndNode String
+  deriving (Eq, Ord, Read, Show)
+
+newtype FlowEndNode = FlowEndNode String
   deriving (Eq, Ord, Read, Show)
 
 newtype StartNode = StartNode String
@@ -71,7 +74,8 @@ data Node =
   | MNode MergeNode
   | FNode ForkNode
   | JNode JoinNode
-  | ENode EndNode
+  | AeNode ActivityEndNode
+  | FeNode FlowEndNode
   | StNode StartNode
   deriving (Eq, Ord, Show)
 
@@ -82,7 +86,8 @@ data Nodes = Nodes {
   mNodes  :: Set MergeNode,
   fNodes  :: Set ForkNode,
   jNodes  :: Set JoinNode,
-  eNodes  :: Set EndNode,
+  aeNodes :: Set ActivityEndNode,
+  feNodes :: Set FlowEndNode,
   stNodes :: Set StartNode
 } deriving Show
 
@@ -94,7 +99,8 @@ toSet ns = S.unions [
   MNode `S.mapMonotonic` mNodes ns,
   FNode `S.mapMonotonic` fNodes ns,
   JNode `S.mapMonotonic` jNodes ns,
-  ENode `S.mapMonotonic` eNodes ns,
+  AeNode `S.mapMonotonic` aeNodes ns,
+  FeNode `S.mapMonotonic` feNodes ns,
   StNode `S.mapMonotonic` stNodes ns
   ]
 
@@ -110,9 +116,10 @@ parseInstance scope insta = do
   mergeNodes <- getAs "MergeNodes" MergeNode
   forkNodes <- getAs "ForkNodes" ForkNode
   joinNodes <- getAs "JoinNodes" JoinNode
-  endNodes <- getAs "EndNodes" EndNode
+  activityEndNodes <- getAs "ActivityEndNodes" ActivityEndNode
+  flowEndNodes <- getAs "FlowEndNodes" FlowEndNode
   startNodes <- getAs "StartNodes" StartNode
-  let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes endNodes startNodes
+  let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes activityEndNodes flowEndNodes startNodes
   cnames <- fmap (M.fromAscList . S.toAscList) $ getNames scope insta nodes' "States" ComponentName
   let components = enumerateComponents $ toSet nodes'
       names = M.fromList $ zip (nubOrd $ M.elems cnames) $ pure <$> ['A'..]
@@ -161,7 +168,8 @@ convertToADNode getName tuple = case node of
   MNode {} -> ADMergeNode { label = l }
   FNode {} -> ADForkNode { label = l }
   JNode {} -> ADJoinNode { label = l }
-  ENode {} -> ADActivityEndNode { label = l }
+  AeNode {} -> ADActivityEndNode { label = l }
+  FeNode {} -> ADFlowEndNode { label = l }
   StNode {} -> ADStartNode { label = l }
   where 
     node = fst tuple
@@ -245,7 +253,8 @@ toNode ns x i = ifX ANode ActionNode aNodes
   $ ifX MNode MergeNode mNodes
   $ ifX FNode ForkNode fNodes
   $ ifX JNode JoinNode jNodes
-  $ ifX ENode EndNode eNodes
+  $ ifX AeNode ActivityEndNode aeNodes
+  $ ifX FeNode FlowEndNode feNodes
   $ ifX StNode StartNode stNodes
   $ throwError $ fromString $ "unknown node x$" ++ show i
   where

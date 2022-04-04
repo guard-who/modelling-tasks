@@ -25,7 +25,6 @@ abstract sig ActionNodes extends ActionObjectNodes {}
 //Represents an object node
 abstract sig ObjectNodes extends ActionObjectNodes {}
 
-
 //Represents a decision node
 abstract sig DecisionNodes extends NormalStates {}
 {
@@ -44,13 +43,19 @@ abstract sig MergeNodes extends NormalStates {}
 	not this in (Flows <: from) .this . to //No reflexive edges, might be strict but seems kind of nonsensical otherwise
 }
 
+//Represents an activity end
+abstract sig ActivityEndNodes extends EndNodes {}
+
+//Represents a flow end
+abstract sig FlowEndNodes extends EndNodes {}
+
 
 //Restrict Nodes to only those usable in Activity Diagrams
 pred restrictAllowedNodeTypes {
 	Nodes in (StartNodes + EndNodes + ActionObjectNodes + DecisionNodes + MergeNodes  + RegionsStates + ForkNodes + JoinNodes)
 }
 
-// Action or Object Nodes should have distinct names
+//Action or Object Nodes should have distinct names
 pred actionObjectNodesHaveDistinctNames {
 	no disjoint s1,s2 : ActionObjectNodes | s1.name = s2.name
 }
@@ -125,4 +130,4 @@ pred scenario{
 	#Nodes >= 8
 }
 
-run scenario for 15 but 6 Int, exactly 1 StartNodes,  exactly 3 Regions, 0 HierarchicalStates, exactly 1 RegionsStates, exactly 1 ForkNodes, exactly 1 JoinNodes, 0 HistoryNodes
+run scenario for 15 but 6 Int, exactly 1 StartNodes, exactly 3 Regions, 0 HierarchicalStates, exactly 1 RegionsStates, exactly 1 ForkNodes, exactly 1 JoinNodes, 0 HistoryNodes
