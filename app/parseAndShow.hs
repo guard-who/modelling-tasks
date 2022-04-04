@@ -13,12 +13,12 @@ main :: IO ()
 main = do
   xs <- getArgs
   case xs of
-    scope:f:xs' -> do
+    ownscope:incscope:f:xs' -> do
       inst <- B.readFile f
-      let ad = failWith id . parseInstance scope . failWith show
+      let ad = failWith id . parseInstance ownscope incscope . failWith show
             $ AD.parseInstance inst
       pPrint ad
-    _ -> error "usage: two parameters required: String (scope) FilePath (Alloy instance)"
+    _ -> error "usage: three parameters required: String (scope of source) String (scope of include) FilePath (Alloy instance)"
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id

@@ -107,24 +107,25 @@ toSet ns = S.unions [
  --To be finished later
 parseInstance :: (MonadError s m, IsString s)
   => String
+  -> String
   -> AlloyInstance
   -> m UMLActivityDiagram
-parseInstance scope insta = do  
-  actionNodes <- getAs "ActionNodes" ActionNode
-  objectNodes <- getAs "ObjectNodes" ObjectNode
-  decisionNodes <- getAs "DecisionNodes" DecisionNode
-  mergeNodes <- getAs "MergeNodes" MergeNode
-  forkNodes <- getAs "ForkNodes" ForkNode
-  joinNodes <- getAs "JoinNodes" JoinNode
-  activityEndNodes <- getAs "ActivityEndNodes" ActivityEndNode
-  flowEndNodes <- getAs "FlowEndNodes" FlowEndNode
-  startNodes <- getAs "StartNodes" StartNode
+parseInstance ownscope incscope insta = do  
+  actionNodes <- getAs ownscope "ActionNodes" ActionNode
+  objectNodes <- getAs ownscope"ObjectNodes" ObjectNode
+  decisionNodes <- getAs ownscope "DecisionNodes" DecisionNode
+  mergeNodes <- getAs ownscope "MergeNodes" MergeNode
+  forkNodes <- getAs incscope "ForkNodes" ForkNode
+  joinNodes <- getAs incscope "JoinNodes" JoinNode
+  activityEndNodes <- getAs ownscope "ActivityEndNodes" ActivityEndNode
+  flowEndNodes <- getAs ownscope"FlowEndNodes" FlowEndNode
+  startNodes <- getAs incscope "StartNodes" StartNode
   let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes activityEndNodes flowEndNodes startNodes
-  cnames <- fmap (M.fromAscList . S.toAscList) $ getNames scope insta nodes' "States" ComponentName
+  cnames <- fmap (M.fromAscList . S.toAscList) $ getNames incscope insta nodes' "States" ComponentName
   let components = enumerateComponents $ toSet nodes'
       names = M.fromList $ zip (nubOrd $ M.elems cnames) $ pure <$> ['A'..]
       getName x = fromMaybe "" $ M.lookup x cnames >>= (`M.lookup` names)
-  conns <- getConnections scope insta nodes'
+  conns <- getConnections incscope insta nodes'
   let labelOf = getLabelOf components
       conns' = S.map (\(x, y, z) -> (labelOf x, labelOf y, z)) conns
       activityDiagram = setToActivityDiagram getName components conns'
@@ -133,9 +134,10 @@ parseInstance scope insta = do
     getAs
       :: (IsString s, MonadError s m, Ord a)
       => String
+      -> String
       -> (String -> a)
       -> m (Set a)
-    getAs = getX scope insta
+    getAs scope = getX scope insta
 
 
 enumerateComponents :: Set Node -> Set (Node, Int)
