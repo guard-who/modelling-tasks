@@ -85,14 +85,16 @@ pred regionsAreFlat {
 
 //Prevent exits from regions except via Join Nodes
 pred permitExitOnlyViaJoin {
-	let inner = RegionsStates + Regions.contains |
-		no ((Flows <: from).inner.to & ((Nodes - inner) - JoinNodes))
+	all rs1 : RegionsStates | one j1 : JoinNodes |
+		let inner = rs1 + rs1.contains.contains |
+			no ((Flows <: from).inner.to & ((Nodes - inner) - j1))
 }
 
 //Prevent entries to regions except via Fork Nodes
 pred permitEntryOnlyViaFork {
-	let inner = RegionsStates + Regions.contains |
-		no ((Flows <: to).inner.from & ((Nodes - inner) - ForkNodes))
+	all rs1 : RegionsStates | one f1 : ForkNodes |
+		let inner = rs1 + rs1.contains.contains |
+			no ((Flows <: to).inner.from & ((Nodes - inner) - f1))
 }
 
 //TODO: Predicates for explicitly setting the number of occurence for each component
