@@ -83,22 +83,27 @@ pred regionsAreFlat {
 		no regionsInThisAndDeeper[r1]
 }
 
-//Prevent exits from regions except via Join Nodes
-pred permitExitOnlyViaJoin {
-	all rs1 : RegionsStates | one j1 : JoinNodes |
-		let inner = rs1.contains.contains |
-			no ((Flows <: from).inner.to & ((Nodes - inner) - j1))
-			and no ((Flows <: from) . rs1 . to)
+//Prevent direct entries or exits from region states
+pred noDirectEntryOrExitFromRegionsStates {
+	all r1 : Regions | let inner = r1.contains |
+	 	no ((Flows <: to).inner.from) & ((Nodes - inner) - ForkNodes) and
+		no ((Flows <: from).inner.to) & ((Nodes - inner) - JoinNodes)
 }
 
-//Prevent entries to regions except via Fork Nodes
-pred permitEntryOnlyViaFork {
-	all rs1 : RegionsStates | one f1 : ForkNodes |
-		let inner = rs1.contains.contains |
-			no ((Flows <: to).inner.from & ((Nodes - inner) - f1))
-			and no ((Flows <: to) . rs1 . from)
+pred onlyOneEntryAndExitPerRegion {
+	all r1 : Regions | let inner = r1.contains |
+		lone ((Flows <: to).inner.from) & (Nodes - inner) and
+		lone ((Flows <: from).inner.to) & (Nodes - inner)
 }
 
+//Prevent standard entries or exits from region states
+pred noStandardEntryOrExitFromRegionsStates {
+	all rs1 : RegionsStates |
+		no ((Flows <: from) . rs1 . to)
+		and no ((Flows <: to) . rs1 . from)
+}
+
+//Simplified version of reachabiity strategy for activity diagrams
 pred ad_reachability {
  	no derived
 	(Nodes - StartNodes - RegionsStates) in ((StartNodes - allContainedNodes) . ^(~from.to)) 
@@ -117,8 +122,9 @@ pred scenario{
 	//flowsToMergeNodeOriginateFromDecisionNode //Not completely necessary and a bit slow
 	noRegionNames
 	regionsAreFlat
-	permitExitOnlyViaJoin
-	permitEntryOnlyViaFork
+	noDirectEntryOrExitFromRegionsStates
+	noStandardEntryOrExitFromRegionsStates
+	onlyOneEntryAndExitPerRegion
 	restrictNumberOfDecisionOrMergeNodes
 	ad_reachability
 	some (DecisionNodes + MergeNodes)
