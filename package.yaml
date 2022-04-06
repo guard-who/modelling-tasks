@@ -20,6 +20,7 @@ library:
   exposed-modules: 
     - AD_Datatype
     - AD_Instance
+    - AD_PlantUMLConverter
   ghc-options:
     - -Wall
     - -Werror
