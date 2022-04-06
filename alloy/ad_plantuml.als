@@ -68,6 +68,7 @@ fact {
 	noRegionNames
 	permitExitOnlyViaJoin
 	permitEntryOnlyViaFork
+	ad_reachability
 	-- New rules
 	restrictActionObjectNodesToOneOutgoingEdge
 	noReflexiveEdges
@@ -82,4 +83,4 @@ pred generate {
 }
 
 
-run generate for 15 but 6 Int, exactly 1 StartNodes, exactly 1 RegionsStates, exactly 0 RealForkNodes, exactly 0 RealJoinNodes, exactly 1 PlantUMLIfDecisionNodes, exactly 1 PlantUMLIfMergeNodes, 0 HierarchicalStates, 0 HistoryNodes
+run generate for 15 but 6 Int, exactly 1 StartNodes, exactly 1 RegionsStates, exactly 3 Regions, exactly 1 RealForkNodes, exactly 1 RealJoinNodes, exactly 0 PlantUMLIfDecisionNodes, exactly 0 PlantUMLIfMergeNodes, 0 HierarchicalStates, 0 HistoryNodes

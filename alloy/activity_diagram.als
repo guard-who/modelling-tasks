@@ -6,7 +6,7 @@ open project/sd_generate/alloy/sd/startstate_rules // import constraints of star
 open project/sd_generate/alloy/sd/endstate_rules // import constraints of end states
 open project/sd_generate/alloy/sd/region_rules // import constraints of regions and region states
 open project/sd_generate/alloy/sd/node_rules // import constraints of fork and join nodes
-open project/sd_generate/alloy/sd/reachability_rules // import constraints of reachability
+//open project/sd_generate/alloy/sd/reachability_rules // import constraints of reachability
 open project/sd_generate/alloy/sd/transition_rules // import constraints of transition labels
 open project/sd_generate/alloy/sd/substate_rules // import constraints of "substates"
 open project/sd_generate/alloy/sd/name_rules // import constraints of names
@@ -86,15 +86,22 @@ pred regionsAreFlat {
 //Prevent exits from regions except via Join Nodes
 pred permitExitOnlyViaJoin {
 	all rs1 : RegionsStates | one j1 : JoinNodes |
-		let inner = rs1 + rs1.contains.contains |
+		let inner = rs1.contains.contains |
 			no ((Flows <: from).inner.to & ((Nodes - inner) - j1))
+			and no ((Flows <: from) . rs1 . to)
 }
 
 //Prevent entries to regions except via Fork Nodes
 pred permitEntryOnlyViaFork {
 	all rs1 : RegionsStates | one f1 : ForkNodes |
-		let inner = rs1 + rs1.contains.contains |
+		let inner = rs1.contains.contains |
 			no ((Flows <: to).inner.from & ((Nodes - inner) - f1))
+			and no ((Flows <: to) . rs1 . from)
+}
+
+pred ad_reachability {
+ 	no derived
+	(Nodes - StartNodes - RegionsStates) in ((StartNodes - allContainedNodes) . ^(~from.to)) 
 }
 
 //TODO: Predicates for explicitly setting the number of occurence for each component
@@ -113,6 +120,7 @@ pred scenario{
 	permitExitOnlyViaJoin
 	permitEntryOnlyViaFork
 	restrictNumberOfDecisionOrMergeNodes
+	ad_reachability
 	some (DecisionNodes + MergeNodes)
 	#Regions = 3
 	some EndNodes //Not necessary
