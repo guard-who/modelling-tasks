@@ -34,7 +34,7 @@ import Language.Alloy.Call (
 newtype ComponentName = ComponentName String
   deriving (Eq, Ord, Read, Show)
 
-newtype TriggerName = TriggerName String
+newtype GuardName = GuardName String
   deriving (Eq, Ord, Read, Show)
 
 newtype ActionNode = ActionNode String 
@@ -55,13 +55,13 @@ newtype ForkNode = ForkNode String
 newtype JoinNode = JoinNode String
   deriving (Eq, Ord, Read, Show)
 
-newtype ActivityEndNode = ActivityEndNode String
+newtype ActivityFinalNode = ActivityFinalNode String
   deriving (Eq, Ord, Read, Show)
 
-newtype FlowEndNode = FlowEndNode String
+newtype FlowFinalNode = FlowFinalNode String
   deriving (Eq, Ord, Read, Show)
 
-newtype StartNode = StartNode String
+newtype InitialNode = InitialNode String
   deriving (Eq, Ord, Read, Show)
 
 newtype Trigger = Trigger String
@@ -74,9 +74,9 @@ data Node =
   | MNode MergeNode
   | FNode ForkNode
   | JNode JoinNode
-  | AeNode ActivityEndNode
-  | FeNode FlowEndNode
-  | StNode StartNode
+  | AeNode ActivityFinalNode
+  | FeNode FlowFinalNode
+  | StNode InitialNode
   deriving (Eq, Ord, Show)
 
 data Nodes = Nodes {
@@ -86,9 +86,9 @@ data Nodes = Nodes {
   mNodes  :: Set MergeNode,
   fNodes  :: Set ForkNode,
   jNodes  :: Set JoinNode,
-  aeNodes :: Set ActivityEndNode,
-  feNodes :: Set FlowEndNode,
-  stNodes :: Set StartNode
+  aeNodes :: Set ActivityFinalNode,
+  feNodes :: Set FlowFinalNode,
+  stNodes :: Set InitialNode
 } deriving Show
 
 toSet :: Nodes -> Set Node
@@ -110,22 +110,22 @@ parseInstance :: (MonadError s m, IsString s)
   -> String
   -> AlloyInstance
   -> m UMLActivityDiagram
-parseInstance ownscope incscope insta = do  
+parseInstance ownscope _ insta = do  
   actionNodes <- getAs ownscope "ActionNodes" ActionNode
   objectNodes <- getAs ownscope"ObjectNodes" ObjectNode
   decisionNodes <- getAs ownscope "DecisionNodes" DecisionNode
   mergeNodes <- getAs ownscope "MergeNodes" MergeNode
-  forkNodes <- getAs incscope "ForkNodes" ForkNode
-  joinNodes <- getAs incscope "JoinNodes" JoinNode
-  activityEndNodes <- getAs ownscope "ActivityEndNodes" ActivityEndNode
-  flowEndNodes <- getAs ownscope"FlowEndNodes" FlowEndNode
-  startNodes <- getAs incscope "StartNodes" StartNode
-  let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes activityEndNodes flowEndNodes startNodes
-  cnames <- fmap (M.fromAscList . S.toAscList) $ getNames incscope insta nodes' "States" ComponentName
+  forkNodes <- getAs ownscope "ForkNodes" ForkNode
+  joinNodes <- getAs ownscope "JoinNodes" JoinNode
+  activityFinalNodes <- getAs ownscope "ActivityFinalNodes" ActivityFinalNode
+  flowFinalNodes <- getAs ownscope"FlowFinalNodes" FlowFinalNode
+  initialNodes <- getAs ownscope "InitialNodes" InitialNode
+  let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes activityFinalNodes flowFinalNodes initialNodes
+  cnames <- M.fromAscList . S.toAscList <$> getNames ownscope insta nodes' "ActionObjectNodes" ComponentName
   let components = enumerateComponents $ toSet nodes'
       names = M.fromList $ zip (nubOrd $ M.elems cnames) $ pure <$> ['A'..]
       getName x = fromMaybe "" $ M.lookup x cnames >>= (`M.lookup` names)
-  conns <- getConnections incscope insta nodes'
+  conns <- getConnections ownscope insta nodes'
   let labelOf = getLabelOf components
       conns' = S.map (\(x, y, z) -> (labelOf x, labelOf y, z)) conns
       activityDiagram = setToActivityDiagram getName components conns'
@@ -170,9 +170,9 @@ convertToADNode getName tuple = case node of
   MNode {} -> ADMergeNode { label = l }
   FNode {} -> ADForkNode { label = l }
   JNode {} -> ADJoinNode { label = l }
-  AeNode {} -> ADActivityEndNode { label = l }
-  FeNode {} -> ADFlowEndNode { label = l }
-  StNode {} -> ADStartNode { label = l }
+  AeNode {} -> ADActivityFinalNode { label = l }
+  FeNode {} -> ADFlowFinalNode { label = l }
+  StNode {} -> ADInitialNode { label = l }
   where 
     node = fst tuple
     l = snd tuple
@@ -214,10 +214,10 @@ getConnections
   -> Nodes
   -> m (Set (Node, Node, String))
 getConnections scope insta ns = do
-  triggerNames  <- lookupSig (scoped scope "TriggerNames") insta
-  triggers <-  getSingleAs "" (returnX TriggerName) triggerNames
-  realFlows  <- lookupSig (scoped scope "Flows") insta
-  protoFlows <- lookupSig (scoped scope "ProtoFlows") insta
+  guardNames  <- lookupSig (scoped scope "GuardNames") insta
+  triggers <-  getSingleAs "" (returnX GuardName) guardNames
+  realFlows  <- lookupSig (scoped scope "ActivityEdges") insta
+  protoFlows <- lookupSig (scoped scope "ActivityEdges") insta
   flows <- getSingleAs "" (returnX Trigger) realFlows
   from <- only fst flows <$> getDoubleAs
     "from"
@@ -228,11 +228,11 @@ getConnections scope insta ns = do
     <$> getDoubleAs "to" (returnX Trigger) (toNode ns) protoFlows
   tlabel <- M.fromAscList . S.toAscList . only snd triggers .  only fst flows
     <$> getDoubleAs
-      "label"
+      "guard"
       (returnX Trigger)
-      (returnX TriggerName)
+      (returnX GuardName)
       realFlows
-  let labelMap :: Map TriggerName String
+  let labelMap :: Map GuardName String
       labelMap = M.fromAscList . zip (S.toAscList triggers) $ pure <$> ['a'..]
   return $ link to tlabel labelMap from
   where
@@ -255,9 +255,9 @@ toNode ns x i = ifX ANode ActionNode aNodes
   $ ifX MNode MergeNode mNodes
   $ ifX FNode ForkNode fNodes
   $ ifX JNode JoinNode jNodes
-  $ ifX AeNode ActivityEndNode aeNodes
-  $ ifX FeNode FlowEndNode feNodes
-  $ ifX StNode StartNode stNodes
+  $ ifX AeNode ActivityFinalNode aeNodes
+  $ ifX FeNode FlowFinalNode feNodes
+  $ ifX StNode InitialNode stNodes
   $ throwError $ fromString $ "unknown node x$" ++ show i
   where
     ifX f g which h =
