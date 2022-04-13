@@ -11,7 +11,7 @@ import AD_Datatype (
 
 convertToPlantUML :: UMLActivityDiagram -> String
 convertToPlantUML diag@(UMLActivityDiagram ns _) = 
-    let start = head  $ filter isStartNode ns
+    let start = head  $ filter isInitialNode ns
         body = convertNode (Just start) diag
     in "@startuml\n" ++ body ++ "@enduml"
 
@@ -20,9 +20,9 @@ convertNode node diag =
   case node of
     Just ADActionNode {label = l} -> ":A;\n" ++ convertNode (adjNode diag l) diag
     Just ADObjectNode {label = l} -> ":O]\n" ++ convertNode (adjNode diag l) diag
-    Just ADStartNode {label = l} -> "start\n" ++ convertNode (adjNode diag l) diag
-    Just ADActivityEndNode {label = l} -> "end\n" ++ convertNode (adjNode diag l) diag
-    Just ADFlowEndNode {label = l} -> "stop\n" ++ convertNode (adjNode diag l) diag
+    Just ADInitialNode {label = l} -> "start\n" ++ convertNode (adjNode diag l) diag
+    Just ADActivityFinalNode {label = l} -> "end\n" ++ convertNode (adjNode diag l) diag
+    Just ADFlowFinalNode {label = l} -> "stop\n" ++ convertNode (adjNode diag l) diag
     _ -> ""
 
 
@@ -44,6 +44,6 @@ from (ADConnection l _ _) = l
 to :: ADConnection -> Int
 to (ADConnection _ l _) = l
 
-isStartNode :: ADNode -> Bool
-isStartNode ADStartNode {} = True
-isStartNode _ = False
+isInitialNode :: ADNode -> Bool
+isInitialNode ADInitialNode {} = True
+isInitialNode _ = False
