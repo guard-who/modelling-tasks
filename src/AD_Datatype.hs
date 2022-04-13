@@ -27,13 +27,13 @@ data ADNode =
   | ADJoinNode {
       label :: Int
   }
-  | ADActivityEndNode {
+  | ADActivityFinalNode {
       label :: Int
   }
-  | ADFlowEndNode {
+  | ADFlowFinalNode {
       label :: Int
   }
-  | ADStartNode {
+  | ADInitialNode {
       label :: Int
   } deriving (Show, Eq)
 
