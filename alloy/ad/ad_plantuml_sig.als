@@ -75,10 +75,33 @@ abstract sig PlantUMLIfElseBlocks extends PlantUMLBlocks {
 		& (ActivityNodes -  (nodesInThisAndDeeper[inner])) in ifElseStart	//Incoming edges to if/else bodies come from decision node
 }
 
-//TODO: signature for PlantUML-Fork-Structure
 
-pred generate {
-	some rp1 : PlantUMLRepeatBlocks | rp1 in PlantUMLIfElseBlocks.ifBody
+//Represents a plantuml fork block
+abstract sig PlantUMLForkBlocks extends PlantUMLBlocks {
+	forkStart : one ForkNodes,
+	bodies : disj set PlantUMLBlocks, 
+	forkEnd : one JoinNodes
+} {
+	nodes = (forkStart + forkEnd)								//Fork and Join are the nodes
+	substructures = bodies									//bodies are the substructures
+	#(from . forkStart) = 3									//Ternary Fork (for now) 
+	#(to . forkEnd) = 3									//Ternary Join (for now)
+	#bodies = 3											//3 Blocks (for now)
+	all b1 : bodies |
+		forkStart in (to .  (nodesInThis[b1]) . from)					//Edge from Fork node to each block
+	all b1 : bodies |	
+		forkEnd in (from . (nodesInThis[b1]) . to)					//Edge to Join node from each block
+	(from . (nodesInThis[bodies]) . to) 
+		& (ActivityNodes - (nodesInThisAndDeeper[bodies])) in forkEnd	//Outgoing edges from if/else bodies lead to merge node
+	(to . (nodesInThis[bodies]) . from)	
+		& (ActivityNodes -  (nodesInThisAndDeeper[bodies])) in forkStart	//Incoming edges to if/else bodies come from decision node
 }
 
-run generate for 15 but exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks
+//TODO: Check assumptions with asserts
+
+pred generate {
+	some ie1 : PlantUMLIfElseBlocks | ie1 in PlantUMLForkBlocks.bodies
+	some fb1: PlantUMLForkBlocks | fb1 in PlantUMLRepeatBlocks.body
+}
+
+run generate for 15 but exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks, exactly 1 PlantUMLForkBlocks
