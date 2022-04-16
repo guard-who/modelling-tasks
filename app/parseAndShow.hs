@@ -7,7 +7,7 @@ import System.Environment (getArgs, withArgs)
 import Text.Pretty.Simple (pPrint)
 
 import AD_Instance (parseInstance)
-
+import AD_PlantUMLConverter(convertToPlantUML)
 
 main :: IO ()
 main = do
@@ -18,6 +18,7 @@ main = do
       let ad = failWith id . parseInstance ownscope incscope . failWith show
             $ AD.parseInstance inst
       pPrint ad
+      pPrint $ convertToPlantUML ad
     _ -> error "usage: three parameters required: String (scope of source) String (scope of include) FilePath (Alloy instance)"
 
 failWith :: (a -> String) -> Either a c -> c
