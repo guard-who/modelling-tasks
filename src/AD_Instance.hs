@@ -216,22 +216,20 @@ getConnections
 getConnections scope insta ns = do
   guardNames  <- lookupSig (scoped scope "GuardNames") insta
   triggers <-  getSingleAs "" (returnX GuardName) guardNames
-  realFlows  <- lookupSig (scoped scope "ActivityEdges") insta
-  protoFlows <- lookupSig (scoped scope "ActivityEdges") insta
-  flows <- getSingleAs "" (returnX Trigger) realFlows
-  from <- only fst flows <$> getDoubleAs
+  activityEdges  <- lookupSig (scoped scope "ActivityEdges") insta
+  from <- getDoubleAs
     "from"
     (returnX Trigger)
     (toNode ns)
-    protoFlows
-  to <- M.fromAscList . S.toAscList . only fst flows
-    <$> getDoubleAs "to" (returnX Trigger) (toNode ns) protoFlows
-  tlabel <- M.fromAscList . S.toAscList . only snd triggers .  only fst flows
+    activityEdges
+  to <- M.fromAscList . S.toAscList 
+    <$> getDoubleAs "to" (returnX Trigger) (toNode ns) activityEdges
+  tlabel <- M.fromAscList . S.toAscList . only snd triggers
     <$> getDoubleAs
       "guard"
       (returnX Trigger)
       (returnX GuardName)
-      realFlows
+      activityEdges
   let labelMap :: Map GuardName String
       labelMap = M.fromAscList . zip (S.toAscList triggers) $ pure <$> ['a'..]
   return $ link to tlabel labelMap from
