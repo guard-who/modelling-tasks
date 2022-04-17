@@ -6,7 +6,12 @@ module AD_Datatype (
   adjNodes
 ) where 
 
-data ADConnection = ADConnection Int Int String deriving (Show, Eq, Ord)
+data ADConnection = 
+  ADConnection {
+    from :: Int, 
+    to :: Int,
+    guard :: String
+  } deriving (Show, Eq, Ord)
 
 data ADNode =
   ADActionNode {
@@ -49,8 +54,8 @@ data UMLActivityDiagram =
 
 adjNodes :: ADNode -> UMLActivityDiagram -> [ADNode]
 adjNodes node (UMLActivityDiagram ns conns) = 
-  let adjLabel = map getTo $ filter (\c -> getFrom c == getLabel node) conns
-  in filter (\node' -> getLabel node' `elem` adjLabel) ns
+  let adjLabel = map to $ filter (\c -> from c == label node) conns
+  in filter (\node' -> label node' `elem` adjLabel) ns
 
 
 getInitialNodes :: UMLActivityDiagram -> [ADNode]
@@ -58,12 +63,3 @@ getInitialNodes (UMLActivityDiagram ns _) =
   filter isInitialNode ns
   where isInitialNode ADInitialNode {} = True
         isInitialNode _ = False
-
-getFrom :: ADConnection -> Int 
-getFrom (ADConnection l _ _) = l
-
-getTo :: ADConnection -> Int
-getTo (ADConnection _ l _) = l
-
-getLabel :: ADNode -> Int
-getLabel = label
