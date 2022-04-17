@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module AD_PlantUMLConverter (
   convertToPlantUML
@@ -30,8 +31,8 @@ convertNode' (current:queue) diag seen =
   let newQueue = filter (`notElem` seen) (queue ++ adjNodes current diag)
       newSeen = seen ++ [current]
   in case current of 
-        ADActionNode {name = s} -> [i|:#{s};\n|] ++ convertNode' newQueue diag newSeen
-        ADObjectNode {name = s} -> [i|:#{s}]\n|] ++ convertNode' newQueue diag newSeen
+        ADActionNode {name} -> [i|:#{name};\n|] ++ convertNode' newQueue diag newSeen
+        ADObjectNode {name} -> [i|:#{name}]\n|] ++ convertNode' newQueue diag newSeen
         ADInitialNode {} -> "start\n" ++ convertNode' newQueue diag newSeen
         ADActivityFinalNode {} -> "end\n" ++ convertNode' newQueue diag newSeen
         ADFlowFinalNode {} -> "stop\n" ++ convertNode' newQueue diag newSeen
@@ -47,8 +48,8 @@ handleRepeat mergenode callback (current:queue) diag seen =
     let newQueue = filter (`notElem` seen) (queue ++ adjNodes current diag)
         newSeen = seen ++ [current]
     in case current of 
-        ADActionNode {name = s} -> [i|:#{s};\n|] ++ handleRepeat mergenode callback newQueue diag newSeen
-        ADObjectNode {name = s} -> [i|:#{s}]\n|] ++ handleRepeat mergenode callback newQueue diag newSeen
+        ADActionNode {name} -> [i|:#{name};\n|] ++ handleRepeat mergenode callback newQueue diag newSeen
+        ADObjectNode {name} -> [i|:#{name}]\n|] ++ handleRepeat mergenode callback newQueue diag newSeen
         ADInitialNode {} -> "start\n" ++ handleRepeat mergenode callback newQueue diag newSeen
         ADActivityFinalNode {} -> "end\n" ++ handleRepeat mergenode callback newQueue diag newSeen
         ADFlowFinalNode {} -> "stop\n" ++ handleRepeat mergenode callback newQueue diag newSeen
