@@ -48,7 +48,8 @@ convertNode' (current:queue) diag seen =
 handleDecision :: ADNode -> [ADNode] -> UMLActivityDiagram -> [ADNode] -> String
 handleDecision decision _ diag@(UMLActivityDiagram _ conns) seen =
   let ifElseEnd = head $ foldr1 intersect $ map (\x -> traverseFromNodes [x] diag [] seen) $ adjNodes decision diag
-      pathsToIfElseEnd = map (\xs -> takeWhile (\x -> x /= ifElseEnd) xs) $ map (\x -> traverseFromNodes [x] diag [] seen) $ adjNodes decision diag
+      pathsToIfElseEnd = map (\xs -> filter (\x -> x `notElem` traverseFromNodes [ifElseEnd] diag [] seen) xs) 
+        $ map (\x -> traverseFromNodes [x] diag [] seen) $ adjNodes decision diag
       subDiags = map (\xs -> UMLActivityDiagram xs conns) pathsToIfElseEnd
       subStrings = map (\xs -> convertNode' [head $ nodes xs] xs seen) subDiags
       newSeen = seen ++ (foldr1 union pathsToIfElseEnd) ++ [ifElseEnd]
@@ -61,7 +62,7 @@ handleDecision decision _ diag@(UMLActivityDiagram _ conns) seen =
 handleRepeat :: ADNode -> [ADNode] -> UMLActivityDiagram -> [ADNode] -> String
 handleRepeat merge queue diag@(UMLActivityDiagram _ conns) seen =
   let repeatEnd =  head $ dropWhile (\x -> merge `notElem` adjNodes x diag) $ traverseFromNodes [merge] diag [] seen
-      pathToRepeatEnd = tail $ takeWhile (\x -> merge `notElem` adjNodes x diag) $ traverseFromNodes [merge] diag [] seen
+      pathToRepeatEnd = tail $ filter (\x -> x `notElem` traverseFromNodes [repeatEnd] diag [] seen) $ traverseFromNodes [merge] diag [] seen
       subString = convertNode' queue (UMLActivityDiagram pathToRepeatEnd conns) seen
       newSeen = seen ++ pathToRepeatEnd ++ [repeatEnd] 
       newQueue = filter (`notElem` newSeen) (adjNodes repeatEnd diag)
