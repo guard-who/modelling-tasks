@@ -39,6 +39,7 @@ convertNode' (current:queue) diag seen =
         ADFlowFinalNode {} -> "stop\n" 
         ADMergeNode {} -> "repeat\n" ++ handleRepeat current newQueue diag newSeen
         ADDecisionNode {} -> "if () then ([X])\n" ++ handleDecision current newQueue diag newSeen
+        ADForkNode {} -> "fork\n" ++ handleFork current newQueue diag newSeen
         _ -> ""
 
 
