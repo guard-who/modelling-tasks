@@ -80,7 +80,7 @@ handleRepeat merge queue diag@(UMLActivityDiagram _ conns) seen =
       subString = convertNode' queue (UMLActivityDiagram pathToRepeatEnd conns) seen
       newSeen = seen ++ pathToRepeatEnd ++ [repeatEnd] 
       newQueue = filter (`notElem` newSeen) (adjNodes repeatEnd diag)
-  in subString ++ "repeat while ()\n" ++ convertNode' newQueue diag newSeen
+  in subString ++ "repeat while () is ([Y]) not ([X])\n" ++ convertNode' newQueue diag newSeen
 
 
 --Crude implementation of BFS, in order to get a list of reachable (yet unhandled) nodes 
