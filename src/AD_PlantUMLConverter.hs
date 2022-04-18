@@ -88,5 +88,6 @@ traverseFromNodes :: [ADNode] -> UMLActivityDiagram -> [ADNode] -> [ADNode] -> [
 traverseFromNodes [] _ path _ = path
 traverseFromNodes (current:queue) diag path seen =
   let newQueue = queue ++ filter (`notElem` (path ++ seen)) (adjNodes current diag)
-      newPath = path ++ [current]
+      newPath = if current `elem` (path ++ seen) then path
+                else path ++ [current]
   in traverseFromNodes newQueue diag newPath seen 
