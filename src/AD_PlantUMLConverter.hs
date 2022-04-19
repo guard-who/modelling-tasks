@@ -43,14 +43,14 @@ convertNode' (current:queue) diag seen =
         _ -> ""
 
 
---Strategy: Find the corresponding merge to the decision: That should be the first node reachable from all decision paths
---Since BFS returns nodes in order of their distance, the head of the intersection of the BFS-Path-Lists should be that node
+--Strategy: Find the corresponding merge/join to the decision/fork: That should be the first node reachable from all decision paths
+--This should be the the head of the intersection of nodes traversed from the nodes that the decision/fork points to
 --Then: Determine the subpaths between the decision and the merge and handle them via convertNode'
 handleDecisionOrFork :: ADNode -> UMLActivityDiagram -> [ADNode] -> String -> String -> String
 handleDecisionOrFork startNode diag@(UMLActivityDiagram _ conns) seen midToken endToken =
-  let endNode = head $ foldr1 intersect $ map (\x -> traverseFromNodes [x] diag [] seen) $ adjNodes startNode diag
-      pathsToEnd = map (filter (\x -> x `notElem` traverseFromNodes [endNode] diag [] seen)) 
-        $ map (\x -> traverseFromNodes [x] diag [] seen) $ adjNodes startNode diag
+  let endNode = head $ foldr1 intersect $ map (\x -> traverseFromNode x diag seen) $ adjNodes startNode diag
+      pathsToEnd = map (filter (\x -> x `notElem` traverseFromNode endNode diag seen)) 
+        $ map (\x -> traverseFromNode x diag seen) $ adjNodes startNode diag
       subDiags = map (\xs -> UMLActivityDiagram xs conns) pathsToEnd
       subStrings = map (\xs -> convertNode' [head $ nodes xs] xs seen) subDiags
       newSeen = seen ++ (foldr1 union pathsToEnd) ++ [endNode]
@@ -62,19 +62,23 @@ handleDecisionOrFork startNode diag@(UMLActivityDiagram _ conns) seen midToken e
 --Then: Determine the subpath between the merge and the decision and handle them via convertNode'
 handleRepeat :: ADNode -> UMLActivityDiagram -> [ADNode] -> String
 handleRepeat merge diag@(UMLActivityDiagram _ conns) seen =
-  let repeatEnd =  head $ dropWhile (\x -> merge `notElem` adjNodes x diag) $ traverseFromNodes [merge] diag [] seen
-      pathToRepeatEnd = tail $ filter (\x -> x `notElem` traverseFromNodes [repeatEnd] diag [] seen) $ traverseFromNodes [merge] diag [] seen
+  let repeatEnd =  head $ dropWhile (\x -> merge `notElem` adjNodes x diag) $ traverseFromNode merge diag seen
+      pathToRepeatEnd = tail $ filter (\x -> x `notElem` traverseFromNode repeatEnd diag seen) $ traverseFromNode merge diag seen
       subString = convertNode' (adjNodes merge diag) (UMLActivityDiagram pathToRepeatEnd conns) seen
       newSeen = seen ++ pathToRepeatEnd ++ [repeatEnd] 
       newQueue = filter (`notElem` newSeen) (adjNodes repeatEnd diag)
   in subString ++ "repeat while () is ([Y]) not ([X])\n" ++ convertNode' newQueue diag newSeen
 
 
---Crude implementation of BFS, in order to get a list of reachable (yet unhandled) nodes 
-traverseFromNodes :: [ADNode] -> UMLActivityDiagram -> [ADNode] -> [ADNode] -> [ADNode]
-traverseFromNodes [] _ path _ = path
-traverseFromNodes (current:queue) diag path seen =
-  let newQueue = queue ++ filter (`notElem` (path ++ seen)) (adjNodes current diag)
-      newPath = if current `elem` (path ++ seen) then path
-                else path ++ [current]
-  in traverseFromNodes newQueue diag newPath seen 
+--Get reachable (yet unhandled) nodes from passed node
+traverseFromNode :: ADNode -> UMLActivityDiagram -> [ADNode] -> [ADNode]
+traverseFromNode node = traverseFromNode' [node] [node]
+
+--Implementation of BFS taking already previously handled (seen) nodes in account
+traverseFromNode' :: [ADNode] -> [ADNode] -> UMLActivityDiagram -> [ADNode] -> [ADNode]
+traverseFromNode' [] traversed _ _ = traversed
+traverseFromNode' (current:queue) traversed diag seen =
+  let nextNodes = filter (`notElem` (traversed ++ seen)) (adjNodes current diag)
+      newQueue = queue ++ nextNodes
+      newTraversed = traversed ++ nextNodes
+  in traverseFromNode' newQueue newTraversed diag seen 
