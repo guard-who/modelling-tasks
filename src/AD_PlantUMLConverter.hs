@@ -49,11 +49,14 @@ convertNode' (current:queue) diag seen =
 handleDecisionOrFork :: ADNode -> UMLActivityDiagram -> [ADNode] -> String -> String -> String
 handleDecisionOrFork startNode diag@(UMLActivityDiagram _ conns) seen midToken endToken =
   let endNode = head $ foldr1 intersect $ map (\x -> traverseFromNode x diag seen) $ adjNodes startNode diag
-      pathsToEnd = map (filter (\x -> x `notElem` traverseFromNode endNode diag seen)) 
-        $ map (\x -> traverseFromNode x diag seen) $ adjNodes startNode diag
-      subDiags = map (\xs -> UMLActivityDiagram xs conns) pathsToEnd
+      pathsToEnd = 
+        map
+        (filter (\ x -> x `notElem` traverseFromNode endNode diag seen)
+        . (\ x -> traverseFromNode x diag seen))
+        (adjNodes startNode diag)
+      subDiags = map (`UMLActivityDiagram` conns) pathsToEnd
       subStrings = map (\xs -> convertNode' [head $ nodes xs] xs seen) subDiags
-      newSeen = seen ++ (foldr1 union pathsToEnd) ++ [endNode]
+      newSeen = seen ++ foldr1 union pathsToEnd ++ [endNode]
       newQueue = filter (`notElem` newSeen) (adjNodes endNode diag)
   in intercalate midToken subStrings ++ endToken ++ convertNode' newQueue diag newSeen
 
