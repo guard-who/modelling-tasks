@@ -48,7 +48,7 @@ convertNode' (current:queue) diag seen =
 --Then: Determine the subpaths between the decision and the merge and handle them via convertNode'
 handleDecisionOrFork :: ADNode -> UMLActivityDiagram -> [ADNode] -> String -> String -> String
 handleDecisionOrFork startNode diag@(UMLActivityDiagram _ conns) seen midToken endToken =
-  let endNode = head $ foldr1 intersect $ map (\x -> traverseFromNode x diag seen) $ adjNodes startNode diag
+  let endNode = head $ foldr1 intersect $ filterDisjunctSublists $ map (\x -> traverseFromNode x diag seen) $ adjNodes startNode diag
       pathsToEnd = 
         map
         (filter (\ x -> x `notElem` traverseFromNode endNode diag seen)
@@ -60,6 +60,14 @@ handleDecisionOrFork startNode diag@(UMLActivityDiagram _ conns) seen midToken e
       newQueue = filter (`notElem` newSeen) (adjNodes endNode diag)
   in intercalate midToken subStrings ++ endToken ++ convertNode' newQueue diag newSeen
 
+
+-- Filter out sublists that are disjunct with all other sublists
+filterDisjunctSublists :: (Eq a) => [[a]] -> [[a]]
+filterDisjunctSublists ws = filterDisjunctSublists' ws ws
+  where filterDisjunctSublists' sublists = foldr (\hs js -> if allDisjunctWith hs sublists then js
+                                                            else hs:js) []
+        allDisjunctWith xs ys = null $ filter (\zs -> not $ disjunct xs zs) $ delete xs ys
+        disjunct as bs = null $ intersect as bs
 
 --Strategy: Find the corresponding decision to the merge: That should be the node reachable from the merge (but not traversed yet) that has an edge towards it 
 --Then: Determine the subpath between the merge and the decision and handle them via convertNode'
