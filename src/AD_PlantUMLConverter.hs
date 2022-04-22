@@ -66,8 +66,8 @@ filterDisjunctSublists :: (Eq a) => [[a]] -> [[a]]
 filterDisjunctSublists ws = filterDisjunctSublists' ws ws
   where filterDisjunctSublists' sublists = foldr (\hs js -> if allDisjunctWith hs sublists then js
                                                             else hs:js) []
-        allDisjunctWith xs ys = null $ filter (\zs -> not $ disjunct xs zs) $ delete xs ys
-        disjunct as bs = null $ intersect as bs
+        allDisjunctWith xs ys = all (disjunct xs) (delete xs ys)
+        disjunct xs = null . intersect xs
 
 --Strategy: Find the corresponding decision to the merge: That should be the node reachable from the merge (but not traversed yet) that has an edge towards it 
 --Then: Determine the subpath between the merge and the decision and handle them via convertNode'
