@@ -6,7 +6,12 @@ open uml_activity_diagram
 abstract sig PlantUMLBlocks {
 	nodes : disj some ActivityNodes,
 	substructures : disj set PlantUMLBlocks 
-} 
+} {
+	one ((to . (nodesInThisAndDeeper[this]) . from) & 
+		(ActivityNodes - (nodesInThisAndDeeper[this]))) 	//One incoming edge to block
+	lone ((from . (nodesInThisAndDeeper[this]) . to) &
+		 (ActivityNodes -(nodesInThisAndDeeper[this])))  	//At most one outgoing edge from block
+}
 
 fun nodesInThis [b1 : PlantUMLBlocks] : set ActivityNodes {
 	b1.nodes
@@ -26,10 +31,20 @@ fact {
 	(ActivityNodes - InitialNodes) in PlantUMLBlocks.nodes				//No seperate nodes
 }
 
-//Represents a simple sequence of initial nodes, actions, objects, and final nodes
+fun incomingEdgeToThis [b1 : one PlantUMLBlocks] : one ActivityNodes {
+	(to . (nodesInThisAndDeeper[b1]) . from) & (ActivityNodes - (nodesInThisAndDeeper[b1]))
+}
+
+fun outgoingEdgeFromThis [b1 : one PlantUMLBlocks] : lone ActivityNodes {
+	(from . (nodesInThisAndDeeper[b1]) . to) & (ActivityNodes -(nodesInThisAndDeeper[b1]))  
+}
+
+
+
+//Represents a sequence of blocks, actions, objects, and final nodes
 abstract sig PlantUMLSequenceBlocks extends PlantUMLBlocks {}	{
-	no substructures
-	nodes in (InitialNodes + ActionObjectNodes + FinalNodes)
+	substructures in (PlantUMLBlocks - PlantUMLSequenceBlocks)		//Prevent unnecessary sub-sequence blocks
+	nodes in (ActionObjectNodes + FinalNodes)
 }
 
 //Represents a plantuml repeat block
@@ -43,12 +58,8 @@ abstract sig PlantUMLRepeatBlocks extends PlantUMLBlocks {
 	#(to . repeatStart) = 2										//Binary merge 
 	#(from . repeatEnd) = 2										//Binary decision
 	repeatStart in (from . repeatEnd . to)							//Edge from decision node to merge node
-	repeatStart in (to . (nodesInThis[body]) . from)						//Edge to repeat body from merge node
-	repeatEnd in (from . (nodesInThis[body]) . to) 						//Edge from repeat body to decision node
-	(from . (nodesInThis[body]) . to)
-		& (ActivityNodes - (nodesInThisAndDeeper[body])) in repeatEnd		//Outgoing edges from body lead to decision node
-	(to .  (nodesInThis[body]) . from) 
-		& (ActivityNodes -  (nodesInThisAndDeeper[body])) in repeatStart		//Incoming edges to body come from merge node	
+	repeatStart in incomingEdgeToThis[body]							//Edge to repeat body from merge node
+	repeatEnd in outgoingEdgeFromThis[body] 						//Edge from repeat body to decision node
 }
 
 //Represents a plantuml if/else block
@@ -63,16 +74,10 @@ abstract sig PlantUMLIfElseBlocks extends PlantUMLBlocks {
 	#(from . ifElseStart) = 2									//Binary decision 
 	#(to . ifElseEnd) = 2									//Binary merge
 	disj[ifBody, elseBody]									//If- and else-body are different
-	ifElseStart in (to .  (nodesInThis[ifBody]) . from)					//Edge from Decision node to if-Block
-	ifElseStart in (to .  (nodesInThis[elseBody]). from)				//Edge from Decision node to else-Block
-	ifElseEnd in (from . (nodesInThis[ifBody]) . to)					//Edge to Merge node from jf-Block
-	ifElseEnd in (from .  (nodesInThis[elseBody]) . to)				//Edge to Merge node from else-Block
-	let inner =  (ifBody + elseBody) |
-		(from . (nodesInThis[inner]) . to) 
-		& (ActivityNodes - (nodesInThisAndDeeper[inner])) in ifElseEnd	//Outgoing edges from if/else bodies lead to merge node
-	let inner = (ifBody + elseBody) |
-		(to . (nodesInThis[inner]) . from)	
-		& (ActivityNodes -  (nodesInThisAndDeeper[inner])) in ifElseStart	//Incoming edges to if/else bodies come from decision node
+	ifElseStart in incomingEdgeToThis[ifBody]						//Edge from Decision node to if-Block
+	ifElseStart in incomingEdgeToThis[elseBody]					//Edge from Decision node to else-Block
+	ifElseEnd in outgoingEdgeFromThis[ifBody]					//Edge to Merge node from jf-Block
+	ifElseEnd in outgoingEdgeFromThis[elseBody]					//Edge to Merge node from else-Block
 }
 
 
@@ -89,14 +94,10 @@ abstract sig PlantUMLForkBlocks extends PlantUMLBlocks {
 	#bodies = 3											//3 Blocks (for now)
           (to . forkEnd . from) in nodesInThis[bodies]					//Edges to Join Node come from blocks                                               
 	all b1 : bodies |
-		forkStart in (to .  (nodesInThis[b1]) . from)					//Edge from Fork node to each block
+		forkStart in incomingEdgeToThis[b1]						//Edge from Fork node to each block
 	all b1 : bodies |
-		no (nodesInThis[b1] & FinalNodes) implies	
-		forkEnd in (from . (nodesInThis[b1]) . to)					//Edge to Join node from each block
-	(from . (nodesInThis[bodies]) . to) 
-		& (ActivityNodes - (nodesInThisAndDeeper[bodies])) in forkEnd	//Outgoing edges from fork bodies lead to join node
-	(to . (nodesInThis[bodies]) . from)	
-		& (ActivityNodes -  (nodesInThisAndDeeper[bodies])) in forkStart	//Incoming edges to fork bodies come from fork node
+		some outgoingEdgeFromThis[b1] implies	
+		forkEnd in outgoingEdgeFromThis[b1]					//Edge to Join node from each block
 }
 
 //TODO: Check assumptions with asserts
