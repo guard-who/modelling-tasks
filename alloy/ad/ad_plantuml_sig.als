@@ -84,17 +84,19 @@ abstract sig PlantUMLForkBlocks extends PlantUMLBlocks {
 } {
 	nodes = (forkStart + forkEnd)								//Fork and Join are the nodes
 	substructures = bodies									//bodies are the substructures
-	#(from . forkStart) = 3									//Ternary Fork (for now) 
-	#(to . forkEnd) = 3									//Ternary Join (for now)
+	#(from . forkStart) = #(bodies)							//Ternary Fork (for now) 
+	#(to . forkEnd) <= #(from . forkStart)						//Ternary Join (for now)
 	#bodies = 3											//3 Blocks (for now)
+          (to . forkEnd . from) in nodesInThis[bodies]					//Edges to Join Node come from blocks                                               
 	all b1 : bodies |
 		forkStart in (to .  (nodesInThis[b1]) . from)					//Edge from Fork node to each block
-	all b1 : bodies |	
+	all b1 : bodies |
+		no (nodesInThis[b1] & FinalNodes) implies	
 		forkEnd in (from . (nodesInThis[b1]) . to)					//Edge to Join node from each block
 	(from . (nodesInThis[bodies]) . to) 
-		& (ActivityNodes - (nodesInThisAndDeeper[bodies])) in forkEnd	//Outgoing edges from if/else bodies lead to merge node
+		& (ActivityNodes - (nodesInThisAndDeeper[bodies])) in forkEnd	//Outgoing edges from fork bodies lead to join node
 	(to . (nodesInThis[bodies]) . from)	
-		& (ActivityNodes -  (nodesInThisAndDeeper[bodies])) in forkStart	//Incoming edges to if/else bodies come from decision node
+		& (ActivityNodes -  (nodesInThisAndDeeper[bodies])) in forkStart	//Incoming edges to fork bodies come from fork node
 }
 
 //TODO: Check assumptions with asserts
@@ -104,4 +106,4 @@ pred generate {
 	some fb1: PlantUMLForkBlocks | fb1 in PlantUMLRepeatBlocks.body
 }
 
-run generate for 15 but exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks, exactly 1 PlantUMLForkBlocks
+run generate for 15 but 6 Int, exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks, exactly 1 PlantUMLForkBlocks
