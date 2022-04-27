@@ -34,6 +34,11 @@ executables:
     dependencies:
       - ba-athena-schulz
       - pretty-simple
+  parseAndCreateDiagram:
+    main: parseAndCreateDiagram.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
   default:
     main: default.hs
     source-dirs: app
