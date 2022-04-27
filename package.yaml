@@ -6,6 +6,7 @@ dependencies:
   - call-alloy
   - containers
   - extra
+  - file-embed
   - mtl
   - process 
   - string-interpolate
