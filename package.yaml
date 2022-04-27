@@ -21,6 +21,7 @@ default-extensions:
 library:
   source-dirs: src
   exposed-modules: 
+    - AD_Alloy
     - AD_Datatype
     - AD_Instance
     - AD_PlantUMLConverter
