@@ -7,6 +7,7 @@ dependencies:
   - containers
   - extra
   - mtl
+  - process 
   - string-interpolate
 default-extensions:
   - TupleSections
@@ -22,6 +23,7 @@ library:
     - AD_Datatype
     - AD_Instance
     - AD_PlantUMLConverter
+    - CallPlantUML
   ghc-options:
     - -Wall
     - -Werror
