@@ -44,7 +44,7 @@ removeLines n = unlines . drop n . lines
 --For now just with static scope from file
 getAlloyInstances :: Maybe Integer -> IO [AlloyInstance]
 getAlloyInstances n = 
-  map (either (error . show) id . parseInstance) <$>
+  map (either (error . show) id . parseInstance) .
   preprocess <$> getRawInstances n completeSpec
 
 
@@ -54,4 +54,4 @@ preprocess = map preprocess'
   
 preprocess' :: ByteString -> ByteString
 preprocess' s = let linesOfByteString = B.split 10 s 
-                in B.intercalate "\n" $ filter (\x -> x /= "------State 0-------") linesOfByteString
+                in B.intercalate "\n" $ filter (/= "------State 0-------") linesOfByteString
