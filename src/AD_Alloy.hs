@@ -1,15 +1,23 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module AD_Alloy(
   getAlloyInstances
 ) where
 
+import qualified Data.ByteString as B (split, intercalate)
+
+import Data.ByteString (ByteString)
 import Data.FileEmbed                   (embedStringFile)
 import Data.List                        (intercalate)
 
 import Language.Alloy.Call (
-  AlloyInstance,
-  getInstances
+  AlloyInstance
+  )
+
+import Language.Alloy.Debug (
+  parseInstance,
+  getRawInstances
   )
 
 moduleComponentsSig :: String
@@ -35,4 +43,15 @@ removeLines n = unlines . drop n . lines
 
 --For now just with static scope from file
 getAlloyInstances :: Maybe Integer -> IO [AlloyInstance]
-getAlloyInstances n = getInstances n completeSpec
+getAlloyInstances n = 
+  map (either (error . show) id . parseInstance) <$>
+  preprocess <$> getRawInstances n completeSpec
+
+
+--Remove problematic line from getRawInstances output
+preprocess :: [ByteString] -> [ByteString]
+preprocess = map preprocess' 
+  
+preprocess' :: ByteString -> ByteString
+preprocess' s = let linesOfByteString = B.split 10 s 
+                in B.intercalate "\n" $ filter (\x -> x /= "------State 0-------") linesOfByteString
