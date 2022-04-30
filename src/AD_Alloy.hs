@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module AD_Alloy(
-  getAlloyInstances
+  getAlloyInstances,
+  getRawAlloyInstances
 ) where
 
 import qualified Data.ByteString as B (split, intercalate)
@@ -47,6 +48,9 @@ getAlloyInstances n =
   map (either (error . show) id . parseInstance) .
   preprocess <$> getRawInstances n completeSpec
 
+--For debugging
+getRawAlloyInstances :: Maybe Integer -> IO [ByteString]
+getRawAlloyInstances n = preprocess <$> getRawInstances n completeSpec
 
 --Remove problematic line from getRawInstances output
 preprocess :: [ByteString] -> [ByteString]

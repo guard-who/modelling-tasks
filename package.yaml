@@ -5,8 +5,10 @@ dependencies:
   - bytestring
   - call-alloy
   - containers
+  - directory
   - extra
   - file-embed
+  - filepath
   - mtl
   - process 
   - string-interpolate
@@ -38,6 +40,11 @@ executables:
       - pretty-simple
   parseAndCreateDiagram:
     main: parseAndCreateDiagram.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
+  parseAndOutputAlloyInst:
+    main: parseAndOutputAlloyInst.hs
     source-dirs: app
     dependencies:
       - ba-athena-schulz
