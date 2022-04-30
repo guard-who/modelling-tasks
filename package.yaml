@@ -5,10 +5,8 @@ dependencies:
   - bytestring
   - call-alloy
   - containers
-  - directory
   - extra
   - file-embed
-  - filepath
   - mtl
   - process 
   - string-interpolate
@@ -48,6 +46,8 @@ executables:
     source-dirs: app
     dependencies:
       - ba-athena-schulz
+      - directory
+      - filepath
   default:
     main: default.hs
     source-dirs: app
