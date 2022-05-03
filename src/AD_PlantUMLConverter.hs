@@ -35,8 +35,8 @@ convertNode' (current:queue) diag seen =
         ADActionNode {name} -> [i|:#{name};\n|] ++ convertNode' newQueue diag newSeen
         ADObjectNode {name} -> [i|:#{name}]\n|] ++ convertNode' newQueue diag newSeen
         ADInitialNode {} -> "start\n" ++ convertNode' newQueue diag newSeen
-        ADActivityFinalNode {} -> "end\n" 
-        ADFlowFinalNode {} -> "stop\n" 
+        ADActivityFinalNode {} -> "stop\n" 
+        ADFlowFinalNode {} -> "end\n" 
         ADMergeNode {} -> "repeat\n" ++ handleRepeat current diag newSeen
         ADDecisionNode {} -> "if () then ([X])\n" ++ handleDecisionOrFork current diag newSeen "else ([Y])\n" "endif\n"
         ADForkNode {} -> "fork\n" ++ handleDecisionOrFork current diag newSeen "forkagain\n" "forkend\n"
