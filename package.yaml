@@ -26,6 +26,8 @@ library:
     - AD_Instance
     - AD_PlantUMLConverter
     - CallPlantUML
+    - AD_Petrinet
+    - PetriStub
   ghc-options:
     - -Wall
     - -Werror
