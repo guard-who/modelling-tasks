@@ -36,7 +36,7 @@ import Modelling.PetriNet.Reach.Reach   (
   transitionsValid,
   )
 import Modelling.PetriNet.Reach.Roll    (netLimits)
-import Modelling.PetriNet.Reach.Step    (deadlocks, executes, successors)
+import Modelling.PetriNet.Reach.Step    (deadlocks, deadlocks', executes, successors)
 import Modelling.PetriNet.Reach.Type (
   Capacity (Unbounded),
   Net (..),
@@ -110,6 +110,9 @@ deadlockEvaluation path inst ts = do
   assertReachPoints (const $ null . successors n) minLength inst ts eout
   where
     n = petriNet inst
+
+deadlockSolution :: Ord s => DeadlockInstance s t -> [t]
+deadlockSolution = reverse . snd . head . concat . deadlocks' . petriNet
 
 data DeadlockInstance s t = DeadlockInstance {
   drawUsing         :: GraphvizCommand,

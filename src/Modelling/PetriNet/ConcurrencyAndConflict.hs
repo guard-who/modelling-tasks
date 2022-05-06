@@ -21,12 +21,15 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   findConcurrency,
   findConcurrencyEvaluation,
   findConcurrencyGenerate,
+  findConcurrencySolution,
   findConcurrencySyntax,
   findConcurrencyTask,
   findConflict,
   findConflictEvaluation,
   findConflictGenerate,
   findConflictPlacesEvaluation,
+  findConflictPlacesSolution,
+  findConflictSolution,
   findConflictSyntax,
   findConflictTask,
   findInitial,
@@ -42,9 +45,11 @@ module Modelling.PetriNet.ConcurrencyAndConflict (
   pickConflictGenerate,
   pickConflictTask,
   pickEvaluation,
+  pickSolution,
   pickSyntax,
   pickTaskInstance,
   renderWith,
+  transitionPairShow,
   ) where
 
 import qualified Data.Bimap                       as BM (fromList, lookup)
@@ -210,19 +215,16 @@ findConcurrencyTask path task = do
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
-    code $ show findInitialShow
+    let ts = transitionPairShow findInitial
+    code $ show ts
     translate $ do
-      let t1 = show $ fst findInitialShow
-          t2 = show $ snd findInitialShow
+      let (t1, t2) = bimap show show ts
       english [i| as answer would indicate that transitions #{t1} and #{t2} are concurrently activated under the initial marking. |]
       german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung nebenläufig aktiviert sind. |]
     translate $ do
       english "The order of transitions within the pair does not matter here."
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
   paragraph hoveringInformation
-
-findInitialShow :: (ShowTransition, ShowTransition)
-findInitialShow = bimap ShowTransition ShowTransition findInitial
 
 findInitial :: (Transition, Transition)
 findInitial = (Transition 0, Transition 1)
@@ -248,8 +250,13 @@ findConcurrencyEvaluation task x = do
   result <- toFindEvaluation what withSol concur x
   uncurry printSolutionAndAssert result
   where
-    Concurrent concur = toFind task
+    concur = findConcurrencySolution task
     withSol = showSolution (task :: FindInstance (Concurrent Transition))
+
+findConcurrencySolution :: FindInstance (Concurrent a) -> (a, a)
+findConcurrencySolution task = concur
+  where
+    Concurrent concur = toFind task
 
 toFindSyntax
   :: OutputMonad m
@@ -268,6 +275,9 @@ toFindSyntax withSol n (fi, si) = addPretext $ do
       german $ t' ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
     isValidTransition (Transition x) = x >= 1 && x <= n
 
+transitionPairShow :: (Transition, Transition) -> (ShowTransition, ShowTransition)
+transitionPairShow = bimap ShowTransition ShowTransition
+
 toFindEvaluation
   :: (Num a, OutputMonad m)
   => Map Language String
@@ -280,7 +290,7 @@ toFindEvaluation what withSol (ft, st) (fi, si) = do
       points = if correct then 1 else 0
       msolutionString =
         if withSol
-        then Just $ show $ bimap ShowTransition ShowTransition (ft, st)
+        then Just $ show $ transitionPairShow (ft, st)
         else Nothing
   assert correct $ translate $ do
     english $ "Given transitions " ++ localise English what ++ "?"
@@ -310,10 +320,10 @@ findConflictTask path task = do
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
-    code $ show findInitialShow
+    let ts = transitionPairShow findInitial
+    code $ show ts
     translate $ do
-      let t1 = show $ fst findInitialShow
-          t2 = show $ snd findInitialShow
+      let (t1, t2) = bimap show show ts
       english [i| as answer would indicate that transitions #{t1} and #{t2} are in conflict under the initial marking. |]
       german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung in Konflikt stehen. |]
     translate $ do
@@ -340,6 +350,9 @@ findConflictEvaluation task x = findConflictPlacesEvaluation
   (x, [])
 
 type ConflictPlaces = ((Transition, Transition), [Place])
+
+findConflictSolution :: FindInstance (PetriConflict p t) -> (t, t)
+findConflictSolution = conflictTrans . toFind
 
 conflictPlacesShow
   :: ConflictPlaces
@@ -370,7 +383,7 @@ findConflictPlacesEvaluation task (conflict, ps) = do
   printSolutionAndAssert (fixSolution <$> ms) result
   where
     assert = continueOrAbort withSol
-    conf = conflictTrans $ toFind task
+    conf = findConflictSolution task
     sources = conflictPlaces (toFind task)
     fixSolution
       | null sources = id
@@ -380,6 +393,10 @@ findConflictPlacesEvaluation task (conflict, ps) = do
     (correct, wrong') = partition (`elem` sources) ps
     base = fromIntegral $ 2 + numberOfPlaces task
     len = fromIntegral . length
+
+findConflictPlacesSolution :: FindInstance (PetriConflict p t) -> ((t, t), [p])
+findConflictPlacesSolution task =
+  (findConflictSolution task, conflictPlaces $ toFind task)
 
 pickConcurrencyTask
   :: (MonadIO m, OutputMonad m)
@@ -443,8 +460,11 @@ pickEvaluation task = do
       if withSol
       then Just $ show solution
       else Nothing
-    solution = head . M.keys . M.filter fst $ nets task
+    solution = pickSolution task
     withSol = showSolution (task :: PickInstance)
+
+pickSolution :: PickInstance -> Int
+pickSolution = head . M.keys . M.filter fst . nets
 
 pickConflictTask
   :: (MonadIO m, OutputMonad m)

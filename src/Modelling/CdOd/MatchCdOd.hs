@@ -14,8 +14,10 @@ module Modelling.CdOd.MatchCdOd (
   getRandomTask,
   matchCdOd,
   matchCdOdEvaluation,
+  matchCdOdSolution,
   matchCdOdSyntax,
   matchCdOdTask,
+  matchingShow,
   newMatchCdOdInstances,
   ) where
 
@@ -206,7 +208,7 @@ For example, |]
       german [i|Bitte geben Sie Ihre Antwort in Form einer Liste von Paaren an, die jeweils aus einer Klassendiagrammnummer und aus Objektdiagrammbuchstaben bestehen.
 Jedes Paar gibt an, dass die genannten Objektdiagramme zu dem jeweiligen Klassendiagramm passen.
 Zum Beispiel drückt |]
-    code $ showMatching matchCdOdInitial
+    code . show $ matchingShow matchCdOdInitial
     translate $ do
       english [i|expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 1 and that none of the offered object diagrams are instances of class diagram 2.|]
       german [i|aus, dass unter den angebotenen Auswahlmöglichkeiten genau die Objektdiagramme a und b Instanzen des Klassendiagramms 1 sind und dass keines der angebotenen Objektdiagramme Instanz des Klassendiagramms 2 ist.|]
@@ -226,8 +228,8 @@ newtype ShowLetters = ShowLetters { showLetters' :: Letters }
 instance Show ShowLetters where
   show = showLetters . showLetters'
 
-showMatching :: [(Int, Letters)] -> String
-showMatching = show . fmap (second ShowLetters)
+matchingShow :: [(Int, Letters)] -> [(Int, ShowLetters)]
+matchingShow = fmap (second ShowLetters)
 
 matchCdOdInitial :: [(Int, Letters)]
 matchCdOdInitial = [(1, Letters "ab"), (2, Letters "")]
@@ -262,17 +264,21 @@ matchCdOdEvaluation task sub' = do
         german "Instanzen"
       solution =
         if showSolution task
-        then Just $ show $ M.toList $ reverseMapping sol
+        then Just . show . matchingShow $ matchCdOdSolution task
         else Nothing
   multipleChoice what solution matching sub
   where
-    reverseMapping :: Map Char [Int] -> Map Int ShowLetters
-    reverseMapping = fmap (fmap $ ShowLetters . Letters) . M.foldrWithKey
-      (\x ys xs -> foldr (M.adjust (x:)) xs ys)
-      $ M.fromList [(1, []), (2, [])]
     toMatching' :: Foldable f => f (Int, Letters) -> [(Int, Char)]
     toMatching' =
       foldr (\(c, ys) xs -> foldr ((:) . (c,)) xs (lettersList ys)) []
+
+matchCdOdSolution :: MatchCdOdInstance -> [(Int, Letters)]
+matchCdOdSolution = M.toList . reverseMapping . fmap fst . instances
+  where
+    reverseMapping :: Map Char [Int] -> Map Int Letters
+    reverseMapping = fmap (fmap Letters) . M.foldrWithKey
+      (\x ys xs -> foldr (M.adjust (x:)) xs ys)
+      $ M.fromList [(1, []), (2, [])]
 
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do

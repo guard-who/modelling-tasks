@@ -96,12 +96,13 @@ findConflictPlacesTask path task = do
     translate $ do
       english [i|Stating |]
       german [i|Die Eingabe von |]
-    code $ show conflictInitialShow
+    let ts = conflictPlacesShow conflictInitial
+    code $ show ts
     translate $ do
       let ((t1, t2), [p1, p2]) = bimap
             (bimap show show)
             (fmap show)
-            conflictInitialShow
+            ts
       english [i| as answer would indicate that transitions #{t1} and #{t2} are in conflict under the initial marking
 and that places #{p1} and #{p2} are all the common places within the preconditions
 which each do not have enough tokens to fire #{t1} and #{t2} at the same time. |]
@@ -117,9 +118,6 @@ Die Reihenfolge der Stellen innerhalb der Auflistung der den Konflikt auslösend
 
 conflictInitial :: ConflictPlaces
 conflictInitial = (findInitial, [Place 0, Place 1])
-
-conflictInitialShow :: ((ShowTransition, ShowTransition), [ShowPlace])
-conflictInitialShow = conflictPlacesShow conflictInitial
 
 findConflictPlacesSyntax
   :: OutputMonad m

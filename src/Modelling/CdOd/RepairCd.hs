@@ -15,6 +15,7 @@ module Modelling.CdOd.RepairCd (
   phraseChange,
   repairCd,
   repairCdEvaluation,
+  repairCdSolution,
   repairCdSyntax,
   repairCdTask,
   repairIncorrect,
@@ -238,7 +239,10 @@ repairCdEvaluation inst xs = addPretext $ do
         (German, "Änderungen")
         ]
       solution = fst <$> changes inst
-  multipleChoice chs (Just $ show $ M.keys $ M.filter id solution) solution xs
+  multipleChoice chs (Just $ show $ repairCdSolution inst) solution xs
+
+repairCdSolution :: RepairCdInstance -> [Int]
+repairCdSolution = M.keys . M.filter id . fmap fst . changes
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int (Bool, Change DiagramEdge),

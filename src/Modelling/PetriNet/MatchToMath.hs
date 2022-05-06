@@ -20,6 +20,7 @@ module Modelling.PetriNet.MatchToMath (
   graphToMathEvaluation,
   graphToMathSyntax,
   graphToMathTask,
+  matchSolution,
   mathToGraph,
   mathToGraphEvaluation,
   mathToGraphSyntax,
@@ -447,6 +448,9 @@ graphToMathEvaluation = do
         german "mathematische Repräsentation"
   evaluation what
 
+matchSolution :: MatchInstance a b -> Int
+matchSolution = head . M.keys . M.filter fst . to
+
 mathToGraphSyntax
   :: OutputMonad m
   => MathToGraphInstance
@@ -475,7 +479,7 @@ evaluation
   -> Int
   -> Rated m
 evaluation what task = do
-  let solution = head . M.keys . M.filter fst $ to task
+  let solution = matchSolution task
       msolution =
         if showSolution task
         then Just $ show solution

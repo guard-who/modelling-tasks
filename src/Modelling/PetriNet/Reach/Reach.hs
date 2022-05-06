@@ -31,7 +31,7 @@ import Modelling.PetriNet.Reach.Property (
   validate,
   )
 import Modelling.PetriNet.Reach.Roll    (netLimits)
-import Modelling.PetriNet.Reach.Step    (executes, levels)
+import Modelling.PetriNet.Reach.Step    (executes, levels, levels')
 import Modelling.PetriNet.Reach.Type (
   Capacity (Unbounded),
   Net (start, transitions),
@@ -186,6 +186,11 @@ reachEvaluation path inst ts = do
   assertReachPoints ((==) . goal) minLength inst ts eout
   where
     n = petriNet inst
+
+reachSolution :: Ord s => ReachInstance s t -> [t]
+reachSolution inst = reverse $ snd $ head $ concatMap
+  (filter $ (== goal inst) . fst)
+  $ levels' $ petriNet inst
 
 assertReachPoints
   :: OutputMonad m

@@ -46,6 +46,13 @@ deadlocks n = do
   zs <- levels n
   return $ filter (null . successors n) zs
 
+{-|
+The returned trace for each state is in reversed order,
+i.e. undoing the firing on the returned deadlock state
+in order of the returned transitions list
+leads to the initial state of the net.
+(Only states of and traces to deadlocks are returned.)
+-}
 deadlocks' :: Ord s => Net s t -> [[(State s, [t])]]
 deadlocks' n = do
   zs <- levels' n
@@ -66,6 +73,12 @@ levels n =
               (S.toList $ S.difference next done')
   in f S.empty [start n]
 
+{-|
+The returned trace for each state is in reversed order,
+i.e. undoing the firing on the returned target state
+in order of the returned transitions list
+leads to the initial state of the net.
+-}
 levels'
   :: Ord s
   => Net s t

@@ -10,8 +10,10 @@ module Modelling.CdOd.DifferentNames (
   differentNames,
   differentNamesEvaluation,
   differentNamesInitial,
+  differentNamesSolution,
   differentNamesSyntax,
   differentNamesTask,
+  mappingShow,
   newDifferentNamesInstances,
   renameInstance,
   ) where
@@ -147,8 +149,8 @@ newtype ShowName = ShowName { showName' :: Name }
 instance Show ShowName where
   show = showName . showName'
 
-showMapping :: [(Name, Name)] -> String
-showMapping = show . fmap (bimap ShowName ShowName)
+mappingShow :: [(Name, Name)] -> [(ShowName, ShowName)]
+mappingShow = fmap (bimap ShowName ShowName)
 
 differentNamesTask
   :: (OutputMonad m, MonadIO m)
@@ -183,7 +185,7 @@ To state that a in the CD corresponds to x in the OD and b in the CD corresponds
       german [i|Welche Beziehung im Klassendiagramm (CD) entspricht welchen Links im Objektdiagramm (OD)?
 Geben Sie Ihre Antwort als eine Zuordnung von Beziehungen im CD zu Links im OD an.
 Um anzugeben, dass a im CD zu x im OD und b im CD zu y im OD korrespondieren, schreiben Sie es als:|]
-    code $ showMapping differentNamesInitial
+    code . show $ mappingShow differentNamesInitial
   paragraph $ translate $ do
     english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.|]
     german [i|Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert, d.h. alle Links mit dem selben Namen (and auch nur Links mit dem selben Namen!) im OD entsprechen genau dem selben Beziehungsnamen im CD.|]
@@ -240,9 +242,12 @@ differentNamesEvaluation task cs = do
       ms = M.fromAscList $ map (,True) $ BM.toAscList m
       solution =
         if showSolution task
-        then Just $ showMapping $ BM.toAscList m
+        then Just . show . mappingShow $ differentNamesSolution task
         else Nothing
   multipleChoice what solution ms (catMaybes $ readMapping m <$> cs)
+
+differentNamesSolution :: DifferentNamesInstance -> [(Name, Name)]
+differentNamesSolution = BM.toAscList . nameMapping . mapping
 
 differentNames
   :: MonadIO m

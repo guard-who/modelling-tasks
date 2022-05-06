@@ -8,6 +8,7 @@ module Modelling.CdOd.SelectValidCd (
   defaultSelectValidCdInstance,
   selectValidCd,
   selectValidCdEvaluation,
+  selectValidCdSolution,
   selectValidCdSyntax,
   selectValidCdTask,
   newSelectValidCdInstances,
@@ -155,7 +156,10 @@ selectValidCdEvaluation inst xs = addPretext $ do
         (German, "Klassendiagramme")
         ]
       solution = fst <$> classDiagrams inst
-  multipleChoice cds (Just $ show $ M.keys $ M.filter id solution) solution xs
+  multipleChoice cds (Just $ show $ selectValidCdSolution inst) solution xs
+
+selectValidCdSolution :: SelectValidCdInstance -> [Int]
+selectValidCdSolution = M.keys . M.filter id . fmap fst . classDiagrams
 
 selectValidCd
   :: SelectValidCdConfig
