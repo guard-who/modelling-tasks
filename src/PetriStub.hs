@@ -1,6 +1,8 @@
 module PetriStub (
   Node(..),
-  PetriLike(..)
+  PetriLike(..),
+  isPlaceNode,
+  isTransitionNode
 ) where 
 
 import Data.Map (Map)
@@ -25,3 +27,11 @@ newtype PetriLike a = PetriLike {
   -- | the 'Map' of all 'Node's the Petri net like graph is made of
   allNodes :: Map a (Node a)
 } deriving (Show)
+
+isPlaceNode :: Node a -> Bool
+isPlaceNode PlaceNode {} = True
+isPlaceNode _ = False
+
+isTransitionNode :: Node a -> Bool
+isTransitionNode TransitionNode {} = True
+isTransitionNode _ = False

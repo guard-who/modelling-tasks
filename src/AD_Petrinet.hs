@@ -4,7 +4,7 @@ module AD_Petrinet (
   convertToPetrinet 
 ) where
 
-import qualified Data.Map as M (adjust, lookup, insert, empty)
+import qualified Data.Map as M ((!), adjust, filter, mapMaybeWithKey, foldrWithKey, lookup, insert, delete, empty, singleton, keys)
 
 import AD_Datatype (
   UMLActivityDiagram(..),
@@ -14,7 +14,8 @@ import AD_Datatype (
 
 import PetriStub (
   Node(..), 
-  PetriLike(..)
+  PetriLike(..),
+  isPlaceNode, isTransitionNode
   )
 
 import Data.Map (Map)
@@ -24,10 +25,27 @@ convertToPetrinet :: UMLActivityDiagram -> PetriLike String
 convertToPetrinet diag = 
   let mt_petri = PetriLike {allNodes = M.empty :: Map String (Node String)}
       st_petri = foldr insertNode mt_petri (nodes diag)
-  in foldr insertEdge st_petri (connections diag)
+      st_edges_petri = foldr insertEdge st_petri (connections diag)
+  in foldr addSupportST st_edges_petri (M.keys $ allNodes st_edges_petri)
 
+addSupportST :: String -> PetriLike String -> PetriLike String
+addSupportST sourceKey petri =
+  let sourceNode = allNodes petri M.! sourceKey 
+      fn = if isPlaceNode sourceNode then isPlaceNode else isTransitionNode
+      nodesToBeFixed = M.filter fn $ M.mapMaybeWithKey (\k _ -> M.lookup k (allNodes petri)) $ flowOut sourceNode
+  in M.foldrWithKey (addSupportST' sourceKey) petri nodesToBeFixed 
 
-
+addSupportST' :: String -> String -> Node String -> PetriLike String -> PetriLike String
+addSupportST' sourceKey targetKey targetNode petri =
+  let supportKey = "H" ++ sourceKey ++ "->" ++ targetKey
+      supportNode = if isPlaceNode targetNode then TransitionNode {flowIn = M.singleton sourceKey 1, flowOut = M.singleton targetKey 1}
+                    else PlaceNode {initial = 0, flowIn = M.singleton sourceKey 1, flowOut = M.singleton targetKey 1}
+      newSourceNode = addFlowOutToNode supportKey $ deleteFlowOutToNode targetKey $ allNodes petri M.! sourceKey
+      newTargetNode = addFlowInToNode supportKey $ deleteFlowInToNode sourceKey targetNode
+  in PetriLike
+      $ M.insert targetKey newTargetNode 
+      $ M.insert sourceKey newSourceNode
+      $ M.insert supportKey supportNode (allNodes petri)
 
 insertNode :: ADNode -> PetriLike String -> PetriLike String
 insertNode node petri =
@@ -66,12 +84,23 @@ insertEdge edge petri =
 addFlowInToNode :: String -> Node String -> Node String
 addFlowInToNode x node = 
   case node of
-    PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=(M.insert x 1 flowIn), flowOut=flowOut}
-    TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=(M.insert x 1 flowIn), flowOut=flowOut}
+    PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=M.insert x 1 flowIn, flowOut=flowOut}
+    TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=M.insert x 1 flowIn, flowOut=flowOut}
 
 addFlowOutToNode :: String -> Node String -> Node String
 addFlowOutToNode x node = 
   case node of
-    PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=flowIn, flowOut=(M.insert x 1 flowOut)}
-    TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=flowIn, flowOut=(M.insert x 1 flowOut)}
+    PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=flowIn, flowOut=M.insert x 1 flowOut}
+    TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=flowIn, flowOut=M.insert x 1 flowOut}
 
+deleteFlowInToNode :: String -> Node String -> Node String
+deleteFlowInToNode x node = 
+  case node of
+    PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=M.delete x flowIn, flowOut=flowOut}
+    TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=M.delete x flowIn, flowOut=flowOut}
+
+deleteFlowOutToNode :: String -> Node String -> Node String
+deleteFlowOutToNode x node = 
+  case node of
+    PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=flowIn, flowOut=M.delete x flowOut}
+    TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=flowIn, flowOut=M.delete x flowOut}
