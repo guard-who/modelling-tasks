@@ -8,6 +8,7 @@ import Text.Pretty.Simple (pPrint)
 
 import AD_Instance (parseInstance)
 import AD_PlantUMLConverter(convertToPlantUML)
+import AD_Petrinet (convertToPetrinet)
 
 main :: IO ()
 main = do
@@ -18,6 +19,7 @@ main = do
       let ad = failWith id . parseInstance ownscope incscope . failWith show
             $ AD.parseInstance inst
       pPrint ad
+      pPrint $ convertToPetrinet ad
       pPrint $ convertToPlantUML ad
     _ -> error "usage: three parameters required: String (scope of source) String (scope of include) FilePath (Alloy instance)"
 
