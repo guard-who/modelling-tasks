@@ -63,7 +63,9 @@ nodeToST node =
     ADMergeNode {} -> Just PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty}
     ADForkNode {} -> Just TransitionNode {flowIn = M.empty, flowOut = M.empty}
     ADJoinNode {} -> Just TransitionNode {flowIn = M.empty, flowOut = M.empty}
-    _ -> Nothing   
+    ADActivityFinalNode {} -> Just PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty}
+    ADFlowFinalNode {} -> Just PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty}
+    _ -> Nothing    
 
 insertEdge :: ADConnection -> PetriLike String -> PetriLike String
 insertEdge edge petri =
