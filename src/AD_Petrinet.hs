@@ -38,7 +38,7 @@ removeIfFinal :: UMLActivityDiagram -> String -> PetriLike String -> PetriLike S
 removeIfFinal diag key petri = 
   let flowInKeys = M.keys $ flowIn $ fromJust $ M.lookup key $ allNodes petri  
   in
-  case (readMaybe key) :: Maybe Int of 
+  case readMaybe key :: Maybe Int of 
     Just n -> if isFinalNode n then 
                 PetriLike $ M.delete key $ allNodes $ foldr (removeEdgeToFinal key) petri flowInKeys
               else petri 
