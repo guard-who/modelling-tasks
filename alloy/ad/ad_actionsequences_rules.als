@@ -1,6 +1,6 @@
 module ad_actionsequences_rules
 
-open ad_plantuml_sig as components
+open ad_exercise_rules
 
 //Have action nodes in each sequence block to avoid useless subblocks and empty sequences
 pred someActionNodesExistInEachBlock {
@@ -11,11 +11,6 @@ pred someActionNodesExistInEachBlock {
 //Keep flow finals in fork blocks -> only activity finals outside of those
 pred flowFinalsOnlyInForkBlocks {
 	FlowFinalNodes in nodesInThisAndDeeper[PlantUMLForkBlocks]
-}
-
-//Option to keep activity finals out of parallel sections in order to avoid confusion about premature termination of sequence
-pred noActivityFinalInForkBlocks {
-	no ae1 : ActivityFinalNodes | ae1 in nodesInThisAndDeeper[PlantUMLForkBlocks]
 }
 
 //Option to have at least one object node on path
