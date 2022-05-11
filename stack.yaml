@@ -2,5 +2,10 @@ resolver: lts-16.11
 packages:
   - .
 extra-deps:
-  - git: https://github.com/marcellussiegburg/call-alloy.git
-    commit: 8f4aab19bc6e7a162c6136306c9df72285cc3567
+  - git: https://github.com/AthenaSchulz/call-alloy-fork.git
+    commit: 18d85503925bec80a92501c71e4883a50d3f740e
+  - git: https://github.com/fmidue/modelling-tasks.git
+    commit: c5032e8dd5b8a5ab82f50e6f7d693b3bbe80fc03
+  - call-alloy-0.2.1.1
+  - diagrams-graphviz-1.4.1.1@sha256:e71afa8f89904c2a6a2cb490dba7108c6425779c2174b90bd90dbaf507a9d3dc,1388
+  - latex-svg-image-0.2@sha256:b282a74a96724037ec3d24b664118e51170c8152aff12f363ddb715a38ef053a,1830

@@ -3,10 +3,11 @@ extra-source-files: []
 dependencies:
   - base
   - bytestring
-  - call-alloy
+  - call-alloy-fork
   - containers
   - extra
   - file-embed
+  - modelling-tasks
   - mtl
   - process 
   - string-interpolate
