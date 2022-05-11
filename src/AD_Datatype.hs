@@ -3,6 +3,7 @@ module AD_Datatype (
   ADNode(..),
   UMLActivityDiagram(..),
   getInitialNodes,
+  getFinalNodes,
   adjNodes
 ) where 
 
@@ -63,3 +64,10 @@ getInitialNodes (UMLActivityDiagram ns _) =
   filter isInitialNode ns
   where isInitialNode ADInitialNode {} = True
         isInitialNode _ = False
+
+getFinalNodes :: UMLActivityDiagram -> [ADNode]
+getFinalNodes (UMLActivityDiagram ns _) =
+  filter isFinalNode ns 
+  where isFinalNode ADActivityFinalNode {} = True
+        isFinalNode ADFlowFinalNode {} = True
+        isFinalNode _ = False
