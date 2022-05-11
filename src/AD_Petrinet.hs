@@ -12,7 +12,7 @@ import AD_Datatype (
   ADConnection(..)
   )
 
-import PetriStub (
+import Modelling.PetriNet.Types (
   Node(..), 
   PetriLike(..),
   isPlaceNode, isTransitionNode
