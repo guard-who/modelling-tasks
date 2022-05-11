@@ -9,7 +9,8 @@ import qualified Data.Map as M ((!), adjust, filter, mapMaybeWithKey, foldrWithK
 import AD_Datatype (
   UMLActivityDiagram(..),
   ADNode(..),
-  ADConnection(..)
+  ADConnection(..),
+  getFinalNodes
   )
 
 import Modelling.PetriNet.Types (
@@ -19,14 +20,35 @@ import Modelling.PetriNet.Types (
   )
 
 import Data.Map (Map)
- 
+import Data.Maybe (fromJust)
+import Text.Read (readMaybe)
 
 convertToPetrinet :: UMLActivityDiagram -> PetriLike String
 convertToPetrinet diag = 
   let mt_petri = PetriLike {allNodes = M.empty :: Map String (Node String)}
       st_petri = foldr insertNode mt_petri (nodes diag)
       st_edges_petri = foldr insertEdge st_petri (connections diag)
-  in foldr addSupportST st_edges_petri (M.keys $ allNodes st_edges_petri)
+      st_support_petri = foldr addSupportST st_edges_petri (M.keys $ allNodes st_edges_petri)
+  in removeFinalPlaces diag st_support_petri
+
+removeFinalPlaces :: UMLActivityDiagram -> PetriLike String -> PetriLike String
+removeFinalPlaces diag petri = foldr (removeIfFinal diag) petri (M.keys $ allNodes petri)
+
+removeIfFinal :: UMLActivityDiagram -> String -> PetriLike String -> PetriLike String
+removeIfFinal diag key petri = 
+  let flowInKeys = M.keys $ flowIn $ fromJust $ M.lookup key $ allNodes petri  
+  in
+  case (readMaybe key) :: Maybe Int of 
+    Just n -> if isFinalNode n then 
+                PetriLike $ M.delete key $ allNodes $ foldr (removeEdgeToFinal key) petri flowInKeys
+              else petri 
+    _ -> petri 
+  where isFinalNode n = elem n $ map label $ getFinalNodes diag
+
+removeEdgeToFinal :: String -> String -> PetriLike String -> PetriLike String
+removeEdgeToFinal x key petri =
+  let updatedNode = deleteFlowOutToNode x $ allNodes petri M.! key
+  in PetriLike $ M.insert key updatedNode (allNodes petri)
 
 addSupportST :: String -> PetriLike String -> PetriLike String
 addSupportST sourceKey petri =
