@@ -39,6 +39,7 @@ executables:
     dependencies:
       - ba-athena-schulz
       - pretty-simple
+      - graphviz
   parseAndCreateDiagram:
     main: parseAndCreateDiagram.hs
     source-dirs: app

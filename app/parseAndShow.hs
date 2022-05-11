@@ -10,16 +10,22 @@ import AD_Instance (parseInstance)
 import AD_PlantUMLConverter(convertToPlantUML)
 import AD_Petrinet (convertToPetrinet)
 
+import Modelling.PetriNet.Diagram (cacheNet)
+import Data.GraphViz.Commands (GraphvizCommand(..))
+import Control.Monad.Except(runExceptT)
+
 main :: IO ()
 main = do
   xs <- getArgs
   case xs of
-    ownscope:incscope:f:xs' -> do
+    ownscope:incscope:f:path:xs' -> do
       inst <- B.readFile f
       let ad = failWith id . parseInstance ownscope incscope . failWith show
             $ AD.parseInstance inst
+          petri = convertToPetrinet ad
       pPrint ad
-      pPrint $ convertToPetrinet ad
+      pPrint petri
+      _ <- runExceptT $ cacheNet path id petri False False False Dot
       pPrint $ convertToPlantUML ad
     _ -> error "usage: three parameters required: String (scope of source) String (scope of include) FilePath (Alloy instance)"
 
