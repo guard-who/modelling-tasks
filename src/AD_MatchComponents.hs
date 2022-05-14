@@ -1,28 +1,33 @@
 module AD_MatchComponents (
-  matchADComponents
+  matchADComponents,
+  matchPetriComponents
 ) where
 
-import qualified Data.Map as M (insert, empty)
+import qualified Data.Map as M (insert, delete, keys, empty)
 
-import AD_Datatype (
+import qualified AD_Datatype as AD (
   UMLActivityDiagram(..),
   ADNode(..),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 
+import AD_Petrinet (PetriKey(..))
+
+import Modelling.PetriNet.Types (PetriLike(..))
+
 import Data.Map (Map)
 
 
-matchADComponents :: UMLActivityDiagram -> Map String [Int]
+matchADComponents :: AD.UMLActivityDiagram -> Map String [Int]
 matchADComponents diag =
-  let actionLabels = extractLabels isActionNode  
-      objectLabels = extractLabels isObjectNode 
-      decisionLabels = extractLabels isDecisionNode 
-      mergeLabels = extractLabels isMergeNode 
-      forkLabels = extractLabels isForkNode
-      joinLabels = extractLabels isJoinNode 
-      initialLabels = extractLabels isInitialNode 
-      activtiyFinalLabels = extractLabels isActivityFinalNode 
-      flowFinalLabels = extractLabels isFlowFinalNode 
+  let actionLabels = extractLabels AD.isActionNode  
+      objectLabels = extractLabels AD.isObjectNode 
+      decisionLabels = extractLabels AD.isDecisionNode 
+      mergeLabels = extractLabels AD.isMergeNode 
+      forkLabels = extractLabels AD.isForkNode
+      joinLabels = extractLabels AD.isJoinNode 
+      initialLabels = extractLabels AD.isInitialNode 
+      activtiyFinalLabels = extractLabels AD.isActivityFinalNode 
+      flowFinalLabels = extractLabels AD.isFlowFinalNode 
   in M.insert "ActionNodes" actionLabels $
      M.insert "ObjectNodes" objectLabels $
      M.insert "DecisionNodes" decisionLabels $
@@ -33,4 +38,17 @@ matchADComponents diag =
      M.insert "ActivityFinalNodes" activtiyFinalLabels $
      M.insert "FlowFinalNodes" flowFinalLabels $
      M.empty
-  where extractLabels fn = map label $ filter fn $ nodes diag
+  where extractLabels fn = map AD.label $ filter fn $ AD.nodes diag
+
+--Precondition: petri was generated from diag via convertToPetrinet
+matchPetriComponents :: AD.UMLActivityDiagram -> PetriLike PetriKey -> Map String [Int]
+matchPetriComponents diag petri =
+  let labelMap = M.delete "FlowFinalNodes" $ M.delete "ActivityFinalNodes" $ matchADComponents diag
+      supportST = map label $ filter isSupportST $ M.keys $ allNodes petri
+  in M.insert "SupportST" supportST labelMap
+
+isSupportST :: PetriKey -> Bool
+isSupportST key =
+  case key of
+    SupportST {} -> True
+    _ -> False
