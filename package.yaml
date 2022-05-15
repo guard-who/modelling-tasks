@@ -52,6 +52,14 @@ executables:
       - ba-athena-schulz
       - directory
       - filepath
+  matchToPetri:
+    main: matchToPetri.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
+      - directory
+      - filepath
+      - graphviz
   default:
     main: default.hs
     source-dirs: app
