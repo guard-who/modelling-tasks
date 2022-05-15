@@ -29,6 +29,7 @@ library:
     - CallPlantUML
     - AD_Petrinet
     - PetriStub
+    - AD_MatchComponents
   ghc-options:
     - -Wall
     - -Werror
@@ -57,6 +58,7 @@ executables:
     source-dirs: app
     dependencies:
       - ba-athena-schulz
+      - aeson
       - directory
       - filepath
       - graphviz
