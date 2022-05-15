@@ -4,13 +4,14 @@ import qualified Language.Alloy.Debug as AD (parseInstance)
 import qualified Data.ByteString as B (writeFile)
 
 import Data.ByteString (ByteString)
+import Data.ByteString.Lazy(toStrict)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
-
 import AD_Alloy (getRawAlloyInstances)
 import AD_Instance (parseInstance)
+import AD_MatchComponents(matchPetriComponents)
 import AD_Petrinet (convertToPetrinet, PetriKey(..))
 import AD_PlantUMLConverter(convertToPlantUML)
 import CallPlantUML(processPlantUMLString)
@@ -19,6 +20,7 @@ import Modelling.PetriNet.Diagram (cacheNet)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Control.Monad.Except(runExceptT)
 
+import Data.Aeson(encode)
 
 main :: IO ()
 main = do
@@ -31,9 +33,11 @@ main = do
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
           plantumlstring = map convertToPlantUML ad
           petri = map convertToPetrinet ad
+          json =  map (\(x,y) -> toStrict $ encode $ matchPetriComponents x y) $ zip ad petri
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToFolders folders svg "Diagram.svg"
       mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False False Dot) $ zip folders petri
+      writeFilesToFolders folders json "MatchExercise.json"
     _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
 
 failWith :: (a -> String) -> Either a c -> c
