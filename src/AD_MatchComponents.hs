@@ -3,7 +3,7 @@ module AD_MatchComponents (
   matchPetriComponents
 ) where
 
-import qualified Data.Map as M (insert, delete, keys, empty)
+import qualified Data.Map as M ((!), insert, delete, keys, empty, null)
 
 import qualified AD_Datatype as AD (
   UMLActivityDiagram(..),
@@ -12,7 +12,7 @@ import qualified AD_Datatype as AD (
 
 import AD_Petrinet (PetriKey(..))
 
-import Modelling.PetriNet.Types (PetriLike(..))
+import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Data.Map (Map)
 
@@ -36,7 +36,7 @@ matchADComponents diag =
      M.insert "JoinNodes" joinLabels $
      M.insert "InitialNodes" initialLabels $
      M.insert "ActivityFinalNodes" activtiyFinalLabels $
-     M.insert "FlowFinalNodes" flowFinalLabels $
+     M.insert "FlowFinalNodes" flowFinalLabels 
      M.empty
   where extractLabels fn = map AD.label $ filter fn $ AD.nodes diag
 
@@ -44,8 +44,11 @@ matchADComponents diag =
 matchPetriComponents :: AD.UMLActivityDiagram -> PetriLike PetriKey -> Map String [Int]
 matchPetriComponents diag petri =
   let labelMap = M.delete "FlowFinalNodes" $ M.delete "ActivityFinalNodes" $ matchADComponents diag
-      supportST = map label $ filter isSupportST $ M.keys $ allNodes petri
+      supportST = map label $ filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
   in M.insert "SupportST" supportST labelMap
+
+isSinkST :: PetriKey -> PetriLike PetriKey -> Bool
+isSinkST key petri = M.null $ flowOut $ allNodes petri M.! key
 
 isSupportST :: PetriKey -> Bool
 isSupportST key =
