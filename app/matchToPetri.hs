@@ -36,7 +36,7 @@ main = do
           json =  map (\(x,y) -> toStrict $ encode $ matchPetriComponents x y) $ zip ad petri
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToFolders folders svg "Diagram.svg"
-      mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False False Dot) $ zip folders petri
+      mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True Dot) $ zip folders petri
       writeFilesToFolders folders json "MatchExercise.json"
     _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
 
