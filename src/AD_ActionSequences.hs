@@ -45,26 +45,29 @@ fromPetriLike petri =
       start = State {unState = M.map initial $ M.filter isPlaceNode $ allNodes petri}
   }
 
---Generate a single valid action sequence to one of the final nodes
-generateActionSequence :: UMLActivityDiagram -> [String]
+--Generate one valid action sequence to each of the final nodes
+generateActionSequence :: UMLActivityDiagram -> [[String]]
 generateActionSequence diag =
-  case generateActionSequence' diag of
-    Just (t:_) -> 
-      let labels = map (label :: PetriKey -> Int) t
-          actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
-      in catMaybes $ map (\x -> lookup x actions) labels
-    _ -> []
+  let tSeqList = generateActionSequence' diag 
+      tSeqLabels = map (\xs -> map (label :: PetriKey -> Int) xs) tSeqList
+      actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
+  in map (\xs -> catMaybes $ map (\x -> lookup x actions) xs) tSeqLabels
+ 
 
---Generate at least one sequence of transitions to a final node
-generateActionSequence' :: UMLActivityDiagram -> Maybe [[PetriKey]]
+--Generate at one sequence of transitions to each final node
+generateActionSequence' :: UMLActivityDiagram -> [[PetriKey]]
 generateActionSequence' diag =
   let petriLike =  convertToPetrinet diag
       finals = M.keys $ M.filter (M.null . flowOut) $ allNodes petriLike
-      sequences = find (not . null . filterSequences finals) $ levels' $ fromPetriLike petriLike
-  in (map reverse) <$> filterSequences finals <$> sequences
+      levels = levels' $ fromPetriLike petriLike
+      sequences = catMaybes $ map (\t -> 
+        case find (not . null . filterSequences t) levels of
+          Just xs -> Just (xs, t)
+          _ -> Nothing
+        ) finals 
+  in map (\xs -> reverse xs) $ map (\(xs,t) -> head $ filterSequences t xs) sequences
   where 
-    p ts = \xs -> not . null $ filter (\t -> t `elem` xs) ts 
-    filterSequences ts = filter (p ts) . map snd
+    filterSequences t = filter (\xs -> t `elem` xs) . map snd
 
 
 --To be reworked
