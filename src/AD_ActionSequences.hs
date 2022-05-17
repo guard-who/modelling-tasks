@@ -32,7 +32,7 @@ import Modelling.PetriNet.Reach.Type (
 import Modelling.PetriNet.Reach.Step (levels')
 
 import Data.List (delete, find)
-import Data.Maybe(catMaybes)
+import Data.Maybe(mapMaybe)
 
 
 fromPetriLike :: (Ord a) => PetriLike a -> Net a a
@@ -49,9 +49,9 @@ fromPetriLike petri =
 generateActionSequence :: UMLActivityDiagram -> [[String]]
 generateActionSequence diag =
   let tSeqList = generateActionSequence' diag 
-      tSeqLabels = map (\xs -> map (label :: PetriKey -> Int) xs) tSeqList
+      tSeqLabels = map (map (label :: PetriKey -> Int)) tSeqList
       actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
-  in map (\xs -> catMaybes $ map (\x -> lookup x actions) xs) tSeqLabels
+  in map (mapMaybe (`lookup` actions)) tSeqLabels
  
 
 --Generate at one sequence of transitions to each final node
@@ -60,14 +60,14 @@ generateActionSequence' diag =
   let petriLike =  convertToPetrinet diag
       finals = M.keys $ M.filter (M.null . flowOut) $ allNodes petriLike
       levels = levels' $ fromPetriLike petriLike
-      sequences = catMaybes $ map (\t -> 
+      sequences = mapMaybe (\t -> 
         case find (not . null . filterSequences t) levels of
           Just xs -> Just (xs, t)
           _ -> Nothing
         ) finals 
-  in map (\xs -> reverse xs) $ map (\(xs,t) -> head $ filterSequences t xs) sequences
+  in map (reverse . (\(xs,t) -> head $ filterSequences t xs)) sequences
   where 
-    filterSequences t = filter (\xs -> t `elem` xs) . map snd
+    filterSequences t = filter (t `elem`) . map snd
 
 
 --To be reworked
