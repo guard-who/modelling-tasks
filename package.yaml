@@ -30,6 +30,7 @@ library:
     - AD_Petrinet
     - PetriStub
     - AD_MatchComponents
+    - AD_ActionSequences
   ghc-options:
     - -Wall
     - -Werror
