@@ -32,6 +32,7 @@ import Modelling.PetriNet.Reach.Type (
 import Modelling.PetriNet.Reach.Step (levels')
 
 import Data.List (delete, find)
+import Data.Maybe(catMaybes)
 
 
 fromPetriLike :: (Ord a) => PetriLike a -> Net a a
@@ -45,11 +46,14 @@ fromPetriLike petri =
   }
 
 --Generate a single valid action sequence to one of the final nodes
-generateActionSequence :: UMLActivityDiagram -> Maybe [String]
+generateActionSequence :: UMLActivityDiagram -> [String]
 generateActionSequence diag =
   case generateActionSequence' diag of
-    Just (t:_) -> Just $ map name $ filter (\n -> isActionNode n && (label :: ADNode -> Int) n `elem` (map (label :: PetriKey -> Int) t)) $ nodes diag
-    _ -> Nothing
+    Just (t:_) -> 
+      let labels = map (label :: PetriKey -> Int) t
+          actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
+      in catMaybes $ map (\x -> lookup x actions) labels
+    _ -> []
 
 --Generate at least one sequence of transitions to a final node
 generateActionSequence' :: UMLActivityDiagram -> Maybe [[PetriKey]]
@@ -61,7 +65,6 @@ generateActionSequence' diag =
   where 
     p ts = \xs -> not . null $ filter (\t -> t `elem` xs) ts 
     filterSequences ts = filter (p ts) . map snd
-
 
 
 --To be reworked
