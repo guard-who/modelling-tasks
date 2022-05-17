@@ -9,6 +9,7 @@ import Text.Pretty.Simple (pPrint)
 import AD_Instance (parseInstance)
 import AD_PlantUMLConverter(convertToPlantUML)
 import AD_Petrinet (PetriKey(..), convertToPetrinet)
+import AD_ActionSequences (generateActionSequence)
 
 import Modelling.PetriNet.Diagram (cacheNet)
 import Data.GraphViz.Commands (GraphvizCommand(..))
@@ -23,8 +24,10 @@ main = do
       let ad = failWith id . parseInstance ownscope incscope . failWith show
             $ AD.parseInstance inst
           petri = convertToPetrinet ad
+          actions = generateActionSequence ad
       pPrint ad
       pPrint petri
+      pPrint actions
       _ <- runExceptT $ cacheNet path (show . label) petri False False False Dot
       pPrint $ convertToPlantUML ad
     _ -> error "usage: three parameters required: String (scope of source) String (scope of include) FilePath (Alloy instance)"
