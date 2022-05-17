@@ -33,7 +33,7 @@ main = do
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
           plantumlstring = map convertToPlantUML ad
           petri = map convertToPetrinet ad
-          json =  map (\(x,y) -> toStrict $ encode $ matchPetriComponents x y) $ zip ad petri
+          json =  zipWith (\x y -> toStrict $ encode $ matchPetriComponents x y) ad petri
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToFolders folders svg "Diagram.svg"
       mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True Dot) $ zip folders petri
@@ -51,5 +51,5 @@ createExerciseFolders path n = do
 
 writeFilesToFolders :: [FilePath] -> [ByteString] -> String -> IO ()  
 writeFilesToFolders folders files filename = do
-  let paths = map (\x -> x </> filename) folders
-  mapM_ (\(x,y) -> B.writeFile x y) $ zip paths files
+  let paths = map (</> filename) folders
+  mapM_ (uncurry B.writeFile) $ zip paths files
