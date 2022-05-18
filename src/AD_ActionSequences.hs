@@ -63,23 +63,24 @@ generateActionSequence' diag =
   in reverse $ fromJust $ lookup zeroState sequences
 
 
-validActionSequence :: [String] -> UMLActivityDiagram -> String
+validActionSequence :: [String] -> UMLActivityDiagram -> Bool
 validActionSequence input diag =
   let nameMap = map (\n -> (name n, (label :: ADNode -> Int) n)) $ filter isActionNode $ nodes diag
       labels = mapMaybe (`lookup` nameMap) input  
       petri = convertToPetrinet diag
       petriKeyMap = map (\k -> ((label :: PetriKey -> Int) k, k)) $ M.keys $ allNodes petri
       input' = mapMaybe (`lookup` petriKeyMap) labels
-      actions = map snd $ filter (\(l,_) -> l `elem` map snd nameMap) $ petriKeyMap
-  in show (length input == length labels) ++ show(validActionSequence' input' actions petri) ++ show labels ++ show input' ++ show actions
+      actions = map snd $ filter (\(l,_) -> l `elem` map snd nameMap) petriKeyMap
+  in length input == length labels && validActionSequence' input' actions petri
+
 
 validActionSequence' :: [PetriKey] -> [PetriKey] -> PetriLike PetriKey -> Bool
 validActionSequence' input actions petri =
   let net = fromPetriLike $ petri
       zeroState = State $ M.map (const 0) $ unState $ start net
-      finals = filter (\k -> not $ k `elem` actions) $ M.keys $ M.filter (M.null . flowOut) $ allNodes petri 
-  in not . null $ filter (isJust . lookup zeroState) $ levelsCheckAS input actions finals net
-
+      finals = filter (`notElem` actions) $ M.keys $ M.filter (M.null . flowOut) $ allNodes petri 
+  in any (isJust . lookup zeroState) (levelsCheckAS input actions finals net)
+ 
 
 levelsCheckAS :: [PetriKey] -> [PetriKey] -> [PetriKey] -> Net PetriKey PetriKey-> [[(State PetriKey, [PetriKey])]]
 levelsCheckAS input actions finals n =
@@ -89,7 +90,7 @@ levelsCheckAS input actions finals n =
               M.fromList $ do
                 (x, p) <- xs
                 (t, y) <- successors n x
-                guard $ not $ t `elem` actions        -- No futher actions should be processed if no input is left
+                guard $ notElem t actions        -- No futher actions should be processed if no input is left
                 return (y, t : p)
         in xs : f [] next
       f (a:as) xs =
@@ -103,8 +104,8 @@ levelsCheckAS input actions finals n =
               M.fromList $ do
                 (x, p) <- xs
                 (t, y) <- successors n x
-                guard $ not $ t `elem` actions      --Case: Next transition is not an action, therefore is processed but not removed from input
-                guard $ not $ t `elem` finals       --Supress firing of transitions representing final nodes until input is processed
+                guard $ notElem t actions      --Case: Next transition is not an action, therefore is processed but not removed from input
+                guard $ notElem t finals       --Supress firing of transitions representing final nodes until input is processed
                 return (y, t : p)
          in union (xs : f as consume) (xs : f (a:as) notConsume)
   in f input [(start n, [])]
