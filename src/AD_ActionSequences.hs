@@ -4,12 +4,12 @@ module AD_ActionSequences (
 ) where
 
 import qualified Data.Set as S (fromList)
-import qualified Data.Map as M (filter, map, keys, toList)
+import qualified Data.Map as M (filter, map, keys, fromList, toList, null)
 
 import AD_Datatype (
   ADNode(..),
   UMLActivityDiagram (..),
-  adjNodes, getInitialNodes, isActionNode
+  isActionNode
   )
 
 import AD_Petrinet (
@@ -29,9 +29,10 @@ import Modelling.PetriNet.Reach.Type (
   Net(..)
   )
 
-import Modelling.PetriNet.Reach.Step (levels')
+import Modelling.PetriNet.Reach.Step (levels', successors)
 
-import Data.List (delete, find)
+import Control.Monad (guard)
+import Data.List (find, union)
 import Data.Maybe(mapMaybe, isJust, fromJust)
 
 
@@ -62,10 +63,57 @@ generateActionSequence' diag =
   in reverse $ fromJust $ lookup zeroState sequences
 
 
---To be reworked
-validActionSequence :: [ADNode] -> UMLActivityDiagram -> Bool
-validActionSequence input diag = all isActionNode input && validActionSequence' input diag (getInitialNodes diag)
+validActionSequence :: [String] -> UMLActivityDiagram -> String
+validActionSequence input diag =
+  let nameMap = map (\n -> (name n, (label :: ADNode -> Int) n)) $ filter isActionNode $ nodes diag
+      labels = mapMaybe (`lookup` nameMap) input  
+      petri = convertToPetrinet diag
+      petriKeyMap = map (\k -> ((label :: PetriKey -> Int) k, k)) $ M.keys $ allNodes petri
+      input' = mapMaybe (`lookup` petriKeyMap) labels
+      actions = map snd $ filter (\(l,_) -> l `elem` map snd nameMap) $ petriKeyMap
+  in show (length input == length labels) ++ show(validActionSequence' input' actions petri) ++ show labels ++ show input' ++ show actions
 
+validActionSequence' :: [PetriKey] -> [PetriKey] -> PetriLike PetriKey -> Bool
+validActionSequence' input actions petri =
+  let net = fromPetriLike $ petri
+      zeroState = State $ M.map (const 0) $ unState $ start net
+      finals = filter (\k -> not $ k `elem` actions) $ M.keys $ M.filter (M.null . flowOut) $ allNodes petri 
+  in not . null $ filter (isJust . lookup zeroState) $ levelsCheckAS input actions finals net
+
+
+levelsCheckAS :: [PetriKey] -> [PetriKey] -> [PetriKey] -> Net PetriKey PetriKey-> [[(State PetriKey, [PetriKey])]]
+levelsCheckAS input actions finals n =
+  let f _ [] = []
+      f [] xs =
+        let next = M.toList $
+              M.fromList $ do
+                (x, p) <- xs
+                (t, y) <- successors n x
+                guard $ not $ t `elem` actions        -- No futher actions should be processed if no input is left
+                return (y, t : p)
+        in xs : f [] next
+      f (a:as) xs =
+        let consume = M.toList $
+              M.fromList $ do
+                (x, p) <- xs
+                (t, y) <- successors n x
+                guard $ t == a                     -- Case: Next transitions correspond to next input, therefore is processed and removed
+                return (y, t : p)
+            notConsume = M.toList $
+              M.fromList $ do
+                (x, p) <- xs
+                (t, y) <- successors n x
+                guard $ not $ t `elem` actions      --Case: Next transition is not an action, therefore is processed but not removed from input
+                guard $ not $ t `elem` finals       --Supress firing of transitions representing final nodes until input is processed
+                return (y, t : p)
+         in union (xs : f as consume) (xs : f (a:as) notConsume)
+  in f input [(start n, [])]
+
+
+
+
+
+{--
 validActionSequence' :: [ADNode] -> UMLActivityDiagram -> [ADNode] -> Bool
 validActionSequence' [] _ [] = False
 validActionSequence' [] diag (y:nextNodes) =                                                                 --Case: No input left
@@ -85,4 +133,4 @@ validActionSequence' (x:input) diag (y:nextNodes) =
       ADActivityFinalNode {} -> False                                                                        --Activity Final traversed with input left
       _ -> validActionSequence' (x:input) diag (nextNodes ++ adjNodes y diag)
   else validActionSequence' input diag (delete x (y:nextNodes))                                              --If action node is in nextNodes, remove from input
-
+--}
