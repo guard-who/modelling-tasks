@@ -4,7 +4,7 @@ module AD_ActionSequences (
 ) where
 
 import qualified Data.Set as S (fromList)
-import qualified Data.Map as M (filter, map, keys, toList, null)
+import qualified Data.Map as M (filter, map, keys, toList)
 
 import AD_Datatype (
   ADNode(..),
@@ -32,7 +32,7 @@ import Modelling.PetriNet.Reach.Type (
 import Modelling.PetriNet.Reach.Step (levels')
 
 import Data.List (delete, find)
-import Data.Maybe(mapMaybe)
+import Data.Maybe(mapMaybe, isJust, fromJust)
 
 
 fromPetriLike :: (Ord a) => PetriLike a -> Net a a
@@ -46,28 +46,20 @@ fromPetriLike petri =
   }
 
 --Generate one valid action sequence to each of the final nodes
-generateActionSequence :: UMLActivityDiagram -> [[String]]
+generateActionSequence :: UMLActivityDiagram -> [String]
 generateActionSequence diag =
-  let tSeqList = generateActionSequence' diag 
-      tSeqLabels = map (map (label :: PetriKey -> Int)) tSeqList
+  let tSeq = generateActionSequence' diag 
+      tSeqLabels = map (label :: PetriKey -> Int) tSeq
       actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
-  in map (mapMaybe (`lookup` actions)) tSeqLabels
+  in mapMaybe (`lookup` actions) tSeqLabels
  
-
 --Generate at one sequence of transitions to each final node
-generateActionSequence' :: UMLActivityDiagram -> [[PetriKey]]
+generateActionSequence' :: UMLActivityDiagram -> [PetriKey]
 generateActionSequence' diag =
-  let petriLike =  convertToPetrinet diag
-      finals = M.keys $ M.filter (M.null . flowOut) $ allNodes petriLike
-      levels = levels' $ fromPetriLike petriLike
-      sequences = mapMaybe (\t -> 
-        case find (not . null . filterSequences t) levels of
-          Just xs -> Just (xs, t)
-          _ -> Nothing
-        ) finals 
-  in map (reverse . (\(xs,t) -> head $ filterSequences t xs)) sequences
-  where 
-    filterSequences t = filter (t `elem`) . map snd
+  let petri =  fromPetriLike $ convertToPetrinet diag
+      zeroState = State $ M.map (const 0) $ unState $ start petri
+      sequences = fromJust $ find (isJust . lookup zeroState) $ levels' petri 
+  in reverse $ fromJust $ lookup zeroState sequences
 
 
 --To be reworked
