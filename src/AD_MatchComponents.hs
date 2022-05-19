@@ -1,5 +1,6 @@
 module AD_MatchComponents (
-  matchADComponents,
+  MatchPetriInstance(..),
+  MatchPetriConfig(..),
   matchPetriComponents
 ) where
 
@@ -11,14 +12,27 @@ import qualified AD_Datatype as AD (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 
 import AD_Petrinet (PetriKey(..))
+import AD_Config (ADConfig(..))
 
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Data.Map (Map)
 
+data MatchPetriInstance = MatchPetriInstance {
+  activityDiagram :: AD.UMLActivityDiagram,
+  petrinet :: PetriLike PetriKey            -- Is this needed or should be generated from ad here?
+}
 
-matchADComponents :: AD.UMLActivityDiagram -> Map String [Int]
-matchADComponents diag =
+data MatchPetriConfig = MatchPetriConfig {
+  adConfig :: ADConfig,
+  mustHaveSomeSupportSTs :: Bool,    -- Option to force support STs to occur  
+  allowActivityFinals :: Bool,      -- Option to disallow activity finals to reduce semantic confusion
+  avoidAddingSinksForFinals :: Bool -- Avoid having to add new sink transitions for representing finals
+} deriving (Show)
+
+
+mapTypesToLabels :: AD.UMLActivityDiagram -> Map String [Int]
+mapTypesToLabels diag =
   let actionLabels = extractLabels AD.isActionNode  
       objectLabels = extractLabels AD.isObjectNode 
       decisionLabels = extractLabels AD.isDecisionNode 
@@ -43,7 +57,7 @@ matchADComponents diag =
 --Precondition: petri was generated from diag via convertToPetrinet
 matchPetriComponents :: AD.UMLActivityDiagram -> PetriLike PetriKey -> Map String [Int]
 matchPetriComponents diag petri =
-  let labelMap = M.delete "FlowFinalNodes" $ M.delete "ActivityFinalNodes" $ matchADComponents diag
+  let labelMap = M.delete "FlowFinalNodes" $ M.delete "ActivityFinalNodes" $ mapTypesToLabels diag
       supportST = map label $ filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
   in M.insert "SupportST" supportST labelMap
 
