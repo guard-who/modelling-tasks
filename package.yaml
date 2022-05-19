@@ -28,9 +28,9 @@ library:
     - AD_PlantUMLConverter
     - CallPlantUML
     - AD_Petrinet
-    - PetriStub
     - AD_MatchComponents
     - AD_ActionSequences
+    - AD_Config
   ghc-options:
     - -Wall
     - -Werror
