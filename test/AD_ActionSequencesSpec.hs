@@ -12,7 +12,7 @@ import Test.Hspec
 
 
 spec :: Spec 
-spec = do
+spec = 
   describe "validActionSequence" $ do
     it "accepts valid input sequences of actions, therefore one leading to the termination of all flows of the diagram" $
       validActionSequence ["A", "E", "C", "B"] testDiagram `shouldBe` (True::Bool)

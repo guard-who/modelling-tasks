@@ -76,7 +76,7 @@ validActionSequence input diag =
 
 validActionSequence' :: [PetriKey] -> [PetriKey] -> PetriLike PetriKey -> Bool
 validActionSequence' input actions petri =
-  let net = fromPetriLike $ petri
+  let net = fromPetriLike petri
       zeroState = State $ M.map (const 0) $ unState $ start net
       finals = filter (`notElem` actions) $ M.keys $ M.filter (M.null . flowOut) $ allNodes petri 
   in any (isJust . lookup zeroState) (levelsCheckAS input actions finals net)
