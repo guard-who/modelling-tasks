@@ -2,6 +2,7 @@
 
 module AD_Config (
   ADConfig(..),
+  defaultADConfig,
   checkADConfig
 ) where 
 
@@ -17,6 +18,20 @@ data ADConfig = ADConfig {
   flowFinalNodes :: Int,
   cycles :: Int
 } deriving (Show)
+
+defaultADConfig :: ADConfig
+defaultADConfig = ADConfig
+  { minActions = 3,
+    maxActions = 5,
+    minObjectNodes = 3,
+    maxObjectNodes = 5,
+    maxNamedNodes = 8,
+    decisionMergePairs = 2,
+    forkJoinPairs = 1,
+    activityFinalNodes = 1,
+    flowFinalNodes = 1,
+    cycles = 1
+  }
 
 checkADConfig :: ADConfig -> Maybe String
 checkADConfig ADConfig {
