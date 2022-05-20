@@ -6,8 +6,11 @@ module AD_Config (
 ) where 
 
 data ADConfig = ADConfig {
-  actions :: Int,
-  objectNodes :: Int,
+  minActions :: Int,
+  maxActions :: Int,
+  minObjectNodes :: Int,
+  maxObjectNodes :: Int,
+  maxNamedNodes :: Int,
   decisionMergePairs :: Int,
   forkJoinPairs :: Int,
   activityFinalNodes :: Int,
@@ -17,20 +20,29 @@ data ADConfig = ADConfig {
 
 checkADConfig :: ADConfig -> Maybe String
 checkADConfig ADConfig {
-    actions,
-    objectNodes,
+    minActions,
+    maxActions,
+    minObjectNodes,
+    maxObjectNodes,
+    maxNamedNodes,
     decisionMergePairs,
     forkJoinPairs,
     activityFinalNodes,
     flowFinalNodes,
     cycles
   }
-  | actions < 0
-    = Just "Number of Actions must be non-negative"
-  | objectNodes < 0
-    = Just "Number of Object Nodes must be non-negative"
-  | actions + objectNodes <= 0
-    = Just "Number of Actions and Object Nodes together must be positive"
+  | minActions < 0
+    = Just "Minimum number of Actions must be non-negative"
+  | maxActions < minActions
+    = Just "Maximal number of Actions must not be larger than the minimum number"
+  | minObjectNodes < 0
+    = Just "Minimum number of Object Nodes must be non-negative"
+  | maxObjectNodes < minObjectNodes
+    = Just "Maximal number of Object Nodes must not be larger than the minimum number"
+  | minActions + minObjectNodes <= 0
+    = Just "Minimum number of Actions and Object Nodes together must be positive"
+  | minActions + minObjectNodes > maxNamedNodes
+    = Just "Minimal number of Actions and Object Nodes together must not be larger than maximum number of Named Nodes"
   | decisionMergePairs < 0
     = Just "Number of Decision and Merge pairs must be non-negative"
   | forkJoinPairs < 0
