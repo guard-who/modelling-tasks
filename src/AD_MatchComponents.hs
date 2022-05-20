@@ -1,6 +1,9 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module AD_MatchComponents (
   MatchPetriInstance(..),
   MatchPetriConfig(..),
+  checkMatchPetriConfig,
   matchPetriComponents
 ) where
 
@@ -12,10 +15,11 @@ import qualified AD_Datatype as AD (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 
 import AD_Petrinet (PetriKey(..))
-import AD_Config (ADConfig(..))
+import AD_Config (ADConfig(..), checkADConfig)
 
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
+import Control.Applicative (Alternative ((<|>)))
 import Data.Map (Map)
 
 data MatchPetriInstance = MatchPetriInstance {
@@ -30,6 +34,25 @@ data MatchPetriConfig = MatchPetriConfig {
   avoidAddingSinksForFinals :: Bool -- Avoid having to add new sink transitions for representing finals
 } deriving (Show)
 
+
+checkMatchPetriConfig :: MatchPetriConfig -> Maybe String 
+checkMatchPetriConfig conf =
+  checkADConfig (adConfig conf) 
+  <|> checkMatchPetriConfig' conf
+
+
+checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String 
+checkMatchPetriConfig' MatchPetriConfig {
+    adConfig,    
+    allowActivityFinals,      
+    avoidAddingSinksForFinals
+  }
+  | not allowActivityFinals && activityFinalNodes adConfig > 0
+    = Just "Setting the parameter 'allowActivityFinals' to False prohibits having more than 0 Activity Final Node"
+  | avoidAddingSinksForFinals && actions adConfig + forkNodes adConfig + joinNodes adConfig <= 0
+    = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
+  | otherwise 
+    = Nothing
 
 mapTypesToLabels :: AD.UMLActivityDiagram -> Map String [Int]
 mapTypesToLabels diag =
