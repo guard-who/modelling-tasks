@@ -4,7 +4,7 @@ module AD_ActionSequences (
 ) where
 
 import qualified Data.Set as S (fromList)
-import qualified Data.Map as M (filter, map, keys, fromList, toList, null)
+import qualified Data.Map as M (filter, map, keys, fromList, toList)
 
 import AD_Datatype (
   ADNode(..),
@@ -78,12 +78,11 @@ validActionSequence' :: [PetriKey] -> [PetriKey] -> PetriLike PetriKey -> Bool
 validActionSequence' input actions petri =
   let net = fromPetriLike petri
       zeroState = State $ M.map (const 0) $ unState $ start net
-      finals = filter (`notElem` actions) $ M.keys $ M.filter (M.null . flowOut) $ allNodes petri 
-  in any (isJust . lookup zeroState) (levelsCheckAS input actions finals net)
+  in any (isJust . lookup zeroState) (levelsCheckAS input actions net)
  
 
-levelsCheckAS :: [PetriKey] -> [PetriKey] -> [PetriKey] -> Net PetriKey PetriKey-> [[(State PetriKey, [PetriKey])]]
-levelsCheckAS input actions finals n =
+levelsCheckAS :: [PetriKey] -> [PetriKey] -> Net PetriKey PetriKey-> [[(State PetriKey, [PetriKey])]]
+levelsCheckAS input actions n =
   let f _ [] = []
       f [] xs =
         let next = M.toList $
@@ -105,9 +104,8 @@ levelsCheckAS input actions finals n =
                 (x, p) <- xs
                 (t, y) <- successors n x
                 guard $ notElem t actions      --Case: Next transition is not an action, therefore is processed but not removed from input
-                guard $ notElem t finals       --Supress firing of transitions representing final nodes until input is processed
                 return (y, t : p)
-         in union (xs : f as consume) (xs : f (a:as) notConsume)
+         in union (f as consume) (f (a:as) notConsume)
   in f input [(start n, [])]
 
 
