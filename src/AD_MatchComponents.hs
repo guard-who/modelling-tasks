@@ -3,6 +3,7 @@
 module AD_MatchComponents (
   MatchPetriInstance(..),
   MatchPetriConfig(..),
+  defaultMatchPetriConfig,
   checkMatchPetriConfig,
   matchPetriComponents
 ) where
@@ -15,7 +16,7 @@ import qualified AD_Datatype as AD (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 
 import AD_Petrinet (PetriKey(..))
-import AD_Config (ADConfig(..), checkADConfig)
+import AD_Config (ADConfig(..), defaultADConfig, checkADConfig)
 
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
@@ -34,6 +35,14 @@ data MatchPetriConfig = MatchPetriConfig {
   avoidAddingSinksForFinals :: Maybe Bool -- Avoid having to add new sink transitions for representing finals
 } deriving (Show)
 
+
+defaultMatchPetriConfig :: MatchPetriConfig
+defaultMatchPetriConfig = MatchPetriConfig
+  { adConfig = defaultADConfig,
+    mustHaveSomeSupportSTs = Nothing,
+    allowActivityFinals = Nothing,
+    avoidAddingSinksForFinals = Nothing
+  }
 
 checkMatchPetriConfig :: MatchPetriConfig -> Maybe String 
 checkMatchPetriConfig conf =
