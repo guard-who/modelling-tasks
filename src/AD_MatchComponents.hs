@@ -49,7 +49,7 @@ checkMatchPetriConfig' MatchPetriConfig {
   }
   | not allowActivityFinals && activityFinalNodes adConfig > 0
     = Just "Setting the parameter 'allowActivityFinals' to False prohibits having more than 0 Activity Final Node"
-  | avoidAddingSinksForFinals && actions adConfig + forkNodes adConfig + joinNodes adConfig <= 0
+  | avoidAddingSinksForFinals && actions adConfig + forkJoinPairs adConfig <= 0
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | otherwise 
     = Nothing

@@ -8,26 +8,22 @@ module AD_Config (
 data ADConfig = ADConfig {
   actions :: Int,
   objectNodes :: Int,
-  decisionNodes :: Int,
-  mergeNodes :: Int,
-  forkNodes :: Int,
-  joinNodes :: Int,
-  initialNodes :: Int,
+  decisionMergePairs :: Int,
+  forkJoinPairs :: Int,
   activityFinalNodes :: Int,
-  flowFinalNodes :: Int
+  flowFinalNodes :: Int,
+  cycles :: Int
 } deriving (Show)
 
 checkADConfig :: ADConfig -> Maybe String
 checkADConfig ADConfig {
     actions,
     objectNodes,
-    decisionNodes,
-    mergeNodes,
-    forkNodes,
-    joinNodes,
-    initialNodes,
+    decisionMergePairs,
+    forkJoinPairs,
     activityFinalNodes,
-    flowFinalNodes 
+    flowFinalNodes,
+    cycles
   }
   | actions < 0
     = Just "Number of Actions must be non-negative"
@@ -35,27 +31,17 @@ checkADConfig ADConfig {
     = Just "Number of Object Nodes must be non-negative"
   | actions + objectNodes <= 0
     = Just "Number of Actions and Object Nodes together must be positive"
-  | decisionNodes < 0
-    = Just "Number of Decision Nodes must be non-negative"
-  | mergeNodes < 0
-    = Just "Number of Merge Nodes must be non-negative"
-  | decisionNodes /= mergeNodes
-    = Just "Number of Decision Nodes and Merge Nodes must be equal"
-  | forkNodes < 0
-    = Just "Number of Fork Nodes must be non-negative"
-  | joinNodes < 0
-    = Just "Number of Join Nodes must be non-negative"
-  | forkNodes /= joinNodes
-    = Just "Number of Fork Nodes and Join Nodes must be equal"
-  | initialNodes < 0
-    = Just "Number of Initial Nodes must be non-negative"
-  | initialNodes /= 1
-    = Just "Number of Initial Nodes must be exactly one"
+  | decisionMergePairs < 0
+    = Just "Number of Decision and Merge pairs must be non-negative"
+  | forkJoinPairs < 0
+    = Just "Number of Fork and Join pairs must be non-negative"
   | activityFinalNodes < 0
     = Just "Number of Activity Final Nodes must be non-negative"
   | flowFinalNodes < 0
     = Just "Number of Flow Final Nodes must be non-negative"
   | activityFinalNodes + flowFinalNodes <= 0
     = Just "Number of Activity Final Nodes and Flow Final Nodes together must be positive"
+  | cycles > decisionMergePairs
+    = Just "Number of Cycles must be less or equal to the number of Decision and Merge pairs"
   | otherwise 
     = Nothing
