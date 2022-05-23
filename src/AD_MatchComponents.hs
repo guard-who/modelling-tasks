@@ -1,11 +1,14 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE QuasiQuotes #-}
+
 
 module AD_MatchComponents (
   MatchPetriInstance(..),
   MatchPetriConfig(..),
   defaultMatchPetriConfig,
   checkMatchPetriConfig,
-  matchPetriComponents
+  matchPetriComponents,
+  matchPetriAlloy
 ) where
 
 import qualified Data.Map as M ((!), insert, delete, keys, empty, null)
@@ -15,6 +18,7 @@ import qualified AD_Datatype as AD (
   ADNode(..),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 
+import AD_Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
 import AD_Petrinet (PetriKey(..))
 import AD_Config (ADConfig(..), defaultADConfig, checkADConfig)
 
@@ -22,6 +26,8 @@ import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.Map (Map)
+import Data.String.Interpolate ( i )
+
 
 data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: AD.UMLActivityDiagram,
@@ -62,6 +68,55 @@ checkMatchPetriConfig' MatchPetriConfig {
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | otherwise 
     = Nothing
+
+
+matchPetriAlloy :: MatchPetriConfig -> String
+matchPetriAlloy MatchPetriConfig {
+    adConfig = adConf@ADConfig {
+      minActions,
+      maxActions,
+      minObjectNodes,
+      maxObjectNodes,
+      maxNamedNodes,
+      decisionMergePairs,
+      forkJoinPairs,
+      activityFinalNodes,
+      flowFinalNodes,
+      cycles
+    }
+  } =
+  [i|module MatchPetri
+    #{moduleComponentsSig}
+    #{moduleInitialNodeRules}
+    #{moduleNameRules}
+    #{moduleReachabilityRules}
+    #{modulePlantUMLSig}
+    #{moduleExerciseRules}
+
+    pred showAD {
+      \#ActionNodes >= #{minActions}
+      \#ObjectNodes >= #{minObjectNodes}
+      \#(ActionNodes + ObjectNodes) <= #{maxNamedNodes}
+    }
+
+    run showAD for #{adConfigScope adConf} but 6 Int, #{maxActions} ActionNodes,
+      #{maxObjectNodes} ObjectNodes, #{maxActions + maxObjectNodes} ComponentNames,
+      exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
+      #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
+      exactly 1 InitialNodes, exactly #{activityFinalNodes} ActivityFinalNodes, exactly #{flowFinalNodes} FlowFinalNodes,
+      exactly #{cycles} PlantUMLRepeatBlocks, exactly #{decisionMergePairs - cycles} PlantUMLIfElseBlocks,
+      exactly #{forkJoinPairs} PlantUMLForkBlocks
+  |]
+
+
+adConfigScope :: ADConfig -> Int
+adConfigScope ADConfig {
+    maxActions,
+    maxObjectNodes,
+    decisionMergePairs,
+    forkJoinPairs
+  } = 1 + maxActions + maxObjectNodes + 3 * decisionMergePairs + 4 * forkJoinPairs
+
 
 mapTypesToLabels :: AD.UMLActivityDiagram -> Map String [Int]
 mapTypesToLabels diag =
