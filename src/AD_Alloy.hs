@@ -3,7 +3,9 @@
 
 module AD_Alloy(
   getAlloyInstances,
+  getAlloyInstancesWith,
   getRawAlloyInstances,
+  getRawAlloyInstancesWith,
   moduleComponentsSig,
   moduleInitialNodeRules,
   moduleNameRules,
@@ -53,13 +55,19 @@ removeLines n = unlines . drop n . lines
 
 --For now just with static scope from file
 getAlloyInstances :: Maybe Integer -> IO [AlloyInstance]
-getAlloyInstances n = 
-  map (either (error . show) id . parseInstance) .
-  preprocess <$> getRawInstances n completeSpec
+getAlloyInstances n = getAlloyInstancesWith n completeSpec
 
 --For debugging
 getRawAlloyInstances :: Maybe Integer -> IO [ByteString]
-getRawAlloyInstances n = preprocess <$> getRawInstances n completeSpec
+getRawAlloyInstances n = getRawAlloyInstancesWith n completeSpec
+
+getAlloyInstancesWith :: Maybe Integer -> String -> IO [AlloyInstance]
+getAlloyInstancesWith n spec =
+  map (either (error . show) id . parseInstance) <$>
+  getRawAlloyInstancesWith n spec
+
+getRawAlloyInstancesWith :: Maybe Integer -> String -> IO [ByteString]
+getRawAlloyInstancesWith n spec = preprocess <$> getRawInstances n spec
 
 --Remove problematic line from getRawInstances output
 preprocess :: [ByteString] -> [ByteString]
