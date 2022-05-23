@@ -36,8 +36,11 @@ moduleReachabilityRules = removeLines 3 $(embedStringFile "alloy/ad/ad_reachabil
 modulePlantUMLSig :: String
 modulePlantUMLSig = removeLines 3 $(embedStringFile "alloy/ad/ad_plantuml_sig.als")
 
+moduleExerciseRules :: String
+moduleExerciseRules = removeLines 3 $(embedStringFile "alloy/ad/ad_exercise_rules.als")
+
 completeSpec :: String 
-completeSpec = intercalate "\n" [moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig]
+completeSpec = intercalate "\n" [moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules]
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
