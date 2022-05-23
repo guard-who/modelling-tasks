@@ -9,9 +9,9 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
-import AD_Alloy (getRawAlloyInstances)
+import AD_Alloy (getRawAlloyInstancesWith)
 import AD_Instance (parseInstance)
-import AD_MatchComponents(matchPetriComponents)
+import AD_MatchComponents(matchPetriComponents, defaultMatchPetriConfig, matchPetriAlloy)
 import AD_Petrinet (convertToPetrinet, PetriKey(..))
 import AD_PlantUMLConverter(convertToPlantUML)
 import CallPlantUML(processPlantUMLString)
@@ -27,7 +27,7 @@ main = do
   xs <- getArgs
   case xs of
     pathToJar:pathToFolder:xs' -> do
-      inst <- getRawAlloyInstances (Just 50) 
+      inst <- getRawAlloyInstancesWith (Just 50) $ matchPetriAlloy defaultMatchPetriConfig
       folders <- createExerciseFolders pathToFolder (length inst)
       writeFilesToFolders folders inst "Diagram.als"
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
