@@ -102,9 +102,9 @@ abstract sig PlantUMLForkBlocks extends PlantUMLBlocks {
 
 //TODO: Check assumptions with asserts
 
-pred generate {
-	some ie1 : PlantUMLIfElseBlocks | ie1 in PlantUMLForkBlocks.bodies
-	some fb1: PlantUMLForkBlocks | fb1 in PlantUMLRepeatBlocks.body
-}
-
-run generate for 15 but 6 Int, exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks, exactly 1 PlantUMLForkBlocks
+//pred generate {
+//	some ie1 : PlantUMLIfElseBlocks | ie1 in PlantUMLForkBlocks.bodies
+//	some fb1: PlantUMLForkBlocks | fb1 in PlantUMLRepeatBlocks.body
+//}
+//
+//run generate for 15 but 6 Int, exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks, exactly 1 PlantUMLForkBlocks
