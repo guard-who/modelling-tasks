@@ -3,7 +3,13 @@
 
 module AD_Alloy(
   getAlloyInstances,
-  getRawAlloyInstances
+  getRawAlloyInstances,
+  moduleComponentsSig,
+  moduleInitialNodeRules,
+  moduleNameRules,
+  moduleReachabilityRules,
+  modulePlantUMLSig,
+  moduleExerciseRules
 ) where
 
 import qualified Data.ByteString as B (split, intercalate)
