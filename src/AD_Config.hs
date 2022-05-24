@@ -1,10 +1,17 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module AD_Config (
   ADConfig(..),
   defaultADConfig,
-  checkADConfig
+  checkADConfig,
+  adConfigToAlloy
 ) where 
+
+import AD_Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
+
+import Data.String.Interpolate ( i )
+
 
 data ADConfig = ADConfig {
   minActions :: Int,
@@ -72,3 +79,50 @@ checkADConfig ADConfig {
     = Just "Number of Cycles must be less or equal to the number of Decision and Merge pairs"
   | otherwise 
     = Nothing
+
+
+adConfigToAlloy :: String -> String -> ADConfig -> String
+adConfigToAlloy modules preds adConf@ADConfig {
+    minActions,
+    maxActions,
+    minObjectNodes,
+    maxObjectNodes,
+    maxNamedNodes,
+    decisionMergePairs,
+    forkJoinPairs,
+    activityFinalNodes,
+    flowFinalNodes,
+    cycles
+  } =
+  [i|module MatchPetri
+    #{moduleComponentsSig}
+    #{moduleInitialNodeRules}
+    #{moduleNameRules}
+    #{moduleReachabilityRules}
+    #{modulePlantUMLSig}
+    #{moduleExerciseRules}
+    #{modules}
+
+    pred showAD {
+      \#ActionNodes >= #{minActions}
+      \#ObjectNodes >= #{minObjectNodes}
+      #{preds}
+    }
+
+    run showAD for #{adConfigScope adConf} but 6 Int, #{maxActions} ActionNodes,
+      #{maxObjectNodes} ObjectNodes, #{maxNamedNodes} ActionObjectNodes, #{maxActions + maxObjectNodes} ComponentNames,
+      exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
+      #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
+      exactly 1 InitialNodes, exactly #{activityFinalNodes} ActivityFinalNodes, exactly #{flowFinalNodes} FlowFinalNodes,
+      exactly #{cycles} PlantUMLRepeatBlocks, exactly #{decisionMergePairs - cycles} PlantUMLIfElseBlocks,
+      exactly #{forkJoinPairs} PlantUMLForkBlocks
+  |]
+
+
+adConfigScope :: ADConfig -> Int
+adConfigScope ADConfig {
+    maxActions,
+    maxObjectNodes,
+    decisionMergePairs,
+    forkJoinPairs
+  } = 1 + maxActions + maxObjectNodes + 3 * decisionMergePairs + 4 * forkJoinPairs
