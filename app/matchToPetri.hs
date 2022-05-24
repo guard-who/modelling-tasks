@@ -11,8 +11,8 @@ import System.FilePath ((</>), addTrailingPathSeparator)
 
 import AD_Alloy (getRawAlloyInstancesWith)
 import AD_Instance (parseInstance)
-import AD_MatchComponents(matchPetriComponents, defaultMatchPetriConfig, matchPetriAlloy)
-import AD_Petrinet (convertToPetrinet, PetriKey(..))
+import AD_MatchComponents(matchPetriComponents, defaultMatchPetriConfig, matchPetriAlloy, MatchPetriInstance (MatchPetriInstance))
+import AD_Petrinet (PetriKey(label))
 import AD_PlantUMLConverter(convertToPlantUML)
 import CallPlantUML(processPlantUMLString)
 
@@ -32,8 +32,9 @@ main = do
       writeFilesToFolders folders inst "Diagram.als"
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
           plantumlstring = map convertToPlantUML ad
-          petri = map convertToPetrinet ad
-          json =  zipWith (\x y -> toStrict $ encode $ matchPetriComponents x y) ad petri
+          matchPetri = map (matchPetriComponents . MatchPetriInstance) ad
+          petri = map fst matchPetri
+          json = map (toStrict . encode . snd) matchPetri
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToFolders folders svg "Diagram.svg"
       mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True Dot) $ zip folders petri
