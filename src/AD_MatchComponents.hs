@@ -36,8 +36,8 @@ data MatchPetriInstance = MatchPetriInstance {
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
-  mustHaveSomeSupportSTs :: Maybe Bool,    -- Option to force support STs to occur
-  allowActivityFinals :: Maybe Bool,      -- Option to disallow activity finals to reduce semantic confusion
+  supportSTExist :: Maybe Bool,           -- Option to force support STs to occur
+  activityFinalsExist :: Maybe Bool,      -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool -- Avoid having to add new sink transitions for representing finals
 } deriving (Show)
 
@@ -45,8 +45,8 @@ data MatchPetriConfig = MatchPetriConfig {
 defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
-    mustHaveSomeSupportSTs = Nothing,
-    allowActivityFinals = Nothing,
+    supportSTExist = Nothing,
+    activityFinalsExist = Nothing,
     avoidAddingSinksForFinals = Nothing
   }
 
@@ -59,10 +59,10 @@ checkMatchPetriConfig conf =
 checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String 
 checkMatchPetriConfig' MatchPetriConfig {
     adConfig,    
-    allowActivityFinals,      
+    activityFinalsExist,
     avoidAddingSinksForFinals
   }
-  | allowActivityFinals == Just False && activityFinalNodes adConfig > 0
+  | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
     = Just "Setting the parameter 'allowActivityFinals' to False prohibits having more than 0 Activity Final Node"
   | avoidAddingSinksForFinals == Just True && minActions adConfig + forkJoinPairs adConfig <= 0
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
