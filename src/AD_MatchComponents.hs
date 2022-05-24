@@ -96,11 +96,10 @@ matchPetriAlloy MatchPetriConfig {
     pred showAD {
       \#ActionNodes >= #{minActions}
       \#ObjectNodes >= #{minObjectNodes}
-      \#(ActionNodes + ObjectNodes) <= #{maxNamedNodes}
     }
 
     run showAD for #{adConfigScope adConf} but 6 Int, #{maxActions} ActionNodes,
-      #{maxObjectNodes} ObjectNodes, #{maxActions + maxObjectNodes} ComponentNames,
+      #{maxObjectNodes} ObjectNodes, #{maxNamedNodes} ActionObjectNodes, #{maxActions + maxObjectNodes} ComponentNames,
       exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
       #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
       exactly 1 InitialNodes, exactly #{activityFinalNodes} ActivityFinalNodes, exactly #{flowFinalNodes} FlowFinalNodes,
