@@ -103,9 +103,10 @@ adConfigToAlloy modules preds adConf@ADConfig {
     #{moduleExerciseRules}
     #{modules}
 
+    #{singletonActions}
+    #{singletonObjectNodes}
+
     pred showAD {
-      \#ActionNodes >= #{minActions}
-      \#ObjectNodes >= #{minObjectNodes}
       #{preds}
     }
 
@@ -117,7 +118,11 @@ adConfigToAlloy modules preds adConf@ADConfig {
       exactly #{cycles} PlantUMLRepeatBlocks, exactly #{decisionMergePairs - cycles} PlantUMLIfElseBlocks,
       exactly #{forkJoinPairs} PlantUMLForkBlocks
   |]
-
+  where
+    singletonActions = 
+      unlines $ map (\x -> [i| one sig A#{x} extends ActionNodes \{\}|]) [1..minActions] 
+    singletonObjectNodes =
+      unlines $ map (\x -> [i| one sig O#{x} extends ObjectNodes \{\}|]) [1..minObjectNodes]
 
 adConfigScope :: ADConfig -> Int
 adConfigScope ADConfig {
