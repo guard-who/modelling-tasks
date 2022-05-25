@@ -71,15 +71,11 @@ abstract sig ActionObjectNodes extends ActivityNodes {
 	one (to . this) 					//Exactly one incoming edge (due to PlantUML-Constraints)
 }
 
-abstract sig ActionNodes extends ActionObjectNodes {}
+sig ActionNodes extends ActionObjectNodes {}
 
-abstract sig ObjectNodes extends ActionObjectNodes {}
+sig ObjectNodes extends ActionObjectNodes {}
 
 //The namespace of all Action and Object Nodes
 abstract sig ComponentNames {} {
-        this in ActionObjectNodes.name
+  this in ActionObjectNodes.name
 }
-
-
-//TODO: PlantUML-specific signatures like "Blocks" which encapsulate nodes
-
