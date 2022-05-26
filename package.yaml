@@ -10,6 +10,8 @@ dependencies:
   - modelling-tasks
   - mtl
   - process 
+  - random
+  - random-shuffle
   - string-interpolate
 default-extensions:
   - TupleSections
@@ -31,6 +33,7 @@ library:
     - AD_MatchComponents
     - AD_ActionSequences
     - AD_Config
+    - AD_Shuffle
   ghc-options:
     - -Wall
     - -Werror
