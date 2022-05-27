@@ -27,8 +27,9 @@ import Control.Applicative (Alternative ((<|>)))
 import Data.Map (Map)
 
 
-newtype MatchPetriInstance = MatchPetriInstance {
-  activityDiagram :: UMLActivityDiagram
+data MatchPetriInstance = MatchPetriInstance {
+  activityDiagram :: UMLActivityDiagram,
+  seed :: Int
 } deriving (Show)
 
 data MatchPetriConfig = MatchPetriConfig {
@@ -97,9 +98,10 @@ mapTypesToLabels diag =
 
 matchPetriComponents :: MatchPetriInstance -> (PetriLike PetriKey, Map String [Int])
 matchPetriComponents MatchPetriInstance {
-  activityDiagram
+  activityDiagram,
+  seed
 } =
-  let (relabeling, petri) = shufflePetri 123 $ convertToPetrinet activityDiagram
+  let (relabeling, petri) = shufflePetri seed $ convertToPetrinet activityDiagram
       labelMap = M.map (map (relabeling M.!)) $ mapTypesToLabels activityDiagram
       supportST = map label $ filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
   in (petri, M.insert "SupportST" supportST labelMap)
