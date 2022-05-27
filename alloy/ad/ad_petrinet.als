@@ -13,7 +13,7 @@ pred activityFinalsExist {
   some ActivityFinalNodes
 }
 
-pred avoidSinksForFinals {
+pred avoidAddingSinksForFinals {
   let transitions = ActionNodes + ForkNodes + JoinNodes |
   (to.FinalNodes.from) in transitions
 }
