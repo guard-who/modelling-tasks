@@ -9,7 +9,7 @@ module AD_MatchComponents (
   matchPetriAlloy
 ) where
 
-import qualified Data.Map as M ((!), insert, keys, empty, null)
+import qualified Data.Map as M ((!), insert, keys, empty, null, map)
 import qualified AD_Datatype as AD (ADNode(label))
 
 import AD_Datatype (
@@ -17,7 +17,9 @@ import AD_Datatype (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode)
 
 import AD_Petrinet (PetriKey(..), convertToPetrinet)
+import AD_Shuffle (shufflePetri)
 import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+
 
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
@@ -97,8 +99,8 @@ matchPetriComponents :: MatchPetriInstance -> (PetriLike PetriKey, Map String [I
 matchPetriComponents MatchPetriInstance {
   activityDiagram
 } =
-  let labelMap = mapTypesToLabels activityDiagram
-      petri = convertToPetrinet activityDiagram
+  let (relabeling, petri) = shufflePetri 123 $ convertToPetrinet activityDiagram
+      labelMap = M.map (map (relabeling M.!)) $ mapTypesToLabels activityDiagram
       supportST = map label $ filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
   in (petri, M.insert "SupportST" supportST labelMap)
 
