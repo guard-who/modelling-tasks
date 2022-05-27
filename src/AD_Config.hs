@@ -74,7 +74,9 @@ checkADConfig ADConfig {
   | flowFinalNodes < 0
     = Just "Number of Flow Final Nodes must be non-negative"
   | activityFinalNodes + flowFinalNodes <= 0
-    = Just "Number of Activity Final Nodes and Flow Final Nodes together must be positive"
+    = Just "Total number of Final Nodes must be positive"
+  | activityFinalNodes + flowFinalNodes > 1 + forkJoinPairs
+    = Just "Total number of Final Nodes must be less or equal to the number of Fork and Join pairs plus one"
   | cycles > decisionMergePairs
     = Just "Number of Cycles must be less or equal to the number of Decision and Merge pairs"
   | otherwise 
