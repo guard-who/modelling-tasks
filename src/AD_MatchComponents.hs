@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module AD_MatchComponents (
   MatchPetriInstance(..),
@@ -19,12 +20,14 @@ import AD_Datatype (
 import AD_Petrinet (PetriKey(..), convertToPetrinet)
 import AD_Shuffle (shufflePetri)
 import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-
+import AD_Alloy (modulePetrinet)
 
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.Map (Map)
+import Data.String.Interpolate ( i )
+
 
 
 data MatchPetriInstance = MatchPetriInstance {
@@ -70,11 +73,24 @@ checkMatchPetriConfig' MatchPetriConfig {
 
 matchPetriAlloy :: MatchPetriConfig -> String
 matchPetriAlloy MatchPetriConfig {
-  adConfig
+  adConfig,
+  supportSTExist,
+  activityFinalsExist,
+  avoidAddingSinksForFinals
 }
   = adConfigToAlloy modules preds adConfig
-  where modules = ""
-        preds = ""
+  where modules = modulePetrinet
+        preds =
+          [i|
+            #{f supportSTExist "supportSTExist"}
+            #{f activityFinalsExist "activityFinalsExist"}
+            #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
+          |]
+        f opt s =
+          case opt of
+            Just True -> s
+            Just False -> [i| not #{s}|]
+            _ -> ""
 
 
 mapTypesToLabels :: UMLActivityDiagram -> Map String [Int]
