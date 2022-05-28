@@ -51,15 +51,15 @@ defaultMatchPetriConfig = MatchPetriConfig
     avoidAddingSinksForFinals = Nothing
   }
 
-checkMatchPetriConfig :: MatchPetriConfig -> Maybe String 
+checkMatchPetriConfig :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig conf =
-  checkADConfig (adConfig conf) 
+  checkADConfig (adConfig conf)
   <|> checkMatchPetriConfig' conf
 
 
-checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String 
+checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig' MatchPetriConfig {
-    adConfig,    
+    adConfig,
     activityFinalsExist,
     avoidAddingSinksForFinals
   }
@@ -67,7 +67,7 @@ checkMatchPetriConfig' MatchPetriConfig {
     = Just "Setting the parameter 'allowActivityFinals' to False prohibits having more than 0 Activity Final Node"
   | avoidAddingSinksForFinals == Just True && minActions adConfig + forkJoinPairs adConfig <= 0
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
-  | otherwise 
+  | otherwise
     = Nothing
 
 

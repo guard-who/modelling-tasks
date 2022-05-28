@@ -6,7 +6,7 @@ module AD_Config (
   defaultADConfig,
   checkADConfig,
   adConfigToAlloy
-) where 
+) where
 
 import AD_Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
 
@@ -79,7 +79,7 @@ checkADConfig ADConfig {
     = Just "Total number of Final Nodes must be less or equal to the number of Fork and Join pairs plus one"
   | cycles > decisionMergePairs
     = Just "Number of Cycles must be less or equal to the number of Decision and Merge pairs"
-  | otherwise 
+  | otherwise
     = Nothing
 
 
@@ -121,8 +121,8 @@ adConfigToAlloy modules preds adConf@ADConfig {
       exactly #{forkJoinPairs} PlantUMLForkBlocks
   |]
   where
-    singletonActions = 
-      unlines $ map (\x -> [i| one sig A#{x} extends ActionNodes \{\}|]) [1..minActions] 
+    singletonActions =
+      unlines $ map (\x -> [i| one sig A#{x} extends ActionNodes \{\}|]) [1..minActions]
     singletonObjectNodes =
       unlines $ map (\x -> [i| one sig O#{x} extends ObjectNodes \{\}|]) [1..minObjectNodes]
 

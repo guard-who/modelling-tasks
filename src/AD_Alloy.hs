@@ -36,7 +36,7 @@ moduleComponentsSig = removeLines 1 $(embedStringFile "alloy/ad/ad_components_si
 moduleInitialNodeRules :: String
 moduleInitialNodeRules = removeLines 3 $(embedStringFile "alloy/ad/ad_initialnode_rules.als")
 
-moduleNameRules :: String 
+moduleNameRules :: String
 moduleNameRules = removeLines 3 $(embedStringFile "alloy/ad/ad_name_rules.als")
 
 moduleReachabilityRules :: String
@@ -51,7 +51,7 @@ moduleExerciseRules = removeLines 3 $(embedStringFile "alloy/ad/ad_exercise_rule
 modulePetrinet :: String
 modulePetrinet = removeLines 3 $(embedStringFile "alloy/ad/ad_petrinet.als")
 
-completeSpec :: String 
+completeSpec :: String
 completeSpec = intercalate "\n" [moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules]
 
 removeLines :: Int -> String -> String
@@ -75,8 +75,8 @@ getRawAlloyInstancesWith n spec = preprocess <$> getRawInstances n spec
 
 --Remove problematic line from getRawInstances output
 preprocess :: [ByteString] -> [ByteString]
-preprocess = map preprocess' 
-  
+preprocess = map preprocess'
+
 preprocess' :: ByteString -> ByteString
-preprocess' s = let linesOfByteString = B.split 10 s 
+preprocess' s = let linesOfByteString = B.split 10 s
                 in B.intercalate "\n" $ filter (/= "------State 0-------") linesOfByteString

@@ -60,7 +60,7 @@ abstract sig DecisionNodes extends ControlNodes {} {
 	not (lone from . this) 				//Multiple outgoing activity edges from DecisionNodes
 	no ae1 : (from . this) | no ae1 . guard				//Every outgoing activity edge should have a guard
 	no disj ae1, ae2 : (from . this) | ae1.guard = ae2.guard	//Guards should be disjunct
-} 
+}
 
 //Superclass of Action Nodes and Object Nodes
 abstract sig ActionObjectNodes extends ActivityNodes {

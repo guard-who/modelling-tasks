@@ -16,7 +16,7 @@ import System.Process (
   )
 
 processPlantUMLString :: String -> String -> IO ByteString
-processPlantUMLString plantumlstring pathToJar = do  
+processPlantUMLString plantumlstring pathToJar = do
   let callPlantUML = proc "java" $ ["-jar", pathToJar, "-p"] ++ ["-svg"]
   (Just hin, Just hout, Just herr, ph) <-
     createProcess callPlantUML {
@@ -30,4 +30,3 @@ processPlantUMLString plantumlstring pathToJar = do
   out <- BS.hGetContents hout
   cleanupProcess (Just hin, Just hout, Just herr, ph)
   return out
-

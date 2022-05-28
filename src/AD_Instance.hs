@@ -1,6 +1,6 @@
 module AD_Instance (
   parseInstance
-) where 
+) where
 
 import qualified Data.Map               as M (fromAscList, elems, lookup, fromList)
 import qualified Data.Set               as S (unions, mapMonotonic, fromAscList, toAscList, map, filter, member)
@@ -37,16 +37,16 @@ newtype ComponentName = ComponentName String
 newtype GuardName = GuardName String
   deriving (Eq, Ord, Read, Show)
 
-newtype ActionNode = ActionNode String 
+newtype ActionNode = ActionNode String
   deriving (Eq, Ord, Read, Show)
 
-newtype ObjectNode = ObjectNode String 
+newtype ObjectNode = ObjectNode String
   deriving (Eq, Ord, Read, Show)
 
-newtype DecisionNode = DecisionNode String 
+newtype DecisionNode = DecisionNode String
   deriving (Eq, Ord, Read, Show)
 
-newtype MergeNode = MergeNode String 
+newtype MergeNode = MergeNode String
   deriving (Eq, Ord, Read, Show)
 
 newtype ForkNode = ForkNode String
@@ -110,7 +110,7 @@ parseInstance :: (MonadError s m, IsString s)
   -> String
   -> AlloyInstance
   -> m UMLActivityDiagram
-parseInstance ownscope _ insta = do  
+parseInstance ownscope _ insta = do
   actionNodes <- getAs ownscope "ActionNodes" ActionNode
   objectNodes <- getAs ownscope"ObjectNodes" ObjectNode
   decisionNodes <- getAs ownscope "DecisionNodes" DecisionNode
@@ -155,9 +155,9 @@ setToActivityDiagram getName components conns = UMLActivityDiagram {
   nodes = map (convertToADNode getName) (S.toAscList components),
   connections = uncurry3 ADConnection <$> S.toAscList conns
 }
-    
-convertToADNode :: (Node -> String) -> (Node, Int) -> ADNode 
-convertToADNode getName tuple = case node of 
+
+convertToADNode :: (Node -> String) -> (Node, Int) -> ADNode
+convertToADNode getName tuple = case node of
   ANode {} -> ADActionNode {
     label = l,
     name = getName node
@@ -173,7 +173,7 @@ convertToADNode getName tuple = case node of
   AeNode {} -> ADActivityFinalNode { label = l }
   FeNode {} -> ADFlowFinalNode { label = l }
   StNode {} -> ADInitialNode { label = l }
-  where 
+  where
     node = fst tuple
     l = snd tuple
 
@@ -222,7 +222,7 @@ getConnections scope insta ns = do
     (returnX Trigger)
     (toNode ns)
     activityEdges
-  to <- M.fromAscList . S.toAscList 
+  to <- M.fromAscList . S.toAscList
     <$> getDoubleAs "to" (returnX Trigger) (toNode ns) activityEdges
   tlabel <- M.fromAscList . S.toAscList . only snd triggers
     <$> getDoubleAs

@@ -9,7 +9,7 @@ dependencies:
   - file-embed
   - modelling-tasks
   - mtl
-  - process 
+  - process
   - random
   - random-shuffle
   - string-interpolate
@@ -23,7 +23,7 @@ default-extensions:
   - ScopedTypeVariables
 library:
   source-dirs: src
-  exposed-modules: 
+  exposed-modules:
     - AD_Alloy
     - AD_Datatype
     - AD_Instance

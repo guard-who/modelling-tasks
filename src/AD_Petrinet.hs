@@ -2,7 +2,7 @@
 
 module AD_Petrinet (
   PetriKey (..),
-  convertToPetrinet 
+  convertToPetrinet
 ) where
 
 import qualified Data.Map as M ((!), adjust, filter, mapMaybeWithKey, foldrWithKey, lookup, insert, delete, empty, singleton, keys)
@@ -15,7 +15,7 @@ import qualified AD_Datatype as AD (
   )
 
 import Modelling.PetriNet.Types (
-  Node(..), 
+  Node(..),
   PetriLike(..),
   isPlaceNode, isTransitionNode
   )
@@ -26,7 +26,7 @@ import Data.Map (Map)
 data PetriKey = SupportST {label :: Int} | NormalST {label :: Int} deriving (Ord, Eq, Show)
 
 convertToPetrinet :: AD.UMLActivityDiagram -> PetriLike PetriKey
-convertToPetrinet diag = 
+convertToPetrinet diag =
   let mt_petri = PetriLike {allNodes = M.empty :: Map PetriKey (Node PetriKey)}
       st_petri = foldr insertNode mt_petri (AD.nodes diag)
       st_edges_petri = foldr insertEdge st_petri (AD.connections diag)
@@ -37,14 +37,14 @@ removeFinalPlaces :: AD.UMLActivityDiagram -> PetriLike PetriKey -> PetriLike Pe
 removeFinalPlaces diag petri = foldr (removeIfFinal diag) petri (M.keys $ allNodes petri)
 
 removeIfFinal :: AD.UMLActivityDiagram -> PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
-removeIfFinal diag key petri = 
-  let flowInKeys = M.keys $ flowIn $ allNodes petri M.! key  
+removeIfFinal diag key petri =
+  let flowInKeys = M.keys $ flowIn $ allNodes petri M.! key
   in
-  case key of 
-    NormalST {label} -> if isFinalNode label then 
+  case key of
+    NormalST {label} -> if isFinalNode label then
                           PetriLike $ M.delete key $ allNodes $ foldr (removeEdgeToFinal key) petri flowInKeys
-                        else petri 
-    _ -> petri 
+                        else petri
+    _ -> petri
   where isFinalNode n = elem n $ map AD.label $ AD.getFinalNodes diag
 
 removeEdgeToFinal :: PetriKey -> PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
@@ -54,10 +54,10 @@ removeEdgeToFinal x key petri =
 
 addSupportST :: PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
 addSupportST sourceKey petri =
-  let sourceNode = allNodes petri M.! sourceKey 
+  let sourceNode = allNodes petri M.! sourceKey
       fn = if isPlaceNode sourceNode then isPlaceNode else isTransitionNode
       nodesToBeFixed = M.filter fn $ M.mapMaybeWithKey (\k _ -> M.lookup k (allNodes petri)) $ flowOut sourceNode
-  in M.foldrWithKey (addSupportST' sourceKey) petri nodesToBeFixed 
+  in M.foldrWithKey (addSupportST' sourceKey) petri nodesToBeFixed
 
 addSupportST' :: PetriKey -> PetriKey -> Node PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
 addSupportST' sourceKey targetKey targetNode petri =
@@ -67,13 +67,13 @@ addSupportST' sourceKey targetKey targetNode petri =
       newSourceNode = addFlowOutToNode supportKey $ deleteFlowOutToNode targetKey $ allNodes petri M.! sourceKey
       newTargetNode = addFlowInToNode supportKey $ deleteFlowInToNode sourceKey targetNode
   in PetriLike
-      $ M.insert targetKey newTargetNode 
+      $ M.insert targetKey newTargetNode
       $ M.insert sourceKey newSourceNode
       $ M.insert supportKey supportNode (allNodes petri)
 
 insertNode :: AD.ADNode -> PetriLike PetriKey -> PetriLike PetriKey
 insertNode node petri =
-  case nodeToST node of 
+  case nodeToST node of
     Just st -> PetriLike $ M.insert (NormalST{label = AD.label node}) st (allNodes petri)
     Nothing -> petri
 
@@ -96,36 +96,36 @@ insertEdge edge petri =
       targetKey = NormalST{label = AD.to edge}
       sourceNode = M.lookup sourceKey (allNodes petri)
       targetNode = M.lookup targetKey (allNodes petri)
-  in 
+  in
   case sourceNode of
-    Just _ -> 
+    Just _ ->
       case targetNode of
         Just _ -> PetriLike
-                  $ M.adjust (addFlowInToNode sourceKey) targetKey 
+                  $ M.adjust (addFlowInToNode sourceKey) targetKey
                   $ M.adjust (addFlowOutToNode targetKey) sourceKey (allNodes petri)
         Nothing -> petri
     Nothing -> petri
 
 addFlowInToNode :: PetriKey -> Node PetriKey -> Node PetriKey
-addFlowInToNode x node = 
+addFlowInToNode x node =
   case node of
     PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=M.insert x 1 flowIn, flowOut=flowOut}
     TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=M.insert x 1 flowIn, flowOut=flowOut}
 
 addFlowOutToNode :: PetriKey -> Node PetriKey -> Node PetriKey
-addFlowOutToNode x node = 
+addFlowOutToNode x node =
   case node of
     PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=flowIn, flowOut=M.insert x 1 flowOut}
     TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=flowIn, flowOut=M.insert x 1 flowOut}
 
 deleteFlowInToNode :: PetriKey -> Node PetriKey -> Node PetriKey
-deleteFlowInToNode x node = 
+deleteFlowInToNode x node =
   case node of
     PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=M.delete x flowIn, flowOut=flowOut}
     TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=M.delete x flowIn, flowOut=flowOut}
 
 deleteFlowOutToNode :: PetriKey -> Node PetriKey -> Node PetriKey
-deleteFlowOutToNode x node = 
+deleteFlowOutToNode x node =
   case node of
     PlaceNode {initial, flowIn, flowOut} -> PlaceNode {initial=initial, flowIn=flowIn, flowOut=M.delete x flowOut}
     TransitionNode {flowIn, flowOut} -> TransitionNode {flowIn=flowIn, flowOut=M.delete x flowOut}

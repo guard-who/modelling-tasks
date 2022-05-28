@@ -16,7 +16,7 @@ main = do
   xs <- getArgs
   case xs of
     pathToJar:pathToFolder:xs' -> do
-      inst <- getAlloyInstances (Just 50) 
+      inst <- getAlloyInstances (Just 50)
       let ad = map (failWith id . parseInstance "this" "this") inst
           plantumlstring = map convertToPlantUML ad
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring

@@ -14,11 +14,11 @@ module AD_Datatype (
   isActivityFinalNode,
   isFlowFinalNode,
   adjNodes
-) where 
+) where
 
-data ADConnection = 
+data ADConnection =
   ADConnection {
-    from :: Int, 
+    from :: Int,
     to :: Int,
     guard :: String
   } deriving (Show, Eq, Ord)
@@ -31,10 +31,10 @@ data ADNode =
   | ADObjectNode {
       label :: Int,
       name :: String
-  } 
+  }
   | ADDecisionNode {
       label :: Int
-  } 
+  }
   | ADMergeNode {
       label :: Int
   }
@@ -63,7 +63,7 @@ data UMLActivityDiagram =
 
 
 adjNodes :: ADNode -> UMLActivityDiagram -> [ADNode]
-adjNodes node (UMLActivityDiagram ns conns) = 
+adjNodes node (UMLActivityDiagram ns conns) =
   let adjLabel = map to $ filter (\c -> from c == label node) conns
   in filter (\node' -> label node' `elem` adjLabel) ns
 
@@ -71,31 +71,31 @@ isActionNode :: ADNode -> Bool
 isActionNode node =
   case node of
     ADActionNode {} -> True
-    _ -> False 
+    _ -> False
 
 isObjectNode :: ADNode -> Bool
 isObjectNode node =
   case node of
     ADObjectNode {} -> True
-    _ -> False 
+    _ -> False
 
 isDecisionNode :: ADNode -> Bool
 isDecisionNode node =
   case node of
     ADDecisionNode {} -> True
-    _ -> False 
+    _ -> False
 
 isMergeNode :: ADNode -> Bool
 isMergeNode node =
   case node of
     ADMergeNode {} -> True
-    _ -> False 
+    _ -> False
 
 isForkNode :: ADNode -> Bool
 isForkNode node =
   case node of
     ADForkNode {} -> True
-    _ -> False 
+    _ -> False
 
 isJoinNode :: ADNode -> Bool
 isJoinNode node =
@@ -107,25 +107,25 @@ isInitialNode :: ADNode -> Bool
 isInitialNode node =
   case node of
     ADInitialNode {} -> True
-    _ -> False 
-  
+    _ -> False
+
 isActivityFinalNode :: ADNode -> Bool
 isActivityFinalNode node =
   case node of
     ADActivityFinalNode {} -> True
-    _ -> False 
+    _ -> False
 
 isFlowFinalNode :: ADNode -> Bool
 isFlowFinalNode node =
   case node of
     ADFlowFinalNode {} -> True
-    _ -> False 
+    _ -> False
 
 
 getInitialNodes :: UMLActivityDiagram -> [ADNode]
-getInitialNodes (UMLActivityDiagram ns _) = 
+getInitialNodes (UMLActivityDiagram ns _) =
   filter isInitialNode ns
 
 getFinalNodes :: UMLActivityDiagram -> [ADNode]
 getFinalNodes (UMLActivityDiagram ns _) =
-  filter (\x -> isActivityFinalNode x || isFlowFinalNode x) ns 
+  filter (\x -> isActivityFinalNode x || isFlowFinalNode x) ns

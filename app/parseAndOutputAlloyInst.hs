@@ -19,7 +19,7 @@ main = do
   xs <- getArgs
   case xs of
     pathToJar:pathToFolder:xs' -> do
-      inst <- getRawAlloyInstances (Just 50) 
+      inst <- getRawAlloyInstances (Just 50)
       writeFilesToSubfolder inst pathToFolder "AlloyInstances" "Diagram" ".als"
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
           plantumlstring = map convertToPlantUML ad

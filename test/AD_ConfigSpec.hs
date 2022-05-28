@@ -11,5 +11,5 @@ spec = describe "checkADConfig" $ do
     checkADConfig defaultADConfig `shouldBe` Nothing
   context "when provided with Input out of the constraints" $
     it "it returns a String with nessecary changes" $
-      checkADConfig defaultADConfig{minActions=0, minObjectNodes=0} 
+      checkADConfig defaultADConfig{minActions=0, minObjectNodes=0}
         `shouldSatisfy` isJust

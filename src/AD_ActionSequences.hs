@@ -14,7 +14,7 @@ import AD_Datatype (
 
 import AD_Petrinet (
   PetriKey(..),
-  convertToPetrinet 
+  convertToPetrinet
   )
 
 import Modelling.PetriNet.Types (
@@ -37,7 +37,7 @@ import Data.Maybe(mapMaybe, isJust, fromJust)
 
 
 fromPetriLike :: (Ord a) => PetriLike a -> Net a a
-fromPetriLike petri = 
+fromPetriLike petri =
   Net {
       places = S.fromList $ M.keys $ M.filter isPlaceNode $ allNodes petri,
       transitions = S.fromList $ M.keys $ M.filter isTransitionNode $ allNodes petri,
@@ -49,24 +49,24 @@ fromPetriLike petri =
 --Generate one valid action sequence to each of the final nodes
 generateActionSequence :: UMLActivityDiagram -> [String]
 generateActionSequence diag =
-  let tSeq = generateActionSequence' diag 
+  let tSeq = generateActionSequence' diag
       tSeqLabels = map (label :: PetriKey -> Int) tSeq
       actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
   in mapMaybe (`lookup` actions) tSeqLabels
- 
+
 --Generate at one sequence of transitions to each final node
 generateActionSequence' :: UMLActivityDiagram -> [PetriKey]
 generateActionSequence' diag =
   let petri =  fromPetriLike $ convertToPetrinet diag
       zeroState = State $ M.map (const 0) $ unState $ start petri
-      sequences = fromJust $ find (isJust . lookup zeroState) $ levels' petri 
+      sequences = fromJust $ find (isJust . lookup zeroState) $ levels' petri
   in reverse $ fromJust $ lookup zeroState sequences
 
 
 validActionSequence :: [String] -> UMLActivityDiagram -> Bool
 validActionSequence input diag =
   let nameMap = map (\n -> (name n, (label :: ADNode -> Int) n)) $ filter isActionNode $ nodes diag
-      labels = mapMaybe (`lookup` nameMap) input  
+      labels = mapMaybe (`lookup` nameMap) input
       petri = convertToPetrinet diag
       petriKeyMap = map (\k -> ((label :: PetriKey -> Int) k, k)) $ M.keys $ allNodes petri
       input' = mapMaybe (`lookup` petriKeyMap) labels
@@ -79,7 +79,7 @@ validActionSequence' input actions petri =
   let net = fromPetriLike petri
       zeroState = State $ M.map (const 0) $ unState $ start net
   in any (isJust . lookup zeroState) (levelsCheckAS input actions net)
- 
+
 
 levelsCheckAS :: [PetriKey] -> [PetriKey] -> Net PetriKey PetriKey-> [[(State PetriKey, [PetriKey])]]
 levelsCheckAS input actions n =
@@ -123,7 +123,7 @@ validActionSequence' [] diag (y:nextNodes) =                                    
           ADActivityFinalNode {} -> True                                                                     --All input processed and activity final reached -> valid sequence
           _ -> validActionSequence' [] diag (nextNodes ++ adjNodes y diag)
 validActionSequence' (_:_) _ [] = False                                                                      --No nodes left to traverse
-validActionSequence' (x:input) diag (y:nextNodes) =                                                          
+validActionSequence' (x:input) diag (y:nextNodes) =
   if x `notElem` (y:nextNodes) then                                                                          --Case: Input not in next nodes to be traversed
     case y of
       ADDecisionNode {} -> validActionSequence' (x:input) diag (nextNodes ++ init (adjNodes y diag)) ||

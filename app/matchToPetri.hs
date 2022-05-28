@@ -50,7 +50,7 @@ createExerciseFolders path n = do
   mapM_ (createDirectoryIfMissing True) pathToFolders
   return $ map addTrailingPathSeparator pathToFolders
 
-writeFilesToFolders :: [FilePath] -> [ByteString] -> String -> IO ()  
+writeFilesToFolders :: [FilePath] -> [ByteString] -> String -> IO ()
 writeFilesToFolders folders files filename = do
   let paths = map (</> filename) folders
   mapM_ (uncurry B.writeFile) $ zip paths files

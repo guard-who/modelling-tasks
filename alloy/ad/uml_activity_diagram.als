@@ -7,4 +7,4 @@ open ad_initialnode_rules
 open ad_reachability_rules
 
 //For testing purposes
-run {} for 6 
+run {} for 6

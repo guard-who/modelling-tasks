@@ -5,9 +5,9 @@ open uml_activity_diagram
 //For isolating nodes in order to translate them to "blocks", similiar to regions in state diagrams
 abstract sig PlantUMLBlocks {
 	nodes : disj some ActivityNodes,
-	substructures : disj set PlantUMLBlocks 
+	substructures : disj set PlantUMLBlocks
 } {
-	one ((to . (nodesInThisAndDeeper[this]) . from) & 
+	one ((to . (nodesInThisAndDeeper[this]) . from) &
 		(ActivityNodes - (nodesInThisAndDeeper[this]))) 	//One incoming edge to block
 	lone ((from . (nodesInThisAndDeeper[this]) . to) &
 		 (ActivityNodes -(nodesInThisAndDeeper[this])))  	//At most one outgoing edge from block
@@ -36,7 +36,7 @@ fun incomingEdgeToThis [b1 : one PlantUMLBlocks] : one ActivityNodes {
 }
 
 fun outgoingEdgeFromThis [b1 : one PlantUMLBlocks] : lone ActivityNodes {
-	(from . (nodesInThisAndDeeper[b1]) . to) & (ActivityNodes -(nodesInThisAndDeeper[b1]))  
+	(from . (nodesInThisAndDeeper[b1]) . to) & (ActivityNodes -(nodesInThisAndDeeper[b1]))
 }
 
 
@@ -55,7 +55,7 @@ abstract sig PlantUMLRepeatBlocks extends PlantUMLBlocks {
 } {
 	nodes = (repeatStart + repeatEnd)								//Merge and Decision are the nodes
 	substructures = body 										//repeat body is the substructure
-	#(to . repeatStart) = 2										//Binary merge 
+	#(to . repeatStart) = 2										//Binary merge
 	#(from . repeatEnd) = 2										//Binary decision
 	repeatStart in (from . repeatEnd . to)							//Edge from decision node to merge node
 	repeatStart in incomingEdgeToThis[body]							//Edge to repeat body from merge node
@@ -71,7 +71,7 @@ abstract sig PlantUMLIfElseBlocks extends PlantUMLBlocks {
 } {
 	nodes = (ifElseStart + ifElseEnd)							//Merge and Decision are the nodes
 	substructures = (ifBody + elseBody)							//if and else body are the substructures
-	#(from . ifElseStart) = 2									//Binary decision 
+	#(from . ifElseStart) = 2									//Binary decision
 	#(to . ifElseEnd) = 2									//Binary merge
 	disj[ifBody, elseBody]									//If- and else-body are different
 	ifElseStart in incomingEdgeToThis[ifBody]						//Edge from Decision node to if-Block
@@ -84,19 +84,19 @@ abstract sig PlantUMLIfElseBlocks extends PlantUMLBlocks {
 //Represents a plantuml fork block
 abstract sig PlantUMLForkBlocks extends PlantUMLBlocks {
 	forkStart : one ForkNodes,
-	bodies : disj set PlantUMLBlocks, 
+	bodies : disj set PlantUMLBlocks,
 	forkEnd : one JoinNodes
 } {
 	nodes = (forkStart + forkEnd)								//Fork and Join are the nodes
 	substructures = bodies									//bodies are the substructures
-	#(from . forkStart) = #(bodies)							//Ternary Fork (for now) 
+	#(from . forkStart) = #(bodies)							//Ternary Fork (for now)
 	#(to . forkEnd) <= #(from . forkStart)						//Ternary Join (for now)
 	#bodies = 3											//3 Blocks (for now)
-          (to . forkEnd . from) in nodesInThis[bodies]					//Edges to Join Node come from blocks                                               
+          (to . forkEnd . from) in nodesInThis[bodies]					//Edges to Join Node come from blocks
 	all b1 : bodies |
 		forkStart in incomingEdgeToThis[b1]						//Edge from Fork node to each block
 	all b1 : bodies |
-		some outgoingEdgeFromThis[b1] implies	
+		some outgoingEdgeFromThis[b1] implies
 		forkEnd in outgoingEdgeFromThis[b1]					//Edge to Join node from each block
 }
 
