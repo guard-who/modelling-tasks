@@ -60,9 +60,12 @@ checkMatchPetriConfig conf =
 checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
+    supportSTExist,
     activityFinalsExist,
     avoidAddingSinksForFinals
   }
+  | supportSTExist == Just False && cycles adConfig > 0
+    = Just "Setting the parameter 'supportSTExist' to False prohibits having more than 0 cycles"
   | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
     = Just "Setting the parameter 'allowActivityFinals' to False prohibits having more than 0 Activity Final Node"
   | avoidAddingSinksForFinals == Just True && minActions adConfig + forkJoinPairs adConfig <= 0
