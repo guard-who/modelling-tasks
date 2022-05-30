@@ -12,7 +12,8 @@ module AD_Alloy(
   moduleReachabilityRules,
   modulePlantUMLSig,
   moduleExerciseRules,
-  modulePetrinet
+  modulePetrinet,
+  moduleActionSequencesRules
 ) where
 
 import qualified Data.ByteString as B (split, intercalate)
@@ -50,6 +51,9 @@ moduleExerciseRules = removeLines 3 $(embedStringFile "alloy/ad/ad_exercise_rule
 
 modulePetrinet :: String
 modulePetrinet = removeLines 3 $(embedStringFile "alloy/ad/ad_petrinet.als")
+
+moduleActionSequencesRules :: String
+moduleActionSequencesRules = removeLines 3 $(embedStringFile "alloy/ad/ad_actionsequences_rules.als")
 
 completeSpec :: String
 completeSpec = intercalate "\n" [moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules]
