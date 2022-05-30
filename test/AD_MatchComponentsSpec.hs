@@ -22,15 +22,15 @@ spec = do
           {adConfig=defaultADConfig{minActions=0, forkJoinPairs=0}, avoidAddingSinksForFinals=Just True}
             `shouldSatisfy` isJust
   describe "matchPetriAlloy" $ do
-    context "when supportSTExist is set to Just True" $
+    context "when supportSTAbsent is set to Just False" $
       it "it returns an Alloy Specification from which only diagrams which contain support STs are generated" $ do
-        let spec = matchPetriAlloy defaultMatchPetriConfig {supportSTExist = Just True}
+        let spec = matchPetriAlloy defaultMatchPetriConfig {supportSTAbsent = Just False}
         inst <- getAlloyInstancesWith (Just 50) spec
         let ad = map (failWith id . parseInstance "this" "this") inst
         all (hasSupportSTs . convertToPetrinet) ad `shouldBe` (True::Bool)
-    context "when supportSTExist is set to Just False" $
+    context "when supportSTAbsent is set to Just True" $
       it "it returns an Alloy Specification from which only diagrams which contain no support STs are generated" $ do
-        let spec = matchPetriAlloy defaultMatchPetriConfig {adConfig=defaultADConfig{cycles=0, decisionMergePairs=1}, supportSTExist=Just False}
+        let spec = matchPetriAlloy defaultMatchPetriConfig {adConfig=defaultADConfig{cycles=0, decisionMergePairs=1}, supportSTAbsent=Just True}
         inst <- getAlloyInstancesWith (Just 50) spec
         let ad = map (failWith id .parseInstance "this" "this") inst
         any (hasSupportSTs . convertToPetrinet) ad `shouldBe` (False::Bool)
