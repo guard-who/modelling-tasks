@@ -7,7 +7,8 @@ module AD_MatchComponents (
   defaultMatchPetriConfig,
   checkMatchPetriConfig,
   matchPetriComponents,
-  matchPetriAlloy
+  matchPetriAlloy,
+  extractSupportSTs
 ) where
 
 import qualified Data.Map as M ((!), insert, keys, empty, null, map)
@@ -122,8 +123,12 @@ matchPetriComponents MatchPetriInstance {
 } =
   let (relabeling, petri) = shufflePetri seed $ convertToPetrinet activityDiagram
       labelMap = M.map (map (relabeling M.!)) $ mapTypesToLabels activityDiagram
-      supportST = map label $ filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
+      supportST = map label $ extractSupportSTs petri
   in (petri, M.insert "SupportST" supportST labelMap)
+
+
+extractSupportSTs :: PetriLike PetriKey -> [PetriKey]
+extractSupportSTs petri = filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
 
 isSinkST :: PetriKey -> PetriLike PetriKey -> Bool
 isSinkST key petri = M.null $ flowOut $ allNodes petri M.! key
