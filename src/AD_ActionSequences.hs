@@ -83,53 +83,18 @@ validActionSequence' input actions petri =
 
 levelsCheckAS :: [PetriKey] -> [PetriKey] -> Net PetriKey PetriKey-> [[(State PetriKey, [PetriKey])]]
 levelsCheckAS input actions n =
-  let f _ [] = []
+  let g h xs = M.toList $
+        M.fromList $ do
+          (x, p) <- xs
+          (t, y) <- successors n x
+          guard $ h t
+          return (y, t : p)
+      f _ [] = []
       f [] xs =
-        let next = M.toList $
-              M.fromList $ do
-                (x, p) <- xs
-                (t, y) <- successors n x
-                guard $ notElem t actions        -- No futher actions should be processed if no input is left
-                return (y, t : p)
+        let next = g (`notElem` actions) xs               -- No further actions should be processed if no input is left
         in xs : f [] next
       f (a:as) xs =
-        let consume = M.toList $
-              M.fromList $ do
-                (x, p) <- xs
-                (t, y) <- successors n x
-                guard $ t == a                     -- Case: Next transitions correspond to next input, therefore is processed and removed
-                return (y, t : p)
-            notConsume = M.toList $
-              M.fromList $ do
-                (x, p) <- xs
-                (t, y) <- successors n x
-                guard $ notElem t actions      --Case: Next transition is not an action, therefore is processed but not removed from input
-                return (y, t : p)
-         in union (f as consume) (f (a:as) notConsume)
+        let consume = g (==a) xs                          -- Case: Next transition corresponds to input, therefore is processed and removed
+            notConsume = g (`notElem` actions) xs         -- Case: Next transition is not an action, therefore is processed but not removed from input
+        in union (f as consume) (f (a:as) notConsume)
   in f input [(start n, [])]
-
-
-
-
-
-{--
-validActionSequence' :: [ADNode] -> UMLActivityDiagram -> [ADNode] -> Bool
-validActionSequence' [] _ [] = False
-validActionSequence' [] diag (y:nextNodes) =                                                                 --Case: No input left
-  case y of
-          ADDecisionNode {} -> validActionSequence' [] diag (nextNodes ++ init (adjNodes y diag)) ||         --Decision node needs alternative handling
-                               validActionSequence' [] diag (nextNodes ++ tail (adjNodes y diag))
-          ADActionNode {} -> False                                                                           --Action node not in input
-          ADActivityFinalNode {} -> True                                                                     --All input processed and activity final reached -> valid sequence
-          _ -> validActionSequence' [] diag (nextNodes ++ adjNodes y diag)
-validActionSequence' (_:_) _ [] = False                                                                      --No nodes left to traverse
-validActionSequence' (x:input) diag (y:nextNodes) =
-  if x `notElem` (y:nextNodes) then                                                                          --Case: Input not in next nodes to be traversed
-    case y of
-      ADDecisionNode {} -> validActionSequence' (x:input) diag (nextNodes ++ init (adjNodes y diag)) ||
-                           validActionSequence' (x:input) diag (nextNodes ++ tail (adjNodes y diag))
-      ADActionNode {} -> False                                                                               --Action node traversed thats not in input
-      ADActivityFinalNode {} -> False                                                                        --Activity Final traversed with input left
-      _ -> validActionSequence' (x:input) diag (nextNodes ++ adjNodes y diag)
-  else validActionSequence' input diag (delete x (y:nextNodes))                                              --If action node is in nextNodes, remove from input
---}
