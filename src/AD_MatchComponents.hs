@@ -38,7 +38,7 @@ data MatchPetriInstance = MatchPetriInstance {
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
-  supportSTExist :: Maybe Bool,           -- Option to force support STs to occur
+  supportSTAbsent :: Maybe Bool,          -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,      -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool -- Avoid having to add new sink transitions for representing finals
 } deriving (Show)
@@ -47,7 +47,7 @@ data MatchPetriConfig = MatchPetriConfig {
 defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
-    supportSTExist = Nothing,
+    supportSTAbsent = Nothing,
     activityFinalsExist = Nothing,
     avoidAddingSinksForFinals = Nothing
   }
@@ -61,12 +61,12 @@ checkMatchPetriConfig conf =
 checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
-    supportSTExist,
+    supportSTAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals
   }
-  | supportSTExist == Just False && cycles adConfig > 0
-    = Just "Setting the parameter 'supportSTExist' to False prohibits having more than 0 cycles"
+  | supportSTAbsent == Just True && cycles adConfig > 0
+    = Just "Setting the parameter 'supportSTAbsent' to True prohibits having more than 0 cycles"
   | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
     = Just "Setting the parameter 'allowActivityFinals' to False prohibits having more than 0 Activity Final Node"
   | avoidAddingSinksForFinals == Just True && minActions adConfig + forkJoinPairs adConfig <= 0
@@ -78,7 +78,7 @@ checkMatchPetriConfig' MatchPetriConfig {
 matchPetriAlloy :: MatchPetriConfig -> String
 matchPetriAlloy MatchPetriConfig {
   adConfig,
-  supportSTExist,
+  supportSTAbsent,
   activityFinalsExist,
   avoidAddingSinksForFinals
 }
@@ -86,7 +86,7 @@ matchPetriAlloy MatchPetriConfig {
   where modules = modulePetrinet
         preds =
           [i|
-            #{f supportSTExist "supportSTExist"}
+            #{f supportSTAbsent "supportSTAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
           |]
