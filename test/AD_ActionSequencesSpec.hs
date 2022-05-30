@@ -1,6 +1,6 @@
 module AD_ActionSequencesSpec where
 
-import AD_ActionSequences
+import AD_ActionSequences (generateActionSequence, validActionSequence)
 
 import AD_Datatype (
   UMLActivityDiagram(..),
@@ -8,39 +8,58 @@ import AD_Datatype (
   ADConnection(..)
   )
 
-import Test.Hspec
+import AD_Alloy (getAlloyInstancesWith, moduleActionSequencesRules)
+import AD_Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
+import AD_Instance (parseInstance)
+
+
+import Test.Hspec(Spec, context, describe, it, shouldBe)
 
 
 spec :: Spec
 spec =
   describe "validActionSequence" $ do
-    it "accepts valid input sequences of actions, therefore one leading to the termination of all flows of the diagram" $
-      validActionSequence ["A", "E", "C", "B"] testDiagram `shouldBe` (True::Bool)
-    it "accepts valid input sequences traversing a different path at decision nodes" $
-      validActionSequence ["A", "E", "D", "B"] testDiagram `shouldBe` (True::Bool)
-    it "accept valid input sequences traversing nodes in different order due to fork nodes" $
-      validActionSequence ["A", "B", "E", "C"] testDiagram `shouldBe` (True::Bool)
-    it "accepts valid input sequences of actions traversing one cycle" $
-      validActionSequence ["A", "E", "C", "B", "D", "B", "E"] testDiagram `shouldBe` (True::Bool)
-    it "accepts valid input sequences of actions traversing more than one cycle" $
-      validActionSequence ["A", "E", "D", "B", "B", "C", "E", "E", "C", "B"] testDiagram `shouldBe` (True::Bool)
-    it "accepts much deferred flow ends" $
-      validActionSequence ["A", "E", "D", "C", "E", "E", "C", "E", "C", "B", "B", "B", "B"] testDiagram `shouldBe` (True::Bool)
-    it "rejects an empty input sequence" $
-      validActionSequence [] testDiagram `shouldBe` (False::Bool)
-    it "rejects input sequences with actions which dont exist in the diagram" $
-      validActionSequence ["A", "X", "E", "C", "B"] testDiagram `shouldBe` (False::Bool)
-    it "rejects input sequences that are too short to terminate any flows of the diagram" $
-      validActionSequence ["A"] testDiagram `shouldBe` (False::Bool)
-    it "rejects input sequences that dont terminate all flows of the diagram" $
-      validActionSequence ["A", "E", "C"] testDiagram `shouldBe` (False::Bool)
-    it "rejects input sequences that contain actions that arent traversed in that order" $
-      validActionSequence ["A", "E", "A", "C", "B"] testDiagram `shouldBe` (False::Bool)
-    it "rejects input sequences where a prefix, but not the whole sequence, would terminate all flows of the diagram" $
-      validActionSequence ["A", "B", "D", "E", "B"] testDiagram `shouldBe` (False::Bool)
-    it "is consistent with the function generateActionSequence" $
-      validActionSequence (generateActionSequence testDiagram) testDiagram `shouldBe` (True::Bool)
+    context "on a specific diagram" $ do
+      it "accepts valid input sequences of actions, therefore one leading to the termination of all flows of the diagram" $
+        validActionSequence ["A", "E", "C", "B"] testDiagram `shouldBe` (True::Bool)
+      it "accepts valid input sequences traversing a different path at decision nodes" $
+        validActionSequence ["A", "E", "D", "B"] testDiagram `shouldBe` (True::Bool)
+      it "accept valid input sequences traversing nodes in different order due to fork nodes" $
+        validActionSequence ["A", "B", "E", "C"] testDiagram `shouldBe` (True::Bool)
+      it "accepts valid input sequences of actions traversing one cycle" $
+        validActionSequence ["A", "E", "C", "B", "D", "B", "E"] testDiagram `shouldBe` (True::Bool)
+      it "accepts valid input sequences of actions traversing more than one cycle" $
+        validActionSequence ["A", "E", "D", "B", "B", "C", "E", "E", "C", "B"] testDiagram `shouldBe` (True::Bool)
+      it "accepts much deferred flow ends" $
+        validActionSequence ["A", "E", "D", "C", "E", "E", "C", "E", "C", "B", "B", "B", "B"] testDiagram `shouldBe` (True::Bool)
+      it "rejects an empty input sequence" $
+        validActionSequence [] testDiagram `shouldBe` (False::Bool)
+      it "rejects input sequences with actions which dont exist in the diagram" $
+        validActionSequence ["A", "X", "E", "C", "B"] testDiagram `shouldBe` (False::Bool)
+      it "rejects input sequences that are too short to terminate any flows of the diagram" $
+        validActionSequence ["A"] testDiagram `shouldBe` (False::Bool)
+      it "rejects input sequences that dont terminate all flows of the diagram" $
+        validActionSequence ["A", "E", "C"] testDiagram `shouldBe` (False::Bool)
+      it "rejects input sequences that contain actions that arent traversed in that order" $
+        validActionSequence ["A", "E", "A", "C", "B"] testDiagram `shouldBe` (False::Bool)
+      it "rejects input sequences where a prefix, but not the whole sequence, would terminate all flows of the diagram" $
+        validActionSequence ["A", "B", "D", "E", "B"] testDiagram `shouldBe` (False::Bool)
+      it "is consistent with the function generateActionSequence" $
+        validActionSequence (generateActionSequence testDiagram) testDiagram `shouldBe` (True::Bool)
+    context "on a list of generated diagrams" $
+      it "is consistent with the function generateActionSequence" $ do
+        let spec = adConfigToAlloy modules preds defaultADConfig{minActions=5, maxActions=8, minObjectNodes=0, maxObjectNodes=1}
+        inst <- getAlloyInstancesWith (Just 50) spec
+        let ad = map (failWith id .parseInstance "this" "this") inst
+        all p ad `shouldBe` (True::Bool)
+      where
+        modules = moduleActionSequencesRules
+        preds = "someActionNodesExistInEachBlock"
+        p x = validActionSequence (generateActionSequence x) x
 
+
+failWith :: (a -> String) -> Either a c -> c
+failWith f = either (error . f) id
 
 testDiagram :: UMLActivityDiagram
 testDiagram = UMLActivityDiagram
