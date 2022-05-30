@@ -53,16 +53,3 @@ pred checkIfStudentUnderstandsThatConditionsCanChange {
         decisionWithSameConditionNestedInRepeat or
         decisionWithSameConditionInParallelToRepeat
 }
-
-fact {
-        someActionNodesExistInEachBlock
-        flowFinalsOnlyInForkBlocks
-        noActivityFinalInForkBlocks
-        checkIfStudentKnowsDifferenceBetweenObjectAndActionNodes
-        checkIfStudentUnderstandsConcurrency
-        checkIfStudentUnderstandsThatConditionsCanChange
-}
-
-pred show {}
-
-run show for 17 but 6 Int, exactly 1 PlantUMLForkBlocks, exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks
