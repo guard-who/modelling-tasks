@@ -8,6 +8,8 @@ module AD_MatchComponents (
   checkMatchPetriConfig,
   matchPetriComponents,
   matchPetriAlloy,
+  matchPetriTaskDesciption,
+  matchPetriComponentsText,
   extractSupportSTs
 ) where
 
@@ -115,6 +117,40 @@ mapTypesToLabels diag =
      M.insert "InitialNodes" initialLabels
      M.empty
   where extractLabels fn = map AD.label $ filter fn $ nodes diag
+
+
+matchPetriTaskDesciption :: String
+matchPetriTaskDesciption =
+  [i|
+    Look at the given Activity Diagram and Petrinet, then use the displayed numbers
+    at the places and transitions as identifiers for the following tasks:
+
+    a) Name all nodes of the petrinet which correspond to Actions in the Activity Diagram
+    b) Name all nodes of the petrinet which correspond to Object Nodes in the Activity Diagram
+    c) Name all nodes of the petrinet which correspond to Decision Nodes in the Activity Diagram
+    d) Name all nodes of the petrinet which correspond to Merge Nodes in the Activity Diagram
+    e) Name all nodes of the petrinet which correspond to Fork Nodes in the Activity Diagram
+    f) Name all nodes of the petrinet which correspond to Join Nodes in the Activity Diagram
+    g) Name all nodes of the petrinet which correspond to Initial Nodes in the Activity Diagram
+    h) Name all added support places and support transtions
+  |]
+
+matchPetriComponentsText :: MatchPetriInstance -> (PetriLike PetriKey, String)
+matchPetriComponentsText inst =
+  let (petri, solutions) = matchPetriComponents inst
+      text = [i|
+      Solutions for the MatchPetri-Task:
+
+      a) Nodes in the petrinet corresponding to Actions: #{solutions M.! "ActionNodes"}
+      b) Nodes in the petrinet corresponding to Object Nodes: #{solutions M.! "ObjectNodes"}
+      c) Nodes in the petrinet corresponding to Decision Nodes: #{solutions M.! "DecisionNodes"}
+      d) Nodes in the petrinet corresponding to Merge Nodes: #{solutions M.! "MergeNodes"}
+      e) Nodes in the petrinet corresponding to Fork Nodes: #{solutions M.! "ForkNodes"}
+      f) Nodes in the petrinet corresponding to Join Nodes: #{solutions M.! "JoinNodes"}
+      g) Nodes in the petrinet corresponding to Initial Nodes: #{solutions M.! "InitialNodes"}
+      h) Support places and transitions: #{solutions M.! "SupportST"}
+      |]
+  in (petri, text)
 
 matchPetriComponents :: MatchPetriInstance -> (PetriLike PetriKey, Map String [Int])
 matchPetriComponents MatchPetriInstance {
