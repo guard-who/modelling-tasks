@@ -89,6 +89,7 @@ library
     , latex-svg-image
     , lens
     , mtl
+    , output-monad
     , parsec
     , random-shuffle
     , split
@@ -149,6 +150,7 @@ test-suite modelling-tasks-test
     , lens
     , modelling-tasks
     , mtl
+    , output-monad
     , parsec
     , process
     , random

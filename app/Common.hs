@@ -40,9 +40,6 @@ renderPetriNet x dia = do
 
 instance OutputMonad IO where
   assertion b m = unless b $ m >> error ""
-  enumerate g f = lift . putStrLn . foldrWithKey
-    (\k x rs -> g k ++ ". " ++ f x ++ "\n" ++ rs)
-    ""
   image         = lift . putStr . ("file: " ++)
   images g f    = lift . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)

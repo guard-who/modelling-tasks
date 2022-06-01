@@ -43,6 +43,7 @@ dependencies:
   - latex-svg-image
   - lens
   - mtl
+  - output-monad
   - parsec
   - random-shuffle
   - split

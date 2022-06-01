@@ -12,7 +12,6 @@ import Control.Monad.Trans              (MonadTrans(lift))
 
 instance OutputMonad (Either String) where
   assertion b m = unless b (m >> lift (Left "assertion"))
-  enumerate _ _ _ = return ()
   image _         = return ()
   images _ _ _    = return ()
   paragraph _     = return ()

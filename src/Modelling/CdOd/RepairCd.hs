@@ -41,6 +41,7 @@ import Modelling.Auxiliary.Output (
   Rated,
   LangM,
   addPretext,
+  enumerate,
   hoveringInformation,
   multipleChoice,
   simplifiedInformation,
