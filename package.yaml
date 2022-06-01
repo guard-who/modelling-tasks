@@ -31,6 +31,7 @@ library:
     - CallPlantUML
     - AD_Petrinet
     - AD_MatchComponents
+    - AD_MatchAD
     - AD_ActionSequences
     - AD_Config
     - AD_Shuffle
