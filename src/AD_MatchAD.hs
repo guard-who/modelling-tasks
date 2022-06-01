@@ -58,8 +58,8 @@ matchADTaskDescription =
     b) Name all Object Nodes of the Activity Diagram
     c) Enter the number of Decision- and Merge Nodes in the Activity Diagram
     d) Enter the number of Fork- and Join Nodes in the Activity Diagram
-    h) Enter the number of Activity Final Nodes in the Activity Diagram
-    i) Enter the number of Flow Final Nodes in the Activity Diagram
+    e) Enter the number of Activity Final Nodes in the Activity Diagram
+    f) Enter the number of Flow Final Nodes in the Activity Diagram
   |]
 
 data MatchADSolution = MatchADSolution {
