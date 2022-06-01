@@ -71,32 +71,33 @@ data MatchADSolution = MatchADSolution {
   numberOfFlowFinalNodes :: Int
 } deriving (Eq, Show)
 
-matchADComponents :: MatchADInstance -> MatchADSolution
+matchADComponents :: MatchADInstance -> (UMLActivityDiagram, MatchADSolution)
 matchADComponents MatchADInstance {
   activityDiagram,
   seed
 } =
-  let adnodes = nodes $ snd $ shuffleADNames seed activityDiagram
-  in MatchADSolution {
-      actionNames = map name $ filter isActionNode adnodes,
-      objectNodeNames = map name $ filter isObjectNode adnodes,
-      numberOfDecisionMergeNodes = length $ filter (\x -> isDecisionNode x || isMergeNode x) adnodes,
-      numberOfForkJoinNodes = length $ filter (\x -> isForkNode x || isJoinNode x) adnodes,
-      numberOfActivityFinalNodes = length $ filter isActivityFinalNode adnodes,
-      numberOfFlowFinalNodes = length $ filter isFlowFinalNode adnodes
-    }
+  let ad =  snd $ shuffleADNames seed activityDiagram
+      solution = MatchADSolution {
+        actionNames = map name $ filter isActionNode $ nodes ad,
+        objectNodeNames = map name $ filter isObjectNode $ nodes ad,
+        numberOfDecisionMergeNodes = length $ filter (\x -> isDecisionNode x || isMergeNode x) $ nodes ad,
+        numberOfForkJoinNodes = length $ filter (\x -> isForkNode x || isJoinNode x) $ nodes ad,
+        numberOfActivityFinalNodes = length $ filter isActivityFinalNode $ nodes ad,
+        numberOfFlowFinalNodes = length $ filter isFlowFinalNode $ nodes ad
+      }
+  in (ad, solution)
 
-matchADComponentsText :: MatchADInstance -> String
+matchADComponentsText :: MatchADInstance -> (UMLActivityDiagram, String)
 matchADComponentsText inst =
-  let solution = matchADComponents inst
-  in
-    [i|
-      Solutions for the MatchAD-Task:
+  let (ad, solution) = matchADComponents inst
+      text = [i|
+        Solutions for the MatchAD-Task:
 
-      a) Names of all Actions in the Activity Diagram: #{actionNames solution}
-      b) Names of all Object Nodes in the Activity Diagram: #{objectNodeNames solution}
-      c) Number of Decision- and Merge Nodes in the Activity Diagram: #{numberOfDecisionMergeNodes solution}
-      d) Number of Fork- and Join Nodes in the Activity Diagram: #{numberOfForkJoinNodes solution}
-      e) Number of Activity Final Nodes in the Activity Diagram: #{numberOfActivityFinalNodes solution}
-      f) Number of Flow Final Nodes in the Activity Diagram: #{numberOfFlowFinalNodes solution}
-    |]
+        a) Names of all Actions in the Activity Diagram: #{actionNames solution}
+        b) Names of all Object Nodes in the Activity Diagram: #{objectNodeNames solution}
+        c) Number of Decision- and Merge Nodes in the Activity Diagram: #{numberOfDecisionMergeNodes solution}
+        d) Number of Fork- and Join Nodes in the Activity Diagram: #{numberOfForkJoinNodes solution}
+        e) Number of Activity Final Nodes in the Activity Diagram: #{numberOfActivityFinalNodes solution}
+        f) Number of Flow Final Nodes in the Activity Diagram: #{numberOfFlowFinalNodes solution}
+      |]
+  in (ad, text)
