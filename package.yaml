@@ -62,7 +62,6 @@ executables:
     source-dirs: app
     dependencies:
       - ba-athena-schulz
-      - aeson
       - directory
       - filepath
       - graphviz
