@@ -18,6 +18,7 @@ import CallPlantUML(processPlantUMLString)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Control.Monad.Except(runExceptT)
+import Data.Tuple.Extra (fst3, snd3, thd3)
 
 
 main :: IO ()
@@ -29,11 +30,11 @@ main = do
       writeFilesToSubfolder inst pathToFolder "Debug" "Exercise" ".als"
       folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
-          plantumlstring = map convertToPlantUML ad
           matchPetri = map (\x -> matchPetriComponentsText $ MatchPetriInstance{activityDiagram = x, seed=123}) ad
-          petri = map fst matchPetri
+          plantumlstring = map (convertToPlantUML . fst3) matchPetri
+          petri = map snd3 matchPetri
           taskDescription = replicate (length folders) matchPetriTaskDesciption
-          taskSolution = map snd matchPetri
+          taskSolution = map thd3 matchPetri
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True Dot) $ zip folders petri
