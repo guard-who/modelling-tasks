@@ -21,6 +21,7 @@ import AD_Datatype (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isActivityFinalNode, isFlowFinalNode)
 import AD_Shuffle (shuffleADNames)
 
+import Data.List (sort)
 import Data.String.Interpolate ( i )
 
 
@@ -78,8 +79,8 @@ matchADComponents MatchADInstance {
 } =
   let ad =  snd $ shuffleADNames seed activityDiagram
       solution = MatchADSolution {
-        actionNames = map name $ filter isActionNode $ nodes ad,
-        objectNodeNames = map name $ filter isObjectNode $ nodes ad,
+        actionNames = sort $ map name $ filter isActionNode $ nodes ad,
+        objectNodeNames = sort $ map name $ filter isObjectNode $ nodes ad,
         numberOfDecisionMergeNodes = length $ filter (\x -> isDecisionNode x || isMergeNode x) $ nodes ad,
         numberOfForkJoinNodes = length $ filter (\x -> isForkNode x || isJoinNode x) $ nodes ad,
         numberOfActivityFinalNodes = length $ filter isActivityFinalNode $ nodes ad,
