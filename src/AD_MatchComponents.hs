@@ -21,7 +21,7 @@ import AD_Datatype (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode)
 
 import AD_Petrinet (PetriKey(..), convertToPetrinet)
-import AD_Shuffle (shufflePetri)
+import AD_Shuffle (shufflePetri, shuffleADNames)
 import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import AD_Alloy (modulePetrinet)
 
@@ -136,9 +136,9 @@ matchPetriTaskDesciption =
     h) Name all added support places and support transtions
   |]
 
-matchPetriComponentsText :: MatchPetriInstance -> (PetriLike PetriKey, String)
+matchPetriComponentsText :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, String)
 matchPetriComponentsText inst =
-  let (petri, solutions) = matchPetriComponents inst
+  let (ad, petri, solutions) = matchPetriComponents inst
       text = [i|
       Solutions for the MatchPetri-Task:
 
@@ -151,9 +151,9 @@ matchPetriComponentsText inst =
       g) Nodes in the petrinet corresponding to Initial Nodes: #{solutions M.! "InitialNodes"}
       h) Support places and transitions: #{solutions M.! "SupportST"}
       |]
-  in (petri, text)
+  in (ad, petri, text)
 
-matchPetriComponents :: MatchPetriInstance -> (PetriLike PetriKey, Map String [Int])
+matchPetriComponents :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, Map String [Int])
 matchPetriComponents MatchPetriInstance {
   activityDiagram,
   seed
@@ -161,7 +161,8 @@ matchPetriComponents MatchPetriInstance {
   let (relabeling, petri) = shufflePetri seed $ convertToPetrinet activityDiagram
       labelMap = M.map (sort . map (relabeling M.!)) $ mapTypesToLabels activityDiagram
       supportST = sort $ map label $ extractSupportSTs petri
-  in (petri, M.insert "SupportST" supportST labelMap)
+      ad = snd $ shuffleADNames seed activityDiagram
+  in (ad, petri, M.insert "SupportST" supportST labelMap)
 
 
 extractSupportSTs :: PetriLike PetriKey -> [PetriKey]
