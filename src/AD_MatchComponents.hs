@@ -28,6 +28,7 @@ import AD_Alloy (modulePetrinet)
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Control.Applicative (Alternative ((<|>)))
+import Data.List (sort)
 import Data.Map (Map)
 import Data.String.Interpolate ( i )
 
@@ -158,8 +159,8 @@ matchPetriComponents MatchPetriInstance {
   seed
 } =
   let (relabeling, petri) = shufflePetri seed $ convertToPetrinet activityDiagram
-      labelMap = M.map (map (relabeling M.!)) $ mapTypesToLabels activityDiagram
-      supportST = map label $ extractSupportSTs petri
+      labelMap = M.map (sort . map (relabeling M.!)) $ mapTypesToLabels activityDiagram
+      supportST = sort $ map label $ extractSupportSTs petri
   in (petri, M.insert "SupportST" supportST labelMap)
 
 
