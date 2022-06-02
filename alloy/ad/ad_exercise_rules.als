@@ -7,6 +7,11 @@ pred noActivityFinalInForkBlocks {
         no ae1 : ActivityFinalNodes | ae1 in nodesInThisAndDeeper[PlantUMLForkBlocks]
 }
 
+pred noDirectFinalAfterFork {
+  no f1 : FinalNodes | f1 in (from.ForkNodes.to)
+}
+
 fact {
   noActivityFinalInForkBlocks
+  noDirectFinalAfterFork
 }
