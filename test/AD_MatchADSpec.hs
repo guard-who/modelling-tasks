@@ -2,7 +2,7 @@ module AD_MatchADSpec where
 
 import AD_MatchAD (MatchADConfig(..), checkMatchADConfig, defaultMatchADConfig)
 
-import AD_Config (ADConfig(minActions, minObjectNodes), defaultADConfig)
+import AD_Config (ADConfig(activityFinalNodes), defaultADConfig)
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
 
@@ -12,6 +12,7 @@ spec = describe "checkMatchADConfig" $ do
     checkMatchADConfig defaultMatchADConfig `shouldBe` Nothing
   context "when provided with Input out of the constraints" $
     it "it returns a String with necessary changes" $
-      checkMatchADConfig MatchADConfig {
-        adConfig=defaultADConfig{minActions=0, minObjectNodes=0}
+      checkMatchADConfig defaultMatchADConfig {
+        adConfig=defaultADConfig{activityFinalNodes = 2},
+        noActivityFinalInForkBlocks=Just True
       } `shouldSatisfy` isJust
