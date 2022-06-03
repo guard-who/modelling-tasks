@@ -10,10 +10,6 @@ build-type:     Simple
 
 executable check-cds
   main-is: check-cds.hs
-  other-modules:
-      Common
-      EvaluateArgs
-      Paths_modelling_tasks_apps
   hs-source-dirs:
       ./
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
@@ -39,8 +35,6 @@ executable concurrency
   main-is: concurrency.hs
   other-modules:
       Common
-      EvaluateArgs
-      Paths_modelling_tasks_apps
   hs-source-dirs:
       ./
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
@@ -57,6 +51,7 @@ executable concurrency
     , digest
     , modelling-tasks
     , mtl
+    , output-monad
     , pretty-simple
     , transformers
   default-language: Haskell2010
@@ -65,8 +60,6 @@ executable conflicts
   main-is: conflicts.hs
   other-modules:
       Common
-      EvaluateArgs
-      Paths_modelling_tasks_apps
   hs-source-dirs:
       ./
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
@@ -83,6 +76,7 @@ executable conflicts
     , digest
     , modelling-tasks
     , mtl
+    , output-monad
     , pretty-simple
     , transformers
   default-language: Haskell2010
@@ -108,6 +102,7 @@ executable different-names
     , digest
     , modelling-tasks
     , mtl
+    , output-monad
     , transformers
   default-language: Haskell2010
 
@@ -132,6 +127,7 @@ executable match-cd-od
     , digest
     , modelling-tasks
     , mtl
+    , output-monad
     , transformers
   default-language: Haskell2010
 
@@ -139,8 +135,6 @@ executable matchToMath
   main-is: matchToMath.hs
   other-modules:
       Common
-      EvaluateArgs
-      Paths_modelling_tasks_apps
   hs-source-dirs:
       ./
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
@@ -157,6 +151,7 @@ executable matchToMath
     , digest
     , modelling-tasks
     , mtl
+    , output-monad
     , pretty-simple
     , transformers
   default-language: Haskell2010
@@ -182,5 +177,6 @@ executable repair-incorrect
     , digest
     , modelling-tasks
     , mtl
+    , output-monad
     , transformers
   default-language: Haskell2010

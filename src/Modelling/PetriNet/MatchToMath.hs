@@ -35,17 +35,7 @@ import qualified Data.Map                         as M (
 
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output       (
-  LangM,
-  LangM',
-  Language,
-  OutputMonad (..),
-  Rated,
-  english,
-  german,
   hoveringInformation,
-  singleChoice,
-  translate,
-  translations,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -100,6 +90,18 @@ import Modelling.PetriNet.Types (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (first)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output       (
+  LangM,
+  LangM',
+  Language,
+  OutputMonad (..),
+  Rated,
+  english,
+  german,
+  singleChoice,
+  translate,
+  translations,
+  )
 import Control.Monad.Random             (
   MonadRandom,
   RandT,

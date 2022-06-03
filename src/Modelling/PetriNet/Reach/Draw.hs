@@ -3,7 +3,6 @@ module Modelling.PetriNet.Reach.Draw (drawToFile, toPetriLike) where
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (toList)
 
-import Modelling.Auxiliary.Output       (LangM')
 import Modelling.PetriNet.Diagram       (cacheNet)
 import Modelling.PetriNet.Reach.Type (
   Net (connections, places, start, transitions),
@@ -15,6 +14,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output             (LangM')
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (runExceptT)
 import Data.GraphViz                    (GraphvizCommand)

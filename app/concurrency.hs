@@ -6,7 +6,6 @@ import Common (
   forceErrors,
   instanceInput,
   )
-import Modelling.Auxiliary.Output        (LangM' (withLang), Language (English))
 import Modelling.PetriNet.ConcurrencyAndConflict (
   checkPickConcurrencyConfig,
   checkFindConcurrencyConfig,
@@ -21,6 +20,7 @@ import Modelling.PetriNet.Types (
   defaultFindConcurrencyConfig, defaultPickConcurrencyConfig,
   )
 
+import Control.Monad.Output             (LangM' (withLang), Language (English))
 import Control.Monad.Trans.Class        (lift)
 import Data.Maybe                        (isNothing)
 import System.IO (

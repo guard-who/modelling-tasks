@@ -69,23 +69,8 @@ import qualified Data.Set                         as Set (
 
 import Modelling.Auxiliary.Common                 (oneOf, upperFirst)
 import Modelling.Auxiliary.Output (
-  LangM',
-  LangM,
-  Language (English, German),
-  OutputMonad (..),
-  Rated,
   addPretext,
-  continueOrAbort,
-  english,
-  german,
   hoveringInformation,
-  localise,
-  printSolutionAndAssert,
-  recoverFrom,
-  singleChoice,
-  singleChoiceSyntax,
-  translate,
-  translations,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -146,6 +131,23 @@ import Control.Applicative              (Alternative, (<|>))
 import Control.Arrow                    (Arrow (second), ArrowChoice (left))
 import Control.Lens                     ((.~), makeLensesFor, over)
 import Control.Monad                    (forM_, unless)
+import Control.Monad.Output (
+  LangM',
+  LangM,
+  Language (English, German),
+  OutputMonad (..),
+  Rated,
+  continueOrAbort,
+  english,
+  german,
+  localise,
+  printSolutionAndAssert,
+  recoverFrom,
+  singleChoice,
+  singleChoiceSyntax,
+  translate,
+  translations,
+  )
 import Control.Monad.Random (
   RandT,
   RandomGen,

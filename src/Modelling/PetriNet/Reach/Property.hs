@@ -24,12 +24,6 @@ import qualified Data.Set                         as S (
   size,
   )
 
-import Modelling.Auxiliary.Output (
-  LangM,
-  LangM' (withLang),
-  Language (English),
-  OutputMonad(indent, paragraph, refuse, text),
-  )
 import Modelling.PetriNet.Reach.Step    (execute)
 import Modelling.PetriNet.Reach.Type (
   Net (capacity, connections, places, start, transitions),
@@ -40,6 +34,12 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Monad                    (foldM, forM, forM_, unless, when)
+import Control.Monad.Output (
+  LangM,
+  LangM' (withLang),
+  Language (English),
+  OutputMonad (indent, paragraph, refuse, text),
+  )
 import Data.Either                      (fromLeft)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)

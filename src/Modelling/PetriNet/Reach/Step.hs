@@ -20,14 +20,6 @@ import qualified Data.Set                         as S (
   union,
   )
 
-import Modelling.Auxiliary.Output (
-  LangM',
-  OutputMonad (image, indent, paragraph, refuse, text),
-  english,
-  german,
-  recoverWith,
-  translate,
-  )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Type (
   Net (capacity, connections, start),
@@ -39,6 +31,14 @@ import Modelling.PetriNet.Reach.Type (
 import Control.Applicative              (Alternative)
 import Control.Monad                    (foldM, guard, unless)
 import Control.Monad.IO.Class           (MonadIO)
+import Control.Monad.Output (
+  LangM',
+  OutputMonad (image, indent, paragraph, refuse, text),
+  english,
+  german,
+  recoverWith,
+  translate,
+  )
 import Data.GraphViz                    (GraphvizCommand)
 
 deadlocks :: Ord s => Net s t -> [[State s]]

@@ -2,11 +2,11 @@ module Main (main) where
 
 import Common                           ()
 
-import Modelling.Auxiliary.Output       (LangM'(withLang), Language (English))
 import Modelling.CdOd.DifferentNames
   (defaultDifferentNamesConfig, differentNames, differentNamesTask)
 import EvaluateArgs                     (evaluateArgs)
 
+import Control.Monad.Output             (LangM'(withLang), Language (English))
 import Control.Monad.Trans.Except       (runExceptT)
 import System.Environment               (getArgs)
 

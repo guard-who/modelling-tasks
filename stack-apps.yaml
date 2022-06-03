@@ -1,4 +1,4 @@
-resolver: lts-16.11
+resolver: lts-16.31
 packages:
   - .
   - app
@@ -7,6 +7,10 @@ flags:
   modelling-tasks:
     quick-testing: true
 extra-deps:
+  - git: https://github.com/fmidue/output-monad.git
+    commit: d51169e89ecfc736e12f36732b08d53460c2bb4f
+    subdirs:
+      - output-monad
   - call-alloy-0.2.1.1
   - diagrams-graphviz-1.4.1.1@sha256:e71afa8f89904c2a6a2cb490dba7108c6425779c2174b90bd90dbaf507a9d3dc,1388
   - latex-svg-image-0.2@sha256:b282a74a96724037ec3d24b664118e51170c8152aff12f363ddb715a38ef053a,1830

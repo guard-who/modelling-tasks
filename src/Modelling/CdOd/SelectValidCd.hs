@@ -26,18 +26,9 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Output (
-  LangM,
-  Language (English, German),
-  OutputMonad (..),
-  Rated,
   addPretext,
-  english,
-  german,
   hoveringInformation,
-  multipleChoice,
   simplifiedInformation,
-  singleChoiceSyntax,
-  translate,
   )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
@@ -56,6 +47,17 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  Language (English, German),
+  OutputMonad (..),
+  Rated,
+  english,
+  german,
+  multipleChoice,
+  singleChoiceSyntax,
+  translate,
+  )
 import Control.Monad.Random             (evalRandT, forM_, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Control.Monad.Trans              (MonadTrans (lift))

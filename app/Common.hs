@@ -6,9 +6,8 @@ module Common (
 
 import qualified Data.Map                         as M (lookup)
 
-import Modelling.Auxiliary.Output       (LangM' (LangM), OutputMonad (..))
-
 import Control.Monad                    (unless)
+import Control.Monad.Output             (LangM' (LangM), OutputMonad (..))
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Map                         (foldrWithKey)

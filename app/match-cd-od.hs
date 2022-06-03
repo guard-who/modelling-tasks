@@ -9,8 +9,8 @@ import Modelling.CdOd.MatchCdOd (
   )
 import EvaluateArgs                     (evaluateArgs)
 
+import Control.Monad.Output             (LangM' (withLang), Language (English))
 import System.Environment               (getArgs)
-import Modelling.Auxiliary.Output       (LangM' (withLang), Language (English))
 
 main :: IO ()
 main = do

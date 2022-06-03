@@ -16,14 +16,7 @@ import qualified Data.Set                         as S (toList)
 
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
-  LangM,
-  OutputMonad (assertion, code, image, indent, paragraph, refuse, text),
-  Rated,
-  english,
-  german,
   hoveringInformation,
-  translate,
-  yesNo,
   )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
@@ -50,6 +43,15 @@ import Modelling.PetriNet.Reach.Type (
 import Control.Applicative              (Alternative)
 import Control.Monad                    (forM, forM_, unless, when)
 import Control.Monad.IO.Class           (MonadIO)
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (assertion, code, image, indent, paragraph, refuse, text),
+  Rated,
+  english,
+  german,
+  translate,
+  yesNo,
+  )
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
 import Data.Bifunctor                   (Bifunctor (second))

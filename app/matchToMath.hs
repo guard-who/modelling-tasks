@@ -4,7 +4,6 @@ import Common (
   forceErrors,
   instanceInput,
   )
-import Modelling.Auxiliary.Output       (LangM'(withLang), Language (English))
 import Modelling.PetriNet.MatchToMath (
   MathConfig (..),
   checkMathConfig,
@@ -20,6 +19,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Monad                    (when)
+import Control.Monad.Output             (LangM' (withLang), Language (English))
 import Control.Monad.Trans.Class        (lift)
 import Control.Monad.Trans.Except       (throwE)
 import System.IO (

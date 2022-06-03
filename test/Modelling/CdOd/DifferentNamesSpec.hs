@@ -4,10 +4,6 @@ module Modelling.CdOd.DifferentNamesSpec where
 
 import qualified Data.Bimap                       as BM
 
-import Modelling.Auxiliary.Output (
-  LangM'(withLang),
-  Language (English),
-  )
 import Modelling.CdOd.DifferentNames (
   differentNamesEvaluation,
   differentNamesInitial,
@@ -26,6 +22,10 @@ import Modelling.CdOd.Types (
   )
 import Modelling.Common                 ()
 
+import Control.Monad.Output (
+  LangM' (withLang),
+  Language (English),
+  )
 import Control.Monad.Random             (mkStdGen, randomRIO)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Char                        (toUpper)

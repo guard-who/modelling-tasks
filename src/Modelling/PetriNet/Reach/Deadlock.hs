@@ -15,15 +15,6 @@ import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList, toList)
 
 import Modelling.Auxiliary.Common       (oneOf)
-import Modelling.Auxiliary.Output (
-  LangM,
-  OutputMonad,
-  Rated,
-  english,
-  german,
-  translate,
-  yesNo,
-  )
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
   Property (Default),
@@ -51,6 +42,15 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Applicative              (Alternative)
+import Control.Monad.Output (
+  LangM,
+  OutputMonad,
+  Rated,
+  english,
+  german,
+  translate,
+  yesNo,
+  )
 import Data.Bifunctor                   (Bifunctor (second))
 import Control.Monad                    (forM, guard, when)
 import Control.Monad.IO.Class           (MonadIO)

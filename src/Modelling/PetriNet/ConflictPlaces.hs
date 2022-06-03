@@ -7,16 +7,7 @@ module Modelling.PetriNet.ConflictPlaces where
 import qualified Data.Map                         as M (empty, fromList)
 
 import Modelling.Auxiliary.Output (
-  LangM',
-  LangM,
-  OutputMonad (..),
-  Rated,
-  continueOrAbort,
-  english,
-  german,
   hoveringInformation,
-  translate,
-  translations,
   )
 import Modelling.PetriNet.BasicNetFunctions (
   checkConfigForFind,
@@ -59,6 +50,17 @@ import Control.Applicative              ((<|>))
 import Control.Lens                     ((.~))
 import Control.Monad                    (forM_, void)
 import Control.Monad.IO.Class           (MonadIO)
+import Control.Monad.Output (
+  LangM',
+  LangM,
+  OutputMonad (..),
+  Rated,
+  continueOrAbort,
+  english,
+  german,
+  translate,
+  translations,
+  )
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))

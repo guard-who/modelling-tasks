@@ -29,6 +29,7 @@ executables:
       - digest
       - graphviz
       - modelling-tasks
+    other-modules: []
   conflicts:
     main: conflicts.hs
     source-dirs: .
@@ -36,7 +37,10 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
+      - output-monad
       - pretty-simple
+    other-modules:
+      - Common
   concurrency:
     main: concurrency.hs
     source-dirs: .
@@ -44,7 +48,10 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
+      - output-monad
       - pretty-simple
+    other-modules:
+      - Common
   different-names:
     main: different-names.hs
     source-dirs: .
@@ -52,6 +59,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
+      - output-monad
     other-modules:
       - EvaluateArgs
       - Common
@@ -62,6 +70,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
+      - output-monad
     other-modules:
       - Common
       - EvaluateArgs
@@ -72,7 +81,10 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
+      - output-monad
       - pretty-simple
+    other-modules:
+      - Common
   repair-incorrect:
     main: repair-incorrect.hs
     source-dirs: .
@@ -80,6 +92,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
+      - output-monad
     other-modules:
       - Common
       - EvaluateArgs

@@ -38,18 +38,10 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Output (
-  LangM,
-  OutputMonad (..),
-  Rated,
   addPretext,
   directionsAdvice,
-  english,
-  german,
   hoveringInformation,
-  multipleChoice,
   simplifiedInformation,
-  translate,
-  translations,
   )
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
@@ -99,6 +91,16 @@ import Control.Monad.Except             (runExceptT)
 import Control.Monad.Fail               (MonadFail)
 #endif
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (..),
+  Rated,
+  english,
+  german,
+  multipleChoice,
+  translate,
+  translations,
+  )
 import Control.Monad.Random (
   MonadRandom (getRandom),
   RandT,

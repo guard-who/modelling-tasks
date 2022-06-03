@@ -5,9 +5,9 @@ and printing error messages.
 -}
 module Modelling.Common where
 
-import Modelling.Auxiliary.Output       (OutputMonad (..))
 
 import Control.Monad                    (unless)
+import Control.Monad.Output             (OutputMonad (..))
 import Control.Monad.Trans              (MonadTrans(lift))
 
 instance OutputMonad (Either String) where

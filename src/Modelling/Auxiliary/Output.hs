@@ -3,49 +3,22 @@
 {-# LANGUAGE QuasiQuotes #-}
 -- | This module provides common skeletons for printing tasks
 module Modelling.Auxiliary.Output (
-  OutputMonad (..),
-  Rated,
   addPretext,
   directionsAdvice,
-  enumerate,
   hoveringInformation,
-  multipleChoice,
-  printSolutionAndAssert,
-  recoverFrom,
-  recoverWith,
   simplifiedInformation,
-  singleChoice,
-  singleChoiceSyntax,
-  Out (..),
-  Report,
-  ReportT (..),
-  abortWith,
-  alignOutput,
-  continueOrAbort,
-  getAllOuts,
-  getOutsWithResult,
-  combineReports,
-  combineTwoReports,
-  format,
-  toAbort,
-  toOutput,
-  LangM,
-  LangM' (LangM),
-  Language (..),
-  english,
-  german,
-  localise,
-  mapLangM,
-  multiLang,
-  translate,
-  translations,
-  withLang,
-  yesNo,
   ) where
 
 
-import Control.Monad.Output
-import Data.String.Interpolate (i)
+import Control.Monad.Output             (
+  OutputMonad (paragraph),
+  LangM,
+  LangM',
+  english,
+  german,
+  translate,
+  )
+import Data.String.Interpolate          (i)
 
 hoveringInformation :: OutputMonad m => LangM m
 hoveringInformation = translate $ do

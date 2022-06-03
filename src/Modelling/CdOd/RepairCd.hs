@@ -36,16 +36,9 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Output (
-  Language (English, German),
-  OutputMonad (..),
-  Rated,
-  LangM,
   addPretext,
-  enumerate,
   hoveringInformation,
-  multipleChoice,
   simplifiedInformation,
-  singleChoiceSyntax,
   )
 import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.CdOd.CD2Alloy.Transform (transform)
@@ -73,6 +66,15 @@ import Modelling.CdOd.Types (
 
 import Control.Monad                    (forM_, void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output (
+  Language (English, German),
+  OutputMonad (..),
+  Rated,
+  LangM,
+  enumerate,
+  multipleChoice,
+  singleChoiceSyntax,
+  )
 import Control.Monad.Random
   (RandT, RandomGen, StdGen, evalRandT, getRandomR, getStdGen, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))

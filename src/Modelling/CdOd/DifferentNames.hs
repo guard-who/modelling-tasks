@@ -35,18 +35,10 @@ import qualified Data.Map                         as M (
 import qualified Data.Set                         as S (toList)
 
 import Modelling.Auxiliary.Output (
-  LangM,
-  OutputMonad (..),
-  Rated,
   addPretext,
   directionsAdvice,
-  english,
-  german,
   hoveringInformation,
-  multipleChoice,
   simplifiedInformation,
-  translations,
-  translate,
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
@@ -78,6 +70,16 @@ import Modelling.CdOd.Types (
 import Control.Monad                    (void, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (..),
+  Rated,
+  english,
+  german,
+  multipleChoice,
+  translations,
+  translate,
+  )
 import Control.Monad.Random
   (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))

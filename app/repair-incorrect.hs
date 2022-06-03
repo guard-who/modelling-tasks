@@ -1,7 +1,6 @@
 module Main where
 
 import Common                           ()
-import Modelling.Auxiliary.Output       (LangM'(withLang), Language (English))
 import Modelling.CdOd.RepairCd (
   defaultRepairCdConfig,
   repairCd,
@@ -11,6 +10,7 @@ import Modelling.CdOd.SelectValidCd
   (defaultSelectValidCdConfig, selectValidCd, selectValidCdTask)
 import EvaluateArgs                     (evaluateArgs)
 
+import Control.Monad.Output             (LangM' (withLang), Language (English))
 import System.Environment               (getArgs)
 
 main :: IO ()
