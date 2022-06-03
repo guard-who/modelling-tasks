@@ -12,6 +12,5 @@ pred noDirectFinalAfterFork {
 }
 
 fact {
-  noActivityFinalInForkBlocks
   noDirectFinalAfterFork
 }

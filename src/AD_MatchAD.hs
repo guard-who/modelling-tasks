@@ -21,6 +21,7 @@ import AD_Datatype (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import AD_Shuffle (shuffleADNames)
 
+import Control.Applicative (Alternative ((<|>)))
 import Data.List (sort)
 import Data.String.Interpolate ( i )
 
@@ -30,24 +31,48 @@ data MatchADInstance = MatchADInstance {
   seed :: Int
 } deriving (Show)
 
-newtype MatchADConfig = MatchADConfig {
-  adConfig :: ADConfig
+data MatchADConfig = MatchADConfig {
+  adConfig :: ADConfig,
+  noActivityFinalInForkBlocks :: Maybe Bool
 }
 
 defaultMatchADConfig :: MatchADConfig
 defaultMatchADConfig = MatchADConfig {
-  adConfig=defaultADConfig
+  adConfig = defaultADConfig,
+  noActivityFinalInForkBlocks = Just True
 }
 
 checkMatchADConfig :: MatchADConfig -> Maybe String
-checkMatchADConfig MatchADConfig {
-  adConfig
-} = checkADConfig adConfig
+checkMatchADConfig conf =
+  checkADConfig (adConfig conf)
+  <|> checkMatchADConfig' conf
+
+checkMatchADConfig' :: MatchADConfig -> Maybe String
+checkMatchADConfig' MatchADConfig {
+    adConfig,
+    noActivityFinalInForkBlocks
+  }
+  | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
+    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
+  | otherwise
+    = Nothing
 
 matchADAlloy :: MatchADConfig -> String
 matchADAlloy MatchADConfig {
-  adConfig
-}= adConfigToAlloy "" "" adConfig
+    adConfig,
+    noActivityFinalInForkBlocks
+  }
+  = adConfigToAlloy "" preds adConfig
+  where
+    preds =
+      [i|
+        #{f noActivityFinalInForkBlocks "noActivityFinalInForkBlocks"}
+      |]
+    f opt s =
+      case opt of
+        Just True -> s
+        Just False -> [i| not #{s}|]
+        _ -> ""
 
 matchADTaskDescription :: String
 matchADTaskDescription =

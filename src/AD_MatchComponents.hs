@@ -41,9 +41,10 @@ data MatchPetriInstance = MatchPetriInstance {
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
-  supportSTAbsent :: Maybe Bool,          -- Option to prevent support STs from occurring
-  activityFinalsExist :: Maybe Bool,      -- Option to disallow activity finals to reduce semantic confusion
-  avoidAddingSinksForFinals :: Maybe Bool -- Avoid having to add new sink transitions for representing finals
+  supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
+  activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
+  avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
+  noActivityFinalInForkBlocks :: Maybe Bool -- Avoid Activity Finals in concurrent flows to reduce confusion
 } deriving (Show)
 
 
@@ -52,7 +53,8 @@ defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
     supportSTAbsent = Nothing,
     activityFinalsExist = Nothing,
-    avoidAddingSinksForFinals = Nothing
+    avoidAddingSinksForFinals = Nothing,
+    noActivityFinalInForkBlocks = Just True
   }
 
 checkMatchPetriConfig :: MatchPetriConfig -> Maybe String
@@ -66,7 +68,8 @@ checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
     supportSTAbsent,
     activityFinalsExist,
-    avoidAddingSinksForFinals
+    avoidAddingSinksForFinals,
+    noActivityFinalInForkBlocks
   }
   | supportSTAbsent == Just True && cycles adConfig > 0
     = Just "Setting the parameter 'supportSTAbsent' to True prohibits having more than 0 cycles"
@@ -74,6 +77,8 @@ checkMatchPetriConfig' MatchPetriConfig {
     = Just "Setting the parameter 'allowActivityFinals' to False prohibits having more than 0 Activity Final Node"
   | avoidAddingSinksForFinals == Just True && minActions adConfig + forkJoinPairs adConfig <= 0
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
+  | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
+    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
   | otherwise
     = Nothing
 
@@ -83,7 +88,8 @@ matchPetriAlloy MatchPetriConfig {
   adConfig,
   supportSTAbsent,
   activityFinalsExist,
-  avoidAddingSinksForFinals
+  avoidAddingSinksForFinals,
+  noActivityFinalInForkBlocks
 }
   = adConfigToAlloy modules preds adConfig
   where modules = modulePetrinet
@@ -92,6 +98,7 @@ matchPetriAlloy MatchPetriConfig {
             #{f supportSTAbsent "supportSTAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
+            #{f noActivityFinalInForkBlocks "noActivityFinalInForkBlocks"}
           |]
         f opt s =
           case opt of
