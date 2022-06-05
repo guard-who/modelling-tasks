@@ -90,6 +90,6 @@ selectActionSequence SelectASInstance {
   let correctSequence = generateActionSequence activityDiagram
       wrongSequences =
         take numberOfWrongSequences $
-        filter (`validActionSequence` activityDiagram) $
+        filter (not . (`validActionSequence` activityDiagram)) $
         permutations correctSequence
   in SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
