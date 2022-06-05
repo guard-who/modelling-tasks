@@ -4,6 +4,7 @@
 module AD_SelectAS (
   SelectASInstance(..),
   SelectASConfig(..),
+  SelectASSolution(..),
   defaultSelectASConfig,
   checkSelectASConfig,
   selectASAlloy,
