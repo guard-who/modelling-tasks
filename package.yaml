@@ -35,6 +35,7 @@ library:
     - AD_ActionSequences
     - AD_Config
     - AD_Shuffle
+    - AD_SelectAS
   ghc-options:
     - -Wall
     - -Werror
