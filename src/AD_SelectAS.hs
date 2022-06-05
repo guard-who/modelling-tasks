@@ -10,12 +10,13 @@ module AD_SelectAS (
   selectActionSequence
 ) where
 
-import AD_ActionSequences (generateActionSequence)
+import AD_ActionSequences (generateActionSequence, validActionSequence)
 import AD_Alloy (moduleActionSequencesRules)
 import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import AD_Datatype (UMLActivityDiagram(..))
 
 import Control.Applicative (Alternative ((<|>)))
+import Data.List (permutations)
 import Data.String.Interpolate ( i )
 
 
@@ -80,11 +81,15 @@ data SelectASSolution = SelectASSolution {
   wrongSequences :: [[String]]
 } deriving (Show, Eq)
 
---To be implemented
 selectActionSequence :: SelectASInstance -> SelectASSolution
 selectActionSequence SelectASInstance {
-    activityDiagram
+    activityDiagram,
+    numberOfWrongSequences
   }
   =
   let correctSequence = generateActionSequence activityDiagram
-  in SelectASSolution {correctSequence=correctSequence, wrongSequences=[]}
+      wrongSequences =
+        take numberOfWrongSequences $
+        filter (`validActionSequence` activityDiagram) $
+        permutations correctSequence
+  in SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
