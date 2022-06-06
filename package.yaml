@@ -47,18 +47,6 @@ executables:
       - ba-athena-schulz
       - pretty-simple
       - graphviz
-  parseAndCreateDiagram:
-    main: parseAndCreateDiagram.hs
-    source-dirs: app
-    dependencies:
-      - ba-athena-schulz
-  parseAndOutputAlloyInst:
-    main: parseAndOutputAlloyInst.hs
-    source-dirs: app
-    dependencies:
-      - ba-athena-schulz
-      - directory
-      - filepath
   matchToPetri:
     main: matchToPetri.hs
     source-dirs: app
