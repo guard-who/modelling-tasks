@@ -9,7 +9,7 @@ module AD_SelectPetri (
   checkSelectPetriConfig,
   selectPetriAlloy,
   selectPetrinet,
-  selectPetriTaskDescription,
+  selectPetriTaskDescription
 ) where
 
 import AD_Alloy (modulePetrinet)
