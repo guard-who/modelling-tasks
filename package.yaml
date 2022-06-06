@@ -74,6 +74,13 @@ executables:
       - ba-athena-schulz
       - directory
       - filepath
+  selectActionSequence:
+    main: selectActionSequence.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
+      - directory
+      - filepath
   default:
     main: default.hs
     source-dirs: app
