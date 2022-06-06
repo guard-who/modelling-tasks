@@ -37,6 +37,7 @@ library:
     - AD_Shuffle
     - AD_SelectAS
     - AD_EnterAS
+    - AD_SelectPetri
   ghc-options:
     - -Wall
     - -Werror
