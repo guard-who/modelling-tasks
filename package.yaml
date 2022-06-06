@@ -57,6 +57,14 @@ executables:
       - directory
       - filepath
       - graphviz
+  selectPetrinet:
+    main: selectPetrinet.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
+      - directory
+      - filepath
+      - graphviz
   matchADComponents:
     main: matchADComponents.hs
     source-dirs: app
