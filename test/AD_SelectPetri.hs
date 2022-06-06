@@ -1,4 +1,4 @@
-module AD_MatchComponentsSpec where
+module AD_SelectPetriSpec where
 
 import AD_SelectPetri (SelectPetriConfig(..), checkSelectPetriConfig, defaultSelectPetriConfig)
 
@@ -8,7 +8,7 @@ import AD_Config (ADConfig(minActions, forkJoinPairs), defaultADConfig)
 
 
 spec :: Spec
-spec = do
+spec =
   describe "checkSelectPetriConfig" $ do
     it "checks if the basic Input is in given boundaries" $
       checkSelectPetriConfig defaultSelectPetriConfig  `shouldBe` Nothing
