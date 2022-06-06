@@ -36,6 +36,7 @@ library:
     - AD_Config
     - AD_Shuffle
     - AD_SelectAS
+    - AD_EnterAS
   ghc-options:
     - -Wall
     - -Werror
