@@ -125,7 +125,7 @@ modifyAD diag seed =
         not (isActivityFinalNode x) &&
         not (isFlowFinalNode x)) $ nodes diag
       toBeModified = pickRandomItems 3 filteredNodes seed
-      swappedNodes = map (\x -> if x `elem` toBeModified then swapST x else x) filteredNodes
+      swappedNodes = map (\x -> if x `elem` toBeModified then swapST x else x) $ nodes diag
   in UMLActivityDiagram {nodes=swappedNodes, connections=connections diag}
 
 -- Swap nodes translated to places to nodes translated to transitions and vice versa
