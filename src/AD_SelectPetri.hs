@@ -114,8 +114,8 @@ selectPetrinet SelectPetriInstance {
     numberOfWrongNets
   } =
   let matchingNet = convertToPetrinet activityDiagram
-      seeds = take numberOfWrongNets $ unfoldr (Just . next) $ (mkStdGen seed)
-      wrongNets =  map (convertToPetrinet . (modifyAD activityDiagram)) seeds
+      seeds = take numberOfWrongNets $ unfoldr (Just . next) (mkStdGen seed)
+      wrongNets =  map (convertToPetrinet . modifyAD activityDiagram) seeds
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
 
 modifyAD :: UMLActivityDiagram -> Int -> UMLActivityDiagram
