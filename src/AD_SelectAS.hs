@@ -8,7 +8,9 @@ module AD_SelectAS (
   defaultSelectASConfig,
   checkSelectASConfig,
   selectASAlloy,
-  selectActionSequence
+  selectActionSequence,
+  selectASTaskDescription,
+  selectActionSequenceText
 ) where
 
 import AD_ActionSequences (generateActionSequence, validActionSequence)
@@ -19,6 +21,8 @@ import AD_Datatype (UMLActivityDiagram(..))
 import Control.Applicative (Alternative ((<|>)))
 import Data.List (permutations)
 import Data.String.Interpolate ( i )
+import System.Random (mkStdGen)
+import System.Random.Shuffle (shuffle')
 
 
 data SelectASInstance = SelectASInstance {
@@ -94,3 +98,32 @@ selectActionSequence SelectASInstance {
         filter (not . (`validActionSequence` activityDiagram)) $
         permutations correctSequence
   in SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
+
+selectASTaskDescription :: SelectASInstance -> String
+selectASTaskDescription inst@SelectASInstance {
+    seed
+  }
+  =
+  let solution = selectActionSequence inst
+      toStringList = map (foldr1 (++)) (correctSequence solution : wrongSequences solution)
+      shuffledList = shuffle' toStringList (length toStringList) (mkStdGen seed)
+  in
+  [i|
+    Look at the given Activity Diagram, and determine which of the action sequences listed below
+    result in all flows of the Activity Diagram being terminated (Single Choice):
+
+    #{listOptions shuffledList}
+  |]
+  where
+    listOptions xs =
+      unlines $ map (\(x :: String) -> [i|- #{x}|]) xs
+
+selectActionSequenceText :: SelectASInstance -> String
+selectActionSequenceText inst =
+  let solution = correctSequence $ selectActionSequence inst
+  in
+  [i|
+    Solution for the SelectActionSequence-Task:
+
+    The correct Action Sequence is #{solution}.
+  |]
