@@ -12,14 +12,18 @@ module AD_SelectPetri (
   selectPetriTaskDescription
 ) where
 
+import qualified Data.Map as M ((!), keys)
+
 import AD_Alloy (modulePetrinet)
 import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import AD_Datatype (UMLActivityDiagram(..), ADNode(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import AD_Petrinet (PetriKey(..), convertToPetrinet)
 
-import Modelling.PetriNet.Types (PetriLike(..))
+import Modelling.PetriNet.Types (PetriLike(..), Node(flowOut))
 
 import Control.Applicative (Alternative ((<|>)))
+import Data.Graph (Graph, graphFromEdges')
+import Data.Graph.Automorphism (isIsomorphic)
 import Data.List (unfoldr)
 import Data.String.Interpolate ( i )
 import System.Random (mkStdGen, next)       --To be changed from 'next' to 'uniform', not possible as of now due to dependencies
@@ -114,8 +118,10 @@ selectPetrinet SelectPetriInstance {
     numberOfWrongNets
   } =
   let matchingNet = convertToPetrinet activityDiagram
-      seeds = take numberOfWrongNets $ unfoldr (Just . next) (mkStdGen seed)
-      wrongNets =  map (convertToPetrinet . modifyAD activityDiagram) seeds
+      seeds = unfoldr (Just . next) (mkStdGen seed)
+      wrongNets = take numberOfWrongNets
+                  $ filter (not . checkIsomorphism matchingNet)
+                  $ map (convertToPetrinet . modifyAD activityDiagram) seeds
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
 
 modifyAD :: UMLActivityDiagram -> Int -> UMLActivityDiagram
@@ -143,3 +149,13 @@ swapST node =
 pickRandomItems :: Int -> [a] -> Int -> [a]
 pickRandomItems n xs seed =
   take n $ shuffle' xs (length xs) (mkStdGen seed)
+
+checkIsomorphism :: (Ord a) => PetriLike a -> PetriLike a -> Bool
+checkIsomorphism p1 p2 =
+  isIsomorphic (petriToGraph p1) (petriToGraph p2)
+
+petriToGraph :: (Ord a) => PetriLike a -> Graph
+petriToGraph petri =
+  let keys = M.keys $ allNodes petri
+      keyToEdgeList k = M.keys $ flowOut $ allNodes petri M.! k
+  in fst $ graphFromEdges' $ map (\k -> (k, k, keyToEdgeList k)) keys
