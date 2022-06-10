@@ -5,6 +5,7 @@ dependencies:
   - bytestring
   - call-alloy-fork
   - containers
+  - edit-distance-vector
   - extra
   - file-embed
   - hgal
@@ -14,6 +15,7 @@ dependencies:
   - random
   - random-shuffle
   - string-interpolate
+  - vector
 default-extensions:
   - TupleSections
   - DuplicateRecordFields
