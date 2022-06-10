@@ -13,14 +13,18 @@ module AD_SelectAS (
   selectActionSequenceText
 ) where
 
+import qualified Data.Vector as V (fromList)
+
 import AD_ActionSequences (generateActionSequence, validActionSequence)
 import AD_Alloy (moduleActionSequencesRules)
 import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import AD_Datatype (UMLActivityDiagram(..))
 
 import Control.Applicative (Alternative ((<|>)))
-import Data.List (permutations)
+import Data.List (permutations, sortBy)
+import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
+import Data.Vector.Distance (Params(..), leastChanges)
 import System.Random (mkStdGen)
 import System.Random.Shuffle (shuffle')
 
@@ -95,9 +99,30 @@ selectActionSequence SelectASInstance {
   let correctSequence = generateActionSequence activityDiagram
       wrongSequences =
         take numberOfWrongSequences $
+        sortBy (compareDistToCorrect correctSequence) $
         filter (not . (`validActionSequence` activityDiagram)) $
         permutations correctSequence
   in SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
+
+asEditDistParams :: [String] -> Params String (String, Int, String) (Sum Int)
+asEditDistParams xs = Params
+    { equivalent = (==)
+    , delete     = \n s    -> ("delete", n, s)
+    , insert     = \n s    -> ("insert", n, s)
+    , substitute = \n _ s' -> ("replace", n, s')
+    , cost = \ (_, n, _) -> Sum $ abs (n - (length xs `div` 2))
+    , positionOffset = \ (op, _, _) -> if op == "delete" then 0 else 1
+    }
+
+compareDistToCorrect :: [String] -> [String] -> [String] -> Ordering
+compareDistToCorrect correctSequence xs ys =
+  compare (distToCorrect xs) (distToCorrect ys)
+  where
+    distToCorrect zs =
+      getSum
+      $ fst
+      $ leastChanges (asEditDistParams correctSequence) (V.fromList correctSequence) (V.fromList zs)
+
 
 selectASTaskDescription :: SelectASInstance -> String
 selectASTaskDescription inst@SelectASInstance {
