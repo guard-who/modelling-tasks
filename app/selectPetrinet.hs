@@ -6,7 +6,7 @@ import qualified Language.Alloy.Debug as AD (parseInstance)
 import qualified Data.ByteString as B (writeFile)
 
 import Data.ByteString (ByteString)
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, renameFile)
 import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
@@ -46,8 +46,10 @@ writeSolutionToFolder :: FilePath -> SelectPetriSolution -> IO ()
 writeSolutionToFolder path SelectPetriSolution {
      matchingNet,
      wrongNets
-  } =
-  mapM_ (\x -> runExceptT $ cacheNet path (show . label) x False False True Dot) (matchingNet:wrongNets)
+  } = do
+  pathToSolution <- runExceptT $ cacheNet path (show.label) matchingNet False False True Dot
+  renameFile (failWith id pathToSolution) (path </> "MatchingNet.svg")
+  mapM_ (\x -> runExceptT $ cacheNet path (show . label) x False False True Dot) wrongNets
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
