@@ -4,13 +4,14 @@ import qualified Language.Alloy.Debug as AD (parseInstance)
 import qualified Data.ByteString as B (writeFile)
 
 import Data.ByteString (ByteString)
+import Data.Maybe (isNothing)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import AD_Alloy (getRawAlloyInstancesWith)
 import AD_Instance (parseInstance)
-import AD_EnterAS (EnterASInstance(..), defaultEnterASConfig, enterASAlloy, enterActionSequenceText, enterASTaskDescription)
+import AD_EnterAS (EnterASInstance(..), defaultEnterASConfig, enterASAlloy, checkEnterASInstance, enterActionSequenceText, enterASTaskDescription)
 import AD_PlantUMLConverter(convertToPlantUML)
 import CallPlantUML(processPlantUMLString)
 
@@ -21,12 +22,14 @@ main = do
     pathToJar:pathToFolder:xs' -> do
       inst <- getRawAlloyInstancesWith (Just 50) $ enterASAlloy defaultEnterASConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Exercise" ".als"
-      folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
-          enterAS = map (\x -> enterActionSequenceText $ EnterASInstance{activityDiagram = x, seed=123}) ad
+          enterAS = map enterActionSequenceText
+                    $ filter (isNothing . (`checkEnterASInstance` defaultEnterASConfig))
+                    $ map (\x -> EnterASInstance{activityDiagram = x, seed=123}) ad
           plantumlstring = map (convertToPlantUML . fst) enterAS
-          taskDescription = replicate (length folders) enterASTaskDescription
+          taskDescription = replicate (length enterAS) enterASTaskDescription
           taskSolution = map snd enterAS
+      folders <- createExerciseFolders pathToFolder (length enterAS)
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
