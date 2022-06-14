@@ -4,13 +4,14 @@ import qualified Language.Alloy.Debug as AD (parseInstance)
 import qualified Data.ByteString as B (writeFile)
 
 import Data.ByteString (ByteString)
+import Data.Maybe (isNothing)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import AD_Alloy (getRawAlloyInstancesWith)
 import AD_Instance (parseInstance)
-import AD_SelectAS (SelectASInstance(..), defaultSelectASConfig, selectASAlloy, selectActionSequenceText, selectASTaskDescription)
+import AD_SelectAS (SelectASInstance(..), defaultSelectASConfig, selectASAlloy, checkSelectASInstance, selectActionSequenceText, selectASTaskDescription)
 import AD_PlantUMLConverter(convertToPlantUML)
 import CallPlantUML(processPlantUMLString)
 
@@ -21,12 +22,13 @@ main = do
     pathToJar:pathToFolder:xs' -> do
       inst <- getRawAlloyInstancesWith (Just 50) $ selectASAlloy defaultSelectASConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Exercise" ".als"
-      folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
-          selectAS = map (\x ->SelectASInstance{activityDiagram = x, seed=123, numberOfWrongSequences=2}) ad
-          plantumlstring = map convertToPlantUML ad
+          selectAS = filter (isNothing . (`checkSelectASInstance` defaultSelectASConfig))
+                      $ map (\x -> SelectASInstance{activityDiagram = x, seed=123, numberOfWrongSequences=2}) ad
+          plantumlstring = map (convertToPlantUML . activityDiagram) selectAS
           taskDescription = map selectASTaskDescription selectAS
           taskSolution = map selectActionSequenceText selectAS
+      folders <- createExerciseFolders pathToFolder (length selectAS)
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
