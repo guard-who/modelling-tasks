@@ -69,7 +69,7 @@ enterASAlloy EnterASConfig {
   where modules = moduleActionSequencesRules
         preds =
           [i|
-            noActivityFinalInForkBlocks
+            noActivityFinalNodes
             someActionNodesExistInEachBlock
             #{f objectNodeOnEveryPath "checkIfStudentKnowsDifferenceBetweenObjectAndActionNodes"}
           |]
