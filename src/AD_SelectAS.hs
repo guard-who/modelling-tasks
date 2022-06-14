@@ -8,6 +8,7 @@ module AD_SelectAS (
   defaultSelectASConfig,
   checkSelectASConfig,
   selectASAlloy,
+  checkSelectASInstance,
   selectActionSequence,
   selectASTaskDescription,
   selectActionSequenceText
@@ -37,7 +38,8 @@ data SelectASInstance = SelectASInstance {
 
 data SelectASConfig = SelectASConfig {
   adConfig :: ADConfig,
-  objectNodeOnEveryPath :: Maybe Bool
+  objectNodeOnEveryPath :: Maybe Bool,
+  minAnswerLength :: Int
 } deriving (Show)
 
 defaultSelectASConfig :: SelectASConfig
@@ -48,7 +50,8 @@ defaultSelectASConfig = SelectASConfig {
     minObjectNodes = 0,
     maxObjectNodes = 0
   },
-  objectNodeOnEveryPath = Nothing
+  objectNodeOnEveryPath = Nothing,
+  minAnswerLength = 5
 }
 
 checkSelectASConfig :: SelectASConfig -> Maybe String
@@ -59,12 +62,15 @@ checkSelectASConfig conf =
 checkSelectASConfig' :: SelectASConfig -> Maybe String
 checkSelectASConfig' SelectASConfig {
     adConfig,
-    objectNodeOnEveryPath
+    objectNodeOnEveryPath,
+    minAnswerLength
   }
   | objectNodeOnEveryPath == Just True && maxObjectNodes adConfig < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True requires having at least 1 Object Node"
   | objectNodeOnEveryPath == Just True && minObjectNodes adConfig == 0
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occuring"
+  | minAnswerLength < 0
+    = Just "The parameter 'minAnswerLength' should be non-negative"
   | otherwise
     = Nothing
 
@@ -86,6 +92,15 @@ selectASAlloy SelectASConfig {
             Just True -> s
             Just False -> [i| not #{s}|]
             _ -> ""
+
+checkSelectASInstance :: SelectASInstance -> SelectASConfig -> Maybe String
+checkSelectASInstance inst SelectASConfig {
+    minAnswerLength
+  }
+  | length (correctSequence $ selectActionSequence inst) < minAnswerLength
+    = Just "Solution should not be shorter than parameter 'minAnswerLength'"
+  | otherwise
+    = Nothing
 
 data SelectASSolution = SelectASSolution {
   correctSequence :: [String],

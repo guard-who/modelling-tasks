@@ -8,6 +8,7 @@ module AD_EnterAS (
   defaultEnterASConfig,
   checkEnterASConfig,
   enterASAlloy,
+  checkEnterASInstance,
   enterActionSequence,
   enterASTaskDescription,
   enterActionSequenceText
@@ -29,7 +30,8 @@ data EnterASInstance = EnterASInstance {
 
 data EnterASConfig = EnterASConfig {
   adConfig :: ADConfig,
-  objectNodeOnEveryPath :: Maybe Bool
+  objectNodeOnEveryPath :: Maybe Bool,
+  minAnswerLength :: Int
 } deriving (Show)
 
 defaultEnterASConfig :: EnterASConfig
@@ -40,7 +42,8 @@ defaultEnterASConfig = EnterASConfig {
     minObjectNodes = 0,
     maxObjectNodes = 0
   },
-  objectNodeOnEveryPath = Nothing
+  objectNodeOnEveryPath = Nothing,
+  minAnswerLength = 5
 }
 
 checkEnterASConfig :: EnterASConfig -> Maybe String
@@ -51,12 +54,15 @@ checkEnterASConfig conf =
 checkEnterASConfig' :: EnterASConfig -> Maybe String
 checkEnterASConfig' EnterASConfig {
     adConfig,
-    objectNodeOnEveryPath
+    objectNodeOnEveryPath,
+    minAnswerLength
   }
   | objectNodeOnEveryPath == Just True && maxObjectNodes adConfig < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True requires having at least 1 ObjectNode"
   | objectNodeOnEveryPath == Just True && minObjectNodes adConfig == 0
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occuring"
+  | minAnswerLength < 0
+    = Just "The parameter 'minAnswerLength' should be non-negative"
   | otherwise
     = Nothing
 
@@ -78,6 +84,15 @@ enterASAlloy EnterASConfig {
             Just True -> s
             Just False -> [i| not #{s}|]
             _ -> ""
+
+checkEnterASInstance :: EnterASInstance -> EnterASConfig -> Maybe String
+checkEnterASInstance inst EnterASConfig {
+    minAnswerLength
+  }
+  | length (sampleSolution $ snd $ enterActionSequence inst) < minAnswerLength
+    = Just "Solution should not be shorter than parameter 'minAnswerLength'"
+  | otherwise
+    = Nothing
 
 newtype EnterASSolution = EnterASSolution {
   sampleSolution :: [String]
