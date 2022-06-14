@@ -8,9 +8,9 @@ pred someActionNodesExistInEachBlock {
                 a1 in psb1.nodes
 }
 
-//Keep flow finals in fork blocks -> only activity finals outside of those
-pred flowFinalsOnlyInForkBlocks {
-        FlowFinalNodes in nodesInThisAndDeeper[PlantUMLForkBlocks]
+//Prohibit Activity Finals to simplify checking action sequences for validity
+pred noActivityFinalNodes {
+  no ActivityFinalNodes
 }
 
 //Option to have at least one object node on path
