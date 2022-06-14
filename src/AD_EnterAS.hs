@@ -40,7 +40,9 @@ defaultEnterASConfig = EnterASConfig {
     minActions = 6,
     maxActions = 8,
     minObjectNodes = 0,
-    maxObjectNodes = 0
+    maxObjectNodes = 0,
+    activityFinalNodes = 0,
+    flowFinalNodes = 2
   },
   objectNodeOnEveryPath = Nothing,
   minAnswerLength = 5
