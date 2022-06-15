@@ -13,15 +13,15 @@ abstract sig PlantUMLBlocks {
                  (ActivityNodes -(nodesInThisAndDeeper[this])))          //At most one outgoing edge from block
 }
 
-fun nodesInThis [b1 : PlantUMLBlocks] : set ActivityNodes {
+fun nodesInThis [b1 : set PlantUMLBlocks] : set ActivityNodes {
         b1.nodes
 }
 
-fun nodesInThisAndDeeper [b1 : PlantUMLBlocks] : set ActivityNodes {
+fun nodesInThisAndDeeper [b1 : set PlantUMLBlocks] : set ActivityNodes {
         b1.*(substructures).nodes
 }
 
-fun substructuresInThisAndDeeper [b1 : PlantUMLBlocks] : set PlantUMLBlocks {
+fun substructuresInThisAndDeeper [b1 : set PlantUMLBlocks] : set PlantUMLBlocks {
         b1.^(substructures)
 }
 
