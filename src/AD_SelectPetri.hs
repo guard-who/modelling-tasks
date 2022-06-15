@@ -126,7 +126,7 @@ selectPetrinet SelectPetriInstance {
                   $ map (convertToPetrinet . modifyAD activityDiagram) seeds
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
   where
-    takeNonIsomorphic n xs = f n [] xs
+    takeNonIsomorphic n = f n []
     f _ found [] = found
     f n found (x:xs)
       | length found >= n = found
