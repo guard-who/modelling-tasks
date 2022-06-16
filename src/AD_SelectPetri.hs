@@ -24,7 +24,7 @@ import Modelling.PetriNet.Types (PetriLike(..), Node(flowOut))
 import Control.Applicative (Alternative ((<|>)))
 import Data.Graph (Graph, graphFromEdges')
 import Data.Graph.Automorphism (isIsomorphic)
-import Data.List (unfoldr)
+import Data.List (unfoldr, nubBy)
 import Data.String.Interpolate ( i )
 import System.Random (mkStdGen, next)       --To be changed from 'next' to 'uniform', not possible as of now due to dependencies
 import System.Random.Shuffle (shuffle')
@@ -121,17 +121,11 @@ selectPetrinet SelectPetriInstance {
   } =
   let matchingNet = convertToPetrinet activityDiagram
       seeds = unfoldr (Just . next) (mkStdGen seed)
-      wrongNets = takeNonIsomorphic numberOfWrongNets
+      wrongNets = take numberOfWrongNets
+                  $ nubBy checkIsomorphism
                   $ filter (not . checkIsomorphism matchingNet)
                   $ map (convertToPetrinet . modifyAD activityDiagram) seeds
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
-  where
-    takeNonIsomorphic n = f n []
-    f _ found [] = found
-    f n found (x:xs)
-      | length found >= n = found
-      | (not . any (checkIsomorphism x)) found = f n (x:found) xs
-      | otherwise = f n found xs
 
 modifyAD :: UMLActivityDiagram -> Int -> UMLActivityDiagram
 modifyAD diag seed =
