@@ -41,6 +41,7 @@ library:
     - AD_SelectAS
     - AD_EnterAS
     - AD_SelectPetri
+    - AD_Isomorphism
   ghc-options:
     - -Wall
     - -Werror
