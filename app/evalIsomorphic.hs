@@ -25,7 +25,7 @@ main = do
   xs <- getArgs
   case xs of
     pathToJar:pathToFolder:xs' -> do
-      inst <- getRawAlloyInstancesWith Nothing $ adConfigToAlloy "" "" defaultADConfig
+      inst <- getRawAlloyInstancesWith (Just 1000) $ adConfigToAlloy "" "" defaultADConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Instance" ".als"
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
           plantumlstring = map convertToPlantUML ad
