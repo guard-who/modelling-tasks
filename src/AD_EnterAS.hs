@@ -59,9 +59,7 @@ checkEnterASConfig' EnterASConfig {
     objectNodeOnEveryPath,
     minAnswerLength
   }
-  | objectNodeOnEveryPath == Just True && maxObjectNodes adConfig < 1
-    = Just "Setting the parameter 'objectNodeOnEveryPath' to True requires having at least 1 ObjectNode"
-  | objectNodeOnEveryPath == Just True && minObjectNodes adConfig == 0
+  | objectNodeOnEveryPath == Just True && minObjectNodes adConfig < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occuring"
   | minAnswerLength < 0
     = Just "The parameter 'minAnswerLength' should be non-negative"
