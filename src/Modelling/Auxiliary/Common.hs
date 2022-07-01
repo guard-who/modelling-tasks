@@ -1,5 +1,16 @@
 module Modelling.Auxiliary.Common where
 
+import qualified Data.Map                         as M (
+  Map,
+  empty,
+  insertWith,
+  )
+import qualified Data.Set                         as S (
+  Set,
+  singleton,
+  union,
+  )
+
 import Control.Monad.Random (MonadRandom (getRandomR))
 import Data.Char                        (digitToInt, isSpace, toLower, toUpper)
 import Data.Foldable                    (Foldable (foldl'))
@@ -19,6 +30,14 @@ import Text.ParserCombinators.Parsec (
   optional,
   satisfy,
   )
+
+data Object = Object {
+  oName :: String,
+  oIndex :: Int
+  } deriving (Eq, Ord, Show)
+
+toMap :: (Ord a, Ord b) => S.Set (a, b) -> M.Map a (S.Set b)
+toMap = foldr (\(x, y) -> M.insertWith S.union x (S.singleton y)) M.empty
 
 oneOf :: MonadRandom m => [a] -> m a
 oneOf xs = do

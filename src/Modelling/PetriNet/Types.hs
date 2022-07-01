@@ -3,6 +3,7 @@
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-|
 This module provides types to represent Petri nets.
 
@@ -87,6 +88,21 @@ mapChange f (Change tc fc) =
   Change (M.mapKeys f tc) (M.mapKeys f $ M.mapKeys f <$> fc)
 
 {-|
+A 'PetriConflict' describes a conflict between two transitions.
+It occurs when the number of tokens at the source place are not enough to fire
+both transitions (both are having the same source place).
+-}
+data PetriConflict p t = Conflict {
+  -- | The pair of transitions in conflict.
+  conflictTrans :: (t, t),
+  -- | The set of source nodes having not enough tokens to fire both transitions.
+  conflictPlaces :: [p]
+  }
+  deriving (Generic, Read, Show)
+
+makeLensesWith lensRulesL ''PetriConflict
+
+{-|
 A 'PetriConflict' where nodes are labelled by strings.
 -}
 type Conflict = PetriConflict Place Petri.Transition
@@ -104,21 +120,6 @@ instance Foldable PetriConflict' where
 
 instance Traversable PetriConflict' where
   traverse f = fmap PetriConflict' . bitraverse f f . toPetriConflict
-
-{-|
-A 'PetriConflict' describes a conflict between two transitions.
-It occurs when the number of tokens at the source place are not enough to fire
-both transitions (both are having the same source place).
--}
-data PetriConflict p t = Conflict {
-  -- | The pair of transitions in conflict.
-  conflictTrans :: (t, t),
-  -- | The set of source nodes having not enough tokens to fire both transitions.
-  conflictPlaces :: [p]
-  }
-  deriving (Generic, Read, Show)
-
-makeLensesWith lensRulesL ''PetriConflict
 
 instance Bifunctor PetriConflict where
   bimap f g (Conflict ts as) = Conflict (bimap g g ts) (f <$> as)

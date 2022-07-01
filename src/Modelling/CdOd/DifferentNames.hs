@@ -91,9 +91,14 @@ import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg)
 import Data.List                        (permutations, sort)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
 import Data.String.Interpolate          (i)
+import Data.Tuple.Extra                 (snd3)
 import GHC.Generics                     (Generic)
-import Language.Alloy.Call
-  (AlloyInstance, getTriple, lookupSig, objectName, scoped)
+import Language.Alloy.Call (
+  AlloyInstance,
+  getTripleAs,
+  lookupSig,
+  scoped,
+  )
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
@@ -362,10 +367,10 @@ getDifferentNamesTask config = do
     continueWithHead (x:_) f = f x
     usedLabels :: AlloyInstance -> [String]
     usedLabels inst = either error id $ do
+      let ignore = const $ const $ return ()
+          name = const . return
       os    <- lookupSig (scoped "this" "Obj") inst
-      links <- map nameOf . S.toList <$> getTriple "get" os
-      return $ nubOrd links
-    nameOf (_,l,_) = takeWhile (/= '$') $ objectName l
+      map snd3 . S.toList <$> getTripleAs "get" ignore name ignore os
 
 renameInstance
   :: MonadThrow m

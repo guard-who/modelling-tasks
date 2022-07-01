@@ -13,10 +13,9 @@ import Language.Alloy.Call              as Alloy (
   CallAlloyConfig (..),
   defaultCallAlloyConfig,
   getInstancesWith,
-  getSingle,
-  getTriple,
+  getSingleAs,
+  getTripleAs,
   lookupSig,
-  objectName,
   scoped,
   )
 
@@ -64,11 +63,12 @@ alloyInstanceToOd
   -> ExceptT String m ([String], [(Int, Int, String)])
 alloyInstanceToOd i = except $ do
   os    <- lookupSig (scoped "this" "Obj") i
-  objs  <- map objectName . S.toList <$> getSingle "" os
-  links <- map (linkOf objs) . S.toList <$> getTriple "get" os
+  let withDollar x y = return $ x ++ '$' : show y
+  objs  <- S.toList <$> getSingleAs "" withDollar os
+  links <- fmap (linkOf objs) . S.toList <$> getTripleAs "get" withDollar withDollar withDollar os
   return (objs, links)
   where
-    nameOf   = takeWhile (/= '$') . objectName
+    nameOf   = takeWhile (/= '$')
     linkOf objs (x, l, y) =
-      let indexOf z = fromJust $ elemIndex (objectName z) objs
+      let indexOf z = fromJust $ elemIndex (nameOf z) objs
       in (indexOf x, indexOf y, nameOf l)

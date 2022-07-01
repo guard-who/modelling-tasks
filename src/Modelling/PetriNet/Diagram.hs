@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 {-|
@@ -16,6 +17,7 @@ import qualified Data.ByteString.UTF8             as BS (fromString)
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
+import Modelling.Auxiliary.Common       (Object)
 import Modelling.PetriNet.Parser (
   parsePetriLike,
   petriLikeToGr,
@@ -43,10 +45,20 @@ import Data.Maybe
 import Diagrams.Backend.SVG             (B, svgClass, SVG)
 import Diagrams.Path                    (pathPoints)
 import Diagrams.Prelude
-import Graphics.SVGFonts
-  (Spacing (..), TextOpts (..), Mode (..), textSVG_)
+import Graphics.SVGFonts (
+  TextOpts (..),
+#if MIN_VERSION_SVGFonts(1,8,0)
+  fit_height,
+  set_envelope,
+  svgText,
+#else
+  Spacing (..),
+  Mode (..),
+  textSVG_,
+#endif
+  )
 import Graphics.SVGFonts.ReadFont       (PreparedFont, loadFont')
-import Language.Alloy.Call              (AlloyInstance, Object)
+import Language.Alloy.Call              (AlloyInstance)
 import System.Directory                 (doesFileExist)
 
 lin :: IO (PreparedFont Double)
@@ -343,8 +355,15 @@ text'
   -> String
   -- ^ what to write
   -> Diagram B
-text' pfont s =
-  textSVG_ (TextOpts pfont INSIDE_H KERN False s s)
+text' pfont s x = x
+#if MIN_VERSION_SVGFonts(1,8,0)
+  # svgText (def :: TextOpts Double) { textFont = pfont }
+  # fit_height s
+  # set_envelope
+  # lw none
+#else
+  # textSVG_ (TextOpts pfont INSIDE_H KERN False s s)
+#endif
   # fc black
   # lc black
   # lwL 0.4

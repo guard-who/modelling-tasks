@@ -7,16 +7,20 @@ module Modelling.CdOd.Output (
   ) where
 
 import qualified Data.Map               as M (empty, insert, lookup)
-import qualified Data.Set               as S (toList)
 
 import Modelling.Auxiliary.Common       (lowerFirst)
-import Modelling.CdOd.Auxiliary.Util    (emptyArr, underlinedLabel)
+import Modelling.CdOd.Auxiliary.Util (
+  alloyInstanceToOd,
+  emptyArr,
+  underlinedLabel,
+  )
 import Modelling.CdOd.Types
   (AssociationType(..), Connection(..), DiagramEdge, Syntax)
 import Modelling.CdOd.Edges             (shouldBeMarked)
 
 import Control.Monad.Random             (RandT, RandomGen)
 import Control.Monad.Trans              (MonadTrans(lift))
+import Control.Monad.Trans.Except       (runExcept)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
@@ -26,8 +30,7 @@ import Data.List (
 import Data.List.Split                  (splitOn)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
-import Language.Alloy.Call
-  (AlloyInstance, getSingle, getTriple, lookupSig, objectName, scoped)
+import Language.Alloy.Call              (AlloyInstance)
 import System.FilePath                  (dropExtension)
 import System.IO.Unsafe                 (unsafePerformIO)
 import System.Random.Shuffle            (shuffleM)
@@ -112,17 +115,8 @@ drawOdFromInstance
   -> GraphvizOutput
   -> RandT g IO FilePath
 drawOdFromInstance i anonymous =
-  let g = either error id $ do
-        os    <- lookupSig (scoped "this" "Obj") i
-        objs  <- map objectName . S.toList <$> getSingle "" os
-        links <- map (linkOf objs) . S.toList <$> getTriple "get" os
-        return (objs, links)
+  let g = either error id $ runExcept $ alloyInstanceToOd i
   in uncurry drawOdFromNodesAndEdges g $ fromMaybe (length (fst g) `div` 3) anonymous
-  where
-    nameOf   = takeWhile (/= '$') . objectName
-    linkOf objs (x, l, y) =
-      let indexOf z = fromJust $ elemIndex (objectName z) objs
-      in (indexOf x, indexOf y, nameOf l)
 
 drawOdFromRawInstance
   :: RandomGen g

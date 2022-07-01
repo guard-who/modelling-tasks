@@ -17,24 +17,32 @@ import qualified Data.Bimap                       as BM (
   fromList, lookup,
   )
 import qualified Data.Set                         as Set (
-  Set, findMin, foldr, lookupMin, null, size,
+  Set, findMin, foldr, fromList, lookupMin, null, size, toList,
   )
 import qualified Data.Map.Lazy                    as Map (
   empty, findIndex, foldlWithKey, foldrWithKey, insert, lookup,
   )
 
+import Modelling.Auxiliary.Common       (Object (Object, oName, oIndex), toMap)
 import Modelling.PetriNet.Types
 
 import Control.Arrow                    (left, second)
-import Language.Alloy.Call
 import Data.Bimap                       (Bimap)
 import Data.Graph.Inductive.Graph       (mkGraph)
 import Data.Graph.Inductive.PatriciaTree
   (Gr)
-import Data.List                        (stripPrefix)
 import Data.Set                         (Set)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe)
+import Data.Composition                 ((.:))
+import Language.Alloy.Call (
+  AlloyInstance,
+  getDoubleAs,
+  getSingleAs,
+  getTripleAs,
+  lookupSig,
+  scoped,
+  )
 
 {-|
 Given the name of a flow set and a token set the given alloy instance is parsed
@@ -86,17 +94,20 @@ parsePetriLike
 parsePetriLike flowSetName tokenSetName inst = do
   nodes  <- singleSig inst "this" "Nodes" ""
   tkns   <- doubleSig inst "this" "Places" tokenSetName
-  tokens <- relToMap (second $ read . objectName) tkns
+  let tokens = relToMap (second oIndex) tkns
   flow   <- tripleSig inst "this" "Nodes" flowSetName
-  fin    <- relToMap tripleToIn flow
-  fin'   <- relToMap id `mapM` fin
-  fout   <- relToMap tripleToOut flow
-  fout'  <- relToMap id `mapM` fout
+  let fin = relToMap tripleToIn flow
+  let fin' = relToMap id <$> fin
+  let fout = relToMap tripleToOut flow
+  let fout' = relToMap id <$> fout
   return $ PetriLike $
     Set.foldr (\x -> Map.insert x (toNode tokens fin' fout' x)) Map.empty nodes
   where
-    tripleToIn  (x, y, z) = (y, (x, read $ objectName z))
-    tripleToOut (x, y, z) = (x, (y, read $ objectName z))
+    tripleToIn  (x, y, z) = (y, (x, oIndex z))
+    tripleToOut (x, y, z) = (x, (y, oIndex z))
+
+relToMap :: (Ord b, Ord c) => (a -> (b, c)) -> Set a -> Map b (Set c)
+relToMap f = toMap . Set.fromList . map f . Set.toList
 
 {-|
 Transform an 'Object' into a 'String' by replacing the prefix.
@@ -106,15 +117,15 @@ Returns 'Either':
  * or the resulting 'String'
 -}
 simpleRename :: Object -> Either String String
-simpleRename x
-  | Just y <- strip "addedPlaces$"      = Right $ 'a':'S':y
-  | Just y <- strip "addedTransitions$" = Right $ 'a':'T':y
-  | Just y <- strip "givenPlaces$"      = Right $ 'S':y
-  | Just y <- strip "givenTransitions$" = Right $ 'T':y
-  | otherwise
-  = Left $ "simpleRename: Could not rename " ++ show x
+simpleRename x = case oName x of
+  "addedPlaces"      -> Right $ 'a':'S':y
+  "addedTransitions" -> Right $ 'a':'T':y
+  "givenPlaces"      -> Right $ 'S':y
+  "givenTransitions" -> Right $ 'T':y
+  _                  ->
+    Left $ "simpleRename: Could not rename " ++ oName x ++ '$' : y
   where
-    strip pre = stripPrefix pre $ objectName x
+    y = show (oIndex x)
 
 {-|
 Given three maps, and a given key construct a node for that key, containing its
@@ -153,17 +164,17 @@ parseChange :: AlloyInstance -> Either String (PetriChange Object)
 parseChange inst = do
   flow <- tripleSig inst "this" "Nodes" "flowChange"
   tkn  <- doubleSig inst "this" "Places" "tokenChange"
-  tknM   <- relToMap (second $ read . objectName) tkn
+  let tknM = relToMap (second oIndex) tkn
   tknC   <- asSingleton `mapM` tknM
-  flowM  <- relToMap tripleToOut flow
-  flowM' <- relToMap id `mapM` flowM
+  let flowM = relToMap tripleToOut flow
+  let flowM' = relToMap id <$> flowM
   flowC  <- mapM asSingleton `mapM` flowM'
   return $ Change {
     tokenChange = tknC,
     flowChange  = flowC
     }
   where
-    tripleToOut (x, y, z) = (x, (y, read $ objectName z))
+    tripleToOut (x, y, z) = (x, (y, oIndex z))
 
 {-|
 Convert a singleton 'Set' into its single value.
@@ -182,18 +193,20 @@ asSingleton s
 singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
 singleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
-  getSingle rd sig
+  getSingleAs rd (return .: Object) sig
                             
 doubleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set (Object,Object))
 doubleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
-  getDouble rd sig
+  let obj = return .: Object
+  getDoubleAs rd obj obj sig
 
 tripleSig :: AlloyInstance -> String -> String -> String
                -> Either String (Set.Set (Object,Object,Object))
 tripleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
-  getTriple rd sig
+  let obj = return .: Object
+  getTripleAs rd obj obj obj sig
 
 {-|
 Retrieve a simple naming map from a given 'PetriLike'.

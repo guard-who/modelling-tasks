@@ -73,7 +73,8 @@ library
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.2.0.4 && <0.3
+    , call-alloy >=0.3.0.2
+    , composition
     , containers
     , diagrams-graphviz
     , diagrams-lib
@@ -132,7 +133,8 @@ test-suite modelling-tasks-test
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.2.0.4 && <0.3
+    , call-alloy >=0.3.0.2
+    , composition
     , containers
     , diagrams-graphviz
     , diagrams-lib

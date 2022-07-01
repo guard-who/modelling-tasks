@@ -33,7 +33,7 @@ import qualified Data.Map                         as M (
   empty, filter, foldrWithKey, keys, lookup, partition,
   )
 
-import Modelling.Auxiliary.Common       (oneOf)
+import Modelling.Auxiliary.Common       (Object (oName), oneOf)
 import Modelling.Auxiliary.Output       (
   hoveringInformation,
   )
@@ -121,7 +121,7 @@ import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Image.LaTeX.Render               (alterForHTML, imageForFormula, defaultFormulaOptions, defaultEnv, SVG, Formula)
 import Language.Alloy.Call (
-  AlloyInstance, getInstances, objectName,
+  AlloyInstance, getInstances,
   )
 import System.Random.Shuffle            (shuffleM)
 
@@ -533,7 +533,7 @@ checkConfig MathConfig {
 addChange :: AlloyInstance -> Either String (AlloyInstance, Change)
 addChange alloy = do
   change <- parseChange alloy
-  return (alloy, mapChange (takeWhile (/= '$') . objectName) change)
+  return (alloy, mapChange oName change)
 
 petriNetRnd :: BasicConfig -> AdvConfig -> String
 petriNetRnd basicC@BasicConfig{places,transitions} advConfig = [i|module PetriNetRnd

@@ -4,24 +4,47 @@ module Modelling.CdOd.CdAndChanges.Instance (
   fromInstance,
   ) where
 
-import qualified Data.Map                         as M (lookup)
-import qualified Data.Set                         as S (findMin, size, toList)
+import qualified Data.Map                         as M (
+  lookup,
+  )
+import qualified Data.Set                         as S (
+  findMin,
+  size,
+  toList,
+  )
 
+import Modelling.Auxiliary.Common       (Object (Object, oName), toMap)
 import Modelling.CdOd.Types
   (AssociationType (..), Change (..), Connection (..), DiagramEdge)
 
-import Data.List                        (stripPrefix)
+import Data.Composition                 ((.:))
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
 #if __GLASGOW_HASKELL__ >= 808
 import Data.String                      (IsString, fromString)
 #endif
-import Language.Alloy.Call
+import Language.Alloy.Call (
+  AlloyInstance,
+  AlloySig,
+  getDoubleAs,
+  getSingleAs,
+  lookupSig,
+  scoped,
+  )
 
 #if __GLASGOW_HASKELL__ >= 808
 instance IsString a => MonadFail (Either a) where
   fail = Left . fromString
 #endif
+
+objectName :: Object -> String
+objectName (Object n x) = n ++ '$' : show x
+
+newtype NumberedClass = NumberedClass Int
+  deriving (Eq, Ord)
+
+data NumberedAssoc = NumberedAssoc String Int
+  deriving (Eq, Ord)
 
 fromInstance
   :: AlloyInstance
@@ -44,9 +67,9 @@ instanceToNames
   :: AlloyInstance -> Either String ([String], [String])
 instanceToNames insta = do
   c' <- lookupSig (scoped "this" "Class") insta
-  cs <- map objectName . S.toList <$> getSingle "" c'
+  cs <- map objectName . S.toList <$> getSingleAs "" (return .: Object) c'
   a' <- lookupSig (scoped "this" "Assoc") insta
-  as <- map objectName . S.toList <$> getSingle "" a'
+  as <- map objectName . S.toList <$> getSingleAs "" (return .: Object) a'
   return (cs, as)
 
 instanceToChanges
@@ -54,7 +77,7 @@ instanceToChanges
   -> Either String [Change Object]
 instanceToChanges insta = do
   c'      <- lookupSig (scoped "this" "Change") insta
-  cs      <- S.toList <$> getSingle "" c'
+  cs      <- S.toList <$> getSingleAs "" (return .: Object) c'
   cAdd    <- getRelation "add" c'
   cRemove <- getRelation "remove" c'
   return $ map (change cAdd cRemove) cs
@@ -63,7 +86,8 @@ instanceToChanges insta = do
       Change (M.lookup c cAdd) (M.lookup c cRemove)
 
 getRelation :: String -> AlloySig -> Either String (Map Object Object)
-getRelation n i = getDouble n i >>= relToMap id >>= mapM single
+getRelation n i = getDoubleAs n (return .: Object) (return .: Object) i
+  >>= mapM single . toMap
   where
     single x
       | S.size x == 1 = return $ S.findMin x
@@ -95,7 +119,7 @@ instanceToEdges'
   -> Either String [(Object, DiagramEdge)]
 instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
   inh' <- lookupSig (scoped "this" "Inheritance") insta
-  inh  <- S.toList <$> getSingle "" inh'
+  inh  <- S.toList <$> getSingleAs "" (return .: Object) inh'
   inhs <- (\i -> (i,) <$> rel False i Inheritance) `mapM` inh
   coms <- lookupAssocs True Composition "Composition"
   asss <- lookupAssocs False Association "Association"
@@ -107,11 +131,11 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
       Just v  -> Right $ objectName v
     lookupLimit k m = case M.lookup k m of
       Nothing -> Left "Missing limit"
-      Just o -> case objectName o of
-        n | Just _ <- stripPrefix "Star" n -> Right Nothing
-          | Just _ <- stripPrefix "Zero" n -> Right $ Just 0
-          | Just _ <- stripPrefix "One"  n -> Right $ Just 1
-          | Just _ <- stripPrefix "Two"  n -> Right $ Just 2
+      Just o -> case oName o of
+        "Star" -> Right Nothing
+        "Zero" -> Right $ Just 0
+        "One"  -> Right $ Just 1
+        "Two"  -> Right $ Just 2
         l      -> Left $ "Unknown limit " ++ l
     rel flipRel r c = do
       rFrom' <- lookupObj r rFrom
@@ -131,5 +155,5 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
         $ Assoc t (objectName a) l h False
     lookupAssocs flipRel t n = do
       a' <- lookupSig (scoped "this" n) insta
-      a  <- S.toList <$> getSingle "" a'
+      a  <- S.toList <$> getSingleAs "" (return .: Object) a'
       assoc flipRel t `mapM` a

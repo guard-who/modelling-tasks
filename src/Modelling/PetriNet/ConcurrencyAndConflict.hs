@@ -67,7 +67,11 @@ import qualified Data.Set                         as Set (
   toList,
   )
 
-import Modelling.Auxiliary.Common                 (oneOf, upperFirst)
+import Modelling.Auxiliary.Common (
+  Object (Object),
+  oneOf,
+  upperFirst,
+  )
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
@@ -161,6 +165,7 @@ import Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.Bool                        (bool)
+import Data.Composition                 ((.:))
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
@@ -172,7 +177,7 @@ import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
-  AlloyInstance, Object, getSingle, lookupSig, unscoped
+  AlloyInstance, getSingleAs, lookupSig, unscoped
   )
 import System.Random.Shuffle            (shuffleM)
 import Text.Parsec                      (parse)
@@ -918,7 +923,7 @@ parseConcurrency inst = do
 unscopedSingleSig :: AlloyInstance -> String -> String -> Either String (Set.Set Object)
 unscopedSingleSig inst st nd = do
   sig <- lookupSig (unscoped st) inst
-  getSingle nd sig
+  getSingleAs nd (return .: Object) sig
 
 checkFindConcurrencyConfig :: FindConcurrencyConfig -> Maybe String
 checkFindConcurrencyConfig FindConcurrencyConfig {
