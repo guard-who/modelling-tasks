@@ -231,7 +231,7 @@ writeGraph
   -> PetriLike String
   -> LangM' m FilePath
 writeGraph s path index pl = do
-  file' <- lift $ liftIO $ runExceptT $ do
+  file' <- lift $ liftIO $ runExceptT $
     draw $ path ++ "graph" ++ index
   either
     (const $ (>> return "") $ refuse $ translate $ do

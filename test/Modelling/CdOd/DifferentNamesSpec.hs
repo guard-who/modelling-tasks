@@ -90,7 +90,7 @@ spec = do
           origMap = bimap
             (rename (associationNames $ cDiagram inst) as)
             (rename (linkNames $ oDiagram inst) ls)
-            <$> (BM.toList $ fromNameMapping $ mapping inst)
+            <$> BM.toList (fromNameMapping $ mapping inst)
       in (Right 1 ==)
          $ maybe (Left "instance could not be renamed") return mrinst
          >>= \rinst -> differentNamesEvaluation rinst origMap `withLang` English

@@ -642,7 +642,7 @@ renderWith
   -> DrawSettings
   -> LangM' m FilePath
 renderWith path task net config = do
-  f <- lift $ liftIO $ runExceptT $ do
+  f <- lift $ liftIO $ runExceptT $
     cacheNet (path ++ task) id net
       (not $ withPlaceNames config)
       (not $ withTransitionNames config)

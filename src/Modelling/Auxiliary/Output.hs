@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE QuasiQuotes #-}
 -- | This module provides common skeletons for printing tasks
 module Modelling.Auxiliary.Output (
@@ -44,4 +42,3 @@ addPretext = (>>) $
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
-
