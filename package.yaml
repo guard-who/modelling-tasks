@@ -94,10 +94,16 @@ executables:
     main: evalIsomorphic.hs
     source-dirs: app
     dependencies:
-     - ba-athena-schulz
-     - directory
-     - filepath
-
+      - ba-athena-schulz
+      - directory
+      - filepath
+  evalTimeToGenerate:
+    main: evalTimeToGenerate.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
+      - filepath
+      - criterion-measurement
   default:
     main: default.hs
     source-dirs: app
