@@ -13,7 +13,7 @@ import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>))
 
 import AD_Alloy (getRawAlloyInstancesWith)
-import AD_Config (adConfigToAlloy, defaultADConfig)
+import AD_Config (ADConfig(..), adConfigToAlloy, defaultADConfig)
 import AD_Datatype (UMLActivityDiagram)
 import AD_Instance (parseInstance)
 import AD_Isomorphism (isADIsomorphic)
@@ -33,6 +33,15 @@ main = do
       svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
       writeFilesToSubfolder svg pathToFolder "Debug" "Instance" ".svg"
     _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
+
+smallConfig :: ADConfig
+smallConfig = defaultADConfig {maxActions=4, maxObjectNodes=4, maxNamedNodes=6, decisionMergePairs=1}
+
+largeConfig :: ADConfig
+largeConfig = defaultADConfig {minActions=5, maxActions=7, minObjectNodes=5, maxObjectNodes=7, maxNamedNodes=12}
+
+extraLargeConfig :: ADConfig
+extraLargeConfig = defaultADConfig {minActions=6, maxActions=8, minObjectNodes=6, maxObjectNodes=8, maxNamedNodes=14, forkJoinPairs=2}
 
 isomorphismStats :: [UMLActivityDiagram] -> String
 isomorphismStats xs =
