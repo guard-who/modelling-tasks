@@ -46,13 +46,6 @@ library:
     - -Wall
     - -Werror
 executables:
-  parseAndShow:
-    main: parseAndShow.hs
-    source-dirs: app
-    dependencies:
-      - ba-athena-schulz
-      - pretty-simple
-      - graphviz
   matchToPetri:
     main: matchToPetri.hs
     source-dirs: app
