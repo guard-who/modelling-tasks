@@ -93,7 +93,7 @@ findConflictPlacesTask path task = do
     german "Welches Paar von Transitionen steht wegen welcher konfliktauslösenden Stellen unter der Startmarkierung in Konflikt?"
   paragraph $ do
     translate $ do
-      english "Please state your answer by giving a pair of conflicting transitions and the list of all the places being sources of the conflict. "
+      english "Please state your answer by giving a pair of conflicting transitions and the list of all the places that cause the conflict. "
       german "Geben Sie Ihre Antwort durch Eingabe eines Paars von in Konflikt stehenden Transitionen und die Liste aller Stellen, die den Konflikt auslösen, an. "
     translate $ do
       english [i|Stating |]
@@ -113,7 +113,7 @@ und dass die Stellen #{p1} und #{p2} alle gemeinsamen Stellen in den Vorbedingun
 die jeweils nicht ausreichend Marken zum gleichzeitigen Feuern der Transitionen #{t1} und #{t2} haben. |]
     translate $ do
       english [i|The order of transitions within the pair does not matter here.
-The order of places within the lisiting of places being the sources of the conflict is irrelevant as well.|]
+The order of places within the lisiting of places being the causes of the conflict is irrelevant as well.|]
       german [i|Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle.
 Die Reihenfolge der Stellen innerhalb der Auflistung der den Konflikt auslösenden Stellen spielt ebenso keine Rolle.|]
   paragraph hoveringInformation
