@@ -13,7 +13,7 @@ run input output template index = do
   let tokens = lexer input
   let syntax = parser tokens
   time <- getZonedTime
-  let (part1, part2, part3, part4, part5) = transform syntax Nothing False Nothing Nothing index (show time)
+  let (part1, part2, part3, part4, part5) = transform syntax Nothing False Nothing Nothing Nothing Nothing index (show time)
   case output of
     Just file -> do
       when template $ let out = file ++ ".part1" in writeFile out part1 >> putStrLn ("Some output written to " ++ out)

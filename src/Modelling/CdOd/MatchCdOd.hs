@@ -142,9 +142,13 @@ data MatchCdOdInstance = MatchCdOdInstance {
 data MatchCdOdConfig = MatchCdOdConfig {
     classConfig      :: ClassConfig,
     maxLinks         :: Maybe Int,
+    -- | maximum number of links connected to an object in the object diagram
+    maxLinksPerObject :: Maybe Int,
     maxObjects       :: Int,
     maxInstances     :: Maybe Integer,
     minLinks         :: Maybe Int,
+    -- | minimum number of links connected to an object in the object diagram
+    minLinksPerObject :: Maybe Int,
     presenceOfLinkSelfLoops :: Maybe Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
@@ -161,9 +165,11 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
         inheritances = (1, Just 2)
       },
     maxLinks         = Just 16,
+    maxLinksPerObject = Just 4,
     maxObjects       = 4,
     maxInstances     = Nothing,
     minLinks         = Just 10,
+    minLinksPerObject = Nothing,
     presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
     searchSpace      = 10,
@@ -292,15 +298,7 @@ getMatchCdOdTask
   => MatchCdOdConfig
   -> RandT g m MatchCdOdInstance
 getMatchCdOdTask config = do
-  (cds, ods) <- mapRandT liftIO $ getRandomTask
-    (classConfig config)
-    (presenceOfLinkSelfLoops config)
-    (minLinks config)
-    (maxLinks config)
-    (maxObjects config)
-    (searchSpace config)
-    (maxInstances config)
-    (timeout config)
+  (cds, ods) <- mapRandT liftIO $ getRandomTask config
   ods' <- runExceptT (mapM (mapM alloyInstanceToOd) ods)
     >>= either fail return
   let names  = nubOrd $ concat $ classNames <$> cds
@@ -423,58 +421,40 @@ renameInstance inst names' assocs' = do
 
 getRandomTask
   :: RandomGen g
-  => ClassConfig
-  -> Maybe Bool
-  -> Maybe Int
-  -> Maybe Int
-  -> Int
-  -> Int
-  -> Maybe Integer
-  -> Maybe Int
+  => MatchCdOdConfig
   -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
-getRandomTask config selfLoops minLns maxLns maxObs search maxIs to = do
-  (cd1, cd2, cd3, numClasses) <- getRandomCDs config search
-  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops minLns maxLns
+getRandomTask config = do
+  (cd1, cd2, cd3, numClasses) <- getRandomCDs (classConfig config) (searchSpace config)
+  instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
-    Nothing      -> getRandomTask config selfLoops minLns maxLns maxObs search maxIs to
+    Nothing      -> getRandomTask config
     Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
 
 getRandomTask'
   :: RandomGen g
-  => ClassConfig
-  -> Maybe Bool
-  -> Maybe Int
-  -> Maybe Int
-  -> Int
-  -> Int
-  -> Maybe Integer
+  => MatchCdOdConfig
   -> RandT g IO (Map Int Syntax, [([Int], AlloyInstance)])
-getRandomTask' config selfLoops minLns maxLns maxObs search maxIs = do
-  let alloyCode = Changes.transform config defaultProperties
+getRandomTask' config = do
+  let alloyCode = Changes.transform (classConfig config) defaultProperties
   instas <- liftIO $ getInstances (Just 6000) Nothing alloyCode
   when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
-  ods <- getODsFor maxObs maxIs Nothing selfLoops minLns maxLns rinstas
-  maybe (getRandomTask' config selfLoops minLns maxLns maxObs search maxIs) return ods
+  ods <- getODsFor config { timeout = Nothing } rinstas
+  maybe (getRandomTask' config) return ods
 
 getODsFor
   :: RandomGen g
-  => Int
-  -> Maybe Integer
-  -> Maybe Int
-  -> Maybe Bool
-  -> Maybe Int
-  -> Maybe Int
+  => MatchCdOdConfig
   -> [AlloyInstance]
   -> RandT g IO (Maybe (Map Int Syntax, [([Int], AlloyInstance)]))
-getODsFor _      _     _  _         _      _      []       = return Nothing
-getODsFor maxObs maxIs to selfLoops minLns maxLns (cd:cds) = do
+getODsFor _      []       = return Nothing
+getODsFor config (cd:cds) = do
   (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
-  instas <- liftIO $ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops minLns maxLns
+  instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
-    Nothing      -> getODsFor maxObs maxIs to selfLoops minLns maxLns cds
+    Nothing      -> getODsFor config cds
     Just rinstas -> return $ Just (M.fromList [(1, cd1), (2, cd2)], rinstas)
 
 applyChanges
@@ -531,18 +511,13 @@ getRandomCDs config search = do
       | otherwise         = getRandomCDs config search
 
 getODInstances
-  :: Int
-  -> Maybe Integer
-  -> Maybe Int
+  :: MatchCdOdConfig
   -> Syntax
   -> Syntax
   -> Syntax
   -> Int
-  -> Maybe Bool
-  -> Maybe Int
-  -> Maybe Int
   -> IO (Map [Int] [AlloyInstance])
-getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops minLns maxLns = do
+getODInstances config cd1 cd2 cd3 numClasses = do
   -- TODO remove `toOldSyntax`
   let parts1 = getFourParts cd1 "1"
       parts2 = getFourParts cd2 "2"
@@ -565,9 +540,25 @@ getODInstances maxObs maxIs to cd1 cd2 cd3 numClasses selfLoops minLns maxLns = 
                        ([1,2], instances1and2),
                        ([]   , instancesNot1not2)]
   where
-    getFourParts cd nr = case transform (toOldSyntax cd) selfLoops False minLns maxLns nr "" of
+    alloyFor cd nr = transform
+      (toOldSyntax cd)
+      (presenceOfLinkSelfLoops config)
+      False
+      (minLinks config)
+      (maxLinks config)
+      (minLinksPerObject config)
+      (maxLinksPerObject config)
+      nr
+      ""
+    to = timeout config
+    maxIs = maxInstances config
+    getFourParts cd nr = case alloyFor cd nr of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-    runCommand x = createRunCommand selfLoops x numClasses maxObs
+    runCommand x = createRunCommand
+      (presenceOfLinkSelfLoops config)
+      x
+      numClasses
+      (maxObjects config)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
 
 takeRandomInstances

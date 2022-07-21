@@ -17,10 +17,21 @@ transform
   -> Bool
   -> Maybe Int
   -> Maybe Int
+  -> Maybe Int
+  -> Maybe Int
   -> String
   -> String
   -> (String, String, String, String, String)
-transform (classes, associations) hasSelfLoops noIsolationLimitation minLinks maxLinks index time =
+transform
+  (classes, associations)
+  hasSelfLoops
+  noIsolationLimitation
+  minLinks
+  maxLinks
+  minLinksPerObject
+  maxLinksPerObject
+  index
+  time =
   (part1, part2, part3, part4, part5)
   where
     template :: String
@@ -65,7 +76,14 @@ fact LimitLinks {
 }
 |]) [
       ("  #get >= " ++) . show <$> minLinks,
-      ("  #get <= " ++) . show <$> maxLinks]
+      ("  #get <= " ++) . show <$> maxLinks,
+      linksPerObject minLinksPerObject maxLinksPerObject]
+    linksPerObject Nothing Nothing = Nothing
+    linksPerObject mmin mmax = Just $
+      "  all o : Obj | let x = minus[plus[#o.get,#get.o],#o.get.o] |"
+      ++ foldMap ((" x >= " ++) . show) mmin
+      ++ foldMap (const " &&") (mmin >> mmax)
+      ++ foldMap ((" x <= " ++) . show) mmax
     part2 = [i|
 // Concrete names of fields
 #{unlines (associationSigs associations)}

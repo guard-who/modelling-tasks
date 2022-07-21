@@ -24,9 +24,11 @@ main = do
               inheritances = (1, Just 2)
             },
           maxLinks         = Nothing,
+          maxLinksPerObject = Nothing,
           maxObjects       = 4,
           maxInstances     = Nothing,
           minLinks         = Nothing,
+          minLinksPerObject = Nothing,
           presenceOfLinkSelfLoops = Nothing,
           printSolution    = False,
           searchSpace      = 10,

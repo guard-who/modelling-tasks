@@ -119,8 +119,12 @@ data DifferentNamesInstance = DifferentNamesInstance {
 data DifferentNamesConfig = DifferentNamesConfig {
     classConfig      :: ClassConfig,
     maxLinks         :: Maybe Int,
+    -- | maximum number of links connected to an object in the object diagram
+    maxLinksPerObject :: Maybe Int,
     maxObjects       :: Int,
     minLinks         :: Maybe Int,
+    -- | minimum number of links connected to an object in the object diagram
+    minLinksPerObject :: Maybe Int,
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
     onlyAnonymousObjects :: Bool,
@@ -143,8 +147,10 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         inheritances = (1, Just 2)
       },
     maxLinks         = Just 16,
+    maxLinksPerObject = Just 4,
     maxObjects       = 4,
     minLinks         = Just 10,
+    minLinksPerObject = Nothing,
     onlyAnonymousObjects = True,
     presenceOfLinkSelfLoops = Nothing,
     ignoreOneRelationship = Just False,
@@ -356,8 +362,18 @@ getDifferentNamesTask config = do
         lift $ renameInstance inst names' assocs' links'
         else getDifferentNamesTask config
   where
+    alloyFor n cd = transform
+      (toOldSyntax cd)
+      (presenceOfLinkSelfLoops config)
+      False
+      (minLinks config)
+      (maxLinks config)
+      (minLinksPerObject config)
+      (maxLinksPerObject config)
+      (show n)
+      ""
     extractFourParts (n, cd) =
-      case transform (toOldSyntax cd) (presenceOfLinkSelfLoops config) False (minLinks config) (maxLinks config) (show n) "" of
+      case alloyFor n cd of
       (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
