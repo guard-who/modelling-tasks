@@ -74,7 +74,7 @@ jobs:
     - name: Build and test on unix
       run: |
         set -ex
-        stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
+        stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
         set +ex
       env:
         ARGS: ${{ matrix.plan.resolver }}
@@ -83,7 +83,7 @@ jobs:
     - name: Build and test on windows
       shell: powershell
       run: |
-        stack --no-terminal --install-ghc ${env:ARGS} test --stack-yaml=stack-apps.yaml --bench --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
+        stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
       env:
         ARGS: ${{ matrix.plan.resolver }}
       if: contains(matrix.os, 'windows')
