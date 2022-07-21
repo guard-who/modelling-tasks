@@ -86,6 +86,7 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
+import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (permutations, sort)
@@ -111,7 +112,8 @@ data DifferentNamesInstance = DifferentNamesInstance {
     oDiagram :: Od,
     showSolution :: Bool,
     mapping  :: NameMapping,
-    usesAllRelationships :: Maybe Bool
+    -- | whether every relationship has an associated link (in the mapping)
+    usesAllRelationships :: Bool
   } deriving (Eq, Generic, Read, Show)
 
 data DifferentNamesConfig = DifferentNamesConfig {
@@ -123,10 +125,12 @@ data DifferentNamesConfig = DifferentNamesConfig {
     maxInstances     :: Maybe Integer,
     onlyAnonymousObjects :: Bool,
     presenceOfLinkSelfLoops :: Maybe Bool,
+    -- | whether to enforce one relationship not matching to
+    -- any link in the object diagram
+    ignoreOneRelationship :: Maybe Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
-    timeout          :: Maybe Int,
-    useAllRelationships :: Maybe Bool
+    timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
 
 defaultDifferentNamesConfig :: DifferentNamesConfig
@@ -143,12 +147,12 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     minLinks         = Just 10,
     onlyAnonymousObjects = True,
     presenceOfLinkSelfLoops = Nothing,
+    ignoreOneRelationship = Just False,
     printSolution    = False,
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
     searchSpace      = 10,
-    timeout          = Nothing,
-    useAllRelationships = Just True
+    timeout          = Nothing
   }
 
 newtype ShowName = ShowName { showName' :: Name }
@@ -196,7 +200,7 @@ Um anzugeben, dass a im CD zu x im OD und b im CD zu y im OD korrespondieren, sc
   paragraph $ translate $ do
     english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.|]
     german [i|Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert, d.h. alle Links mit dem selben Namen (and auch nur Links mit dem selben Namen!) im OD entsprechen genau dem selben Beziehungsnamen im CD.|]
-  paragraph $ translate $ if fromMaybe False $ usesAllRelationships task
+  paragraph $ translate $ if usesAllRelationships task
     then do
     english [i|Thus, every link name and every relationship name should occur exactly once in your mapping.|]
     german [i|Deshalb sollte jeder Linkname and jeder Beziehungsname genau einmal in Ihrer Zuordnung auftauchen.|]
@@ -288,7 +292,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
     ),
   showSolution = False,
   mapping = toNameMapping $ BM.fromList [("a","y"),("b","z"),("c","x")],
-  usesAllRelationships = Just True
+  usesAllRelationships = True
   }
 
 getDifferentNamesTask
@@ -330,8 +334,9 @@ getDifferentNamesTask config = do
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = fromEdges names $ renameEdges (BM.twist bm) edges'
           bm' = BM.filter (const (`elem` usedLabels od1)) bm
-      if maybe (const True) (\x -> if x then id else not) (useAllRelationships config)
-         $ BM.keysR bm == sort (usedLabels od1)
+          isCompleteMapping = BM.keysR bm == sort (usedLabels od1)
+      if maybe (const True) (bool id not) (ignoreOneRelationship config)
+         isCompleteMapping
         then do
         let (assocs, links) = unzip $ BM.toAscList bm
         names'  <- shuffleM names
@@ -346,7 +351,7 @@ getDifferentNamesTask config = do
               oDiagram  = od1',
               showSolution = printSolution config,
               mapping   = toNameMapping bm',
-              usesAllRelationships = useAllRelationships config
+              usesAllRelationships = isCompleteMapping
               }
         lift $ renameInstance inst names' assocs' links'
         else getDifferentNamesTask config

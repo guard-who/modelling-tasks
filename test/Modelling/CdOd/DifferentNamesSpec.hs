@@ -145,7 +145,7 @@ evaluateDifferentNames cs cs' = flip withLang English $ do
         oDiagram = error "oDiagram is undefined",
         showSolution = True,
         mapping = toNameMapping $ BM.fromList cs,
-        usesAllRelationships = Just True
+        usesAllRelationships = True
         }
       cs'' = bimap Name Name <$> cs'
   differentNamesSyntax i cs''
