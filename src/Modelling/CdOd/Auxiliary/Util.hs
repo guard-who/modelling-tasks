@@ -70,5 +70,5 @@ alloyInstanceToOd i = except $ do
   where
     nameOf   = takeWhile (/= '$')
     linkOf objs (x, l, y) =
-      let indexOf z = fromJust $ elemIndex (nameOf z) objs
+      let indexOf z = fromJust $ elemIndex z objs
       in (indexOf x, indexOf y, nameOf l)
