@@ -125,6 +125,8 @@ data DifferentNamesConfig = DifferentNamesConfig {
     minLinks         :: Maybe Int,
     -- | minimum number of links connected to an object in the object diagram
     minLinksPerObject :: Maybe Int,
+    -- | minimum number of objects in the object diagram
+    minObjects       :: Maybe Int,
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
     onlyAnonymousObjects :: Bool,
@@ -141,16 +143,17 @@ defaultDifferentNamesConfig :: DifferentNamesConfig
 defaultDifferentNamesConfig = DifferentNamesConfig {
     classConfig  = ClassConfig {
         classes      = (4, 4),
-        aggregations = (0, Just 2),
-        associations = (0, Just 2),
-        compositions = (0, Just 1),
-        inheritances = (1, Just 2)
+        aggregations = (1, Just 1),
+        associations = (1, Just 1),
+        compositions = (1, Just 1),
+        inheritances = (1, Just 1)
       },
-    maxLinks         = Just 16,
-    maxLinksPerObject = Just 4,
-    maxObjects       = 4,
-    minLinks         = Just 10,
+    maxLinks         = Just 10,
+    maxLinksPerObject = Just 3,
+    maxObjects       = 6,
+    minLinks         = Just 5,
     minLinksPerObject = Nothing,
+    minObjects       = Just 4,
     onlyAnonymousObjects = True,
     presenceOfLinkSelfLoops = Nothing,
     ignoreOneRelationship = Just False,
@@ -370,6 +373,7 @@ getDifferentNamesTask config = do
       (maxLinks config)
       (minLinksPerObject config)
       (maxLinksPerObject config)
+      (minObjects config)
       (show n)
       ""
     extractFourParts (n, cd) =

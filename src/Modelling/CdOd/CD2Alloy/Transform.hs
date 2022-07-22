@@ -19,6 +19,7 @@ transform
   -> Maybe Int
   -> Maybe Int
   -> Maybe Int
+  -> Maybe Int
   -> String
   -> String
   -> (String, String, String, String, String)
@@ -30,6 +31,7 @@ transform
   maxLinks
   minLinksPerObject
   maxLinksPerObject
+  minObjects
   index
   time =
   (part1, part2, part3, part4, part5)
@@ -75,6 +77,7 @@ fact LimitLinks {
 #{unlines ps}
 }
 |]) [
+      ("  #Obj >= " ++) . show <$> minObjects,
       ("  #get >= " ++) . show <$> minLinks,
       ("  #get <= " ++) . show <$> maxLinks,
       linksPerObject minLinksPerObject maxLinksPerObject]

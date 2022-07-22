@@ -149,6 +149,8 @@ data MatchCdOdConfig = MatchCdOdConfig {
     minLinks         :: Maybe Int,
     -- | minimum number of links connected to an object in the object diagram
     minLinksPerObject :: Maybe Int,
+    -- | minimum number of objects in the object diagram
+    minObjects       :: Maybe Int,
     presenceOfLinkSelfLoops :: Maybe Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
@@ -170,6 +172,7 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
     maxInstances     = Nothing,
     minLinks         = Just 10,
     minLinksPerObject = Nothing,
+    minObjects       = Just 4,
     presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
     searchSpace      = 10,
@@ -548,6 +551,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       (maxLinks config)
       (minLinksPerObject config)
       (maxLinksPerObject config)
+      (minObjects config)
       nr
       ""
     to = timeout config
