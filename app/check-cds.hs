@@ -99,7 +99,7 @@ drawCdAndOdsFor is c dirs cds cmd = do
     mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= liftIO . print)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
-    parts = zipWith (\cd i -> getFour $ transform (toOldSyntax cd) Nothing False Nothing Nothing Nothing Nothing (show i) "") cds [0..]
+    parts = zipWith (\cd i -> getFour $ transform (toOldSyntax cd) Nothing False Nothing Nothing Nothing Nothing Nothing (show i) "") cds [0..]
     getFour (p1, p2, p3, p4, _) = (p1, p2, p3, p4)
     combineParts (p1, p2, p3, p4) =
       p1 ++ p2 ++ p3 ++ p4

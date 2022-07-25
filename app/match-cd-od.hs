@@ -29,6 +29,7 @@ main = do
           maxInstances     = Nothing,
           minLinks         = Nothing,
           minLinksPerObject = Nothing,
+          minObjects       = Just 2,
           presenceOfLinkSelfLoops = Nothing,
           printSolution    = False,
           searchSpace      = 10,
