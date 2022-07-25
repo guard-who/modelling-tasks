@@ -12,20 +12,20 @@ pred selfRelationship [r : Relationship] {
   r.from = r.to
 }
 
-pred sameDirection [r, r' : Relationship] {
-  r.from = r'.from and r.to = r'.to
+pred sameDirection [r, r2 : Relationship] {
+  r.from = r2.from and r.to = r2.to
 }
 
-pred doubleRelationship [r, r' : Relationship] {
-  r != r' and sameDirection [r, r']
+pred doubleRelationship [r, r2 : Relationship] {
+  r != r2 and sameDirection [r, r2]
 }
 
-pred reverseRelationship [r, r' : Relationship] {
-  r != r' and r.to = r'.from and r.from = r'.to
+pred reverseRelationship [r, r2 : Relationship] {
+  r != r2 and r.to = r2.from and r.from = r2.to
 }
 
-pred multipleInheritance [i, i' : Inheritance] {
-  i != i' and i.from = i'.from
+pred multipleInheritance [i, i2 : Inheritance] {
+  i != i2 and i.from = i2.from
 }
 
 fun relationship [restriction : set Relationship] : Class -> Class {
@@ -53,9 +53,9 @@ pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] 
 }
 
 pred markedEdge [a : Assoc, assocs : set Assoc, is : set Inheritance] {
-  some a' : assocs |
-    markedEdgeCriterion [a.from, a.to, a'.from, a'.to, is]
-    or markedEdgeCriterion [a.to, a.from, a'.from, a'.to, is]
+  some a2 : assocs |
+    markedEdgeCriterion [a.from, a.to, a2.from, a2.to, is]
+    or markedEdgeCriterion [a.to, a.from, a2.from, a2.to, is]
 }
 
 pred noMarkedEdges [assocs : set Assoc, is : set Inheritance] {
@@ -63,15 +63,15 @@ pred noMarkedEdges [assocs : set Assoc, is : set Inheritance] {
 }
 
 pred noDoubleRelationships [rs : set Relationship] {
-  no r, r' : rs | doubleRelationship [r, r']
+  no r, r2 : rs | doubleRelationship [r, r2]
 }
 
 pred noReverseRelationships [rs : set Relationship] {
-  no r, r' : rs | reverseRelationship [r, r']
+  no r, r2 : rs | reverseRelationship [r, r2]
 }
 
 pred noMultipleInheritances [is : set Inheritance] {
-  no i, i' : is | multipleInheritance [i, i']
+  no i, i2 : is | multipleInheritance [i, i2]
 }
 
 fact nonEmptyInstancesOnly {
@@ -83,11 +83,11 @@ sig Change {
   remove : lone Relationship
 }
 
-pred sameKind [r, r' : Relationship] {
-  r in Association iff r' in Association
-  r in Aggregation iff r' in Aggregation
-  r in Composition iff r' in Composition
-  r in Inheritance iff r' in Inheritance
+pred sameKind [r, r2 : Relationship] {
+  r in Association iff r2 in Association
+  r in Aggregation iff r2 in Aggregation
+  r in Composition iff r2 in Composition
+  r in Inheritance iff r2 in Inheritance
 }
 
 pred flip [c : Change] {
@@ -114,11 +114,11 @@ pred changedLimit [c : Change] {
   shiftedRange [c.add, c.remove] iff not changedRange [c.add, c.remove]
 }
 
-pred sameRelationship [r, r' : Relationship] {
-  r.from = r'.from
-  sameKind [r, r']
-  sameDirection [r, r']
-  r in Assoc implies sameLimits [r, r']
+pred sameRelationship [r, r2 : Relationship] {
+  r.from = r2.from
+  sameKind [r, r2]
+  sameDirection [r, r2]
+  r in Assoc implies sameLimits [r, r2]
 }
 
 pred change [c : Change, rs : set Relationship] {
@@ -132,9 +132,9 @@ pred change [c : Change, rs : set Relationship] {
 }
 
 fact changesAreUnique {
-  all c, c' : Change | c = c'
-    or c.add != c'.add and not sameRelationship [c.add, c'.add]
-    or c.remove != c'.remove and not sameRelationship [c.remove, c'.remove]
+  all c, c2 : Change | c = c2
+    or c.add != c2.add and not sameRelationship [c.add, c2.add]
+    or c.remove != c2.remove and not sameRelationship [c.remove, c2.remove]
 }
 
 abstract sig Boolean {}
@@ -200,12 +200,12 @@ pred changeOfFirstCD [
   hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
   hasMarkedEdges : lone Boolean] {
-    let Assoc' = Assoc - (Change.add - c.add) - c.remove,
-        Composition' = Composition - (Change.add - c.add) - c.remove,
-        Relationship' = Relationship - (Change.add - c.add) - c.remove,
-        Inheritance' = Inheritance - (Change.add - c.add) - c.remove {
+    let Assoc2 = Assoc - (Change.add - c.add) - c.remove,
+        Composition2 = Composition - (Change.add - c.add) - c.remove,
+        Relationship2 = Relationship - (Change.add - c.add) - c.remove,
+        Inheritance2 = Inheritance - (Change.add - c.add) - c.remove {
       change[c, Relationship - Change.add]
-      classDiagram [Assoc', Composition', Inheritance', Relationship',
+      classDiagram [Assoc2, Composition2, Inheritance2, Relationship2,
         wrongAssocs, wrongCompositions, selfRelationships, selfInheritances,
         hasDoubleRelationships, hasReverseRelationships, hasReverseInheritances,
         hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,

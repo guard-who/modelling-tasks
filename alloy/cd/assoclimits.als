@@ -14,14 +14,14 @@ one sig One extends Limit {}
 one sig Two extends Limit {}
 one sig Star extends Limit {}
 
-pred smallerOrSame [l, l' : Limit] {
+pred smallerOrSame [l, l2 : Limit] {
   not (l = Star)
-  and (l = Two implies (l' = Two or l' = Star))
-  and (l = One implies not l' = Zero)
+  and (l = Two implies (l2 = Two or l2 = Star))
+  and (l = One implies not l2 = Zero)
 }
 
-pred smaller [l, l' : Limit] {
-  not l = l' and smallerOrSame [l, l']
+pred smaller [l, l2 : Limit] {
+  not l = l2 and smallerOrSame [l, l2]
 }
 
 abstract sig Assoc extends Relationship {
@@ -53,39 +53,39 @@ pred validLimitsComposition [a : Assoc] {
   (a.toLower = Zero or a.toLower = One) and a.toUpper = One
 }
 
-pred sameFromLimits [a, a' : Assoc] {
-  a.fromLower = a'.fromLower
-  a.fromUpper = a'.fromUpper
+pred sameFromLimits [a, a2 : Assoc] {
+  a.fromLower = a2.fromLower
+  a.fromUpper = a2.fromUpper
 }
 
-pred sameToLimits [a, a' : Assoc] {
-  a.toLower = a'.toLower
-  a.toUpper = a'.toUpper
+pred sameToLimits [a, a2 : Assoc] {
+  a.toLower = a2.toLower
+  a.toUpper = a2.toUpper
 }
 
-pred sameLimits [a, a' : Assoc] {
-  sameFromLimits [a, a']
-  sameToLimits [a, a']
+pred sameLimits [a, a2 : Assoc] {
+  sameFromLimits [a, a2]
+  sameToLimits [a, a2]
 }
 
-pred increasedFromRange [a, a' : Assoc] {
-  smaller [a'.fromLower, a.fromLower] and a.fromUpper = a'.fromUpper
-  or smaller [a.fromUpper, a'.fromUpper] and a.fromLower = a'.fromLower
-  sameToLimits [a, a']
+pred increasedFromRange [a, a2 : Assoc] {
+  smaller [a2.fromLower, a.fromLower] and a.fromUpper = a2.fromUpper
+  or smaller [a.fromUpper, a2.fromUpper] and a.fromLower = a2.fromLower
+  sameToLimits [a, a2]
 }
 
-pred increasedToRange [a, a' : Assoc] {
-  smaller [a'.toLower, a.toLower] and a.toUpper = a'.toUpper
-  or smaller [a.toUpper, a'.toUpper] and a.toLower = a'.toLower
-  sameFromLimits [a, a']
+pred increasedToRange [a, a2 : Assoc] {
+  smaller [a2.toLower, a.toLower] and a.toUpper = a2.toUpper
+  or smaller [a.toUpper, a2.toUpper] and a.toLower = a2.toLower
+  sameFromLimits [a, a2]
 }
 
-pred increasedRange [a, a' : Assoc] {
-  increasedFromRange [a, a'] iff not increasedToRange [a, a']
+pred increasedRange [a, a2 : Assoc] {
+  increasedFromRange [a, a2] iff not increasedToRange [a, a2]
 }
 
-pred changedRange [a, a' : Assoc] {
-  increasedRange [a, a'] iff not increasedRange [a', a]
+pred changedRange [a, a2 : Assoc] {
+  increasedRange [a, a2] iff not increasedRange [a2, a]
 }
 
 fun shiftBy [l, shift : Limit] : lone Limit {
@@ -96,25 +96,25 @@ fun shiftBy [l, shift : Limit] : lone Limit {
   else none
 }
 
-pred shiftLimits [l1, l1', l2, l2' : Limit] {
+pred shiftLimits [l1, l1b, l2, l2b : Limit] {
   one shift : Limit {
     shift != Zero
     l2 = shiftBy [l1, shift]
-    l2' = shiftBy [l1', shift]
+    l2b = shiftBy [l1b, shift]
   }
 }
 
-pred shiftedRangeUp [a, a' : Assoc] {
-  shiftLimits [a.fromLower, a.fromUpper, a'.fromLower, a'.fromUpper] and sameToLimits [a, a']
-  iff not (shiftLimits [a.toLower, a.toUpper, a'.toLower, a'.toUpper] and sameFromLimits [a, a'])
+pred shiftedRangeUp [a, a2 : Assoc] {
+  shiftLimits [a.fromLower, a.fromUpper, a2.fromLower, a2.fromUpper] and sameToLimits [a, a2]
+  iff not (shiftLimits [a.toLower, a.toUpper, a2.toLower, a2.toUpper] and sameFromLimits [a, a2])
 }
 
-pred shiftedRange [a, a' : Assoc] {
-  shiftedRangeUp [a, a'] iff not shiftedRangeUp [a', a]
+pred shiftedRange [a, a2 : Assoc] {
+  shiftedRangeUp [a, a2] iff not shiftedRangeUp [a2, a]
 }
 
 assert sameLimits {
-  all a, a' : Assoc | sameLimits [a, a'] iff sameFromLimits [a, a'] and sameToLimits [a, a']
+  all a, a2 : Assoc | sameLimits [a, a2] iff sameFromLimits [a, a2] and sameToLimits [a, a2]
 }
 
 assert shiftingLimit {
@@ -122,17 +122,17 @@ assert shiftingLimit {
 }
 
 assert shiftingUp {
-  all l, l' : Limit | l' != Zero and one shiftBy [l, l'] implies smaller [l, shiftBy [l, l']]
+  all l, l2 : Limit | l2 != Zero and one shiftBy [l, l2] implies smaller [l, shiftBy [l, l2]]
 }
 
 assert shiftingEqually {
-  all l, l', l'', l''' : Limit | shiftLimits [l, l', l'', l'''] implies (l = l'' iff l' = l''')
+  all l, l2, l3, l4 : Limit | shiftLimits [l, l2, l3, l4] implies (l = l3 iff l2 = l4)
 }
 
 assert shiftedUpIsValid {
-  all a, a' : Assoc | a != a' and shiftedRangeUp [a, a'] and validLimitsAssoc [a] implies validLimitsAssoc [a']
+  all a, a2 : Assoc | a != a2 and shiftedRangeUp [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
 }
 
 assert increasedRangeIsValid {
-  all a, a' : Assoc | a != a' and increasedRange [a, a'] and validLimitsAssoc [a] implies validLimitsAssoc [a']
+  all a, a2 : Assoc | a != a2 and increasedRange [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
 }

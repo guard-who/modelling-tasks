@@ -55,29 +55,29 @@ classDiagram config props = [i|
 //////////////////////////////////////////////////
 
 pred cd {
-  let Assoc' = Assoc - Change.add,
-      Association' = Association - Change.add,
-      Aggregation' = Aggregation - Change.add,
-      Composition' = Composition - Change.add,
-      Relationship' = Relationship - Change.add,
-      Inheritance' = Inheritance - Change.add {
-    classDiagram [Assoc', Composition', Inheritance', Relationship',
+  let Assoc2 = Assoc - Change.add,
+      Association2 = Association - Change.add,
+      Aggregation2 = Aggregation - Change.add,
+      Composition2 = Composition - Change.add,
+      Relationship2 = Relationship - Change.add,
+      Inheritance2 = Inheritance - Change.add {
+    classDiagram [Assoc2, Composition2, Inheritance2, Relationship2,
       #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
       #{selfInheritances props},
       #{hasDoubleRelationships props}, #{hasReverseRelationships props},
       #{hasReverseInheritances props},
       #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
       #{hasCompositionCycles props}, #{maybeToAlloySet $ hasMarkedEdges props}]
-    #{fst $ associations config} <= \#Association'
-    \#Association' <= #{upper $ associations config}
-    #{fst $ aggregations config} <= \#Aggregation'
-    \#Aggregation' <= #{upper $ aggregations config}
-    #{fst $ compositions config} <= \#Composition'
-    \#Composition' <= #{upper $ compositions config}
-    #{fst $ inheritances config} <= \#Inheritance'
-    \#Inheritance' <= #{upper $ inheritances config}
+    #{fst $ associations config} <= \#Association2
+    \#Association2 <= #{upper $ associations config}
+    #{fst $ aggregations config} <= \#Aggregation2
+    \#Aggregation2 <= #{upper $ aggregations config}
+    #{fst $ compositions config} <= \#Composition2
+    \#Composition2 <= #{upper $ compositions config}
+    #{fst $ inheritances config} <= \#Inheritance2
+    \#Inheritance2 <= #{upper $ inheritances config}
     #{fst $ classes config} <= \#Class
-    3 <= \#Relationship'
+    3 <= \#Relationship2
   }
 }
 |]
@@ -142,18 +142,18 @@ changeLimits :: ClassConfig -> String
 changeLimits config = [i|
 pred changeLimits {
   all c : Change {
-    let Association' = Association - (Change.add - c.add) - c.remove,
-        Composition' = Composition - (Change.add - c.add) - c.remove,
-        Aggregation' = Aggregation - (Change.add - c.add) - c.remove,
-        Inheritance' = Inheritance - (Change.add - c.add) - c.remove {
-      #{fst $ associations config} <= \#Association'
-      \#Association' <= #{upper $ associations config}
-      #{fst $ aggregations config} <= \#Aggregation'
-      \#Aggregation' <= #{upper $ aggregations config}
-      #{fst $ compositions config} <= \#Composition'
-      \#Composition' <= #{upper $ compositions config}
-      #{fst $ inheritances config} <= \#Inheritance'
-      \#Inheritance' <= #{upper $ inheritances config}
+    let Association2 = Association - (Change.add - c.add) - c.remove,
+        Composition2 = Composition - (Change.add - c.add) - c.remove,
+        Aggregation2 = Aggregation - (Change.add - c.add) - c.remove,
+        Inheritance2 = Inheritance - (Change.add - c.add) - c.remove {
+      #{fst $ associations config} <= \#Association2
+      \#Association2 <= #{upper $ associations config}
+      #{fst $ aggregations config} <= \#Aggregation2
+      \#Aggregation2 <= #{upper $ aggregations config}
+      #{fst $ compositions config} <= \#Composition2
+      \#Composition2 <= #{upper $ compositions config}
+      #{fst $ inheritances config} <= \#Inheritance2
+      \#Inheritance2 <= #{upper $ inheritances config}
     }
   }
 }
