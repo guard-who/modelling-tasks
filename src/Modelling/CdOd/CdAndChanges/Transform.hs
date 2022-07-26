@@ -4,12 +4,15 @@
 module Modelling.CdOd.CdAndChanges.Transform (
   transform,
   transformChanges,
+  transformNoChanges,
   ) where
 
 import Modelling.CdOd.Types
-  (ClassConfig (..), RelationshipProperties (..))
+  (ClassConfig (..), RelationshipProperties (..), defaultProperties)
 
+import Data.Bool                        (bool)
 import Data.FileEmbed                   (embedStringFile)
+import Data.Functor                     ((<&>))
 import Data.Maybe                       (fromMaybe)
 import Data.String.Interpolate          (i)
 
@@ -24,6 +27,16 @@ transformWith config properties (cs, predicates, part) =
   ++ classDiagram config properties
   ++ part
   ++ createRunCommand config predicates cs
+
+transformNoChanges :: ClassConfig -> Maybe Bool -> String
+transformNoChanges config withNonTrivialInheritance =
+  transformWith config defaultProperties (0, [], part)
+  where
+    part = (`foldMap` trivialInh) $ \x -> [i|fact {
+  #{x} i : Inheritance | i.to in (Assoc.from + Assoc.to)
+}|]
+    trivialInh = withNonTrivialInheritance
+      <&> bool "no" "all"
 
 transform :: ClassConfig -> RelationshipProperties -> String
 transform config props =

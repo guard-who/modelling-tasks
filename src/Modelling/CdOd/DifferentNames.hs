@@ -139,6 +139,8 @@ data DifferentNamesConfig = DifferentNamesConfig {
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
 
+{-# DEPRECATED searchSpace "because Modelling.Cd.generate' is not used anymore and will be removed soon" #-}
+
 defaultDifferentNamesConfig :: DifferentNamesConfig
 defaultDifferentNamesConfig = DifferentNamesConfig {
     classConfig  = ClassConfig {
@@ -314,7 +316,8 @@ getDifferentNamesTask config = do
     (names, edges') <- generate
       (withNonTrivialInheritance config)
       config'
-      $ searchSpace config
+      (maxInstances config)
+      (timeout config)
     let edges  = reverseAssociation <$> edges'
         cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = extractFourParts cd0

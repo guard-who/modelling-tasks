@@ -12,11 +12,11 @@ spec =
   describe "generate" $ do
     it "generates non trivial inheritance instances" $
       ioProperty $ do
-        c <- generate (Just True) classConfig 10
+        c <- generate (Just True) classConfig (Just 1000) Nothing
         return $ c `shouldSatisfy` uncurry hasAssociationAtOneSuperclass
     it "generates non trivial inheritance instances" $
       ioProperty $ do
-        c <- generate (Just False) classConfig 10
+        c <- generate (Just False) classConfig (Just 1000) Nothing
         return $ c `shouldSatisfy` not . uncurry hasAssociationAtOneSuperclass
 
 

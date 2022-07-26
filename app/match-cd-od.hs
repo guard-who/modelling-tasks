@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wwarn=deprecations #-}
 module Main (main) where
 
 import Common                           ()

@@ -157,6 +157,8 @@ data MatchCdOdConfig = MatchCdOdConfig {
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
 
+{-# DEPRECATED searchSpace "because Modelling.Cd.generate' is not used anymore and will be removed soon" #-}
+
 defaultMatchCdOdConfig :: MatchCdOdConfig
 defaultMatchCdOdConfig = MatchCdOdConfig {
     classConfig  = ClassConfig {
@@ -427,7 +429,7 @@ getRandomTask
   => MatchCdOdConfig
   -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
-  (cd1, cd2, cd3, numClasses) <- getRandomCDs (classConfig config) (searchSpace config)
+  (cd1, cd2, cd3, numClasses) <- getRandomCDs config
   instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
@@ -487,13 +489,17 @@ applyChanges insta = do
             _ -> add c
       in maybe rs (: rs) add'
 
-getRandomCDs :: RandomGen g => ClassConfig -> Int -> RandT g IO (Syntax, Syntax, Syntax, Int)
-getRandomCDs config search = do
-  (names, edges) <- generate Nothing config search
+getRandomCDs :: RandomGen g => MatchCdOdConfig -> RandT g IO (Syntax, Syntax, Syntax, Int)
+getRandomCDs config = do
+  (names, edges) <- generate
+    Nothing
+    (classConfig config)
+    (maxInstances config)
+    (timeout config)
   let cd0 = fromEdges names edges
   -- continueIf (not (anyMarkedEdge cd0)) $ do
   when debug . liftIO . void $ drawCdFromSyntax False True (Just redColor) cd0 "debug-0" Pdf
-  mutations <- shuffleM $ getAllMutationResults config names edges
+  mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
   let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
   continueWithJust medges1 (const True) $ \edges1 -> do
     mutations' <- shuffleM mutations
@@ -511,7 +517,7 @@ getRandomCDs config search = do
   where
     continueWithJust mx p m
       | Just x <- mx, p x = m x
-      | otherwise         = getRandomCDs config search
+      | otherwise         = getRandomCDs config
 
 getODInstances
   :: MatchCdOdConfig
