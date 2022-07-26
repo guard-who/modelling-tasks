@@ -1,5 +1,7 @@
 module uml/cd/assoclimits
 
+open util/ordering[Class] as CO
+
 abstract sig Class {}
 
 abstract sig Relationship {
