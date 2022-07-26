@@ -143,10 +143,10 @@ pred changes {
     m1 = False or m2 = False
     let c1Assocs = Assoc - (Change.add - Assoc <: C1.add) - C1.remove,
         c2Assocs = Assoc - (Change.add - Assoc <: C2.add) - C2.remove |
-      some c1Assocs or some c2Assocs
-    changeOfFirstCD [C1, 0, 0, 0, False, False, False, False, False, m1]
-    changeOfFirstCD [C2, 0, 0, 0, False, False, False, False, False, m2]
-    changeOfFirstCD [C3, 0, 0, 0, False, False, False, False, False, False]
+    some c1Assocs or some c2Assocs
+    changeOfFirstCD [C1, 0, 0, 0, 0, False, False, False, False, False, False, m1]
+    changeOfFirstCD [C2, 0, 0, 0, 0, False, False, False, False, False, False, m2]
+    changeOfFirstCD [C3, 0, 0, 0, 0, False, False, False, False, False, False, False]
   }
 }
 |] ++ changeLimits config

@@ -424,35 +424,38 @@ renameInstance inst names' assocs' = do
     showSolution = showSolution inst
     }
 
+getRandomTask'
+  :: RandomGen g
+  => MatchCdOdConfig
+  -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
+getRandomTask' config = do
+  (cd1, cd2, cd3, numClasses) <- getRandomCDs config
+  instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
+  mrinstas <- takeRandomInstances instas
+  case mrinstas of
+    Nothing      -> getRandomTask' config
+    Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
+
+{-# DEPRECATED getRandomTask' "use getRandomTask instead" #-}
+
 getRandomTask
   :: RandomGen g
   => MatchCdOdConfig
   -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
-  (cd1, cd2, cd3, numClasses) <- getRandomCDs config
-  instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
-  mrinstas <- takeRandomInstances instas
-  case mrinstas of
-    Nothing      -> getRandomTask config
-    Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
-
-getRandomTask'
-  :: RandomGen g
-  => MatchCdOdConfig
-  -> RandT g IO (Map Int Syntax, [([Int], AlloyInstance)])
-getRandomTask' config = do
   let alloyCode = Changes.transform (classConfig config) defaultProperties
-  instas <- liftIO $ getInstances (Just 6000) Nothing alloyCode
+  instas <- liftIO
+    $ getInstances (maxInstances config) (timeout config) alloyCode
   when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
   ods <- getODsFor config { timeout = Nothing } rinstas
-  maybe (getRandomTask' config) return ods
+  maybe (getRandomTask config) return ods
 
 getODsFor
   :: RandomGen g
   => MatchCdOdConfig
   -> [AlloyInstance]
-  -> RandT g IO (Maybe (Map Int Syntax, [([Int], AlloyInstance)]))
+  -> RandT g IO (Maybe (Map Int Syntax, Map Char ([Int], AlloyInstance)))
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
   (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
@@ -460,7 +463,10 @@ getODsFor config (cd:cds) = do
   mrinstas <- takeRandomInstances instas
   case mrinstas of
     Nothing      -> getODsFor config cds
-    Just rinstas -> return $ Just (M.fromList [(1, cd1), (2, cd2)], rinstas)
+    Just rinstas -> return $ Just (
+      M.fromList [(1, cd1), (2, cd2)],
+      M.fromList $ zip ['a' ..] rinstas
+      )
 
 applyChanges
   :: RandomGen g
