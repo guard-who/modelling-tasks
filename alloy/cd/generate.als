@@ -48,8 +48,9 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
 pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
   let subs = ~(relationship [is]) |
     (xFrom != yFrom or xTo != yTo)
-      and (yFrom in xFrom.*subs and (yTo in xTo.*subs or xTo in yTo.*subs)
-        or yTo in xTo.*subs and (yFrom in xFrom.*subs or xFrom in yFrom.*subs))
+      and let first = yFrom in xFrom.subs, second = yTo in xTo.subs |
+        (first and (second or xTo in yTo.subs)
+          or second and xFrom in yFrom.subs)
 }
 
 pred markedEdge [a : Assoc, assocs : set Assoc, is : set Inheritance] {
