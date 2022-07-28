@@ -37,6 +37,7 @@ executable concurrency
       Common
   hs-source-dirs:
       ./
+      common
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex
@@ -62,6 +63,7 @@ executable conflicts
       Common
   hs-source-dirs:
       ./
+      common
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex
@@ -88,6 +90,7 @@ executable different-names
       Common
   hs-source-dirs:
       ./
+      common
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex
@@ -113,6 +116,7 @@ executable match-cd-od
       EvaluateArgs
   hs-source-dirs:
       ./
+      common
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex
@@ -137,6 +141,7 @@ executable matchToMath
       Common
   hs-source-dirs:
       ./
+      common
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex
@@ -163,6 +168,7 @@ executable repair-incorrect
       EvaluateArgs
   hs-source-dirs:
       ./
+      common
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex

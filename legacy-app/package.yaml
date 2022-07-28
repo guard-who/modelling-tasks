@@ -38,6 +38,31 @@ executables:
     other-modules:
       - Modelling.CdOd.Auxiliary.Lexer
       - Modelling.CdOd.Auxiliary.Parser
+  different-names-legacy:
+    main: different-names.hs
+    source-dirs:
+      - .
+      - common
+      - generate
+    dependencies:
+      - MonadRandom
+      - bytestring
+      - call-alloy
+      - containers
+      - diagrams-lib
+      - diagrams-svg
+      - digest
+      - graphviz
+      - modelling-tasks
+      - mtl
+      - output-monad
+      - random-shuffle
+      - transformers
+    other-modules:
+      - Common
+      - EvaluateArgs
+      - Modelling.CdOd.Generate.DifferentNames
+      - Modelling.CdOd.Generate.Generate
   instance2pic:
     main: instance2pic.hs
     source-dirs: .
@@ -47,3 +72,29 @@ executables:
       - containers
       - graphviz
       - modelling-tasks
+  match-cd-od-legacy:
+    main: match-cd-od.hs
+    source-dirs:
+      - .
+      - common
+      - generate
+    dependencies:
+      - MonadRandom
+      - bytestring
+      - call-alloy
+      - containers
+      - diagrams-lib
+      - diagrams-svg
+      - digest
+      - graphviz
+      - modelling-tasks
+      - mtl
+      - output-monad
+      - random-shuffle
+      - transformers
+    other-modules:
+      - Common
+      - EvaluateArgs
+      - Modelling.CdOd.Generate.Generate
+      - Modelling.CdOd.Generate.MatchCdOd
+      - Modelling.CdOd.Generate.Mutation

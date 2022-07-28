@@ -32,7 +32,9 @@ executables:
     other-modules: []
   conflicts:
     main: conflicts.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - common
     dependencies:
       - bytestring
       - digest
@@ -43,7 +45,9 @@ executables:
       - Common
   concurrency:
     main: concurrency.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - common
     dependencies:
       - bytestring
       - digest
@@ -54,7 +58,9 @@ executables:
       - Common
   different-names:
     main: different-names.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - common
     dependencies:
       - bytestring
       - digest
@@ -65,7 +71,9 @@ executables:
       - Common
   match-cd-od:
     main: match-cd-od.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - common
     dependencies:
       - bytestring
       - digest
@@ -76,7 +84,9 @@ executables:
       - EvaluateArgs
   matchToMath:
     main: matchToMath.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - common
     dependencies:
       - bytestring
       - digest
@@ -87,7 +97,9 @@ executables:
       - Common
   repair-incorrect:
     main: repair-incorrect.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - common
     dependencies:
       - bytestring
       - digest
