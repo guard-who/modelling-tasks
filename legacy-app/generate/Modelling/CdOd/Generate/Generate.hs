@@ -1,32 +1,19 @@
 {-# LANGUAGE TupleSections #-}
-module Modelling.CdOd.Generate (
+module Modelling.CdOd.Generate.Generate (
   generate,
-  generate',
   ) where
 
-import qualified Data.Bimap                       as BM (
-  fromList,
-  keysR,
-  )
 
 import Modelling.Auxiliary.Common       (oneOf)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
-import Modelling.CdOd.CdAndChanges.Instance (
-  fromInstance,
-  )
-import Modelling.CdOd.CdAndChanges.Transform (
-  transformNoChanges,
-  )
 import Modelling.CdOd.Edges             (
   checkMultiEdge,
   hasAssociationAtOneSuperclass,
-  renameClasses,
   )
+import Modelling.CdOd.Generate          (nameEdges)
 import Modelling.CdOd.Types
   (AssociationType (..), ClassConfig (..), Connection (..), DiagramEdge)
 
 import Control.Arrow                    (second)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (MonadRandom, getRandomR)
 import Data.List                        (delete, nub)
 import Data.Maybe                       (isNothing)
@@ -34,34 +21,12 @@ import Data.Tuple                       (swap)
 import System.Random.Shuffle            (shuffleM)
 
 generate
-  :: (MonadIO m, MonadRandom m)
-  => Maybe Bool
-  -> ClassConfig
-  -> Maybe Integer
-  -> Maybe Int
-  -> m ([String], [DiagramEdge])
-generate withNonTrivialInheritance config maxInsts to = do
-  let alloyCode = transformNoChanges config withNonTrivialInheritance
-  instas  <- liftIO $ getInstances maxInsts to alloyCode
-  rinstas <- shuffleM instas
-  return $ either error id $ case rinstas of
-    [] -> Left $
-      "it seems to be impossible to generate such a model"
-      ++ "; check your configuration"
-    (rinsta:_) -> do
-      ((cs, _), es, []) <- fromInstance rinsta
-      let cns = BM.fromList $ zip cs $ map pure ['A'..]
-      return (BM.keysR cns, nameEdges $ renameClasses cns es)
-
-{-# DEPRECATED generate' "use generate instead" #-}
-
-generate'
   :: MonadRandom m
   => Maybe Bool
   -> ClassConfig
   -> Int
   -> m ([String], [DiagramEdge])
-generate' withNonTrivialInheritance c searchSpace = do
+generate withNonTrivialInheritance c searchSpace = do
   ncls <- oneOfFirst searchSpace $ toAvailable $ second Just $ classes c
   nins <- oneOfFirst searchSpace $ toAvailable $ inheritances c
   ncos <- oneOfFirst searchSpace $ toAvailable $ compositions c
@@ -81,7 +46,7 @@ generate' withNonTrivialInheritance c searchSpace = do
       if smallerC == c
       then error $ "it seems to be impossible to generate such a model"
            ++ "; check your configuration"
-      else generate' withNonTrivialInheritance smallerC searchSpace
+      else generate withNonTrivialInheritance smallerC searchSpace
     smallerC = shrink c searchSpace
     classNames x = map (:[]) $ take x ['A'..]
     toAvailable :: (Int, Maybe Int) -> [Int]
@@ -106,12 +71,6 @@ generate' withNonTrivialInheritance c searchSpace = do
       | withNonTrivialInheritance == Just False
       , (cla - inh) * (cla - inh - 1) `div` 2 < com + ass + agg = False
       | otherwise                                       = True
-
-nameEdges :: [DiagramEdge] -> [DiagramEdge]
-nameEdges es =
-     [e | e@(_, _, Inheritance) <- es]
-  ++ [(s, e, Assoc k [n] m1 m2 b)
-     | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] es]
 
 data GenerationConfig = GenerationConfig {
   available               :: [(String, String)],

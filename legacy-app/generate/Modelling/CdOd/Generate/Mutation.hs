@@ -1,4 +1,4 @@
-module Modelling.CdOd.Mutation (
+module Modelling.CdOd.Generate.Mutation (
   -- * Types
   Mutation (..), Targets, Target (..), Alteration (..),
   -- * Perform mutation operations

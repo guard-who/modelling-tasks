@@ -13,6 +13,7 @@ module Modelling.CdOd.DifferentNames (
   differentNamesSolution,
   differentNamesSyntax,
   differentNamesTask,
+  getDifferentNamesTask,
   mappingShow,
   newDifferentNamesInstances,
   renameInstance,
@@ -279,7 +280,14 @@ differentNames
   -> ExceptT String m DifferentNamesInstance
 differentNames config segment seed = do
   let g = mkStdGen (segment + 4 * seed)
-  liftIO $ evalRandT (getDifferentNamesTask config) g
+  liftIO $ flip evalRandT g $ do
+    (names, edges) <- generate
+      (withNonTrivialInheritance config)
+      (classConfig config)
+      (maxInstances config)
+      (timeout config)
+    let dnt = getDifferentNamesTask dnt config names edges
+    dnt
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, Assoc Association n lf lt im) =
@@ -308,16 +316,12 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
 
 getDifferentNamesTask
   :: RandomGen g
-  => DifferentNamesConfig
+  => RandT g IO DifferentNamesInstance
+  -> DifferentNamesConfig
+  -> [String]
+  -> [DiagramEdge]
   -> RandT g IO DifferentNamesInstance
-getDifferentNamesTask config = do
-  configs <- withMinimalLabels 3 $ classConfig config
-  continueWithHead configs $ \config' -> do
-    (names, edges') <- generate
-      (withNonTrivialInheritance config)
-      config'
-      (maxInstances config)
-      (timeout config)
+getDifferentNamesTask fhead config names edges' = do
     let edges  = reverseAssociation <$> edges'
         cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = extractFourParts cd0
@@ -366,7 +370,7 @@ getDifferentNamesTask config = do
               usesAllRelationships = isCompleteMapping
               }
         lift $ renameInstance inst names' assocs' links'
-        else getDifferentNamesTask config
+        else fhead
   where
     alloyFor n cd = transform
       (toOldSyntax cd)
@@ -385,13 +389,7 @@ getDifferentNamesTask config = do
     combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
       drawCdFromSyntax True True (Just redColor) cd ("debug-" ++ show n) Pdf
-    continueWithHead
-      :: RandomGen g
-      => [a]
-      -> (a -> RandT g IO DifferentNamesInstance)
-      -> RandT g IO DifferentNamesInstance
-    continueWithHead []    _ =
-      getDifferentNamesTask config
+    continueWithHead []    _ = fhead
     continueWithHead (x:_) f = f x
     usedLabels :: AlloyInstance -> [String]
     usedLabels inst = either error id $ do
@@ -450,29 +448,3 @@ newDifferentNamesInstances inst = do
     [ renameInstance inst ns as ls
     | (ns, as, ls) <- zip3 names' assocs' links'
     ]
-
-withMinimalLabels :: MonadRandom m => Int -> ClassConfig -> m [ClassConfig]
-withMinimalLabels n config
-  | n <= lowerLimit = return [config]
-  | Just u <- upperLimit, n > u = return [config]
-  | otherwise       = shuffleM
-    [ config {
-        aggregations = (aggrs, snd (aggregations config)),
-        associations = (assos, snd (associations config)),
-        compositions = (comps, snd (compositions config))
-      }
-    | aggrs <- range aggregations  0                           n
-    , assos <- range associations  0                          (n - aggrs)
-    , comps <- range compositions (max 0 $ n - aggrs - assos) (n - aggrs - assos)]
-  where
-    upperLimit = (\x y z -> x + y + z)
-      <$> snd (aggregations config)
-      <*> snd (associations config)
-      <*> snd (compositions config)
-    lowerLimit = 0
-      + fst (aggregations config)
-      + fst (associations config)
-      + fst (compositions config)
-    min' l1 Nothing   = l1
-    min' l1 (Just l2) = min l1 l2
-    range f low high  = [low + fst (f config) .. min' high (snd $ f config)]

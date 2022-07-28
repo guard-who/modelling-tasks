@@ -10,8 +10,8 @@ module Modelling.CdOd.MatchCdOd (
   debug,
   defaultMatchCdOdConfig,
   defaultMatchCdOdInstance,
-  getRandomTask',
-  getRandomTask,
+  getMatchCdOdTask,
+  getODInstances,
   matchCdOd,
   matchCdOdEvaluation,
   matchCdOdSolution,
@@ -19,6 +19,7 @@ module Modelling.CdOd.MatchCdOd (
   matchCdOdTask,
   matchingShow,
   newMatchCdOdInstances,
+  takeRandomInstances,
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
@@ -48,20 +49,14 @@ import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   getInstances,
-  redColor,
   )
 import Modelling.CdOd.Edges (
   DiagramEdge,
-  anyMarkedEdge,
-  checkMultiEdge,
   fromEdges,
   renameClasses,
   renameEdges,
   toEdges,
   )
-import Modelling.CdOd.Generate          (generate)
-import Modelling.CdOd.Mutation
-  (Target (..), getAllMutationResults, nonTargets)
 import Modelling.CdOd.Output
   (drawCdFromSyntax, drawOdFromNodesAndEdges, getDirs)
 import Modelling.CdOd.Types (
@@ -84,7 +79,7 @@ import Modelling.CdOd.Types (
   toOldSyntax,
   )
 
-import Control.Monad                    (void, when)
+import Control.Monad                    (when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except             (runExceptT)
 #if __GLASGOW_HASKELL__ < 808
@@ -113,7 +108,7 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.GraphViz                    (GraphvizOutput (Pdf, Svg))
+import Data.GraphViz                    (GraphvizOutput (Svg))
 import Data.List (
   (\\),
   delete,
@@ -123,7 +118,6 @@ import Data.List (
   )
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
-import Data.Set                         (singleton)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
@@ -296,14 +290,16 @@ matchCdOdSolution = M.toList . reverseMapping . fmap fst . instances
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  evalRandT (getMatchCdOdTask config) g
+  evalRandT (getMatchCdOdTask getRandomTask config) g
 
 getMatchCdOdTask
   :: (RandomGen g, MonadIO m, MonadFail m, MonadThrow m)
-  => MatchCdOdConfig
+  => (MatchCdOdConfig
+    -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance)))
+  -> MatchCdOdConfig
   -> RandT g m MatchCdOdInstance
-getMatchCdOdTask config = do
-  (cds, ods) <- mapRandT liftIO $ getRandomTask config
+getMatchCdOdTask f config = do
+  (cds, ods) <- mapRandT liftIO $ f config
   ods' <- runExceptT (mapM (mapM alloyInstanceToOd) ods)
     >>= either fail return
   let names  = nubOrd $ concat $ classNames <$> cds
@@ -424,20 +420,6 @@ renameInstance inst names' assocs' = do
     showSolution = showSolution inst
     }
 
-getRandomTask'
-  :: RandomGen g
-  => MatchCdOdConfig
-  -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
-getRandomTask' config = do
-  (cd1, cd2, cd3, numClasses) <- getRandomCDs config
-  instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
-  mrinstas <- takeRandomInstances instas
-  case mrinstas of
-    Nothing      -> getRandomTask' config
-    Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
-
-{-# DEPRECATED getRandomTask' "use getRandomTask instead" #-}
-
 getRandomTask
   :: RandomGen g
   => MatchCdOdConfig
@@ -494,36 +476,6 @@ applyChanges insta = do
                 Just (from', to', Assoc t' n m1 m2 b)
             _ -> add c
       in maybe rs (: rs) add'
-
-getRandomCDs :: RandomGen g => MatchCdOdConfig -> RandT g IO (Syntax, Syntax, Syntax, Int)
-getRandomCDs config = do
-  (names, edges) <- generate
-    Nothing
-    (classConfig config)
-    (maxInstances config)
-    (timeout config)
-  let cd0 = fromEdges names edges
-  -- continueIf (not (anyMarkedEdge cd0)) $ do
-  when debug . liftIO . void $ drawCdFromSyntax False True (Just redColor) cd0 "debug-0" Pdf
-  mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
-  let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
-  continueWithJust medges1 (const True) $ \edges1 -> do
-    mutations' <- shuffleM mutations
-    let medges2     = getFirstValidSatisfying (const True) names mutations'
-        notOnlyInhs = not . null . nonTargets (singleton TInheritance) . (edges1 ++)
-    continueWithJust medges2 notOnlyInhs $ \edges2 -> do
-      [cd1, cd2] <- shuffleM [fromEdges names edges1, fromEdges names edges2]
-      mutations'' <- shuffleM mutations
-      let medges3 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations''
-      continueWithJust medges3 (const True) $ \edges3 -> do
-        let cd3         = fromEdges names edges3
-        when debug . void . liftIO
-          $ drawCdFromSyntax False True (Just redColor) cd3 "debug-3" Pdf
-        return (cd1, cd2, cd3, length names)
-  where
-    continueWithJust mx p m
-      | Just x <- mx, p x = m x
-      | otherwise         = getRandomCDs config
 
 getODInstances
   :: MatchCdOdConfig
@@ -593,13 +545,3 @@ takeRandomInstances instas = do
       rinstas <- mapM shuffleM instas
       ts:_    <- shuffleM takes
       shuffleM $ concatMap ($ rinstas) ts
-
-getFirstValidSatisfying
-  :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
-getFirstValidSatisfying _ _     []
-  = Nothing
-getFirstValidSatisfying p names (x:xs)
-  | checkMultiEdge x, p (fromEdges names x)
-  = Just x
-  | otherwise
-  = getFirstValidSatisfying p names xs
