@@ -16,7 +16,9 @@ dependencies:
 executables:
   cd2alloy:
     main: cd2alloy.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - parser
     dependencies:
       - array
       - modelling-tasks
@@ -26,7 +28,9 @@ executables:
       - Modelling.CdOd.Auxiliary.Parser
   cd2pic:
     main: cd2pic.hs
-    source-dirs: .
+    source-dirs:
+      - .
+      - parser
     dependencies:
       - array
       - graphviz

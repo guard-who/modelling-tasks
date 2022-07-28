@@ -15,6 +15,7 @@ executable cd2alloy
       Modelling.CdOd.Auxiliary.Parser
   hs-source-dirs:
       ./
+      parser
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex
@@ -33,6 +34,7 @@ executable cd2pic
       Modelling.CdOd.Auxiliary.Parser
   hs-source-dirs:
       ./
+      parser
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
       alex
@@ -47,8 +49,6 @@ executable cd2pic
 executable instance2pic
   main-is: instance2pic.hs
   other-modules:
-      Modelling.CdOd.Auxiliary.Lexer
-      Modelling.CdOd.Auxiliary.Parser
       Paths_modelling_task_legacy_apps
   hs-source-dirs:
       ./
