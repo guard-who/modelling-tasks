@@ -1,8 +1,15 @@
+*.aux
+*.el
 *.dyn_hi
 *.dyn_o
+*.fdb_latexmk
+*.fls
 *.hi
+*.log
 *.o
 *.pdf
+*.ps1
+*.synctex.gz
 *.exe
 *.DS_Store
 .stack-work/
