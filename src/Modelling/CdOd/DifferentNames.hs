@@ -44,7 +44,7 @@ import Modelling.Auxiliary.Output (
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
-import Modelling.CdOd.Generate          (generate)
+import Modelling.CdOd.Generate          (generateCd)
 import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromNodesAndEdges)
 import Modelling.CdOd.Types (
   AssociationType (..),
@@ -57,6 +57,7 @@ import Modelling.CdOd.Types (
   Syntax,
   associationNames,
   classNames,
+  defaultProperties,
   fromNameMapping,
   linkNames,
   renameAssocsInCd,
@@ -281,9 +282,10 @@ differentNames
 differentNames config segment seed = do
   let g = mkStdGen (segment + 4 * seed)
   liftIO $ flip evalRandT g $ do
-    (names, edges) <- generate
+    (names, edges) <- generateCd
       (withNonTrivialInheritance config)
       (classConfig config)
+      defaultProperties
       (maxInstances config)
       (timeout config)
     let dnt = getDifferentNamesTask dnt config names edges
