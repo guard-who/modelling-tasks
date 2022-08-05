@@ -7,8 +7,10 @@ module Modelling.CdOd.CdAndChanges.Transform (
   transformNoChanges,
   ) where
 
-import Modelling.CdOd.Types
-  (ClassConfig (..), RelationshipProperties (..), defaultProperties)
+import Modelling.CdOd.Types (
+  ClassConfig (..),
+  RelationshipProperties (..),
+  )
 
 import Data.Bool                        (bool)
 import Data.FileEmbed                   (embedStringFile)
@@ -28,9 +30,17 @@ transformWith config properties (cs, predicates, part) =
   ++ part
   ++ createRunCommand config predicates cs
 
-transformNoChanges :: ClassConfig -> Maybe Bool -> String
-transformNoChanges config withNonTrivialInheritance =
-  transformWith config defaultProperties (0, [], part)
+{-|
+Create Alloy code for the generation of a single class diagram with the
+given properties.
+-}
+transformNoChanges
+  :: ClassConfig
+  -> RelationshipProperties
+  -> Maybe Bool
+  -> String
+transformNoChanges config properties withNonTrivialInheritance =
+  transformWith config properties (0, [], part)
   where
     part = (`foldMap` trivialInh) $ \x -> [i|fact {
   #{x} i : Inheritance | i.to in (Assoc.from + Assoc.to)
