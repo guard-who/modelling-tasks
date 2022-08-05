@@ -55,7 +55,7 @@ executable different-names-legacy
       Modelling.CdOd.Generate.Generate
   hs-source-dirs:
       ./
-      common
+      ../app/common
       generate
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:
@@ -107,7 +107,7 @@ executable match-cd-od-legacy
       Modelling.CdOd.Generate.Mutation
   hs-source-dirs:
       ./
-      common
+      ../app/common
       generate
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-tools:

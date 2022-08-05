@@ -42,7 +42,7 @@ executables:
     main: different-names.hs
     source-dirs:
       - .
-      - common
+      - ../app/common
       - generate
     dependencies:
       - MonadRandom
@@ -76,7 +76,7 @@ executables:
     main: match-cd-od.hs
     source-dirs:
       - .
-      - common
+      - ../app/common
       - generate
     dependencies:
       - MonadRandom
