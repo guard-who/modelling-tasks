@@ -4,6 +4,7 @@ dependencies:
   - base
   - bytestring
   - call-alloy-fork
+  - call-plantuml
   - containers
   - edit-distance-vector
   - extra
