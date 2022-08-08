@@ -26,6 +26,7 @@ import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 import Data.Bimap                       (Bimap)
 import Data.List                        (partition)
 import Data.Maybe                       (fromJust)
+import Data.Tuple.Extra                 (thd3)
 
 toEdges :: Syntax -> [DiagramEdge]
 toEdges (is, as) =
@@ -78,7 +79,33 @@ inheritanceCycles = cycles isInheritance
     isInheritance _           = False
 
 compositionCycles :: [DiagramEdge] -> [[DiagramEdge]]
-compositionCycles = cycles isComposition
+compositionCycles es = cycles isComposition (flatten es)
+  ++ [c:cs |   (s,  e, cs) <- getPaths isInheritance es
+           , c@(s', e', _) <- filter (isComposition . thd3) es
+           , s' == e && s == e' || s' == s && e' == e]
+  where
+    isInheritance Inheritance = True
+    isInheritance _           = False
+
+flatten :: [DiagramEdge] -> [DiagramEdge]
+flatten es
+  | Just ((s, e), es') <- findInheritance es
+  = flatten $ flattenInheritance s e `concatMap` es'
+  | otherwise
+  = es
+
+findInheritance :: [DiagramEdge] -> Maybe ((String, String), [DiagramEdge])
+findInheritance []                         = Nothing
+findInheritance ((s, e, Inheritance) : es) = Just ((s, e), es)
+findInheritance (e:es)                     = fmap (e:) <$> findInheritance es
+
+flattenInheritance :: String -> String -> DiagramEdge -> [DiagramEdge]
+flattenInheritance s e edge@(s', e', t) = case t of
+  Inheritance | e == s', s /= e' -> [(s, e', Inheritance)]
+              | s == e', e /= s' -> [(s', e, Inheritance)]
+  Assoc {} | e == s' -> [(s, e', t), edge]
+  Assoc {} | e == e' -> [(s', e, t), edge]
+  _ -> [edge]
 
 isComposition :: Connection -> Bool
 isComposition (Assoc Composition _ _ _ _) = True

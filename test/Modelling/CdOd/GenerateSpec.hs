@@ -2,6 +2,7 @@ module Modelling.CdOd.GenerateSpec where
 
 import Modelling.CdOd.Edges (
   anyMarkedEdge,
+  compositionCycles,
   doubleConnections,
   fromEdges,
   hasAssociationAtOneSuperclass,
@@ -68,6 +69,10 @@ spec =
       "anyMarkedEdge"
       (curry $ anyMarkedEdge . uncurry fromEdges)
       defaultProperties { hasMarkedEdges = Just True }
+    generateProperty
+      "hasCompositionCycles"
+      (const $ not . null . compositionCycles)
+      defaultProperties { hasCompositionCycles = True }
 
 generateProperty
   :: String
@@ -85,6 +90,6 @@ classConfig = ClassConfig {
   classes      = (4, 4),
   aggregations = (0, Just 2),
   associations = (0, Just 2),
-  compositions = (0, Just 1),
+  compositions = (0, Just 3),
   inheritances = (1, Just 3)
   }
