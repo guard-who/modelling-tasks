@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module AD_Alloy(
+module Modelling.ActivityDiagram.Alloy(
   getAlloyInstances,
   getAlloyInstancesWith,
   getRawAlloyInstances,

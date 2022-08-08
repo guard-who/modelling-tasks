@@ -1,11 +1,11 @@
-module AD_Instance (
+module Modelling.ActivityDiagram.Instance (
   parseInstance
 ) where
 
 import qualified Data.Map               as M (fromAscList, elems, lookup, fromList)
 import qualified Data.Set               as S (unions, mapMonotonic, fromAscList, toAscList, map, filter, member)
 
-import AD_Datatype (
+import Modelling.ActivityDiagram.Datatype (
   ADConnection(ADConnection),
   ADNode(..),
   UMLActivityDiagram(..),
@@ -28,8 +28,6 @@ import Language.Alloy.Call (
   scoped,
   AlloyInstance,
   )
-
-
 
 newtype ComponentName = ComponentName String
   deriving (Eq, Ord, Read, Show)

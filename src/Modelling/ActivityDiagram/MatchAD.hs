@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module AD_MatchAD (
+module Modelling.ActivityDiagram.MatchAD (
   MatchADInstance(..),
   MatchADConfig(..),
   MatchADSolution(..),
@@ -14,12 +14,12 @@ module AD_MatchAD (
  ) where
 
 
-import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import AD_Datatype (
+import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode(name),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
-import AD_Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.List (sort)

@@ -1,13 +1,13 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module AD_Petrinet (
+module Modelling.ActivityDiagram.Petrinet (
   PetriKey (..),
   convertToPetrinet
 ) where
 
 import qualified Data.Map as M ((!), adjust, filter, mapMaybeWithKey, foldrWithKey, lookup, insert, delete, empty, singleton, keys)
 
-import qualified AD_Datatype as AD (
+import qualified Modelling.ActivityDiagram.Datatype as AD (
   UMLActivityDiagram(..),
   ADNode(..),
   ADConnection(..),

@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module AD_SelectPetri (
+module Modelling.ActivityDiagram.SelectPetri (
   SelectPetriInstance(..),
   SelectPetriConfig(..),
   SelectPetriSolution(..),
@@ -12,11 +12,11 @@ module AD_SelectPetri (
   selectPetriTaskDescription
 ) where
 
-import AD_Alloy (modulePetrinet)
-import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import AD_Datatype (UMLActivityDiagram(..), ADNode(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
-import AD_Isomorphism (isPetriIsomorphic)
-import AD_Petrinet (PetriKey(..), convertToPetrinet)
+import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
+import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
+import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 
 import Modelling.PetriNet.Types (PetriLike(..))
 

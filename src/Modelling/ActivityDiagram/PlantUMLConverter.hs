@@ -1,14 +1,14 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module AD_PlantUMLConverter (
+module Modelling.ActivityDiagram.PlantUMLConverter (
   convertToPlantUML
 ) where
 
 import Data.List
 import Data.String.Interpolate ( i )
 
-import AD_Datatype (
+import Modelling.ActivityDiagram.Datatype (
   ADNode(..),
   UMLActivityDiagram(..),
   getInitialNodes,
@@ -25,7 +25,6 @@ convertNode :: [ADNode] -> UMLActivityDiagram -> String
 convertNode queue diag = convertNode' queue diag []
 
 --Traverse the graph and serialize the nodes along the way to a PlantUML-String
---TODO: Handling fork structures
 convertNode' :: [ADNode] -> UMLActivityDiagram -> [ADNode] -> String
 convertNode' [] _ _ = ""
 convertNode' (current:queue) diag seen =

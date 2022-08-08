@@ -1,12 +1,12 @@
-module AD_Isomorphism (
+module Modelling.ActivityDiagram.Isomorphism (
   isADIsomorphic,
   isPetriIsomorphic
 ) where
 
 import qualified Data.Map as M ((!), keys)
 
-import AD_Datatype (UMLActivityDiagram)
-import AD_Petrinet (convertToPetrinet)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
+import Modelling.ActivityDiagram.Petrinet (convertToPetrinet)
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 import Data.Graph (Graph, graphFromEdges')
 import Data.Graph.Automorphism (isIsomorphic)

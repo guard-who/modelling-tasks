@@ -1,14 +1,14 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module AD_Config (
+module Modelling.ActivityDiagram.Config (
   ADConfig(..),
   defaultADConfig,
   checkADConfig,
   adConfigToAlloy
 ) where
 
-import AD_Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
+import Modelling.ActivityDiagram.Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
 
 import Data.String.Interpolate ( i )
 

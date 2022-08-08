@@ -27,21 +27,21 @@ default-extensions:
 library:
   source-dirs: src
   exposed-modules:
-    - AD_Alloy
-    - AD_Datatype
-    - AD_Instance
-    - AD_PlantUMLConverter
+    - Modelling.ActivityDiagram.Alloy
+    - Modelling.ActivityDiagram.Datatype
+    - Modelling.ActivityDiagram.Instance
+    - Modelling.ActivityDiagram.PlantUMLConverter
     - CallPlantUML
-    - AD_Petrinet
-    - AD_MatchComponents
-    - AD_MatchAD
-    - AD_ActionSequences
-    - AD_Config
-    - AD_Shuffle
-    - AD_SelectAS
-    - AD_EnterAS
-    - AD_SelectPetri
-    - AD_Isomorphism
+    - Modelling.ActivityDiagram.Petrinet
+    - Modelling.ActivityDiagram.MatchPetri
+    - Modelling.ActivityDiagram.MatchAD
+    - Modelling.ActivityDiagram.ActionSequences
+    - Modelling.ActivityDiagram.Config
+    - Modelling.ActivityDiagram.Shuffle
+    - Modelling.ActivityDiagram.SelectAS
+    - Modelling.ActivityDiagram.EnterAS
+    - Modelling.ActivityDiagram.SelectPetri
+    - Modelling.ActivityDiagram.Isomorphism
   ghc-options:
     - -Wall
     - -Werror

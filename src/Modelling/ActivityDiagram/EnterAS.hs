@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module AD_EnterAS (
+module Modelling.ActivityDiagram.EnterAS (
   EnterASInstance(..),
   EnterASConfig(..),
   EnterASSolution(..),
@@ -14,11 +14,11 @@ module AD_EnterAS (
   enterActionSequenceText
 ) where
 
-import AD_ActionSequences (generateActionSequence)
-import AD_Alloy (moduleActionSequencesRules)
-import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import AD_Datatype (UMLActivityDiagram(..))
-import AD_Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.ActionSequences (generateActionSequence)
+import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
+import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
+import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.String.Interpolate ( i )

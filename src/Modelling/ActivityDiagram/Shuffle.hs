@@ -1,20 +1,20 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module AD_Shuffle (
+module Modelling.ActivityDiagram.Shuffle (
   shuffleADLabels, shuffleADNames, shufflePetri
 ) where
 
 import qualified Data.Map as M ((!), fromList, keys)
-import qualified AD_Datatype as AD (ADNode(label))
-import qualified AD_Petrinet as PK (PetriKey(label))
+import qualified Modelling.ActivityDiagram.Datatype as AD (ADNode(label))
+import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
 
-import AD_Datatype (
+import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode (..),
   ADConnection (..),
   isActionNode, isObjectNode)
 
-import AD_Petrinet (PetriKey(..))
+import Modelling.ActivityDiagram.Petrinet (PetriKey(..))
 import Modelling.PetriNet.Types(PetriLike(..), mapPetriLike)
 
 import Data.Map (Map)

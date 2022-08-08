@@ -5,8 +5,8 @@ module Main where
 import System.Environment (getArgs)
 import System.FilePath ((</>))
 
-import AD_Alloy (getRawAlloyInstancesWith)
-import AD_Config (ADConfig(..), adConfigToAlloy, defaultADConfig)
+import Modelling.ActivityDiagram.Alloy (getRawAlloyInstancesWith)
+import Modelling.ActivityDiagram.Config (ADConfig(..), adConfigToAlloy, defaultADConfig)
 import Data.String.Interpolate ( i )
 import Criterion.Measurement (secs, initializeTime, getTime)
 

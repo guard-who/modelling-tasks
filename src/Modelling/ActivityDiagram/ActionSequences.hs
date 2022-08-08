@@ -1,4 +1,4 @@
-module AD_ActionSequences (
+module Modelling.ActivityDiagram.ActionSequences (
   validActionSequence,
   generateActionSequence,
 ) where
@@ -6,13 +6,13 @@ module AD_ActionSequences (
 import qualified Data.Set as S (fromList)
 import qualified Data.Map as M (filter, map, keys, fromList, toList)
 
-import AD_Datatype (
+import Modelling.ActivityDiagram.Datatype (
   ADNode(..),
   UMLActivityDiagram (..),
   isActionNode
   )
 
-import AD_Petrinet (
+import Modelling.ActivityDiagram.Petrinet (
   PetriKey(..),
   convertToPetrinet
   )

@@ -1,4 +1,4 @@
-module AD_Datatype (
+module Modelling.ActivityDiagram.Datatype (
   ADConnection(..),
   ADNode(..),
   UMLActivityDiagram(..),

@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module AD_SelectAS (
+module Modelling.ActivityDiagram.SelectAS (
   SelectASInstance(..),
   SelectASConfig(..),
   SelectASSolution(..),
@@ -16,10 +16,10 @@ module AD_SelectAS (
 
 import qualified Data.Vector as V (fromList)
 
-import AD_ActionSequences (generateActionSequence, validActionSequence)
-import AD_Alloy (moduleActionSequencesRules)
-import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import AD_Datatype (UMLActivityDiagram(..))
+import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
+import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
+import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.List (permutations, sortBy)

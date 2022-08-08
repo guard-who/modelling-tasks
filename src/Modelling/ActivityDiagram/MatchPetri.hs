@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module AD_MatchComponents (
+module Modelling.ActivityDiagram.MatchPetri (
   MatchPetriInstance(..),
   MatchPetriConfig(..),
   defaultMatchPetriConfig,
@@ -14,16 +14,16 @@ module AD_MatchComponents (
 ) where
 
 import qualified Data.Map as M ((!), insert, keys, empty, null, map)
-import qualified AD_Datatype as AD (ADNode(label))
+import qualified Modelling.ActivityDiagram.Datatype as AD (ADNode(label))
 
-import AD_Datatype (
+import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode)
 
-import AD_Petrinet (PetriKey(..), convertToPetrinet)
-import AD_Shuffle (shufflePetri, shuffleADNames)
-import AD_Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import AD_Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
+import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
+import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
