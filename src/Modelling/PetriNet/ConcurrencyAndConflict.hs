@@ -167,12 +167,13 @@ import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
 import Data.Bool                        (bool)
 import Data.Composition                 ((.:))
 import Data.Containers.ListUtils        (nubOrd)
+import Data.Either                      (isLeft)
 import Data.Function                    ((&))
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
 import Data.List                        (partition)
 import Data.List.Extra                  (nubSort)
 import Data.Map                         (Map)
-import Data.Maybe                       (fromJust, isJust, isNothing)
+import Data.Maybe                       (fromJust, isJust)
 import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
@@ -724,33 +725,40 @@ petriNetFindConfl FindConflictConfig {
     basicConfig
     changeConfig
     (Just (conflictConfig, uniqueConflictPlace))
-    $ Just advConfig
+    $ Right advConfig
 
 petriNetPickConfl :: PickConflictConfig -> String
 petriNetPickConfl PickConflictConfig {
   basicConfig,
   changeConfig,
   conflictConfig,
+  prohibitSourceTransitions,
   uniqueConflictPlace
   }
   = petriNetAlloy
     basicConfig
     changeConfig
     (Just (conflictConfig, uniqueConflictPlace))
-    Nothing
+    (Left prohibitSourceTransitions)
 
 petriNetFindConcur :: FindConcurrencyConfig -> String
 petriNetFindConcur FindConcurrencyConfig{
   basicConfig,
   advConfig,
   changeConfig
-  } = petriNetAlloy basicConfig changeConfig Nothing $ Just advConfig
+  } = petriNetAlloy basicConfig changeConfig Nothing $ Right advConfig
 
 petriNetPickConcur :: PickConcurrencyConfig -> String
 petriNetPickConcur PickConcurrencyConfig{
   basicConfig,
-  changeConfig
-  } = petriNetAlloy basicConfig changeConfig Nothing Nothing
+  changeConfig,
+  prohibitSourceTransitions
+  } =
+  petriNetAlloy
+    basicConfig
+    changeConfig
+    Nothing
+    (Left prohibitSourceTransitions)
 
 {-|
 Generate code for PetriNet conflict and concurrency tasks
@@ -760,14 +768,14 @@ petriNetAlloy
   -> ChangeConfig
   -> Maybe (ConflictConfig, Maybe Bool)
   -- ^ Just for conflict task; Nothing for concurrency task
-  -> Maybe AdvConfig
-  -- ^ Just for find task; Nothing for pick task
+  -> Either Bool AdvConfig
+  -- ^ Right for find task; Left for pick task
   -> String
 petriNetAlloy basicC changeC muniquePlace specific
   = [i|module #{moduleName}
 
 #{modulePetriSignature}
-#{maybe sigs (const modulePetriAdditions) specific}
+#{either (const sigs) (const modulePetriAdditions) specific}
 #{moduleHelpers}
 #{modulePetriConcepts}
 #{modulePetriConstraints}
@@ -778,6 +786,7 @@ pred #{predicate}[#{place}#{defaultActivTrans}#{activated} : set Transitions, #{
   #{compBasicConstraints activated basicC}
   #{compChange changeC}
   #{maybe "" (multiplePlaces . snd) muniquePlace}
+  #{sourceTransitionConstraints}
   #{constraints}
   #{compConstraints}
 }
@@ -787,12 +796,17 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   where
     activated        = "activatedTrans"
     activatedDefault = "defaultActivTrans"
-    compConstraints = maybe
-      (defaultConstraints activatedDefault basicC)
+    compConstraints = either
+      (const $ defaultConstraints activatedDefault basicC)
       compAdvConstraints
       specific
     conflict = isJust muniquePlace
     conflictConfig = fst $ fromJust muniquePlace
+    sourceTransitionConstraints
+      | Left True <- specific = [i|
+  no t : givenTransitions | no givenPlaces.flow[t]
+  no t : Transitions | sourceTransitions[t]|]
+      | otherwise = ""
     constraints :: String
     constraints
       | conflict  = [i|
@@ -840,7 +854,7 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
       let ps = common#{upperFirst which}Preconditions[t1, t2] |
         \#ps > 1 and all p : ps | p.#{tokens} >= p.#{flow}[t1] and p.#{tokens} >= p.#{flow}[t2]|]
     defaultActivTrans
-      | isNothing specific = [i|#{activatedDefault} : set givenTransitions,|]
+      | isLeft specific    = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""
     moduleName
       | conflict  = "PetriNetConfl"

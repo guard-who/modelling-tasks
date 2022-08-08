@@ -514,6 +514,7 @@ data PickConflictConfig = PickConflictConfig
   , changeConfig :: ChangeConfig
   , conflictConfig :: ConflictConfig
   , printSolution :: Bool
+  , prohibitSourceTransitions :: Bool
   , uniqueConflictPlace :: Maybe Bool
   , useDifferentGraphLayouts :: Bool
   , alloyConfig  :: AlloyConfig
@@ -525,6 +526,7 @@ defaultPickConflictConfig = PickConflictConfig
   , changeConfig = defaultChangeConfig
   , conflictConfig = defaultConflictConfig
   , printSolution = False
+  , prohibitSourceTransitions = False
   , uniqueConflictPlace = Nothing
   , useDifferentGraphLayouts = False
   , alloyConfig  = defaultAlloyConfig
@@ -551,6 +553,7 @@ data PickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
   , printSolution :: Bool
+  , prohibitSourceTransitions :: Bool
   , useDifferentGraphLayouts :: Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
@@ -560,6 +563,7 @@ defaultPickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
   , changeConfig = defaultChangeConfig
   , printSolution = False
+  , prohibitSourceTransitions = False
   , useDifferentGraphLayouts = False
   , alloyConfig  = defaultAlloyConfig
   }

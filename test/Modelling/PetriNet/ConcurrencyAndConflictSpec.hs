@@ -204,7 +204,8 @@ validPickConcurrencyConfigs
   -> [PickConcurrencyConfig]
 validPickConcurrencyConfigs cs = uncurry PickConcurrencyConfig
   <$> cs
-  ?? False
+  <*> pure False
+  <*> [False, True]
   ?? False
   ?? alloyTestConfig
 
@@ -216,6 +217,7 @@ validPickConflictConfigs cs = do
   PickConflictConfig bc ch
     <$> validConflictConfigs bc
     <*> pure False
+    <*> [False, True]
     <*> [Nothing, Just True, Just False]
     ?? False
     ?? alloyTestConfig
