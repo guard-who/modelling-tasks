@@ -32,7 +32,6 @@ library:
     - Modelling.ActivityDiagram.Datatype
     - Modelling.ActivityDiagram.Instance
     - Modelling.ActivityDiagram.PlantUMLConverter
-    - CallPlantUML
     - Modelling.ActivityDiagram.Petrinet
     - Modelling.ActivityDiagram.MatchPetri
     - Modelling.ActivityDiagram.MatchAD
