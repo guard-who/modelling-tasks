@@ -5,6 +5,7 @@ module Modelling.ActivityDiagram.PlantUMLConverter (
   convertToPlantUML
 ) where
 
+import Data.ByteString (ByteString)
 import Data.List
 import Data.String.Interpolate ( __i )
 
@@ -15,14 +16,13 @@ import Modelling.ActivityDiagram.Datatype (
   adjNodes,
   )
 
-convertToPlantUML :: UMLActivityDiagram -> String
+convertToPlantUML :: UMLActivityDiagram -> ByteString
 convertToPlantUML diag =
     let start = getInitialNodes diag
         body = convertNode start diag
     in
-    [__i|@startuml
-    #{body}
-    @enduml|]
+      [__i|@startuml
+      #{body}@enduml|]
 
 convertNode :: [ADNode] -> UMLActivityDiagram -> String
 convertNode queue diag = convertNode' queue diag []
@@ -75,9 +75,8 @@ handleDecisionOrFork startNode diag@(UMLActivityDiagram _ conns) seen midToken e
       newSeen = seen ++ foldr1 union pathsToEnd ++ [endNode]
       newQueue = filter (`notElem` newSeen) (adjNodes endNode diag)
   in
-  [__i|#{intercalate midToken subStrings}
-  #{endToken}
-  #{convertNode' newQueue diag newSeen}|]
+    [__i|#{intercalate midToken subStrings}#{endToken}
+    #{convertNode' newQueue diag newSeen}|]
 
 
 -- Filter out sublists that are disjunct with all other sublists
@@ -98,9 +97,8 @@ handleRepeat merge diag@(UMLActivityDiagram _ conns) seen =
       newSeen = seen ++ pathToRepeatEnd ++ [repeatEnd]
       newQueue = filter (`notElem` newSeen) (adjNodes repeatEnd diag)
   in
-  [__i|#{subString}
-  repeat while () is ([Y]) not ([X])
-  #{convertNode' newQueue diag newSeen}|]
+    [__i|#{subString}repeat while () is ([Y]) not ([X])
+    #{convertNode' newQueue diag newSeen}|]
 
 
 --Get reachable (yet unhandled) nodes from passed node
