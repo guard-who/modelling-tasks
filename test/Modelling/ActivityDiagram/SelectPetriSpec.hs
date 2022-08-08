@@ -1,10 +1,10 @@
-module AD_SelectPetriSpec where
+module Modelling.ActivityDiagram.SelectPetriSpec where
 
-import AD_SelectPetri (SelectPetriConfig(..), checkSelectPetriConfig, defaultSelectPetriConfig)
+import Modelling.ActivityDiagram.SelectPetri (SelectPetriConfig(..), checkSelectPetriConfig, defaultSelectPetriConfig)
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
-import AD_Config (ADConfig(minActions, forkJoinPairs), defaultADConfig)
+import Modelling.ActivityDiagram.Config (ADConfig(minActions, forkJoinPairs), defaultADConfig)
 
 
 spec :: Spec

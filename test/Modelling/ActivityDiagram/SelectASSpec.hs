@@ -1,18 +1,18 @@
-module AD_EnterASSpec where
+module Modelling.ActivityDiagram.SelectASSpec where
 
-import AD_EnterAS (EnterASConfig(..), checkEnterASConfig, defaultEnterASConfig)
+import Modelling.ActivityDiagram.SelectAS (SelectASConfig(..), checkSelectASConfig, defaultSelectASConfig)
 
-import AD_Config (ADConfig(maxObjectNodes), defaultADConfig)
+import Modelling.ActivityDiagram.Config (ADConfig(maxObjectNodes), defaultADConfig)
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
 
 spec :: Spec
-spec = describe "checkEnterASConfig" $ do
+spec = describe "checkSelectASConfig" $ do
   it "checks if the basic Input is in given boundaries" $
-    checkEnterASConfig defaultEnterASConfig `shouldBe` Nothing
+    checkSelectASConfig defaultSelectASConfig `shouldBe` Nothing
   context "when provided with Input out of the constraints" $
     it "it returns a String with necessary changes" $
-      checkEnterASConfig defaultEnterASConfig {
+      checkSelectASConfig defaultSelectASConfig {
         adConfig=defaultADConfig{maxObjectNodes = 0},
         objectNodeOnEveryPath = Just True
       } `shouldSatisfy` isJust

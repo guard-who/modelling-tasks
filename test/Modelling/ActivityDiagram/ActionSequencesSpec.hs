@@ -1,16 +1,16 @@
-module AD_ActionSequencesSpec where
+module Modelling.ActivityDiagram.ActionSequencesSpec where
 
-import AD_ActionSequences (generateActionSequence, validActionSequence)
+import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 
-import AD_Datatype (
+import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode(..),
   ADConnection(..)
   )
 
-import AD_Alloy (getAlloyInstancesWith, moduleActionSequencesRules)
-import AD_Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
-import AD_Instance (parseInstance)
+import Modelling.ActivityDiagram.Alloy (getAlloyInstancesWith, moduleActionSequencesRules)
+import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
+import Modelling.ActivityDiagram.Instance (parseInstance)
 
 
 import Test.Hspec(Spec, context, describe, it, shouldBe)

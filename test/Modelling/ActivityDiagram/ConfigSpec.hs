@@ -1,6 +1,6 @@
-module AD_ConfigSpec where
+module Modelling.ActivityDiagram.ConfigSpec where
 
-import AD_Config (ADConfig(..), checkADConfig, defaultADConfig)
+import Modelling.ActivityDiagram.Config (ADConfig(..), checkADConfig, defaultADConfig)
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)

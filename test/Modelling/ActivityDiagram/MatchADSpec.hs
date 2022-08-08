@@ -1,8 +1,8 @@
-module AD_MatchADSpec where
+module Modelling.ActivityDiagram.MatchADSpec where
 
-import AD_MatchAD (MatchADConfig(..), checkMatchADConfig, defaultMatchADConfig)
+import Modelling.ActivityDiagram.MatchAD (MatchADConfig(..), checkMatchADConfig, defaultMatchADConfig)
 
-import AD_Config (ADConfig(activityFinalNodes), defaultADConfig)
+import Modelling.ActivityDiagram.Config (ADConfig(activityFinalNodes), defaultADConfig)
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
 

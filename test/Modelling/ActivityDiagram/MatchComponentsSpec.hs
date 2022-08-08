@@ -1,15 +1,15 @@
-module AD_MatchComponentsSpec where
+module Modelling.ActivityDiagram.MatchPetriSpec where
 
-import AD_MatchComponents (MatchPetriConfig(..), checkMatchPetriConfig, defaultMatchPetriConfig, matchPetriAlloy, extractSupportSTs)
+import Modelling.ActivityDiagram.MatchPetri (MatchPetriConfig(..), checkMatchPetriConfig, defaultMatchPetriConfig, matchPetriAlloy, extractSupportSTs)
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
-import AD_Config (ADConfig(minActions, forkJoinPairs, decisionMergePairs, cycles), defaultADConfig)
+import Modelling.ActivityDiagram.Config (ADConfig(minActions, forkJoinPairs, decisionMergePairs, cycles), defaultADConfig)
 
-import AD_Alloy(getAlloyInstancesWith)
-import AD_Instance(parseInstance)
+import Modelling.ActivityDiagram.Alloy(getAlloyInstancesWith)
+import Modelling.ActivityDiagram.Instance(parseInstance)
 
-import AD_Petrinet(convertToPetrinet)
+import Modelling.ActivityDiagram.Petrinet(convertToPetrinet)
 
 spec :: Spec
 spec = do
