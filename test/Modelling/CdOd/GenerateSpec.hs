@@ -29,50 +29,92 @@ spec =
       ioProperty $ do
         c <- generateCd (Just True) classConfig defaultProperties (Just 1000) Nothing
         return $ c `shouldSatisfy` uncurry hasAssociationAtOneSuperclass
-    it "generates non trivial inheritance instances" $
+    it "generates no non trivial inheritance instances" $
       ioProperty $ do
         c <- generateCd (Just False) classConfig defaultProperties (Just 1000) Nothing
         return $ c `shouldSatisfy` not . uncurry hasAssociationAtOneSuperclass
     generateProperty
-      "hasWrongLimits"
+      "wrongLimits (Assoc)"
       (const $ not . null . wrongLimits)
       defaultProperties { wrongAssocs = 1 }
     generateProperty
-      "hasWrongLimits"
+      "wrongLimits (Composition)"
       (const $ not . null . wrongLimits)
       defaultProperties { wrongCompositions = 1 }
     generateProperty
-      "hasSelfEdges"
+      "no wrongLimits"
+      (const $ null . wrongLimits)
+      defaultProperties {
+        wrongAssocs = 0,
+        wrongCompositions = 0
+        }
+    generateProperty
+      "selfEdges (Assoc)"
       (const $ not . null . selfEdges)
       defaultProperties { selfRelationships = 1 }
     generateProperty
-      "hasSelfEdges"
+      "selfEdges (Inheritance)"
       (const $ not . null . selfEdges)
       defaultProperties { selfInheritances = 1 }
     generateProperty
-      "hasDoubleConnections"
+      "no selfEdges"
+      (const $ null . selfEdges)
+      defaultProperties {
+        selfInheritances = 0,
+        selfRelationships = 0
+        }
+    generateProperty
+      "doubleConnections (same direction)"
       (const $ not . null . doubleConnections)
       defaultProperties { hasDoubleRelationships = True }
     generateProperty
-      "hasDoubleConnections"
+      "doubleConnections (reverse direction)"
       (const $ not . null . doubleConnections)
       defaultProperties { hasReverseRelationships = True }
     generateProperty
-      "hasMultipleInheritances"
+      "no doubleConnections"
+      (const $ null . doubleConnections)
+      defaultProperties {
+        hasDoubleRelationships = False,
+        hasReverseInheritances = False,
+        hasReverseRelationships = False
+        }
+    generateProperty
+      "multipleInheritances"
       (const $ not . null . multipleInheritances)
       defaultProperties { hasMultipleInheritances = True }
     generateProperty
-      "hasInheritanceCycles"
+      "no multipleInheritances"
+      (const $ null . multipleInheritances)
+      defaultProperties { hasMultipleInheritances = False }
+    generateProperty
+      "inheritanceCycles"
       (const $ not . null . inheritanceCycles)
       defaultProperties { hasNonTrivialInheritanceCycles = True }
+    generateProperty
+      "no inheritanceCycles"
+      (const $ null . inheritanceCycles)
+      defaultProperties { hasNonTrivialInheritanceCycles = False }
     generateProperty
       "anyMarkedEdge"
       (curry $ anyMarkedEdge . uncurry fromEdges)
       defaultProperties { hasMarkedEdges = Just True }
     generateProperty
-      "hasCompositionCycles"
+      "not anyMarkedEdge"
+      (curry $ not . anyMarkedEdge . uncurry fromEdges)
+      defaultProperties { hasMarkedEdges = Just False }
+    generateProperty
+      "compositionCycles"
       (const $ not . null . compositionCycles)
       defaultProperties { hasCompositionCycles = True }
+    generateProperty
+      "no compositionCycles"
+      (const $ null . compositionCycles)
+      defaultProperties {
+        hasCompositionCycles = False,
+        hasNonTrivialInheritanceCycles = False,
+        hasReverseInheritances = False
+        }
 
 generateProperty
   :: String
@@ -80,7 +122,7 @@ generateProperty
   -> RelationshipProperties
   -> SpecWith ()
 generateProperty property satisfies relProps =
-  it ("abides to property " ++ property) $
+  it ("generates " ++ property) $
     ioProperty $ do
       c <- generateCd Nothing classConfig relProps (Just 1000) Nothing
       return $ c `shouldSatisfy` uncurry satisfies
