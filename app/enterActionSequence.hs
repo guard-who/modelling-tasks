@@ -13,13 +13,13 @@ import Modelling.ActivityDiagram.Alloy (getRawAlloyInstancesWith)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.EnterAS (EnterASInstance(..), defaultEnterASConfig, enterASAlloy, checkEnterASInstance, enterActionSequenceText, enterASTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
-import CallPlantUML(processPlantUMLString)
+import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 main :: IO ()
 main = do
   xs <- getArgs
   case xs of
-    pathToJar:pathToFolder:xs' -> do
+    pathToFolder:xs' -> do
       inst <- getRawAlloyInstancesWith (Just 50) $ enterASAlloy defaultEnterASConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Exercise" ".als"
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
@@ -30,11 +30,11 @@ main = do
           taskDescription = replicate (length enterAS) enterASTaskDescription
           taskSolution = map snd enterAS
       folders <- createExerciseFolders pathToFolder (length enterAS)
-      svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"
-    _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
+    _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id

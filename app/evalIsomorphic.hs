@@ -18,21 +18,21 @@ import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isADIsomorphic)
 import Modelling.ActivityDiagram.PlantUMLConverter (convertToPlantUML)
-import CallPlantUML (processPlantUMLString)
+import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 main :: IO ()
 main = do
   xs <- getArgs
   case xs of
-    pathToJar:pathToFolder:xs' -> do
+    pathToFolder:xs' -> do
       inst <- getRawAlloyInstancesWith (Just 1000) $ adConfigToAlloy "" "" defaultADConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Instance" ".als"
       let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
           plantumlstring = map convertToPlantUML ad
       writeFile (pathToFolder </> "Stats.txt") $ isomorphismStats ad
-      svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToSubfolder svg pathToFolder "Debug" "Instance" ".svg"
-    _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
+    _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 smallConfig :: ADConfig
 smallConfig = defaultADConfig {maxActions=4, maxObjectNodes=4, maxNamedNodes=6, decisionMergePairs=1}

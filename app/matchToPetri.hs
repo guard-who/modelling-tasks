@@ -13,7 +13,7 @@ import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.MatchPetri(matchPetriComponentsText, matchPetriTaskDesciption, defaultMatchPetriConfig, matchPetriAlloy, MatchPetriInstance (..))
 import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
-import CallPlantUML(processPlantUMLString)
+import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 import Modelling.PetriNet.Diagram (cacheNet)
 import Data.GraphViz.Commands (GraphvizCommand(..))
@@ -25,7 +25,7 @@ main :: IO ()
 main = do
   xs <- getArgs
   case xs of
-    pathToJar:pathToFolder:xs' -> do
+    pathToFolder:xs' -> do
       inst <- getRawAlloyInstancesWith (Just 50) $ matchPetriAlloy defaultMatchPetriConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Exercise" ".als"
       folders <- createExerciseFolders pathToFolder (length inst)
@@ -35,12 +35,12 @@ main = do
           petri = map snd3 matchPetri
           taskDescription = replicate (length folders) matchPetriTaskDesciption
           taskSolution = map thd3 matchPetri
-      svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True Dot) $ zip folders petri
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"
-    _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
+    _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id

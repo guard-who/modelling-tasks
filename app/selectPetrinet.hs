@@ -15,7 +15,7 @@ import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
 import Modelling.ActivityDiagram.SelectPetri (SelectPetriInstance(..), SelectPetriSolution(..), defaultSelectPetriConfig, selectPetriAlloy, selectPetrinet, selectPetriTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
-import CallPlantUML(processPlantUMLString)
+import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 import Modelling.PetriNet.Diagram (cacheNet)
 import Control.Monad.Except(runExceptT)
@@ -26,7 +26,7 @@ main :: IO ()
 main = do
   xs <- getArgs
   case xs of
-    pathToJar:pathToFolder:xs' -> do
+    pathToFolder:xs' -> do
       inst <- getRawAlloyInstancesWith (Just 50) $ selectPetriAlloy defaultSelectPetriConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Exercise" ".als"
       folders <- createExerciseFolders pathToFolder (length inst)
@@ -35,11 +35,11 @@ main = do
           plantumlstring = map convertToPlantUML ad
           taskDescription = replicate (length folders) selectPetriTaskDescription
           taskSolution = map selectPetrinet selectPetri
-      svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       mapM_ (uncurry writeSolutionToFolder) $ zip folders taskSolution
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
-    _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
+    _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 
 writeSolutionToFolder :: FilePath -> SelectPetriSolution -> IO ()

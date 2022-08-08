@@ -12,13 +12,13 @@ import Modelling.ActivityDiagram.Alloy (getRawAlloyInstancesWith)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.MatchAD (MatchADInstance(..), defaultMatchADConfig, matchADAlloy, matchADComponentsText, matchADTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
-import CallPlantUML(processPlantUMLString)
+import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 main :: IO ()
 main = do
   xs <- getArgs
   case xs of
-    pathToJar:pathToFolder:xs' -> do
+    pathToFolder:xs' -> do
       inst <- getRawAlloyInstancesWith (Just 50) $ matchADAlloy defaultMatchADConfig
       writeFilesToSubfolder inst pathToFolder "Debug" "Exercise" ".als"
       folders <- createExerciseFolders pathToFolder (length inst)
@@ -27,11 +27,11 @@ main = do
           plantumlstring = map (convertToPlantUML . fst) matchAD
           taskDescription = replicate (length folders) matchADTaskDescription
           taskSolution = map snd matchAD
-      svg <- mapM (`processPlantUMLString` pathToJar) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"
-    _ -> error "usage: two parameters required: FilePath (PlantUML jar) FilePath (Output Folder)"
+    _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
