@@ -6,7 +6,7 @@ module Modelling.ActivityDiagram.PlantUMLConverter (
 ) where
 
 import Data.List
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate ( __i )
 
 import Modelling.ActivityDiagram.Datatype (
   ADNode(..),
@@ -19,27 +19,44 @@ convertToPlantUML :: UMLActivityDiagram -> String
 convertToPlantUML diag =
     let start = getInitialNodes diag
         body = convertNode start diag
-    in "@startuml\n" ++ body ++ "@enduml"
+    in
+    [__i|@startuml
+    #{body}
+    @enduml|]
 
 convertNode :: [ADNode] -> UMLActivityDiagram -> String
 convertNode queue diag = convertNode' queue diag []
 
 --Traverse the graph and serialize the nodes along the way to a PlantUML-String
 convertNode' :: [ADNode] -> UMLActivityDiagram -> [ADNode] -> String
-convertNode' [] _ _ = ""
+convertNode' [] _ _ = [__i||]
 convertNode' (current:queue) diag seen =
   let newQueue = filter (`notElem` seen) (queue ++ adjNodes current diag)
       newSeen = seen ++ [current]
   in case current of
-        ADActionNode {name} -> [i|:#{name};\n|] ++ convertNode' newQueue diag newSeen
-        ADObjectNode {name} -> [i|:#{name}]\n|] ++ convertNode' newQueue diag newSeen
-        ADInitialNode {} -> "start\n" ++ convertNode' newQueue diag newSeen
-        ADActivityFinalNode {} -> "stop\n"
-        ADFlowFinalNode {} -> "end\n"
-        ADMergeNode {} -> "repeat\n" ++ handleRepeat current diag newSeen
-        ADDecisionNode {} -> "if () then ([X])\n" ++ handleDecisionOrFork current diag newSeen "else ([Y])\n" "endif\n"
-        ADForkNode {} -> "fork\n" ++ handleDecisionOrFork current diag newSeen "forkagain\n" "forkend\n"
-        _ -> ""
+        ADActionNode {name} ->
+          [__i|:#{name};
+          #{convertNode' newQueue diag newSeen}|]
+        ADObjectNode {name} ->
+          [__i|:#{name}]
+          #{convertNode' newQueue diag newSeen}|]
+        ADInitialNode {} ->
+          [__i|start
+          #{convertNode' newQueue diag newSeen}|]
+        ADActivityFinalNode {} ->
+          [__i|stop\n|]
+        ADFlowFinalNode {} ->
+          [__i|end\n|]
+        ADMergeNode {} ->
+          [__i|repeat
+          #{handleRepeat current diag newSeen}|]
+        ADDecisionNode {} ->
+          [__i|if () then ([X])
+          #{handleDecisionOrFork current diag newSeen "else ([Y])\n" "endif"}|]
+        ADForkNode {} ->
+          [__i|fork
+          #{handleDecisionOrFork current diag newSeen "forkagain\n" "forkend"}|]
+        _ -> [__i||]
 
 
 --Strategy: Find the corresponding merge/join to the decision/fork: That should be the first node reachable from all decision paths
@@ -57,7 +74,10 @@ handleDecisionOrFork startNode diag@(UMLActivityDiagram _ conns) seen midToken e
       subStrings = map (\xs -> convertNode' [head $ nodes xs] xs seen) subDiags
       newSeen = seen ++ foldr1 union pathsToEnd ++ [endNode]
       newQueue = filter (`notElem` newSeen) (adjNodes endNode diag)
-  in intercalate midToken subStrings ++ endToken ++ convertNode' newQueue diag newSeen
+  in
+  [__i|#{intercalate midToken subStrings}
+  #{endToken}
+  #{convertNode' newQueue diag newSeen}|]
 
 
 -- Filter out sublists that are disjunct with all other sublists
@@ -77,7 +97,10 @@ handleRepeat merge diag@(UMLActivityDiagram _ conns) seen =
       subString = convertNode' (adjNodes merge diag) (UMLActivityDiagram pathToRepeatEnd conns) seen
       newSeen = seen ++ pathToRepeatEnd ++ [repeatEnd]
       newQueue = filter (`notElem` newSeen) (adjNodes repeatEnd diag)
-  in subString ++ "repeat while () is ([Y]) not ([X])\n" ++ convertNode' newQueue diag newSeen
+  in
+  [__i|#{subString}
+  repeat while () is ([Y]) not ([X])
+  #{convertNode' newQueue diag newSeen}|]
 
 
 --Get reachable (yet unhandled) nodes from passed node
