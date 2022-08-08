@@ -378,26 +378,26 @@ findConflictPlacesEvaluation task (conflict, ps) = do
         english "have a conflict"
         german "haben einen Konflikt"
   (ms, res) <- toFindEvaluation what withSol conf conflict
-  recoverFrom $ unless (null causes || res == 0) $ do
-    forM_ ps' $ \x -> assert (x `elem` causes) $ translate $ do
+  recoverFrom $ unless (null inducing || res == 0) $ do
+    forM_ ps' $ \x -> assert (x `elem` inducing) $ translate $ do
       let x' = show $ ShowPlace x
       english $ x' ++ " is reason for the conflict?"
       german $ x' ++ " ist auslösende Stelle für den Konflikt?"
-    assert (ps' == causes) $ translate $ do
+    assert (ps' == inducing) $ translate $ do
       english "The given solution is correct and complete?"
       german "Die angegebene Lösung ist korrekt und vollständig?"
-  let result = min res $ (base - len causes + len correct - len wrong') % base
+  let result = min res $ (base - len inducing + len correct - len wrong') % base
   printSolutionAndAssert (fixSolution <$> ms) result
   where
     assert = continueOrAbort withSol
     conf = findConflictSolution task
-    causes = conflictPlaces (toFind task)
+    inducing = conflictPlaces (toFind task)
     fixSolution
-      | null causes = id
-      | otherwise    = const $ show $ conflictPlacesShow (conf, causes)
+      | null inducing = id
+      | otherwise    = const $ show $ conflictPlacesShow (conf, inducing)
     withSol = showSolution (task :: FindInstance Conflict)
     ps' = nubSort ps
-    (correct, wrong') = partition (`elem` causes) ps
+    (correct, wrong') = partition (`elem` inducing) ps
     base = fromIntegral $ 2 + numberOfPlaces task
     len = fromIntegral . length
 
