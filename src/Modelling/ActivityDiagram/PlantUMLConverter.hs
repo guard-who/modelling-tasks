@@ -20,9 +20,8 @@ convertToPlantUML :: UMLActivityDiagram -> ByteString
 convertToPlantUML diag =
     let start = getInitialNodes diag
         body = convertNode start diag
-    in
-      [__i|@startuml
-      #{body}@enduml|]
+        document = "@startuml\n" ++ body ++ "@enduml"
+    in [__i|#{document}|]
 
 convertNode :: [ADNode] -> UMLActivityDiagram -> String
 convertNode queue diag = convertNode' queue diag []
