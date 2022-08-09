@@ -3,7 +3,7 @@ extra-source-files: []
 dependencies:
   - base
   - bytestring
-  - call-alloy-fork
+  - call-alloy
   - call-plantuml
   - containers
   - edit-distance-vector
