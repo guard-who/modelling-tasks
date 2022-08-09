@@ -138,6 +138,7 @@ data RelationshipProperties = RelationshipProperties {
     hasMultipleInheritances :: Bool,
     hasNonTrivialInheritanceCycles :: Bool,
     hasCompositionCycles    :: Bool,
+    hasCompositionsPreventingParts :: Bool,
     hasMarkedEdges          :: Maybe Bool
   } deriving (Generic, Read, Show)
 
@@ -153,6 +154,7 @@ defaultProperties = RelationshipProperties {
     hasMultipleInheritances = False,
     hasNonTrivialInheritanceCycles = False,
     hasCompositionCycles    = False,
+    hasCompositionsPreventingParts = False,
     hasMarkedEdges          = Nothing
   }
 

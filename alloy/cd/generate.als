@@ -45,6 +45,20 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
   no c : Class | c in c.^(*inheritance.composition).*~inheritance
 }
 
+pred isPartOfMultipleCompositions [c : Class, is : set Inheritance, cs : set Composition] {
+  let subs = *~(relationship [is]) |
+    some x : cs, y : cs - x {
+      c in x.from.subs
+      c in y.from.subs
+      x.toLower = One
+      y.toLower = One
+    }
+}
+
+pred noCompositionsPreventParts [is : set Inheritance, cs : set Composition] {
+  no c : Class | isPartOfMultipleCompositions [c, is, cs]
+}
+
 pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
   let subs = *~(relationship [is]) |
     (xFrom != yFrom or xTo != yTo)
@@ -156,6 +170,7 @@ pred classDiagram [
   hasMultipleInheritances : one Boolean,
   hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
+  hasCompositionsPreventingParts : one Boolean,
   hasMarkedEdges : lone Boolean] {
   #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
   #{ a : assocs | not validFromLimitsAssoc [a] iff validToLimitsAssoc [a]} = wrongAssocs
@@ -183,6 +198,9 @@ pred classDiagram [
   hasCompositionCycles = True
     implies not noCompositionCycles [inheritances, compositions]
     else noCompositionCycles [inheritances, compositions]
+  hasCompositionsPreventingParts = True
+     implies not noCompositionsPreventParts [inheritances, compositions]
+     else noCompositionsPreventParts [inheritances, compositions]
   hasMarkedEdges = True
     implies not noMarkedEdges[assocs, inheritances]
     else hasMarkedEdges = False implies noMarkedEdges[assocs, inheritances]
@@ -200,6 +218,7 @@ pred changeOfFirstCD [
   hasMultipleInheritances : one Boolean,
   hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
+  hasCompositionsPreventingParts : one Boolean,
   hasMarkedEdges : lone Boolean] {
     let Assoc2 = Assoc - (Change.add - c.add) - c.remove,
         Composition2 = Composition - (Change.add - c.add) - c.remove,
@@ -210,6 +229,6 @@ pred changeOfFirstCD [
         wrongAssocs, wrongCompositions, selfRelationships, selfInheritances,
         hasDoubleRelationships, hasReverseRelationships, hasReverseInheritances,
         hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,
-        hasMarkedEdges]
+        hasCompositionsPreventingParts, hasMarkedEdges]
   }
 }
