@@ -16,7 +16,7 @@ import Test.Hspec(Spec, context, describe, it, shouldBe)
 
 spec :: Spec
 spec =
-  describe "convertToPetrinet" $ do
+  describe "convertToPetrinet" $
     context "on a list of generated diagrams" $ do
       let spec = adConfigToAlloy "" "" defaultADConfig
       it "generates a petrinet with ascending labels" $ do
