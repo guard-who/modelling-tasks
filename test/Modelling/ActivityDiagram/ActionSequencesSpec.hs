@@ -8,10 +8,10 @@ import Modelling.ActivityDiagram.Datatype (
   ADConnection(..)
   )
 
-import Modelling.ActivityDiagram.Alloy (getAlloyInstancesWith, moduleActionSequencesRules)
+import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
 import Modelling.ActivityDiagram.Instance (parseInstance)
-
+import Language.Alloy.Call (getInstances)
 
 import Test.Hspec(Spec, context, describe, it, shouldBe)
 
@@ -49,7 +49,7 @@ spec =
     context "on a list of generated diagrams" $
       it "is consistent with the function generateActionSequence" $ do
         let spec = adConfigToAlloy modules preds defaultADConfig{minActions=5, maxActions=8, minObjectNodes=0, maxObjectNodes=1}
-        inst <- getAlloyInstancesWith (Just 50) spec
+        inst <- getInstances (Just 50) spec
         let ad = map (failWith id .parseInstance "this" "this") inst
         all p ad `shouldBe` (True::Bool)
       where

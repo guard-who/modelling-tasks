@@ -6,10 +6,10 @@ import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
 import Modelling.ActivityDiagram.Config (ADConfig(minActions, forkJoinPairs, decisionMergePairs, cycles), defaultADConfig)
 
-import Modelling.ActivityDiagram.Alloy(getAlloyInstancesWith)
 import Modelling.ActivityDiagram.Instance(parseInstance)
-
 import Modelling.ActivityDiagram.Petrinet(convertToPetrinet)
+
+import Language.Alloy.Call (getInstances)
 
 spec :: Spec
 spec = do
@@ -25,13 +25,13 @@ spec = do
     context "when supportSTAbsent is set to Just False" $
       it "it returns an Alloy Specification from which only diagrams which contain support STs are generated" $ do
         let spec = matchPetriAlloy defaultMatchPetriConfig {supportSTAbsent = Just False}
-        inst <- getAlloyInstancesWith (Just 50) spec
+        inst <- getInstances (Just 50) spec
         let ad = map (failWith id . parseInstance "this" "this") inst
         all (hasSupportSTs . convertToPetrinet) ad `shouldBe` (True::Bool)
     context "when supportSTAbsent is set to Just True" $
       it "it returns an Alloy Specification from which only diagrams which contain no support STs are generated" $ do
         let spec = matchPetriAlloy defaultMatchPetriConfig {adConfig=defaultADConfig{cycles=0, decisionMergePairs=1}, supportSTAbsent=Just True}
-        inst <- getAlloyInstancesWith (Just 50) spec
+        inst <- getInstances (Just 50) spec
         let ad = map (failWith id .parseInstance "this" "this") inst
         any (hasSupportSTs . convertToPetrinet) ad `shouldBe` (False::Bool)
   where hasSupportSTs = not . null . extractSupportSTs
