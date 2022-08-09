@@ -6,7 +6,7 @@ module Modelling.ActivityDiagram.Petrinet (
   convertToPetrinet
 ) where
 
-import qualified Data.Map as M ((!), adjust, filter, mapMaybeWithKey, foldrWithKey, lookup, insert, delete, empty, singleton, keys)
+import qualified Data.Map as M ((!), adjust, filter, fromList, mapMaybeWithKey, foldrWithKey, lookup, insert, delete, empty, singleton, keys)
 
 import qualified Modelling.ActivityDiagram.Datatype as AD (
   UMLActivityDiagram(..),
@@ -17,7 +17,7 @@ import qualified Modelling.ActivityDiagram.Datatype as AD (
 import Modelling.PetriNet.Types (
   Node(..),
   PetriLike(..),
-  isPlaceNode, isTransitionNode
+  isPlaceNode, isTransitionNode, mapPetriLike
   )
 
 import Data.Map (Map)
@@ -44,7 +44,21 @@ convertToPetrinet diag =
       st_petri = foldr insertNode mt_petri (AD.nodes diag)
       st_edges_petri = foldr insertEdge st_petri (AD.connections diag)
       st_support_petri = foldr addSupportST st_edges_petri (M.keys $ allNodes st_edges_petri)
-  in removeFinalPlaces st_support_petri
+  in relabelPetri $ removeFinalPlaces st_support_petri
+
+-- Relabels petrinet nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
+relabelPetri ::  PetriLike PetriKey -> PetriLike PetriKey
+relabelPetri petri =
+  let labels = map label $ M.keys $ allNodes petri
+      relabeling = M.fromList $ zip labels [1..(length labels)]
+  in mapPetriLike (updatePetriKey relabeling) petri
+
+updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
+updatePetriKey relabeling key =
+  case key of
+    NormalST {label, nodeType} -> NormalST {label=relabel label, nodeType=nodeType}
+    SupportST {label} -> SupportST {label=relabel label}
+  where relabel n = relabeling M.! n
 
 removeFinalPlaces :: PetriLike PetriKey -> PetriLike PetriKey
 removeFinalPlaces petri = foldr removeIfFinal petri (M.keys $ allNodes petri)
