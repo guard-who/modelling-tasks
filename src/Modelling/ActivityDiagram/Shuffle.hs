@@ -76,6 +76,6 @@ shufflePetri seed petri =
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
 updatePetriKey relabeling key =
   case key of
-    NormalST {label} -> NormalST {label=relabel label}
+    NormalST {label, nodeType} -> NormalST {label=relabel label, nodeType=nodeType}
     SupportST {label} -> SupportST {label=relabel label}
   where relabel n = relabeling M.! n
