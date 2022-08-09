@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -67,13 +68,17 @@ import Modelling.CdOd.Types (
 import Control.Monad                    (forM_, void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
+  LangM' (LangM),
+  LangM,
   Language (English, German),
   OutputMonad (..),
   Rated,
-  LangM,
+  english,
   enumerate,
+  german,
   multipleChoice,
   singleChoiceSyntax,
+  translate,
   )
 import Control.Monad.Random
   (RandT, RandomGen, StdGen, evalRandT, getRandomR, getStdGen, mkStdGen)
@@ -90,6 +95,69 @@ import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
 debug = False
+
+phraseChangeDE :: Bool -> Bool -> Change DiagramEdge -> String
+phraseChangeDE byName withDir c = case (add c, remove c) of
+  (Nothing, Nothing) -> "verändere nichts"
+  (Just a,  Nothing) -> "ergänze " ++ trailingComma (phraseRelationDE False withDir a)
+  (Nothing, Just e)  -> "entferne " ++ phraseRelationDE byName withDir e
+  (Just a,  Just e)  ->
+    "ersetze " ++ trailingComma (phraseRelationDE byName withDir e)
+    ++ " durch " ++ phraseRelationDE False withDir a
+  where
+    trailingComma xs
+      | ',' `elem` xs = xs ++ ","
+      | otherwise     = xs
+
+phraseRelationDE :: Bool -> Bool -> DiagramEdge -> String
+phraseRelationDE _ _ (from, to, Inheritance) =
+  "eine Vererbung, bei der " ++ from ++ " von " ++ to ++ " erbt"
+phraseRelationDE True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
+  Association -> "Assoziation "
+  Aggregation -> "Aggregation "
+  Composition -> "Komposition "
+phraseRelationDE _ False (from, to, Assoc Association _ l h _)
+  | from == to = [i|eine Selbst-Assoziation #{selfParticipates}|]
+  | otherwise  = "eine Assoziation" ++ participations l from h to
+  where
+    selfParticipates :: String
+    selfParticipates =
+      [i|für #{from}, wobei es an einem Ende #{phraseLimitDE l} genau einmal und am anderen Ende #{phraseLimitDE h} beteiligt ist|]
+phraseRelationDE _ _ (from, to, Assoc t _ l h _)
+  | from == to = case t of
+      Association -> [i|eine Selbst-Assoziation #{selfParticipates}|]
+      Aggregation -> [i|eine Selbst-Aggregation #{selfParticipatesPartWhole}|]
+      Composition -> [i|eine Selbst-Komposition #{selfParticipatesPartWhole}|]
+  | otherwise = (++ participationsDE l from h to) $ case t of
+    Association -> "eine Assoziation von " ++ from ++ " nach " ++ to
+    Aggregation -> "eine Beziehung, die " ++ from
+      ++ " eine Aggregation aus " ++ to ++ "s macht"
+    Composition -> "eine Beziehung, die " ++ from
+      ++ " eine Komposition aus " ++ to ++ "s macht"
+  where
+    selfParticipates :: String
+    selfParticipates =
+      [i|für #{from}, wobei es am Anfang #{phraseLimitDE l} und am Ende #{phraseLimitDE h} beteiligt ist|]
+    selfParticipatesPartWhole :: String
+    selfParticipatesPartWhole =
+      [i|für #{from}, wobei es #{phraseLimitDE l} als Teil and #{phraseLimitDE h} als Ganzes beteiligt ist|]
+
+participationsDE
+  :: (Int, Maybe Int)
+  -> String
+  -> (Int, Maybe Int)
+  -> String
+  -> String
+participationsDE l from h to =
+  [i|, wobei #{from} #{phraseLimitDE l} und #{to} #{phraseLimitDE h} beteiligt ist|]
+
+phraseLimitDE :: (Int, Maybe Int) -> String
+phraseLimitDE (0, Just 0)  = "gar nicht"
+phraseLimitDE (1, Just 1)  = "genau einmal"
+phraseLimitDE (2, Just 2)  = "genau zweimal"
+phraseLimitDE (-1, Just n) = "*.." ++ show n ++ "-mal"
+phraseLimitDE (m, Nothing) = show m ++ "..*-mal"
+phraseLimitDE (m, Just n)  = show m ++ ".." ++ show n ++ "-mal"
 
 phraseChange :: Bool -> Bool -> Change DiagramEdge -> String
 phraseChange byName withDir c = case (add c, remove c) of
@@ -216,18 +284,28 @@ repairCdTask path task = do
     Nothing
     (classDiagram task)
     path Svg
-  paragraph $ text
-    "Consider the following class diagram, which unfortunately is invalid."
+  paragraph $ translate $ do
+    english "Consider the following class diagram, which unfortunately is invalid."
+    german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist."
   image cd
-  paragraph $ text
-    [i|Which of the following changes would repair the class diagram?|]
-  enumerate show (phraseChange (withNames task) (withDirections task) . snd) $ changes task
-  paragraph $ text
-    [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
+  paragraph $ translate $ do
+    english [i|Which of the following changes would repair the class diagram?|]
+    german [i|Welche der folgenden Änderungen würde das Klassendiagramm reparieren?|]
+  phrase <- LangM $ \case
+    English -> return phraseChange
+    German -> return phraseChangeDE
+  enumerate show (phrase (withNames task) (withDirections task) . snd) (changes task)
+  paragraph $ translate $ do
+    english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
+    german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen Ihrer Meinung nach jeweils in einem gültigen Klassendiagramm resultieren. |]
   paragraph $ do
-    text [i|Answer by giving a comma separated list of all valid options, e.g. |]
+    translate $ do
+      english [i|Answer by giving a comma separated list of all valid options, e.g. |]
+      german [i|Antworten Sie durch Angabe einer durch Komma separierten Liste aller gültigen Optionen. Zum Beispiel |]
     code "[1, 2]"
-    text [i| would indicate that options 1 and 2 each repair the given class diagram.|]
+    translate $ do
+      english [i| would indicate that options 1 and 2 each repair the given class diagram.|]
+      german [i| als Angabe würde bedeuten, dass die Optionen 1 und 2 jeweils das gegebene Klassendiagramm reparieren würden.|]
   paragraph simplifiedInformation
   paragraph hoveringInformation
 
