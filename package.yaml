@@ -97,11 +97,6 @@ executables:
       - ba-athena-schulz
       - filepath
       - criterion-measurement
-  default:
-    main: default.hs
-    source-dirs: app
-    dependencies:
-      - ba-athena-schulz
 tests:
   ba-athena-schulz-test:
     main: Spec.hs
