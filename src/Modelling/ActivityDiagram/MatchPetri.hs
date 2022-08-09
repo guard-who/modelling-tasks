@@ -15,8 +15,8 @@ module Modelling.ActivityDiagram.MatchPetri (
 
 import qualified Data.Map as M ((!), insert, keys, empty, null, map)
 
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
-import Modelling.ActivityDiagram.Petrinet (PetriKey(..), ADNodeType (..), convertToPetrinet)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram, isActionNode, isObjectNode, isDecisionNode, isMergeNode, isJoinNode, isInitialNode, isForkNode)
+import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
@@ -106,13 +106,13 @@ matchPetriAlloy MatchPetriConfig {
 
 mapTypesToLabels :: PetriLike PetriKey -> Map String [Int]
 mapTypesToLabels petri =
-  let actionLabels = extractLabels ADActionNode
-      objectLabels = extractLabels ADObjectNode
-      decisionLabels = extractLabels ADDecisionNode
-      mergeLabels = extractLabels ADMergeNode
-      forkLabels = extractLabels ADForkNode
-      joinLabels = extractLabels ADJoinNode
-      initialLabels = extractLabels ADInitialNode
+  let actionLabels = extractLabels isActionNode
+      objectLabels = extractLabels isObjectNode
+      decisionLabels = extractLabels isDecisionNode
+      mergeLabels = extractLabels isMergeNode
+      forkLabels = extractLabels isForkNode
+      joinLabels = extractLabels isJoinNode
+      initialLabels = extractLabels isInitialNode
   in M.insert "ActionNodes" actionLabels $
      M.insert "ObjectNodes" objectLabels $
      M.insert "DecisionNodes" decisionLabels $
@@ -122,9 +122,9 @@ mapTypesToLabels petri =
      M.insert "InitialNodes" initialLabels
      M.empty
   where
-    extractLabels t =
+    extractLabels fn =
       map label $
-      filter (\k -> nodeType k == t) $
+      filter (fn . sourceNode)  $
       filter (not . isSupportST) $
       M.keys $ allNodes petri
 

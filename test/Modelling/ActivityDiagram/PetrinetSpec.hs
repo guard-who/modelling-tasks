@@ -2,7 +2,7 @@ module Modelling.ActivityDiagram.PetrinetSpec where
 
 import qualified Data.Map as M (keys)
 
-import Modelling.ActivityDiagram.Petrinet (PetriKey (..), ADNodeType(..), convertToPetrinet)
+import Modelling.ActivityDiagram.Petrinet (PetriKey (..), convertToPetrinet)
 
 import Modelling.ActivityDiagram.Alloy (getAlloyInstancesWith, moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
