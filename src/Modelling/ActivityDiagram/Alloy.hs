@@ -16,8 +16,6 @@ module Modelling.ActivityDiagram.Alloy(
   moduleActionSequencesRules
 ) where
 
-import qualified Data.ByteString as B (split, intercalate)
-
 import Data.ByteString (ByteString)
 import Data.FileEmbed                   (embedStringFile)
 import Data.List                        (intercalate)
@@ -75,12 +73,4 @@ getAlloyInstancesWith n spec =
   getRawAlloyInstancesWith n spec
 
 getRawAlloyInstancesWith :: Maybe Integer -> String -> IO [ByteString]
-getRawAlloyInstancesWith n spec = preprocess <$> getRawInstances n spec
-
---Remove problematic line from getRawInstances output
-preprocess :: [ByteString] -> [ByteString]
-preprocess = map preprocess'
-
-preprocess' :: ByteString -> ByteString
-preprocess' s = let linesOfByteString = B.split 10 s
-                in B.intercalate "\n" $ filter (/= "------State 0-------") linesOfByteString
+getRawAlloyInstancesWith = getRawInstances
