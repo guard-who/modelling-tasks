@@ -14,13 +14,9 @@ module Modelling.ActivityDiagram.MatchPetri (
 ) where
 
 import qualified Data.Map as M ((!), insert, keys, empty, null, map)
-import qualified Modelling.ActivityDiagram.Datatype as AD (ADNode(label))
 
-import Modelling.ActivityDiagram.Datatype (
-  UMLActivityDiagram(..),
-  isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode)
-
-import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
+import Modelling.ActivityDiagram.Petrinet (PetriKey(..), ADNodeType (..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
@@ -31,7 +27,6 @@ import Control.Applicative (Alternative ((<|>)))
 import Data.List (sort)
 import Data.Map (Map)
 import Data.String.Interpolate ( i )
-
 
 
 data MatchPetriInstance = MatchPetriInstance {
@@ -109,15 +104,15 @@ matchPetriAlloy MatchPetriConfig {
             _ -> ""
 
 
-mapTypesToLabels :: UMLActivityDiagram -> Map String [Int]
-mapTypesToLabels diag =
-  let actionLabels = extractLabels isActionNode
-      objectLabels = extractLabels isObjectNode
-      decisionLabels = extractLabels isDecisionNode
-      mergeLabels = extractLabels isMergeNode
-      forkLabels = extractLabels isForkNode
-      joinLabels = extractLabels isJoinNode
-      initialLabels = extractLabels isInitialNode
+mapTypesToLabels :: PetriLike PetriKey -> Map String [Int]
+mapTypesToLabels petri =
+  let actionLabels = extractLabels ADActionNode
+      objectLabels = extractLabels ADObjectNode
+      decisionLabels = extractLabels ADDecisionNode
+      mergeLabels = extractLabels ADMergeNode
+      forkLabels = extractLabels ADForkNode
+      joinLabels = extractLabels ADJoinNode
+      initialLabels = extractLabels ADInitialNode
   in M.insert "ActionNodes" actionLabels $
      M.insert "ObjectNodes" objectLabels $
      M.insert "DecisionNodes" decisionLabels $
@@ -126,7 +121,12 @@ mapTypesToLabels diag =
      M.insert "JoinNodes" joinLabels $
      M.insert "InitialNodes" initialLabels
      M.empty
-  where extractLabels fn = map AD.label $ filter fn $ nodes diag
+  where
+    extractLabels t =
+      map label $
+      filter (\k -> nodeType k == t) $
+      filter (not . isSupportST) $
+      M.keys $ allNodes petri
 
 
 matchPetriTaskDesciption :: String
@@ -168,7 +168,7 @@ matchPetriComponents MatchPetriInstance {
   seed
 } =
   let (relabeling, petri) = shufflePetri seed $ convertToPetrinet activityDiagram
-      labelMap = M.map (sort . map (relabeling M.!)) $ mapTypesToLabels activityDiagram
+      labelMap = M.map (sort . map (relabeling M.!)) $ mapTypesToLabels petri
       supportST = sort $ map label $ extractSupportSTs petri
       ad = snd $ shuffleADNames seed activityDiagram
   in (ad, petri, M.insert "SupportST" supportST labelMap)
