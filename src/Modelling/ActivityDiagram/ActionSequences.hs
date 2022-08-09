@@ -50,9 +50,15 @@ fromPetriLike petri =
 generateActionSequence :: UMLActivityDiagram -> [String]
 generateActionSequence diag =
   let tSeq = generateActionSequence' diag
-      tSeqLabels = map (label :: PetriKey -> Int) tSeq
+      tSeqLabels = map ((label :: ADNode -> Int) . sourceNode) $ filter isNormalST tSeq
       actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
   in mapMaybe (`lookup` actions) tSeqLabels
+
+isNormalST :: PetriKey -> Bool
+isNormalST pk =
+  case pk of
+    NormalST {} -> True
+    _ -> False
 
 --Generate at one sequence of transitions to each final node
 generateActionSequence' :: UMLActivityDiagram -> [PetriKey]
@@ -68,7 +74,7 @@ validActionSequence input diag =
   let nameMap = map (\n -> (name n, (label :: ADNode -> Int) n)) $ filter isActionNode $ nodes diag
       labels = mapMaybe (`lookup` nameMap) input
       petri = convertToPetrinet diag
-      petriKeyMap = map (\k -> ((label :: PetriKey -> Int) k, k)) $ M.keys $ allNodes petri
+      petriKeyMap = map (\k -> ((label :: ADNode -> Int) $ sourceNode k, k)) $ filter isNormalST $ M.keys $ allNodes petri
       input' = mapMaybe (`lookup` petriKeyMap) labels
       actions = map snd $ filter (\(l,_) -> l `elem` map snd nameMap) petriKeyMap
   in length input == length labels && validActionSequence' input' actions petri
