@@ -2,7 +2,6 @@
 
 module Modelling.ActivityDiagram.Petrinet (
   PetriKey (..),
-  ADNodeType(..),
   convertToPetrinet
 ) where
 
@@ -22,21 +21,15 @@ import Modelling.PetriNet.Types (
 
 import Data.Map (Map)
 import Data.List (find)
+import Modelling.ActivityDiagram.Datatype (
+  isActivityFinalNode, isFlowFinalNode
+  )
 
 
-data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, nodeType :: ADNodeType} deriving (Ord, Eq, Show)
+data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, sourceNode :: AD.ADNode} deriving (Eq, Show)
 
-data ADNodeType =
-  ADInitialNode |
-  ADActionNode |
-  ADObjectNode |
-  ADDecisionNode |
-  ADMergeNode |
-  ADForkNode |
-  ADJoinNode |
-  ADActivityFinalNode |
-  ADFlowFinalNode
-  deriving (Show, Eq, Ord)
+instance Ord PetriKey where
+  pk1 `compare` pk2 = label pk1 `compare` label pk2
 
 convertToPetrinet :: AD.UMLActivityDiagram -> PetriLike PetriKey
 convertToPetrinet diag =
@@ -56,7 +49,7 @@ relabelPetri petri =
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
 updatePetriKey relabeling key =
   case key of
-    NormalST {label, nodeType} -> NormalST {label=relabel label, nodeType=nodeType}
+    NormalST {label, sourceNode} -> NormalST {label=relabel label, sourceNode=sourceNode}
     SupportST {label} -> SupportST {label=relabel label}
   where relabel n = relabeling M.! n
 
@@ -68,8 +61,8 @@ removeIfFinal key petri =
   let flowInKeys = M.keys $ flowIn $ allNodes petri M.! key
   in
   case key of
-    NormalST {nodeType} ->
-      if nodeType == ADActivityFinalNode || nodeType == ADFlowFinalNode then
+    NormalST {sourceNode} ->
+      if isActivityFinalNode sourceNode || isFlowFinalNode sourceNode then
          PetriLike $ M.delete key $ allNodes $ foldr (removeEdgeToFinal key) petri flowInKeys
       else petri
     _ -> petri
@@ -106,23 +99,23 @@ insertNode node petri =
 nodeToST :: AD.ADNode -> (PetriKey, Node PetriKey)
 nodeToST node =
   case node of
-    AD.ADInitialNode {label} -> (NormalST{label=label, nodeType=ADInitialNode},
+    AD.ADInitialNode {label} -> (NormalST{label=label, sourceNode=node},
                                  PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.empty})
-    AD.ADActionNode {label} -> (NormalST{label=label, nodeType=ADActionNode},
+    AD.ADActionNode {label} -> (NormalST{label=label, sourceNode=node},
                                 TransitionNode {flowIn = M.empty, flowOut = M.empty})
-    AD.ADObjectNode {label} -> (NormalST{label=label, nodeType=ADObjectNode},
+    AD.ADObjectNode {label} -> (NormalST{label=label, sourceNode=node},
                                 PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
-    AD.ADDecisionNode {label} -> (NormalST{label=label, nodeType=ADDecisionNode},
+    AD.ADDecisionNode {label} -> (NormalST{label=label, sourceNode=node},
                                   PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
-    AD.ADMergeNode {label} -> (NormalST{label=label, nodeType=ADMergeNode},
+    AD.ADMergeNode {label} -> (NormalST{label=label, sourceNode=node},
                                 PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
-    AD.ADForkNode {label} -> (NormalST{label=label, nodeType=ADForkNode},
+    AD.ADForkNode {label} -> (NormalST{label=label, sourceNode=node},
                               TransitionNode {flowIn = M.empty, flowOut = M.empty})
-    AD.ADJoinNode {label} -> (NormalST{label=label, nodeType=ADJoinNode},
+    AD.ADJoinNode {label} -> (NormalST{label=label, sourceNode=node},
                               TransitionNode {flowIn = M.empty, flowOut = M.empty})
-    AD.ADActivityFinalNode {label} -> (NormalST{label=label, nodeType=ADActivityFinalNode},
+    AD.ADActivityFinalNode {label} -> (NormalST{label=label, sourceNode=node},
                                        PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
-    AD.ADFlowFinalNode {label} -> (NormalST{label=label, nodeType=ADFlowFinalNode},
+    AD.ADFlowFinalNode {label} -> (NormalST{label=label, sourceNode=node},
                                     PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
 
 insertEdge :: AD.ADConnection -> PetriLike PetriKey -> PetriLike PetriKey
