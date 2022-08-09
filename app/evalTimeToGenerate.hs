@@ -5,9 +5,9 @@ module Main where
 import System.Environment (getArgs)
 import System.FilePath ((</>))
 
-import Modelling.ActivityDiagram.Alloy (getRawAlloyInstancesWith)
 import Modelling.ActivityDiagram.Config (ADConfig(..), adConfigToAlloy, defaultADConfig)
 import Data.String.Interpolate ( i )
+import Language.Alloy.Call (getInstances)
 import Criterion.Measurement (secs, initializeTime, getTime)
 
 main :: IO ()
@@ -27,7 +27,7 @@ main = do
 calcTimeForOneInst :: ADConfig -> IO String
 calcTimeForOneInst conf = do
   start <- getTime
-  _ <- getRawAlloyInstancesWith (Just 1) $ adConfigToAlloy "" "" conf
+  _ <- getInstances (Just 1) $ adConfigToAlloy "" "" conf
   end <- getTime
   let !delta = end - start
   return $ secs delta

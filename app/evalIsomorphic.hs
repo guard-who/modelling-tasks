@@ -2,7 +2,6 @@
 
 module Main where
 
-import qualified Language.Alloy.Debug as AD (parseInstance)
 import qualified Data.ByteString as B (writeFile)
 
 import Data.ByteString (ByteString)
@@ -12,12 +11,12 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>))
 
-import Modelling.ActivityDiagram.Alloy (getRawAlloyInstancesWith)
 import Modelling.ActivityDiagram.Config (ADConfig(..), adConfigToAlloy, defaultADConfig)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isADIsomorphic)
 import Modelling.ActivityDiagram.PlantUMLConverter (convertToPlantUML)
+import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 main :: IO ()
@@ -25,9 +24,8 @@ main = do
   xs <- getArgs
   case xs of
     pathToFolder:xs' -> do
-      inst <- getRawAlloyInstancesWith (Just 1000) $ adConfigToAlloy "" "" defaultADConfig
-      writeFilesToSubfolder inst pathToFolder "Debug" "Instance" ".als"
-      let ad = map (failWith id . parseInstance "this" "this" . failWith show . AD.parseInstance) inst
+      inst <- getInstances (Just 1000) $ adConfigToAlloy "" "" defaultADConfig
+      let ad = map (failWith id . parseInstance "this" "this") inst
           plantumlstring = map convertToPlantUML ad
       writeFile (pathToFolder </> "Stats.txt") $ isomorphismStats ad
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
