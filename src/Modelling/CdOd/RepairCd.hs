@@ -34,6 +34,7 @@ import qualified Data.Map                         as M (
   fromList,
   insert,
   keys,
+  toList,
   )
 
 import Modelling.Auxiliary.Output (
@@ -68,13 +69,12 @@ import Modelling.CdOd.Types (
 import Control.Monad                    (forM_, void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
-  LangM' (LangM),
   LangM,
   Language (English, German),
   OutputMonad (..),
   Rated,
   english,
-  enumerate,
+  enumerateM,
   german,
   multipleChoice,
   singleChoiceSyntax,
@@ -291,10 +291,10 @@ repairCdTask path task = do
   paragraph $ translate $ do
     english [i|Which of the following changes would repair the class diagram?|]
     german [i|Welche der folgenden Änderungen würde das Klassendiagramm reparieren?|]
-  phrase <- LangM $ \case
-    English -> return phraseChange
-    German -> return phraseChangeDE
-  enumerate show (phrase (withNames task) (withDirections task) . snd) (changes task)
+  let phrase x y z = translate $ do
+        english $ phraseChange x y z
+        german $ phraseChangeDE x y z
+  enumerateM (text . show) $ second (phrase (withNames task) (withDirections task) . snd) <$> M.toList (changes task)
   paragraph $ translate $ do
     english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
     german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen Ihrer Meinung nach jeweils in einem gültigen Klassendiagramm resultieren. |]
