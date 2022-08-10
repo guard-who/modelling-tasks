@@ -118,7 +118,7 @@ phraseRelationDE True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
   Composition -> "Komposition "
 phraseRelationDE _ False (from, to, Assoc Association _ l h _)
   | from == to = [i|eine Selbst-Assoziation #{selfParticipates}|]
-  | otherwise  = "eine Assoziation" ++ participations l from h to
+  | otherwise  = "eine Assoziation" ++ participationsDE l from h to
   where
     selfParticipates :: String
     selfParticipates =
