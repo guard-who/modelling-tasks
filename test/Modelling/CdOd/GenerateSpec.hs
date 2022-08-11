@@ -11,7 +11,7 @@ import Modelling.CdOd.Edges (
   selfEdges,
   wrongLimits,
   )
-import Modelling.CdOd.Generate          (generateCd)
+import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
 import Modelling.CdOd.Types (
   ClassConfig (..),
   DiagramEdge,
@@ -21,6 +21,16 @@ import Modelling.CdOd.Types (
 
 import Test.Hspec
 import Test.QuickCheck                  (ioProperty)
+
+generateCd
+  :: Maybe Bool
+  -> ClassConfig
+  -> RelationshipProperties
+  -> Maybe Integer
+  -> Maybe Int
+  -> IO ([String], [DiagramEdge])
+generateCd wi c p mis to = either error id . instanceToEdges . head
+  <$> generateCds wi c p mis to
 
 spec :: Spec
 spec =

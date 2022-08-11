@@ -1,5 +1,6 @@
 module Modelling.CdOd.Generate (
-  generateCd,
+  generateCds,
+  instanceToEdges,
   nameEdges,
   ) where
 
@@ -27,28 +28,27 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (MonadRandom)
+import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
-generateCd
+generateCds
   :: (MonadIO m, MonadRandom m)
   => Maybe Bool
   -> ClassConfig
   -> RelationshipProperties
   -> Maybe Integer
   -> Maybe Int
-  -> m ([String], [DiagramEdge])
-generateCd withNonTrivialInheritance config props maxInsts to = do
+  -> m [AlloyInstance]
+generateCds withNonTrivialInheritance config props maxInsts to = do
   let alloyCode = transformNoChanges config props withNonTrivialInheritance
   instas  <- liftIO $ getInstances maxInsts to alloyCode
-  rinstas <- shuffleM instas
-  return $ either error id $ case rinstas of
-    [] -> Left $
-      "it seems to be impossible to generate such a model"
-      ++ "; check your configuration"
-    (rinsta:_) -> do
-      ((cs, _), es, []) <- fromInstance rinsta
-      let cns = BM.fromList $ zip cs $ map pure ['A'..]
-      return (BM.keysR cns, nameEdges $ renameClasses cns es)
+  shuffleM instas
+
+instanceToEdges :: AlloyInstance -> Either String ([String], [DiagramEdge])
+instanceToEdges rinsta = do
+  ((cs, _), es, []) <- fromInstance rinsta
+  let cns = BM.fromList $ zip cs $ map pure ['A'..]
+  return (BM.keysR cns, nameEdges $ renameClasses cns es)
 
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
 nameEdges es =

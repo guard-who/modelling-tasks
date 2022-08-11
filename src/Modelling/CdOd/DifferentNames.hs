@@ -44,7 +44,7 @@ import Modelling.Auxiliary.Output (
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
-import Modelling.CdOd.Generate          (generateCd)
+import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
 import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromNodesAndEdges)
 import Modelling.CdOd.Types (
   AssociationType (..),
@@ -282,14 +282,20 @@ differentNames
 differentNames config segment seed = do
   let g = mkStdGen (segment + 4 * seed)
   liftIO $ flip evalRandT g $ do
-    (names, edges) <- generateCd
+    is <- generateCds
       (withNonTrivialInheritance config)
       (classConfig config)
       defaultProperties
       (maxInstances config)
       (timeout config)
-    let dnt = getDifferentNamesTask dnt config names edges
-    dnt
+    fgen is
+  where
+    fgen []             = error $
+      "it seems to be impossible to generate such a model"
+      ++ "; check your configuration"
+    fgen (insta:instas) =
+      let (names, edges) = either error id $ instanceToEdges insta
+      in getDifferentNamesTask (fgen instas) config names edges
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, Assoc Association n lf lt im) =
@@ -317,12 +323,12 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   }
 
 getDifferentNamesTask
-  :: RandomGen g
-  => RandT g IO DifferentNamesInstance
+  :: (RandomGen g, MonadIO m, MonadThrow m)
+  => RandT g m DifferentNamesInstance
   -> DifferentNamesConfig
   -> [String]
   -> [DiagramEdge]
-  -> RandT g IO DifferentNamesInstance
+  -> RandT g m DifferentNamesInstance
 getDifferentNamesTask fhead config names edges' = do
     let edges  = reverseAssociation <$> edges'
         cd0    = (0 :: Integer, fromEdges names edges)

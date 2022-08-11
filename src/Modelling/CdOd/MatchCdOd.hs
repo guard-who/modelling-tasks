@@ -431,7 +431,7 @@ getRandomTask config = do
   when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
   ods <- getODsFor config { timeout = Nothing } rinstas
-  maybe (getRandomTask config) return ods
+  maybe (error "could not find instance") return ods
 
 getODsFor
   :: RandomGen g
