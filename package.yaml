@@ -41,6 +41,7 @@ library:
     - Modelling.ActivityDiagram.SelectAS
     - Modelling.ActivityDiagram.EnterAS
     - Modelling.ActivityDiagram.SelectPetri
+    - Modelling.ActivityDiagram.FindSupportST
     - Modelling.ActivityDiagram.Isomorphism
   ghc-options:
     - -Wall
@@ -78,6 +79,13 @@ executables:
       - filepath
   enterActionSequence:
     main: enterActionSequence.hs
+    source-dirs: app
+    dependencies:
+      - ba-athena-schulz
+      - directory
+      - filepath
+  findSupportST:
+    main: findSupportST.hs
     source-dirs: app
     dependencies:
       - ba-athena-schulz
