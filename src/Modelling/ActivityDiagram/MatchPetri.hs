@@ -8,7 +8,7 @@ module Modelling.ActivityDiagram.MatchPetri (
   checkMatchPetriConfig,
   matchPetriComponents,
   matchPetriAlloy,
-  matchPetriTaskDesciption,
+  matchPetriTaskDescription,
   matchPetriComponentsText,
   extractSupportSTs
 ) where
@@ -129,8 +129,8 @@ mapTypesToLabels petri =
       M.keys $ allNodes petri
 
 
-matchPetriTaskDesciption :: String
-matchPetriTaskDesciption =
+matchPetriTaskDescription :: String
+matchPetriTaskDescription =
   [i|
     Look at the given Activity Diagram and Petrinet, then use the displayed numbers
     at the places and transitions as identifiers for the following tasks:

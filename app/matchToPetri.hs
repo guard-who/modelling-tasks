@@ -8,7 +8,7 @@ import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.MatchPetri(matchPetriComponentsText, matchPetriTaskDesciption, defaultMatchPetriConfig, matchPetriAlloy, MatchPetriInstance (..))
+import Modelling.ActivityDiagram.MatchPetri(matchPetriComponentsText, matchPetriTaskDescription, defaultMatchPetriConfig, matchPetriAlloy, MatchPetriInstance (..))
 import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
@@ -31,7 +31,7 @@ main = do
           matchPetri = map (\x -> matchPetriComponentsText $ MatchPetriInstance{activityDiagram = x, seed=123}) ad
           plantumlstring = map (convertToPlantUML . fst3) matchPetri
           petri = map snd3 matchPetri
-          taskDescription = replicate (length folders) matchPetriTaskDesciption
+          taskDescription = replicate (length folders) matchPetriTaskDescription
           taskSolution = map thd3 matchPetri
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
