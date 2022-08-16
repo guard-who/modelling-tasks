@@ -7,6 +7,7 @@ module Modelling.ActivityDiagram.SelectPetri (
   SelectPetriSolution(..),
   defaultSelectPetriConfig,
   checkSelectPetriConfig,
+  checkPetriInstance,
   selectPetriAlloy,
   selectPetrinet,
   selectPetriTaskDescription
@@ -104,6 +105,15 @@ selectPetriTaskDescription =
     Look at the given Activity Diagram and the given Petri Nets, and determine which Petri Net
     corresponds to the Activity Diagram (Single Choice).
   |]
+
+checkPetriInstance :: SelectPetriInstance -> Maybe String
+checkPetriInstance inst@SelectPetriInstance {
+    numberOfWrongNets
+  }
+  | length (wrongNets $ selectPetrinet inst) /= numberOfWrongNets
+    = Just "Number of wrong nets found for given instance is unequal to numberOfWrongNets"
+  | otherwise
+    = Nothing
 
 data SelectPetriSolution = SelectPetriSolution {
   matchingNet :: PetriLike PetriKey,
