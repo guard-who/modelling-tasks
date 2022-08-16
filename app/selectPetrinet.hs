@@ -5,13 +5,14 @@ module Main where
 import qualified Data.ByteString as B (writeFile)
 
 import Data.ByteString (ByteString)
+import Data.Maybe (isNothing)
 import System.Directory (createDirectoryIfMissing, renameFile)
 import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
-import Modelling.ActivityDiagram.SelectPetri (SelectPetriInstance(..), SelectPetriSolution(..), defaultSelectPetriConfig, selectPetriAlloy, selectPetrinet, selectPetriTaskDescription)
+import Modelling.ActivityDiagram.SelectPetri (SelectPetriInstance(..), SelectPetriSolution(..), defaultSelectPetriConfig, selectPetriAlloy, checkPetriInstance, selectPetrinet, selectPetriTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
@@ -27,12 +28,14 @@ main = do
   case xs of
     pathToFolder:xs' -> do
       inst <- getInstances (Just 50) $ selectPetriAlloy defaultSelectPetriConfig
-      folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance "this" "this") inst
-          selectPetri = map (\x ->SelectPetriInstance{activityDiagram = x, seed=123, numberOfWrongNets=2}) ad
-          plantumlstring = map convertToPlantUML ad
-          taskDescription = replicate (length folders) selectPetriTaskDescription
+          selectPetri =
+            filter (isNothing . checkPetriInstance)
+            $ map (\x -> SelectPetriInstance{activityDiagram = x, seed=123, numberOfWrongNets=2}) ad
+          plantumlstring = map (convertToPlantUML . activityDiagram) selectPetri
+          taskDescription = replicate (length selectPetri) selectPetriTaskDescription
           taskSolution = map selectPetrinet selectPetri
+      folders <- createExerciseFolders pathToFolder (length selectPetri)
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       mapM_ (uncurry writeSolutionToFolder) $ zip folders taskSolution
