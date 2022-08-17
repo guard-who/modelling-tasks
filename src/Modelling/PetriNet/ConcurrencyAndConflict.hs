@@ -219,10 +219,10 @@ findConcurrencyTask path task = do
   paragraph $ do
     translate $ do
       english "Please state your answer by giving a pair of concurrently activated transitions. "
-      german "Geben Sie Ihre Antwort durch Eingabe eines Paars von nebenläufig aktivierten Transitionen an. "
+      german "Geben Sie Ihre Antwort durch Angabe eines Paars von nebenläufig aktivierten Transitionen an. "
     translate $ do
       english [i|Stating |]
-      german [i|Die Eingabe von |]
+      german [i|Die Angabe von |]
     let ts = transitionPairShow findInitial
     code $ show ts
     translate $ do
@@ -324,10 +324,10 @@ findConflictTask path task = do
   paragraph $ do
     translate $ do
       english "Please state your answer by giving a pair of conflicting transitions. "
-      german "Geben Sie Ihre Antwort durch Eingabe eines Paars von in Konflikt stehenden Transitionen an. "
+      german "Geben Sie Ihre Antwort durch Angabe eines Paars von in Konflikt stehenden Transitionen an. "
     translate $ do
       english [i|Stating |]
-      german [i|Die Eingabe von |]
+      german [i|Die Angabe von |]
     let ts = transitionPairShow findInitial
     code $ show ts
     translate $ do
@@ -419,12 +419,12 @@ pickConcurrencyTask path task = do
   images show snd files
   paragraph $ translate $ do
     english "Please state your answer by giving only the number of the Petri net having these concurrently activated transitions. "
-    german "Geben Sie Ihre Antwort durch Eingabe der Nummer des Petrinetzes an, das diese nebenläufig aktivierten Transitionen hat. "
+    german "Geben Sie Ihre Antwort durch Angabe der Nummer des Petrinetzes an, das diese nebenläufig aktivierten Transitionen hat. "
   let plural = wrongInstances task > 1
   paragraph $ do
     translate $ do
       english [i|Stating |]
-      german [i|Die Eingabe von |]
+      german [i|Die Angabe von |]
     code "1"
     translate $ do
       english [i| as answer would indicate that Petri net 1 has exactly two transitions that are concurrently activated (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
@@ -487,12 +487,12 @@ pickConflictTask path task = do
   images show snd files
   paragraph $ translate $ do
     english "Please state your answer by giving only the number of the Petri net having these transitions in conflict. "
-    german "Geben Sie Ihre Antwort durch Eingabe der Nummer des Petrinetzes an, das diese in Konflikt stehenden Transitionen hat. "
+    german "Geben Sie Ihre Antwort durch Angabe der Nummer des Petrinetzes an, das diese in Konflikt stehenden Transitionen hat. "
   let plural = wrongInstances task > 1
   paragraph $ do
     translate $ do
       english [i|Stating |]
-      german [i|Die Eingabe von |]
+      german [i|Die Angabe von |]
     code "1"
     translate $ do
       english [i| as answer would indicate that Petri net 1 has exactly two transitions that are in conflict (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]

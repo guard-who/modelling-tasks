@@ -361,11 +361,11 @@ graphToMathTask path task = do
     $ second (mathToOutput latex . snd) <$> toList (to task)
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching representation only.|]
-    german [i|Geben Sie Ihre Antwort durch Eingabe der Nummer der passenden Repräsentation an.|]
+    german [i|Geben Sie Ihre Antwort durch Angabe der Nummer der passenden Repräsentation an.|]
   paragraph $ do
     translate $ do
       english [i|Stating |]
-      german [i|Die Eingabe von |]
+      german [i|Die Angabe von |]
     code "1"
     translate $ do
       english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
@@ -418,11 +418,11 @@ mathToGraphTask path task = do
   images show snd dias
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching diagram only.|]
-    german [i|Geben Sie Ihre Antwort durch Eingabe der Nummer des passenden Diagramms an.|]
+    german [i|Geben Sie Ihre Antwort durch Angabe der Nummer des passenden Diagramms an.|]
   paragraph $ do
     translate $ do
       english [i|Stating |]
-      german [i|Die Eingabe von |]
+      german [i|Die Angabe von |]
     code "1"
     translate $ do
       english [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]

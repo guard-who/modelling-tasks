@@ -290,14 +290,14 @@ repairCdTask path task = do
   image cd
   paragraph $ translate $ do
     english [i|Which of the following changes would repair the class diagram?|]
-    german [i|Welche der folgenden Änderungen würde das Klassendiagramm reparieren?|]
+    german [i|Welche der folgenden Änderungen würden das Klassendiagramm reparieren?|]
   let phrase x y z = translate $ do
         english $ phraseChange x y z
         german $ phraseChangeDE x y z
   enumerateM (text . show) $ second (phrase (withNames task) (withDirections task) . snd) <$> M.toList (changes task)
   paragraph $ translate $ do
     english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
-    german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen Ihrer Meinung nach jeweils in einem gültigen Klassendiagramm resultieren. |]
+    german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren. |]
   paragraph $ do
     translate $ do
       english [i|Answer by giving a comma separated list of all valid options, e.g. |]

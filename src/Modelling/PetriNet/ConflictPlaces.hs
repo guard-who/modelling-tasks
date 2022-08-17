@@ -89,15 +89,15 @@ findConflictPlacesTask path task = do
     german "Betrachten Sie folgendes Petrinetz"
   image pn
   paragraph $ translate $ do
-    english "Which pair of transitions are in conflict because of which places under the initial marking?"
-    german "Welches Paar von Transitionen steht wegen welcher konfliktauslösenden Stellen unter der Startmarkierung in Konflikt?"
+    english "Which pair of transitions are in conflict because of which place(s) under the initial marking?"
+    german "Welches Paar von Transitionen steht wegen welcher konfliktauslösenden Stelle(n) unter der Startmarkierung in Konflikt?"
   paragraph $ do
     translate $ do
       english "Please state your answer by giving a pair of conflicting transitions and the list of all the places that induce the conflict. "
-      german "Geben Sie Ihre Antwort durch Eingabe eines Paars von in Konflikt stehenden Transitionen und die Liste aller Stellen, die den Konflikt auslösen, an. "
+      german "Geben Sie Ihre Antwort durch Angabe eines Paars von in Konflikt stehenden Transitionen und die Liste aller Stellen, die den Konflikt auslösen, an. "
     translate $ do
       english [i|Stating |]
-      german [i|Die Eingabe von |]
+      german [i|Die Angabe von |]
     let ts = conflictPlacesShow conflictInitial
     code $ show ts
     translate $ do
@@ -115,7 +115,7 @@ die jeweils nicht ausreichend Marken zum gleichzeitigen Feuern der Transitionen 
       english [i|The order of transitions within the pair does not matter here.
 The order of places within the lisiting of places inducing the conflict is irrelevant as well.|]
       german [i|Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle.
-Die Reihenfolge der Stellen innerhalb der Auflistung der den Konflikt auslösenden Stellen spielt ebenso keine Rolle.|]
+Die Reihenfolge von Stellen innerhalb der Auflistung der den Konflikt auslösenden Stellen spielt ebenso keine Rolle.|]
   paragraph hoveringInformation
 
 conflictInitial :: ConflictPlaces
