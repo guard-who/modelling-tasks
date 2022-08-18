@@ -9,6 +9,7 @@ dependencies:
   - edit-distance-vector
   - extra
   - file-embed
+  - graphviz
   - hgal
   - modelling-tasks
   - mtl
@@ -54,7 +55,6 @@ executables:
       - ba-athena-schulz
       - directory
       - filepath
-      - graphviz
   selectPetrinet:
     main: selectPetrinet.hs
     source-dirs: app
@@ -62,7 +62,6 @@ executables:
       - ba-athena-schulz
       - directory
       - filepath
-      - graphviz
   matchADComponents:
     main: matchADComponents.hs
     source-dirs: app
