@@ -24,6 +24,7 @@ import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Control.Applicative (Alternative ((<|>)))
+import Data.GraphViz.Commands (GraphvizCommand(Dot))
 import Data.List (sort)
 import Data.String.Interpolate ( i )
 
@@ -35,6 +36,7 @@ data MatchPetriInstance = MatchPetriInstance {
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
+  petriLayout :: GraphvizCommand,
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
@@ -45,6 +47,7 @@ data MatchPetriConfig = MatchPetriConfig {
 defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
+    petriLayout = Dot,
     supportSTAbsent = Nothing,
     activityFinalsExist = Nothing,
     avoidAddingSinksForFinals = Nothing,

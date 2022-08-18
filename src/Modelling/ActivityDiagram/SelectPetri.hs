@@ -23,9 +23,11 @@ import Modelling.PetriNet.Types (PetriLike(..))
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.List (unfoldr, nubBy)
+import Data.GraphViz.Commands (GraphvizCommand(Dot))
 import Data.String.Interpolate ( i )
 import System.Random (mkStdGen, next)       --To be changed from 'next' to 'uniform', not possible as of now due to dependencies
 import System.Random.Shuffle (shuffle')
+
 
 data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
@@ -35,6 +37,7 @@ data SelectPetriInstance = SelectPetriInstance {
 
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: ADConfig,
+  petriLayout :: GraphvizCommand,
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
@@ -44,6 +47,7 @@ data SelectPetriConfig = SelectPetriConfig {
 defaultSelectPetriConfig :: SelectPetriConfig
 defaultSelectPetriConfig = SelectPetriConfig {
   adConfig = defaultADConfig,
+  petriLayout = Dot,
   supportSTAbsent = Nothing,
   activityFinalsExist = Nothing,
   avoidAddingSinksForFinals = Nothing,
