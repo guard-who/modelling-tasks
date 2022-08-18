@@ -13,7 +13,7 @@ module Modelling.ActivityDiagram.MatchPetri (
   extractSupportSTs
 ) where
 
-import qualified Data.Map as M ((!), insert, keys, empty, null, map)
+import qualified Data.Map as M ((!), keys, null)
 
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram, isActionNode, isObjectNode, isDecisionNode, isMergeNode, isJoinNode, isInitialNode, isForkNode)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
@@ -25,7 +25,6 @@ import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.List (sort)
-import Data.Map (Map)
 import Data.String.Interpolate ( i )
 
 
@@ -104,25 +103,21 @@ matchPetriAlloy MatchPetriConfig {
             _ -> ""
 
 
-mapTypesToLabels :: PetriLike PetriKey -> Map String [Int]
+mapTypesToLabels :: PetriLike PetriKey -> MatchPetriSolution
 mapTypesToLabels petri =
-  let actionLabels = extractLabels isActionNode
-      objectLabels = extractLabels isObjectNode
-      decisionLabels = extractLabels isDecisionNode
-      mergeLabels = extractLabels isMergeNode
-      forkLabels = extractLabels isForkNode
-      joinLabels = extractLabels isJoinNode
-      initialLabels = extractLabels isInitialNode
-  in M.insert "ActionNodes" actionLabels $
-     M.insert "ObjectNodes" objectLabels $
-     M.insert "DecisionNodes" decisionLabels $
-     M.insert "MergeNodes" mergeLabels $
-     M.insert "ForkNodes" forkLabels $
-     M.insert "JoinNodes" joinLabels $
-     M.insert "InitialNodes" initialLabels
-     M.empty
+  MatchPetriSolution {
+    actionNodes = extractLabels isActionNode,
+    objectNodes = extractLabels isObjectNode,
+    decisionNodes = extractLabels isDecisionNode,
+    mergeNodes = extractLabels isMergeNode,
+    forkNodes = extractLabels isForkNode,
+    joinNodes = extractLabels isJoinNode,
+    initialNodes = extractLabels isInitialNode,
+    supportSTs = sort $ map label $ extractSupportSTs petri
+  }
   where
     extractLabels fn =
+      sort $
       map label $
       filter (fn . sourceNode)  $
       filter (not . isSupportST) $
@@ -147,31 +142,41 @@ matchPetriTaskDescription =
 
 matchPetriComponentsText :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, String)
 matchPetriComponentsText inst =
-  let (ad, petri, solutions) = matchPetriComponents inst
+  let (ad, petri, solution) = matchPetriComponents inst
       text = [i|
       Solutions for the MatchPetri-Task:
 
-      a) Nodes in the petrinet corresponding to Actions: #{solutions M.! "ActionNodes"}
-      b) Nodes in the petrinet corresponding to Object Nodes: #{solutions M.! "ObjectNodes"}
-      c) Nodes in the petrinet corresponding to Decision Nodes: #{solutions M.! "DecisionNodes"}
-      d) Nodes in the petrinet corresponding to Merge Nodes: #{solutions M.! "MergeNodes"}
-      e) Nodes in the petrinet corresponding to Fork Nodes: #{solutions M.! "ForkNodes"}
-      f) Nodes in the petrinet corresponding to Join Nodes: #{solutions M.! "JoinNodes"}
-      g) Nodes in the petrinet corresponding to Initial Nodes: #{solutions M.! "InitialNodes"}
-      h) Support places and transitions: #{solutions M.! "SupportST"}
+      a) Nodes in the petrinet corresponding to Actions: #{actionNodes solution}
+      b) Nodes in the petrinet corresponding to Object Nodes: #{objectNodes solution}
+      c) Nodes in the petrinet corresponding to Decision Nodes: #{decisionNodes solution}
+      d) Nodes in the petrinet corresponding to Merge Nodes: #{mergeNodes solution}
+      e) Nodes in the petrinet corresponding to Fork Nodes: #{forkNodes solution}
+      f) Nodes in the petrinet corresponding to Join Nodes: #{joinNodes solution}
+      g) Nodes in the petrinet corresponding to Initial Nodes: #{initialNodes solution}
+      h) Support places and transitions: #{supportSTs solution}
       |]
   in (ad, petri, text)
 
-matchPetriComponents :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, Map String [Int])
+data MatchPetriSolution = MatchPetriSolution {
+  actionNodes :: [Int],
+  objectNodes :: [Int],
+  decisionNodes :: [Int],
+  mergeNodes :: [Int],
+  forkNodes :: [Int],
+  joinNodes :: [Int],
+  initialNodes :: [Int],
+  supportSTs :: [Int]
+} deriving (Show, Eq)
+
+matchPetriComponents :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, MatchPetriSolution)
 matchPetriComponents MatchPetriInstance {
   activityDiagram,
   seed
 } =
-  let (relabeling, petri) = shufflePetri seed $ convertToPetrinet activityDiagram
-      labelMap = M.map (sort . map (relabeling M.!)) $ mapTypesToLabels petri
-      supportST = sort $ map label $ extractSupportSTs petri
-      ad = snd $ shuffleADNames seed activityDiagram
-  in (ad, petri, M.insert "SupportST" supportST labelMap)
+  let ad = snd $ shuffleADNames seed activityDiagram
+      petri = snd $ shufflePetri seed $ convertToPetrinet activityDiagram
+      solution = mapTypesToLabels petri
+  in (ad, petri, solution)
 
 
 extractSupportSTs :: PetriLike PetriKey -> [PetriKey]
