@@ -15,7 +15,7 @@ module Modelling.ActivityDiagram.MatchPetri (
 
 import qualified Data.Map as M ((!), keys, null)
 
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram, isActionNode, isObjectNode, isDecisionNode, isMergeNode, isJoinNode, isInitialNode, isForkNode)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram, ADNode(name), isActionNode, isObjectNode, isDecisionNode, isMergeNode, isJoinNode, isInitialNode, isForkNode)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
@@ -106,8 +106,8 @@ matchPetriAlloy MatchPetriConfig {
 mapTypesToLabels :: PetriLike PetriKey -> MatchPetriSolution
 mapTypesToLabels petri =
   MatchPetriSolution {
-    actionNodes = extractLabels isActionNode,
-    objectNodes = extractLabels isObjectNode,
+    actionNodes = extractNameLabelTuple isActionNode,
+    objectNodes = extractNameLabelTuple isObjectNode,
     decisionNodes = extractLabels isDecisionNode,
     mergeNodes = extractLabels isMergeNode,
     forkNodes = extractLabels isForkNode,
@@ -116,9 +116,15 @@ mapTypesToLabels petri =
     supportSTs = sort $ map label $ extractSupportSTs petri
   }
   where
+    extractNameLabelTuple fn =
+      sort $
+      map (\k -> (name $ sourceNode k, label k)) $
+      keysByNodeType fn
     extractLabels fn =
       sort $
       map label $
+      keysByNodeType fn
+    keysByNodeType fn =
       filter (fn . sourceNode)  $
       filter (not . isSupportST) $
       M.keys $ allNodes petri
@@ -130,8 +136,10 @@ matchPetriTaskDescription =
     Look at the given Activity Diagram and Petrinet, then use the displayed numbers
     at the places and transitions as identifiers for the following tasks:
 
-    a) Name all nodes of the petrinet which correspond to Actions in the Activity Diagram
-    b) Name all nodes of the petrinet which correspond to Object Nodes in the Activity Diagram
+    a) For every Action in the Activity Diagram, name a tuple with its corresponding node in the petrinet
+       (e.g. ("A", 1) if the Action "A" corresponds to 1 in the petrinet)
+    b) For every Object Node in the Activity Diagram, name a tuple with its corresponding node in the petrinet
+       (e.g. ("O", 2) if the Action "O" corresponds to 2 in the petrinet)
     c) Name all nodes of the petrinet which correspond to Decision Nodes in the Activity Diagram
     d) Name all nodes of the petrinet which correspond to Merge Nodes in the Activity Diagram
     e) Name all nodes of the petrinet which correspond to Fork Nodes in the Activity Diagram
@@ -158,8 +166,8 @@ matchPetriComponentsText inst =
   in (ad, petri, text)
 
 data MatchPetriSolution = MatchPetriSolution {
-  actionNodes :: [Int],
-  objectNodes :: [Int],
+  actionNodes :: [(String, Int)],
+  objectNodes :: [(String, Int)],
   decisionNodes :: [Int],
   mergeNodes :: [Int],
   forkNodes :: [Int],
@@ -174,7 +182,7 @@ matchPetriComponents MatchPetriInstance {
   seed
 } =
   let ad = snd $ shuffleADNames seed activityDiagram
-      petri = snd $ shufflePetri seed $ convertToPetrinet activityDiagram
+      petri = snd $ shufflePetri seed $ convertToPetrinet ad
       solution = mapTypesToLabels petri
   in (ad, petri, solution)
 
