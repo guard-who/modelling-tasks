@@ -154,8 +154,8 @@ matchPetriComponentsText inst =
       text = [i|
       Solutions for the MatchPetri-Task:
 
-      a) Nodes in the petrinet corresponding to Actions: #{actionNodes solution}
-      b) Nodes in the petrinet corresponding to Object Nodes: #{objectNodes solution}
+      a) Matchings of Actions to petrinet nodes: #{actionNodes solution}
+      b) Matchings of Object Nodes to petrinet nodes: #{objectNodes solution}
       c) Nodes in the petrinet corresponding to Decision Nodes: #{decisionNodes solution}
       d) Nodes in the petrinet corresponding to Merge Nodes: #{mergeNodes solution}
       e) Nodes in the petrinet corresponding to Fork Nodes: #{forkNodes solution}
