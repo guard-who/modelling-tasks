@@ -8,7 +8,10 @@ import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.MatchPetri(matchPetriComponentsText, matchPetriTaskDescription, defaultMatchPetriConfig, matchPetriAlloy, MatchPetriInstance (..))
+import Modelling.ActivityDiagram.MatchPetri(
+  MatchPetriConfig(..),
+  MatchPetriInstance (..),
+  matchPetriComponentsText, matchPetriTaskDescription, defaultMatchPetriConfig, matchPetriAlloy)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
@@ -35,7 +38,7 @@ main = do
           taskSolution = map thd3 matchPetri
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
-      mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True Dot) $ zip folders petri
+      mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True (petriLayout defaultMatchPetriConfig)) $ zip folders petri
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"
     _ -> error "usage: one parameter required: FilePath (Output Folder)"

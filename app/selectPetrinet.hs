@@ -12,7 +12,11 @@ import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
-import Modelling.ActivityDiagram.SelectPetri (SelectPetriInstance(..), SelectPetriSolution(..), defaultSelectPetriConfig, selectPetriAlloy, checkPetriInstance, selectPetrinet, selectPetriTaskDescription)
+import Modelling.ActivityDiagram.SelectPetri (
+  SelectPetriConfig(..),
+  SelectPetriInstance(..),
+  SelectPetriSolution(..),
+  defaultSelectPetriConfig, selectPetriAlloy, checkPetriInstance, selectPetrinet, selectPetriTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
@@ -38,19 +42,19 @@ main = do
       folders <- createExerciseFolders pathToFolder (length selectPetri)
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
-      mapM_ (uncurry writeSolutionToFolder) $ zip folders taskSolution
+      mapM_ (uncurry (writeSolutionToFolder defaultSelectPetriConfig)) $ zip folders taskSolution
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
     _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 
-writeSolutionToFolder :: FilePath -> SelectPetriSolution -> IO ()
-writeSolutionToFolder path SelectPetriSolution {
+writeSolutionToFolder :: SelectPetriConfig -> FilePath  -> SelectPetriSolution -> IO ()
+writeSolutionToFolder conf path SelectPetriSolution {
      matchingNet,
      wrongNets
   } = do
   pathToSolution <- runExceptT $ cacheNet path (show.label) matchingNet False False True Dot
   renameFile (failWith id pathToSolution) (path </> "MatchingNet.svg")
-  mapM_ (\x -> runExceptT $ cacheNet path (show . label) x False False True Dot) wrongNets
+  mapM_ (\x -> runExceptT $ cacheNet path (show . label) x False False True (petriLayout conf)) wrongNets
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
