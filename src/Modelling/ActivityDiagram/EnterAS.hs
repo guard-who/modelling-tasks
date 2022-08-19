@@ -31,7 +31,8 @@ data EnterASInstance = EnterASInstance {
 data EnterASConfig = EnterASConfig {
   adConfig :: ADConfig,
   objectNodeOnEveryPath :: Maybe Bool,
-  minAnswerLength :: Int
+  minAnswerLength :: Int,
+  maxAnswerLength :: Int
 } deriving (Show)
 
 defaultEnterASConfig :: EnterASConfig
@@ -45,7 +46,8 @@ defaultEnterASConfig = EnterASConfig {
     flowFinalNodes = 2
   },
   objectNodeOnEveryPath = Nothing,
-  minAnswerLength = 5
+  minAnswerLength = 5,
+  maxAnswerLength = 8
 }
 
 checkEnterASConfig :: EnterASConfig -> Maybe String
@@ -57,12 +59,15 @@ checkEnterASConfig' :: EnterASConfig -> Maybe String
 checkEnterASConfig' EnterASConfig {
     adConfig,
     objectNodeOnEveryPath,
-    minAnswerLength
+    minAnswerLength,
+    maxAnswerLength
   }
   | objectNodeOnEveryPath == Just True && minObjectNodes adConfig < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occuring"
   | minAnswerLength < 0
     = Just "The parameter 'minAnswerLength' should be non-negative"
+  | maxAnswerLength < minAnswerLength
+    = Just "The parameter 'maxAnswerLength' should be greater or equal to 'minAnswerLength'"
   | otherwise
     = Nothing
 
@@ -87,12 +92,16 @@ enterASAlloy EnterASConfig {
 
 checkEnterASInstance :: EnterASInstance -> EnterASConfig -> Maybe String
 checkEnterASInstance inst EnterASConfig {
-    minAnswerLength
+    minAnswerLength,
+    maxAnswerLength
   }
-  | length (sampleSolution $ snd $ enterActionSequence inst) < minAnswerLength
+  | length solution < minAnswerLength
     = Just "Solution should not be shorter than parameter 'minAnswerLength'"
+  | length solution > maxAnswerLength
+    = Just "Solution should not be longer than parameter 'maxAnswerLength'"
   | otherwise
     = Nothing
+  where solution = sampleSolution $ snd $ enterActionSequence inst
 
 newtype EnterASSolution = EnterASSolution {
   sampleSolution :: [String]
