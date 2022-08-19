@@ -16,14 +16,14 @@ import Modelling.ActivityDiagram.SelectPetri (
   SelectPetriConfig(..),
   SelectPetriInstance(..),
   SelectPetriSolution(..),
-  defaultSelectPetriConfig, selectPetriAlloy, checkPetriInstance, selectPetrinet, selectPetriTaskDescription)
+  pickRandomLayout, defaultSelectPetriConfig, selectPetriAlloy, checkPetriInstance, selectPetrinet, selectPetriTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 import Modelling.PetriNet.Diagram (cacheNet)
 import Control.Monad.Except(runExceptT)
-import Data.GraphViz.Commands (GraphvizCommand(..))
+import Data.GraphViz.Commands (GraphvizCommand)
 
 
 main :: IO ()
@@ -31,7 +31,8 @@ main = do
   xs <- getArgs
   case xs of
     pathToFolder:xs' -> do
-      inst <- getInstances (Just 50) $ selectPetriAlloy defaultSelectPetriConfig
+      let conf = defaultSelectPetriConfig
+      inst <- getInstances (Just 50) $ selectPetriAlloy conf
       let ad = map (failWith id . parseInstance "this" "this") inst
           selectPetri =
             map selectPetrinet
@@ -43,19 +44,20 @@ main = do
       folders <- createExerciseFolders pathToFolder (length selectPetri)
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
-      mapM_ (uncurry (writeSolutionToFolder defaultSelectPetriConfig)) $ zip folders taskSolution
+      layout <- pickRandomLayout conf
+      mapM_ (uncurry (writeSolutionToFolder layout)) $ zip folders taskSolution
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
     _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 
-writeSolutionToFolder :: SelectPetriConfig -> FilePath -> SelectPetriSolution -> IO ()
-writeSolutionToFolder conf path SelectPetriSolution {
+writeSolutionToFolder :: GraphvizCommand -> FilePath -> SelectPetriSolution -> IO ()
+writeSolutionToFolder layout path SelectPetriSolution {
      matchingNet,
      wrongNets
   } = do
-  pathToSolution <- runExceptT $ cacheNet path (show.label) matchingNet False False True Dot
+  pathToSolution <- runExceptT $ cacheNet path (show . label) matchingNet False False True layout
   renameFile (failWith id pathToSolution) (path </> "MatchingNet.svg")
-  mapM_ (\x -> runExceptT $ cacheNet path (show . label) x False False True (petriLayout conf)) wrongNets
+  mapM_ (\x -> runExceptT $ cacheNet path (show . label) x False False True layout) wrongNets
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
