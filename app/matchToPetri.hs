@@ -11,14 +11,14 @@ import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.MatchPetri(
   MatchPetriConfig(..),
   MatchPetriInstance (..),
-  matchPetriComponentsText, matchPetriTaskDescription, defaultMatchPetriConfig, matchPetriAlloy)
+  pickRandomLayout, matchPetriComponentsText, matchPetriTaskDescription, defaultMatchPetriConfig, matchPetriAlloy)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 import Modelling.PetriNet.Diagram (cacheNet)
-import Data.GraphViz.Commands (GraphvizCommand(..))
+import Data.GraphViz.Commands (GraphvizCommand)
 import Control.Monad.Except(runExceptT)
 import Data.Tuple.Extra (fst3, snd3, thd3)
 
@@ -28,7 +28,8 @@ main = do
   xs <- getArgs
   case xs of
     pathToFolder:xs' -> do
-      inst <- getInstances (Just 50) $ matchPetriAlloy defaultMatchPetriConfig
+      let conf = defaultMatchPetriConfig
+      inst <- getInstances (Just 50) $ matchPetriAlloy conf
       folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance "this" "this") inst
           matchPetri = map (\x -> matchPetriComponentsText $ MatchPetriInstance{activityDiagram = x, seed=123}) ad
@@ -38,7 +39,8 @@ main = do
           taskSolution = map thd3 matchPetri
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
-      mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True (petriLayout defaultMatchPetriConfig)) $ zip folders petri
+      layout <- pickRandomLayout conf
+      mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True layout) $ zip folders petri
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"
     _ -> error "usage: one parameter required: FilePath (Output Folder)"
