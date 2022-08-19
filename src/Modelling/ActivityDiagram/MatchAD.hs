@@ -39,7 +39,7 @@ data MatchADConfig = MatchADConfig {
 defaultMatchADConfig :: MatchADConfig
 defaultMatchADConfig = MatchADConfig {
   adConfig = defaultADConfig,
-  noActivityFinalInForkBlocks = Just True
+  noActivityFinalInForkBlocks = Nothing
 }
 
 checkMatchADConfig :: MatchADConfig -> Maybe String

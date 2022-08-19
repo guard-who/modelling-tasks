@@ -56,7 +56,7 @@ defaultMatchPetriConfig = MatchPetriConfig
     supportSTAbsent = Nothing,
     activityFinalsExist = Nothing,
     avoidAddingSinksForFinals = Nothing,
-    noActivityFinalInForkBlocks = Just True
+    noActivityFinalInForkBlocks = Nothing
   }
 
 checkMatchPetriConfig :: MatchPetriConfig -> Maybe String
