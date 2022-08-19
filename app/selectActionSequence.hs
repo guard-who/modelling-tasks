@@ -9,7 +9,9 @@ import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.SelectAS (SelectASInstance(..), defaultSelectASConfig, selectASAlloy, checkSelectASInstance, selectActionSequenceText, selectASTaskDescription)
+import Modelling.ActivityDiagram.SelectAS (
+  SelectASInstance(..),
+  defaultSelectASConfig, selectASAlloy, checkSelectASInstance, selectActionSequenceText, selectASTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
@@ -21,11 +23,12 @@ main = do
     pathToFolder:xs' -> do
       inst <- getInstances (Just 50) $ selectASAlloy defaultSelectASConfig
       let ad = map (failWith id . parseInstance "this" "this") inst
-          selectAS = filter (isNothing . (`checkSelectASInstance` defaultSelectASConfig))
+          validInst = filter (isNothing . (`checkSelectASInstance` defaultSelectASConfig))
                       $ map (\x -> SelectASInstance{activityDiagram = x, seed=123, numberOfWrongSequences=2}) ad
-          plantumlstring = map (convertToPlantUML . activityDiagram) selectAS
-          taskDescription = map selectASTaskDescription selectAS
-          taskSolution = map selectActionSequenceText selectAS
+          selectAS = map selectActionSequenceText validInst
+          plantumlstring = map (convertToPlantUML . fst) selectAS
+          taskDescription = map selectASTaskDescription  validInst
+          taskSolution =  map snd selectAS
       folders <- createExerciseFolders pathToFolder (length selectAS)
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
