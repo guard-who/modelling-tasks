@@ -20,6 +20,7 @@ import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validA
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
+import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.List (permutations, sortBy)
@@ -109,26 +110,29 @@ checkSelectASInstance inst SelectASConfig {
     = Just "Solution should not be longer than parameter 'maxAnswerLength'"
   | otherwise
     = Nothing
-  where solution = correctSequence $ selectActionSequence inst
+  where solution = correctSequence $ snd $ selectActionSequence inst
 
 data SelectASSolution = SelectASSolution {
   correctSequence :: [String],
   wrongSequences :: [[String]]
 } deriving (Show, Eq)
 
-selectActionSequence :: SelectASInstance -> SelectASSolution
+selectActionSequence :: SelectASInstance -> (UMLActivityDiagram, SelectASSolution)
 selectActionSequence SelectASInstance {
     activityDiagram,
+    seed,
     numberOfWrongSequences
   }
   =
-  let correctSequence = generateActionSequence activityDiagram
+  let ad = snd $ shuffleADNames seed activityDiagram
+      correctSequence = generateActionSequence ad
       wrongSequences =
         take numberOfWrongSequences $
         sortBy (compareDistToCorrect correctSequence) $
-        filter (not . (`validActionSequence` activityDiagram)) $
+        filter (not . (`validActionSequence` ad)) $
         permutations correctSequence
-  in SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
+      solution = SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
+  in (ad, solution)
 
 asEditDistParams :: [String] -> Params String (String, Int, String) (Sum Int)
 asEditDistParams xs = Params
@@ -156,7 +160,7 @@ selectASTaskDescription inst@SelectASInstance {
   }
   =
   let solution = selectActionSequence inst
-      toStringList = map (foldr1 (++)) (correctSequence solution : wrongSequences solution)
+      toStringList = map (foldr1 (++)) $ correctSequence (snd solution) : wrongSequences (snd solution)
       shuffledList = shuffle' toStringList (length toStringList) (mkStdGen seed)
   in
   [i|
@@ -169,12 +173,13 @@ selectASTaskDescription inst@SelectASInstance {
     listOptions xs =
       unlines $ map (\(x :: String) -> [i|- #{x}|]) xs
 
-selectActionSequenceText :: SelectASInstance -> String
+selectActionSequenceText :: SelectASInstance -> (UMLActivityDiagram, String)
 selectActionSequenceText inst =
-  let solution = correctSequence $ selectActionSequence inst
-  in
-  [i|
-    Solution for the SelectActionSequence-Task:
+  let (ad, solution) = selectActionSequence inst
+      text =
+        [i|
+          Solution for the SelectActionSequence-Task:
 
-    The correct Action Sequence is #{solution}.
-  |]
+          The correct Action Sequence is #{correctSequence solution}.
+        |]
+  in (ad, text)
