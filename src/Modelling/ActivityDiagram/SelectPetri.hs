@@ -5,6 +5,7 @@ module Modelling.ActivityDiagram.SelectPetri (
   SelectPetriInstance(..),
   SelectPetriConfig(..),
   SelectPetriSolution(..),
+  pickRandomLayout,
   defaultSelectPetriConfig,
   checkSelectPetriConfig,
   checkPetriInstance,
@@ -20,9 +21,11 @@ import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
+import Modelling.Auxiliary.Common (oneOf)
 import Modelling.PetriNet.Types (PetriLike(..))
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Random (MonadRandom)
 import Data.List (unfoldr, nubBy)
 import Data.GraphViz.Commands (GraphvizCommand(Dot))
 import Data.String.Interpolate ( i )
@@ -38,17 +41,20 @@ data SelectPetriInstance = SelectPetriInstance {
 
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: ADConfig,
-  petriLayout :: GraphvizCommand,
+  petriLayout :: [GraphvizCommand],
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
   noActivityFinalInForkBlocks :: Maybe Bool -- Avoid Activity Finals in concurrent flows to reduce confusion
 } deriving (Show)
 
+pickRandomLayout :: (MonadRandom m) => SelectPetriConfig -> m GraphvizCommand
+pickRandomLayout conf = oneOf (petriLayout conf)
+
 defaultSelectPetriConfig :: SelectPetriConfig
 defaultSelectPetriConfig = SelectPetriConfig {
   adConfig = defaultADConfig,
-  petriLayout = Dot,
+  petriLayout = [Dot],
   supportSTAbsent = Nothing,
   activityFinalsExist = Nothing,
   avoidAddingSinksForFinals = Nothing,
