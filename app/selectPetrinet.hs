@@ -34,11 +34,12 @@ main = do
       inst <- getInstances (Just 50) $ selectPetriAlloy defaultSelectPetriConfig
       let ad = map (failWith id . parseInstance "this" "this") inst
           selectPetri =
-            filter (isNothing . checkPetriInstance)
+            map selectPetrinet
+            $ filter (isNothing . checkPetriInstance)
             $ map (\x -> SelectPetriInstance{activityDiagram = x, seed=123, numberOfWrongNets=2}) ad
-          plantumlstring = map (convertToPlantUML . activityDiagram) selectPetri
+          plantumlstring = map (convertToPlantUML . fst) selectPetri
           taskDescription = replicate (length selectPetri) selectPetriTaskDescription
-          taskSolution = map selectPetrinet selectPetri
+          taskSolution = map snd selectPetri
       folders <- createExerciseFolders pathToFolder (length selectPetri)
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
@@ -47,7 +48,7 @@ main = do
     _ -> error "usage: one parameter required: FilePath (Output Folder)"
 
 
-writeSolutionToFolder :: SelectPetriConfig -> FilePath  -> SelectPetriSolution -> IO ()
+writeSolutionToFolder :: SelectPetriConfig -> FilePath -> SelectPetriSolution -> IO ()
 writeSolutionToFolder conf path SelectPetriSolution {
      matchingNet,
      wrongNets
