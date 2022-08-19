@@ -12,6 +12,7 @@ dependencies:
   - graphviz
   - hgal
   - modelling-tasks
+  - MonadRandom
   - mtl
   - process
   - random
