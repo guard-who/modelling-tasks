@@ -18,6 +18,7 @@ import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADC
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
+import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
 import Modelling.PetriNet.Types (PetriLike(..))
 
@@ -114,7 +115,7 @@ checkPetriInstance :: SelectPetriInstance -> Maybe String
 checkPetriInstance inst@SelectPetriInstance {
     numberOfWrongNets
   }
-  | length (wrongNets $ selectPetrinet inst) /= numberOfWrongNets
+  | length (wrongNets $ snd $ selectPetrinet inst) /= numberOfWrongNets
     = Just "Number of wrong nets found for given instance is unequal to numberOfWrongNets"
   | otherwise
     = Nothing
@@ -124,19 +125,21 @@ data SelectPetriSolution = SelectPetriSolution {
   wrongNets :: [PetriLike PetriKey]
 } deriving (Show)
 
-selectPetrinet :: SelectPetriInstance -> SelectPetriSolution
+selectPetrinet :: SelectPetriInstance -> (UMLActivityDiagram, SelectPetriSolution)
 selectPetrinet SelectPetriInstance {
     activityDiagram,
     seed,
     numberOfWrongNets
   } =
-  let matchingNet = convertToPetrinet activityDiagram
+  let ad = snd $ shuffleADNames seed activityDiagram
+      matchingNet = convertToPetrinet ad
       seeds = unfoldr (Just . next) (mkStdGen seed)
       wrongNets = take numberOfWrongNets
                   $ nubBy isPetriIsomorphic
                   $ filter (not . isPetriIsomorphic matchingNet)
-                  $ map (convertToPetrinet . modifyAD activityDiagram) seeds
-  in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
+                  $ map (convertToPetrinet . modifyAD ad) seeds
+      solution = SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
+  in (ad, solution)
 
 modifyAD :: UMLActivityDiagram -> Int -> UMLActivityDiagram
 modifyAD diag seed =
