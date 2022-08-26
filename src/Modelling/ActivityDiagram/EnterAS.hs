@@ -164,11 +164,21 @@ enterASTask path task = do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
   image ad
-  paragraph $ translate $ do
-    english [i|State an action sequence for the diagram, therefore a sequence of actions resulting in
-the termination of all flows of the diagram, by entering a list of action names.|]
-    german [i|Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge von Aktionen welche in
-das Terminieren aller Abläufe des Diagramms resultiert, indem Sie eine Liste von Aktionsnamen angeben.|]
+  paragraph $ do
+    translate $ do
+      english [i|State an action sequence for the diagram, therefore a sequence of actions resulting in
+the termination of all flows of the diagram, by entering a list of action names.
+For example, |]
+      german [i|Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge von Aktionen welche in
+das Terminieren aller Abläufe des Diagramms resultiert, indem Sie eine Liste von Aktionsnamen angeben.
+Zum Beispiel drückt |]
+    code $ show enterASInitial
+    translate $ do
+      english [i|expresses the execution of A, followed by B in the diagram.|]
+      german [i|die Ausführung von A, gefolgt von B im Diagramm aus.|]
+
+enterASInitial :: [String]
+enterASInitial = ["A", "B"]
 
 enterASSyntax
   :: (OutputMonad m)
