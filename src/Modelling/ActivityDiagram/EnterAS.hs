@@ -11,16 +11,26 @@ module Modelling.ActivityDiagram.EnterAS (
   checkEnterASInstance,
   enterActionSequence,
   enterASTaskDescription,
-  enterActionSequenceText
+  enterActionSequenceText,
+  enterASTask
 ) where
 
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
+import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (..),
+  english,
+  german,
+  translate
+  )
 import Data.String.Interpolate ( i )
 
 data EnterASInstance = EnterASInstance {
@@ -128,11 +138,29 @@ enterASTaskDescription =
 enterActionSequenceText :: EnterASInstance -> (UMLActivityDiagram, String)
 enterActionSequenceText inst =
   let (ad, solution) = enterActionSequence inst
-      text = [i|
+      soltext = [i|
         Sample solution for the EnterActionSequence-Task:
 
         A correct Action Sequence for the given Activity Diagram is: #{sampleSolution solution}
 
         Other entered sequences might be checked with the function 'validActionSequence'
       |]
-  in (ad, text)
+  in (ad, soltext)
+
+enterASTask
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> EnterASInstance
+  -> LangM m
+enterASTask path task = do
+  let (diag, _) = enterActionSequence task
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  paragraph $ translate $ do
+    english "Consider the following activity diagram."
+    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+  image ad
+  paragraph $ translate $ do
+    english [i|State an action sequence for the diagram, therefore a sequence of actions resulting in
+the termination of all flows of the diagram, by entering a list of action names.|]
+    german [i|Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge von Aktionen welche in
+das Terminieren aller Abläufe des Diagramms resultiert, indem Sie eine Liste von Aktionsnamen angeben.|]
