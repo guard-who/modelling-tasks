@@ -13,13 +13,14 @@ module Modelling.ActivityDiagram.EnterAS (
   enterASTaskDescription,
   enterActionSequenceText,
   enterASTask,
+  enterASSyntax,
   enterASEvaluation
 ) where
 
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), isActionNode, isObjectNode)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
@@ -35,6 +36,7 @@ import Control.Monad.Output (
   printSolutionAndAssert
   )
 import Data.String.Interpolate ( i )
+import Modelling.Auxiliary.Output (addPretext)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
@@ -167,6 +169,18 @@ enterASTask path task = do
 the termination of all flows of the diagram, by entering a list of action names.|]
     german [i|Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge von Aktionen welche in
 das Terminieren aller Abläufe des Diagramms resultiert, indem Sie eine Liste von Aktionsnamen angeben.|]
+
+enterASSyntax
+  :: (OutputMonad m)
+  => EnterASInstance
+  -> [String]
+  -> LangM m
+enterASSyntax task sub = addPretext $ do
+  let (diag, _) = enterActionSequence task
+      adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes diag
+  assertion (all (`elem` adNames) sub) $ translate $ do
+    english "Referenced node names were provided within task?"
+    german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
 
 enterASEvaluation
   :: (OutputMonad m)
