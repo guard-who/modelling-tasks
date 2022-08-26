@@ -14,13 +14,15 @@ module Modelling.ActivityDiagram.EnterAS (
   enterActionSequenceText,
   enterASTask,
   enterASSyntax,
-  enterASEvaluation
+  enterASEvaluation,
+  enterAS
 ) where
 
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), isActionNode, isObjectNode)
+import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
@@ -35,8 +37,18 @@ import Control.Monad.Output (
   translate,
   printSolutionAndAssert
   )
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  evalRandT,
+  mkStdGen,
+  )
+import Data.Maybe (isNothing)
 import Data.String.Interpolate ( i )
+import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
+import System.Random.Shuffle (shuffleM)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
@@ -203,3 +215,30 @@ enterASEvaluation task sub = do
       points = if correct then 1 else 0
       msolutionString = Just $ show $ sampleSolution sol
   printSolutionAndAssert msolutionString points
+
+enterAS
+  :: EnterASConfig
+  -> Int
+  -> Int
+  -> IO EnterASInstance
+enterAS config segment seed = do
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  evalRandT (getEnterASTask config) g
+
+getEnterASTask
+  :: (RandomGen g, MonadIO m)
+  => EnterASConfig
+  -> RandT g m EnterASInstance
+getEnterASTask config = do
+  instas <- liftIO $ getInstances (Just 50) $ enterASAlloy config
+  rinstas <- shuffleM instas
+  let ad = map (failWith id . parseInstance "this" "this") rinstas
+      validInsta =
+        head $ filter (isNothing . (`checkEnterASInstance` config))
+        $ map (\x -> EnterASInstance {activityDiagram=x, seed=123}) ad
+  g' <- getRandom
+  return $ EnterASInstance {activityDiagram=activityDiagram validInsta, seed=g'}
+
+
+failWith :: (a -> String) -> Either a c -> c
+failWith f = either (error . f) id
