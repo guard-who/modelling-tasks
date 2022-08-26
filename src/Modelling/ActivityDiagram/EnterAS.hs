@@ -12,10 +12,11 @@ module Modelling.ActivityDiagram.EnterAS (
   enterActionSequence,
   enterASTaskDescription,
   enterActionSequenceText,
-  enterASTask
+  enterASTask,
+  enterASEvaluation
 ) where
 
-import Modelling.ActivityDiagram.ActionSequences (generateActionSequence)
+import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
@@ -26,10 +27,12 @@ import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
+  Rated,
   OutputMonad (..),
   english,
   german,
-  translate
+  translate,
+  printSolutionAndAssert
   )
 import Data.String.Interpolate ( i )
 
@@ -164,3 +167,15 @@ enterASTask path task = do
 the termination of all flows of the diagram, by entering a list of action names.|]
     german [i|Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge von Aktionen welche in
 das Terminieren aller Abläufe des Diagramms resultiert, indem Sie eine Liste von Aktionsnamen angeben.|]
+
+enterASEvaluation
+  :: (OutputMonad m)
+  => EnterASInstance
+  -> [String]
+  -> Rated m
+enterASEvaluation task sub = do
+  let (diag, sol) = enterActionSequence task
+      correct = validActionSequence sub diag
+      points = if correct then 1 else 0
+      msolutionString = Just $ show $ sampleSolution sol
+  printSolutionAndAssert msolutionString points
