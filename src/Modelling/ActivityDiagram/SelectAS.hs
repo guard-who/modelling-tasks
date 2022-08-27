@@ -12,10 +12,11 @@ module Modelling.ActivityDiagram.SelectAS (
   selectActionSequence,
   selectASTaskDescription,
   selectActionSequenceText,
-  selectASTask
+  selectASTask,
+  selectASEvaluation
 ) where
 
-import qualified Data.Map as M (fromList, toList, map)
+import qualified Data.Map as M (fromList, toList, filter, map)
 import qualified Data.Vector as V (fromList)
 
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
@@ -29,10 +30,13 @@ import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
+  Rated,
   OutputMonad (..),
   english,
   german,
   translate,
+  translations,
+  singleChoice
   )
 import Control.Monad.Random (
   mkStdGen
@@ -42,6 +46,7 @@ import Data.Map (Map)
 import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
 import Data.Vector.Distance (Params(..), leastChanges)
+import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffle')
 
 
@@ -205,7 +210,7 @@ selectASTask
   -> LangM m
 selectASTask path task = do
   let (diag, sol) = selectActionSequence task
-      mapping = M.toList $ M.map snd $ selectASSolutionToMap sol (seed task)
+      mapping = M.toList $ M.map snd $ selectASSolutionToMap (seed task) sol
   ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
   paragraph $ translate $ do
     english "Consider the following activity diagram."
@@ -229,8 +234,21 @@ Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräs
       english [i|would indicate that sequence 2 is the valid action sequence.|]
       german  [i|würde bedeuten, dass Folge 2 die valide Aktionsfolge ist.|]
 
-selectASSolutionToMap :: SelectASSolution -> Int -> Map Int (Bool, [String])
-selectASSolutionToMap sol seed =
+selectASSolutionToMap :: Int -> SelectASSolution -> Map Int (Bool, [String])
+selectASSolutionToMap seed sol =
   let xs = (True, correctSequence sol) : (map (\x -> (False, x)) $ wrongSequences sol)
       solution = shuffle' xs (length xs) (mkStdGen seed)
   in M.fromList $ zip [1..] solution
+
+selectASEvaluation
+  :: OutputMonad m
+  => SelectASInstance
+  -> Int
+  -> Rated m
+selectASEvaluation task n = addPretext $ do
+  let as = translations $ do
+        english "action sequence"
+        german "Aktionsfolge"
+      solMap = selectASSolutionToMap (seed task) $ snd $ selectActionSequence task
+      (solution, validAS) = head $ M.toList $ M.map snd $ M.filter fst solMap
+  singleChoice as (Just $ show $ validAS) solution n
