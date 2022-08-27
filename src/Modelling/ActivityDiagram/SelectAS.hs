@@ -11,23 +11,37 @@ module Modelling.ActivityDiagram.SelectAS (
   checkSelectASInstance,
   selectActionSequence,
   selectASTaskDescription,
-  selectActionSequenceText
+  selectActionSequenceText,
+  selectASTask
 ) where
 
+import qualified Data.Map as M (fromList, toList, map)
 import qualified Data.Vector as V (fromList)
 
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
+import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (..),
+  english,
+  german,
+  translate,
+  )
+import Control.Monad.Random (
+  mkStdGen
+  )
 import Data.List (permutations, sortBy)
+import Data.Map (Map)
 import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
 import Data.Vector.Distance (Params(..), leastChanges)
-import System.Random (mkStdGen)
 import System.Random.Shuffle (shuffle')
 
 
@@ -176,10 +190,47 @@ selectASTaskDescription inst@SelectASInstance {
 selectActionSequenceText :: SelectASInstance -> (UMLActivityDiagram, String)
 selectActionSequenceText inst =
   let (ad, solution) = selectActionSequence inst
-      text =
+      soltext =
         [i|
           Solution for the SelectActionSequence-Task:
 
           The correct Action Sequence is #{correctSequence solution}.
         |]
-  in (ad, text)
+  in (ad, soltext)
+
+selectASTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> SelectASInstance
+  -> LangM m
+selectASTask path task = do
+  let (diag, sol) = selectActionSequence task
+      mapping = M.toList $ M.map snd $ selectASSolutionToMap sol (seed task)
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  paragraph $ translate $ do
+    english "Consider the following activity diagram."
+    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+  image ad
+  paragraph $ translate $ do
+    english "Consider the following sequences."
+    german "Betrachten Sie die folgenden Folgen."
+  enumerateM (code . show) $ map (\(n,xs) -> (n, code $ show xs)) mapping
+  paragraph $ translate $ do
+    english [i|Which of these sequences is a valid action sequences?
+Please state your answer by giving a number indicating the valid action sequence.|]
+    german [i|Welcher dieser Folgen ist eine valide Aktionsfolge?
+Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräsentiert.|]
+  paragraph $ do
+    translate $ do
+      english [i|For example,|]
+      german [i|Zum Beispiel|]
+    code "2"
+    translate $ do
+      english [i|would indicate that sequence 2 is the valid action sequence.|]
+      german  [i|würde bedeuten, dass Folge 2 die valide Aktionsfolge ist.|]
+
+selectASSolutionToMap :: SelectASSolution -> Int -> Map Int (Bool, [String])
+selectASSolutionToMap sol seed =
+  let xs = (True, correctSequence sol) : (map (\x -> (False, x)) $ wrongSequences sol)
+      solution = shuffle' xs (length xs) (mkStdGen seed)
+  in M.fromList $ zip [1..] solution
