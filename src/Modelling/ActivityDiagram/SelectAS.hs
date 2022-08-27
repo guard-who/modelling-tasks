@@ -13,7 +13,8 @@ module Modelling.ActivityDiagram.SelectAS (
   selectASTaskDescription,
   selectActionSequenceText,
   selectASTask,
-  selectASEvaluation
+  selectASEvaluation,
+  selectAS
 ) where
 
 import qualified Data.Map as M (fromList, toList, filter, map)
@@ -23,6 +24,7 @@ import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validA
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..))
+import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
@@ -39,15 +41,21 @@ import Control.Monad.Output (
   singleChoice
   )
 import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  evalRandT,
   mkStdGen
   )
 import Data.List (permutations, sortBy)
 import Data.Map (Map)
+import Data.Maybe (isNothing)
 import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
 import Data.Vector.Distance (Params(..), leastChanges)
+import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
-import System.Random.Shuffle (shuffle')
+import System.Random.Shuffle (shuffle', shuffleM)
 
 
 data SelectASInstance = SelectASInstance {
@@ -59,6 +67,7 @@ data SelectASInstance = SelectASInstance {
 data SelectASConfig = SelectASConfig {
   adConfig :: ADConfig,
   objectNodeOnEveryPath :: Maybe Bool,
+  numberOfWrongAnswers :: Int,
   minAnswerLength :: Int,
   maxAnswerLength :: Int
 } deriving (Show)
@@ -74,6 +83,7 @@ defaultSelectASConfig = SelectASConfig {
     flowFinalNodes = 2
   },
   objectNodeOnEveryPath = Nothing,
+  numberOfWrongAnswers = 2,
   minAnswerLength = 5,
   maxAnswerLength = 8
 }
@@ -234,7 +244,10 @@ Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräs
       english [i|would indicate that sequence 2 is the valid action sequence.|]
       german  [i|würde bedeuten, dass Folge 2 die valide Aktionsfolge ist.|]
 
-selectASSolutionToMap :: Int -> SelectASSolution -> Map Int (Bool, [String])
+selectASSolutionToMap
+  :: Int
+  -> SelectASSolution
+  -> Map Int (Bool, [String])
 selectASSolutionToMap seed sol =
   let xs = (True, correctSequence sol) : (map (\x -> (False, x)) $ wrongSequences sol)
       solution = shuffle' xs (length xs) (mkStdGen seed)
@@ -252,3 +265,34 @@ selectASEvaluation task n = addPretext $ do
       solMap = selectASSolutionToMap (seed task) $ snd $ selectActionSequence task
       (solution, validAS) = head $ M.toList $ M.map snd $ M.filter fst solMap
   singleChoice as (Just $ show $ validAS) solution n
+
+selectAS
+  :: SelectASConfig
+  -> Int
+  -> Int
+  -> IO SelectASInstance
+selectAS config segment seed = do
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  evalRandT (getSelectASTask config) g
+
+getSelectASTask
+  :: (RandomGen g, MonadIO m)
+  => SelectASConfig
+  -> RandT g m SelectASInstance
+getSelectASTask config = do
+  instas <- liftIO $ getInstances (Just 50) $ selectASAlloy config
+  rinstas <- shuffleM instas
+  let ad = map (failWith id . parseInstance "this" "this") rinstas
+      validInsta =
+        head $ filter (isNothing . (`checkSelectASInstance` config))
+        $ map (\x ->
+          SelectASInstance {activityDiagram=x, seed=123, numberOfWrongSequences=numberOfWrongAnswers config}) ad
+  g' <- getRandom
+  return $ SelectASInstance {
+    activityDiagram=activityDiagram validInsta,
+    seed=g',
+    numberOfWrongSequences=numberOfWrongAnswers config
+  }
+
+failWith :: (a -> String) -> Either a c -> c
+failWith f = either (error . f) id
