@@ -13,12 +13,13 @@ module Modelling.ActivityDiagram.SelectAS (
   selectASTaskDescription,
   selectActionSequenceText,
   selectASTask,
+  selectASSyntax,
   selectASEvaluation,
   selectAS,
   defaultSelectASInstance
 ) where
 
-import qualified Data.Map as M (fromList, toList, filter, map)
+import qualified Data.Map as M (fromList, toList, keys, filter, map)
 import qualified Data.Vector as V (fromList)
 
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
@@ -39,7 +40,7 @@ import Control.Monad.Output (
   german,
   translate,
   translations,
-  singleChoice
+  singleChoice, singleChoiceSyntax
   )
 import Control.Monad.Random (
   MonadRandom (getRandom),
@@ -250,9 +251,18 @@ selectASSolutionToMap
   -> SelectASSolution
   -> Map Int (Bool, [String])
 selectASSolutionToMap seed sol =
-  let xs = (True, correctSequence sol) : (map (\x -> (False, x)) $ wrongSequences sol)
+  let xs = (True, correctSequence sol) : map (\x -> (False, x)) (wrongSequences sol)
       solution = shuffle' xs (length xs) (mkStdGen seed)
   in M.fromList $ zip [1..] solution
+
+selectASSyntax
+  :: (OutputMonad m)
+  => SelectASInstance
+  -> Int
+  -> LangM m
+selectASSyntax task sub = addPretext $ do
+  let options = M.keys $ selectASSolutionToMap (seed task) $ snd $ selectActionSequence task
+  singleChoiceSyntax True options sub
 
 selectASEvaluation
   :: OutputMonad m
@@ -265,7 +275,7 @@ selectASEvaluation task n = addPretext $ do
         german "Aktionsfolge"
       solMap = selectASSolutionToMap (seed task) $ snd $ selectActionSequence task
       (solution, validAS) = head $ M.toList $ M.map snd $ M.filter fst solMap
-  singleChoice as (Just $ show $ validAS) solution n
+  singleChoice as (Just $ show validAS) solution n
 
 selectAS
   :: SelectASConfig
