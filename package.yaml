@@ -106,6 +106,13 @@ executables:
       - ba-athena-schulz
       - filepath
       - criterion-measurement
+  selectASTaskDemo:
+    main: selectASTaskDemo.hs
+    source-dirs:
+      - app
+      - app/common
+    dependencies:
+      - ba-athena-schulz
 tests:
   ba-athena-schulz-test:
     main: Spec.hs
