@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 
 module Modelling.ActivityDiagram.SelectPetri (
   SelectPetriInstance(..),
@@ -246,7 +247,7 @@ selectPetriSolutionToMap
   -> SelectPetriSolution
   -> Map Int (Bool, PetriLike PetriKey)
 selectPetriSolutionToMap seed sol =
-  let xs = (True, matchingNet sol) : map (\x -> (False, x)) (wrongNets sol)
+  let xs = (True, matchingNet sol) : map (False, ) (wrongNets sol)
       solution = shuffle' xs (length xs) (mkStdGen seed)
   in M.fromList $ zip [1..] solution
 

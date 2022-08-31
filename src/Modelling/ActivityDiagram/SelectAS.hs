@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 
 module Modelling.ActivityDiagram.SelectAS (
   SelectASInstance(..),
@@ -251,7 +252,7 @@ selectASSolutionToMap
   -> SelectASSolution
   -> Map Int (Bool, [String])
 selectASSolutionToMap seed sol =
-  let xs = (True, correctSequence sol) : map (\x -> (False, x)) (wrongSequences sol)
+  let xs = (True, correctSequence sol) : map (False, ) (wrongSequences sol)
       solution = shuffle' xs (length xs) (mkStdGen seed)
   in M.fromList $ zip [1..] solution
 
