@@ -26,3 +26,4 @@ main = do
       selectASSyntax task sub `withLang` English
       _ <- selectASEvaluation task sub `withLang` English
       return ()
+    _ -> error "usage: three parameters required: FilePath (Output Folder) Segment (Int) Seed (Int)"
