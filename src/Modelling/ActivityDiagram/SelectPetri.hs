@@ -14,7 +14,8 @@ module Modelling.ActivityDiagram.SelectPetri (
   selectPetriTaskDescription,
   selectPetriTask,
   selectPetriSyntax,
-  selectPetriEvaluation
+  selectPetriEvaluation,
+  selectPetri
 ) where
 
 import qualified Data.Map as M (fromList, toList, keys, map, filter)
@@ -23,6 +24,7 @@ import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
+import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
@@ -45,14 +47,22 @@ import Control.Monad.Output (
   translations,
   singleChoice, singleChoiceSyntax
   )
-import Control.Monad.Random (MonadRandom)
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  evalRandT,
+  mkStdGen
+  )
+import Control.Monad.Except (runExceptT)
 import Data.List (unfoldr, nubBy)
 import Data.Map (Map)
+import Data.Maybe (isNothing)
 import Data.GraphViz.Commands (GraphvizCommand(Dot))
 import Data.String.Interpolate ( i )
-import System.Random (mkStdGen, next)       --To be changed from 'next' to 'uniform', not possible as of now due to dependencies
-import System.Random.Shuffle (shuffle')
-import Control.Monad.Except (runExceptT)
+import Language.Alloy.Call (getInstances)
+import System.Random (next)       --To be changed from 'next' to 'uniform', not possible as of now due to dependencies
+import System.Random.Shuffle (shuffle', shuffleM)
 
 
 data SelectPetriInstance = SelectPetriInstance {
@@ -64,6 +74,7 @@ data SelectPetriInstance = SelectPetriInstance {
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: ADConfig,
   petriLayout :: [GraphvizCommand],
+  numberOfWrongAnswers :: Int,
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
@@ -77,6 +88,7 @@ defaultSelectPetriConfig :: SelectPetriConfig
 defaultSelectPetriConfig = SelectPetriConfig {
   adConfig = defaultADConfig,
   petriLayout = [Dot],
+  numberOfWrongAnswers = 2,
   supportSTAbsent = Nothing,
   activityFinalsExist = Nothing,
   avoidAddingSinksForFinals = Nothing,
@@ -259,6 +271,34 @@ selectPetriEvaluation task n = addPretext $ do
       solMap = selectPetriSolutionToMap (seed task) $ snd $ selectPetrinet task
       (solution, _) = head $ M.toList $ M.map snd $ M.filter fst solMap
   singleChoice as (Just $ show solution) solution n
+
+selectPetri
+  :: SelectPetriConfig
+  -> Int
+  -> Int
+  -> IO SelectPetriInstance
+selectPetri config segment seed = do
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  evalRandT (getSelectPetriTask config) g
+
+getSelectPetriTask
+  :: (RandomGen g, MonadIO m)
+  => SelectPetriConfig
+  -> RandT g m SelectPetriInstance
+getSelectPetriTask config = do
+  instas <- liftIO $ getInstances (Just 50) $ selectPetriAlloy config
+  rinstas <- shuffleM instas
+  let ad = map (failWith id . parseInstance "this" "this") rinstas
+      validInsta =
+        head $ filter (isNothing . checkPetriInstance)
+        $ map (\x ->
+          SelectPetriInstance {activityDiagram=x, seed=123, numberOfWrongNets=numberOfWrongAnswers config}) ad
+  g' <- getRandom
+  return $ SelectPetriInstance {
+    activityDiagram=activityDiagram validInsta,
+    seed=g',
+    numberOfWrongNets=numberOfWrongAnswers config
+  }
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
