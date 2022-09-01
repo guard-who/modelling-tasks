@@ -113,6 +113,13 @@ executables:
       - app/common
     dependencies:
       - ba-athena-schulz
+  selectPetriTaskDemo:
+    main: selectPetriTaskDemo.hs
+    source-dirs:
+      - app
+      - app/common
+    dependencies:
+      - ba-athena-schulz
 tests:
   ba-athena-schulz-test:
     main: Spec.hs
