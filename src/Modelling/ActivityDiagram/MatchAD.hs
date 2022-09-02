@@ -232,7 +232,7 @@ matchADEvaluation task sub = addPretext $ do
 
 matchADSolutionMap
   :: MatchADSolution
-  -> Map (Either [String] Int) Bool
+  -> Map (Int, Either [String] Int) Bool
 matchADSolutionMap sol =
   let xs = [
         Left $ sort $ actionNames sol,
@@ -245,7 +245,7 @@ matchADSolutionMap sol =
         Right $ numberOfActivityFinalNodes sol,
         Right $ numberOfFlowFinalNodes sol
         ]
-  in M.fromList $ map (,True) xs
+  in M.fromList $ zipWith (curry (,True)) [1..] xs
 
 matchAD
   :: MatchADConfig
