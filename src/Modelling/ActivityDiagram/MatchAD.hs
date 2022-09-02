@@ -10,7 +10,8 @@ module Modelling.ActivityDiagram.MatchAD (
   matchADAlloy,
   matchADTaskDescription,
   matchADComponents,
-  matchADComponentsText
+  matchADComponentsText,
+  matchADTask
  ) where
 
 
@@ -19,9 +20,18 @@ import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode(name),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
+import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (..),
+  english,
+  german,
+  translate
+  )
 import Data.List (sort)
 import Data.String.Interpolate ( i )
 
@@ -125,7 +135,7 @@ matchADComponents MatchADInstance {
 matchADComponentsText :: MatchADInstance -> (UMLActivityDiagram, String)
 matchADComponentsText inst =
   let (ad, solution) = matchADComponents inst
-      text = [i|
+      soltext = [i|
         Solutions for the MatchAD-Task:
 
         a) Names of all Actions in the Activity Diagram: #{actionNames solution}
@@ -138,4 +148,40 @@ matchADComponentsText inst =
         h) Number of Activity Final Nodes in the Activity Diagram: #{numberOfActivityFinalNodes solution}
         i) Number of Flow Final Nodes in the Activity Diagram: #{numberOfFlowFinalNodes solution}
       |]
-  in (ad, text)
+  in (ad, soltext)
+
+matchADTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> MatchADInstance
+  -> LangM m
+matchADTask path task = do
+  let (diag, _) = matchADComponents task
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  paragraph $ translate $ do
+    english "Consider the following activity diagram."
+    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+  image ad
+  paragraph $ translate $ do
+    english [i|State the names of all actions, the names of all object nodes, and the number
+of each other type of component for the given diagram.|]
+    german [i|Geben Sie die Namen aller Aktionen, die Namen aller Objektknoten, sowie die Anzahl
+aller anderen Arten von Komponenten für das gegebene Aktivitätsdiagramm an.|]
+  paragraph $ do
+    translate $ do
+      english [i|To do this, enter your answer as in the following example.|]
+      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
+    code $ show matchADInitial
+
+matchADInitial :: MatchADSolution
+matchADInitial = MatchADSolution {
+  actionNames = ["A", "B"],
+  objectNodeNames = ["C", "D"],
+  numberOfDecisionNodes = 2,
+  numberOfMergeNodes = 2,
+  numberOfForkNodes = 0,
+  numberOfJoinNodes = 0,
+  numberOfInitialNodes = 1,
+  numberOfActivityFinalNodes = 1,
+  numberOfFlowFinalNodes = 0
+}
