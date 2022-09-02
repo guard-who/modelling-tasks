@@ -13,7 +13,8 @@ module Modelling.ActivityDiagram.MatchAD (
   matchADComponentsText,
   matchADTask,
   matchADSyntax,
-  matchADEvaluation
+  matchADEvaluation,
+  matchAD
  ) where
 
 import qualified Data.Map as M (fromList, keys)
@@ -23,6 +24,7 @@ import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode(name),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
+import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 
@@ -38,10 +40,19 @@ import Control.Monad.Output (
   translations,
   multipleChoice
   )
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  evalRandT,
+  mkStdGen
+  )
 import Data.List (sort)
 import Data.Map (Map)
 import Data.String.Interpolate ( i )
+import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
+import System.Random.Shuffle (shuffleM)
 
 data MatchADInstance = MatchADInstance {
   activityDiagram :: UMLActivityDiagram,
@@ -235,3 +246,29 @@ matchADSolutionMap sol =
         Right $ numberOfFlowFinalNodes sol
         ]
   in M.fromList $ map (,True) xs
+
+matchAD
+  :: MatchADConfig
+  -> Int
+  -> Int
+  -> IO MatchADInstance
+matchAD config segment seed = do
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  evalRandT (getMatchADTask config) g
+
+getMatchADTask
+  :: (RandomGen g, MonadIO m)
+  => MatchADConfig
+  -> RandT g m MatchADInstance
+getMatchADTask config = do
+  instas <- liftIO $ getInstances (Just 50) $ matchADAlloy config
+  rinstas <- shuffleM instas
+  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  g' <- getRandom
+  return $ MatchADInstance {
+    activityDiagram=head ad,
+    seed=g'
+  }
+
+failWith :: (a -> String) -> Either a c -> c
+failWith f = either (error . f) id
