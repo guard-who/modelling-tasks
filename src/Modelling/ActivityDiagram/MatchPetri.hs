@@ -73,7 +73,8 @@ import System.Random.Shuffle (shuffleM)
 
 data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int
+  seed :: Int,
+  graphvizCmd :: GraphvizCommand
 } deriving (Show)
 
 data MatchPetriConfig = MatchPetriConfig {
@@ -261,7 +262,9 @@ matchPetriTask path task = do
   paragraph $ translate $ do
     english "Consider the following petrinet."
     german "Betrachten Sie das folgende Petrinetz."
-  petri' <- liftIO $ runExceptT $ cacheNet path (show . label) petri False False True Dot
+  petri' <- liftIO
+    $ runExceptT
+    $ cacheNet path (show . label) petri False False True (graphvizCmd task)
   image $ failWith id petri'
   paragraph $ translate $ do
     english [i|State the matchings of each action and petrinet node, the matching of each
@@ -366,9 +369,11 @@ getMatchPetriTask config = do
   rinstas <- shuffleM instas
   let ad = map (failWith id . parseInstance "this" "this") rinstas
   g' <- getRandom
+  layout <- pickRandomLayout config
   return $ MatchPetriInstance {
     activityDiagram=head ad,
-    seed=g'
+    seed=g',
+    graphvizCmd = layout
   }
 
 failWith :: (a -> String) -> Either a c -> c
