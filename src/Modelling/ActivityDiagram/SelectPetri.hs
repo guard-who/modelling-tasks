@@ -224,7 +224,7 @@ selectPetriTask path task = do
   image ad
   petris <- liftIO $
     traverse (\c -> runExceptT
-      $ cacheNet path (show . PK.label) c False False True Dot) mapping
+      $ cacheNet path (show . PK.label) c False False True (graphVizCmd task)) mapping
   paragraph $ translate $ do
     english "Consider the following petrinets."
     german "Betrachten Sie die folgenden Petrinetze."
