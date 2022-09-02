@@ -14,7 +14,8 @@ module Modelling.ActivityDiagram.MatchPetri (
   extractSupportSTs,
   matchPetriTask,
   matchPetriSyntax,
-  matchPetriEvaluation
+  matchPetriEvaluation,
+  matchPetri
 ) where
 
 import qualified Data.Map as M ((!), keys, null, fromList)
@@ -34,6 +35,7 @@ import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 
 import Modelling.Auxiliary.Common (oneOf)
@@ -54,11 +56,19 @@ import Control.Monad.Output (
   translations,
   multipleChoice
   )
-import Control.Monad.Random (MonadRandom)
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  evalRandT,
+  mkStdGen
+  )
 import Data.GraphViz.Commands (GraphvizCommand(Dot))
 import Data.List (sort)
 import Data.Map (Map)
 import Data.String.Interpolate ( i )
+import Language.Alloy.Call (getInstances)
+import System.Random.Shuffle (shuffleM)
 
 
 data MatchPetriInstance = MatchPetriInstance {
@@ -337,6 +347,29 @@ matchPetriSolutionMap sol =
         Right $ sort $ supportSTs sol
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
+
+matchPetri
+  :: MatchPetriConfig
+  -> Int
+  -> Int
+  -> IO MatchPetriInstance
+matchPetri config segment seed = do
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  evalRandT (getMatchPetriTask config) g
+
+getMatchPetriTask
+  :: (RandomGen g, MonadIO m)
+  => MatchPetriConfig
+  -> RandT g m MatchPetriInstance
+getMatchPetriTask config = do
+  instas <- liftIO $ getInstances (Just 50) $ matchPetriAlloy config
+  rinstas <- shuffleM instas
+  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  g' <- getRandom
+  return $ MatchPetriInstance {
+    activityDiagram=head ad,
+    seed=g'
+  }
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
