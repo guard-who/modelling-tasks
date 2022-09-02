@@ -11,7 +11,8 @@ module Modelling.ActivityDiagram.MatchPetri (
   matchPetriAlloy,
   matchPetriTaskDescription,
   matchPetriComponentsText,
-  extractSupportSTs
+  extractSupportSTs,
+  matchPetriTask
 ) where
 
 import qualified Data.Map as M ((!), keys, null)
@@ -21,11 +22,22 @@ import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 
 import Modelling.Auxiliary.Common (oneOf)
+import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Except (runExceptT)
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (..),
+  english,
+  german,
+  translate
+  )
 import Control.Monad.Random (MonadRandom)
 import Data.GraphViz.Commands (GraphvizCommand(Dot))
 import Data.List (sort)
@@ -159,7 +171,7 @@ matchPetriTaskDescription =
 matchPetriComponentsText :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, String)
 matchPetriComponentsText inst =
   let (ad, petri, solution) = matchPetriComponents inst
-      text = [i|
+      soltext = [i|
       Solutions for the MatchPetri-Task:
 
       a) Matchings of Actions to petrinet nodes: #{actionNodes solution}
@@ -171,7 +183,7 @@ matchPetriComponentsText inst =
       g) Nodes in the petrinet corresponding to Initial Nodes: #{initialNodes solution}
       h) Support places and transitions: #{supportSTs solution}
       |]
-  in (ad, petri, text)
+  in (ad, petri, soltext)
 
 data MatchPetriSolution = MatchPetriSolution {
   actionNodes :: [(String, Int)],
@@ -206,3 +218,52 @@ isSupportST key =
   case key of
     SupportST {} -> True
     _ -> False
+
+matchPetriTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> MatchPetriInstance
+  -> LangM m
+matchPetriTask path task = do
+  let (diag, petri, _) = matchPetriComponents task
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  paragraph $ translate $ do
+    english "Consider the following activity diagram."
+    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+  image ad
+  paragraph $ translate $ do
+    english "Consider the following petrinet."
+    german "Betrachten Sie das folgende Petrinetz."
+  petri' <- liftIO $ runExceptT $ cacheNet path (show . label) petri False False True Dot
+  image $ failWith id petri'
+  paragraph $ translate $ do
+    english [i|State the matchings of each action and petrinet node, the matching of each
+object node and petrinet node, the petrinet nodes per component type, as well as all support nodes
+of the petrinet.|]
+    german [i|Geben Sie alle Aktion/Petrinetzknotenpaare, Objektknoten/Petrinetzknotenpaare, die
+Petrinetzknoten pro Komponententyp und die Hilfsknoten im Petrinetz an.|]
+  paragraph $ do
+    translate $ do
+      english [i|To do this, enter your answer as in the following example.|]
+      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
+    code $ show matchPetriInitial
+    translate $ do
+      english [i|In this example, the action nodes "A" and "B" are matched with the petrinet nodes 1 and 2,
+the petrinet nodes 5 and 7 correspond to decision nodes and the petrinet nodes 13, 14 and 15 are support nodes.|]
+      german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
+die Petrinetzknoten 5 und 7 entsprechen mit Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsknoten.|]
+
+matchPetriInitial :: MatchPetriSolution
+matchPetriInitial = MatchPetriSolution {
+  actionNodes = [("A", 1), ("B", 2)],
+  objectNodes = [("C", 3), ("D", 4)],
+  decisionNodes = [5, 7],
+  mergeNodes = [6, 8],
+  forkNodes = [10],
+  joinNodes = [11],
+  initialNodes = [12],
+  supportSTs = [13, 14, 15]
+}
+
+failWith :: (a -> String) -> Either a c -> c
+failWith f = either (error . f) id
