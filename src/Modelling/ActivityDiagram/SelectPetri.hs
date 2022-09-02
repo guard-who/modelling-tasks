@@ -69,6 +69,7 @@ import System.Random.Shuffle (shuffle', shuffleM)
 data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   seed :: Int,
+  graphVizCmd :: GraphvizCommand,
   numberOfWrongNets :: Int
 } deriving (Show, Eq)
 
@@ -293,11 +294,13 @@ getSelectPetriTask config = do
       validInsta =
         head $ filter (isNothing . checkPetriInstance)
         $ map (\x ->
-          SelectPetriInstance {activityDiagram=x, seed=123, numberOfWrongNets=numberOfWrongAnswers config}) ad
+          SelectPetriInstance {activityDiagram=x, seed=123, graphVizCmd=Dot, numberOfWrongNets=numberOfWrongAnswers config}) ad
   g' <- getRandom
+  layout <- pickRandomLayout config
   return $ SelectPetriInstance {
     activityDiagram=activityDiagram validInsta,
     seed=g',
+    graphVizCmd=layout,
     numberOfWrongNets=numberOfWrongAnswers config
   }
 
