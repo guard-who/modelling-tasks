@@ -12,12 +12,23 @@ module Modelling.ActivityDiagram.MatchPetri (
   matchPetriTaskDescription,
   matchPetriComponentsText,
   extractSupportSTs,
-  matchPetriTask
+  matchPetriTask,
+  matchPetriSyntax
 ) where
 
 import qualified Data.Map as M ((!), keys, null)
 
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram, ADNode(name), isActionNode, isObjectNode, isDecisionNode, isMergeNode, isJoinNode, isInitialNode, isForkNode)
+import Modelling.ActivityDiagram.Datatype (
+  UMLActivityDiagram(nodes),
+  ADNode(name),
+  isActionNode,
+  isObjectNode,
+  isDecisionNode,
+  isMergeNode,
+  isJoinNode,
+  isInitialNode,
+  isForkNode
+  )
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
@@ -25,6 +36,7 @@ import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 
 import Modelling.Auxiliary.Common (oneOf)
+import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (PetriLike(..), Node(..))
 
@@ -264,6 +276,32 @@ matchPetriInitial = MatchPetriSolution {
   initialNodes = [12],
   supportSTs = [13, 14, 15]
 }
+
+matchPetriSyntax
+  :: (OutputMonad m)
+  => MatchPetriInstance
+  -> MatchPetriSolution
+  -> LangM m
+matchPetriSyntax task sub = addPretext $ do
+  let (diag, petri, _) = matchPetriComponents task
+      adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes diag
+      subNames = map fst (actionNodes sub) ++ map fst (objectNodes sub)
+      petriLabels = map label $ M.keys $ allNodes petri
+      subLabels =
+        map snd (actionNodes sub)
+        ++ map snd (objectNodes sub)
+        ++ decisionNodes sub
+        ++ mergeNodes sub
+        ++ forkNodes sub
+        ++ joinNodes sub
+        ++ initialNodes sub
+        ++ supportSTs sub
+  assertion (all (`elem` adNames) subNames) $ translate $ do
+    english "Referenced node names were provided within task?"
+    german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
+  assertion (all (`elem` petriLabels) subLabels) $ translate $ do
+    english "Referenced petrinet nodes were provided within task?"
+    german "Referenzierte Petrinetzknoten sind Bestandteil der Aufgabenstellung?"
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
