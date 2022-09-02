@@ -13,10 +13,11 @@ module Modelling.ActivityDiagram.MatchPetri (
   matchPetriComponentsText,
   extractSupportSTs,
   matchPetriTask,
-  matchPetriSyntax
+  matchPetriSyntax,
+  matchPetriEvaluation
 ) where
 
-import qualified Data.Map as M ((!), keys, null)
+import qualified Data.Map as M ((!), keys, null, fromList)
 
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(nodes),
@@ -45,14 +46,18 @@ import Control.Monad.Except (runExceptT)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
+  Rated,
   OutputMonad (..),
   english,
   german,
-  translate
+  translate,
+  translations,
+  multipleChoice
   )
 import Control.Monad.Random (MonadRandom)
 import Data.GraphViz.Commands (GraphvizCommand(Dot))
 import Data.List (sort)
+import Data.Map (Map)
 import Data.String.Interpolate ( i )
 
 
@@ -302,6 +307,36 @@ matchPetriSyntax task sub = addPretext $ do
   assertion (all (`elem` petriLabels) subLabels) $ translate $ do
     english "Referenced petrinet nodes were provided within task?"
     german "Referenzierte Petrinetzknoten sind Bestandteil der Aufgabenstellung?"
+
+matchPetriEvaluation
+  :: OutputMonad m
+  => MatchPetriInstance
+  -> MatchPetriSolution
+  -> Rated m
+matchPetriEvaluation task sub = addPretext $ do
+  let as = translations $ do
+        english "partial answers"
+        german "Teilantworten"
+      (_, _, sol) = matchPetriComponents task
+      solution = matchPetriSolutionMap sol
+      sub' = M.keys $ matchPetriSolutionMap sub
+  multipleChoice as (Just $ show solution) solution sub'
+
+matchPetriSolutionMap
+  :: MatchPetriSolution
+  -> Map (Int, Either [(String, Int)] [Int]) Bool
+matchPetriSolutionMap sol =
+  let xs = [
+        Left $ sort $ actionNodes sol,
+        Left $ sort $ objectNodes sol,
+        Right $ sort $ decisionNodes sol,
+        Right $ sort $ mergeNodes sol,
+        Right $ sort $ forkNodes sol,
+        Right $ sort $ joinNodes sol,
+        Right $ sort $ initialNodes sol,
+        Right $ sort $ supportSTs sol
+        ]
+  in M.fromList $ zipWith (curry (,True)) [1..] xs
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
