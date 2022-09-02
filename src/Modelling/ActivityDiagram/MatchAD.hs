@@ -12,9 +12,11 @@ module Modelling.ActivityDiagram.MatchAD (
   matchADComponents,
   matchADComponentsText,
   matchADTask,
-  matchADSyntax
+  matchADSyntax,
+  matchADEvaluation
  ) where
 
+import qualified Data.Map as M (fromList, keys)
 
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (
@@ -28,12 +30,16 @@ import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
+  Rated,
   OutputMonad (..),
   english,
   german,
-  translate
+  translate,
+  translations,
+  multipleChoice
   )
 import Data.List (sort)
+import Data.Map (Map)
 import Data.String.Interpolate ( i )
 import Modelling.Auxiliary.Output (addPretext)
 
@@ -199,3 +205,33 @@ matchADSyntax task sub = addPretext $ do
   assertion (all (`elem` adNames) subNames) $ translate $ do
     english "Referenced node names were provided within task?"
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
+
+matchADEvaluation
+  :: OutputMonad m
+  => MatchADInstance
+  -> MatchADSolution
+  -> Rated m
+matchADEvaluation task sub = addPretext $ do
+  let as = translations $ do
+        english "partial answers"
+        german "Teilantworten"
+      solution = matchADSolutionMap $ snd $ matchADComponents task
+      sub' = M.keys $ matchADSolutionMap sub
+  multipleChoice as (Just $ show solution) solution sub'
+
+matchADSolutionMap
+  :: MatchADSolution
+  -> Map (Either [String] Int) Bool
+matchADSolutionMap sol =
+  let xs = [
+        Left $ sort $ actionNames sol,
+        Left $ sort $ objectNodeNames sol,
+        Right $ numberOfDecisionNodes sol,
+        Right $ numberOfMergeNodes sol,
+        Right $ numberOfForkNodes sol,
+        Right $ numberOfJoinNodes sol,
+        Right $ numberOfInitialNodes sol,
+        Right $ numberOfActivityFinalNodes sol,
+        Right $ numberOfFlowFinalNodes sol
+        ]
+  in M.fromList $ map (,True) xs
