@@ -11,7 +11,8 @@ module Modelling.ActivityDiagram.MatchAD (
   matchADTaskDescription,
   matchADComponents,
   matchADComponentsText,
-  matchADTask
+  matchADTask,
+  matchADSyntax
  ) where
 
 
@@ -34,7 +35,7 @@ import Control.Monad.Output (
   )
 import Data.List (sort)
 import Data.String.Interpolate ( i )
-
+import Modelling.Auxiliary.Output (addPretext)
 
 data MatchADInstance = MatchADInstance {
   activityDiagram :: UMLActivityDiagram,
@@ -185,3 +186,16 @@ matchADInitial = MatchADSolution {
   numberOfActivityFinalNodes = 1,
   numberOfFlowFinalNodes = 0
 }
+
+matchADSyntax
+  :: (OutputMonad m)
+  => MatchADInstance
+  -> MatchADSolution
+  -> LangM m
+matchADSyntax task sub = addPretext $ do
+  let (diag, _) = matchADComponents task
+      adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes diag
+      subNames = actionNames sub ++ objectNodeNames sub
+  assertion (all (`elem` adNames) subNames) $ translate $ do
+    english "Referenced node names were provided within task?"
+    german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
