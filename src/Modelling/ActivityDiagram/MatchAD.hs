@@ -268,7 +268,7 @@ getMatchADTask
 getMatchADTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchADAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  let ad = map (failWith id . parseInstance) rinstas
   g' <- getRandom
   return $ MatchADInstance {
     activityDiagram=head ad,

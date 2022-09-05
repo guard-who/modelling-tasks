@@ -296,7 +296,7 @@ getSelectASTask
 getSelectASTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ selectASAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  let ad = map (failWith id . parseInstance) rinstas
       validInsta =
         head $ filter (isNothing . (`checkSelectASInstance` config))
         $ map (\x ->

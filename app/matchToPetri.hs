@@ -31,7 +31,7 @@ main = do
       let conf = defaultMatchPetriConfig
       inst <- getInstances (Just 50) $ matchPetriAlloy conf
       folders <- createExerciseFolders pathToFolder (length inst)
-      let ad = map (failWith id . parseInstance "this" "this") inst
+      let ad = map (failWith id . parseInstance) inst
           matchPetri = map (\x -> matchPetriComponentsText $ MatchPetriInstance{activityDiagram = x, seed=123, graphvizCmd=Dot}) ad
           plantumlstring = map (convertToPlantUML . fst3) matchPetri
           petri = map snd3 matchPetri

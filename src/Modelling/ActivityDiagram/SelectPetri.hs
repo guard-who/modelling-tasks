@@ -293,7 +293,7 @@ getSelectPetriTask
 getSelectPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ selectPetriAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  let ad = map (failWith id . parseInstance) rinstas
       validInsta =
         head $ filter (isNothing . checkPetriInstance)
         $ map (\x ->

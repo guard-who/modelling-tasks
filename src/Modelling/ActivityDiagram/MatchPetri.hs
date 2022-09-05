@@ -372,7 +372,7 @@ getMatchPetriTask
 getMatchPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchPetriAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  let ad = map (failWith id . parseInstance) rinstas
   g' <- getRandom
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {

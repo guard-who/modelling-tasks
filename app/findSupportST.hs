@@ -21,7 +21,7 @@ main = do
     pathToFolder:xs' -> do
       inst <- getInstances (Just 50) $ findSupportSTAlloy defaultFindSupportSTConfig
       folders <- createExerciseFolders pathToFolder (length inst)
-      let ad = map (failWith id . parseInstance "this" "this") inst
+      let ad = map (failWith id . parseInstance) inst
           findSupportSTPetri = map (\x -> findSupportSTText $ FindSupportSTInstance {activityDiagram = x, seed=123}) ad
           plantumlstring = map (convertToPlantUML . fst) findSupportSTPetri
           taskDescription = replicate (length folders) findSupportSTTaskDescription

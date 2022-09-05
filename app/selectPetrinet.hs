@@ -33,7 +33,7 @@ main = do
     pathToFolder:xs' -> do
       let conf = defaultSelectPetriConfig
       inst <- getInstances (Just 50) $ selectPetriAlloy conf
-      let ad = map (failWith id . parseInstance "this" "this") inst
+      let ad = map (failWith id . parseInstance) inst
           selectPetri =
             map selectPetrinet
             $ filter (isNothing . checkPetriInstance)

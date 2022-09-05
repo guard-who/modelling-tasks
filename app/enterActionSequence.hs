@@ -20,7 +20,7 @@ main = do
   case xs of
     pathToFolder:xs' -> do
       inst <- getInstances (Just 50) $ enterASAlloy defaultEnterASConfig
-      let ad = map (failWith id . parseInstance "this" "this") inst
+      let ad = map (failWith id . parseInstance) inst
           enterAS = map enterActionSequenceText
                     $ filter (isNothing . (`checkEnterASInstance` defaultEnterASConfig))
                     $ map (\x -> EnterASInstance{activityDiagram = x, seed=123}) ad

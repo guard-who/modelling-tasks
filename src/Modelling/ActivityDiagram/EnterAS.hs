@@ -235,7 +235,7 @@ getEnterASTask
 getEnterASTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ enterASAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  let ad = map (failWith id . parseInstance) rinstas
       validInsta =
         head $ filter (isNothing . (`checkEnterASInstance` config))
         $ map (\x -> EnterASInstance {activityDiagram=x, seed=123}) ad

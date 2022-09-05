@@ -22,7 +22,7 @@ main = do
   case xs of
     pathToFolder:xs' -> do
       inst <- getInstances (Just 50) $ selectASAlloy defaultSelectASConfig
-      let ad = map (failWith id . parseInstance "this" "this") inst
+      let ad = map (failWith id . parseInstance) inst
           validInst = filter (isNothing . (`checkSelectASInstance` defaultSelectASConfig))
                       $ map (\x -> SelectASInstance{activityDiagram = x, seed=123, numberOfWrongSequences=2}) ad
           selectAS = map selectActionSequenceText validInst

@@ -244,7 +244,7 @@ getFindSupportSTTask
 getFindSupportSTTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ findSupportSTAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  let ad = map (failWith id . parseInstance) rinstas
   g' <- getRandom
   return $ FindSupportSTInstance {
     activityDiagram=head ad,

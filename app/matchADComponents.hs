@@ -20,7 +20,7 @@ main = do
     pathToFolder:xs' -> do
       inst <- getInstances (Just 50) $ matchADAlloy defaultMatchADConfig
       folders <- createExerciseFolders pathToFolder (length inst)
-      let ad = map (failWith id . parseInstance "this" "this") inst
+      let ad = map (failWith id . parseInstance) inst
           matchAD = map (\x -> matchADComponentsText $ MatchADInstance{activityDiagram = x, seed=123}) ad
           plantumlstring = map (convertToPlantUML . fst) matchAD
           taskDescription = replicate (length folders) matchADTaskDescription
