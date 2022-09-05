@@ -69,6 +69,7 @@ data SelectASInstance = SelectASInstance {
 
 data SelectASConfig = SelectASConfig {
   adConfig :: ADConfig,
+  maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
   numberOfWrongAnswers :: Int,
   minAnswerLength :: Int,
@@ -85,6 +86,7 @@ defaultSelectASConfig = SelectASConfig {
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },
+  maxInstances = Just 50,
   objectNodeOnEveryPath = Nothing,
   numberOfWrongAnswers = 2,
   minAnswerLength = 5,
@@ -292,7 +294,7 @@ getSelectASTask
   => SelectASConfig
   -> RandT g m SelectASInstance
 getSelectASTask config = do
-  instas <- liftIO $ getInstances (Just 50) $ selectASAlloy config
+  instas <- liftIO $ getInstances (maxInstances config) $ selectASAlloy config
   rinstas <- shuffleM instas
   let ad = map (failWith id . parseInstance "this" "this") rinstas
       validInsta =
