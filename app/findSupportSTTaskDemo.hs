@@ -22,11 +22,11 @@ main = do
       task <- findSupportST defaultFindSupportSTConfig (read s) (read seed)
       print task
       findSupportSTTask path task `withLang` English
-      putStrLn $ "Enter number of nodes in net:"
+      putStrLn "Enter number of nodes in net:"
       petriNodes <- read <$> getLine
-      putStrLn $ "Enter number of support places in net:"
+      putStrLn "Enter number of support places in net:"
       supportPlaces <- read <$> getLine
-      putStrLn $ "Enter number of support transitions in net:"
+      putStrLn "Enter number of support transitions in net:"
       supportTransitions <- read <$> getLine
       let sub = FindSupportSTSolution {
         numberOfPetriNodes = petriNodes,
