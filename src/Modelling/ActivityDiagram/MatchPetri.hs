@@ -82,6 +82,7 @@ data MatchPetriInstance = MatchPetriInstance {
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
+  maxInstances :: Maybe Integer,
   petriLayout :: [GraphvizCommand],
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
@@ -95,6 +96,7 @@ pickRandomLayout conf = oneOf (petriLayout conf)
 defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
+    maxInstances = Just 50,
     petriLayout = [Dot],
     supportSTAbsent = Nothing,
     activityFinalsExist = Nothing,
@@ -368,7 +370,7 @@ getMatchPetriTask
   => MatchPetriConfig
   -> RandT g m MatchPetriInstance
 getMatchPetriTask config = do
-  instas <- liftIO $ getInstances (Just 50) $ matchPetriAlloy config
+  instas <- liftIO $ getInstances (maxInstances config) $ matchPetriAlloy config
   rinstas <- shuffleM instas
   let ad = map (failWith id . parseInstance "this" "this") rinstas
   g' <- getRandom
