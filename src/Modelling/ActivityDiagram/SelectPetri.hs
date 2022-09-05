@@ -76,6 +76,7 @@ data SelectPetriInstance = SelectPetriInstance {
 
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: ADConfig,
+  maxInstances :: Maybe Integer,
   petriLayout :: [GraphvizCommand],
   numberOfWrongAnswers :: Int,
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
@@ -90,6 +91,7 @@ pickRandomLayout conf = oneOf (petriLayout conf)
 defaultSelectPetriConfig :: SelectPetriConfig
 defaultSelectPetriConfig = SelectPetriConfig {
   adConfig = defaultADConfig,
+  maxInstances = Just 50,
   petriLayout = [Dot],
   numberOfWrongAnswers = 2,
   supportSTAbsent = Nothing,
@@ -289,7 +291,7 @@ getSelectPetriTask
   => SelectPetriConfig
   -> RandT g m SelectPetriInstance
 getSelectPetriTask config = do
-  instas <- liftIO $ getInstances (Just 50) $ selectPetriAlloy config
+  instas <- liftIO $ getInstances (maxInstances config) $ selectPetriAlloy config
   rinstas <- shuffleM instas
   let ad = map (failWith id . parseInstance "this" "this") rinstas
       validInsta =
