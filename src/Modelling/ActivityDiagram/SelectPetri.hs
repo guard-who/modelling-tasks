@@ -70,7 +70,7 @@ import System.Random.Shuffle (shuffle', shuffleM)
 data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   seed :: Int,
-  graphVizCmd :: GraphvizCommand,
+  graphvizCmd :: GraphvizCommand,
   numberOfWrongNets :: Int
 } deriving (Show, Eq)
 
@@ -227,7 +227,7 @@ selectPetriTask path task = do
   image ad
   petris <- liftIO $
     traverse (\c -> runExceptT
-      $ cacheNet path (show . PK.label) c False False True (graphVizCmd task)) mapping
+      $ cacheNet path (show . PK.label) c False False True (graphvizCmd task)) mapping
   paragraph $ translate $ do
     english "Consider the following petrinets."
     german "Betrachten Sie die folgenden Petrinetze."
@@ -297,13 +297,13 @@ getSelectPetriTask config = do
       validInsta =
         head $ filter (isNothing . checkPetriInstance)
         $ map (\x ->
-          SelectPetriInstance {activityDiagram=x, seed=123, graphVizCmd=Dot, numberOfWrongNets=numberOfWrongAnswers config}) ad
+          SelectPetriInstance {activityDiagram=x, seed=123, graphvizCmd=Dot, numberOfWrongNets=numberOfWrongAnswers config}) ad
   g' <- getRandom
   layout <- pickRandomLayout config
   return $ SelectPetriInstance {
     activityDiagram=activityDiagram validInsta,
     seed=g',
-    graphVizCmd=layout,
+    graphvizCmd=layout,
     numberOfWrongNets=numberOfWrongAnswers config
   }
 
@@ -355,6 +355,6 @@ defaultSelectPetriInstance = SelectPetriInstance {
     ]
   },
   seed = 5508675034223564747,
-  graphVizCmd = Dot,
+  graphvizCmd = Dot,
   numberOfWrongNets = 2
 }
