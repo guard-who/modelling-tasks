@@ -10,6 +10,7 @@ module Modelling.ActivityDiagram.FindSupportST (
   findSupportSTAlloy,
   findSupportSTTaskDescription,
   findSupportSTText,
+  findSupportSTTask
 ) where
 
 import qualified Data.Map as M ((!), null, size, filter, filterWithKey)
@@ -19,10 +20,19 @@ import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 
 import Modelling.PetriNet.Types (PetriLike(..), Node(..), isPlaceNode, isTransitionNode)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM,
+  OutputMonad (..),
+  english,
+  german,
+  translate
+  )
 import Data.String.Interpolate ( i )
 
 
@@ -98,14 +108,14 @@ findSupportSTTaskDescription =
 findSupportSTText :: FindSupportSTInstance -> (UMLActivityDiagram, String)
 findSupportSTText inst =
   let (ad, solution) = findSupportST inst
-      text = [i|
+      soltext = [i|
       Solutions for the FindSupportST-Task:
 
       a) Number of nodes of the resulting petri net: #{numberOfPetriNodes solution}
       b) Number of support places in the resulting petri net: #{numberOfSupportPlaces solution}
       c) Number of support transitions in the resulting petri net: #{numberOfSupportTransitions solution}
       |]
-  in (ad, text)
+  in (ad, soltext)
 
 data FindSupportSTSolution = FindSupportSTSolution {
   numberOfPetriNodes :: Int,
@@ -139,3 +149,36 @@ isSupportST key =
   case key of
     SupportST {} -> True
     _ -> False
+
+findSupportSTTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> FindSupportSTInstance
+  -> LangM m
+findSupportSTTask path task = do
+  let (diag, _) = findSupportST task
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  paragraph $ translate $ do
+    english "Consider the following activity diagram."
+    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+  image ad
+  paragraph $ translate $ do
+    english [i|Translate the given activity diagram into a petrinet, then state the total number of nodes,
+the number of support places and the number of support transitions of the net.|]
+    german [i|Übersetzen Sie das gegebene Aktivitätsdiagramm in ein Petrinetz, geben Sie anschließend die Gesamtanzahl
+an Knoten, die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]
+  paragraph $ do
+    translate $ do
+      english [i|To do this, enter your answer as in the following example.|]
+      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
+    code $ show findSupportSTInitial
+    translate $ do
+      english [i|In this example, the resulting net contains 10 nodes in total, with 2 support places and 3 support transitions.|]
+      german [i|In diesem Beispiel enthält das entstehende Netz etwa 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransition.|]
+
+findSupportSTInitial :: FindSupportSTSolution
+findSupportSTInitial = FindSupportSTSolution {
+  numberOfPetriNodes = 10,
+  numberOfSupportPlaces = 2,
+  numberOfSupportTransitions = 3
+}
