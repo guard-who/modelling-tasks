@@ -16,7 +16,8 @@ module Modelling.ActivityDiagram.SelectPetri (
   selectPetriTask,
   selectPetriSyntax,
   selectPetriEvaluation,
-  selectPetri
+  selectPetri,
+  defaultSelectPetriInstance
 ) where
 
 import qualified Data.Map as M (fromList, toList, keys, map, filter)
@@ -24,7 +25,7 @@ import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
 
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
@@ -306,3 +307,52 @@ getSelectPetriTask config = do
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
+
+defaultSelectPetriInstance :: SelectPetriInstance
+defaultSelectPetriInstance = SelectPetriInstance {
+  activityDiagram = UMLActivityDiagram {
+    nodes = [
+      ADActionNode {label = 1, name = "A"},
+      ADActionNode {label = 2, name = "B"},
+      ADActionNode {label = 3, name = "C"},
+      ADActionNode {label = 4, name = "D"},
+      ADObjectNode {label = 5, name = "E"},
+      ADObjectNode {label = 6, name = "F"},
+      ADObjectNode {label = 7, name = "G"},
+      ADObjectNode {label = 8, name = "H"},
+      ADDecisionNode {label = 9},
+      ADDecisionNode {label = 10},
+      ADMergeNode {label = 11},
+      ADMergeNode {label = 12},
+      ADForkNode {label = 13},
+      ADJoinNode {label = 14},
+      ADActivityFinalNode {label = 15},
+      ADFlowFinalNode {label = 16},
+      ADInitialNode {label = 17}
+    ],
+    connections = [
+      ADConnection {from = 1, to = 14, guard = ""},
+      ADConnection {from = 2, to = 11, guard = ""},
+      ADConnection {from = 3, to = 14, guard = ""},
+      ADConnection {from = 4, to = 8, guard = ""},
+      ADConnection {from = 5, to = 11, guard = ""},
+      ADConnection {from = 6, to = 9, guard = ""},
+      ADConnection {from = 7, to = 16, guard = ""},
+      ADConnection {from = 8, to = 12, guard = ""},
+      ADConnection {from = 9, to = 10, guard = "a"},
+      ADConnection {from = 9, to = 12, guard = "b"},
+      ADConnection {from = 10, to = 2, guard = "b"},
+      ADConnection {from = 10, to = 5, guard = "a"},
+      ADConnection {from = 11, to = 13, guard = ""},
+      ADConnection {from = 12, to = 6, guard = ""},
+      ADConnection {from = 13, to = 1, guard = ""},
+      ADConnection {from = 13, to = 3, guard = ""},
+      ADConnection {from = 13, to = 7, guard = ""},
+      ADConnection {from = 14, to = 15, guard = ""},
+      ADConnection {from = 17, to = 4, guard = ""}
+    ]
+  },
+  seed = 5508675034223564747,
+  graphVizCmd = Dot,
+  numberOfWrongNets = 2
+}
