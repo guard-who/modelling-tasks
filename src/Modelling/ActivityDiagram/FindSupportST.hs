@@ -10,10 +10,11 @@ module Modelling.ActivityDiagram.FindSupportST (
   findSupportSTAlloy,
   findSupportSTTaskDescription,
   findSupportSTText,
-  findSupportSTTask
+  findSupportSTTask,
+  findSupportSTEvaluation
 ) where
 
-import qualified Data.Map as M ((!), null, size, filter, filterWithKey)
+import qualified Data.Map as M ((!), null, size, filter, filterWithKey, keys, fromList)
 
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
@@ -22,17 +23,22 @@ import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADC
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 
+import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Types (PetriLike(..), Node(..), isPlaceNode, isTransitionNode)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
+  Rated,
   OutputMonad (..),
   english,
   german,
-  translate
+  translate,
+  translations,
+  multipleChoice
   )
+import Data.Map (Map)
 import Data.String.Interpolate ( i )
 
 
@@ -182,3 +188,28 @@ findSupportSTInitial = FindSupportSTSolution {
   numberOfSupportPlaces = 2,
   numberOfSupportTransitions = 3
 }
+
+findSupportSTEvaluation
+  :: OutputMonad m
+  => FindSupportSTInstance
+  -> FindSupportSTSolution
+  -> Rated m
+findSupportSTEvaluation task sub = addPretext $ do
+  let as = translations $ do
+        english "partial answers"
+        german "Teilantworten"
+      (_, sol) = findSupportST task
+      solution = findSupportSTSolutionMap sol
+      sub' = M.keys $ findSupportSTSolutionMap sub
+  multipleChoice as (Just $ show sol) solution sub'
+
+findSupportSTSolutionMap
+  :: FindSupportSTSolution
+  -> Map (Int, Int) Bool
+findSupportSTSolutionMap sol =
+  let xs = [
+        numberOfPetriNodes sol,
+        numberOfSupportPlaces sol,
+        numberOfSupportTransitions sol
+        ]
+  in M.fromList $ zipWith (curry (,True)) [1..] xs
