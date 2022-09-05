@@ -333,7 +333,7 @@ matchPetriEvaluation task sub = addPretext $ do
       (_, _, sol) = matchPetriComponents task
       solution = matchPetriSolutionMap sol
       sub' = M.keys $ matchPetriSolutionMap sub
-  multipleChoice as (Just $ show solution) solution sub'
+  multipleChoice as (Just $ show sol) solution sub'
 
 matchPetriSolutionMap
   :: MatchPetriSolution

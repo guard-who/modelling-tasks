@@ -226,9 +226,10 @@ matchADEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "partial answers"
         german "Teilantworten"
-      solution = matchADSolutionMap $ snd $ matchADComponents task
+      (_, sol) = matchADComponents task
+      solution = matchADSolutionMap sol
       sub' = M.keys $ matchADSolutionMap sub
-  multipleChoice as (Just $ show solution) solution sub'
+  multipleChoice as (Just $ show sol) solution sub'
 
 matchADSolutionMap
   :: MatchADSolution
