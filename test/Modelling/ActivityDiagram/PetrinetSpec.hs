@@ -21,11 +21,11 @@ spec =
       let spec = adConfigToAlloy "" "" defaultADConfig
       it "generates a petrinet with ascending labels" $ do
         inst <- getInstances (Just 50) spec
-        let petri = map (convertToPetrinet . failWith id . parseInstance "this" "this") inst
+        let petri = map (convertToPetrinet . failWith id . parseInstance) inst
         all checkLabels petri `shouldBe` (True::Bool)
       it "generates only valid petrinets" $ do
         inst <- getInstances (Just 50) spec
-        let petri = map (petriLikeToPetri . convertToPetrinet . failWith id . parseInstance "this" "this") inst
+        let petri = map (petriLikeToPetri . convertToPetrinet . failWith id . parseInstance) inst
         all isRight petri `shouldBe` (True::Bool)
 
 failWith :: (a -> String) -> Either a c -> c
