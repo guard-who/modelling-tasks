@@ -6,12 +6,13 @@ module Modelling.ActivityDiagram.FindSupportST (
   FindSupportSTConfig(..),
   defaultFindSupportSTConfig,
   checkFindSupportSTConfig,
-  findSupportST,
+  findSupportSTSolution,
   findSupportSTAlloy,
   findSupportSTTaskDescription,
   findSupportSTText,
   findSupportSTTask,
-  findSupportSTEvaluation
+  findSupportSTEvaluation,
+  findSupportST
 ) where
 
 import qualified Data.Map as M ((!), null, size, filter, filterWithKey, keys, fromList)
@@ -21,6 +22,7 @@ import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 
 import Modelling.Auxiliary.Output (addPretext)
@@ -38,9 +40,17 @@ import Control.Monad.Output (
   translations,
   multipleChoice
   )
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  evalRandT,
+  mkStdGen
+  )
 import Data.Map (Map)
 import Data.String.Interpolate ( i )
-
+import Language.Alloy.Call (getInstances)
+import System.Random.Shuffle (shuffleM)
 
 data FindSupportSTInstance = FindSupportSTInstance {
   activityDiagram :: UMLActivityDiagram,
@@ -113,7 +123,7 @@ findSupportSTTaskDescription =
 
 findSupportSTText :: FindSupportSTInstance -> (UMLActivityDiagram, String)
 findSupportSTText inst =
-  let (ad, solution) = findSupportST inst
+  let (ad, solution) = findSupportSTSolution inst
       soltext = [i|
       Solutions for the FindSupportST-Task:
 
@@ -129,17 +139,17 @@ data FindSupportSTSolution = FindSupportSTSolution {
   numberOfSupportTransitions :: Int
 } deriving (Show, Eq)
 
-findSupportST :: FindSupportSTInstance -> (UMLActivityDiagram, FindSupportSTSolution)
-findSupportST FindSupportSTInstance {
+findSupportSTSolution :: FindSupportSTInstance -> (UMLActivityDiagram, FindSupportSTSolution)
+findSupportSTSolution FindSupportSTInstance {
   activityDiagram,
   seed
 } =
   let ad =  snd $ shuffleADNames seed activityDiagram
-      solution = findSupportST' $ convertToPetrinet ad
+      solution = findSupportSTSolution' $ convertToPetrinet ad
   in (ad, solution)
 
-findSupportST' :: PetriLike PetriKey -> FindSupportSTSolution
-findSupportST' petri = FindSupportSTSolution {
+findSupportSTSolution' :: PetriLike PetriKey -> FindSupportSTSolution
+findSupportSTSolution' petri = FindSupportSTSolution {
     numberOfPetriNodes = M.size $ allNodes petri,
     numberOfSupportPlaces = M.size $ M.filter isPlaceNode supportSTMap,
     numberOfSupportTransitions = M.size $ M.filter isTransitionNode supportSTMap
@@ -162,7 +172,7 @@ findSupportSTTask
   -> FindSupportSTInstance
   -> LangM m
 findSupportSTTask path task = do
-  let (diag, _) = findSupportST task
+  let (diag, _) = findSupportSTSolution task
   ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
   paragraph $ translate $ do
     english "Consider the following activity diagram."
@@ -198,7 +208,7 @@ findSupportSTEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "partial answers"
         german "Teilantworten"
-      (_, sol) = findSupportST task
+      (_, sol) = findSupportSTSolution task
       solution = findSupportSTSolutionMap sol
       sub' = M.keys $ findSupportSTSolutionMap sub
   multipleChoice as (Just $ show sol) solution sub'
@@ -213,3 +223,29 @@ findSupportSTSolutionMap sol =
         numberOfSupportTransitions sol
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
+
+findSupportST
+  :: FindSupportSTConfig
+  -> Int
+  -> Int
+  -> IO FindSupportSTInstance
+findSupportST config segment seed = do
+  let g = mkStdGen $ (segment +) $ 4 * seed
+  evalRandT (getFindSupportSTTask config) g
+
+getFindSupportSTTask
+  :: (RandomGen g, MonadIO m)
+  => FindSupportSTConfig
+  -> RandT g m FindSupportSTInstance
+getFindSupportSTTask config = do
+  instas <- liftIO $ getInstances (Just 50) $ findSupportSTAlloy config
+  rinstas <- shuffleM instas
+  let ad = map (failWith id . parseInstance "this" "this") rinstas
+  g' <- getRandom
+  return $ FindSupportSTInstance {
+    activityDiagram=head ad,
+    seed=g'
+  }
+
+failWith :: (a -> String) -> Either a c -> c
+failWith f = either (error . f) id
