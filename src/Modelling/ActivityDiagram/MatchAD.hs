@@ -63,12 +63,14 @@ data MatchADInstance = MatchADInstance {
 
 data MatchADConfig = MatchADConfig {
   adConfig :: ADConfig,
+  maxInstances :: Maybe Integer,
   noActivityFinalInForkBlocks :: Maybe Bool
 }
 
 defaultMatchADConfig :: MatchADConfig
 defaultMatchADConfig = MatchADConfig {
   adConfig = defaultADConfig,
+  maxInstances = Just 50,
   noActivityFinalInForkBlocks = Nothing
 }
 
@@ -264,7 +266,7 @@ getMatchADTask
   => MatchADConfig
   -> RandT g m MatchADInstance
 getMatchADTask config = do
-  instas <- liftIO $ getInstances (Just 50) $ matchADAlloy config
+  instas <- liftIO $ getInstances (maxInstances config) $ matchADAlloy config
   rinstas <- shuffleM instas
   let ad = map (failWith id . parseInstance "this" "this") rinstas
   g' <- getRandom
