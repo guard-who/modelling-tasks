@@ -58,6 +58,7 @@ data EnterASInstance = EnterASInstance {
 
 data EnterASConfig = EnterASConfig {
   adConfig :: ADConfig,
+  maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
   minAnswerLength :: Int,
   maxAnswerLength :: Int
@@ -73,6 +74,7 @@ defaultEnterASConfig = EnterASConfig {
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },
+  maxInstances = Just 50,
   objectNodeOnEveryPath = Nothing,
   minAnswerLength = 5,
   maxAnswerLength = 8
@@ -231,7 +233,7 @@ getEnterASTask
   => EnterASConfig
   -> RandT g m EnterASInstance
 getEnterASTask config = do
-  instas <- liftIO $ getInstances (Just 50) $ enterASAlloy config
+  instas <- liftIO $ getInstances (maxInstances config) $ enterASAlloy config
   rinstas <- shuffleM instas
   let ad = map (failWith id . parseInstance "this" "this") rinstas
       validInsta =
