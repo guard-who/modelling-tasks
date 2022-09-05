@@ -37,7 +37,7 @@ main = do
           selectPetri =
             map selectPetrinet
             $ filter (isNothing . checkPetriInstance)
-            $ map (\x -> SelectPetriInstance{activityDiagram = x, seed=123, graphVizCmd=Dot, numberOfWrongNets=2}) ad
+            $ map (\x -> SelectPetriInstance{activityDiagram = x, seed=123, graphvizCmd=Dot, numberOfWrongNets=2}) ad
           plantumlstring = map (convertToPlantUML . fst) selectPetri
           taskDescription = replicate (length selectPetri) selectPetriTaskDescription
           taskSolution = map snd selectPetri
