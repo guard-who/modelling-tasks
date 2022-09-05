@@ -102,28 +102,26 @@ toSet ns = S.unions [
   StNode `S.mapMonotonic` stNodes ns
   ]
 
- --To be finished later
 parseInstance :: (MonadError s m, IsString s)
-  => String
-  -> String
-  -> AlloyInstance
+  => AlloyInstance
   -> m UMLActivityDiagram
-parseInstance ownscope _ insta = do
-  actionNodes <- getAs ownscope "ActionNodes" ActionNode
-  objectNodes <- getAs ownscope"ObjectNodes" ObjectNode
-  decisionNodes <- getAs ownscope "DecisionNodes" DecisionNode
-  mergeNodes <- getAs ownscope "MergeNodes" MergeNode
-  forkNodes <- getAs ownscope "ForkNodes" ForkNode
-  joinNodes <- getAs ownscope "JoinNodes" JoinNode
-  activityFinalNodes <- getAs ownscope "ActivityFinalNodes" ActivityFinalNode
-  flowFinalNodes <- getAs ownscope"FlowFinalNodes" FlowFinalNode
-  initialNodes <- getAs ownscope "InitialNodes" InitialNode
+parseInstance insta = do
+  let scope = "this"
+  actionNodes <- getAs scope "ActionNodes" ActionNode
+  objectNodes <- getAs scope"ObjectNodes" ObjectNode
+  decisionNodes <- getAs scope "DecisionNodes" DecisionNode
+  mergeNodes <- getAs scope "MergeNodes" MergeNode
+  forkNodes <- getAs scope "ForkNodes" ForkNode
+  joinNodes <- getAs scope "JoinNodes" JoinNode
+  activityFinalNodes <- getAs scope "ActivityFinalNodes" ActivityFinalNode
+  flowFinalNodes <- getAs scope"FlowFinalNodes" FlowFinalNode
+  initialNodes <- getAs scope "InitialNodes" InitialNode
   let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes activityFinalNodes flowFinalNodes initialNodes
-  cnames <- M.fromAscList . S.toAscList <$> getNames ownscope insta nodes' "ActionObjectNodes" ComponentName
+  cnames <- M.fromAscList . S.toAscList <$> getNames scope insta nodes' "ActionObjectNodes" ComponentName
   let components = enumerateComponents $ toSet nodes'
       names = M.fromList $ zip (nubOrd $ M.elems cnames) $ pure <$> ['A'..]
       getName x = fromMaybe "" $ M.lookup x cnames >>= (`M.lookup` names)
-  conns <- getConnections ownscope insta nodes'
+  conns <- getConnections scope insta nodes'
   let labelOf = getLabelOf components
       conns' = S.map (\(x, y, z) -> (labelOf x, labelOf y, z)) conns
       activityDiagram = setToActivityDiagram getName components conns'
