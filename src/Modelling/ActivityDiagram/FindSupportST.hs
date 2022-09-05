@@ -4,6 +4,7 @@
 module Modelling.ActivityDiagram.FindSupportST (
   FindSupportSTInstance(..),
   FindSupportSTConfig(..),
+  FindSupportSTSolution(..),
   defaultFindSupportSTConfig,
   checkFindSupportSTConfig,
   findSupportSTSolution,
