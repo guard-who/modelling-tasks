@@ -61,6 +61,7 @@ data FindSupportSTInstance = FindSupportSTInstance {
 
 data FindSupportSTConfig = FindSupportSTConfig {
   adConfig :: ADConfig,
+  maxInstances :: Maybe Integer,
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool   -- Avoid having to add new sink transitions for representing finals
 } deriving (Show)
@@ -68,6 +69,7 @@ data FindSupportSTConfig = FindSupportSTConfig {
 defaultFindSupportSTConfig :: FindSupportSTConfig
 defaultFindSupportSTConfig = FindSupportSTConfig
   { adConfig = defaultADConfig,
+    maxInstances = Just 50,
     activityFinalsExist = Nothing,
     avoidAddingSinksForFinals = Nothing
   }
@@ -240,7 +242,7 @@ getFindSupportSTTask
   => FindSupportSTConfig
   -> RandT g m FindSupportSTInstance
 getFindSupportSTTask config = do
-  instas <- liftIO $ getInstances (Just 50) $ findSupportSTAlloy config
+  instas <- liftIO $ getInstances (maxInstances config) $ findSupportSTAlloy config
   rinstas <- shuffleM instas
   let ad = map (failWith id . parseInstance "this" "this") rinstas
   g' <- getRandom
