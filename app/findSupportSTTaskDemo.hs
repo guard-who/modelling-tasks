@@ -1,7 +1,6 @@
 module Main (main) where
 
 import Modelling.ActivityDiagram.FindSupportST (
-  FindSupportSTSolution(..),
   defaultFindSupportSTConfig,
   findSupportST,
   findSupportSTTask,
@@ -22,17 +21,7 @@ main = do
       task <- findSupportST defaultFindSupportSTConfig (read s) (read seed)
       print task
       findSupportSTTask path task `withLang` English
-      putStrLn "Enter number of nodes in net:"
-      petriNodes <- read <$> getLine
-      putStrLn "Enter number of support places in net:"
-      supportPlaces <- read <$> getLine
-      putStrLn "Enter number of support transitions in net:"
-      supportTransitions <- read <$> getLine
-      let sub = FindSupportSTSolution {
-        numberOfPetriNodes = petriNodes,
-        numberOfSupportPlaces = supportPlaces,
-        numberOfSupportTransitions = supportTransitions
-      }
+      sub <- read <$> getLine
       points <- findSupportSTEvaluation task sub `withLang` English
       putStrLn $ "Points: " ++ show points
     _ -> error "usage: three parameters required: FilePath (Output Folder) Segment (Int) Seed (Int)"
