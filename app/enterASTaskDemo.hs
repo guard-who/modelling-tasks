@@ -24,6 +24,6 @@ main = do
       enterASTask path task `withLang` English
       sub <- read <$> getLine
       enterASSyntax task sub `withLang` English
-      _ <- enterASEvaluation task sub `withLang` English
-      return ()
+      points <- enterASEvaluation task sub `withLang` English
+      print points
     _ -> error "usage: three parameters required: FilePath (Output Folder) Segment (Int) Seed (Int)"
