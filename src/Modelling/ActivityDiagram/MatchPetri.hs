@@ -230,7 +230,7 @@ data MatchPetriSolution = MatchPetriSolution {
   joinNodes :: [Int],
   initialNodes :: [Int],
   supportSTs :: [Int]
-} deriving (Show, Eq)
+} deriving (Show, Eq, Read)
 
 matchPetriComponents :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, MatchPetriSolution)
 matchPetriComponents MatchPetriInstance {

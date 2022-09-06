@@ -141,7 +141,7 @@ data FindSupportSTSolution = FindSupportSTSolution {
   numberOfPetriNodes :: Int,
   numberOfSupportPlaces :: Int,
   numberOfSupportTransitions :: Int
-} deriving (Show, Eq)
+} deriving (Show, Eq, Read)
 
 findSupportSTSolution :: FindSupportSTInstance -> (UMLActivityDiagram, FindSupportSTSolution)
 findSupportSTSolution FindSupportSTInstance {

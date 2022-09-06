@@ -133,7 +133,7 @@ data MatchADSolution = MatchADSolution {
   numberOfInitialNodes :: Int,
   numberOfActivityFinalNodes :: Int,
   numberOfFlowFinalNodes :: Int
-} deriving (Eq, Show)
+} deriving (Eq, Show, Read)
 
 matchADComponents :: MatchADInstance -> (UMLActivityDiagram, MatchADSolution)
 matchADComponents MatchADInstance {
