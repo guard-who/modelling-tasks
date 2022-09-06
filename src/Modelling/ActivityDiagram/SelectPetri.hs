@@ -12,25 +12,23 @@ module Modelling.ActivityDiagram.SelectPetri (
   checkPetriInstance,
   selectPetriAlloy,
   selectPetrinet,
-  selectPetriTaskDescription,
   selectPetriTask,
   selectPetriSyntax,
   selectPetriEvaluation,
-  selectPetri,
-  defaultSelectPetriInstance
-) where
+  selectPetri
+  ) where
 
-import qualified Data.Map as M (fromList, toList, keys, map, filter)
+import qualified Data.Map as M (size, fromList, toList, keys, map, filter)
 import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
 
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
+import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
-import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.Shuffle (shuffleADNames, shufflePetri)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
@@ -71,8 +69,8 @@ data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   seed :: Int,
   graphvizCmd :: GraphvizCommand,
-  numberOfWrongNets :: Int
-} deriving (Show, Eq)
+  petrinets :: Map Int (Bool, PetriLike PetriKey)
+} deriving (Show)
 
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: ADConfig,
@@ -152,19 +150,12 @@ selectPetriAlloy SelectPetriConfig {
             Just False -> [i| not #{s}|]
             _ -> ""
 
-selectPetriTaskDescription :: String
-selectPetriTaskDescription =
-  [i|
-    Look at the given Activity Diagram and the given Petri Nets, and determine which Petri Net
-    corresponds to the Activity Diagram (Single Choice).
-  |]
-
-checkPetriInstance :: SelectPetriInstance -> Maybe String
-checkPetriInstance inst@SelectPetriInstance {
-    numberOfWrongNets
+checkPetriInstance :: SelectPetriInstance -> SelectPetriConfig -> Maybe String
+checkPetriInstance inst SelectPetriConfig {
+    numberOfWrongAnswers
   }
-  | length (wrongNets $ snd $ selectPetrinet inst) /= numberOfWrongNets
-    = Just "Number of wrong nets found for given instance is unequal to numberOfWrongNets"
+  | M.size (M.filter (not . fst) $ petrinets inst) /= numberOfWrongAnswers
+    = Just "Number of wrong nets found for given instance is unequal to numberOfWrongAnswers"
   | otherwise
     = Nothing
 
@@ -173,21 +164,15 @@ data SelectPetriSolution = SelectPetriSolution {
   wrongNets :: [PetriLike PetriKey]
 } deriving (Show)
 
-selectPetrinet :: SelectPetriInstance -> (UMLActivityDiagram, SelectPetriSolution)
-selectPetrinet SelectPetriInstance {
-    activityDiagram,
-    seed,
-    numberOfWrongNets
-  } =
-  let ad = snd $ shuffleADNames seed activityDiagram
-      matchingNet = convertToPetrinet ad
+selectPetrinet :: Int -> Int -> UMLActivityDiagram -> SelectPetriSolution
+selectPetrinet numberOfWrongNets seed ad =
+  let matchingNet = convertToPetrinet ad
       seeds = unfoldr (Just . next) (mkStdGen seed)
       wrongNets = take numberOfWrongNets
                   $ nubBy isPetriIsomorphic
                   $ filter (not . isPetriIsomorphic matchingNet)
                   $ map (convertToPetrinet . modifyAD ad) seeds
-      solution = SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
-  in (ad, solution)
+  in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
 
 modifyAD :: UMLActivityDiagram -> Int -> UMLActivityDiagram
 modifyAD diag seed =
@@ -221,9 +206,8 @@ selectPetriTask
   -> SelectPetriInstance
   -> LangM m
 selectPetriTask path task = do
-  let (diag, sol) = selectPetrinet task
-      mapping = M.map snd $ selectPetriSolutionToMap (seed task) sol
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  let mapping = M.map snd $ petrinets task
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -264,7 +248,7 @@ selectPetriSyntax
   -> Int
   -> LangM m
 selectPetriSyntax task sub = addPretext $ do
-  let options = M.keys $ selectPetriSolutionToMap (seed task) $ snd $ selectPetrinet task
+  let options = M.keys $ petrinets task
   singleChoiceSyntax True options sub
 
 selectPetriEvaluation
@@ -276,7 +260,7 @@ selectPetriEvaluation task n = addPretext $ do
   let as = translations $ do
         english "petrinet"
         german "Petrinet"
-      solMap = selectPetriSolutionToMap (seed task) $ snd $ selectPetrinet task
+      solMap = petrinets task
       (solution, _) = head $ M.toList $ M.map snd $ M.filter fst solMap
   singleChoice as (Just $ show solution) solution n
 
@@ -296,68 +280,28 @@ getSelectPetriTask
 getSelectPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ selectPetriAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance) rinstas
-      validInsta =
-        head $ filter (isNothing . checkPetriInstance)
-        $ map (\x ->
-          SelectPetriInstance {activityDiagram=x, seed=123, graphvizCmd=Dot, numberOfWrongNets=numberOfWrongAnswers config}) ad
+  n <- getRandom
   g' <- getRandom
   layout <- pickRandomLayout config
-  return $ SelectPetriInstance {
-    activityDiagram=activityDiagram validInsta,
-    seed=g',
-    graphvizCmd=layout,
-    numberOfWrongNets=numberOfWrongAnswers config
-  }
+  let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
+      validInsta =
+        head $ filter (isNothing . (`checkPetriInstance` config))
+        $ map (\x ->
+          SelectPetriInstance {
+            activityDiagram=x,
+            seed=g',
+            graphvizCmd=layout,
+            petrinets= selectPetriSolutionToMap g'
+              $ shuffleSolutionNets n
+              $ selectPetrinet (numberOfWrongAnswers config) n x
+          }) ad
+  return validInsta
+
+shuffleSolutionNets :: Int -> SelectPetriSolution -> SelectPetriSolution
+shuffleSolutionNets n sol = SelectPetriSolution {
+  matchingNet = snd $ shufflePetri n (matchingNet sol),
+  wrongNets =  map (snd . shufflePetri n) (wrongNets sol)
+}
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
-
-defaultSelectPetriInstance :: SelectPetriInstance
-defaultSelectPetriInstance = SelectPetriInstance {
-  activityDiagram = UMLActivityDiagram {
-    nodes = [
-      ADActionNode {label = 1, name = "A"},
-      ADActionNode {label = 2, name = "B"},
-      ADActionNode {label = 3, name = "C"},
-      ADActionNode {label = 4, name = "D"},
-      ADObjectNode {label = 5, name = "E"},
-      ADObjectNode {label = 6, name = "F"},
-      ADObjectNode {label = 7, name = "G"},
-      ADObjectNode {label = 8, name = "H"},
-      ADDecisionNode {label = 9},
-      ADDecisionNode {label = 10},
-      ADMergeNode {label = 11},
-      ADMergeNode {label = 12},
-      ADForkNode {label = 13},
-      ADJoinNode {label = 14},
-      ADActivityFinalNode {label = 15},
-      ADFlowFinalNode {label = 16},
-      ADInitialNode {label = 17}
-    ],
-    connections = [
-      ADConnection {from = 1, to = 14, guard = ""},
-      ADConnection {from = 2, to = 11, guard = ""},
-      ADConnection {from = 3, to = 14, guard = ""},
-      ADConnection {from = 4, to = 8, guard = ""},
-      ADConnection {from = 5, to = 11, guard = ""},
-      ADConnection {from = 6, to = 9, guard = ""},
-      ADConnection {from = 7, to = 16, guard = ""},
-      ADConnection {from = 8, to = 12, guard = ""},
-      ADConnection {from = 9, to = 10, guard = "a"},
-      ADConnection {from = 9, to = 12, guard = "b"},
-      ADConnection {from = 10, to = 2, guard = "b"},
-      ADConnection {from = 10, to = 5, guard = "a"},
-      ADConnection {from = 11, to = 13, guard = ""},
-      ADConnection {from = 12, to = 6, guard = ""},
-      ADConnection {from = 13, to = 1, guard = ""},
-      ADConnection {from = 13, to = 3, guard = ""},
-      ADConnection {from = 13, to = 7, guard = ""},
-      ADConnection {from = 14, to = 15, guard = ""},
-      ADConnection {from = 17, to = 4, guard = ""}
-    ]
-  },
-  seed = 5508675034223564747,
-  graphvizCmd = Dot,
-  numberOfWrongNets = 2
-}
