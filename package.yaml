@@ -71,13 +71,6 @@ executables:
       - ba-athena-schulz
       - directory
       - filepath
-  enterActionSequence:
-    main: enterActionSequence.hs
-    source-dirs: app
-    dependencies:
-      - ba-athena-schulz
-      - directory
-      - filepath
   findSupportST:
     main: findSupportST.hs
     source-dirs: app
@@ -115,6 +108,13 @@ executables:
       - ba-athena-schulz
   findSupportSTTaskDemo:
     main: findSupportSTTaskDemo.hs
+    source-dirs:
+      - app
+      - app/common
+    dependencies:
+      - ba-athena-schulz
+  enterASTaskDemo:
+    main: enterASTaskDemo.hs
     source-dirs:
       - app
       - app/common
