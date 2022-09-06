@@ -274,44 +274,44 @@ failWith f = either (error . f) id
 
 defaultSelectASInstance :: SelectASInstance
 defaultSelectASInstance = SelectASInstance {
-  activityDiagram = UMLActivityDiagram
-      { nodes = [
-        ADActionNode { label = 1, name = "A"},
-        ADActionNode { label = 2, name = "B"},
-        ADActionNode { label = 3, name = "C"},
-        ADActionNode { label = 4, name = "D"},
-        ADActionNode { label = 5, name = "E"},
-        ADObjectNode { label = 6, name = "F"},
-        ADDecisionNode { label = 7 },
-        ADDecisionNode { label = 8 },
-        ADMergeNode { label = 9 },
-        ADMergeNode { label = 10 },
-        ADForkNode { label = 11 },
-        ADJoinNode { label = 12 },
-        ADFlowFinalNode { label = 13 },
-        ADFlowFinalNode { label = 14 },
-        ADInitialNode { label = 15 }
-      ]
-    , connections = [
-        ADConnection{ from = 1, to = 10, guard = ""},
-        ADConnection{ from = 2, to = 14, guard = ""},
-        ADConnection{ from = 3, to = 9, guard = ""},
-        ADConnection{ from = 4, to = 9, guard = ""},
-        ADConnection{ from = 5, to = 12, guard = ""},
-        ADConnection{ from = 6, to = 1, guard = ""},
-        ADConnection{ from = 7, to = 10, guard = "b"},
-        ADConnection{ from = 7, to = 13, guard = "a"},
-        ADConnection{ from = 8, to = 3, guard = "b"},
-        ADConnection{ from = 8, to = 4, guard = "a"},
-        ADConnection{ from = 9, to = 12, guard = ""},
-        ADConnection{ from = 10, to = 11, guard = ""},
-        ADConnection{ from = 11, to = 2, guard = ""},
-        ADConnection{ from = 11, to = 5, guard = ""},
-        ADConnection{ from = 11, to = 8, guard = ""},
-        ADConnection{ from = 12, to = 7, guard = ""},
-        ADConnection{ from = 15, to = 6, guard = ""}
-      ]
-    },
-    seed = 7777369639206507645,
-    actionSequences = M.fromList [(1, (True, [])), (2, (False,[])), (3, (False,[]))]
+  activityDiagram = UMLActivityDiagram {
+    nodes = [
+      ADActionNode {label = 1, name = "E"},
+      ADActionNode {label = 2, name = "D"},
+      ADActionNode {label = 3, name = "A"},
+      ADActionNode {label = 4, name = "C"},
+      ADActionNode {label = 5, name = "F"},
+      ADActionNode {label = 6, name = "B"},
+      ADDecisionNode {label = 7},
+      ADDecisionNode {label = 8},
+      ADMergeNode {label = 9},
+      ADMergeNode {label = 10},
+      ADForkNode {label = 11},
+      ADJoinNode {label = 12},
+      ADFlowFinalNode {label = 13},
+      ADFlowFinalNode {label = 14},
+      ADInitialNode {label = 15}
+    ],
+    connections = [
+      ADConnection {from = 1, to = 8, guard = ""},
+      ADConnection {from = 2, to = 14, guard = ""},
+      ADConnection {from = 3, to = 11, guard = ""},
+      ADConnection {from = 4, to = 12, guard = ""},
+      ADConnection {from = 5, to = 10, guard = ""},
+      ADConnection {from = 6, to = 12, guard = ""},
+      ADConnection {from = 7, to = 5, guard = "c"},
+      ADConnection {from = 7, to = 9, guard = "a"},
+      ADConnection {from = 8, to = 9, guard = "c"},
+      ADConnection {from = 8, to = 10, guard = "b"},
+      ADConnection {from = 9, to = 1, guard = ""},
+      ADConnection {from = 10, to = 3, guard = ""},
+      ADConnection {from = 11, to = 2, guard = ""},
+      ADConnection {from = 11, to = 4, guard = ""},
+      ADConnection {from = 11, to = 6, guard = ""},
+      ADConnection {from = 12, to = 13, guard = ""},
+      ADConnection {from = 15, to = 7, guard = ""}
+    ]
+  },
+  seed = -4748947987859297750,
+  actionSequences = M.fromList [(1,(False,["F","B","A","C","D"])),(2,(True,["F","A","B","C","D"])),(3,(False,["A","F","B","C","D"]))]
 }
