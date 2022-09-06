@@ -10,8 +10,6 @@ module Modelling.ActivityDiagram.EnterAS (
   enterASAlloy,
   checkEnterASInstance,
   enterActionSequence,
-  enterASTaskDescription,
-  enterActionSequenceText,
   enterASTask,
   enterASSyntax,
   enterASEvaluation,
@@ -53,7 +51,8 @@ import System.Random.Shuffle (shuffleM)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int
+  seed :: Int,
+  sampleSequence :: [String]
 } deriving (Show, Eq)
 
 data EnterASConfig = EnterASConfig {
@@ -131,41 +130,15 @@ checkEnterASInstance inst EnterASConfig {
     = Just "Solution should not be longer than parameter 'maxAnswerLength'"
   | otherwise
     = Nothing
-  where solution = sampleSolution $ snd $ enterActionSequence inst
+  where solution = sampleSequence inst
 
 newtype EnterASSolution = EnterASSolution {
   sampleSolution :: [String]
 } deriving (Show, Eq)
 
-enterActionSequence :: EnterASInstance -> (UMLActivityDiagram, EnterASSolution)
-enterActionSequence EnterASInstance {
-    activityDiagram,
-    seed
-  }
-  =
-  let ad = snd $ shuffleADNames seed activityDiagram
-      solution = EnterASSolution {sampleSolution=generateActionSequence ad}
-  in (ad, solution)
-
-enterASTaskDescription :: String
-enterASTaskDescription =
-  [i|
-    Look at the given Activity Diagram, and enter an action sequences
-    resulting in all flows of the Activity Diagram being terminated.
-  |]
-
-
-enterActionSequenceText :: EnterASInstance -> (UMLActivityDiagram, String)
-enterActionSequenceText inst =
-  let (ad, solution) = enterActionSequence inst
-      soltext = [i|
-        Sample solution for the EnterActionSequence-Task:
-
-        A correct Action Sequence for the given Activity Diagram is: #{sampleSolution solution}
-
-        Other entered sequences might be checked with the function 'validActionSequence'
-      |]
-  in (ad, soltext)
+enterActionSequence :: UMLActivityDiagram -> EnterASSolution
+enterActionSequence ad =
+  EnterASSolution {sampleSolution=generateActionSequence ad}
 
 enterASTask
   :: (MonadIO m, OutputMonad m)
@@ -173,8 +146,7 @@ enterASTask
   -> EnterASInstance
   -> LangM m
 enterASTask path task = do
-  let (diag, _) = enterActionSequence task
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -201,8 +173,10 @@ enterASSyntax
   -> [String]
   -> LangM m
 enterASSyntax task sub = addPretext $ do
-  let (diag, _) = enterActionSequence task
-      adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes diag
+  let adNames = map name
+        $ filter (\n -> isActionNode n || isObjectNode n)
+        $ nodes
+        $ activityDiagram task
   assertion (all (`elem` adNames) sub) $ translate $ do
     english "Referenced node names were provided within task?"
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
@@ -213,10 +187,9 @@ enterASEvaluation
   -> [String]
   -> Rated m
 enterASEvaluation task sub = do
-  let (diag, sol) = enterActionSequence task
-      correct = validActionSequence sub diag
+  let correct = validActionSequence sub $ activityDiagram task
       points = if correct then 1 else 0
-      msolutionString = Just $ show $ sampleSolution sol
+      msolutionString = Just $ show $ sampleSequence task
   printSolutionAndAssert msolutionString points
 
 enterAS
@@ -235,12 +208,17 @@ getEnterASTask
 getEnterASTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ enterASAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance) rinstas
+  n <- getRandom
+  g' <- getRandom
+  let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
       validInsta =
         head $ filter (isNothing . (`checkEnterASInstance` config))
-        $ map (\x -> EnterASInstance {activityDiagram=x, seed=123}) ad
-  g' <- getRandom
-  return $ EnterASInstance {activityDiagram=activityDiagram validInsta, seed=g'}
+        $ map (\x -> EnterASInstance {
+          activityDiagram=x,
+          seed=g',
+          sampleSequence=sampleSolution $ enterActionSequence x
+        }) ad
+  return validInsta
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
@@ -285,5 +263,6 @@ defaultEnterASInstance = EnterASInstance {
         ADConnection{ from = 15, to = 6, guard = ""}
       ]
     },
-    seed = 7777369639206507645
+    seed = 7777369639206507645,
+    sampleSequence = []
 }
