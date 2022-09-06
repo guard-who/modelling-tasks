@@ -11,8 +11,6 @@ module Modelling.ActivityDiagram.SelectAS (
   selectASAlloy,
   checkSelectASInstance,
   selectActionSequence,
-  selectASTaskDescription,
-  selectActionSequenceText,
   selectASTask,
   selectASSyntax,
   selectASEvaluation,
@@ -64,7 +62,7 @@ import System.Random.Shuffle (shuffle', shuffleM)
 data SelectASInstance = SelectASInstance {
   activityDiagram :: UMLActivityDiagram,
   seed :: Int,
-  numberOfWrongSequences :: Int
+  actionSequences :: Map Int (Bool, [String])
 } deriving (Show, Eq)
 
 data SelectASConfig = SelectASConfig {
@@ -144,29 +142,22 @@ checkSelectASInstance inst SelectASConfig {
     = Just "Solution should not be longer than parameter 'maxAnswerLength'"
   | otherwise
     = Nothing
-  where solution = correctSequence $ snd $ selectActionSequence inst
+  where (_, solution) = head $ M.toList $ M.map snd $ M.filter fst $ actionSequences inst
 
 data SelectASSolution = SelectASSolution {
   correctSequence :: [String],
   wrongSequences :: [[String]]
 } deriving (Show, Eq)
 
-selectActionSequence :: SelectASInstance -> (UMLActivityDiagram, SelectASSolution)
-selectActionSequence SelectASInstance {
-    activityDiagram,
-    seed,
-    numberOfWrongSequences
-  }
-  =
-  let ad = snd $ shuffleADNames seed activityDiagram
-      correctSequence = generateActionSequence ad
+selectActionSequence :: Int -> UMLActivityDiagram -> SelectASSolution
+selectActionSequence numberOfWrongSequences ad =
+  let correctSequence = generateActionSequence ad
       wrongSequences =
         take numberOfWrongSequences $
         sortBy (compareDistToCorrect correctSequence) $
         filter (not . (`validActionSequence` ad)) $
         permutations correctSequence
-      solution = SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
-  in (ad, solution)
+  in SelectASSolution {correctSequence=correctSequence, wrongSequences=wrongSequences}
 
 asEditDistParams :: [String] -> Params String (String, Int, String) (Sum Int)
 asEditDistParams xs = Params
@@ -187,46 +178,14 @@ compareDistToCorrect correctSequence xs ys =
       $ fst
       $ leastChanges (asEditDistParams correctSequence) (V.fromList correctSequence) (V.fromList zs)
 
-
-selectASTaskDescription :: SelectASInstance -> String
-selectASTaskDescription inst@SelectASInstance {
-    seed
-  }
-  =
-  let solution = selectActionSequence inst
-      toStringList = map (foldr1 (++)) $ correctSequence (snd solution) : wrongSequences (snd solution)
-      shuffledList = shuffle' toStringList (length toStringList) (mkStdGen seed)
-  in
-  [i|
-    Look at the given Activity Diagram, and determine which of the action sequences listed below
-    result in all flows of the Activity Diagram being terminated (Single Choice):
-
-    #{listOptions shuffledList}
-  |]
-  where
-    listOptions xs =
-      unlines $ map (\(x :: String) -> [i|- #{x}|]) xs
-
-selectActionSequenceText :: SelectASInstance -> (UMLActivityDiagram, String)
-selectActionSequenceText inst =
-  let (ad, solution) = selectActionSequence inst
-      soltext =
-        [i|
-          Solution for the SelectActionSequence-Task:
-
-          The correct Action Sequence is #{correctSequence solution}.
-        |]
-  in (ad, soltext)
-
 selectASTask
   :: (OutputMonad m, MonadIO m)
   => FilePath
   -> SelectASInstance
   -> LangM m
 selectASTask path task = do
-  let (diag, sol) = selectActionSequence task
-      mapping = M.toList $ M.map snd $ selectASSolutionToMap (seed task) sol
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  let mapping = M.toList $ M.map snd $ actionSequences task
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -264,7 +223,7 @@ selectASSyntax
   -> Int
   -> LangM m
 selectASSyntax task sub = addPretext $ do
-  let options = M.keys $ selectASSolutionToMap (seed task) $ snd $ selectActionSequence task
+  let options = M.keys $ actionSequences task
   singleChoiceSyntax True options sub
 
 selectASEvaluation
@@ -276,7 +235,7 @@ selectASEvaluation task n = addPretext $ do
   let as = translations $ do
         english "action sequence"
         german "Aktionsfolge"
-      solMap = selectASSolutionToMap (seed task) $ snd $ selectActionSequence task
+      solMap = actionSequences task
       (solution, validAS) = head $ M.toList $ M.map snd $ M.filter fst solMap
   singleChoice as (Just $ show validAS) solution n
 
@@ -296,17 +255,19 @@ getSelectASTask
 getSelectASTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ selectASAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance) rinstas
-      validInsta =
-        head $ filter (isNothing . (`checkSelectASInstance` config))
-        $ map (\x ->
-          SelectASInstance {activityDiagram=x, seed=123, numberOfWrongSequences=numberOfWrongAnswers config}) ad
+  n <- getRandom
   g' <- getRandom
-  return $ SelectASInstance {
-    activityDiagram=activityDiagram validInsta,
-    seed=g',
-    numberOfWrongSequences=numberOfWrongAnswers config
-  }
+  let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
+      validInsta = head
+        $ filter (isNothing . (`checkSelectASInstance` config))
+        $ map (\x ->
+          SelectASInstance {
+            activityDiagram=x,
+            seed=g',
+            actionSequences=selectASSolutionToMap g'
+              $ selectActionSequence (numberOfWrongAnswers config) x
+          }) ad
+  return validInsta
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
@@ -352,5 +313,5 @@ defaultSelectASInstance = SelectASInstance {
       ]
     },
     seed = 7777369639206507645,
-    numberOfWrongSequences = 2
+    actionSequences = M.fromList [(1, (True, [])), (2, (False,[])), (3, (False,[]))]
 }
