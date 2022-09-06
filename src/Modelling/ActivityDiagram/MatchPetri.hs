@@ -66,7 +66,7 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen
   )
-import Data.GraphViz.Commands (GraphvizCommand(Dot))
+import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.List (sort)
 import Data.Map (Map)
 import Data.String.Interpolate ( i )
@@ -113,6 +113,7 @@ checkMatchPetriConfig conf =
 checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
+    petriLayout,
     supportSTAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals,
@@ -128,6 +129,8 @@ checkMatchPetriConfig' MatchPetriConfig {
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
+  | any (`notElem` [Dot, Neato, TwoPi, Circo, Fdp]) petriLayout
+    = Just "The parameter 'petriLayout' can only contain the options Dot, Neato, TwoPi, Circo and Fdp"
   | otherwise
     = Nothing
 

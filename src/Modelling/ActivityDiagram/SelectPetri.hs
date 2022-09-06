@@ -60,7 +60,7 @@ import Control.Monad.Except (runExceptT)
 import Data.List (unfoldr, nubBy)
 import Data.Map (Map)
 import Data.Maybe (isNothing)
-import Data.GraphViz.Commands (GraphvizCommand(Dot))
+import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.String.Interpolate ( i )
 import Language.Alloy.Call (getInstances)
 import System.Random (next)       --To be changed from 'next' to 'uniform', not possible as of now due to dependencies
@@ -108,6 +108,7 @@ checkSelectPetriConfig conf =
 checkSelectPetriConfig' :: SelectPetriConfig -> Maybe String
 checkSelectPetriConfig' SelectPetriConfig {
     adConfig,
+    petriLayout,
     supportSTAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals,
@@ -123,6 +124,8 @@ checkSelectPetriConfig' SelectPetriConfig {
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
+  | any (`notElem` [Dot, Neato, TwoPi, Circo, Fdp]) petriLayout
+    = Just "The parameter 'petriLayout' can only contain the options Dot, Neato, TwoPi, Circo and Fdp"
   | otherwise
     = Nothing
 
