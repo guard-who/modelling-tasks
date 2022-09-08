@@ -95,7 +95,7 @@ defaultSelectPetriConfig = SelectPetriConfig {
   supportSTAbsent = Nothing,
   activityFinalsExist = Nothing,
   avoidAddingSinksForFinals = Nothing,
-  noActivityFinalInForkBlocks = Nothing
+  noActivityFinalInForkBlocks = Just False
 }
 
 checkSelectPetriConfig :: SelectPetriConfig -> Maybe String

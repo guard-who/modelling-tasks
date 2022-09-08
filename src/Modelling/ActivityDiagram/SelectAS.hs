@@ -79,13 +79,13 @@ defaultSelectASConfig = SelectASConfig {
   adConfig = defaultADConfig {
     minActions = 6,
     maxActions = 8,
-    minObjectNodes = 0,
-    maxObjectNodes = 0,
+    minObjectNodes = 1,
+    maxObjectNodes = 3,
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },
   maxInstances = Just 50,
-  objectNodeOnEveryPath = Nothing,
+  objectNodeOnEveryPath = Just True,
   numberOfWrongAnswers = 2,
   minAnswerLength = 5,
   maxAnswerLength = 8

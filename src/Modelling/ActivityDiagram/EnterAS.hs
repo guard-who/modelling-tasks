@@ -68,13 +68,13 @@ defaultEnterASConfig = EnterASConfig {
   adConfig = defaultADConfig {
     minActions = 6,
     maxActions = 8,
-    minObjectNodes = 0,
-    maxObjectNodes = 0,
+    minObjectNodes = 1,
+    maxObjectNodes = 5,
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },
   maxInstances = Just 50,
-  objectNodeOnEveryPath = Nothing,
+  objectNodeOnEveryPath = Just True,
   minAnswerLength = 5,
   maxAnswerLength = 8
 }

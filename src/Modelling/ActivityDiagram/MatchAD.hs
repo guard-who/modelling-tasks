@@ -71,7 +71,7 @@ defaultMatchADConfig :: MatchADConfig
 defaultMatchADConfig = MatchADConfig {
   adConfig = defaultADConfig,
   maxInstances = Just 50,
-  noActivityFinalInForkBlocks = Nothing
+  noActivityFinalInForkBlocks = Just False
 }
 
 checkMatchADConfig :: MatchADConfig -> Maybe String
