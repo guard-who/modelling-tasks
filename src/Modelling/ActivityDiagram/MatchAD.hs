@@ -51,6 +51,7 @@ import Control.Monad.Random (
   )
 import Data.List (sort)
 import Data.Map (Map)
+import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
 import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
@@ -82,8 +83,11 @@ checkMatchADConfig conf =
 checkMatchADConfig' :: MatchADConfig -> Maybe String
 checkMatchADConfig' MatchADConfig {
     adConfig,
+    maxInstances,
     noActivityFinalInForkBlocks
   }
+  | isJust maxInstances && fromJust maxInstances < 1
+    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
   | otherwise
