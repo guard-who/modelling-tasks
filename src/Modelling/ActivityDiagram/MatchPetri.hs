@@ -69,6 +69,7 @@ import Control.Monad.Random (
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.List (sort)
 import Data.Map (Map)
+import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
 import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
@@ -113,12 +114,15 @@ checkMatchPetriConfig conf =
 checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
+    maxInstances,
     petriLayout,
     supportSTAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals,
     noActivityFinalInForkBlocks
   }
+  | isJust maxInstances && fromJust maxInstances < 1
+    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
   | supportSTAbsent == Just True && cycles adConfig > 0
     = Just "Setting the parameter 'supportSTAbsent' to True prohibits having more than 0 cycles"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
@@ -129,6 +133,10 @@ checkMatchPetriConfig' MatchPetriConfig {
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
+  | noActivityFinalInForkBlocks == Just False && activityFinalsExist /= Just True
+    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to False implies that the parameter 'activityFinalsExit' should be True"
+  | null petriLayout
+    = Just "The parameter 'petriLayout' can not be the empty list"
   | any (`notElem` [Dot, Neato, TwoPi, Circo, Fdp]) petriLayout
     = Just "The parameter 'petriLayout' can only contain the options Dot, Neato, TwoPi, Circo and Fdp"
   | otherwise
