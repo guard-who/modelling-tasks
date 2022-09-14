@@ -50,7 +50,7 @@ import Control.Monad.Random (
   )
 import Data.List (permutations, sortBy)
 import Data.Map (Map)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, isJust, fromJust)
 import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
 import Data.Vector.Distance (Params(..), leastChanges)
@@ -99,10 +99,16 @@ checkSelectASConfig conf =
 checkSelectASConfig' :: SelectASConfig -> Maybe String
 checkSelectASConfig' SelectASConfig {
     adConfig,
+    maxInstances,
     objectNodeOnEveryPath,
+    numberOfWrongAnswers,
     minAnswerLength,
     maxAnswerLength
   }
+  | isJust maxInstances && fromJust maxInstances < 1
+    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+  | numberOfWrongAnswers < 1
+    = Just "The parameter 'numberOfWrongAnswers' must be set to a positive value"
   | objectNodeOnEveryPath == Just True && minObjectNodes adConfig < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occuring"
   | minAnswerLength < 0
