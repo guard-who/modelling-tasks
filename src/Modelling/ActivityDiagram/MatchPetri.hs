@@ -100,7 +100,7 @@ defaultMatchPetriConfig = MatchPetriConfig
     maxInstances = Just 50,
     petriLayout = [Dot],
     supportSTAbsent = Nothing,
-    activityFinalsExist = Nothing,
+    activityFinalsExist = Just True,
     avoidAddingSinksForFinals = Nothing,
     noActivityFinalInForkBlocks = Just False
   }

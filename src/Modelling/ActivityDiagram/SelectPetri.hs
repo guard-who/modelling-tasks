@@ -93,7 +93,7 @@ defaultSelectPetriConfig = SelectPetriConfig {
   petriLayout = [Dot],
   numberOfWrongAnswers = 2,
   supportSTAbsent = Nothing,
-  activityFinalsExist = Nothing,
+  activityFinalsExist = Just True,
   avoidAddingSinksForFinals = Nothing,
   noActivityFinalInForkBlocks = Just False
 }
