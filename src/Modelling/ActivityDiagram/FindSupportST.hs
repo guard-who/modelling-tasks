@@ -50,6 +50,7 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Data.Map (Map)
+import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
 import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
@@ -82,9 +83,12 @@ checkFindSupportSTConfig conf =
 findSupportSTConfig' :: FindSupportSTConfig -> Maybe String
 findSupportSTConfig' FindSupportSTConfig {
     adConfig,
+    maxInstances,
     activityFinalsExist,
     avoidAddingSinksForFinals
   }
+  | isJust maxInstances && fromJust maxInstances < 1
+    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
     = Just "Setting the parameter 'activityFinalsExist' to True implies having at least 1 Activity Final Node"
   | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
