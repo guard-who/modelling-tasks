@@ -108,6 +108,7 @@ checkSelectPetriConfig' SelectPetriConfig {
     adConfig,
     maxInstances,
     petriLayout,
+    numberOfWrongAnswers,
     supportSTAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals,
@@ -115,6 +116,8 @@ checkSelectPetriConfig' SelectPetriConfig {
   }
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+  | numberOfWrongAnswers < 1
+    = Just "The parameter 'numberOfWrongAnswers' must be set to a positive value"
   | supportSTAbsent == Just True && cycles adConfig > 0
     = Just "Setting the parameter 'supportSTAbsent' to True prohibits having more than 0 cycles"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
