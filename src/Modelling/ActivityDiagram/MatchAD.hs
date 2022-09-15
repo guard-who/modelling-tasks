@@ -8,9 +8,7 @@ module Modelling.ActivityDiagram.MatchAD (
   defaultMatchADConfig,
   checkMatchADConfig,
   matchADAlloy,
-  matchADTaskDescription,
-  matchADComponents,
-  matchADComponentsText,
+  matchADSolution,
   matchADTask,
   matchADSyntax,
   matchADEvaluation,
@@ -110,23 +108,6 @@ matchADAlloy MatchADConfig {
         Just False -> [i| not #{s}|]
         _ -> ""
 
-matchADTaskDescription :: String
-matchADTaskDescription =
-  [i|
-    Look at the given Activity Diagram, and use the displayed node names as identifiers
-    for the following tasks:
-
-    a) Name all Actions of the Activity Diagram
-    b) Name all Object Nodes of the Activity Diagram
-    c) Enter the number of Decision Nodes in the Activity Diagram
-    d) Enter the number of Merge Nodes in the Activity Diagram
-    e) Enter the number of Fork Nodes in the Activity Diagram
-    f) Enter the number of Join Nodes in the Activity Diagram
-    g) Enter the number of Initial Nodes in the Activity Diagram
-    h) Enter the number of Activity Final Nodes in the Activity Diagram
-    i) Enter the number of Flow Final Nodes in the Activity Diagram
-  |]
-
 data MatchADSolution = MatchADSolution {
   actionNames :: [String],
   objectNodeNames :: [String],
@@ -139,13 +120,10 @@ data MatchADSolution = MatchADSolution {
   numberOfFlowFinalNodes :: Int
 } deriving (Eq, Show, Read)
 
-matchADComponents :: MatchADInstance -> (UMLActivityDiagram, MatchADSolution)
-matchADComponents MatchADInstance {
-  activityDiagram,
-  seed
-} =
-  let ad =  snd $ shuffleADNames seed activityDiagram
-      solution = MatchADSolution {
+matchADSolution :: MatchADInstance -> MatchADSolution
+matchADSolution task =
+  let ad = activityDiagram task
+  in MatchADSolution {
         actionNames = sort $ map name $ filter isActionNode $ nodes ad,
         objectNodeNames = sort $ map name $ filter isObjectNode $ nodes ad,
         numberOfDecisionNodes = length $ filter isDecisionNode  $ nodes ad,
@@ -155,26 +133,7 @@ matchADComponents MatchADInstance {
         numberOfInitialNodes = length $ filter isInitialNode $ nodes ad,
         numberOfActivityFinalNodes = length $ filter isActivityFinalNode $ nodes ad,
         numberOfFlowFinalNodes = length $ filter isFlowFinalNode $ nodes ad
-      }
-  in (ad, solution)
-
-matchADComponentsText :: MatchADInstance -> (UMLActivityDiagram, String)
-matchADComponentsText inst =
-  let (ad, solution) = matchADComponents inst
-      soltext = [i|
-        Solutions for the MatchAD-Task:
-
-        a) Names of all Actions in the Activity Diagram: #{actionNames solution}
-        b) Names of all Object Nodes in the Activity Diagram: #{objectNodeNames solution}
-        c) Number of Decision Nodes in the Activity Diagram: #{numberOfDecisionNodes solution}
-        d) Number of Merge Nodes in the Activity Diagram: #{numberOfMergeNodes solution}
-        e) Number of Fork Nodes in the Activity Diagram: #{numberOfForkNodes solution}
-        f) Number of Join Nodes in the Activity Diagram: #{numberOfJoinNodes solution}
-        g) Number of Initial Nodes in the Activity Diagram: #{numberOfInitialNodes solution}
-        h) Number of Activity Final Nodes in the Activity Diagram: #{numberOfActivityFinalNodes solution}
-        i) Number of Flow Final Nodes in the Activity Diagram: #{numberOfFlowFinalNodes solution}
-      |]
-  in (ad, soltext)
+    }
 
 matchADTask
   :: (OutputMonad m, MonadIO m)
@@ -182,8 +141,7 @@ matchADTask
   -> MatchADInstance
   -> LangM m
 matchADTask path task = do
-  let (diag, _) = matchADComponents task
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -218,8 +176,7 @@ matchADSyntax
   -> MatchADSolution
   -> LangM m
 matchADSyntax task sub = addPretext $ do
-  let (diag, _) = matchADComponents task
-      adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes diag
+  let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
       subNames = actionNames sub ++ objectNodeNames sub
   assertion (all (`elem` adNames) subNames) $ translate $ do
     english "Referenced node names were provided within task?"
@@ -234,7 +191,7 @@ matchADEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "partial answers"
         german "Teilantworten"
-      (_, sol) = matchADComponents task
+      sol = matchADSolution task
       solution = matchADSolutionMap sol
       sub' = M.keys $ matchADSolutionMap sub
   multipleChoice as (Just $ show sol) solution sub'
@@ -272,8 +229,9 @@ getMatchADTask
 getMatchADTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchADAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance) rinstas
+  n <- getRandom
   g' <- getRandom
+  let ad = map (snd. shuffleADNames n . failWith id . parseInstance) rinstas
   return $ MatchADInstance {
     activityDiagram=head ad,
     seed=g'
