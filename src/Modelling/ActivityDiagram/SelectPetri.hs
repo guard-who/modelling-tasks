@@ -6,7 +6,6 @@ module Modelling.ActivityDiagram.SelectPetri (
   SelectPetriInstance(..),
   SelectPetriConfig(..),
   SelectPetriSolution(..),
-  pickRandomLayout,
   defaultSelectPetriConfig,
   checkSelectPetriConfig,
   checkPetriInstance,
