@@ -13,6 +13,7 @@ module Modelling.ActivityDiagram.EnterAS (
   enterASTask,
   enterASSyntax,
   enterASEvaluation,
+  enterASSolution,
   enterAS,
   defaultEnterASInstance
 ) where
@@ -194,6 +195,11 @@ enterASEvaluation task sub = do
       points = if correct then 1 else 0
       msolutionString = Just $ show $ sampleSequence task
   printSolutionAndAssert msolutionString points
+
+enterASSolution
+  :: EnterASInstance
+  -> [String]
+enterASSolution = sampleSequence
 
 enterAS
   :: EnterASConfig
