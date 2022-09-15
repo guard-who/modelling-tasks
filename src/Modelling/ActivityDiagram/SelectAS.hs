@@ -14,6 +14,7 @@ module Modelling.ActivityDiagram.SelectAS (
   selectASTask,
   selectASSyntax,
   selectASEvaluation,
+  selectASSolution,
   selectAS,
   defaultSelectASInstance
 ) where
@@ -244,6 +245,11 @@ selectASEvaluation task n = addPretext $ do
       solMap = actionSequences task
       (solution, validAS) = head $ M.toList $ M.map snd $ M.filter fst solMap
   singleChoice as (Just $ show validAS) solution n
+
+selectASSolution
+  :: SelectASInstance
+  -> Int
+selectASSolution = head . M.keys . M.filter fst . actionSequences
 
 selectAS
   :: SelectASConfig
