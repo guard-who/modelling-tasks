@@ -9,8 +9,6 @@ module Modelling.ActivityDiagram.FindSupportST (
   checkFindSupportSTConfig,
   findSupportSTSolution,
   findSupportSTAlloy,
-  findSupportSTTaskDescription,
-  findSupportSTText,
   findSupportSTTask,
   findSupportSTEvaluation,
   findSupportST,
@@ -118,43 +116,15 @@ findSupportSTAlloy FindSupportSTConfig {
             Just False -> [i| not #{s}|]
             _ -> ""
 
-findSupportSTTaskDescription :: String
-findSupportSTTaskDescription =
-  [i|
-    Look at the given Activity Diagram and convert it to a petri net by hand,
-    then:
-
-    a) Enter the number of nodes of the resulting petri net
-    b) Enter the number of support places of the resulting petri net
-    c) Enter the number of support transitions of the resulting petri net
-  |]
-
-findSupportSTText :: FindSupportSTInstance -> (UMLActivityDiagram, String)
-findSupportSTText inst =
-  let (ad, solution) = findSupportSTSolution inst
-      soltext = [i|
-      Solutions for the FindSupportST-Task:
-
-      a) Number of nodes of the resulting petri net: #{numberOfPetriNodes solution}
-      b) Number of support places in the resulting petri net: #{numberOfSupportPlaces solution}
-      c) Number of support transitions in the resulting petri net: #{numberOfSupportTransitions solution}
-      |]
-  in (ad, soltext)
-
 data FindSupportSTSolution = FindSupportSTSolution {
   numberOfPetriNodes :: Int,
   numberOfSupportPlaces :: Int,
   numberOfSupportTransitions :: Int
 } deriving (Show, Eq, Read)
 
-findSupportSTSolution :: FindSupportSTInstance -> (UMLActivityDiagram, FindSupportSTSolution)
-findSupportSTSolution FindSupportSTInstance {
-  activityDiagram,
-  seed
-} =
-  let ad =  snd $ shuffleADNames seed activityDiagram
-      solution = findSupportSTSolution' $ convertToPetrinet ad
-  in (ad, solution)
+findSupportSTSolution :: FindSupportSTInstance -> FindSupportSTSolution
+findSupportSTSolution task =
+  findSupportSTSolution' $ convertToPetrinet $ activityDiagram task
 
 findSupportSTSolution' :: PetriLike PetriKey -> FindSupportSTSolution
 findSupportSTSolution' petri = FindSupportSTSolution {
@@ -180,8 +150,7 @@ findSupportSTTask
   -> FindSupportSTInstance
   -> LangM m
 findSupportSTTask path task = do
-  let (diag, _) = findSupportSTSolution task
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -216,7 +185,7 @@ findSupportSTEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "partial answers"
         german "Teilantworten"
-      (_, sol) = findSupportSTSolution task
+      sol = findSupportSTSolution task
       solution = findSupportSTSolutionMap sol
       sub' = M.keys $ findSupportSTSolutionMap sub
   multipleChoice as (Just $ show sol) solution sub'
@@ -248,8 +217,9 @@ getFindSupportSTTask
 getFindSupportSTTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ findSupportSTAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance) rinstas
+  n <- getRandom
   g' <- getRandom
+  let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
   return $ FindSupportSTInstance {
     activityDiagram=head ad,
     seed=g'
