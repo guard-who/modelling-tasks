@@ -13,15 +13,17 @@ module Modelling.ActivityDiagram.MatchPetri (
   matchPetriTask,
   matchPetriSyntax,
   matchPetriEvaluation,
-  matchPetri
+  matchPetri,
+  defaultMatchPetriInstance
 ) where
 
-import qualified Data.Map as M ((!), keys, null, fromList)
+import qualified Data.Map as M ((!), keys, null, fromList, empty)
 import qualified Modelling.ActivityDiagram.Petrinet as PK (label)
 
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode(..),
+  ADConnection(..),
   isActionNode,
   isObjectNode,
   isDecisionNode,
@@ -347,3 +349,632 @@ getMatchPetriTask config = do
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
+
+defaultMatchPetriInstance :: MatchPetriInstance
+defaultMatchPetriInstance = MatchPetriInstance
+  { activityDiagram = UMLActivityDiagram
+    { nodes =
+      [ ADActionNode
+        { label = 1 , name = "C" }
+      , ADActionNode
+        { label = 2
+        , name = "H" }
+      , ADActionNode
+        { label = 3
+        , name = "A" }
+      , ADActionNode
+        { label = 4
+        , name = "E" }
+      , ADObjectNode
+        { label = 5
+        , name = "F" }
+      , ADObjectNode
+        { label = 6
+        , name = "D" }
+      , ADObjectNode
+        { label = 7
+        , name = "G" }
+      , ADObjectNode
+        { label = 8
+        , name = "B" }
+      , ADDecisionNode
+        { label = 9 }
+      , ADDecisionNode
+        { label = 10 }
+      , ADMergeNode
+        { label = 11 }
+      , ADMergeNode
+        { label = 12 }
+      , ADForkNode
+        { label = 13 }
+      , ADJoinNode
+        { label = 14 }
+      , ADActivityFinalNode
+        { label = 15 }
+      , ADFlowFinalNode
+        { label = 16 }
+      , ADInitialNode
+        { label = 17 } ]
+    , connections =
+      [ ADConnection
+        { from = 1
+        , to = 12
+        , guard = "" }
+      , ADConnection
+        { from = 2
+        , to = 6
+        , guard = "" }
+      , ADConnection
+        { from = 3
+        , to = 4
+        , guard = "" }
+      , ADConnection
+        { from = 4
+        , to = 13
+        , guard = "" }
+      , ADConnection
+        { from = 5
+        , to = 12
+        , guard = "" }
+      , ADConnection
+        { from = 6
+        , to = 14
+        , guard = "" }
+      , ADConnection
+        { from = 7
+        , to = 15
+        , guard = "" }
+      , ADConnection
+        { from = 8
+        , to = 7
+        , guard = "" }
+      , ADConnection
+        { from = 9
+        , to = 11
+        , guard = "a" }
+      , ADConnection
+        { from = 9
+        , to = 14
+        , guard = "b" }
+      , ADConnection
+        { from = 10
+        , to = 1
+        , guard = "b" }
+      , ADConnection
+        { from = 10
+        , to = 5
+        , guard = "c" }
+      , ADConnection
+        { from = 11
+        , to = 10
+        , guard = "" }
+      , ADConnection
+        { from = 12
+        , to = 9
+        , guard = "" }
+      , ADConnection
+        { from = 13
+        , to = 2
+        , guard = "" }
+      , ADConnection
+        { from = 13
+        , to = 8
+        , guard = "" }
+      , ADConnection
+        { from = 13
+        , to = 11
+        , guard = "" }
+      , ADConnection
+        { from = 14
+        , to = 16
+        , guard = "" }
+      , ADConnection
+        { from = 17
+        , to = 3
+        , guard = "" } ] }
+  , petrinet = PetriLike
+    { allNodes = M.fromList
+      [
+        ( NormalST
+          { label = 1
+          , sourceNode = ADDecisionNode
+            { label = 10 } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( SupportST
+                { label = 21 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 7
+                , sourceNode = ADActionNode
+                  { label = 1
+                  , name = "C" } }
+              , 1 )
+            ,
+              ( SupportST
+                { label = 14 }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 2
+          , sourceNode = ADJoinNode
+            { label = 14 } }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 6
+                , sourceNode = ADObjectNode
+                  { label = 6
+                  , name = "D" } }
+              , 1 )
+            ,
+              ( NormalST
+                { label = 24
+                , sourceNode = ADDecisionNode
+                  { label = 9 } }
+              , 1 ) ]
+          , flowOut = M.empty } )
+      ,
+        ( NormalST
+          { label = 3
+          , sourceNode = ADInitialNode
+            { label = 17 } }
+        , PlaceNode
+          { initial = 1
+          , flowIn = M.empty
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 19
+                , sourceNode = ADActionNode
+                  { label = 3
+                  , name = "A" } }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 4 }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 9
+                , sourceNode = ADObjectNode
+                  { label = 7
+                  , name = "G" } }
+              , 1 ) ]
+          , flowOut = M.empty } )
+      ,
+        ( NormalST
+          { label = 5
+          , sourceNode = ADMergeNode
+            { label = 11 } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 12
+                , sourceNode = ADForkNode
+                  { label = 13 } }
+              , 1 )
+            ,
+              ( SupportST
+                { label = 18 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( SupportST
+                { label = 21 }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 6
+          , sourceNode = ADObjectNode
+            { label = 6
+            , name = "D" } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 10
+                , sourceNode = ADActionNode
+                  { label = 2
+                  , name = "H" } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 2
+                , sourceNode = ADJoinNode
+                  { label = 14 } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 7
+          , sourceNode = ADActionNode
+            { label = 1
+            , name = "C" } }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 1
+                , sourceNode = ADDecisionNode
+                  { label = 10 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 13
+                , sourceNode = ADMergeNode
+                  { label = 12 } }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 8 }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 25
+                , sourceNode = ADObjectNode
+                  { label = 5
+                  , name = "F" } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 13
+                , sourceNode = ADMergeNode
+                  { label = 12 } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 9
+          , sourceNode = ADObjectNode
+            { label = 7
+            , name = "G" } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( SupportST
+                { label = 17 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( SupportST
+                { label = 4 }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 10
+          , sourceNode = ADActionNode
+            { label = 2
+            , name = "H" } }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( SupportST
+                { label = 15 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 6
+                , sourceNode = ADObjectNode
+                  { label = 6
+                  , name = "D" } }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 11 }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 16
+                , sourceNode = ADActionNode
+                  { label = 4
+                  , name = "E" } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 12
+                , sourceNode = ADForkNode
+                  { label = 13 } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 12
+          , sourceNode = ADForkNode
+            { label = 13 } }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( SupportST
+                { label = 11 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 5
+                , sourceNode = ADMergeNode
+                  { label = 11 } }
+              , 1 )
+            ,
+              ( SupportST
+                { label = 15 }
+              , 1 )
+            ,
+              ( NormalST
+                { label = 22
+                , sourceNode = ADObjectNode
+                  { label = 8
+                  , name = "B" } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 13
+          , sourceNode = ADMergeNode
+            { label = 12 } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 7
+                , sourceNode = ADActionNode
+                  { label = 1
+                  , name = "C" } }
+              , 1 )
+            ,
+              ( SupportST
+                { label = 8 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( SupportST
+                { label = 23 }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 14 }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 1
+                , sourceNode = ADDecisionNode
+                  { label = 10 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 25
+                , sourceNode = ADObjectNode
+                  { label = 5
+                  , name = "F" } }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 15 }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 12
+                , sourceNode = ADForkNode
+                  { label = 13 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 10
+                , sourceNode = ADActionNode
+                  { label = 2
+                  , name = "H" } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 16
+          , sourceNode = ADActionNode
+            { label = 4
+            , name = "E" } }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( SupportST
+                { label = 20 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( SupportST
+                { label = 11 }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 17 }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 22
+                , sourceNode = ADObjectNode
+                  { label = 8
+                  , name = "B" } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 9
+                , sourceNode = ADObjectNode
+                  { label = 7
+                  , name = "G" } }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 18 }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 24
+                , sourceNode = ADDecisionNode
+                  { label = 9 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 5
+                , sourceNode = ADMergeNode
+                  { label = 11 } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 19
+          , sourceNode = ADActionNode
+            { label = 3
+            , name = "A" } }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 3
+                , sourceNode = ADInitialNode
+                  { label = 17 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( SupportST
+                { label = 20 }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 20 }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 19
+                , sourceNode = ADActionNode
+                  { label = 3
+                  , name = "A" } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 16
+                , sourceNode = ADActionNode
+                  { label = 4
+                  , name = "E" } }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 21 }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 5
+                , sourceNode = ADMergeNode
+                  { label = 11 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 1
+                , sourceNode = ADDecisionNode
+                  { label = 10 } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 22
+          , sourceNode = ADObjectNode
+            { label = 8
+            , name = "B" } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 12
+                , sourceNode = ADForkNode
+                  { label = 13 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( SupportST
+                { label = 17 }
+              , 1 ) ] } )
+      ,
+        ( SupportST
+          { label = 23 }
+        , TransitionNode
+          { flowIn = M.fromList
+            [
+              ( NormalST
+                { label = 13
+                , sourceNode = ADMergeNode
+                  { label = 12 } }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 24
+                , sourceNode = ADDecisionNode
+                  { label = 9 } }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 24
+          , sourceNode = ADDecisionNode
+            { label = 9 } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( SupportST
+                { label = 23 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( NormalST
+                { label = 2
+                , sourceNode = ADJoinNode
+                  { label = 14 } }
+              , 1 )
+            ,
+              ( SupportST
+                { label = 18 }
+              , 1 ) ] } )
+      ,
+        ( NormalST
+          { label = 25
+          , sourceNode = ADObjectNode
+            { label = 5
+            , name = "F" } }
+        , PlaceNode
+          { initial = 0
+          , flowIn = M.fromList
+            [
+              ( SupportST
+                { label = 14 }
+              , 1 ) ]
+          , flowOut = M.fromList
+            [
+              ( SupportST
+                { label = 8 }
+              , 1 ) ] } ) ] }
+  , seed = 2235774404348116088
+  , graphvizCmd = Dot }
