@@ -15,6 +15,7 @@ module Modelling.ActivityDiagram.SelectPetri (
   selectPetriTask,
   selectPetriSyntax,
   selectPetriEvaluation,
+  selectPetriSolution,
   selectPetri
   ) where
 
@@ -273,6 +274,11 @@ selectPetriEvaluation task n = addPretext $ do
       solMap = petrinets task
       (solution, _) = head $ M.toList $ M.map snd $ M.filter fst solMap
   singleChoice as (Just $ show solution) solution n
+
+selectPetriSolution
+  :: SelectPetriInstance
+  -> Int
+selectPetriSolution = head . M.keys . M.filter fst . petrinets
 
 selectPetri
   :: SelectPetriConfig
