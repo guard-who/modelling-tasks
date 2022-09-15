@@ -4,19 +4,16 @@
 module Modelling.ActivityDiagram.MatchPetri (
   MatchPetriInstance(..),
   MatchPetriConfig(..),
-  pickRandomLayout,
+  MatchPetriSolution(..),
   defaultMatchPetriConfig,
   checkMatchPetriConfig,
-  matchPetriComponents,
   matchPetriAlloy,
-  matchPetriTaskDescription,
-  matchPetriComponentsText,
+  matchPetriSolution,
   extractSupportSTs,
   matchPetriTask,
   matchPetriSyntax,
   matchPetriEvaluation,
-  matchPetri,
-  defaultMatchPetriInstance
+  matchPetri
 ) where
 
 import qualified Data.Map as M ((!), keys, null, fromList)
@@ -25,7 +22,6 @@ import qualified Modelling.ActivityDiagram.Petrinet as PK (label)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode(..),
-  ADConnection(..),
   isActionNode,
   isObjectNode,
   isDecisionNode,
@@ -77,6 +73,7 @@ import System.Random.Shuffle (shuffleM)
 
 data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: UMLActivityDiagram,
+  petrinet :: PetriLike PetriKey,
   seed :: Int,
   graphvizCmd :: GraphvizCommand
 } deriving (Show)
@@ -166,7 +163,6 @@ matchPetriAlloy MatchPetriConfig {
             Just False -> [i| not #{s}|]
             _ -> ""
 
-
 mapTypesToLabels :: PetriLike PetriKey -> MatchPetriSolution
 mapTypesToLabels petri =
   MatchPetriSolution {
@@ -193,42 +189,6 @@ mapTypesToLabels petri =
       filter (not . isSupportST) $
       M.keys $ allNodes petri
 
-
-matchPetriTaskDescription :: String
-matchPetriTaskDescription =
-  [i|
-    Look at the given Activity Diagram and Petrinet, then use the displayed numbers
-    at the places and transitions as identifiers for the following tasks:
-
-    a) For every Action in the Activity Diagram, name a tuple with its corresponding node in the petrinet
-       (e.g. ("A", 1) if the Action "A" corresponds to 1 in the petrinet)
-    b) For every Object Node in the Activity Diagram, name a tuple with its corresponding node in the petrinet
-       (e.g. ("O", 2) if the Action "O" corresponds to 2 in the petrinet)
-    c) Name all nodes of the petrinet which correspond to Decision Nodes in the Activity Diagram
-    d) Name all nodes of the petrinet which correspond to Merge Nodes in the Activity Diagram
-    e) Name all nodes of the petrinet which correspond to Fork Nodes in the Activity Diagram
-    f) Name all nodes of the petrinet which correspond to Join Nodes in the Activity Diagram
-    g) Name all nodes of the petrinet which correspond to Initial Nodes in the Activity Diagram
-    h) Name all added support places and support transtions
-  |]
-
-matchPetriComponentsText :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, String)
-matchPetriComponentsText inst =
-  let (ad, petri, solution) = matchPetriComponents inst
-      soltext = [i|
-      Solutions for the MatchPetri-Task:
-
-      a) Matchings of Actions to petrinet nodes: #{actionNodes solution}
-      b) Matchings of Object Nodes to petrinet nodes: #{objectNodes solution}
-      c) Nodes in the petrinet corresponding to Decision Nodes: #{decisionNodes solution}
-      d) Nodes in the petrinet corresponding to Merge Nodes: #{mergeNodes solution}
-      e) Nodes in the petrinet corresponding to Fork Nodes: #{forkNodes solution}
-      f) Nodes in the petrinet corresponding to Join Nodes: #{joinNodes solution}
-      g) Nodes in the petrinet corresponding to Initial Nodes: #{initialNodes solution}
-      h) Support places and transitions: #{supportSTs solution}
-      |]
-  in (ad, petri, soltext)
-
 data MatchPetriSolution = MatchPetriSolution {
   actionNodes :: [(String, Int)],
   objectNodes :: [(String, Int)],
@@ -240,16 +200,8 @@ data MatchPetriSolution = MatchPetriSolution {
   supportSTs :: [Int]
 } deriving (Show, Eq, Read)
 
-matchPetriComponents :: MatchPetriInstance -> (UMLActivityDiagram, PetriLike PetriKey, MatchPetriSolution)
-matchPetriComponents MatchPetriInstance {
-  activityDiagram,
-  seed
-} =
-  let ad = snd $ shuffleADNames seed activityDiagram
-      petri = snd $ shufflePetri seed $ convertToPetrinet ad
-      solution = mapTypesToLabels petri
-  in (ad, petri, solution)
-
+matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
+matchPetriSolution task = mapTypesToLabels $ petrinet task
 
 extractSupportSTs :: PetriLike PetriKey -> [PetriKey]
 extractSupportSTs petri = filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
@@ -269,8 +221,7 @@ matchPetriTask
   -> MatchPetriInstance
   -> LangM m
 matchPetriTask path task = do
-  let (diag, petri, _) = matchPetriComponents task
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf diag
+  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -278,10 +229,10 @@ matchPetriTask path task = do
   paragraph $ translate $ do
     english "Consider the following petrinet."
     german "Betrachten Sie das folgende Petrinetz."
-  petri' <- liftIO
+  petri <- liftIO
     $ runExceptT
-    $ cacheNet path (show . PK.label) petri False False True (graphvizCmd task)
-  image $ failWith id petri'
+    $ cacheNet path (show . PK.label) (petrinet task) False False True (graphvizCmd task)
+  image $ failWith id petri
   paragraph $ translate $ do
     english [i|State the matchings of each action and petrinet node, the matching of each
 object node and petrinet node, the petrinet nodes per component type, as well as all support nodes
@@ -317,10 +268,9 @@ matchPetriSyntax
   -> MatchPetriSolution
   -> LangM m
 matchPetriSyntax task sub = addPretext $ do
-  let (diag, petri, _) = matchPetriComponents task
-      adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes diag
+  let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
       subNames = map fst (actionNodes sub) ++ map fst (objectNodes sub)
-      petriLabels = map PK.label $ M.keys $ allNodes petri
+      petriLabels = map PK.label $ M.keys $ allNodes $ petrinet task
       subLabels =
         map snd (actionNodes sub)
         ++ map snd (objectNodes sub)
@@ -346,7 +296,7 @@ matchPetriEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "partial answers"
         german "Teilantworten"
-      (_, _, sol) = matchPetriComponents task
+      sol = matchPetriSolution task
       solution = matchPetriSolutionMap sol
       sub' = M.keys $ matchPetriSolutionMap sub
   multipleChoice as (Just $ show sol) solution sub'
@@ -383,62 +333,17 @@ getMatchPetriTask
 getMatchPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchPetriAlloy config
   rinstas <- shuffleM instas
-  let ad = map (failWith id . parseInstance) rinstas
+  n <- getRandom
   g' <- getRandom
+  let ad = head $ map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
+      petri = snd $ shufflePetri n $ convertToPetrinet ad
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
-    activityDiagram=head ad,
+    activityDiagram=ad,
+    petrinet = petri,
     seed=g',
     graphvizCmd = layout
   }
 
 failWith :: (a -> String) -> Either a c -> c
 failWith f = either (error . f) id
-
-defaultMatchPetriInstance :: MatchPetriInstance
-defaultMatchPetriInstance = MatchPetriInstance {
-  activityDiagram = UMLActivityDiagram {
-    nodes = [
-      ADActionNode {label = 1, name = "A"},
-      ADActionNode {label = 2, name = "B"},
-      ADActionNode {label = 3, name = "C"},
-      ADActionNode {label = 4, name = "D"},
-      ADObjectNode {label = 5, name = "E"},
-      ADObjectNode {label = 6, name = "F"},
-      ADObjectNode {label = 7, name = "G"},
-      ADObjectNode {label = 8, name = "H"},
-      ADDecisionNode {label = 9},
-      ADDecisionNode {label = 10},
-      ADMergeNode {label = 11},
-      ADMergeNode {label = 12},
-      ADForkNode {label = 13},
-      ADJoinNode {label = 14},
-      ADActivityFinalNode {label = 15},
-      ADFlowFinalNode {label = 16},
-      ADInitialNode {label = 17}
-    ],
-    connections = [
-      ADConnection {from = 1, to = 14, guard = ""},
-      ADConnection {from = 2, to = 11, guard = ""},
-      ADConnection {from = 3, to = 14, guard = ""},
-      ADConnection {from = 4, to = 8, guard = ""},
-      ADConnection {from = 5, to = 11, guard = ""},
-      ADConnection {from = 6, to = 9, guard = ""},
-      ADConnection {from = 7, to = 16, guard = ""},
-      ADConnection {from = 8, to = 12, guard = ""},
-      ADConnection {from = 9, to = 10, guard = "a"},
-      ADConnection {from = 9, to = 12, guard = "b"},
-      ADConnection {from = 10, to = 2, guard = "b"},
-      ADConnection {from = 10, to = 5, guard = "a"},
-      ADConnection {from = 11, to = 13, guard = ""},
-      ADConnection {from = 12, to = 6, guard = ""},
-      ADConnection {from = 13, to = 1, guard = ""},
-      ADConnection {from = 13, to = 3, guard = ""},
-      ADConnection {from = 13, to = 7, guard = ""},
-      ADConnection {from = 14, to = 15, guard = ""},
-      ADConnection {from = 17, to = 4, guard = ""}
-    ]
-  },
-  seed = 5508675034223564747,
-  graphvizCmd = Dot
-}
