@@ -64,13 +64,6 @@ executables:
       - ba-athena-schulz
       - directory
       - filepath
-  findSupportST:
-    main: findSupportST.hs
-    source-dirs: app
-    dependencies:
-      - ba-athena-schulz
-      - directory
-      - filepath
   evalIsomorphic:
     main: evalIsomorphic.hs
     source-dirs: app
