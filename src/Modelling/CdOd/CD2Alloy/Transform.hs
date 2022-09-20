@@ -1,7 +1,13 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Modelling.CdOd.CD2Alloy.Transform (
-  createRunCommand, mergeParts, transform,
+  Parts {- only for legacy-apps: -} (..),
+  combineParts,
+  createRunCommand,
+  mergeParts,
+  transform,
   ) where
 
 import Modelling.CdOd.Types             (Association, AssociationType(..))
@@ -10,6 +16,16 @@ import Data.List
 import Data.FileEmbed
 import Data.Maybe                       (catMaybes, isJust)
 import Data.String.Interpolate          (i)
+
+{-|
+Parts belonging to the CD2Alloy Alloy program.
+-}
+data Parts = Parts {
+  part1 :: !String,
+  part2 :: !String,
+  part3 :: !String,
+  part4 :: !String
+  }
 
 transform
   :: ([(String, Maybe String)], [Association])
@@ -22,7 +38,7 @@ transform
   -> Maybe Int
   -> String
   -> String
-  -> (String, String, String, String, String)
+  -> Parts
 transform
   (classes, associations)
   hasSelfLoops
@@ -34,7 +50,7 @@ transform
   minObjects
   index
   time =
-  (part1, part2, part3, part4, part5)
+  Parts { part1, part2, part3, part4 }
   where
     template :: String
     template = $(embedStringFile "alloy/od/template.als")
@@ -49,6 +65,7 @@ module umlp2alloy/CD#{index}Module
 #{template}
 #{objectsFact}
 #{limitLinks}
+#{loops}
 ///////////////////////////////////////////////////
 // Structures potentially common to multiple CDs
 ///////////////////////////////////////////////////
@@ -84,9 +101,9 @@ fact LimitLinks {
     linksPerObject Nothing Nothing = Nothing
     linksPerObject mmin mmax = Just $
       "  all o : Obj | let x = minus[plus[#o.get,#get.o],#o.get.o] |"
-      ++ foldMap ((" x >= " ++) . show) mmin
-      ++ foldMap (const " &&") (mmin >> mmax)
-      ++ foldMap ((" x <= " ++) . show) mmax
+      ++ maybe "" ((" x >= " ++) . show) mmin
+      ++ maybe "" (const " &&") (mmin >> mmax)
+      ++ maybe "" ((" x <= " ++) . show) mmax
     part2 = [i|
 // Concrete names of fields
 #{unlines (associationSigs associations)}
@@ -109,20 +126,26 @@ fact LimitLinks {
 // Properties
 #{predicate index associations classNames}
 |]
-    part5 = createRunCommand hasSelfLoops ("cd" ++ index) (length classes) 5
     classNames = map fst classes
     classesWithDirectSubclasses =
       map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
+    loops            = case hasSelfLoops of
+      Nothing    -> ""
+      Just True  -> [i|
+fact SomeSelfLoops {
+  some o : Obj | o in o.get[FName]
+}|]
+      Just False -> [i|
+fact NoSelfLoops {
+  no o : Obj | o in o.get[FName]
+}|]
 
-createRunCommand :: Maybe Bool -> String -> Int -> Int -> String
-createRunCommand hasSelfLoops command numClasses maxObjects = [i|
+createRunCommand :: String -> Int -> Int -> String
+createRunCommand command numClasses maxObjects = [i|
 ///////////////////////////////////////////////////
 // Run commands
 ///////////////////////////////////////////////////
-fact {
-  #{loops}
-}
 
 run { #{command} } for #{maxObjects} Obj, #{intSize} FName, #{intSize} Int
 |]
@@ -132,10 +155,6 @@ run { #{command} } for #{maxObjects} Obj, #{intSize} FName, #{intSize} Int
     intSize' :: Double
     intSize' = logBase 2 $ fromIntegral $
       2 * max (numClasses * maxObjects) (2 * maxObjects) + 1
-    loops            = case hasSelfLoops of
-      Nothing    -> ""
-      Just True  -> "some o : Obj | o in o.get[FName]"
-      Just False -> "no o : Obj | o in o.get[FName]"
 
 associationSigs :: [Association] -> [String]
 associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ name ++ " extends FName {}")
@@ -217,10 +236,16 @@ pred cd#{index} {
     subsCD           = "SubsCD" ++ index
 
 mergeParts
-  :: (String, String, String, String)
-  -> (String, String, String, String)
-  -> (String, String, String, String)
-mergeParts (p1, p2, p3, p4) (_, p2', p3', p4') =
-  (p1, p2 `unionL` p2', p3 `unionL` p3', p4 ++ p4')
+  :: Parts
+  -> Parts
+  -> Parts
+mergeParts p p' = Parts
+  (part1 p)
+  (part2 p `unionL` part2 p')
+  (part3 p `unionL` part3 p')
+  (part4 p ++ part4 p')
   where
     unionL x y = unlines $ (++ [""]) $ filter (not . null) $ lines x `union` lines y
+
+combineParts :: Parts -> String
+combineParts Parts {..} = part1 ++ part2 ++ part3 ++ part4

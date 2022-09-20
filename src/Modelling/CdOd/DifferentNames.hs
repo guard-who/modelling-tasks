@@ -42,7 +42,12 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   )
 import Modelling.CdOd.Auxiliary.Util
-import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
+import Modelling.CdOd.CD2Alloy.Transform (
+  combineParts,
+  createRunCommand,
+  mergeParts,
+  transform,
+  )
 import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
 import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
 import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromNodesAndEdges)
@@ -332,16 +337,15 @@ getDifferentNamesTask
 getDifferentNamesTask fhead config names edges' = do
     let edges  = reverseAssociation <$> edges'
         cd0    = (0 :: Integer, fromEdges names edges)
-        parts0 = extractFourParts cd0
+        parts0 = uncurry alloyFor cd0
         labels = [l | (_, l, _, _, _, _) <- snd $ snd cd0]
         cds    = map
           (fromEdges names . flip renameEdges edges . BM.fromList . zip labels)
           $ drop 1 (permutations labels)
         cds'   = zip [1 :: Integer ..] cds
-        partss = map extractFourParts cds'
+        partss = map (uncurry alloyFor) cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand
-          (presenceOfLinkSelfLoops config)
           runCmd
           (length names)
           $ maxObjects config
@@ -391,10 +395,6 @@ getDifferentNamesTask fhead config names edges' = do
       (minObjects config)
       (show n)
       ""
-    extractFourParts (n, cd) =
-      case alloyFor n cd of
-      (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
-    combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
     drawCd (n, cd) =
       drawCdFromSyntax True True (Just redColor) cd ("debug-" ++ show n) Pdf
     continueWithHead []    _ = fhead

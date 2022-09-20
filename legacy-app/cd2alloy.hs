@@ -2,7 +2,7 @@ module Main (main) where
 
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
-import Modelling.CdOd.CD2Alloy.Transform (transform)
+import Modelling.CdOd.CD2Alloy.Transform (Parts (..), createRunCommand, transform)
 
 import Control.Monad
 import Data.Time.LocalTime
@@ -13,15 +13,20 @@ run input output template index = do
   let tokens = lexer input
   let syntax = parser tokens
   time <- getZonedTime
-  let (part1, part2, part3, part4, part5) = transform syntax Nothing False Nothing Nothing Nothing Nothing Nothing index (show time)
+  let parts = transform syntax Nothing False Nothing Nothing Nothing Nothing Nothing index (show time)
+      p1 = part1 parts
+      p2 = part2 parts
+      p3 = part3 parts
+      p4 = part4 parts
+      p5 = createRunCommand ("cd" ++ index) (length $ fst syntax) 5
   case output of
     Just file -> do
-      when template $ let out = file ++ ".part1" in writeFile out part1 >> putStrLn ("Some output written to " ++ out)
-      let out = file ++ ".part2" in writeFile out part2 >> putStrLn ("Some output written to " ++ out)
-      let out = file ++ ".part3" in writeFile out part3 >> putStrLn ("Some output written to " ++ out)
-      let out = file ++ ".part4" in writeFile out part4 >> putStrLn ("Some output written to " ++ out)
-      when template $ let out = file ++ ".part5" in writeFile out part5 >> putStrLn ("Some output written to " ++ out)
-    Nothing -> putStrLn $ (if template then part1 else "") ++ part2 ++ part3 ++ part4 ++ (if template then part5 else "")
+      when template $ let out = file ++ ".part1" in writeFile out p1 >> putStrLn ("Some output written to " ++ out)
+      let out = file ++ ".part2" in writeFile out p2 >> putStrLn ("Some output written to " ++ out)
+      let out = file ++ ".part3" in writeFile out p3 >> putStrLn ("Some output written to " ++ out)
+      let out = file ++ ".part4" in writeFile out p4 >> putStrLn ("Some output written to " ++ out)
+      when template $ let out = file ++ ".part5" in writeFile out p5 >> putStrLn ("Some output written to " ++ out)
+    Nothing -> putStrLn $ (if template then p1 else "") ++ p2 ++ p3 ++ p4 ++ (if template then p5 else "")
 
 main :: IO ()
 main = do

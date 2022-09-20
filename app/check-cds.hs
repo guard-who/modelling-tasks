@@ -4,7 +4,7 @@ module Main where
 import qualified Data.Map                         as M (empty, insert)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
-import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
+import Modelling.CdOd.CD2Alloy.Transform (combineParts, createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Edges             (fromEdges)
 import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
 import Modelling.CdOd.Types
@@ -92,17 +92,14 @@ drawCdAndOdsFor
 drawCdAndOdsFor is c dirs cds cmd = do
   mapM_ (\(cd, i) -> drawCdFromSyntax True True Nothing cd (c ++ "-cd" ++ show i) Pdf >>= print) $ zip cds [0..]
   let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
-        ++ createRunCommand Nothing cmd 3 3
+        ++ createRunCommand cmd 3 3
   ods <- Alloy.getInstances is parts'
   g <- getStdGen
   flip evalRandT g $
     mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= liftIO . print)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
-    parts = zipWith (\cd i -> getFour $ transform (toOldSyntax cd) Nothing False Nothing Nothing Nothing Nothing Nothing (show i) "") cds [0..]
-    getFour (p1, p2, p3, p4, _) = (p1, p2, p3, p4)
-    combineParts (p1, p2, p3, p4) =
-      p1 ++ p2 ++ p3 ++ p4
+    parts = zipWith (\cd i -> transform (toOldSyntax cd) Nothing False Nothing Nothing Nothing Nothing Nothing (show i) "") cds [0..]
     shorten (' ':'a':'n':'d':' ':'c':'d':ys) =
       "and" ++ shorten ys
     shorten (' ':'a':'n':'d':' ':'n':'o':'t':' ':'c':'d':ys) =

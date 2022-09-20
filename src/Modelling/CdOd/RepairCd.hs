@@ -43,7 +43,11 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   )
 import Modelling.CdOd.Auxiliary.Util    (getInstances)
-import Modelling.CdOd.CD2Alloy.Transform (transform)
+import Modelling.CdOd.CD2Alloy.Transform (
+  combineParts,
+  createRunCommand,
+  transform,
+  )
 import Modelling.CdOd.Edges             (toEdges)
 import Modelling.CdOd.MatchCdOd         (applyChanges)
 import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
@@ -469,7 +473,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do
-      let (p1, p2, p3, p4, p5) = transform
+      let parts = combineParts $ transform
             (toOldSyntax cd)
             Nothing
             noIsolationLimitation
@@ -480,7 +484,8 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
             Nothing
             ""
             ""
-      getInstances (Just 1) to (p1 ++ p2 ++ p3 ++ p4 ++ p5)
+          command = createRunCommand "cd" (length $ fst cd) 5
+      getInstances (Just 1) to (parts ++ command)
 
 data AllowedProperties = AllowedProperties {
   compositionCycles      :: Bool,

@@ -44,7 +44,12 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   simplifiedInformation,
   )
-import Modelling.CdOd.CD2Alloy.Transform (createRunCommand, mergeParts, transform)
+import Modelling.CdOd.CD2Alloy.Transform (
+  combineParts,
+  createRunCommand,
+  mergeParts,
+  transform,
+  )
 import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
@@ -486,10 +491,10 @@ getODInstances
   -> IO (Map [Int] [AlloyInstance])
 getODInstances config cd1 cd2 cd3 numClasses = do
   -- TODO remove `toOldSyntax`
-  let parts1 = getFourParts cd1 "1"
-      parts2 = getFourParts cd2 "2"
+  let parts1 = alloyFor cd1 "1"
+      parts2 = alloyFor cd2 "2"
       parts1and2 = mergeParts parts1 parts2
-      parts3 = getFourParts cd3 "3"
+      parts3 = alloyFor cd3 "3"
       cd1not2 = runCommand "cd1 and (not cd2)"
       cd2not1 = runCommand "cd2 and (not cd1)"
       cd1and2 = runCommand "cd1 and cd2"
@@ -520,14 +525,10 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       ""
     to = timeout config
     maxIs = maxInstances config
-    getFourParts cd nr = case alloyFor cd nr of
-      (p1, p2, p3, p4, _) -> (p1, p2, p3, p4)
     runCommand x = createRunCommand
-      (presenceOfLinkSelfLoops config)
       x
       numClasses
       (maxObjects config)
-    combineParts (p1, p2, p3, p4) = p1 ++ p2 ++ p3 ++ p4
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
