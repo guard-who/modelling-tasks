@@ -38,6 +38,7 @@ import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADC
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
@@ -337,7 +338,8 @@ getMatchPetriTask config = do
   rinstas <- shuffleM instas
   n <- getRandom
   g' <- getRandom
-  let ad = head $ map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
+  let ad = headWithErr "Failed to find task instances"
+        $ map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
       petri = snd $ shufflePetri n $ convertToPetrinet ad
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
@@ -346,9 +348,6 @@ getMatchPetriTask config = do
     seed=g',
     graphvizCmd = layout
   }
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 defaultMatchPetriInstance :: MatchPetriInstance
 defaultMatchPetriInstance = MatchPetriInstance

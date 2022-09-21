@@ -27,6 +27,7 @@ import Modelling.ActivityDiagram.Datatype (
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -233,12 +234,9 @@ getMatchADTask config = do
   g' <- getRandom
   let ad = map (snd. shuffleADNames n . failWith id . parseInstance) rinstas
   return $ MatchADInstance {
-    activityDiagram=head ad,
+    activityDiagram=headWithErr "Failed to find task instances" ad,
     seed=g'
   }
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 defaultMatchADInstance :: MatchADInstance
 defaultMatchADInstance = MatchADInstance {

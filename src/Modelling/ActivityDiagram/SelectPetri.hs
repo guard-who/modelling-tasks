@@ -30,6 +30,7 @@ import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames, shufflePetri)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
@@ -301,7 +302,8 @@ getSelectPetriTask config = do
   layout <- pickRandomLayout config
   let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
       validInsta =
-        head $ filter (isNothing . (`checkPetriInstance` config))
+        headWithErr "Failed to find task instances"
+        $ filter (isNothing . (`checkPetriInstance` config))
         $ map (\x ->
           SelectPetriInstance {
             activityDiagram=x,
@@ -318,9 +320,6 @@ shuffleSolutionNets n sol = SelectPetriSolution {
   matchingNet = snd $ shufflePetri n (matchingNet sol),
   wrongNets =  map (snd . shufflePetri n) (wrongNets sol)
 }
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 defaultSelectPetriInstance :: SelectPetriInstance
 defaultSelectPetriInstance =  SelectPetriInstance {

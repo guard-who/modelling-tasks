@@ -25,6 +25,7 @@ import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), A
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -221,16 +222,14 @@ getEnterASTask config = do
   g' <- getRandom
   let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
       validInsta =
-        head $ filter (isNothing . (`checkEnterASInstance` config))
+        headWithErr "Failed to find task instances"
+        $ filter (isNothing . (`checkEnterASInstance` config))
         $ map (\x -> EnterASInstance {
           activityDiagram=x,
           seed=g',
           sampleSequence=sampleSolution $ enterActionSequence x
         }) ad
   return validInsta
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 defaultEnterASInstance :: EnterASInstance
 defaultEnterASInstance = EnterASInstance {

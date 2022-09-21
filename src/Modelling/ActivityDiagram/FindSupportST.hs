@@ -24,6 +24,7 @@ import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADC
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Types (PetriLike(..), Node(..), isPlaceNode, isTransitionNode)
@@ -221,12 +222,9 @@ getFindSupportSTTask config = do
   g' <- getRandom
   let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
   return $ FindSupportSTInstance {
-    activityDiagram=head ad,
+    activityDiagram=headWithErr "Failed to find task instances" ad,
     seed=g'
   }
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 defaultFindSupportSTInstance :: FindSupportSTInstance
 defaultFindSupportSTInstance = FindSupportSTInstance {

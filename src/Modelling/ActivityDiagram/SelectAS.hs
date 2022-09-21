@@ -29,6 +29,7 @@ import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), A
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -270,7 +271,8 @@ getSelectASTask config = do
   n <- getRandom
   g' <- getRandom
   let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
-      validInsta = head
+      validInsta =
+        headWithErr "Failed to find task instances"
         $ filter (isNothing . (`checkSelectASInstance` config))
         $ map (\x ->
           SelectASInstance {
@@ -280,9 +282,6 @@ getSelectASTask config = do
               $ selectActionSequence (numberOfWrongAnswers config) x
           }) ad
   return validInsta
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 defaultSelectASInstance :: SelectASInstance
 defaultSelectASInstance = SelectASInstance {
