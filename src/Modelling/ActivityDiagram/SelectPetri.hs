@@ -79,6 +79,7 @@ data SelectPetriConfig = SelectPetriConfig {
   maxInstances :: Maybe Integer,
   petriLayout :: [GraphvizCommand],
   numberOfWrongAnswers :: Int,
+  numberOfModifications :: Int,
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
@@ -94,6 +95,7 @@ defaultSelectPetriConfig = SelectPetriConfig {
   maxInstances = Just 50,
   petriLayout = [Dot],
   numberOfWrongAnswers = 2,
+  numberOfModifications = 3,
   supportSTAbsent = Nothing,
   activityFinalsExist = Just True,
   avoidAddingSinksForFinals = Nothing,
@@ -111,6 +113,7 @@ checkSelectPetriConfig' SelectPetriConfig {
     maxInstances,
     petriLayout,
     numberOfWrongAnswers,
+    numberOfModifications,
     supportSTAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals,
@@ -120,6 +123,8 @@ checkSelectPetriConfig' SelectPetriConfig {
     = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
   | numberOfWrongAnswers < 1
     = Just "The parameter 'numberOfWrongAnswers' must be set to a positive value"
+  | numberOfModifications < 1
+    = Just "The parameter 'numberOfModifications' must be set to a positive value"
   | supportSTAbsent == Just True && cycles adConfig > 0
     = Just "Setting the parameter 'supportSTAbsent' to True prohibits having more than 0 cycles"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
@@ -176,23 +181,23 @@ data SelectPetriSolution = SelectPetriSolution {
   wrongNets :: [PetriLike PetriKey]
 } deriving (Show)
 
-selectPetrinet :: Int -> Int -> UMLActivityDiagram -> SelectPetriSolution
-selectPetrinet numberOfWrongNets seed ad =
+selectPetrinet :: Int -> Int -> Int -> UMLActivityDiagram -> SelectPetriSolution
+selectPetrinet numberOfWrongNets numberOfModifications seed ad =
   let matchingNet = convertToPetrinet ad
       seeds = unfoldr (Just . next) (mkStdGen seed)
       wrongNets = take numberOfWrongNets
                   $ nubBy isPetriIsomorphic
                   $ filter (not . isPetriIsomorphic matchingNet)
-                  $ map (convertToPetrinet . modifyAD ad) seeds
+                  $ map (convertToPetrinet . modifyAD ad numberOfModifications) seeds
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
 
-modifyAD :: UMLActivityDiagram -> Int -> UMLActivityDiagram
-modifyAD diag seed =
+modifyAD :: UMLActivityDiagram -> Int -> Int -> UMLActivityDiagram
+modifyAD diag numberOfModifications seed =
   let filteredNodes = filter (\x ->
         not (isInitialNode x) &&
         not (isActivityFinalNode x) &&
         not (isFlowFinalNode x)) $ nodes diag
-      toBeModified = pickRandomItems 3 filteredNodes seed
+      toBeModified = pickRandomItems numberOfModifications filteredNodes seed
       swappedNodes = map (\x -> if x `elem` toBeModified then swapST x else x) $ nodes diag
   in UMLActivityDiagram {nodes=swappedNodes, connections=connections diag}
 
@@ -311,7 +316,7 @@ getSelectPetriTask config = do
             graphvizCmd=layout,
             petrinets= selectPetriSolutionToMap g'
               $ shuffleSolutionNets n
-              $ selectPetrinet (numberOfWrongAnswers config) n x
+              $ selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) n x
           }) ad
   return validInsta
 
