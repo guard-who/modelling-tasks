@@ -31,6 +31,7 @@ default-extensions:
 library:
   source-dirs: src
   exposed-modules:
+    - Modelling.ActivityDiagram.Auxiliary.Util
     - Modelling.ActivityDiagram.Alloy
     - Modelling.ActivityDiagram.Datatype
     - Modelling.ActivityDiagram.Instance
