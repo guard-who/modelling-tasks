@@ -8,6 +8,7 @@ import Modelling.ActivityDiagram.Config (ADConfig(minActions, forkJoinPairs, dec
 
 import Modelling.ActivityDiagram.Instance(parseInstance)
 import Modelling.ActivityDiagram.Petrinet(convertToPetrinet)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 
 import Language.Alloy.Call (getInstances)
 
@@ -35,6 +36,3 @@ spec = do
         let ad = map (failWith id .parseInstance) inst
         any (hasSupportSTs . convertToPetrinet) ad `shouldBe` (False::Bool)
   where hasSupportSTs = not . null . extractSupportSTs
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id

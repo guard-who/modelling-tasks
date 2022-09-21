@@ -6,6 +6,7 @@ import Modelling.ActivityDiagram.Petrinet (PetriKey (..), convertToPetrinet)
 
 import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
 import Modelling.ActivityDiagram.Instance (parseInstance)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 import Modelling.PetriNet.Types (PetriLike(allNodes), petriLikeToPetri)
 
 import Language.Alloy.Call (getInstances)
@@ -27,9 +28,6 @@ spec =
         inst <- getInstances (Just 50) spec
         let petri = map (petriLikeToPetri . convertToPetrinet . failWith id . parseInstance) inst
         all isRight petri `shouldBe` (True::Bool)
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 checkLabels :: PetriLike PetriKey -> Bool
 checkLabels petri =

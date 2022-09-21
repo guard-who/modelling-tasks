@@ -11,6 +11,7 @@ import Modelling.ActivityDiagram.Datatype (
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
 import Modelling.ActivityDiagram.Instance (parseInstance)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 import Language.Alloy.Call (getInstances)
 
 import Test.Hspec(Spec, context, describe, it, shouldBe)
@@ -56,10 +57,6 @@ spec =
         modules = moduleActionSequencesRules
         preds = "someActionNodesExistInEachBlock"
         p x = validActionSequence (generateActionSequence x) x
-
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
 
 testDiagram :: UMLActivityDiagram
 testDiagram = UMLActivityDiagram
