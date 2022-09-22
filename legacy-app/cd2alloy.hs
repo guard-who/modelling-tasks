@@ -3,6 +3,7 @@ module Main (main) where
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.CD2Alloy.Transform (Parts (..), createRunCommand, transform)
+import Modelling.CdOd.Types (maxFiveObjects)
 
 import Control.Monad
 import Data.Time.LocalTime
@@ -13,7 +14,7 @@ run input output template index = do
   let tokens = lexer input
   let syntax = parser tokens
   time <- getZonedTime
-  let parts = transform syntax Nothing False Nothing Nothing Nothing Nothing Nothing index (show time)
+  let parts = transform syntax maxFiveObjects Nothing False index (show time)
       p1 = part1 parts
       p2 = part2 parts
       p3 = part3 parts

@@ -70,6 +70,7 @@ import Modelling.CdOd.Types (
   Change (..),
   Connection (..),
   Letters (Letters, lettersList),
+  ObjectConfig (..),
   Od,
   Syntax,
   associationNames,
@@ -140,16 +141,8 @@ data MatchCdOdInstance = MatchCdOdInstance {
 
 data MatchCdOdConfig = MatchCdOdConfig {
     classConfig      :: ClassConfig,
-    maxLinks         :: Maybe Int,
-    -- | maximum number of links connected to an object in the object diagram
-    maxLinksPerObject :: Maybe Int,
-    maxObjects       :: Int,
     maxInstances     :: Maybe Integer,
-    minLinks         :: Maybe Int,
-    -- | minimum number of links connected to an object in the object diagram
-    minLinksPerObject :: Maybe Int,
-    -- | minimum number of objects in the object diagram
-    minObjects       :: Maybe Int,
+    objectConfig     :: ObjectConfig,
     presenceOfLinkSelfLoops :: Maybe Bool,
     printSolution    :: Bool,
     searchSpace      :: Int,
@@ -167,13 +160,12 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
         compositions = (0, Just 1),
         inheritances = (1, Just 2)
       },
-    maxLinks         = Just 16,
-    maxLinksPerObject = Just 4,
-    maxObjects       = 4,
     maxInstances     = Nothing,
-    minLinks         = Just 10,
-    minLinksPerObject = Nothing,
-    minObjects       = Just 2,
+    objectConfig = ObjectConfig {
+      links          = (10, Just 16),
+      linksPerObject = (0, Just 4),
+      objects        = (2, 4)
+      },
     presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
     searchSpace      = 10,
@@ -514,13 +506,9 @@ getODInstances config cd1 cd2 cd3 numClasses = do
   where
     alloyFor cd nr = transform
       (toOldSyntax cd)
+      (objectConfig config)
       (presenceOfLinkSelfLoops config)
       False
-      (minLinks config)
-      (maxLinks config)
-      (minLinksPerObject config)
-      (maxLinksPerObject config)
-      (minObjects config)
       nr
       ""
     to = timeout config
@@ -528,7 +516,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
     runCommand x = createRunCommand
       x
       numClasses
-      (maxObjects config)
+      (snd $ objects $ objectConfig config)
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])

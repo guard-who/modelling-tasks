@@ -12,6 +12,7 @@ module Modelling.CdOd.Types (
   Letters (..),
   Name (..),
   NameMapping (..),
+  ObjectConfig (..),
   Od,
   RelationshipProperties (..),
   Syntax,
@@ -22,6 +23,7 @@ module Modelling.CdOd.Types (
   defaultProperties,
   fromNameMapping,
   linkNames,
+  maxFiveObjects,
   parseLettersPrec,
   parseNamePrec,
   renameAssocsInCd,
@@ -126,6 +128,29 @@ data ClassConfig = ClassConfig {
     compositions :: (Int, Maybe Int),
     inheritances :: (Int, Maybe Int)
   } deriving (Eq, Generic, Read, Show)
+
+{-|
+Defines the size restrictions of an object diagram.
+-}
+data ObjectConfig = ObjectConfig {
+  -- | lower and upper limit of links within the object diagram
+  links             :: !(Int, Maybe Int),
+  -- | lower and upper limit of links starting or ending at each object
+  linksPerObject    :: !(Int, Maybe Int),
+  -- | lower and upper limit of objects within the object diagram
+  objects           :: !(Int, Int)
+  } deriving (Eq, Generic, Read, Show)
+
+{-|
+Defines an 'ObjectConfig' demanding at least one but at most five objects
+without restricting links.
+-}
+maxFiveObjects :: ObjectConfig
+maxFiveObjects = ObjectConfig {
+  links             = (0, Nothing),
+  linksPerObject    = (0, Nothing),
+  objects           = (1, 5)
+  }
 
 data RelationshipProperties = RelationshipProperties {
     wrongAssocs             :: Int,

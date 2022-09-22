@@ -10,10 +10,15 @@ module Modelling.CdOd.CD2Alloy.Transform (
   transform,
   ) where
 
-import Modelling.CdOd.Types             (Association, AssociationType(..))
+import Modelling.CdOd.Types (
+  Association,
+  AssociationType (..),
+  ObjectConfig (..),
+  )
 
-import Data.List
-import Data.FileEmbed
+import Data.Bifunctor                   (first)
+import Data.List                        (intercalate, union)
+import Data.FileEmbed                   (embedStringFile)
 import Data.Maybe                       (catMaybes, isJust)
 import Data.String.Interpolate          (i)
 
@@ -29,25 +34,17 @@ data Parts = Parts {
 
 transform
   :: ([(String, Maybe String)], [Association])
+  -> ObjectConfig
   -> Maybe Bool
   -> Bool
-  -> Maybe Int
-  -> Maybe Int
-  -> Maybe Int
-  -> Maybe Int
-  -> Maybe Int
   -> String
   -> String
   -> Parts
 transform
   (classes, associations)
+  objectConfig
   hasSelfLoops
   noIsolationLimitation
-  minLinks
-  maxLinks
-  minLinksPerObject
-  maxLinksPerObject
-  minObjects
   index
   time =
   Parts { part1, part2, part3, part4 }
@@ -94,16 +91,18 @@ fact LimitLinks {
 #{unlines ps}
 }
 |]) [
-      ("  #Obj >= " ++) . show <$> minObjects,
-      ("  #get >= " ++) . show <$> minLinks,
-      ("  #get <= " ++) . show <$> maxLinks,
-      linksPerObject minLinksPerObject maxLinksPerObject]
-    linksPerObject Nothing Nothing = Nothing
-    linksPerObject mmin mmax = Just $
+      ("  #Obj >= " ++) . show <$> mlower (objects objectConfig),
+      ("  #get >= " ++) . show <$> mlower (links objectConfig),
+      ("  #get <= " ++) . show <$> snd (links objectConfig),
+      uncurry linksPerObjects $ first mlow $ linksPerObject objectConfig]
+    linksPerObjects Nothing Nothing = Nothing
+    linksPerObjects mmin mmax = Just $
       "  all o : Obj | let x = minus[plus[#o.get,#get.o],#o.get.o] |"
       ++ maybe "" ((" x >= " ++) . show) mmin
       ++ maybe "" (const " &&") (mmin >> mmax)
       ++ maybe "" ((" x <= " ++) . show) mmax
+    mlower (x, _) = mlow x
+    mlow x = if x <= 0 then Nothing else Just x
     part2 = [i|
 // Concrete names of fields
 #{unlines (associationSigs associations)}

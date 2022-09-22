@@ -63,6 +63,7 @@ import Modelling.CdOd.Types (
   associationNames,
   classNames,
   defaultProperties,
+  maxFiveObjects,
   renameAssocsInCd,
   renameAssocsInEdge,
   renameClassesInCd,
@@ -475,13 +476,9 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     getOD cd = do
       let parts = combineParts $ transform
             (toOldSyntax cd)
+            maxFiveObjects
             Nothing
             noIsolationLimitation
-            Nothing
-            Nothing
-            Nothing
-            Nothing
-            Nothing
             ""
             ""
           command = createRunCommand "cd" (length $ fst cd) 5

@@ -7,8 +7,14 @@ import qualified Language.Alloy.Call              as Alloy (getInstances)
 import Modelling.CdOd.CD2Alloy.Transform (combineParts, createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Edges             (fromEdges)
 import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
-import Modelling.CdOd.Types
-  (AssociationType (..), Connection (..), DiagramEdge, Syntax, toOldSyntax)
+import Modelling.CdOd.Types (
+  AssociationType (..),
+  Connection (..),
+  DiagramEdge,
+  Syntax,
+  maxFiveObjects,
+  toOldSyntax,
+  )
 
 import Control.Monad.IO.Class           (MonadIO(liftIO))
 import Control.Monad.Random             (evalRandT, getStdGen)
@@ -99,7 +105,7 @@ drawCdAndOdsFor is c dirs cds cmd = do
     mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= liftIO . print)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
-    parts = zipWith (\cd i -> transform (toOldSyntax cd) Nothing False Nothing Nothing Nothing Nothing Nothing (show i) "") cds [0..]
+    parts = zipWith (\cd i -> transform (toOldSyntax cd) maxFiveObjects Nothing False (show i) "") cds [0..]
     shorten (' ':'a':'n':'d':' ':'c':'d':ys) =
       "and" ++ shorten ys
     shorten (' ':'a':'n':'d':' ':'n':'o':'t':' ':'c':'d':ys) =

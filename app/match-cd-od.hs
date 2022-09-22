@@ -2,7 +2,7 @@
 module Main (main) where
 
 import Common                           ()
-import Modelling.CdOd.Types             (ClassConfig (..))
+import Modelling.CdOd.Types             (ClassConfig (..), ObjectConfig (..))
 import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
   matchCdOd,
@@ -24,13 +24,12 @@ main = do
               compositions = (0, Just 1),
               inheritances = (1, Just 2)
             },
-          maxLinks         = Nothing,
-          maxLinksPerObject = Nothing,
-          maxObjects       = 4,
+          objectConfig = ObjectConfig {
+            links          = (0, Nothing),
+            linksPerObject = (0, Nothing),
+            objects        = (2, 4)
+            },
           maxInstances     = Nothing,
-          minLinks         = Nothing,
-          minLinksPerObject = Nothing,
-          minObjects       = Just 2,
           presenceOfLinkSelfLoops = Nothing,
           printSolution    = False,
           searchSpace      = 10,

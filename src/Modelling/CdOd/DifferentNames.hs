@@ -58,6 +58,7 @@ import Modelling.CdOd.Types (
   DiagramEdge,
   Name (Name),
   NameMapping (nameMapping),
+  ObjectConfig (..),
   Od,
   Syntax,
   associationNames,
@@ -125,17 +126,9 @@ data DifferentNamesInstance = DifferentNamesInstance {
 
 data DifferentNamesConfig = DifferentNamesConfig {
     classConfig      :: ClassConfig,
-    maxLinks         :: Maybe Int,
-    -- | maximum number of links connected to an object in the object diagram
-    maxLinksPerObject :: Maybe Int,
-    maxObjects       :: Int,
-    minLinks         :: Maybe Int,
-    -- | minimum number of links connected to an object in the object diagram
-    minLinksPerObject :: Maybe Int,
-    -- | minimum number of objects in the object diagram
-    minObjects       :: Maybe Int,
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
+    objectConfig     :: ObjectConfig,
     onlyAnonymousObjects :: Bool,
     presenceOfLinkSelfLoops :: Maybe Bool,
     -- | whether to enforce one relationship not matching to
@@ -157,12 +150,11 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         compositions = (1, Just 1),
         inheritances = (1, Just 1)
       },
-    maxLinks         = Just 10,
-    maxLinksPerObject = Just 3,
-    maxObjects       = 6,
-    minLinks         = Just 5,
-    minLinksPerObject = Nothing,
-    minObjects       = Just 4,
+    objectConfig = ObjectConfig {
+      links          = (5, Just 10),
+      linksPerObject = (0, Just 3),
+      objects        = (4, 6)
+      },
     onlyAnonymousObjects = True,
     presenceOfLinkSelfLoops = Nothing,
     ignoreOneRelationship = Just False,
@@ -348,7 +340,7 @@ getDifferentNamesTask fhead config names edges' = do
         onlyCd0 = createRunCommand
           runCmd
           (length names)
-          $ maxObjects config
+          . snd . objects $ objectConfig config
         partss' = foldr mergeParts parts0 partss
     when debug . liftIO . void $ drawCd cd0
     when debug . liftIO . void $ drawCd `mapM_` cds'
@@ -366,10 +358,10 @@ getDifferentNamesTask fhead config names edges' = do
       if maybe (const True) (bool id not) (ignoreOneRelationship config)
          isCompleteMapping
         then do
-        let (assocs, links) = unzip $ BM.toAscList bm
+        let (assocs, linkNs) = unzip $ BM.toAscList bm
         names'  <- shuffleM names
         assocs' <- shuffleM assocs
-        links'  <- shuffleM links
+        linkNs' <- shuffleM linkNs
         od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
         gv <- getRandom
         let inst =  DifferentNamesInstance {
@@ -381,18 +373,14 @@ getDifferentNamesTask fhead config names edges' = do
               mapping   = toNameMapping bm',
               usesAllRelationships = isCompleteMapping
               }
-        lift $ renameInstance inst names' assocs' links'
+        lift $ renameInstance inst names' assocs' linkNs'
         else fhead
   where
     alloyFor n cd = transform
       (toOldSyntax cd)
+      (objectConfig config)
       (presenceOfLinkSelfLoops config)
       False
-      (minLinks config)
-      (maxLinks config)
-      (minLinksPerObject config)
-      (maxLinksPerObject config)
-      (minObjects config)
       (show n)
       ""
     drawCd (n, cd) =
@@ -413,16 +401,16 @@ renameInstance
   -> [String]
   -> [String]
   -> m DifferentNamesInstance
-renameInstance inst names' assocs' links' = do
+renameInstance inst names' assocs' linkNs' = do
   let cd = cDiagram inst
       od = oDiagram inst
       names = classNames cd
       assocs = associationNames cd
-      links  = linkNames od
+      linkNs = linkNames od
       bm = BM.toAscList $ fromNameMapping $ mapping inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      bmLinks  = BM.fromList $ zip links links'
+      bmLinks  = BM.fromList $ zip linkNs linkNs'
       bm'      = BM.fromList
         [ (a', l')
         | (a, l) <- bm
@@ -448,10 +436,10 @@ newDifferentNamesInstances
 newDifferentNamesInstances inst = do
   let names = classNames $ cDiagram inst
       assocs = associationNames $ cDiagram inst
-      links  = linkNames $ oDiagram inst
+      linkNs = linkNames $ oDiagram inst
   names'  <- shuffleM $ tail $ permutations names
   assocs' <- shuffleM $ tail $ permutations assocs
-  links'  <- shuffleM $ tail $ permutations links
+  links'  <- shuffleM $ tail $ permutations linkNs
   sequence
     [ renameInstance inst ns as ls
     | (ns, as, ls) <- zip3 names' assocs' links'
