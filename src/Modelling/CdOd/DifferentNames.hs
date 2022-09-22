@@ -340,7 +340,7 @@ getDifferentNamesTask fhead config names edges' = do
         onlyCd0 = createRunCommand
           runCmd
           (length names)
-          . snd . objects $ objectConfig config
+          $ objectConfig config
         partss' = foldr mergeParts parts0 partss
     when debug . liftIO . void $ drawCd cd0
     when debug . liftIO . void $ drawCd `mapM_` cds'

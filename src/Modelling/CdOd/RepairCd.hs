@@ -57,7 +57,6 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   Connection (..),
   DiagramEdge,
-  ObjectConfig (objects),
   RelationshipProperties (..),
   Syntax,
   addedAssociation,
@@ -485,7 +484,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
           command = createRunCommand
             "cd"
             (length $ fst cd)
-            (snd $ objects maxFiveObjects)
+            maxFiveObjects
       getInstances (Just 1) to (parts ++ command)
 
 data AllowedProperties = AllowedProperties {

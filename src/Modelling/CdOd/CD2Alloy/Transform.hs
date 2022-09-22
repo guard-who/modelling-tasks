@@ -19,7 +19,7 @@ import Modelling.CdOd.Types (
 import Data.Bifunctor                   (first)
 import Data.List                        (intercalate, union)
 import Data.FileEmbed                   (embedStringFile)
-import Data.Maybe                       (catMaybes, isJust)
+import Data.Maybe                       (catMaybes, fromMaybe, isJust)
 import Data.String.Interpolate          (i)
 
 {-|
@@ -97,7 +97,7 @@ fact LimitLinks {
       uncurry linksPerObjects $ first mlow $ linksPerObject objectConfig]
     linksPerObjects Nothing Nothing = Nothing
     linksPerObjects mmin mmax = Just $
-      "  all o : Obj | let x = minus[plus[#o.get,#get.o],#o.get.o] |"
+      "  all o : Obj | let x = plus[#o.get,minus[#get.o,#o.get.o]] |"
       ++ maybe "" ((" x >= " ++) . show) mmin
       ++ maybe "" (const " &&") (mmin >> mmax)
       ++ maybe "" ((" x <= " ++) . show) mmax
@@ -140,8 +140,8 @@ fact NoSelfLoops {
   no o : Obj | o in o.get[FName]
 }|]
 
-createRunCommand :: String -> Int -> Int -> String
-createRunCommand command numClasses maxObjects = [i|
+createRunCommand :: String -> Int -> ObjectConfig -> String
+createRunCommand command numClasses objectConfig = [i|
 ///////////////////////////////////////////////////
 // Run commands
 ///////////////////////////////////////////////////
@@ -149,11 +149,18 @@ createRunCommand command numClasses maxObjects = [i|
 run { #{command} } for #{maxObjects} Obj, #{intSize} FName, #{intSize} Int
 |]
   where
+    maxObjects = snd $ objects objectConfig
     intSize :: Int
     intSize = ceiling intSize'
     intSize' :: Double
-    intSize' = logBase 2 $ fromIntegral $
-      2 * max (numClasses * maxObjects) (2 * maxObjects) + 1
+    intSize' = logBase 2 $ fromIntegral $ 2 * maxInt + 1
+    maxInt = maximum [
+      numClasses * maxObjects,
+      2 * maxObjects,
+      count links,
+      count linksPerObject
+      ]
+    count f = fromMaybe (fst $ f objectConfig) $ snd (f objectConfig)
 
 associationSigs :: [Association] -> [String]
 associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ name ++ " extends FName {}")

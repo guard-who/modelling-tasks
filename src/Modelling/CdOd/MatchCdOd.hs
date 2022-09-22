@@ -516,7 +516,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
     runCommand x = createRunCommand
       x
       numClasses
-      (snd $ objects $ objectConfig config)
+      (objectConfig config)
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])

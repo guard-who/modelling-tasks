@@ -3,7 +3,7 @@ module Main (main) where
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.CD2Alloy.Transform (Parts (..), createRunCommand, transform)
-import Modelling.CdOd.Types (ObjectConfig (objects), maxFiveObjects)
+import Modelling.CdOd.Types (maxFiveObjects)
 
 import Control.Monad
 import Data.Time.LocalTime
@@ -22,7 +22,7 @@ run input output template index = do
       p5 = createRunCommand
         ("cd" ++ index)
         (length $ fst syntax)
-        (snd $ objects $ maxFiveObjects)
+        (maxFiveObjects)
   case output of
     Just file -> do
       when template $ let out = file ++ ".part1" in writeFile out p1 >> putStrLn ("Some output written to " ++ out)
