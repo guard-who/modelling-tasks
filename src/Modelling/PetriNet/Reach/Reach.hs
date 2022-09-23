@@ -108,7 +108,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   image img
   paragraph $ case mgoal of
     Nothing -> translate $ do
-      english "a transition sequence is sought, which leads to a marking without successors (i.e. a deadlock)."
+      english "a transition sequence is sought, which leads to a marking without successors (i.e. to a deadlock)."
       german "eine Transitionsfolge, die zu einer Markierung ohne Nachfolger (also zu einem Deadlock) führt."
     Just g -> do
       translate $ do
