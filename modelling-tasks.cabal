@@ -8,6 +8,14 @@ name:           modelling-tasks
 version:        0.0.0
 build-type:     Simple
 extra-source-files:
+    alloy/ad/ad_actionsequences_rules.als
+    alloy/ad/ad_components_sig.als
+    alloy/ad/ad_exercise_rules.als
+    alloy/ad/ad_initialnode_rules.als
+    alloy/ad/ad_name_rules.als
+    alloy/ad/ad_petrinet.als
+    alloy/ad/ad_plantuml_sig.als
+    alloy/ad/ad_reachability_rules.als
     alloy/cd/assoclimits.als
     alloy/cd/generate.als
     alloy/od/template.als
@@ -25,6 +33,22 @@ flag quick-testing
 
 library
   exposed-modules:
+      Modelling.ActivityDiagram.ActionSequences
+      Modelling.ActivityDiagram.Alloy
+      Modelling.ActivityDiagram.Auxiliary.Util
+      Modelling.ActivityDiagram.Config
+      Modelling.ActivityDiagram.Datatype
+      Modelling.ActivityDiagram.EnterAS
+      Modelling.ActivityDiagram.FindSupportST
+      Modelling.ActivityDiagram.Instance
+      Modelling.ActivityDiagram.Isomorphism
+      Modelling.ActivityDiagram.MatchAD
+      Modelling.ActivityDiagram.MatchPetri
+      Modelling.ActivityDiagram.Petrinet
+      Modelling.ActivityDiagram.PlantUMLConverter
+      Modelling.ActivityDiagram.SelectAS
+      Modelling.ActivityDiagram.SelectPetri
+      Modelling.ActivityDiagram.Shuffle
       Modelling.Auxiliary.Common
       Modelling.Auxiliary.Output
       Modelling.CdOd.Auxiliary.Util
@@ -73,24 +97,28 @@ library
     , bimap
     , bytestring
     , call-alloy >=0.3.0.2
+    , call-plantuml
     , composition
     , containers
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
     , directory
+    , edit-distance-vector
     , exceptions
     , extra
     , fgl
     , file-embed
     , filepath
     , graphviz
+    , hgal
     , hxt
     , latex-svg-image
     , lens
     , mtl
     , output-monad
     , parsec
+    , random
     , random-shuffle
     , split
     , string-interpolate
@@ -98,6 +126,7 @@ library
     , text
     , transformers
     , utf8-string
+    , vector
     , xml-conduit
   default-language: Haskell2010
 
@@ -105,6 +134,15 @@ test-suite modelling-tasks-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Modelling.ActivityDiagram.ActionSequencesSpec
+      Modelling.ActivityDiagram.ConfigSpec
+      Modelling.ActivityDiagram.EnterASSpec
+      Modelling.ActivityDiagram.FindSupportSTSpec
+      Modelling.ActivityDiagram.MatchADSpec
+      Modelling.ActivityDiagram.MatchPetriSpec
+      Modelling.ActivityDiagram.PetrinetSpec
+      Modelling.ActivityDiagram.SelectASSpec
+      Modelling.ActivityDiagram.SelectPetriSpec
       Modelling.CdOd.DifferentNamesSpec
       Modelling.CdOd.GenerateSpec
       Modelling.Common
@@ -133,18 +171,21 @@ test-suite modelling-tasks-test
     , bimap
     , bytestring
     , call-alloy >=0.3.0.2
+    , call-plantuml
     , composition
     , containers
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
     , directory
+    , edit-distance-vector
     , exceptions
     , extra
     , fgl
     , file-embed
     , filepath
     , graphviz
+    , hgal
     , hspec
     , hxt
     , latex-svg-image
@@ -162,5 +203,6 @@ test-suite modelling-tasks-test
     , text
     , transformers
     , utf8-string
+    , vector
     , xml-conduit
   default-language: Haskell2010

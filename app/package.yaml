@@ -69,6 +69,66 @@ executables:
     other-modules:
       - EvaluateArgs
       - Common
+  enterASTaskDemo:
+    main: enterASTaskDemo.hs
+    source-dirs:
+      - .
+      - common
+    dependencies:
+      - modelling-tasks
+      - output-monad
+    other-modules:
+      - Common
+  evalIsomorphic:
+    main: evalIsomorphic.hs
+    source-dirs: .
+    dependencies:
+      - bytestring
+      - call-alloy
+      - call-plantuml
+      - directory
+      - filepath
+      - modelling-tasks
+      - string-interpolate
+  evalTimeToGenerate:
+    main: evalTimeToGenerate.hs
+    source-dirs: .
+    dependencies:
+      - call-alloy
+      - filepath
+      - criterion-measurement
+      - modelling-tasks
+      - string-interpolate
+  findSupportSTTaskDemo:
+    main: findSupportSTTaskDemo.hs
+    source-dirs:
+      - .
+      - common
+    dependencies:
+      - modelling-tasks
+      - output-monad
+    other-modules:
+      - Common
+  matchADTaskDemo:
+    main: matchADTaskDemo.hs
+    source-dirs:
+      - .
+      - common
+    dependencies:
+      - modelling-tasks
+      - output-monad
+    other-modules:
+      - Common
+  matchPetriTaskDemo:
+    main: matchPetriTaskDemo.hs
+    source-dirs:
+      - .
+      - common
+    dependencies:
+      - modelling-tasks
+      - output-monad
+    other-modules:
+      - Common
   match-cd-od:
     main: match-cd-od.hs
     source-dirs:
@@ -108,3 +168,23 @@ executables:
     other-modules:
       - Common
       - EvaluateArgs
+  selectASTaskDemo:
+    main: selectASTaskDemo.hs
+    source-dirs:
+      - .
+      - common
+    dependencies:
+      - modelling-tasks
+      - output-monad
+    other-modules:
+      - Common
+  selectPetriTaskDemo:
+    main: selectPetriTaskDemo.hs
+    source-dirs:
+      - .
+      - common
+    dependencies:
+      - modelling-tasks
+      - output-monad
+    other-modules:
+      - Common

@@ -1,5 +1,13 @@
 name: modelling-tasks
 extra-source-files:
+  - alloy/ad/ad_actionsequences_rules.als
+  - alloy/ad/ad_components_sig.als
+  - alloy/ad/ad_exercise_rules.als
+  - alloy/ad/ad_initialnode_rules.als
+  - alloy/ad/ad_name_rules.als
+  - alloy/ad/ad_petrinet.als
+  - alloy/ad/ad_plantuml_sig.als
+  - alloy/ad/ad_reachability_rules.als
   - alloy/cd/assoclimits.als
   - alloy/cd/generate.als
   - alloy/od/template.als
@@ -29,23 +37,27 @@ dependencies:
   - bimap
   - bytestring
   - call-alloy >= 0.3.0.2
+  - call-plantuml
   - composition
   - containers
   - diagrams-graphviz
   - diagrams-lib
   - diagrams-svg
   - directory
+  - edit-distance-vector
   - exceptions
   - extra
   - fgl
   - file-embed
   - filepath
   - graphviz
+  - hgal
   - latex-svg-image
   - lens
   - mtl
   - output-monad
   - parsec
+  - random
   - random-shuffle
   - split
   - string-interpolate
@@ -53,11 +65,28 @@ dependencies:
   - text
   - transformers
   - utf8-string
+  - vector
   - hxt
   - xml-conduit
 library:
   source-dirs: src
   exposed-modules:
+    - Modelling.ActivityDiagram.ActionSequences
+    - Modelling.ActivityDiagram.Alloy
+    - Modelling.ActivityDiagram.Auxiliary.Util
+    - Modelling.ActivityDiagram.Config
+    - Modelling.ActivityDiagram.Datatype
+    - Modelling.ActivityDiagram.EnterAS
+    - Modelling.ActivityDiagram.FindSupportST
+    - Modelling.ActivityDiagram.Instance
+    - Modelling.ActivityDiagram.Isomorphism
+    - Modelling.ActivityDiagram.MatchAD
+    - Modelling.ActivityDiagram.MatchPetri
+    - Modelling.ActivityDiagram.Petrinet
+    - Modelling.ActivityDiagram.PlantUMLConverter
+    - Modelling.ActivityDiagram.SelectAS
+    - Modelling.ActivityDiagram.SelectPetri
+    - Modelling.ActivityDiagram.Shuffle
     - Modelling.Auxiliary.Common
     - Modelling.Auxiliary.Output
     - Modelling.CdOd.Auxiliary.Util

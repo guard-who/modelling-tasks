@@ -109,6 +109,104 @@ executable different-names
     , transformers
   default-language: Haskell2010
 
+executable enterASTaskDemo
+  main-is: enterASTaskDemo.hs
+  other-modules:
+      Common
+  hs-source-dirs:
+      ./
+      common
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , containers
+    , diagrams-lib
+    , diagrams-svg
+    , modelling-tasks
+    , mtl
+    , output-monad
+    , transformers
+  default-language: Haskell2010
+
+executable evalIsomorphic
+  main-is: evalIsomorphic.hs
+  other-modules:
+      Paths_modelling_tasks_apps
+  hs-source-dirs:
+      ./
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , bytestring
+    , call-alloy
+    , call-plantuml
+    , containers
+    , diagrams-lib
+    , diagrams-svg
+    , directory
+    , filepath
+    , modelling-tasks
+    , mtl
+    , string-interpolate
+    , transformers
+  default-language: Haskell2010
+
+executable evalTimeToGenerate
+  main-is: evalTimeToGenerate.hs
+  other-modules:
+      Paths_modelling_tasks_apps
+  hs-source-dirs:
+      ./
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , call-alloy
+    , containers
+    , criterion-measurement
+    , diagrams-lib
+    , diagrams-svg
+    , filepath
+    , modelling-tasks
+    , mtl
+    , string-interpolate
+    , transformers
+  default-language: Haskell2010
+
+executable findSupportSTTaskDemo
+  main-is: findSupportSTTaskDemo.hs
+  other-modules:
+      Common
+  hs-source-dirs:
+      ./
+      common
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , containers
+    , diagrams-lib
+    , diagrams-svg
+    , modelling-tasks
+    , mtl
+    , output-monad
+    , transformers
+  default-language: Haskell2010
+
 executable match-cd-od
   main-is: match-cd-od.hs
   other-modules:
@@ -129,6 +227,52 @@ executable match-cd-od
     , diagrams-lib
     , diagrams-svg
     , digest
+    , modelling-tasks
+    , mtl
+    , output-monad
+    , transformers
+  default-language: Haskell2010
+
+executable matchADTaskDemo
+  main-is: matchADTaskDemo.hs
+  other-modules:
+      Common
+  hs-source-dirs:
+      ./
+      common
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , containers
+    , diagrams-lib
+    , diagrams-svg
+    , modelling-tasks
+    , mtl
+    , output-monad
+    , transformers
+  default-language: Haskell2010
+
+executable matchPetriTaskDemo
+  main-is: matchPetriTaskDemo.hs
+  other-modules:
+      Common
+  hs-source-dirs:
+      ./
+      common
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , containers
+    , diagrams-lib
+    , diagrams-svg
     , modelling-tasks
     , mtl
     , output-monad
@@ -181,6 +325,52 @@ executable repair-incorrect
     , diagrams-lib
     , diagrams-svg
     , digest
+    , modelling-tasks
+    , mtl
+    , output-monad
+    , transformers
+  default-language: Haskell2010
+
+executable selectASTaskDemo
+  main-is: selectASTaskDemo.hs
+  other-modules:
+      Common
+  hs-source-dirs:
+      ./
+      common
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , containers
+    , diagrams-lib
+    , diagrams-svg
+    , modelling-tasks
+    , mtl
+    , output-monad
+    , transformers
+  default-language: Haskell2010
+
+executable selectPetriTaskDemo
+  main-is: selectPetriTaskDemo.hs
+  other-modules:
+      Common
+  hs-source-dirs:
+      ./
+      common
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      MonadRandom
+    , base
+    , containers
+    , diagrams-lib
+    , diagrams-svg
     , modelling-tasks
     , mtl
     , output-monad
