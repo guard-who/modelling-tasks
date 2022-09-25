@@ -22,6 +22,7 @@ module Modelling.ActivityDiagram.SelectPetri (
   ) where
 
 import qualified Data.Map as M (empty, size, fromList, toList, keys, map, filter)
+import qualified Modelling.ActivityDiagram.Datatype as AD (ADNode(label))
 import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
 
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
@@ -59,9 +60,11 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Control.Monad.Except (runExceptT)
-import Data.List (unfoldr, nubBy)
+import Data.List (unfoldr, nubBy, sortOn)
+import Data.List.Extra (dropEnd)
 import Data.Map (Map)
 import Data.Maybe (isNothing, isJust, fromJust)
+import Data.Graph.Inductive (Gr, mkGraph, lab, level)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.String.Interpolate ( i )
 import Language.Alloy.Call (getInstances)
@@ -190,16 +193,18 @@ selectPetrinet numberOfWrongNets numberOfModifications seed ad =
       wrongNets = take numberOfWrongNets
                   $ nubBy isPetriIsomorphic
                   $ filter (not . isPetriIsomorphic matchingNet)
-                  $ map (convertToPetrinet . modifyAD ad numberOfModifications) seeds
+                  $ map (convertToPetrinet . modifyAD ad False numberOfModifications) seeds
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
 
-modifyAD :: UMLActivityDiagram -> Int -> Int -> UMLActivityDiagram
-modifyAD diag numberOfModifications seed =
-  let filteredNodes = filter (\x ->
+modifyAD :: UMLActivityDiagram -> Bool -> Int -> Int -> UMLActivityDiagram
+modifyAD diag pickFromMid numberOfModifications seed =
+  let sampler = if pickFromMid then pickRandomItemsFromMid else pickRandomItems
+      ns = if pickFromMid then map fst $ sortOn snd $ distToStartNode diag else nodes diag
+      filteredNodes = filter (\x ->
         not (isInitialNode x) &&
         not (isActivityFinalNode x) &&
-        not (isFlowFinalNode x)) $ nodes diag
-      toBeModified = pickRandomItems numberOfModifications filteredNodes seed
+        not (isFlowFinalNode x)) ns
+      toBeModified = sampler numberOfModifications filteredNodes seed
       swappedNodes = map (\x -> if x `elem` toBeModified then swapST x else x) $ nodes diag
   in UMLActivityDiagram {nodes=swappedNodes, connections=connections diag}
 
@@ -218,6 +223,20 @@ swapST node =
 pickRandomItems :: Int -> [a] -> Int -> [a]
 pickRandomItems n xs seed =
   take n $ shuffle' xs (length xs) (mkStdGen seed)
+
+distToStartNode :: UMLActivityDiagram -> [(ADNode, Int)]
+distToStartNode diag =
+  let startNode = head $ map AD.label $ filter isInitialNode $ nodes diag
+      grNodes = map (\x -> (AD.label x, x)) $ nodes diag
+      grEdges = map (\x -> (from x, to x, guard x)) $ connections diag
+      graph = mkGraph grNodes grEdges :: Gr ADNode String
+  in map (\(x,y) -> (fromJust $ lab graph x, y)) $ level startNode graph
+
+pickRandomItemsFromMid :: Int -> [a] -> Int -> [a]
+pickRandomItemsFromMid n xs seed =
+  let m = length xs `div` 3
+      mid = dropEnd m $ drop m xs
+  in pickRandomItems n mid seed
 
 selectPetriTask
   :: (OutputMonad m, MonadIO m)
