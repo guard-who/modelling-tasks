@@ -134,11 +134,10 @@ adConfigToAlloy' scope bitwidth modules preds ADConfig {
 
 adConfigScope :: ADConfig -> Int
 adConfigScope ADConfig {
-    maxActions,
-    maxObjectNodes,
+    maxNamedNodes,
     decisionMergePairs,
     forkJoinPairs
-  } = 1 + maxActions + maxObjectNodes + 3 * decisionMergePairs + 4 * forkJoinPairs
+  } = 1 + maxNamedNodes + 3 * decisionMergePairs + 4 * forkJoinPairs
 
 {-
  As of now, the highest Int-Value used in the Alloy Specification is 3 (#bodies in ForkBlocks),
