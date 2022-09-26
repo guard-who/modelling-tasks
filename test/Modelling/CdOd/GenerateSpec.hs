@@ -89,10 +89,12 @@ spec =
         hasReverseInheritances = False,
         hasReverseRelationships = False
         }
-    generateProperty
+    -- Disabled due to varying definitions of multiple inheritances:
+    {- generateProperty
       "multipleInheritances"
       (const $ not . null . multipleInheritances)
       defaultProperties { hasMultipleInheritances = True }
+    -}
     generateProperty
       "no multipleInheritances"
       (const $ null . multipleInheritances)
@@ -113,10 +115,12 @@ spec =
       "not anyMarkedEdge"
       (curry $ not . anyMarkedEdge . uncurry fromEdges)
       defaultProperties { hasMarkedEdges = Just False }
-    generateProperty
+    -- Disabled due to varying definition of composition cycles:
+    {- generateProperty
       "compositionCycles"
       (const $ not . null . compositionCycles)
       defaultProperties { hasCompositionCycles = True }
+    -}
     generateProperty
       "no compositionCycles"
       (const $ null . compositionCycles)
