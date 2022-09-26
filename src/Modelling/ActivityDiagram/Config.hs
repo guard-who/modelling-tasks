@@ -5,7 +5,10 @@ module Modelling.ActivityDiagram.Config (
   ADConfig(..),
   defaultADConfig,
   checkADConfig,
-  adConfigToAlloy
+  adConfigToAlloy,
+  adConfigToAlloy',
+  adConfigScope,
+  adConfigBitwidth
 ) where
 
 import Modelling.ActivityDiagram.Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
@@ -82,9 +85,12 @@ checkADConfig ADConfig {
   | otherwise
     = Nothing
 
-
 adConfigToAlloy :: String -> String -> ADConfig -> String
-adConfigToAlloy modules preds adConf@ADConfig {
+adConfigToAlloy modules preds adConf =
+  adConfigToAlloy' (adConfigScope adConf) (adConfigBitwidth adConf) modules preds adConf
+
+adConfigToAlloy' :: Int -> Int -> String -> String -> ADConfig -> String
+adConfigToAlloy' scope bitwidth modules preds ADConfig {
     minActions,
     maxActions,
     minObjectNodes,
@@ -112,7 +118,7 @@ adConfigToAlloy modules preds adConf@ADConfig {
       #{preds}
     }
 
-    run showAD for #{adConfigScope adConf} but 6 Int, #{maxActions} ActionNodes,
+    run showAD for #{scope} but #{bitwidth} Int, #{maxActions} ActionNodes,
       #{maxObjectNodes} ObjectNodes, #{maxNamedNodes} ActionObjectNodes, #{maxActions + maxObjectNodes} ComponentNames,
       exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
       #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
@@ -133,3 +139,12 @@ adConfigScope ADConfig {
     decisionMergePairs,
     forkJoinPairs
   } = 1 + maxActions + maxObjectNodes + 3 * decisionMergePairs + 4 * forkJoinPairs
+
+{-
+ As of now, the highest Int-Value used in the Alloy Specification is 3 (#bodies in ForkBlocks),
+ therefore 3 Bit (Two's Complement) should be enough.
+ If this number is made configurable or the specification is changed to use more Ints,
+ this should adapted.
+-}
+adConfigBitwidth :: ADConfig -> Int
+adConfigBitwidth = const 3
