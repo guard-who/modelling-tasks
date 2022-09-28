@@ -33,7 +33,7 @@ import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames, shufflePetri)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr, weightedShuffle)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
@@ -60,8 +60,8 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Control.Monad.Except (runExceptT)
-import Data.List (unfoldr, nubBy, sortOn)
-import Data.List.Extra (dropEnd)
+import Data.Bifunctor (second)
+import Data.List (unfoldr, nubBy, genericLength)
 import Data.Map (Map)
 import Data.Maybe (isNothing, isJust, fromJust)
 import Data.Graph.Inductive (Gr, mkGraph, lab, level)
@@ -197,14 +197,20 @@ selectPetrinet numberOfWrongNets numberOfModifications seed ad =
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
 
 modifyAD :: UMLActivityDiagram -> Bool -> Int -> Int -> UMLActivityDiagram
-modifyAD diag pickFromMid numberOfModifications seed =
-  let sampler = if pickFromMid then pickRandomItemsFromMid else pickRandomItems
-      ns = if pickFromMid then map fst $ sortOn snd $ distToStartNode diag else nodes diag
-      filteredNodes = filter (\x ->
+modifyAD diag modifyAtMid numberOfModifications seed =
+  let ns = distToStartNode diag
+      filteredNodes = filter (\(x,_) ->
         not (isInitialNode x) &&
         not (isActivityFinalNode x) &&
         not (isFlowFinalNode x)) ns
-      toBeModified = sampler numberOfModifications filteredNodes seed
+      weightFunc =
+        if modifyAtMid then weightBySquaredDev filteredNodes
+        else const (1.0 :: Double)
+      weightedNodes = map (second weightFunc) filteredNodes
+      toBeModified =
+        take numberOfModifications
+        $ reverse
+        $ weightedShuffle (mkStdGen seed) weightedNodes
       swappedNodes = map (\x -> if x `elem` toBeModified then swapST x else x) $ nodes diag
   in UMLActivityDiagram {nodes=swappedNodes, connections=connections diag}
 
@@ -220,10 +226,6 @@ swapST node =
     ADJoinNode {label} -> ADMergeNode {label}
     _ -> node
 
-pickRandomItems :: Int -> [a] -> Int -> [a]
-pickRandomItems n xs seed =
-  take n $ shuffle' xs (length xs) (mkStdGen seed)
-
 distToStartNode :: UMLActivityDiagram -> [(ADNode, Int)]
 distToStartNode diag =
   let startNode = head $ map AD.label $ filter isInitialNode $ nodes diag
@@ -232,11 +234,12 @@ distToStartNode diag =
       graph = mkGraph grNodes grEdges :: Gr ADNode String
   in map (\(x,y) -> (fromJust $ lab graph x, y)) $ level startNode graph
 
-pickRandomItemsFromMid :: Int -> [a] -> Int -> [a]
-pickRandomItemsFromMid n xs seed =
-  let m = length xs `div` 3
-      mid = dropEnd m $ drop m xs
-  in pickRandomItems n mid seed
+weightBySquaredDev :: (Real w) => [(a, w)] -> w -> Double
+weightBySquaredDev xs w = square (realToFrac w - avg) + epsilon
+  where
+    epsilon = 0.1 -- Small constant to avoid 0-weights
+    square x = x * x
+    avg = realToFrac (sum (map snd xs)) / genericLength xs
 
 selectPetriTask
   :: (OutputMonad m, MonadIO m)
