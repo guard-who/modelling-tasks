@@ -85,6 +85,7 @@ data SelectPetriConfig = SelectPetriConfig {
   petriLayout :: [GraphvizCommand],
   numberOfWrongAnswers :: Int,
   numberOfModifications :: Int,
+  modifyAtMid :: Bool,
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
@@ -101,6 +102,7 @@ defaultSelectPetriConfig = SelectPetriConfig {
   petriLayout = [Dot],
   numberOfWrongAnswers = 2,
   numberOfModifications = 3,
+  modifyAtMid = True,
   supportSTAbsent = Nothing,
   activityFinalsExist = Just True,
   avoidAddingSinksForFinals = Nothing,
@@ -186,18 +188,18 @@ data SelectPetriSolution = SelectPetriSolution {
   wrongNets :: [PetriLike PetriKey]
 } deriving (Show)
 
-selectPetrinet :: Int -> Int -> Int -> UMLActivityDiagram -> SelectPetriSolution
-selectPetrinet numberOfWrongNets numberOfModifications seed ad =
+selectPetrinet :: Int -> Int -> Bool -> Int -> UMLActivityDiagram -> SelectPetriSolution
+selectPetrinet numberOfWrongNets numberOfModifications modifyAtMid seed ad =
   let matchingNet = convertToPetrinet ad
       seeds = unfoldr (Just . next) (mkStdGen seed)
       wrongNets = take numberOfWrongNets
                   $ nubBy isPetriIsomorphic
                   $ filter (not . isPetriIsomorphic matchingNet)
-                  $ map (convertToPetrinet . modifyAD ad False numberOfModifications) seeds
+                  $ map (convertToPetrinet . modifyAD ad numberOfModifications modifyAtMid) seeds
   in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
 
-modifyAD :: UMLActivityDiagram -> Bool -> Int -> Int -> UMLActivityDiagram
-modifyAD diag modifyAtMid numberOfModifications seed =
+modifyAD :: UMLActivityDiagram -> Int -> Bool -> Int -> UMLActivityDiagram
+modifyAD diag numberOfModifications modifyAtMid seed =
   let ns = distToStartNode diag
       filteredNodes = filter (\(x,_) ->
         not (isInitialNode x) &&
@@ -340,7 +342,7 @@ getSelectPetriTask config = do
             graphvizCmd=layout,
             petrinets= selectPetriSolutionToMap g'
               $ shuffleSolutionNets n
-              $ selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) n x
+              $ selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) n x
           }) ad
   return validInsta
 
