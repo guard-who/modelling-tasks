@@ -21,10 +21,12 @@ module Modelling.PetriNet.Alloy (
   petriScopeBitwidth,
   petriScopeMaxSeq,
   signatures,
+  skolemVariable,
   taskInstance,
+  unscopedSingleSig,
   ) where
 
-import Modelling.Auxiliary.Common       (upperFirst)
+import Modelling.Auxiliary.Common       (Object (Object), upperFirst)
 import Modelling.PetriNet.Types (
   AdvConfig (..),
   AlloyConfig,
@@ -45,14 +47,19 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except)
+import Data.Composition                 ((.:))
 import Data.FileEmbed                   (embedStringFile)
 import Data.List                        (intercalate)
+import Data.Set                         (Set)
 import Data.String.Interpolate          (i)
 import Language.Alloy.Call (
   AlloyInstance,
   CallAlloyConfig (maxInstances, timeout),
   defaultCallAlloyConfig,
   getInstancesWith,
+  getSingleAs,
+  lookupSig,
+  unscoped,
   )
 
 petriScopeBitwidth :: BasicConfig -> Int
@@ -246,3 +253,15 @@ randomInSegment :: (RandomGen g, Monad m) => Int -> Int -> RandT g m Int
 randomInSegment segment segLength = do
   x <- liftRandT $ return . randomR ((0,) $ pred segLength)
   return $ segment + 4 * x
+
+unscopedSingleSig
+  :: AlloyInstance
+  -> String
+  -> String
+  -> Either String (Set Object)
+unscopedSingleSig inst st nd = do
+  sig <- lookupSig (unscoped st) inst
+  getSingleAs nd (return .: Object) sig
+
+skolemVariable :: String -> String -> String
+skolemVariable x y = '$' : x ++ '_' : y

@@ -1,7 +1,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Modelling.PetriNet.ConflictPlaces where
 
 import qualified Data.Map                         as M (empty, fromList)
@@ -14,21 +15,22 @@ import Modelling.PetriNet.BasicNetFunctions (
   checkConflictConfig,
   prohibitHidePlaceNames,
   )
-import Modelling.PetriNet.ConcurrencyAndConflict (
+import Modelling.PetriNet.Conflict (
   ConflictPlaces,
-  FindInstance (..),
   conflictPlacesShow,
-  drawFindWith,
-  findConflictEvaluation,
   findConflictSyntax,
+  )
+import Modelling.PetriNet.Find (
+  FindInstance (..),
+  drawFindWith,
   findInitial,
-  net,
+  )
+import Modelling.PetriNet.Diagram (
   renderWith,
   )
 import Modelling.PetriNet.Reach.Type (
   Place (Place),
   ShowPlace (ShowPlace),
-  ShowTransition (ShowTransition),
   Transition (Transition),
   parsePlacePrec,
   parseTransitionPrec,
@@ -40,7 +42,6 @@ import Modelling.PetriNet.Types (
   Node (..),
   PetriConflict (..),
   PetriLike (..),
-  defaultFindConcurrencyConfig,
   defaultFindConflictConfig,
   lBasicConfig,
   lHidePlaceNames,
@@ -54,19 +55,14 @@ import Control.Monad.Output (
   LangM',
   LangM,
   OutputMonad (..),
-  Rated,
   continueOrAbort,
   english,
   german,
   translate,
-  translations,
   )
 import Data.Bifunctor                   (Bifunctor (bimap))
-import Data.Containers.ListUtils        (nubOrd)
 import Data.Function                    ((&))
 import Data.GraphViz.Commands           (GraphvizCommand (Circo))
-import Data.List                        (partition)
-import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i)
 import Text.Parsec (
   char,

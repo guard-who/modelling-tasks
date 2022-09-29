@@ -11,6 +11,7 @@ import qualified Data.Set                         as S (
   union,
   )
 
+import Control.Arrow                    (ArrowChoice (left))
 import Control.Monad.Random (MonadRandom (getRandomR))
 import Data.Char                        (digitToInt, isSpace, toLower, toUpper)
 import Data.Foldable                    (Foldable (foldl'))
@@ -22,6 +23,7 @@ import Control.Lens (
   lensRules,
   mappingNamer,
   )
+import Text.Parsec                      (parse)
 import Text.ParserCombinators.Parsec (
   Parser,
   digit,
@@ -60,3 +62,6 @@ upperFirst (x:xs) = toUpper x : xs
 
 lensRulesL :: LensRules
 lensRulesL = lensRules & lensField .~ mappingNamer (pure . ('l':) . upperFirst)
+
+parseWith :: (Int -> Parser a) -> String -> Either String a
+parseWith f = left show . parse (f 0) ""

@@ -107,9 +107,12 @@ library:
     - Modelling.PetriNet.MatchToMath
     - Modelling.PetriNet.Parser
     - Modelling.PetriNet.Types
-    - Modelling.PetriNet.ConcurrencyAndConflict
+    - Modelling.PetriNet.Concurrency
+    - Modelling.PetriNet.Conflict
     - Modelling.PetriNet.ConflictPlaces
     - Modelling.PetriNet.BasicNetFunctions
+    - Modelling.PetriNet.Find
+    - Modelling.PetriNet.Pick
     - Modelling.PetriNet.Reach.Deadlock
     - Modelling.PetriNet.Reach.Property
     - Modelling.PetriNet.Reach.Reach

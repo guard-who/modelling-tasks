@@ -9,8 +9,10 @@ module Modelling.PetriNet.Diagram (
   drawNet,
   getDefaultNet,
   getNet,
+  renderWith,
   ) where
 
+import qualified Control.Monad.Output             as OM (translate)
 import qualified Data.ByteString                  as BS (readFile, writeFile)
 import qualified Data.ByteString.Lazy             as LBS (fromStrict)
 import qualified Data.ByteString.UTF8             as BS (fromString)
@@ -25,6 +27,7 @@ import Modelling.PetriNet.Parser (
   )
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types (
+  DrawSettings (..),
   PetriLike,
   traversePetriLike,
   mapPetriLike,
@@ -33,8 +36,14 @@ import Modelling.PetriNet.Types (
 import Control.Arrow                    (ArrowChoice(left), first)
 import Control.Monad                    (when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output (
+  LangM',
+  OutputMonad (..),
+  english,
+  german,
+  )
 import Control.Monad.Trans.Class        (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, except)
+import Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
 import Data.Data                        (Typeable)
@@ -367,3 +376,25 @@ text' pfont s x = x
   # fc black
   # lc black
   # lwL 0.4
+
+renderWith
+  :: (MonadIO m, OutputMonad m)
+  => String
+  -> String
+  -> PetriLike String
+  -> DrawSettings
+  -> LangM' m FilePath
+renderWith path task net config = do
+  f <- lift $ liftIO $ runExceptT $
+    cacheNet (path ++ task) id net
+      (not $ withPlaceNames config)
+      (not $ withTransitionNames config)
+      (not $ with1Weights config)
+      (withGraphvizCommand config)
+  either
+    (const $ (>> return "") $ refuse $ OM.translate $ do
+      english "Drawing diagram failed!"
+      german "Diagrammzeichnen fehlgeschlagen!"
+    )
+    return
+    f

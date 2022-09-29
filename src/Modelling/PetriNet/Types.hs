@@ -26,7 +26,7 @@ import qualified Data.Map.Lazy                    as M (
 import qualified Data.Set                         as S (empty, union)
 
 import Modelling.Auxiliary.Common       (lensRulesL, oneOf)
-import Modelling.PetriNet.Reach.Type    (Place)
+import Modelling.PetriNet.Reach.Type    (Place, ShowTransition (ShowTransition))
 
 import Control.Lens                     (makeLensesWith)
 import Control.Monad.Catch              (MonadThrow)
@@ -386,7 +386,7 @@ data Petri = Petri
   { initialMarking :: Marking
   , trans :: [Transition]
   } deriving (Eq, Generic, Read, Show)
-  
+
 defaultPetri :: Petri
 defaultPetri = Petri
   { initialMarking = [1,1,0]
@@ -395,7 +395,7 @@ defaultPetri = Petri
   
 placeHoldPetri :: Petri
 placeHoldPetri = Petri{initialMarking =[],trans=[]}
-  
+
 data BasicConfig = BasicConfig
   { places :: Int
   , transitions :: Int
@@ -608,3 +608,8 @@ manyRandomDrawSettings config n = map (drawSettingsWithCommand config) <$> do
   let gls = graphLayout config
   gls' <- shuffleM gls
   shuffleM $ take n $ concat $ repeat gls'
+
+transitionPairShow
+  :: (Petri.Transition, Petri.Transition)
+  -> (ShowTransition, ShowTransition)
+transitionPairShow = bimap ShowTransition ShowTransition

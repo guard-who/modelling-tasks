@@ -6,7 +6,7 @@ import Common (
   forceErrors,
   instanceInput,
   )
-import Modelling.PetriNet.ConcurrencyAndConflict (
+import Modelling.PetriNet.Conflict (
   checkFindConflictConfig,
   checkPickConflictConfig,
   findConflictGenerate,
