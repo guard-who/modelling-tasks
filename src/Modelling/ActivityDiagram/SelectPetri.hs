@@ -31,14 +31,14 @@ import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), A
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
-import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
+import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames, shufflePetri)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr, weightedShuffle)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
-import Modelling.PetriNet.Types (PetriLike(..), Node(..))
+import Modelling.PetriNet.Types (PetriLike(..), Node(..), DrawSettings(..))
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -75,13 +75,17 @@ import System.Random.Shuffle (shuffle', shuffleM)
 data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   seed :: Int,
-  graphvizCmd :: GraphvizCommand,
+  plantUMLConf :: PlantUMLConvConf,
+  petriDrawConf :: DrawSettings,
   petrinets :: Map Int (Bool, PetriLike PetriKey)
 } deriving (Show)
 
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: ADConfig,
   maxInstances :: Maybe Integer,
+  hideNodeNames :: Bool,
+  hideBranchConditions :: Bool,
+  hidePetriNodeLabels :: Bool,
   petriLayout :: [GraphvizCommand],
   numberOfWrongAnswers :: Int,
   numberOfModifications :: Int,
@@ -99,6 +103,9 @@ defaultSelectPetriConfig :: SelectPetriConfig
 defaultSelectPetriConfig = SelectPetriConfig {
   adConfig = defaultADConfig,
   maxInstances = Just 50,
+  hideNodeNames = False,
+  hideBranchConditions = False,
+  hidePetriNodeLabels = False,
   petriLayout = [Dot],
   numberOfWrongAnswers = 2,
   numberOfModifications = 3,
@@ -255,9 +262,14 @@ selectPetriTask path task = do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
   image ad
+  let drawSetting = petriDrawConf task
   petris <- liftIO $
     traverse (\c -> runExceptT
-      $ cacheNet path (show . PK.label) c False False True (graphvizCmd task)) mapping
+      $ cacheNet path (show . PK.label) c
+      (not $ withPlaceNames drawSetting)
+      (not $ withTransitionNames drawSetting)
+      (not $ with1Weights drawSetting)
+      (withGraphvizCommand drawSetting)) mapping
   paragraph $ translate $ do
     english "Consider the following petrinets."
     german "Betrachten Sie die folgenden Petrinetze."
@@ -339,7 +351,18 @@ getSelectPetriTask config = do
           SelectPetriInstance {
             activityDiagram=x,
             seed=g',
-            graphvizCmd=layout,
+            plantUMLConf=
+              PlantUMLConvConf {
+                suppressNodeNames = hideNodeNames config,
+                suppressBranchConditions = hideBranchConditions config
+              },
+            petriDrawConf=
+              DrawSettings {
+                withPlaceNames = not $ hidePetriNodeLabels config,
+                withTransitionNames = not $ hidePetriNodeLabels config,
+                with1Weights = False,
+                withGraphvizCommand = layout
+              },
             petrinets= selectPetriSolutionToMap g'
               $ shuffleSolutionNets n
               $ selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) n x
@@ -397,7 +420,13 @@ defaultSelectPetriInstance =  SelectPetriInstance {
     ]
   },
   seed = -4748947987859297750,
-  graphvizCmd = Dot,
+  plantUMLConf = defaultPlantUMLConvConf,
+  petriDrawConf = DrawSettings {
+    withPlaceNames = True,
+    withTransitionNames = True,
+    with1Weights = False,
+    withGraphvizCommand = Dot
+  },
   petrinets = M.fromList [
     (1,(False, PetriLike {
       allNodes = M.fromList [
