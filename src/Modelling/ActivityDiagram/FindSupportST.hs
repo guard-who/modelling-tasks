@@ -25,7 +25,7 @@ import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
+import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Output (addPretext)
@@ -58,12 +58,15 @@ import System.Random.Shuffle (shuffleM)
 
 data FindSupportSTInstance = FindSupportSTInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int
+  seed :: Int,
+  plantUMLConf :: PlantUMLConvConf
 } deriving (Show)
 
 data FindSupportSTConfig = FindSupportSTConfig {
   adConfig :: ADConfig,
   maxInstances :: Maybe Integer,
+  hideNodeNames :: Bool,
+  hideBranchConditions :: Bool,
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool   -- Avoid having to add new sink transitions for representing finals
 } deriving (Show)
@@ -72,6 +75,8 @@ defaultFindSupportSTConfig :: FindSupportSTConfig
 defaultFindSupportSTConfig = FindSupportSTConfig
   { adConfig = defaultADConfig,
     maxInstances = Just 50,
+    hideNodeNames = False,
+    hideBranchConditions = False,
     activityFinalsExist = Nothing,
     avoidAddingSinksForFinals = Nothing
   }
@@ -153,7 +158,7 @@ findSupportSTTask
   -> FindSupportSTInstance
   -> LangM m
 findSupportSTTask path task = do
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
+  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -225,7 +230,12 @@ getFindSupportSTTask config = do
   let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
   return $ FindSupportSTInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
-    seed=g'
+    seed=g',
+    plantUMLConf =
+      PlantUMLConvConf {
+        suppressNodeNames = hideNodeNames config,
+        suppressBranchConditions = hideBranchConditions config
+      }
   }
 
 defaultFindSupportSTInstance :: FindSupportSTInstance
@@ -272,5 +282,6 @@ defaultFindSupportSTInstance = FindSupportSTInstance {
       ADConnection {from = 17, to = 13, guard = ""}
     ]
   },
-  seed = 5508675034223564747
+  seed = 5508675034223564747,
+  plantUMLConf = defaultPlantUMLConvConf
 }
