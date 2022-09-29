@@ -43,10 +43,15 @@ transformNoChanges config properties withNonTrivialInheritance =
   transformWith config properties (0, [], part)
   where
     part = (`foldMap` trivialInh) $ \x -> [i|fact {
+  #{withInheritance}
   #{x} i : Inheritance | i.to in (Assoc.from + Assoc.to)
 }|]
     trivialInh = withNonTrivialInheritance
       <&> bool "no" "all"
+    withInheritance = maybe
+      ""
+      (bool "" "some Inheritance")
+      withNonTrivialInheritance
 
 transform :: ClassConfig -> RelationshipProperties -> String
 transform config props =
