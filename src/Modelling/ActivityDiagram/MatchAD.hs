@@ -26,7 +26,7 @@ import Modelling.ActivityDiagram.Datatype (
   ADConnection(..),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
+import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
@@ -59,12 +59,14 @@ import System.Random.Shuffle (shuffleM)
 
 data MatchADInstance = MatchADInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int
+  seed :: Int,
+  plantUMLConf :: PlantUMLConvConf
 } deriving (Show)
 
 data MatchADConfig = MatchADConfig {
   adConfig :: ADConfig,
   maxInstances :: Maybe Integer,
+  hideBranchConditions :: Bool,
   noActivityFinalInForkBlocks :: Maybe Bool
 }
 
@@ -72,6 +74,7 @@ defaultMatchADConfig :: MatchADConfig
 defaultMatchADConfig = MatchADConfig {
   adConfig = defaultADConfig,
   maxInstances = Just 50,
+  hideBranchConditions = False,
   noActivityFinalInForkBlocks = Just False
 }
 
@@ -143,7 +146,7 @@ matchADTask
   -> MatchADInstance
   -> LangM m
 matchADTask path task = do
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
+  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
@@ -236,7 +239,8 @@ getMatchADTask config = do
   let ad = map (snd. shuffleADNames n . failWith id . parseInstance) rinstas
   return $ MatchADInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
-    seed=g'
+    seed=g',
+    plantUMLConf=defaultPlantUMLConvConf{suppressBranchConditions = hideBranchConditions config}
   }
 
 defaultMatchADInstance :: MatchADInstance
@@ -283,5 +287,6 @@ defaultMatchADInstance = MatchADInstance {
       ADConnection {from = 17, to = 4, guard = ""}
     ]
   },
-  seed = 5508675034223564747
+  seed = 5508675034223564747,
+  plantUMLConf = defaultPlantUMLConvConf
 }
