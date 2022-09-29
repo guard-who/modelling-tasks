@@ -39,13 +39,13 @@ import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (defaultPlantUMLConvConf, drawADToFile)
+import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
-import Modelling.PetriNet.Types (PetriLike(..), Node(..))
+import Modelling.PetriNet.Types (PetriLike(..), Node(..), DrawSettings(..))
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Except (runExceptT)
@@ -80,12 +80,15 @@ data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   petrinet :: PetriLike PetriKey,
   seed :: Int,
-  graphvizCmd :: GraphvizCommand
+  plantUMLConf :: PlantUMLConvConf,
+  petriDrawConf :: DrawSettings
 } deriving (Show)
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
   maxInstances :: Maybe Integer,
+  hideBranchConditions :: Bool,
+  hidePetriNodeLabels :: Bool,
   petriLayout :: [GraphvizCommand],
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
@@ -100,6 +103,8 @@ defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
     maxInstances = Just 50,
+    hideBranchConditions = False,
+    hidePetriNodeLabels = False,
     petriLayout = [Dot],
     supportSTAbsent = Nothing,
     activityFinalsExist = Just True,
@@ -234,9 +239,14 @@ matchPetriTask path task = do
   paragraph $ translate $ do
     english "Consider the following petrinet."
     german "Betrachten Sie das folgende Petrinetz."
+  let drawSetting = petriDrawConf task
   petri <- liftIO
     $ runExceptT
-    $ cacheNet path (show . PK.label) (petrinet task) False False True (graphvizCmd task)
+    $ cacheNet path (show . PK.label) (petrinet task)
+      (not $ withPlaceNames drawSetting)
+      (not $ withTransitionNames drawSetting)
+      (not $ with1Weights drawSetting)
+      (withGraphvizCommand drawSetting)
   image $ failWith id petri
   paragraph $ translate $ do
     english [i|State the matchings of each action and petrinet node, the matching of each
@@ -348,7 +358,18 @@ getMatchPetriTask config = do
     activityDiagram=ad,
     petrinet = petri,
     seed=g',
-    graphvizCmd = layout
+    plantUMLConf =
+      PlantUMLConvConf {
+        suppressNodeNames = False,
+        suppressBranchConditions = hideBranchConditions config
+      },
+    petriDrawConf =
+      DrawSettings {
+        withPlaceNames = not $ hidePetriNodeLabels config,
+        withTransitionNames = not $ hidePetriNodeLabels config,
+        with1Weights = False,
+        withGraphvizCommand = layout
+      }
   }
 
 defaultMatchPetriInstance :: MatchPetriInstance
@@ -978,4 +999,12 @@ defaultMatchPetriInstance = MatchPetriInstance
                 { label = 8 }
               , 1 ) ] } ) ] }
   , seed = 2235774404348116088
-  , graphvizCmd = Dot }
+  , plantUMLConf = defaultPlantUMLConvConf
+  , petriDrawConf =
+    DrawSettings {
+      withPlaceNames = True,
+      withTransitionNames = True,
+      with1Weights = False,
+      withGraphvizCommand = Dot
+    }
+  }
