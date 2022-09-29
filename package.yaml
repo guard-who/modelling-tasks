@@ -110,7 +110,6 @@ library:
     - Modelling.PetriNet.Concurrency
     - Modelling.PetriNet.Conflict
     - Modelling.PetriNet.ConflictPlaces
-    - Modelling.PetriNet.BasicNetFunctions
     - Modelling.PetriNet.Find
     - Modelling.PetriNet.Pick
     - Modelling.PetriNet.Reach.Deadlock

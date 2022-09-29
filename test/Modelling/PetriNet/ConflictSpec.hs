@@ -2,6 +2,7 @@
 module Modelling.PetriNet.ConflictSpec where
 
 import Modelling.PetriNet.Conflict (
+  checkConflictConfig,
   checkFindConflictConfig,
   checkPickConflictConfig,
   findConflict,
@@ -11,9 +12,6 @@ import Modelling.PetriNet.Conflict (
   pickConflict,
   )
 
-import Modelling.PetriNet.BasicNetFunctions (
-  checkConflictConfig,
-  )
 import Modelling.PetriNet.Find (
   findTaskInstance,
   )

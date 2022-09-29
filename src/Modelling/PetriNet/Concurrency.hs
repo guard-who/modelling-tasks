@@ -56,15 +56,12 @@ import Modelling.PetriNet.Alloy (
   taskInstance,
   unscopedSingleSig,
   )
-import Modelling.PetriNet.BasicNetFunctions (
-  checkConfigForFind,
-  checkConfigForPick,
-  )
 import Modelling.PetriNet.Diagram (
   renderWith,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
+  checkConfigForFind,
   findInitial,
   findTaskInstance,
   toFindEvaluation,
@@ -75,6 +72,7 @@ import Modelling.PetriNet.Parser        (
   )
 import Modelling.PetriNet.Pick (
   PickInstance (..),
+  checkConfigForPick,
   pickGenerate,
   pickTaskInstance,
   renderPick,

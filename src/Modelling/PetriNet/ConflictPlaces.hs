@@ -10,18 +10,15 @@ import qualified Data.Map                         as M (empty, fromList)
 import Modelling.Auxiliary.Output (
   hoveringInformation,
   )
-import Modelling.PetriNet.BasicNetFunctions (
-  checkConfigForFind,
-  checkConflictConfig,
-  prohibitHidePlaceNames,
-  )
 import Modelling.PetriNet.Conflict (
   ConflictPlaces,
+  checkConflictConfig,
   conflictPlacesShow,
   findConflictSyntax,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
+  checkConfigForFind,
   drawFindWith,
   findInitial,
   )
@@ -36,6 +33,7 @@ import Modelling.PetriNet.Reach.Type (
   parseTransitionPrec,
   )
 import Modelling.PetriNet.Types (
+  BasicConfig (..),
   Conflict,
   DrawSettings (..),
   FindConflictConfig (..),
@@ -175,6 +173,13 @@ checkFindConflictPlacesConfig FindConflictConfig {
   = prohibitHidePlaceNames basicConfig
   <|> checkConfigForFind basicConfig changeConfig
   <|> checkConflictConfig basicConfig conflictConfig
+
+prohibitHidePlaceNames :: BasicConfig -> Maybe String
+prohibitHidePlaceNames bc
+  | hidePlaceNames bc
+  = Just "Place names are required for this task type."
+  | otherwise
+  = Nothing
 
 defaultFindConflictPlacesInstance :: FindInstance Conflict
 defaultFindConflictPlacesInstance = FindInstance {

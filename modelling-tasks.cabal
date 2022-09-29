@@ -72,7 +72,6 @@ library
       Modelling.PetriNet.Concurrency
       Modelling.PetriNet.Conflict
       Modelling.PetriNet.ConflictPlaces
-      Modelling.PetriNet.BasicNetFunctions
       Modelling.PetriNet.Find
       Modelling.PetriNet.Pick
       Modelling.PetriNet.Reach.Deadlock
@@ -150,14 +149,15 @@ test-suite modelling-tasks-test
       Modelling.CdOd.GenerateSpec
       Modelling.Common
       Modelling.PetriNet.AlloySpec
-      Modelling.PetriNet.BasicNetFunctionsSpec
       Modelling.PetriNet.ConcurrencySpec
       Modelling.PetriNet.ConflictSpec
       Modelling.PetriNet.DiagramSpec
+      Modelling.PetriNet.FindSpec
       Modelling.PetriNet.MatchToMathSpec
       Modelling.PetriNet.Reach.DeadlockSpec
       Modelling.PetriNet.Reach.ReachSpec
       Modelling.PetriNet.TestCommon
+      Modelling.PetriNet.TypesSpec
       Settings
       Paths_modelling_tasks
   hs-source-dirs:

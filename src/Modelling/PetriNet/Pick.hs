@@ -4,6 +4,7 @@
 
 module Modelling.PetriNet.Pick (
   PickInstance (..),
+  checkConfigForPick,
   pickGenerate,
   pickEvaluation,
   pickSolution,
@@ -30,8 +31,12 @@ import Modelling.Auxiliary.Common (
 import Modelling.PetriNet.Diagram       (getDefaultNet, getNet, renderWith)
 import Modelling.PetriNet.Types         (
   BasicConfig (..),
+  ChangeConfig (..),
   PetriLike,
   PetriNet,
+  checkBasicConfig,
+  checkChangeConfig,
+  checkGraphLayouts,
   manyRandomDrawSettings,
   placeNames,
   randomDrawSettings,
@@ -39,6 +44,7 @@ import Modelling.PetriNet.Types         (
   traversePetriLike,
   )
 
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Output (
   LangM',
@@ -167,3 +173,9 @@ renderPick path task config =
     render' x (b, (net, ds)) ns = do
       file <- renderWith path (task ++ '-' : show x) net ds
       M.insert x (b, file) <$> ns
+
+checkConfigForPick :: Bool -> Int -> BasicConfig -> ChangeConfig -> Maybe String
+checkConfigForPick useDifferent numWrongInstances basic change
+  = checkBasicConfig basic
+  <|> checkChangeConfig basic change
+  <|> checkGraphLayouts useDifferent numWrongInstances basic

@@ -9,6 +9,8 @@
 
 module Modelling.PetriNet.Find (
   FindInstance (..),
+  checkCConfig,
+  checkConfigForFind,
   findInitial,
   findTaskInstance,
   lToFind,
@@ -29,13 +31,18 @@ import Modelling.PetriNet.Reach.Type (
   ShowTransition (ShowTransition),
   Transition (Transition),
   )
-import Modelling.PetriNet.Types         (
+import Modelling.PetriNet.Types (
+  BasicConfig (..),
+  ChangeConfig (..),
   DrawSettings (..),
   PetriLike,
+  checkBasicConfig,
+  checkChangeConfig,
   shuffleNames,
   transitionPairShow,
   )
 
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Lens                     (makeLensesFor)
 import Control.Monad.Output (
   LangM',
@@ -122,3 +129,23 @@ toFindEvaluation what withSol (ft, st) (fi, si) = do
   return (msolutionString, points)
   where
     assert = continueOrAbort withSol
+
+checkCConfig :: BasicConfig -> Maybe String
+checkCConfig BasicConfig { atLeastActive }
+ | atLeastActive < 2
+  = Just "The parameter 'atLeastActive' must be at least 2 to create the task."
+ | otherwise = Nothing
+
+checkConfigForFind :: BasicConfig -> ChangeConfig -> Maybe String
+checkConfigForFind basic change =
+  checkCConfig basic
+  <|> prohibitHideTransitionNames basic
+  <|> checkBasicConfig basic
+  <|> checkChangeConfig basic change
+
+prohibitHideTransitionNames :: BasicConfig -> Maybe String
+prohibitHideTransitionNames bc
+  | hideTransitionNames bc
+  = Just "Transition names are required for this task type"
+  | otherwise
+  = Nothing

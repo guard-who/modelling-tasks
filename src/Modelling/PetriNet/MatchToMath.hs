@@ -51,11 +51,6 @@ import Modelling.PetriNet.Alloy (
   signatures,
   taskInstance,
   )
-import Modelling.PetriNet.BasicNetFunctions (
-  checkBasicConfig,
-  checkChangeConfig,
-  checkGraphLayouts,
-  )
 import Modelling.PetriNet.Diagram       (cacheNet)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser (
@@ -72,6 +67,9 @@ import Modelling.PetriNet.Types (
   PetriMath (..),
   PetriNet,
   Node (PlaceNode, TransitionNode),
+  checkBasicConfig,
+  checkChangeConfig,
+  checkGraphLayouts,
   defaultAdvConfig,
   defaultAlloyConfig,
   defaultBasicConfig,

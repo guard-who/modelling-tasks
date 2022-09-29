@@ -9,6 +9,7 @@
 
 module Modelling.PetriNet.Conflict (
   ConflictPlaces,
+  checkConflictConfig,
   checkFindConflictConfig,
   checkPickConflictConfig,
   conflictPlacesShow,
@@ -62,16 +63,12 @@ import Modelling.PetriNet.Alloy (
   taskInstance,
   unscopedSingleSig,
   )
-import Modelling.PetriNet.BasicNetFunctions (
-  checkConfigForFind,
-  checkConfigForPick,
-  checkConflictConfig,
-  )
 import Modelling.PetriNet.Diagram (
   renderWith,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
+  checkConfigForFind,
   findInitial,
   findTaskInstance,
   lToFind,
@@ -83,6 +80,7 @@ import Modelling.PetriNet.Parser        (
   )
 import Modelling.PetriNet.Pick (
   PickInstance (..),
+  checkConfigForPick,
   pickGenerate,
   pickTaskInstance,
   renderPick,
@@ -503,6 +501,45 @@ parseConflict inst = do
   pc  <- unscopedSingleSig inst conflictPlaces1 ""
   PetriConflict' . flip Conflict (Set.toList pc)
     <$> ((,) <$> asSingleton tc1 <*> asSingleton tc2)
+
+checkConflictConfig :: BasicConfig -> ConflictConfig -> Maybe String
+checkConflictConfig bc ConflictConfig {
+  addConflictCommonPreconditions,
+  withConflictDistractors,
+  conflictDistractorAddExtraPreconditions,
+  conflictDistractorOnlyConflictLike,
+  conflictDistractorOnlyConcurrentLike
+  }
+  | Just True <- withConflictDistractors
+  , conflictDistractorOnlyConflictLike == conflictDistractorOnlyConcurrentLike
+  = Just "Either 'conflictDistractorOnlyConflictLike' or 'conflictDistractorOnlyConcurrentLike' hast to be set!"
+  | Just True <- withConflictDistractors
+  , places bc < minPlaces
+  = Just $ "Your current conflict configuration requires at least "
+    ++ show minPlaces ++ " places."
+  | Just True <- withConflictDistractors
+  , transitions bc < minTransitions
+  = Just $ "Your current conflict configuration requires at least "
+    ++ show minTransitions ++ " transitions."
+  | Just True <- withConflictDistractors
+  = Nothing
+  | Just {} <- conflictDistractorAddExtraPreconditions
+  = Just "The parameter 'conflictDistractorAddExtraPreconditions' can only be set, if 'withConflictDistractors' is enforced."
+  | conflictDistractorOnlyConflictLike
+  = Just "The parameter 'conflictDistractorOnlyConflictLike' can only be set, if 'withConflictDistractors' is enforced."
+  | conflictDistractorOnlyConcurrentLike
+  = Just "The parameter 'conflictDistractorOnlyConcurrentLike' can only be set, if 'withConflictDistractors' is enforced."
+  | otherwise
+  = Nothing
+  where
+    minPlaces = (2 +) . sum $
+      [1 |  Just True == addConflictCommonPreconditions]
+      ++ [1 | Just True ==  withConflictDistractors]
+      ++ [1
+         | Just True == withConflictDistractors
+         , Just True == conflictDistractorAddExtraPreconditions]
+    minTransitions = 2 + sum
+      [2 | Just True == withConflictDistractors]
 
 checkFindConflictConfig :: FindConflictConfig -> Maybe String
 checkFindConflictConfig FindConflictConfig {
