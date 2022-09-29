@@ -22,7 +22,7 @@ spec = do
       it "it returns a String with nessecary changes" $
         checkADConfig defaultADConfig{minActions=0, minObjectNodes=0}
           `shouldSatisfy` isJust
-  describe "adConfigScope" $ do
+  describe "adConfigScope" $
     context "given the default config" $ do
       let conf = defaultADConfig
           bitwidth = adConfigBitwidth conf
@@ -34,10 +34,10 @@ spec = do
         let spec' = adConfigToAlloy' (adConfigScope conf `div` 2) bitwidth "" "" conf
         inst <- getInstances (Just 1) spec'
         length inst `shouldBe` (0 :: Int)
-  describe "adConfigBitwidth" $ do
-    let conf = defaultADConfig
-        scope = adConfigScope conf
+  describe "adConfigBitwidth" $
     context "given the default config" $ do
+      let conf = defaultADConfig
+          scope = adConfigScope conf
       it "provides a bitwidth large enough to generate instances" $ do
         let spec' = adConfigToAlloy' scope (adConfigBitwidth conf) "" "" conf
         inst <- getInstances (Just 50) spec'
