@@ -1,4 +1,4 @@
-resolver: lts-16.31
+resolver: lts-19.25
 packages:
   - .
 flags:
@@ -9,8 +9,8 @@ extra-deps:
     commit: d51169e89ecfc736e12f36732b08d53460c2bb4f
     subdirs:
       - output-monad
-  - call-alloy-0.3.0.3
   - call-plantuml-0.0.1@sha256:8a1ff92fef35729ed01db4201f7954127034ad6113224f579276d254dae2221b,1985
   - diagrams-graphviz-1.4.1.1@sha256:e71afa8f89904c2a6a2cb490dba7108c6425779c2174b90bd90dbaf507a9d3dc,1388
   - hgal-2.0.0.2@sha256:13d58afd0668b9cb881c612eff8488a0e289edd4bbffa893df4beee60cfeb73b,653
   - latex-svg-image-0.2@sha256:b282a74a96724037ec3d24b664118e51170c8152aff12f363ddb715a38ef053a,1830
+allow-newer: true
