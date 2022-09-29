@@ -88,7 +88,6 @@ data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
-  hidePetriNodeLabels :: Bool,
   petriLayout :: [GraphvizCommand],
   supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
@@ -104,7 +103,6 @@ defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
     maxInstances = Just 50,
     hideBranchConditions = False,
-    hidePetriNodeLabels = False,
     petriLayout = [Dot],
     supportSTAbsent = Nothing,
     activityFinalsExist = Just True,
@@ -365,8 +363,8 @@ getMatchPetriTask config = do
       },
     petriDrawConf =
       DrawSettings {
-        withPlaceNames = not $ hidePetriNodeLabels config,
-        withTransitionNames = not $ hidePetriNodeLabels config,
+        withPlaceNames = True,
+        withTransitionNames = True,
         with1Weights = False,
         withGraphvizCommand = layout
       }
