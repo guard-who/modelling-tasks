@@ -231,7 +231,7 @@ matchPetriTask
   -> MatchPetriInstance
   -> LangM m
 matchPetriTask path task = do
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
+  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."

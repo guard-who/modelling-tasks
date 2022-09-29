@@ -257,7 +257,7 @@ selectPetriTask
   -> LangM m
 selectPetriTask path task = do
   let mapping = M.map snd $ petrinets task
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
+  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
