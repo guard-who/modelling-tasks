@@ -385,7 +385,7 @@ petriNetConflictAlloy
   -- ^ Right for find task; Left for pick task
   -> String
 petriNetConflictAlloy basicC changeC conflictC uniqueConflictP specific
-  = [i|module #{moduleName}
+  = [i|module PetriNetConfl
 
 #{modulePetriSignature}
 #{either (const sigs) (const modulePetriAdditions) specific}
@@ -393,18 +393,26 @@ petriNetConflictAlloy basicC changeC conflictC uniqueConflictP specific
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{predicate}[#{place}#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
+pred #{conflictPredicateName}[#{p} : some Places,#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
   \#Places = #{places basicC}
   \#Transitions = #{transitions basicC}
   #{compBasicConstraints activated basicC}
   #{compChange changeC}
   #{multiplePlaces uniqueConflictP}
   #{sourceTransitionConstraints}
-  #{constraints}
+  no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
+  all q : #{p} | conflict[#{t1}, #{t2}, q]
+  no q : (Places - #{p}) | conflict[#{t1}, #{t2}, q]
+  all u,v : Transitions, q : Places |
+    conflict[u,v,q] implies #{t1} + #{t2} = u + v
+  #{preconditions ""}
+  #{preconditions "Default"}
+  #{conflictDistractor "" ""}
+  #{conflictDistractor "given" "default"}
   #{compConstraints}
 }
 
-run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
+run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
 |]
   where
     activated        = "activatedTrans"
@@ -418,17 +426,6 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   no t : givenTransitions | no givenPlaces.flow[t]
   no t : Transitions | sourceTransitions[t]|]
       | otherwise = ""
-    constraints :: String
-    constraints = [i|
-  no x,y : givenTransitions, z : givenPlaces | conflictDefault[x,y,z]
-  all q : #{p} | conflict[#{t1}, #{t2}, q]
-  no q : (Places - #{p}) | conflict[#{t1}, #{t2}, q]
-  all u,v : Transitions, q : Places |
-    conflict[u,v,q] implies #{t1} + #{t2} = u + v
-  #{preconditions ""}
-  #{preconditions "Default"}
-  #{conflictDistractor "" ""}
-  #{conflictDistractor "given" "default"}|]
     preconditions :: String -> String
     preconditions which = flip foldMap (addConflictCommonPreconditions conflictC)
       $ \case
@@ -461,8 +458,6 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
     defaultActivTrans
       | isLeft specific    = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""
-    moduleName :: String
-    moduleName = "PetriNetConfl"
     multiplePlaces unique
       | unique == Just True
       = [i|one #{p}|]
@@ -471,9 +466,6 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
       | otherwise
       = ""
     p  = places1
-    place :: String
-    place = [i|#{p} : some Places,|]
-    predicate = conflictPredicateName
     sigs = signatures "given" (places basicC) (transitions basicC)
     t1 = transition1
     t2 = transition2

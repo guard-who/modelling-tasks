@@ -307,7 +307,7 @@ petriNetConcurrencyAlloy
   -- ^ Right for find task; Left for pick task
   -> String
 petriNetConcurrencyAlloy basicC changeC specific
-  = [i|module #{moduleName}
+  = [i|module PetriNetConcur
 
 #{modulePetriSignature}
 #{either (const sigs) (const modulePetriAdditions) specific}
@@ -315,17 +315,20 @@ petriNetConcurrencyAlloy basicC changeC specific
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{predicate}[#{place}#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
+pred #{concurrencyPredicateName}[#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
   \#Places = #{places basicC}
   \#Transitions = #{transitions basicC}
   #{compBasicConstraints activated basicC}
   #{compChange changeC}
   #{sourceTransitionConstraints}
-  #{constraints}
+  no disj x,y : givenTransitions | concurrentDefault[x + y]
+  disj[#{t1}, #{t2}] and concurrent[#{t1} + #{t2}]
+  all disj u,v : Transitions |
+    concurrent[u + v] implies #{t1} + #{t2} = u + v
   #{compConstraints}
 }
 
-run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
+run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
 |]
   where
     activated        = "activatedTrans"
@@ -339,18 +342,9 @@ run #{predicate} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwi
   no t : givenTransitions | no givenPlaces.flow[t]
   no t : Transitions | sourceTransitions[t]|]
       | otherwise = ""
-    constraints :: String
-    constraints = [i|
-  no x,y : givenTransitions | x != y and concurrentDefault[x + y]
-  #{t1} != #{t2} and concurrent[#{t1} + #{t2}]
-  all u,v : Transitions |
-    u != v and concurrent[u + v] implies #{t1} + #{t2} = u + v|]
     defaultActivTrans
       | isLeft specific    = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""
-    moduleName = "PetriNetConcur"
-    place = ""
-    predicate = concurrencyPredicateName
     sigs = signatures "given" (places basicC) (transitions basicC)
     t1 = transition1
     t2 = transition2
