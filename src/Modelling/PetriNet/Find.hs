@@ -67,9 +67,9 @@ import Language.Alloy.Call (
 import GHC.Generics                     (Generic)
 
 data FindInstance a = FindInstance {
-  drawFindWith :: !Modelling.PetriNet.Types.DrawSettings,
+  drawFindWith :: !DrawSettings,
   toFind :: !a,
-  net :: !(Modelling.PetriNet.Types.PetriLike String),
+  net :: !(PetriLike String),
   numberOfPlaces :: !Int,
   numberOfTransitions :: !Int,
   showSolution :: !Bool
@@ -121,7 +121,7 @@ toFindEvaluation what withSol (ft, st) (fi, si) = do
       points = if correct then 1 else 0
       msolutionString =
         if withSol
-        then Just $ show $ Modelling.PetriNet.Types.transitionPairShow (ft, st)
+        then Just $ show $ transitionPairShow (ft, st)
         else Nothing
   assert correct $ translate $ do
     english $ "Given transitions " ++ localise English what ++ "?"
