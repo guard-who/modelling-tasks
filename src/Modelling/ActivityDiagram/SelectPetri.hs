@@ -43,7 +43,7 @@ import Modelling.PetriNet.Types (
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
-  toSimplePetriLike,
+  transformNet,
   )
 
 import Control.Applicative (Alternative ((<|>)))
@@ -210,8 +210,8 @@ selectPetrinet numberOfWrongNets numberOfModifications modifyAtMid seed ad =
                   $ filter (not . isPetriIsomorphic matchingNet)
                   $ map (convertToPetrinet . modifyAD ad numberOfModifications modifyAtMid) seeds
   in SelectPetriSolution {
-    matchingNet = toSimplePetriLike matchingNet,
-    wrongNets = map toSimplePetriLike wrongNets
+    matchingNet = transformNet matchingNet,
+    wrongNets = map transformNet wrongNets
     }
 
 modifyAD :: UMLActivityDiagram -> Int -> Bool -> Int -> UMLActivityDiagram

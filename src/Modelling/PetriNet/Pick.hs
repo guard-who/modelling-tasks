@@ -38,7 +38,6 @@ import Modelling.PetriNet.Types         (
   Net (..),
   PetriLike (..),
   PetriNet,
-  PetriNode (..),
   SimpleNode,
   checkBasicConfig,
   checkChangeConfig,
@@ -47,7 +46,6 @@ import Modelling.PetriNet.Types         (
   placeNames,
   randomDrawSettings,
   transitionNames,
-  traversePetriLike,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
@@ -100,7 +98,7 @@ wrong :: Int
 wrong = 1
 
 pickTaskInstance
-  :: (MonadTrans m, PetriNode n, Traversable t)
+  :: (MonadTrans m, Net PetriLike n, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> m (ExceptT String IO) [(PetriLike n String, Maybe (t String))]
@@ -110,7 +108,7 @@ pickTaskInstance parseF inst = lift $ do
   return [confl,net]
 
 pickGenerate
-  :: PetriNode n
+  :: Net PetriLike n
   => (c
     -> Int
     -> RandT StdGen (ExceptT String IO) [(PetriLike n String, Maybe a)]
@@ -130,7 +128,7 @@ pickGenerate pick bc useDifferent withSol config segment seed = flip evalRandT (
   ts' <- shuffleM ts
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
-  ns'' <- lift $ bimapM (traversePetriLike (`BM.lookup` mapping)) return `mapM` ns'
+  ns'' <- lift $ bimapM (traverseNet (`BM.lookup` mapping)) return `mapM` ns'
   s <- randomDrawSettings (bc config)
   ns''' <- addDrawingSettings s ns''
   return $ PickInstance {

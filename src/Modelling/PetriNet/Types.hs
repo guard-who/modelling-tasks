@@ -18,7 +18,78 @@ Another name for Petri net is place / transition (PT) net.
 The 'Modelling.PetriNet.Types' module defines basic type class instances and
 functions to work on and transform Petri net representations.
 -}
-module Modelling.PetriNet.Types where
+module Modelling.PetriNet.Types (
+  AdvConfig (..),
+  AlloyConfig (..),
+  BasicConfig (..),
+  Change,
+  ChangeConfig (..),
+  Concurrent (..),
+  Conflict,
+  ConflictConfig (..),
+  DrawSettings (..),
+  FindConcurrencyConfig (..),
+  FindConflictConfig (..),
+  Net (..),
+  Node (..),
+  Petri (..),
+  PetriChange (..),
+  PetriConflict (..),
+  PetriConflict' (..),
+  PetriLike (..),
+  PetriMath (..),
+  PetriNet,
+  PetriNode (..),
+  PickConcurrencyConfig (..),
+  PickConflictConfig (..),
+  SimpleNode (..),
+  SimplePetriLike,
+  checkBasicConfig,
+  checkChangeConfig,
+  checkGraphLayouts,
+  defaultAdvConfig,
+  defaultAlloyConfig,
+  defaultBasicConfig,
+  defaultChangeConfig,
+  defaultFindConcurrencyConfig,
+  defaultFindConflictConfig,
+  defaultPickConcurrencyConfig,
+  defaultPickConflictConfig,
+  drawSettingsWithCommand,
+  lAdvConfig,
+  lAlloyConfig,
+  lAtLeastActive,
+  lBasicConfig,
+  lChangeConfig,
+  lConflictConfig,
+  lConflictPlaces,
+  lConflictTrans,
+  lGraphLayout,
+  lHidePlaceNames,
+  lHideTransitionNames,
+  lHideWeight1,
+  lIsConnected,
+  lMaxFlowOverall,
+  lMaxFlowPerEdge,
+  lMaxTokensOverall,
+  lMaxTokensPerPlace,
+  lMinFlowOverall,
+  lMinTokensOverall,
+  lPlaces,
+  lPrintSolution,
+  lTransitions,
+  lUniqueConflictPlace,
+  manyRandomDrawSettings,
+  mapChange,
+  maybeInitial,
+  petriLikeToPetri,
+  placeNames,
+  randomDrawSettings,
+  shuffleNames,
+  transformNet,
+  transitionNames,
+  transitionPairShow,
+  ) where
 
 import qualified Modelling.PetriNet.Reach.Type    as Petri (Transition)
 
@@ -36,7 +107,6 @@ import qualified Data.Map.Lazy                    as M (
   keysSet,
   lookup,
   mapKeys,
-  mapWithKey,
   member,
   null,
   )
@@ -326,6 +396,7 @@ traverseKeyAndValueMap f g =
     insertApplicativeKeyValue k x rs = M.insert <$> f k <*> g x <*> rs
 
 class PetriNode n => Net p n where
+  emptyNet :: p n a
   {-|
   Inserts 'flow' into the 'Net' by connecting the provided source and target
   by the given flow.
@@ -369,7 +440,10 @@ class PetriNode n => Net p n where
   -}
   deleteNode        :: Ord a => a -> p n a -> p n a
   flow              :: Ord a => a -> a -> p n a -> Maybe Int
+  nodes             :: Ord a => p n a -> Map a (n a)
   outFlow           :: Ord a => a -> p n a -> Map a Int
+  mapNet            :: Ord b => (a -> b) -> p n a -> p n b
+  traverseNet       :: (Applicative f, Ord b) => (a -> f b) -> p n a -> f (p n b)
 
 updateNode
   :: (Map a Int -> Map b Int)
@@ -399,7 +473,11 @@ newtype PetriLike n a = PetriLike {
   } deriving (Generic, Read, Show)
 
 instance Net PetriLike Node where
+  emptyNet = PetriLike M.empty
+
   flow x y = (M.lookup y . flowOutN) <=< (M.lookup x . allNodes)
+
+  nodes = allNodes
 
   deleteNode x (PetriLike ns) = PetriLike
     . M.delete x
@@ -421,11 +499,18 @@ instance Net PetriLike Node where
 
   outFlow x = maybe M.empty flowOutN . M.lookup x . allNodes
 
+  mapNet = mapPetriLike
+  traverseNet = traversePetriLike
+
 flowOutN :: Node a -> Map a Int
 flowOutN = flowOut
 
 instance Net PetriLike SimpleNode where
+  emptyNet = PetriLike M.empty
+
   flow x y = (M.lookup y . flowOutSN) <=< (M.lookup x . allNodes)
+
+  nodes = allNodes
 
   deleteNode x = PetriLike . M.delete x . allNodes
 
@@ -442,6 +527,9 @@ instance Net PetriLike SimpleNode where
         (maybe SimpleTransition SimplePlace mt M.empty)
 
   outFlow x = maybe M.empty flowOutSN . M.lookup x . allNodes
+
+  mapNet = mapPetriLike
+  traverseNet = traversePetriLike
 
 flowOutSN :: SimpleNode a -> Map a Int
 flowOutSN = flowOut
@@ -486,38 +574,30 @@ traversePetriLike
 traversePetriLike f x =
   PetriLike <$> traverseKeyAndValueMap f (traverseNode f) (allNodes x)
 
-transitionNames :: PetriNode n => PetriLike n k -> [k]
-transitionNames = M.keys . M.filter isTransitionNode . allNodes
+transitionNames :: (Net p n, Ord k) => p n k -> [k]
+transitionNames = M.keys . M.filter isTransitionNode . nodes
 
-placeNames :: PetriNode n => PetriLike n k -> [k]
-placeNames = M.keys . M.filter isPlaceNode . allNodes
+placeNames :: (Net p n, Ord k) => p n k -> [k]
+placeNames = M.keys . M.filter isPlaceNode . nodes
 
 shuffleNames
-  :: (MonadThrow m, PetriNode n, RandomGen g)
-  => PetriLike n String
-  -> RandT g m (PetriLike n String, Bimap String String)
+  :: (MonadThrow m, Net p n, Ord a, RandomGen g)
+  => p n a
+  -> RandT g m (p n a, Bimap a a)
 shuffleNames pl = do
   let ts = transitionNames pl
       ps = placeNames pl
   ts' <- shuffleM ts
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
-  lift $ (,mapping) <$> traversePetriLike (`BM.lookup` mapping) pl
+  lift $ (,mapping) <$> traverseNet (`BM.lookup` mapping) pl
 
-toSimplePetriLike :: (Ord a, Net PetriLike n) => PetriLike n a -> SimplePetriLike a
-toSimplePetriLike x =
-  PetriLike $ toSimpleNode `M.mapWithKey` allNodes x
-  where
-    toSimpleNode k n
-      | isPlaceNode n = SimplePlace (initialTokens n) (outFlow k x)
-      | otherwise     = SimpleTransition (outFlow k x)
-
-fromSimplePetriLike
-  :: (Ord a, Net PetriLike n)
-  => SimplePetriLike a
-  -> PetriLike n a
-fromSimplePetriLike ns =
-  M.foldrWithKey fromSimpleNode (PetriLike M.empty) $ allNodes ns
+transformNet
+  :: (Net p n, Net p' n', Ord a)
+  => p n a
+  -> p' n' a
+transformNet ns =
+  M.foldrWithKey fromSimpleNode emptyNet $ nodes ns
   where
     insertFlows k xs = M.foldrWithKey (flip (repsertFlow k)) xs (outFlow k ns)
     fromSimpleNode k n = insertFlows k . repsertNode k (maybeInitial n)
@@ -596,15 +676,6 @@ data Petri = Petri
   { initialMarking :: Marking
   , trans :: [Transition]
   } deriving (Eq, Generic, Read, Show)
-
-defaultPetri :: Petri
-defaultPetri = Petri
-  { initialMarking = [1,1,0]
-  , trans = [([1,0,0],[0,1,0]),([1,0,0],[0,0,1]),([0,1,1],[2,0,0])]
-  }
-
-placeHoldPetri :: Petri
-placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
 data BasicConfig = BasicConfig
   { places :: Int

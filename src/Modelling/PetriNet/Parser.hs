@@ -27,14 +27,13 @@ import qualified Data.Map.Lazy                    as Map (
 
 import Modelling.Auxiliary.Common       (Object (Object, oName, oIndex), toMap)
 import Modelling.PetriNet.Types (
-  Net (outFlow),
+  Net (outFlow, traverseNet),
   Petri,
   PetriChange (..),
   PetriLike (..),
   PetriNode (..),
   maybeInitial,
   petriLikeToPetri,
-  traversePetriLike,
   )
 
 import Control.Arrow                    (left, second)
@@ -75,7 +74,7 @@ token set names.
 And return an already renamed Petri net.
 -}
 parseRenamedPetriLike
-  :: PetriNode n
+  :: Net PetriLike n
   => String
   -> String
   -> AlloyInstance
@@ -83,7 +82,7 @@ parseRenamedPetriLike
 parseRenamedPetriLike flowSetName tokenSetName inst= do
   petriLike <- parsePetriLike flowSetName tokenSetName inst
   let rename = simpleRenameWith petriLike
-  traversePetriLike rename petriLike
+  traverseNet rename petriLike
 
 {-|
 Transform a given value into a 'String' by replacing it according to the
@@ -99,7 +98,7 @@ Parse a `PetriLike' graph from an 'AlloyInstance' given the instances flow and
 token set names.
 -}
 parsePetriLike
-  :: PetriNode n
+  :: Net PetriLike n
   => String                           -- ^ the name of the flow set
   -> String                           -- ^ the name of the token set
   -> AlloyInstance                    -- ^ the Petri net 'AlloyInstance'

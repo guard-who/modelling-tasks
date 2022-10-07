@@ -104,13 +104,11 @@ import Modelling.PetriNet.Types         (
   DrawSettings (..),
   FindConflictConfig (..),
   Net,
-  PetriConflict (Conflict, conflictTrans),
+  PetriConflict (Conflict, conflictPlaces, conflictTrans),
   PetriConflict' (PetriConflict', toPetriConflict),
   PetriLike (PetriLike, allNodes),
-  PetriNode,
   PickConflictConfig (..),
   SimpleNode (..),
-  conflictPlaces,
   lConflictPlaces,
   transitionPairShow,
   )
@@ -311,7 +309,7 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     bc = basicConfig (config :: FindConflictConfig)
 
 pickConflictGenerate
-  :: PetriNode n
+  :: Net PetriLike n
   => PickConflictConfig
   -> Int
   -> Int
@@ -323,7 +321,7 @@ pickConflictGenerate = pickGenerate pickConflict bc ud ws
     ws config = printSolution (config :: PickConflictConfig)
 
 findConflict
-  :: (PetriNode n, RandomGen g)
+  :: (Net PetriLike n, RandomGen g)
   => FindConflictConfig
   -> Int
   -> RandT
@@ -352,7 +350,7 @@ petriNetFindConfl FindConflictConfig {
     $ Right advConfig
 
 pickConflict
-  :: (PetriNode n, RandomGen g)
+  :: (Net PetriLike n, RandomGen g)
   => PickConflictConfig
   -> Int
   -> RandT

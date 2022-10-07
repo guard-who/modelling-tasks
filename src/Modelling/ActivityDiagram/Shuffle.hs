@@ -8,6 +8,9 @@ module Modelling.ActivityDiagram.Shuffle (
 import qualified Data.Map as M ((!), fromList, keys)
 import qualified Modelling.ActivityDiagram.Datatype as AD (ADNode(label))
 import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
+import qualified Modelling.PetriNet.Types as PN (
+  Net (..)
+  )
 
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
@@ -17,9 +20,7 @@ import Modelling.ActivityDiagram.Datatype (
 
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..))
 import Modelling.PetriNet.Types (
-  PetriLike (..),
-  PetriNode,
-  mapPetriLike,
+  Net,
   )
 
 import Data.Map (Map)
@@ -73,14 +74,14 @@ updateName renaming node =
 
 
 shufflePetri
-  :: PetriNode n
+  :: Net p n
   => Int
-  -> PetriLike n PetriKey
-  -> (Map Int Int, PetriLike n PetriKey)
+  -> p n PetriKey
+  -> (Map Int Int, p n PetriKey)
 shufflePetri seed petri =
-  let labels = map PK.label $ M.keys $ allNodes petri
+  let labels = map PK.label $ M.keys $ PN.nodes petri
       relabeling = M.fromList $ zip labels $ shuffle' labels (length labels) (mkStdGen seed)
-  in (relabeling, mapPetriLike (updatePetriKey relabeling) petri)
+  in (relabeling, PN.mapNet (updatePetriKey relabeling) petri)
 
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
 updatePetriKey relabeling key =

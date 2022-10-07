@@ -29,11 +29,8 @@ import Modelling.PetriNet.Parser (
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
-  Net (..),
+  Net (mapNet, traverseNet),
   PetriLike,
-  PetriNode (..),
-  traversePetriLike,
-  mapPetriLike,
   )
 
 import Control.Arrow                    (ArrowChoice(left), first)
@@ -104,7 +101,7 @@ cacheNet path labelOf pl hidePNames hideTNames hide1 gc = (svg <$) . cache $ do
             liftIO $ appendFile (path ++ "busted.txt") petriId
             create'
         else create'
-    pl' = BS.fromString (show (mapPetriLike labelOf pl))
+    pl' = BS.fromString (show (mapNet labelOf pl))
     petriId = path ++ "petri" ++ showDigest (sha512 $ LBS.fromStrict pl')
     petri = petriId ++ ".hs"
     svg = petriId
@@ -146,7 +143,7 @@ drawNet labelOf pl hidePNames hideTNames hide1 gc = do
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
 
 getNet
-  :: (PetriNode n, Traversable t)
+  :: (Net PetriLike n, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> ExceptT String IO (PetriLike n String, t String)
@@ -158,7 +155,7 @@ getNet parseInst inst = do
   return (net, rconc)
 
 getDefaultNet
-  :: PetriNode n
+  :: Net PetriLike n
   => AlloyInstance
   -> ExceptT String IO (PetriLike n String)
 getDefaultNet inst= fst <$>
@@ -171,7 +168,7 @@ All nodes are renamed using the 'simpleRenameWith' function.
 The renaming is also applied to the additionally parsed instance.
 -}
 getNetWith
-  :: PetriNode n
+  :: Net PetriLike n
   => String
   -- ^ flow
   -> String
@@ -182,7 +179,7 @@ getNetWith
 getNetWith f t inst = do
   pl <- except $ parsePetriLike f t inst
   let rename = simpleRenameWith pl
-  pl' <- except $ traversePetriLike rename pl
+  pl' <- except $ traverseNet rename pl
   return (pl', rename)
 
 {-|

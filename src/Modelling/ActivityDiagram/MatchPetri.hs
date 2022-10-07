@@ -48,11 +48,11 @@ import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
-  Net (..),
+  Net (outFlow),
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
-  toSimplePetriLike,
+  transformNet,
   )
 
 import Control.Applicative (Alternative ((<|>)))
@@ -365,7 +365,7 @@ getMatchPetriTask config = do
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
     activityDiagram=ad,
-    petrinet = toSimplePetriLike petri,
+    petrinet = transformNet petri,
     seed=g',
     plantUMLConf =
       PlantUMLConvConf {

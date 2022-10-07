@@ -91,7 +91,6 @@ import Modelling.PetriNet.Types         (
   FindConcurrencyConfig (..),
   Net (..),
   PetriLike (PetriLike, allNodes),
-  PetriNode,
   PickConcurrencyConfig (..),
   SimpleNode (..),
   transitionPairShow,
@@ -244,7 +243,7 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
     bc = basicConfig (config :: FindConcurrencyConfig)
 
 findConcurrency
-  :: (PetriNode n, RandomGen g)
+  :: (Net PetriLike n, RandomGen g)
   => FindConcurrencyConfig
   -> Int
   -> RandT g (ExceptT String IO) (PetriLike n String, Concurrent String)
@@ -255,7 +254,7 @@ findConcurrency = taskInstance
   (\c -> alloyConfig (c :: FindConcurrencyConfig))
 
 pickConcurrencyGenerate
-  :: PetriNode n
+  :: Net PetriLike n
   => PickConcurrencyConfig
   -> Int
   -> Int
@@ -268,7 +267,7 @@ pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud ws
 
 
 pickConcurrency
-  :: (PetriNode n, RandomGen g)
+  :: (Net PetriLike n, RandomGen g)
   => PickConcurrencyConfig
   -> Int
   -> RandT

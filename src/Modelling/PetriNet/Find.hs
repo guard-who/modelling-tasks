@@ -1,11 +1,11 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE LambdaCase #-}
 
 module Modelling.PetriNet.Find (
   FindInstance (..),
@@ -35,8 +35,8 @@ import Modelling.PetriNet.Types (
   BasicConfig (..),
   ChangeConfig (..),
   DrawSettings (..),
-  PetriLike (..),
-  PetriNode,
+  Net (..),
+  PetriLike,
   SimplePetriLike,
   checkBasicConfig,
   checkChangeConfig,
@@ -101,7 +101,7 @@ toFindSyntax withSol n (fi, si) = addPretext $ do
     isValidTransition (Transition x) = x >= 1 && x <= n
 
 findTaskInstance
-  :: (PetriNode n, RandomGen g, Traversable t)
+  :: (Net PetriLike n, RandomGen g, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
   -> RandT g (ExceptT String IO) (PetriLike n String, t String)

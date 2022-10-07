@@ -83,13 +83,12 @@ import Modelling.PetriNet.Types (
   defaultBasicConfig,
   defaultChangeConfig,
   drawSettingsWithCommand,
-  fromSimplePetriLike,
   isPlaceNode,
   manyRandomDrawSettings,
   mapChange,
   randomDrawSettings,
   shuffleNames,
-  toSimplePetriLike,
+  transformNet,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
@@ -263,7 +262,7 @@ graphToMath
 graphToMath c segment seed = evalRandTWith seed $ do
   ds <- randomDrawSettings (basicConfig c)
   (d, m, ms) <-
-    matchToMath ds (map $ toPetriMath . fromSimplePetriLike) c segment
+    matchToMath ds (map toPetriMath) c segment
   matchMathInstance c d m $ fst <$> ms
 
 mathToGraph
@@ -300,7 +299,7 @@ matchMathInstance c x y ys = do
     }
 
 matchToMath
-  :: (PetriNode n, RandomGen g)
+  :: (Net PetriLike n, RandomGen g)
   => DrawSettings
   -> ([PetriLike n String] -> [a])
   -> MathConfig
@@ -346,7 +345,7 @@ mathInstance config inst = do
   petriLike' <- fst <$> shuffleNames petriLike
   let math = toPetriMath petriLike'
   let f = renderFalse petriLike' config
-  return (f, toSimplePetriLike petriLike', math)
+  return (f, transformNet petriLike', math)
 
 graphToMathTask
   :: (OutputMonad m, MonadIO m)

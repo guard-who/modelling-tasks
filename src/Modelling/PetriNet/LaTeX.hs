@@ -14,11 +14,11 @@ module Modelling.PetriNet.LaTeX (
 import qualified Data.Map as M
 
 import Modelling.PetriNet.Types (
+  Net (..),
   Node (..),
   PetriLike (..),
   PetriMath (..),
   PetriNode (..),
-  isPlaceNode, mapPetriLike,
   )
 
 import Control.Arrow                ((&&&))
@@ -45,7 +45,7 @@ toPetriMath pl = PetriMath {
     (ps, ts)         = M.partition isPlaceNode allNodes
     (places, pnodes) = unzip $ M.toList ps
     transitions      = M.toList ts
-    PetriLike {allNodes} = toLowerIndexes `mapPetriLike` pl
+    PetriLike {allNodes} = toLowerIndexes `mapNet` pl
 
 {-|
 Rewrite the given 'String' to print indexes as subscripts when rendering it

@@ -20,7 +20,6 @@ import Modelling.PetriNet.Types (
   Node(..),
   PetriLike(..),
   PetriNode (..),
-  isPlaceNode, isTransitionNode, mapPetriLike
   )
 
 import Data.Map (Map)
@@ -45,13 +44,13 @@ convertToPetrinet diag =
 
 -- Relabels petrinet nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
 relabelPetri
-  :: PetriNode n
-  => PetriLike n PetriKey
-  -> PetriLike n PetriKey
+  :: Net p n
+  => p n PetriKey
+  -> p n PetriKey
 relabelPetri petri =
-  let labels = map label $ M.keys $ allNodes petri
+  let labels = map label $ M.keys $ nodes petri
       relabeling = M.fromList $ zip labels [1..(length labels)]
-  in mapPetriLike (updatePetriKey relabeling) petri
+  in mapNet (updatePetriKey relabeling) petri
 
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
 updatePetriKey relabeling key =
@@ -61,16 +60,16 @@ updatePetriKey relabeling key =
   where relabel n = relabeling M.! n
 
 removeFinalPlaces
-  :: Net PetriLike n
-  => PetriLike n PetriKey
-  -> PetriLike n PetriKey
-removeFinalPlaces petri = foldr removeIfFinal petri (M.keys $ allNodes petri)
+  :: Net p n
+  => p n PetriKey
+  -> p n PetriKey
+removeFinalPlaces petri = foldr removeIfFinal petri (M.keys $ nodes petri)
 
 removeIfFinal
-  :: Net PetriLike n
+  :: Net p n
   => PetriKey
-  -> PetriLike n PetriKey
-  -> PetriLike n PetriKey
+  -> p n PetriKey
+  -> p n PetriKey
 removeIfFinal key petri =
   case key of
     NormalST {sourceNode} ->
@@ -104,10 +103,10 @@ addSupportST' sourceKey targetKey targetNode petri =
       $ M.insert supportKey supportNode (allNodes petri)
 
 insertNode
-  :: Net PetriLike n
+  :: Net p n
   => AD.ADNode
-  -> PetriLike n PetriKey
-  -> PetriLike n PetriKey
+  -> p n PetriKey
+  -> p n PetriKey
 insertNode =
   uncurry repsertNode . nodeToST
 
