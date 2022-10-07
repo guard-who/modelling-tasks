@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Modelling.ActivityDiagram.Petrinet (
@@ -15,8 +16,10 @@ import qualified Modelling.ActivityDiagram.Datatype as AD (
   )
 
 import Modelling.PetriNet.Types (
+  Net (..),
   Node(..),
   PetriLike(..),
+  PetriNode (..),
   isPlaceNode, isTransitionNode, mapPetriLike
   )
 
@@ -32,7 +35,7 @@ data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, sourceNode ::
 instance Ord PetriKey where
   pk1 `compare` pk2 = label pk1 `compare` label pk2
 
-convertToPetrinet :: AD.UMLActivityDiagram -> PetriLike PetriKey
+convertToPetrinet :: AD.UMLActivityDiagram -> PetriLike Node PetriKey
 convertToPetrinet diag =
   let mt_petri = PetriLike {allNodes = M.empty :: Map PetriKey (Node PetriKey)}
       st_petri = foldr insertNode mt_petri (AD.nodes diag)
@@ -41,7 +44,10 @@ convertToPetrinet diag =
   in relabelPetri $ removeFinalPlaces st_support_petri
 
 -- Relabels petrinet nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
-relabelPetri ::  PetriLike PetriKey -> PetriLike PetriKey
+relabelPetri
+  :: PetriNode n
+  => PetriLike n PetriKey
+  -> PetriLike n PetriKey
 relabelPetri petri =
   let labels = map label $ M.keys $ allNodes petri
       relabeling = M.fromList $ zip labels [1..(length labels)]
@@ -54,33 +60,38 @@ updatePetriKey relabeling key =
     SupportST {label} -> SupportST {label=relabel label}
   where relabel n = relabeling M.! n
 
-removeFinalPlaces :: PetriLike PetriKey -> PetriLike PetriKey
+removeFinalPlaces
+  :: Net PetriLike n
+  => PetriLike n PetriKey
+  -> PetriLike n PetriKey
 removeFinalPlaces petri = foldr removeIfFinal petri (M.keys $ allNodes petri)
 
-removeIfFinal :: PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
+removeIfFinal
+  :: Net PetriLike n
+  => PetriKey
+  -> PetriLike n PetriKey
+  -> PetriLike n PetriKey
 removeIfFinal key petri =
-  let flowInKeys = M.keys $ flowIn $ allNodes petri M.! key
-  in
   case key of
     NormalST {sourceNode} ->
       if isActivityFinalNode sourceNode || isFlowFinalNode sourceNode then
-         PetriLike $ M.delete key $ allNodes $ foldr (removeEdgeToFinal key) petri flowInKeys
+         deleteNode key petri
       else petri
     _ -> petri
 
-removeEdgeToFinal :: PetriKey -> PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
-removeEdgeToFinal x key petri =
-  let updatedNode = deleteFlowOutToNode x $ allNodes petri M.! key
-  in PetriLike $ M.insert key updatedNode (allNodes petri)
-
-addSupportST :: PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
+addSupportST :: PetriKey -> PetriLike Node PetriKey -> PetriLike Node PetriKey
 addSupportST sourceKey petri =
   let sourceNode = allNodes petri M.! sourceKey
       fn = if isPlaceNode sourceNode then isPlaceNode else isTransitionNode
       nodesToBeFixed = M.filter fn $ M.mapMaybeWithKey (\k _ -> M.lookup k (allNodes petri)) $ flowOut sourceNode
   in M.foldrWithKey (addSupportST' sourceKey) petri nodesToBeFixed
 
-addSupportST' :: PetriKey -> PetriKey -> Node PetriKey -> PetriLike PetriKey -> PetriLike PetriKey
+addSupportST'
+  :: PetriKey
+  -> PetriKey
+  -> Node PetriKey
+  -> PetriLike Node PetriKey
+  -> PetriLike Node PetriKey
 addSupportST' sourceKey targetKey targetNode petri =
   let supportKey = SupportST {label = (+ 1) $ maximum $ map label $ M.keys $ allNodes petri}
       supportNode = if isPlaceNode targetNode then TransitionNode {flowIn = M.singleton sourceKey 1, flowOut = M.singleton targetKey 1}
@@ -92,34 +103,49 @@ addSupportST' sourceKey targetKey targetNode petri =
       $ M.insert sourceKey newSourceNode
       $ M.insert supportKey supportNode (allNodes petri)
 
-insertNode :: AD.ADNode -> PetriLike PetriKey -> PetriLike PetriKey
-insertNode node petri =
-  case nodeToST node of
-    (pk, st) -> PetriLike $ M.insert pk st (allNodes petri)
+insertNode
+  :: Net PetriLike n
+  => AD.ADNode
+  -> PetriLike n PetriKey
+  -> PetriLike n PetriKey
+insertNode =
+  uncurry repsertNode . nodeToST
 
-nodeToST :: AD.ADNode -> (PetriKey, Node PetriKey)
+nodeToST :: AD.ADNode -> (PetriKey, Maybe Int)
 nodeToST node =
   case node of
     AD.ADInitialNode {label} -> (NormalST{label=label, sourceNode=node},
-                                 PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.empty})
+      Just 1
+      )
     AD.ADActionNode {label} -> (NormalST{label=label, sourceNode=node},
-                                TransitionNode {flowIn = M.empty, flowOut = M.empty})
+      Nothing
+      )
     AD.ADObjectNode {label} -> (NormalST{label=label, sourceNode=node},
-                                PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
+      Just 0
+      )
     AD.ADDecisionNode {label} -> (NormalST{label=label, sourceNode=node},
-                                  PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
+      Just 0
+      )
     AD.ADMergeNode {label} -> (NormalST{label=label, sourceNode=node},
-                                PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
+      Just 0
+      )
     AD.ADForkNode {label} -> (NormalST{label=label, sourceNode=node},
-                              TransitionNode {flowIn = M.empty, flowOut = M.empty})
+      Nothing
+      )
     AD.ADJoinNode {label} -> (NormalST{label=label, sourceNode=node},
-                              TransitionNode {flowIn = M.empty, flowOut = M.empty})
+      Nothing
+      )
     AD.ADActivityFinalNode {label} -> (NormalST{label=label, sourceNode=node},
-                                       PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
+      Just 0
+      )
     AD.ADFlowFinalNode {label} -> (NormalST{label=label, sourceNode=node},
-                                    PlaceNode {initial = 0, flowIn = M.empty, flowOut = M.empty})
+      Just 0
+      )
 
-insertEdge :: AD.ADConnection -> PetriLike PetriKey -> PetriLike PetriKey
+insertEdge
+  :: AD.ADConnection
+  -> PetriLike Node PetriKey
+  -> PetriLike Node PetriKey
 insertEdge edge petri =
   let sourceKey = find (\k -> label k == AD.from edge) $ M.keys $ allNodes petri
       targetKey = find (\k -> label k == AD.to edge) $ M.keys $ allNodes petri

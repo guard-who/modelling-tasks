@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.ConcurrencySpec where
 
 import Modelling.PetriNet.Concurrency (
@@ -24,6 +25,7 @@ import Modelling.PetriNet.Types (
   Concurrent (Concurrent),
   FindConcurrencyConfig (..),
   PickConcurrencyConfig (..),
+  SimplePetriLike,
   defaultFindConcurrencyConfig,
   defaultPickConcurrencyConfig,
   )
@@ -53,7 +55,7 @@ spec = do
           alloyConfig = firstInstanceConfig
           } 0)
       0
-      checkFindConcurrencyInstance
+      $ checkFindConcurrencyInstance @(SimplePetriLike _)
     testFindConcurrencyConfig fccs
   describe "validPickConcurrencyConfigs" $
     checkConfigs checkPickConcurrencyConfig pccs
@@ -63,7 +65,7 @@ spec = do
           alloyConfig = firstInstanceConfig
           } 0)
       0
-      checkPickConcurrencyInstance
+      $ checkPickConcurrencyInstance @(SimplePetriLike _)
     testPickConcurrencyConfig pccs
   where
     fccs' = validFindConcurrencyConfigs vcfs (AdvConfig Nothing Nothing Nothing)
@@ -85,13 +87,13 @@ testFindConcurrencyConfig :: [FindConcurrencyConfig] -> Spec
 testFindConcurrencyConfig = testTaskGeneration
   petriNetFindConcur
   (findTaskInstance parseConcurrency)
-  checkFindConcurrencyInstance
+  $ checkFindConcurrencyInstance @(SimplePetriLike _)
 
 testPickConcurrencyConfig :: [PickConcurrencyConfig] -> Spec
 testPickConcurrencyConfig = testTaskGeneration
   petriNetPickConcur
   (pickTaskInstance parseConcurrency)
-  checkPickConcurrencyInstance
+  $ checkPickConcurrencyInstance @(SimplePetriLike _)
 
 validFindConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]

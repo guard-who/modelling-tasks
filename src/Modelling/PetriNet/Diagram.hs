@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 {-|
@@ -28,7 +29,9 @@ import Modelling.PetriNet.Parser (
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
+  Net (..),
   PetriLike,
+  PetriNode (..),
   traversePetriLike,
   mapPetriLike,
   )
@@ -78,10 +81,10 @@ lin = do
   return font'
 
 cacheNet
-  :: Ord a
+  :: (Net PetriLike n, Ord a)
   => String
   -> (a -> String)
-  -> PetriLike a
+  -> PetriLike n a
   -> Bool
   -> Bool
   -> Bool
@@ -119,10 +122,10 @@ by distributing places and transitions using GraphViz.
 The provided 'GraphvizCommand' is used for this distribution.
 -}
 drawNet
-  :: Ord a
+  :: (Net PetriLike n, Ord a)
   => (a -> String)
   -- ^ how to obtain labels of the nodes
-  -> PetriLike a
+  -> PetriLike n a
   -- ^ the graph definition
   -> Bool
   -- ^ whether to hide place names
@@ -143,10 +146,10 @@ drawNet labelOf pl hidePNames hideTNames hide1 gc = do
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
 
 getNet
-  :: Traversable t
+  :: (PetriNode n, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> ExceptT String IO (PetriLike String, t String)
+  -> ExceptT String IO (PetriLike n String, t String)
 getNet parseInst inst = do
   (net, rename) <-
     getNetWith "flow" "tokens" inst
@@ -155,8 +158,9 @@ getNet parseInst inst = do
   return (net, rconc)
 
 getDefaultNet
-  :: AlloyInstance
-  -> ExceptT String IO (PetriLike String)
+  :: PetriNode n
+  => AlloyInstance
+  -> ExceptT String IO (PetriLike n String)
 getDefaultNet inst= fst <$>
   getNetWith "defaultFlow" "defaultTokens" inst
 
@@ -167,13 +171,14 @@ All nodes are renamed using the 'simpleRenameWith' function.
 The renaming is also applied to the additionally parsed instance.
 -}
 getNetWith
-  :: String
+  :: PetriNode n
+  => String
   -- ^ flow
   -> String
   -- ^ tokens
   -> AlloyInstance
   -- ^ the instance to parse
-  -> ExceptT String IO (PetriLike String, Object -> Either String String)
+  -> ExceptT String IO (PetriLike n String, Object -> Either String String)
 getNetWith f t inst = do
   pl <- except $ parsePetriLike f t inst
   let rename = simpleRenameWith pl
@@ -378,10 +383,10 @@ text' pfont s x = x
   # lwL 0.4
 
 renderWith
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadIO m, Net PetriLike n, OutputMonad m)
   => String
   -> String
-  -> PetriLike String
+  -> PetriLike n String
   -> DrawSettings
   -> LangM' m FilePath
 renderWith path task net config = do

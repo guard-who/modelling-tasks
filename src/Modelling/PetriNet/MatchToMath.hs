@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -30,7 +31,11 @@ module Modelling.PetriNet.MatchToMath (
   )  where
 
 import qualified Data.Map                         as M (
-  empty, filter, foldrWithKey, keys, lookup, partition,
+  empty,
+  filter,
+  foldrWithKey,
+  keys,
+  partition,
   )
 
 import Modelling.Auxiliary.Common       (Object (oName), oneOf)
@@ -63,10 +68,13 @@ import Modelling.PetriNet.Types (
   Change,
   ChangeConfig (..),
   DrawSettings (..),
+  Net (..),
   PetriLike (..),
   PetriMath (..),
   PetriNet,
-  Node (PlaceNode, TransitionNode),
+  PetriNode (..),
+  SimpleNode (..),
+  SimplePetriLike,
   checkBasicConfig,
   checkChangeConfig,
   checkGraphLayouts,
@@ -75,14 +83,13 @@ import Modelling.PetriNet.Types (
   defaultBasicConfig,
   defaultChangeConfig,
   drawSettingsWithCommand,
-  flowIn,
-  flowOut,
-  initial,
+  fromSimplePetriLike,
   isPlaceNode,
   manyRandomDrawSettings,
   mapChange,
   randomDrawSettings,
   shuffleNames,
+  toSimplePetriLike,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
@@ -125,8 +132,8 @@ import System.Random.Shuffle            (shuffleM)
 
 type Math = PetriMath Formula
 
-type GraphToMathInstance = MatchInstance PetriNet Math
-type MathToGraphInstance = MatchInstance Math PetriNet
+type GraphToMathInstance = MatchInstance (PetriNet SimpleNode) Math
+type MathToGraphInstance = MatchInstance Math (PetriNet SimpleNode)
 
 {-# DEPRECATED addPartNames "the whole type class NamedParts will be removed" #-}
 class NamedParts n where
@@ -203,16 +210,16 @@ evalRandTWith
 evalRandTWith = flip evalRandT . mkStdGen
 
 writeDia
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadIO m, Net PetriLike n, OutputMonad m)
   => FilePath
-  -> MatchInstance PetriNet b
+  -> MatchInstance (PetriNet n) b
   -> LangM' m (MatchInstance FilePath b)
 writeDia path = bimapM (\(n, ds) -> writeGraph ds path "" n) return
 
 writeDias
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadIO m, Net PetriLike n, OutputMonad m)
   => FilePath
-  -> MatchInstance a PetriNet
+  -> MatchInstance a (PetriNet n)
   -> LangM' m (MatchInstance a FilePath)
 writeDias path inst =
   let inst' = inst {
@@ -222,11 +229,11 @@ writeDias path inst =
   in bimapM return (\(l, (n, d)) -> writeGraph d path l n) inst'
 
 writeGraph
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadIO m, Net PetriLike n, OutputMonad m)
   => DrawSettings
   -> FilePath
   -> String
-  -> PetriLike String
+  -> PetriLike n String
   -> LangM' m FilePath
 writeGraph s path index pl = do
   file' <- lift $ liftIO $ runExceptT $
@@ -252,17 +259,18 @@ graphToMath
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance PetriNet Math)
+  -> ExceptT String IO (MatchInstance (PetriNet SimpleNode) Math)
 graphToMath c segment seed = evalRandTWith seed $ do
   ds <- randomDrawSettings (basicConfig c)
-  (d, m, ms) <- matchToMath ds (map toPetriMath) c segment
+  (d, m, ms) <-
+    matchToMath ds (map $ toPetriMath . fromSimplePetriLike) c segment
   matchMathInstance c d m $ fst <$> ms
 
 mathToGraph
   :: MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance Math PetriNet)
+  -> ExceptT String IO (MatchInstance Math (PetriNet SimpleNode))
 mathToGraph c segment seed = evalRandTWith seed $ do
   (x, xs) <- second (flip zip) <$>
     if useDifferentGraphLayouts c
@@ -292,12 +300,12 @@ matchMathInstance c x y ys = do
     }
 
 matchToMath
-  :: RandomGen g
+  :: (PetriNode n, RandomGen g)
   => DrawSettings
-  -> ([PetriLike String] -> [a])
+  -> ([PetriLike n String] -> [a])
   -> MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (PetriNet, Math, [(a, Change)])
+  -> RandT g (ExceptT String IO) (PetriNet SimpleNode, Math, [(a, Change)])
 matchToMath ds toOutput config segment = do
   (f, net, math) <- netMathInstance config segment
   fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
@@ -320,7 +328,7 @@ netMathInstance
   :: RandomGen g
   => MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (String, PetriLike String, Math)
+  -> RandT g (ExceptT String IO) (String, SimplePetriLike String, Math)
 netMathInstance config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
@@ -332,13 +340,13 @@ mathInstance
   :: RandomGen g
   => MathConfig
   -> AlloyInstance
-  -> RandT g (ExceptT String IO) (String, PetriLike String, Math)
+  -> RandT g (ExceptT String IO) (String, SimplePetriLike String, Math)
 mathInstance config inst = do
   petriLike <- lift $ except $ parseRenamedPetriLike "flow" "tokens" inst
   petriLike' <- fst <$> shuffleNames petriLike
   let math = toPetriMath petriLike'
   let f = renderFalse petriLike' config
-  return (f, petriLike', math)
+  return (f, toSimplePetriLike petriLike', math)
 
 graphToMathTask
   :: (OutputMonad m, MonadIO m)
@@ -559,9 +567,9 @@ run showNets for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth 
   where
     activated = "activatedTrans"
 
-renderFalse :: PetriLike String -> MathConfig -> String
+renderFalse :: Net PetriLike n => PetriLike n String -> MathConfig -> String
 renderFalse
-  PetriLike  {allNodes}
+  pl@PetriLike {allNodes}
   MathConfig {basicConfig, advConfig, changeConfig} = [i|module FalseNet
 
 #{modulePetriSignature}
@@ -590,11 +598,11 @@ run showFalseNets for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScop
     activated   = "activatedTrans"
     places      = unlines [extendLine p "givenPlaces" | p <- M.keys ps]
     transitions = unlines [extendLine t "givenTransitions" | t <- M.keys ts]
-    initialMark = M.foldrWithKey (\k -> (++) . tokenLine k) "" $ initial <$> ps
+    initialMark = M.foldrWithKey (\k -> (++) . tokenLine k) "" $ initialTokens <$> ps
     defaultFlow = M.foldrWithKey (\k _ -> (printFlow k ++)) "" allNodes
     printFlow :: String -> String
     printFlow x = M.foldrWithKey
-      (\y flow -> (++) $ flowLine x y $ M.lookup x $ flowIn flow)
+      (\y _ -> (++) $ flowLine x y $ flow x y pl)
       ""
       allNodes
     extendLine :: String -> String -> String
@@ -614,13 +622,13 @@ defaultGraphToMathInstance = MatchInstance {
   from = (
     PetriLike {
       allNodes = fromList [
-        ("s1",PlaceNode {initial = 2, flowIn = M.empty, flowOut = fromList [("t3",1)]}),
-        ("s2",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",1),("t2",1)]}),
-        ("s3",PlaceNode {initial = 1, flowIn = fromList [("t1",1),("t3",1)], flowOut = M.empty}),
-        ("s4",PlaceNode {initial = 0, flowIn = fromList [("t2",1)], flowOut = M.empty}),
-        ("t1",TransitionNode {flowIn = fromList [("s2",1)], flowOut = fromList [("s3",1)]}),
-        ("t2",TransitionNode {flowIn = fromList [("s2",1)], flowOut = fromList [("s4",1)]}),
-        ("t3",TransitionNode {flowIn = fromList [("s1",1)], flowOut = fromList [("s3",1)]})
+        ("s1",SimplePlace {initial = 2, flowOut = fromList [("t3",1)]}),
+        ("s2",SimplePlace {initial = 0, flowOut = fromList [("t1",1),("t2",1)]}),
+        ("s3",SimplePlace {initial = 1, flowOut = M.empty}),
+        ("s4",SimplePlace {initial = 0, flowOut = M.empty}),
+        ("t1",SimpleTransition {flowOut = fromList [("s3",1)]}),
+        ("t2",SimpleTransition {flowOut = fromList [("s4",1)]}),
+        ("t3",SimpleTransition {flowOut = fromList [("s3",1)]})
         ]
       },
     DrawSettings {
@@ -702,13 +710,13 @@ defaultMathToGraphInstance = MatchInstance {
     (1,(True,(
       PetriLike {
         allNodes = fromList [
-          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",1)], flowOut = M.empty}),
-          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t2",1)], flowOut = M.empty}),
-          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",1),("t3",1)]}),
-          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
-          ("t1",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s1",1)]}),
-          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
-          ("t3",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s4",1)]})
+          ("s1",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s2",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s3",SimplePlace {initial = 0, flowOut = fromList [("t1",1),("t3",1)]}),
+          ("s4",SimplePlace {initial = 1, flowOut = fromList [("t2",1)]}),
+          ("t1",SimpleTransition {flowOut = fromList [("s1",1)]}),
+          ("t2",SimpleTransition {flowOut = fromList [("s2",1)]}),
+          ("t3",SimpleTransition {flowOut = fromList [("s4",1)]})
           ]
         },
       DrawSettings {
@@ -721,13 +729,13 @@ defaultMathToGraphInstance = MatchInstance {
     (2,(False,(
       PetriLike {
         allNodes = fromList [
-          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",1)], flowOut = M.empty}),
-          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t2",1)], flowOut = M.empty}),
-          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",2),("t3",2)]}),
-          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
-          ("t1",TransitionNode {flowIn = fromList [("s3",2)], flowOut = fromList [("s1",1)]}),
-          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
-          ("t3",TransitionNode {flowIn = fromList [("s3",2)], flowOut = fromList [("s4",1)]})
+          ("s1",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s2",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s3",SimplePlace {initial = 0, flowOut = fromList [("t1",2),("t3",2)]}),
+          ("s4",SimplePlace {initial = 1, flowOut = fromList [("t2",1)]}),
+          ("t1",SimpleTransition {flowOut = fromList [("s1",1)]}),
+          ("t2",SimpleTransition {flowOut = fromList [("s2",1)]}),
+          ("t3",SimpleTransition {flowOut = fromList [("s4",1)]})
           ]
         },
       DrawSettings {
@@ -740,13 +748,13 @@ defaultMathToGraphInstance = MatchInstance {
     (3,(False,(
       PetriLike {
         allNodes = fromList [
-          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",2)], flowOut = M.empty}),
-          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t1",1),("t2",1)], flowOut = M.empty}),
-          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",1),("t3",1)]}),
-          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
-          ("t1",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s1",2),("s2",1)]}),
-          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
-          ("t3",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s4",1)]})
+          ("s1",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s2",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s3",SimplePlace {initial = 0, flowOut = fromList [("t1",1),("t3",1)]}),
+          ("s4",SimplePlace {initial = 1, flowOut = fromList [("t2",1)]}),
+          ("t1",SimpleTransition {flowOut = fromList [("s1",2),("s2",1)]}),
+          ("t2",SimpleTransition {flowOut = fromList [("s2",1)]}),
+          ("t3",SimpleTransition {flowOut = fromList [("s4",1)]})
           ]
         },
       DrawSettings {
@@ -758,13 +766,13 @@ defaultMathToGraphInstance = MatchInstance {
     (4,(False,(
       PetriLike {
         allNodes = fromList [
-          ("s1",PlaceNode {initial = 1, flowIn = fromList [("t1",2)], flowOut = M.empty}),
-          ("s2",PlaceNode {initial = 1, flowIn = fromList [("t2",1)], flowOut = M.empty}),
-          ("s3",PlaceNode {initial = 0, flowIn = M.empty, flowOut = fromList [("t1",2),("t3",1)]}),
-          ("s4",PlaceNode {initial = 1, flowIn = fromList [("t3",1)], flowOut = fromList [("t2",1)]}),
-          ("t1",TransitionNode {flowIn = fromList [("s3",2)], flowOut = fromList [("s1",2)]}),
-          ("t2",TransitionNode {flowIn = fromList [("s4",1)], flowOut = fromList [("s2",1)]}),
-          ("t3",TransitionNode {flowIn = fromList [("s3",1)], flowOut = fromList [("s4",1)]})
+          ("s1",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s2",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("s3",SimplePlace {initial = 0, flowOut = fromList [("t1",2),("t3",1)]}),
+          ("s4",SimplePlace {initial = 1, flowOut = fromList [("t2",1)]}),
+          ("t1",SimpleTransition {flowOut = fromList [("s1",2)]}),
+          ("t2",SimpleTransition {flowOut = fromList [("s2",1)]}),
+          ("t3",SimpleTransition {flowOut = fromList [("s4",1)]})
           ]
         },
       DrawSettings {

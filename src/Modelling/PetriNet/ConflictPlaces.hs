@@ -37,9 +37,9 @@ import Modelling.PetriNet.Types (
   Conflict,
   DrawSettings (..),
   FindConflictConfig (..),
-  Node (..),
   PetriConflict (..),
   PetriLike (..),
+  SimpleNode (..),
   defaultFindConflictConfig,
   lBasicConfig,
   lHidePlaceNames,
@@ -195,13 +195,13 @@ defaultFindConflictPlacesInstance = FindInstance {
     },
   net = PetriLike {
     allNodes = M.fromList [
-      ("s1",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t1",1)]}),
-      ("s2",PlaceNode {initial = 0, flowIn = M.fromList [("t1",2)], flowOut = M.empty}),
-      ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t1",2),("t2",1),("t3",1)], flowOut = M.empty}),
-      ("s4",PlaceNode {initial = 1, flowIn = M.empty, flowOut = M.fromList [("t1",1),("t3",1)]}),
-      ("t1",TransitionNode {flowIn = M.fromList [("s1",1),("s4",1)], flowOut = M.fromList [("s2",2),("s3",2)]}),
-      ("t2",TransitionNode {flowIn = M.empty, flowOut = M.fromList [("s3",1)]}),
-      ("t3",TransitionNode {flowIn = M.fromList [("s4",1)], flowOut = M.fromList [("s3",1)]})
+      ("s1",SimplePlace {initial = 1, flowOut = M.fromList [("t1",1)]}),
+      ("s2",SimplePlace {initial = 0, flowOut = M.empty}),
+      ("s3",SimplePlace {initial = 0, flowOut = M.empty}),
+      ("s4",SimplePlace {initial = 1, flowOut = M.fromList [("t1",1),("t3",1)]}),
+      ("t1",SimpleTransition {flowOut = M.fromList [("s2",2),("s3",2)]}),
+      ("t2",SimpleTransition {flowOut = M.fromList [("s3",1)]}),
+      ("t3",SimpleTransition {flowOut = M.fromList [("s3",1)]})
       ]
     },
   numberOfPlaces = 4,

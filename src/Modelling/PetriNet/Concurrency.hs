@@ -1,11 +1,10 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE LambdaCase #-}
 
 module Modelling.PetriNet.Concurrency (
   checkFindConcurrencyConfig,
@@ -90,9 +89,11 @@ import Modelling.PetriNet.Types         (
   Concurrent (Concurrent),
   DrawSettings (..),
   FindConcurrencyConfig (..),
-  Node (..),
+  Net (..),
   PetriLike (PetriLike, allNodes),
+  PetriNode,
   PickConcurrencyConfig (..),
+  SimpleNode (..),
   transitionPairShow,
   )
 
@@ -187,9 +188,9 @@ findConcurrencySolution task = concur
     Concurrent concur = toFind task
 
 pickConcurrencyTask
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadIO m, Net PetriLike n, OutputMonad m)
   => FilePath
-  -> PickInstance
+  -> PickInstance n
   -> LangM m
 pickConcurrencyTask path task = do
   paragraph $ translate $ do
@@ -243,10 +244,10 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
     bc = basicConfig (config :: FindConcurrencyConfig)
 
 findConcurrency
-  :: RandomGen g
+  :: (PetriNode n, RandomGen g)
   => FindConcurrencyConfig
   -> Int
-  -> RandT g (ExceptT String IO) (PetriLike String, Concurrent String)
+  -> RandT g (ExceptT String IO) (PetriLike n String, Concurrent String)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
@@ -254,10 +255,11 @@ findConcurrency = taskInstance
   (\c -> alloyConfig (c :: FindConcurrencyConfig))
 
 pickConcurrencyGenerate
-  :: PickConcurrencyConfig
+  :: PetriNode n
+  => PickConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO PickInstance
+  -> ExceptT String IO (PickInstance n)
 pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud ws
   where
     bc config = basicConfig (config :: PickConcurrencyConfig)
@@ -266,10 +268,13 @@ pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud ws
 
 
 pickConcurrency
-  :: RandomGen g
+  :: (PetriNode n, RandomGen g)
   => PickConcurrencyConfig
   -> Int
-  -> RandT g (ExceptT String IO) [(PetriLike String, Maybe (Concurrent String))]
+  -> RandT
+    g
+    (ExceptT String IO)
+    [(PetriLike n String, Maybe (Concurrent String))]
 pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
@@ -388,19 +393,19 @@ checkPickConcurrencyConfig PickConcurrencyConfig {
   }
   = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
 
-defaultPickConcurrencyInstance :: PickInstance
+defaultPickConcurrencyInstance :: PickInstance SimpleNode
 defaultPickConcurrencyInstance = PickInstance {
   nets = M.fromList [
     (1,(False,(
       PetriLike {
         allNodes = M.fromList [
-          ("s1",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1)], flowOut = M.fromList [("t1",2),("t2",1),("t3",1)]}),
-          ("s2",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.empty}),
-          ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.fromList [("t1",1)]}),
-          ("s4",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.empty}),
-          ("t1",TransitionNode {flowIn = M.fromList [("s1",2),("s3",1)], flowOut = M.fromList [("s1",1),("s4",1)]}),
-          ("t2",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s4",1)]}),
-          ("t3",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s2",1),("s3",1)]})
+          ("s1",SimplePlace {initial = 1, flowOut = M.fromList [("t1",2),("t2",1),("t3",1)]}),
+          ("s2",SimplePlace {initial = 0, flowOut = M.empty}),
+          ("s3",SimplePlace {initial = 0, flowOut = M.fromList [("t1",1)]}),
+          ("s4",SimplePlace {initial = 1, flowOut = M.empty}),
+          ("t1",SimpleTransition {flowOut = M.fromList [("s1",1),("s4",1)]}),
+          ("t2",SimpleTransition {flowOut = M.fromList [("s4",1)]}),
+          ("t3",SimpleTransition {flowOut = M.fromList [("s2",1),("s3",1)]})
           ]
         },
       DrawSettings {
@@ -413,13 +418,13 @@ defaultPickConcurrencyInstance = PickInstance {
     (2,(True,(
       PetriLike {
         allNodes = M.fromList [
-          ("s1",PlaceNode {initial = 2, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.fromList [("t1",2),("t2",1),("t3",1)]}),
-          ("s2",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.empty}),
-          ("s3",PlaceNode {initial = 0, flowIn = M.fromList [("t3",1)], flowOut = M.fromList [("t1",1)]}),
-          ("s4",PlaceNode {initial = 2, flowIn = M.fromList [("t1",1),("t2",1)], flowOut = M.fromList [("t2",1)]}),
-          ("t1",TransitionNode {flowIn = M.fromList [("s1",2),("s3",1)], flowOut = M.fromList [("s1",1),("s4",1)]}),
-          ("t2",TransitionNode {flowIn = M.fromList [("s1",1),("s4",1)], flowOut = M.fromList [("s1",1),("s4",1)]}),
-          ("t3",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s2",1),("s3",1)]})
+          ("s1",SimplePlace {initial = 2, flowOut = M.fromList [("t1",2),("t2",1),("t3",1)]}),
+          ("s2",SimplePlace {initial = 0, flowOut = M.empty}),
+          ("s3",SimplePlace {initial = 0, flowOut = M.fromList [("t1",1)]}),
+          ("s4",SimplePlace {initial = 2, flowOut = M.fromList [("t2",1)]}),
+          ("t1",SimpleTransition {flowOut = M.fromList [("s1",1),("s4",1)]}),
+          ("t2",SimpleTransition {flowOut = M.fromList [("s1",1),("s4",1)]}),
+          ("t3",SimpleTransition {flowOut = M.fromList [("s2",1),("s3",1)]})
           ]
         },
       DrawSettings {
@@ -444,13 +449,13 @@ defaultFindConcurrencyInstance = FindInstance {
   toFind = Concurrent (Transition 1,Transition 3),
   net = PetriLike {
     allNodes = M.fromList [
-      ("s1",PlaceNode {initial = 2, flowIn = M.empty, flowOut = M.fromList [("t1",1),("t2",2),("t3",1)]}),
-      ("s2",PlaceNode {initial = 1, flowIn = M.fromList [("t2",1),("t3",2)], flowOut = M.empty}),
-      ("s3",PlaceNode {initial = 1, flowIn = M.fromList [("t1",1)], flowOut = M.fromList [("t3",1)]}),
-      ("s4",PlaceNode {initial = 0, flowIn = M.fromList [("t2",2)], flowOut = M.empty}),
-      ("t1",TransitionNode {flowIn = M.fromList [("s1",1)], flowOut = M.fromList [("s3",1)]}),
-      ("t2",TransitionNode {flowIn = M.fromList [("s1",2)], flowOut = M.fromList [("s2",1),("s4",2)]}),
-      ("t3",TransitionNode {flowIn = M.fromList [("s1",1),("s3",1)], flowOut = M.fromList [("s2",2)]})
+      ("s1",SimplePlace {initial = 2, flowOut = M.fromList [("t1",1),("t2",2),("t3",1)]}),
+      ("s2",SimplePlace {initial = 1, flowOut = M.empty}),
+      ("s3",SimplePlace {initial = 1, flowOut = M.fromList [("t3",1)]}),
+      ("s4",SimplePlace {initial = 0, flowOut = M.empty}),
+      ("t1",SimpleTransition {flowOut = M.fromList [("s3",1)]}),
+      ("t2",SimpleTransition {flowOut = M.fromList [("s2",1),("s4",2)]}),
+      ("t3",SimpleTransition {flowOut = M.fromList [("s2",2)]})
       ]
     },
   numberOfPlaces = 4,

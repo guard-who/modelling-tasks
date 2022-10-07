@@ -14,7 +14,10 @@ module Modelling.PetriNet.LaTeX (
 import qualified Data.Map as M
 
 import Modelling.PetriNet.Types (
-  Node (..), PetriLike (..), PetriMath (..),
+  Node (..),
+  PetriLike (..),
+  PetriMath (..),
+  PetriNode (..),
   isPlaceNode, mapPetriLike,
   )
 
@@ -29,7 +32,7 @@ import Image.LaTeX.Render           (Formula)
 Takes a 'PetriLike' net and generates all formulas required in order to
 represent this net using a mathematical representation ('PetriMath').
 -}
-toPetriMath :: PetriLike String -> PetriMath Formula
+toPetriMath :: PetriLike Node String -> PetriMath Formula
 toPetriMath pl = PetriMath {
   netMath            = netLaTeX,
   placesMath         = placesLaTeX places,
@@ -117,11 +120,12 @@ transitionsLaTeX ts =
 Create a LaTeX-'Formula' representing the tuple of the inital marking.
 -}
 initialMarkingLaTeX
-  :: [Node a]
-  -- ^ A list of nodes which should only contain 'PlaceNode's.
+  :: PetriNode n
+  => [n a]
+  -- ^ A list of nodes which should only contain place nodes.
   -> Formula
 initialMarkingLaTeX ns = "m_0 = "
-  ++ parenthesise (intercalate "," $ show . initial <$> ns)
+  ++ parenthesise (intercalate "," $ show . initialTokens <$> ns)
 
 {-|
 Create LaTeX-'Formula's representing the tuples for incoming and outgoing flow

@@ -16,7 +16,11 @@ import Modelling.ActivityDiagram.Datatype (
   isActionNode, isObjectNode)
 
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..))
-import Modelling.PetriNet.Types(PetriLike(..), mapPetriLike)
+import Modelling.PetriNet.Types (
+  PetriLike (..),
+  PetriNode,
+  mapPetriLike,
+  )
 
 import Data.Map (Map)
 import System.Random (mkStdGen)
@@ -68,7 +72,11 @@ updateName renaming node =
   where rename s = renaming M.! s
 
 
-shufflePetri :: Int -> PetriLike PetriKey -> (Map Int Int, PetriLike PetriKey)
+shufflePetri
+  :: PetriNode n
+  => Int
+  -> PetriLike n PetriKey
+  -> (Map Int Int, PetriLike n PetriKey)
 shufflePetri seed petri =
   let labels = map PK.label $ M.keys $ allNodes petri
       relabeling = M.fromList $ zip labels $ shuffle' labels (length labels) (mkStdGen seed)

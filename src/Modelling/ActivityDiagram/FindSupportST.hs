@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -17,7 +18,14 @@ module Modelling.ActivityDiagram.FindSupportST (
   defaultFindSupportSTInstance
 ) where
 
-import qualified Data.Map as M ((!), null, size, filter, filterWithKey, keys, fromList)
+import qualified Data.Map as M (
+  filter,
+  filterWithKey,
+  fromList,
+  keys,
+  null,
+  size,
+  )
 
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..))
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
@@ -29,7 +37,13 @@ import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaul
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Output (addPretext)
-import Modelling.PetriNet.Types (PetriLike(..), Node(..), isPlaceNode, isTransitionNode)
+import Modelling.PetriNet.Types (
+  Net (..),
+  PetriLike (..),
+  PetriNode (..),
+  isPlaceNode,
+  isTransitionNode,
+  )
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -134,7 +148,10 @@ findSupportSTSolution :: FindSupportSTInstance -> FindSupportSTSolution
 findSupportSTSolution task =
   findSupportSTSolution' $ convertToPetrinet $ activityDiagram task
 
-findSupportSTSolution' :: PetriLike PetriKey -> FindSupportSTSolution
+findSupportSTSolution'
+  :: Net PetriLike n
+  => PetriLike n PetriKey
+  -> FindSupportSTSolution
 findSupportSTSolution' petri = FindSupportSTSolution {
     numberOfPetriNodes = M.size $ allNodes petri,
     numberOfSupportPlaces = M.size $ M.filter isPlaceNode supportSTMap,
@@ -143,8 +160,8 @@ findSupportSTSolution' petri = FindSupportSTSolution {
   where
     supportSTMap = M.filterWithKey (\k _ -> isSupportST k && not (isSinkST k petri)) $ allNodes petri
 
-isSinkST :: PetriKey -> PetriLike PetriKey -> Bool
-isSinkST key petri = M.null $ flowOut $ allNodes petri M.! key
+isSinkST :: Net PetriLike n => PetriKey -> PetriLike n PetriKey -> Bool
+isSinkST key petri = M.null $ outFlow key petri
 
 isSupportST :: PetriKey -> Bool
 isSupportST key =

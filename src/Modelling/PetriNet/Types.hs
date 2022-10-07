@@ -1,9 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DeriveTraversable #-}
 {-# Language DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-|
 This module provides types to represent Petri nets.
@@ -21,8 +24,21 @@ import qualified Modelling.PetriNet.Reach.Type    as Petri (Transition)
 
 import qualified Data.Bimap                       as BM (fromList, lookup)
 import qualified Data.Map.Lazy                    as M (
-  elems, empty, filter, foldrWithKey, insert, keys, keysSet, lookup,
-  mapKeys, member, null
+  adjust,
+  alter,
+  delete,
+  elems,
+  empty,
+  filter,
+  foldrWithKey,
+  insert,
+  keys,
+  keysSet,
+  lookup,
+  mapKeys,
+  mapWithKey,
+  member,
+  null,
   )
 import qualified Data.Set                         as S (empty, union)
 
@@ -30,6 +46,7 @@ import Modelling.Auxiliary.Common       (lensRulesL, oneOf)
 import Modelling.PetriNet.Reach.Type    (Place, ShowTransition (ShowTransition))
 
 import Control.Lens                     (makeLensesWith)
+import Control.Monad                    ((<=<))
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom, RandT, RandomGen)
 import Control.Monad.Trans              (MonadTrans(lift))
@@ -132,9 +149,54 @@ instance Bitraversable PetriConflict where
   bitraverse f g (Conflict ts as) = Conflict
     <$> bitraverse g g ts
     <*> traverse f as
-  
+
 newtype Concurrent a = Concurrent (a, a)
   deriving (Foldable, Functor, Generic, Read, Show, Traversable)
+
+class Show (n String) => PetriNode n where
+  initialTokens     :: n a -> Int
+
+  {-|
+  Whether the 'Node' is a 'PlaceNode'.
+  -}
+  isPlaceNode       :: n a -> Bool
+
+  {-|
+  Whether the 'PetriNode' is a 'TransitionNode'.
+  -}
+  isTransitionNode  :: n a -> Bool
+
+  {-|
+  This function acts like 'fmap' on other 'Functor's.
+
+  Note that 'PetriNode' is not necessarily a true 'Functor' and thus 'mapNode'
+  is not a true 'fmap' because an 'Ord' instance is required for 'Node's
+  first type parameter for 'mapNode' to work,
+  furthermore (and that is the original reason), 'mapNode' usually
+  uses 'M.mapKeys' internally in order to apply the mapping. Thus, the user of
+  'mapNode' is responsible to ensure that the transformation preserves uniqueness
+  on all used keys.
+  -}
+  mapNode           :: Ord b => (a -> b) -> n a -> n b
+
+  {-|
+  This function acts like 'traverse' on 'Traversable'.
+
+  Not that 'PetriNode' is not necessarily 'Traversable' itself as it requires
+  an 'Ord' instance for the result type within the 'Applicative'
+  of its first argument, the applicative lifting transformation function.
+  This behaviour occurs, because the traversal changes the keys of the underlying
+  'Map'.
+  Transformations on this map require a specific traversal 'traverseKeyMap'.
+
+  The user is responsible to ensure uniqueness of the keys after the traversal.
+  Note, that the order of values could also change if the transformation is not
+  order-preserving.
+  -}
+  traverseNode      :: (Applicative f, Ord b) => (a -> f b) -> n a -> f (n b)
+  toNode            :: Maybe Int -> Map a Int -> Map a Int -> n a
+
+{-# DEPRECATED toNode "kept only for Modelling.PetriNet.Parser use repsertNode and repsertFlow instead" #-}
 
 {-|
 A node is part of a Petri like graph (see 'PetriLike').
@@ -157,50 +219,82 @@ data Node a =
   }
   deriving (Generic, Read, Show)
 
+instance PetriNode Node where
+  initialTokens = initial
+
+  isPlaceNode PlaceNode {} = True
+  isPlaceNode _            = False
+
+  isTransitionNode TransitionNode {} = True
+  isTransitionNode _                 = False
+
+  mapNode f (PlaceNode s i o) =
+    PlaceNode s (M.mapKeys f i) (M.mapKeys f o)
+  mapNode f (TransitionNode i o) =
+    TransitionNode (M.mapKeys f i) (M.mapKeys f o)
+
+  toNode tokens fin fout = case tokens of
+    Nothing -> TransitionNode {
+      flowIn  = fin,
+      flowOut = fout
+      }
+    Just t  -> PlaceNode {
+      initial = t,
+      flowIn  = fin,
+      flowOut = fout
+    }
+
+  traverseNode f (PlaceNode s i o) =
+    PlaceNode s <$> traverseKeyMap f i <*> traverseKeyMap f o
+  traverseNode f (TransitionNode i o) =
+    TransitionNode <$> traverseKeyMap f i <*> traverseKeyMap f o
+
+data SimpleNode a =
+  SimplePlace {
+  initial           :: Int,
+  flowOut           :: Map a Int
+  } |
+  SimpleTransition {
+  flowOut           :: Map a Int
+  }
+  deriving (Generic, Read, Show)
+
+instance PetriNode SimpleNode where
+  initialTokens = initial
+
+  isPlaceNode SimplePlace {} = True
+  isPlaceNode _         = False
+
+  isTransitionNode SimpleTransition {} = True
+  isTransitionNode _              = False
+
+  mapNode f (SimplePlace s o) =
+    SimplePlace s (M.mapKeys f o)
+  mapNode f (SimpleTransition o) =
+    SimpleTransition (M.mapKeys f o)
+
+  toNode tokens _ fout = case tokens of
+    Nothing -> SimpleTransition {
+      flowOut       = fout
+      }
+    Just t  -> SimplePlace {
+      initial       = t,
+      flowOut       = fout
+    }
+
+  traverseNode f (SimplePlace s o)    =
+    SimplePlace s <$> traverseKeyMap f o
+  traverseNode f (SimpleTransition o) =
+    SimpleTransition <$> traverseKeyMap f o
+
 {-|
-Returns 'Just' the 'initial' tokens of the given 'Node', if it is a 'PlaceNode',
+Returns 'Just' the 'initial' tokens of the given node, if it is a place 'PetriNode',
 otherwise it returns 'Nothing'.
 -}
-maybeInitial :: Node a -> Maybe Int
-maybeInitial n = case n of
-  PlaceNode      {} -> Just $ initial n
-  TransitionNode {} -> Nothing
-
-{-|
-This function acts like 'fmap' on other 'Functor's.
-
-Note that 'Node' is not a true 'Functor' and thus 'mapNode' is not a true 'fmap'
-because an 'Ord' instance is required for 'Node's first type parameter for
-'mapNode' to work, furthermore (and that is the original reason), 'mapNode'
-uses 'M.mapKeys' internally in order to apply the mapping. Thus, the user of
-'mapNode' is responsible to ensure that the transformation preserves uniqueness
-on all used keys.
--}
-mapNode :: Ord b => (a -> b) -> Node a -> Node b
-mapNode f (PlaceNode s i o) =
-  PlaceNode s (M.mapKeys f i) (M.mapKeys f o)
-mapNode f (TransitionNode i o) =
-  TransitionNode (M.mapKeys f i) (M.mapKeys f o)
-
-{-|
-This function acts like 'traverse' on 'Traversable'.
-
-Not that 'Node' is not 'Traversable' itself as it requires an 'Ord' instance
-for the result type within the 'Applicative' of its first argument, the
-applicative lifting transformation function.
-This behaviour occurs, because the traversal changes the keys of the underlying
-'Map'.
-Transformations on this map require a specific traversal 'traverseKeyMap'.
-
-The user is responsible to ensure uniqueness of the keys after the traversal.
-Note, that the order of values could also change if the transformation is not
-order-preserving.
--}
-traverseNode :: (Applicative f, Ord b) => (a -> f b) -> Node a -> f (Node b)
-traverseNode f (PlaceNode s i o)    =
-  PlaceNode s <$> traverseKeyMap f i <*> traverseKeyMap f o
-traverseNode f (TransitionNode i o) =
-  TransitionNode <$> traverseKeyMap f i <*> traverseKeyMap f o
+maybeInitial :: PetriNode n => n a -> Maybe Int
+maybeInitial n
+  | isPlaceNode n = Just $ initialTokens n
+  | otherwise     = Nothing
 
 {-|
 A specific traversal for 'Map's changing the keys rather than values.
@@ -231,22 +325,65 @@ traverseKeyAndValueMap f g =
   where
     insertApplicativeKeyValue k x rs = M.insert <$> f k <*> g x <*> rs
 
-{-|
-Whether the 'Node' is a 'PlaceNode'.
--}
-isPlaceNode :: Node a -> Bool
-isPlaceNode PlaceNode {} = True
-isPlaceNode _            = False
+class PetriNode n => Net p n where
+  {-|
+  Inserts 'flow' into the 'Net' by connecting the provided source and target
+  by the given flow.
+  If no 'PetriNode' for the given source or target exists within the 'Net'
+  no 'flow' is added to the 'Net'
+  If 'flow' between source and target exists already it is replaced.
+  -}
+  repsertFlow
+    :: Ord a
+    => a
+    -- ^ source
+    -> Int
+    -- ^ the flow
+    -> a
+    -- ^ target
+    -> p n a
+    -> p n a
+
+  {-|
+  Inserts a 'PetriNode' into the 'Net' given the desired key,
+
+   * a place node with the desired initial tokes if Just such are provided,
+   * a transition node otherwise.
+
+  If the desired key already exists the targeted 'PetriNode' is replaced
+  without affecting preexisting 'flow'.
+  (use 'deleteNode' first if you desire to clear related flow)
+  -}
+  repsertNode
+    :: Ord a
+    => a
+    -- ^ node key
+    -> Maybe Int
+    -- ^ initial tokens
+    -> p n a
+    -> p n a
+
+  {-|
+  Removes the 'PetriNode' associated with the key and all connections going
+  from or to the removed node.
+  -}
+  deleteNode        :: Ord a => a -> p n a -> p n a
+  flow              :: Ord a => a -> a -> p n a -> Maybe Int
+  outFlow           :: Ord a => a -> p n a -> Map a Int
+
+updateNode
+  :: (Map a Int -> Map b Int)
+  -> (Map a Int -> Map b Int)
+  -> Node a
+  -> Node b
+updateNode g h (PlaceNode t i o)    = PlaceNode t (g i) (h o)
+updateNode g h (TransitionNode i o) = TransitionNode (g i) (h o)
+
+adjustAll :: Ord a => (b -> b) -> Maybe [a] -> Map a b -> Map a b
+adjustAll f ns m = foldr (M.adjust f) m $ concat ns
 
 {-|
-Whether the 'Node' is a 'TransitionNode'.
--}
-isTransitionNode :: Node a -> Bool
-isTransitionNode TransitionNode {} = True
-isTransitionNode _                 = False
-
-{-|
-A Petri like graph consists of 'Node's which might have connections between each
+A Petri like graph consists of nodes which might have connections between each
 other.
 
 The 'PetriLike' graph is a valid Petri net only if
@@ -256,10 +393,60 @@ The 'PetriLike' graph is a valid Petri net only if
  * the initial marking is valid (i.e. all initial tokens are not negative)
  * every weight is greater than zero
 -}
-newtype PetriLike a = PetriLike {
-  -- | the 'Map' of all 'Node's the Petri net like graph is made of
-  allNodes :: Map a (Node a)
+newtype PetriLike n a = PetriLike {
+  -- | the 'Map' of all nodes the Petri net like graph is made of
+  allNodes :: Map a (n a)
   } deriving (Generic, Read, Show)
+
+instance Net PetriLike Node where
+  flow x y = (M.lookup y . flowOutN) <=< (M.lookup x . allNodes)
+
+  deleteNode x (PetriLike ns) = PetriLike
+    . M.delete x
+    . adjustAll (updateNode id (M.delete x)) (M.keys . flowIn <$> n)
+    . adjustAll (updateNode (M.delete x) id) (M.keys . flowOutN <$> n)
+    $ ns
+    where
+      n = M.lookup x ns
+
+  repsertFlow x f y = PetriLike
+    . M.adjust (updateNode id (M.insert y f)) x
+    . M.adjust (updateNode (M.insert x f) id) y
+    . allNodes
+
+  repsertNode x mt = PetriLike . M.alter alterNode x . allNodes
+    where
+      alterNode = Just . fromMaybe
+        (maybe TransitionNode PlaceNode mt M.empty M.empty)
+
+  outFlow x = maybe M.empty flowOutN . M.lookup x . allNodes
+
+flowOutN :: Node a -> Map a Int
+flowOutN = flowOut
+
+instance Net PetriLike SimpleNode where
+  flow x y = (M.lookup y . flowOutSN) <=< (M.lookup x . allNodes)
+
+  deleteNode x = PetriLike . M.delete x . allNodes
+
+  repsertFlow x f y = PetriLike
+    . M.adjust (updateSimpleNode (M.insert y f)) x
+    . allNodes
+    where
+      updateSimpleNode g (SimplePlace t o)    = SimplePlace t (g o)
+      updateSimpleNode g (SimpleTransition o) = SimpleTransition (g o)
+
+  repsertNode x mt = PetriLike . M.alter alterNode x . allNodes
+    where
+      alterNode = Just . fromMaybe
+        (maybe SimpleTransition SimplePlace mt M.empty)
+
+  outFlow x = maybe M.empty flowOutSN . M.lookup x . allNodes
+
+flowOutSN :: SimpleNode a -> Map a Int
+flowOutSN = flowOut
+
+type SimplePetriLike = PetriLike SimpleNode
 
 {-|
 A 'Functor' like 'fmap' on 'PetriLike'.
@@ -273,7 +460,11 @@ Thus, the user of 'mapPetriLike' is responsible to preserve uniqueness of values
 transformation is not order-preserving, the order of keys within 'Map's might
 be changed.
 -}
-mapPetriLike :: Ord b => (a -> b) -> PetriLike a -> PetriLike b
+mapPetriLike
+  :: (Ord b, PetriNode n)
+  => (a -> b)
+  -> PetriLike n a
+  -> PetriLike n b
 mapPetriLike f x = PetriLike $ M.mapKeys f $ mapNode f <$> allNodes x
 
 {-|
@@ -288,23 +479,23 @@ Furthermore, the order of keys might be changed if the transformation is not
 order-preserving.
 -}
 traversePetriLike
-  :: (Applicative f, Ord b)
+  :: (Applicative f, Ord b, PetriNode n)
   => (a -> f b)
-  -> PetriLike a
-  -> f (PetriLike b)
+  -> PetriLike n a
+  -> f (PetriLike n b)
 traversePetriLike f x =
   PetriLike <$> traverseKeyAndValueMap f (traverseNode f) (allNodes x)
 
-transitionNames :: PetriLike k -> [k]
+transitionNames :: PetriNode n => PetriLike n k -> [k]
 transitionNames = M.keys . M.filter isTransitionNode . allNodes
 
-placeNames :: PetriLike k -> [k]
+placeNames :: PetriNode n => PetriLike n k -> [k]
 placeNames = M.keys . M.filter isPlaceNode . allNodes
 
 shuffleNames
-  :: (MonadThrow m, RandomGen g)
-  => PetriLike String
-  -> RandT g m (PetriLike String, Bimap String String)
+  :: (MonadThrow m, PetriNode n, RandomGen g)
+  => PetriLike n String
+  -> RandT g m (PetriLike n String, Bimap String String)
 shuffleNames pl = do
   let ts = transitionNames pl
       ps = placeNames pl
@@ -312,6 +503,24 @@ shuffleNames pl = do
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
   lift $ (,mapping) <$> traversePetriLike (`BM.lookup` mapping) pl
+
+toSimplePetriLike :: (Ord a, Net PetriLike n) => PetriLike n a -> SimplePetriLike a
+toSimplePetriLike x =
+  PetriLike $ toSimpleNode `M.mapWithKey` allNodes x
+  where
+    toSimpleNode k n
+      | isPlaceNode n = SimplePlace (initialTokens n) (outFlow k x)
+      | otherwise     = SimpleTransition (outFlow k x)
+
+fromSimplePetriLike
+  :: (Ord a, Net PetriLike n)
+  => SimplePetriLike a
+  -> PetriLike n a
+fromSimplePetriLike ns =
+  M.foldrWithKey fromSimpleNode (PetriLike M.empty) $ allNodes ns
+  where
+    insertFlows k xs = M.foldrWithKey (flip (repsertFlow k)) xs (outFlow k ns)
+    fromSimpleNode k n = insertFlows k . repsertNode k (maybeInitial n)
 
 {-|
 Transform a 'PetriLike' graph into a 'Petri' net.
@@ -327,11 +536,11 @@ It first checks if the given Petri net like graph is indeed a valid Petri net
 * if it is not, a message is returned indicating the reason why the given
   Petri net like graph is not a valid Petri net.
 -}
-petriLikeToPetri :: Ord a => PetriLike a -> Either String Petri
+petriLikeToPetri :: Ord a => PetriLike Node a -> Either String Petri
 petriLikeToPetri p = do
   isValid
   return $ Petri {
-    initialMarking = initial <$> M.elems ps,
+    initialMarking = initialTokens <$> M.elems ps,
     trans          =
       foldr ((:) . toChangeTuple) [] ts
     }
@@ -339,7 +548,7 @@ petriLikeToPetri p = do
     ps = M.filter isPlaceNode $ allNodes p
     ts = M.filter isTransitionNode $ allNodes p
     isValid
-      | not (M.null $ M.filter ((< 0) . initial) ps)
+      | not (M.null $ M.filter ((< 0) . initialTokens) ps)
       = Left "Invalid Petri net: place with negative token number"
       | any (`M.member` ts) (allRelatedNodes ts)
       = Left "related nodes of TransitionNodes contain TranisitionNodes"
@@ -347,16 +556,16 @@ petriLikeToPetri p = do
       = Left "related nodes of PlaceNodes contain PlaceNodes"
       | any (any (<= 0) . flowIn) ts
       = Left "flow to a transition is zero or less"
-      | any (any (<= 0) . flowOut) ts
+      | any (any (<= 0) . flowOutN) ts
       = Left "flow from a transition is zero or less"
       | otherwise
       = return ()
-    toChangeTuple n = (toFlowList flowIn n, toFlowList flowOut n)
+    toChangeTuple n = (toFlowList flowIn n, toFlowList flowOutN n)
     toFlowList f n = M.foldrWithKey
       (\k _ xs -> fromMaybe 0 (M.lookup k $ f n) : xs)
       []
       ps
-    relatedNodes n = M.keysSet (flowIn n) `S.union` M.keysSet (flowOut n)
+    relatedNodes n = M.keysSet (flowIn n) `S.union` M.keysSet (flowOutN n)
     allRelatedNodes = foldr
       (S.union . relatedNodes)
       S.empty
@@ -393,7 +602,7 @@ defaultPetri = Petri
   { initialMarking = [1,1,0]
   , trans = [([1,0,0],[0,1,0]),([1,0,0],[0,0,1]),([0,1,1],[2,0,0])]
   }
-  
+
 placeHoldPetri :: Petri
 placeHoldPetri = Petri{initialMarking =[],trans=[]}
 
@@ -433,13 +642,13 @@ defaultBasicConfig = BasicConfig
   , hidePlaceNames = False
   , hideTransitionNames = False
   }
-  
+
 data AdvConfig = AdvConfig
   { presenceOfSelfLoops :: Maybe Bool
   , presenceOfSinkTransitions :: Maybe Bool
   , presenceOfSourceTransitions :: Maybe Bool
   } deriving (Generic, Read, Show)
-  
+
 defaultAdvConfig :: AdvConfig
 defaultAdvConfig = AdvConfig
   { presenceOfSelfLoops = Just False
@@ -453,7 +662,7 @@ data ChangeConfig = ChangeConfig
   , flowChangeOverall :: Int
   , maxFlowChangePerEdge :: Int
   } deriving (Generic, Read, Show)
-  
+
 defaultChangeConfig :: ChangeConfig
 defaultChangeConfig = ChangeConfig
   { tokenChangeOverall = 2
@@ -498,7 +707,7 @@ data FindConflictConfig = FindConflictConfig
   } deriving (Generic, Read, Show)
 
 makeLensesWith lensRulesL ''FindConflictConfig
-  
+
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
@@ -509,7 +718,7 @@ defaultFindConflictConfig = FindConflictConfig
   , uniqueConflictPlace = Just True
   , alloyConfig  = defaultAlloyConfig
   }
-  
+
 data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
@@ -532,7 +741,7 @@ defaultPickConflictConfig = PickConflictConfig
   , useDifferentGraphLayouts = False
   , alloyConfig  = defaultAlloyConfig
   }
-  
+
 data FindConcurrencyConfig = FindConcurrencyConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig
@@ -540,7 +749,7 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   , printSolution :: Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
-  
+
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
   { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
@@ -549,7 +758,7 @@ defaultFindConcurrencyConfig = FindConcurrencyConfig
   , printSolution = False
   , alloyConfig  = defaultAlloyConfig
   }
-  
+
 data PickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
@@ -576,7 +785,7 @@ data DrawSettings = DrawSettings {
   withGraphvizCommand  :: GraphvizCommand
   } deriving (Generic, Read, Show)
 
-type PetriNet = (PetriLike String, DrawSettings)
+type PetriNet n = (PetriLike n String, DrawSettings)
 
 drawSettingsWithCommand :: BasicConfig -> GraphvizCommand -> DrawSettings
 drawSettingsWithCommand config c = DrawSettings {

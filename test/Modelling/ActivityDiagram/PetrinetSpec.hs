@@ -29,7 +29,7 @@ spec =
         let petri = map (petriLikeToPetri . convertToPetrinet . failWith id . parseInstance) inst
         all isRight petri `shouldBe` (True::Bool)
 
-checkLabels :: PetriLike PetriKey -> Bool
+checkLabels :: PetriLike n PetriKey -> Bool
 checkLabels petri =
   let labels = sort $ map label $ M.keys $ allNodes petri
   in labels == [1..(length labels)]

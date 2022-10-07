@@ -1,4 +1,4 @@
-module Modelling.PetriNet.Reach.Draw (drawToFile, toPetriLike) where
+module Modelling.PetriNet.Reach.Draw (drawToFile) where
 
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (toList)
@@ -47,7 +47,7 @@ toPetriLike
   => (s -> a)
   -> (t -> a)
   -> Net s t
-  -> PetriLike a
+  -> PetriLike Node a
 toPetriLike fp ft n = PetriLike $ M.fromList $ ps ++ ts
   where
     ps = do

@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.ConflictSpec where
 
 import Modelling.PetriNet.Conflict (
@@ -27,6 +28,7 @@ import Modelling.PetriNet.Types (
   PetriConflict (Conflict),
   PetriConflict' (PetriConflict'),
   PickConflictConfig (PickConflictConfig, alloyConfig),
+  SimplePetriLike,
   defaultFindConflictConfig,
   defaultPickConflictConfig,
   )
@@ -57,7 +59,7 @@ spec = do
           alloyConfig = firstInstanceConfig
           } 0)
       0
-      checkFindConflictInstance
+      $ checkFindConflictInstance @(SimplePetriLike _)
     testFindConflictConfig fcfs
   describe "validPickConflictConfigs" $
     checkConfigs checkPickConflictConfig pcfs
@@ -67,7 +69,7 @@ spec = do
           alloyConfig = firstInstanceConfig
           } 0)
       0
-      checkPickConflictInstance
+      $ checkPickConflictInstance @(SimplePetriLike _)
     testPickConflictConfig pcfs
   where
     fcfs' = validFindConflictConfigs vcfs (AdvConfig Nothing Nothing Nothing)
@@ -89,13 +91,13 @@ testFindConflictConfig :: [FindConflictConfig] -> Spec
 testFindConflictConfig = testTaskGeneration
   petriNetFindConfl
   (findTaskInstance parseConflict)
-  checkFindConflictInstance
+  $ checkFindConflictInstance @(SimplePetriLike _)
 
 testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig = testTaskGeneration
   petriNetPickConfl
   (pickTaskInstance parseConflict)
-  checkPickConflictInstance
+  $ checkPickConflictInstance @(SimplePetriLike _)
 
 validFindConflictConfigs
   :: [(BasicConfig, ChangeConfig)]

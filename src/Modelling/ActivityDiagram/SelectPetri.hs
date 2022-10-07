@@ -38,7 +38,13 @@ import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr, weighted
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
-import Modelling.PetriNet.Types (PetriLike(..), Node(..), DrawSettings(..))
+import Modelling.PetriNet.Types (
+  DrawSettings (..),
+  PetriLike (..),
+  SimpleNode (..),
+  SimplePetriLike,
+  toSimplePetriLike,
+  )
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -77,7 +83,7 @@ data SelectPetriInstance = SelectPetriInstance {
   seed :: Int,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings,
-  petrinets :: Map Int (Bool, PetriLike PetriKey)
+  petrinets :: Map Int (Bool, SimplePetriLike PetriKey)
 } deriving (Show)
 
 data SelectPetriConfig = SelectPetriConfig {
@@ -191,8 +197,8 @@ checkPetriInstance inst SelectPetriConfig {
     = Nothing
 
 data SelectPetriSolution = SelectPetriSolution {
-  matchingNet :: PetriLike PetriKey,
-  wrongNets :: [PetriLike PetriKey]
+  matchingNet :: SimplePetriLike PetriKey,
+  wrongNets :: [SimplePetriLike PetriKey]
 } deriving (Show)
 
 selectPetrinet :: Int -> Int -> Bool -> Int -> UMLActivityDiagram -> SelectPetriSolution
@@ -203,7 +209,10 @@ selectPetrinet numberOfWrongNets numberOfModifications modifyAtMid seed ad =
                   $ nubBy isPetriIsomorphic
                   $ filter (not . isPetriIsomorphic matchingNet)
                   $ map (convertToPetrinet . modifyAD ad numberOfModifications modifyAtMid) seeds
-  in SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
+  in SelectPetriSolution {
+    matchingNet = toSimplePetriLike matchingNet,
+    wrongNets = map toSimplePetriLike wrongNets
+    }
 
 modifyAD :: UMLActivityDiagram -> Int -> Bool -> Int -> UMLActivityDiagram
 modifyAD diag numberOfModifications modifyAtMid seed =
@@ -291,7 +300,7 @@ Bitte geben Sie ihre Antwort als Zahl an, welche das passende Petrinetz repräse
 selectPetriSolutionToMap
   :: Int
   -> SelectPetriSolution
-  -> Map Int (Bool, PetriLike PetriKey)
+  -> Map Int (Bool, SimplePetriLike PetriKey)
 selectPetriSolutionToMap seed sol =
   let xs = (True, matchingNet sol) : map (False, ) (wrongNets sol)
       solution = shuffle' xs (length xs) (mkStdGen seed)
@@ -431,115 +440,91 @@ defaultSelectPetriInstance =  SelectPetriInstance {
     (1,(False, PetriLike {
       allNodes = M.fromList [
         (NormalST {label = 1, sourceNode = ADActionNode {label = 2, name = "B"}},
-        TransitionNode {
-          flowIn = M.fromList [(NormalST {label = 20, sourceNode = ADDecisionNode {label = 9}},1)],
+        SimpleTransition {
           flowOut = M.fromList [(SupportST {label = 9},1)]}),
         (SupportST {label = 2},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 17, sourceNode = ADActionNode {label = 1, name = "A"}},1)],
           flowOut = M.fromList [(NormalST {label = 24, sourceNode = ADJoinNode {label = 12}},1)]}),
         (NormalST {label = 3, sourceNode = ADActionNode {label = 8, name = "H"}},
-        TransitionNode {
-          flowIn = M.fromList [(SupportST {label = 10},1)],
+        SimpleTransition {
           flowOut = M.fromList [(SupportST {label = 18},1)]}),
         (NormalST {label = 4, sourceNode = ADDecisionNode {label = 10}},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 8, sourceNode = ADActionNode {label = 3, name = "E"}},1)],
           flowOut = M.fromList [(SupportST {label = 6},1),(SupportST {label = 23},1)]}),
         (SupportST {label = 5},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 21, sourceNode = ADForkNode {label = 13}},1)],
           flowOut = M.fromList [(NormalST {label = 7, sourceNode = ADActionNode {label = 6, name = "C"}},1)]}),
         (SupportST {label = 6},
-        TransitionNode {
-          flowIn = M.fromList [(NormalST {label = 4, sourceNode = ADDecisionNode {label = 10}},1)],
+        SimpleTransition {
           flowOut = M.fromList [(NormalST {label = 20, sourceNode = ADDecisionNode {label = 9}},1)]}),
         (NormalST {label = 7, sourceNode = ADActionNode {label = 6, name = "C"}},
-        TransitionNode {
-          flowIn = M.fromList [(SupportST {label = 5},1)],
+        SimpleTransition {
           flowOut = M.fromList [(SupportST {label = 12},1)]}),
         (NormalST {label = 8, sourceNode = ADActionNode {label = 3, name = "E"}},
-        TransitionNode {
-          flowIn = M.fromList [(NormalST {label = 11, sourceNode = ADMergeNode {label = 11}},1)],
+        SimpleTransition {
           flowOut = M.fromList [(NormalST {label = 4, sourceNode = ADDecisionNode {label = 10}},1)]}),
         (SupportST {label = 9},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 1, sourceNode = ADActionNode {label = 2, name = "B"}},1)],
           flowOut = M.fromList [(NormalST {label = 24, sourceNode = ADJoinNode {label = 12}},1)]}),
         (SupportST {label = 10},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 24, sourceNode = ADJoinNode {label = 12}},1)],
           flowOut = M.fromList [(NormalST {label = 3, sourceNode = ADActionNode {label = 8, name = "H"}},1)]}),
         (NormalST {label = 11, sourceNode = ADMergeNode {label = 11}},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 21, sourceNode = ADForkNode {label = 13}},1),(SupportST {label = 23},1)],
           flowOut = M.fromList [(NormalST {label = 8, sourceNode = ADActionNode {label = 3, name = "E"}},1)]}),
         (SupportST {label = 12},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 7, sourceNode = ADActionNode {label = 6, name = "C"}},1)],
           flowOut = M.fromList [(NormalST {label = 14, sourceNode = ADJoinNode {label = 14}},1)]}),
         (NormalST {label = 13, sourceNode = ADActionNode {label = 4, name = "G"}},
-        TransitionNode {
-          flowIn = M.fromList [(SupportST {label = 18},1)],
+        SimpleTransition {
           flowOut = M.empty}),
         (NormalST {label = 14, sourceNode = ADJoinNode {label = 14}},
-        TransitionNode {
-          flowIn = M.fromList [(SupportST {label = 12},1),(NormalST {label = 22, sourceNode = ADObjectNode {label = 5, name = "D"}},1)],
+        SimpleTransition {
           flowOut = M.empty}),
         (NormalST {label = 15, sourceNode = ADObjectNode {label = 7, name = "F"}},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(SupportST {label = 19},1)],
           flowOut = M.fromList [(NormalST {label = 21, sourceNode = ADForkNode {label = 13}},1)]}),
         (NormalST {label = 16, sourceNode = ADInitialNode {label = 17}},
-        PlaceNode {
+        SimplePlace {
           initial = 1,
-          flowIn = M.empty,
           flowOut = M.fromList [(SupportST {label = 19},1)]}),
         (NormalST {label = 17, sourceNode = ADActionNode {label = 1, name = "A"}},
-        TransitionNode {
-          flowIn = M.fromList [(NormalST {label = 20, sourceNode = ADDecisionNode {label = 9}},1)],
+        SimpleTransition {
           flowOut = M.fromList [(SupportST {label = 2},1)]}),
         (SupportST {label = 18},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 3, sourceNode = ADActionNode {label = 8, name = "H"}},1)],
           flowOut = M.fromList [(NormalST {label = 13, sourceNode = ADActionNode {label = 4, name = "G"}},1)]}),
         (SupportST {label = 19},
-        TransitionNode {
-          flowIn = M.fromList [(NormalST {label = 16, sourceNode = ADInitialNode {label = 17}},1)],
+        SimpleTransition {
           flowOut = M.fromList [(NormalST {label = 15, sourceNode = ADObjectNode {label = 7, name = "F"}},1)]}),
         (NormalST {label = 20, sourceNode = ADDecisionNode {label = 9}},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(SupportST {label = 6},1)],
           flowOut = M.fromList [(NormalST {label = 1, sourceNode = ADActionNode {label = 2, name = "B"}},1),
             (NormalST {label = 17, sourceNode = ADActionNode {label = 1, name = "A"}},1)]}),
         (NormalST {label = 21, sourceNode = ADForkNode {label = 13}},
-        TransitionNode {
-          flowIn = M.fromList [(NormalST {label = 15, sourceNode = ADObjectNode {label = 7, name = "F"}},1)],
+        SimpleTransition {
           flowOut = M.fromList [(SupportST {label = 5},1),
             (NormalST {label = 11, sourceNode = ADMergeNode {label = 11}},1),
             (NormalST {label = 22, sourceNode = ADObjectNode {label = 5, name = "D"}},1)]}),
         (NormalST {label = 22, sourceNode = ADObjectNode {label = 5, name = "D"}},
-        PlaceNode {
+        SimplePlace {
           initial = 0,
-          flowIn = M.fromList [(NormalST {label = 21, sourceNode = ADForkNode {label = 13}},1)],
           flowOut = M.fromList [(NormalST {label = 14, sourceNode = ADJoinNode {label = 14}},1)]}),
         (SupportST {label = 23},
-        TransitionNode {
-          flowIn = M.fromList [(NormalST {label = 4, sourceNode = ADDecisionNode {label = 10}},1)],
+        SimpleTransition {
           flowOut = M.fromList [(NormalST {label = 11, sourceNode = ADMergeNode {label = 11}},1)]}),
         (NormalST {label = 24, sourceNode = ADJoinNode {label = 12}},
-        TransitionNode {
-          flowIn = M.fromList [(SupportST {label = 2},1),(SupportST {label = 9},1)],
+        SimpleTransition {
           flowOut = M.fromList [(SupportST {label = 10},1)]})
       ]
     }
@@ -547,193 +532,149 @@ defaultSelectPetriInstance =  SelectPetriInstance {
   (2,(True,PetriLike {
     allNodes = M.fromList [
       (NormalST {label = 1, sourceNode = ADForkNode {label = 13}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 6, sourceNode = ADObjectNode {label = 7, name = "F"}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 3, sourceNode = ADObjectNode {label = 5, name = "D"}},1),
           (NormalST {label = 5, sourceNode = ADObjectNode {label = 6, name = "C"}},1),
           (NormalST {label = 12, sourceNode = ADMergeNode {label = 11}},1)]}),
       (SupportST {label = 2},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 10, sourceNode = ADInitialNode {label = 17}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 6, sourceNode = ADObjectNode {label = 7, name = "F"}},1)]}),
       (NormalST {label = 3, sourceNode = ADObjectNode {label = 5, name = "D"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 1, sourceNode = ADForkNode {label = 13}},1)],
         flowOut = M.fromList [(NormalST {label = 19, sourceNode = ADJoinNode {label = 14}},1)]}),
       (NormalST {label = 4, sourceNode = ADActionNode {label = 4, name = "G"}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 16, sourceNode = ADObjectNode {label = 8, name = "H"}},1)],
+      SimpleTransition {
         flowOut = M.empty}),
       (NormalST {label = 5, sourceNode = ADObjectNode {label = 6, name = "C"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 1, sourceNode = ADForkNode {label = 13}},1)],
         flowOut = M.fromList [(NormalST {label = 19, sourceNode = ADJoinNode {label = 14}},1)]}),
       (NormalST {label = 6, sourceNode = ADObjectNode {label = 7, name = "F"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 2},1)],
         flowOut = M.fromList [(NormalST {label = 1, sourceNode = ADForkNode {label = 13}},1)]}),
       (NormalST {label = 7, sourceNode = ADDecisionNode {label = 9}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 13},1)],
         flowOut = M.fromList [(NormalST {label = 9, sourceNode = ADActionNode {label = 1, name = "A"}},1),
           (NormalST {label = 11, sourceNode = ADActionNode {label = 2, name = "B"}},1)]}),
       (NormalST {label = 8, sourceNode = ADMergeNode {label = 12}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 9, sourceNode = ADActionNode {label = 1, name = "A"}},1),
-          (NormalST {label = 11, sourceNode = ADActionNode {label = 2, name = "B"}},1)],
         flowOut = M.fromList [(SupportST {label = 18},1)]}),
       (NormalST {label = 9, sourceNode = ADActionNode {label = 1, name = "A"}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 7, sourceNode = ADDecisionNode {label = 9}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 8, sourceNode = ADMergeNode {label = 12}},1)]}),
       (NormalST {label = 10, sourceNode = ADInitialNode {label = 17}},
-      PlaceNode {
+      SimplePlace {
         initial = 1,
-        flowIn = M.empty,
         flowOut = M.fromList [(SupportST {label = 2},1)]}),
       (NormalST {label = 11, sourceNode = ADActionNode {label = 2, name = "B"}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 7, sourceNode = ADDecisionNode {label = 9}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 8, sourceNode = ADMergeNode {label = 12}},1)]}),
       (NormalST {label = 12, sourceNode = ADMergeNode {label = 11}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 1, sourceNode = ADForkNode {label = 13}},1),
-          (SupportST {label = 17},1)],
         flowOut = M.fromList [(NormalST {label = 15, sourceNode = ADActionNode {label = 3, name = "E"}},1)]}),
       (SupportST {label = 13},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 14, sourceNode = ADDecisionNode {label = 10}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 7, sourceNode = ADDecisionNode {label = 9}},1)]}),
       (NormalST {label = 14, sourceNode = ADDecisionNode {label = 10}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 15, sourceNode = ADActionNode {label = 3, name = "E"}},1)],
         flowOut = M.fromList [(SupportST {label = 13},1), (SupportST {label = 17},1)]}),
       (NormalST {label = 15, sourceNode = ADActionNode {label = 3, name = "E"}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 12, sourceNode = ADMergeNode {label = 11}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 14, sourceNode = ADDecisionNode {label = 10}},1)]}),
       (NormalST {label = 16, sourceNode = ADObjectNode {label = 8, name = "H"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 18},1)],
         flowOut = M.fromList [(NormalST {label = 4, sourceNode = ADActionNode {label = 4, name = "G"}},1)]}),
       (SupportST {label = 17},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 14, sourceNode = ADDecisionNode {label = 10}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 12, sourceNode = ADMergeNode {label = 11}},1)]}),
       (SupportST {label = 18},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 8, sourceNode = ADMergeNode {label = 12}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 16, sourceNode = ADObjectNode {label = 8, name = "H"}},1)]}),
       (NormalST {label = 19, sourceNode = ADJoinNode {label = 14}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 3, sourceNode = ADObjectNode {label = 5, name = "D"}},1),
-          (NormalST {label = 5, sourceNode = ADObjectNode {label = 6, name = "C"}},1)],
+      SimpleTransition {
         flowOut = M.empty})
     ]
   })),
   (3,(False,PetriLike {
     allNodes = M.fromList [
       (NormalST {label = 1, sourceNode = ADJoinNode {label = 12}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 15, sourceNode = ADObjectNode {label = 2, name = "B"}},1),
-          (NormalST {label = 17, sourceNode = ADObjectNode {label = 1, name = "A"}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 20, sourceNode = ADObjectNode {label = 8, name = "H"}},1)]}),
       (SupportST {label = 2},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 12, sourceNode = ADDecisionNode {label = 10}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 6, sourceNode = ADDecisionNode {label = 9}},1)]}),
       (NormalST {label = 3, sourceNode = ADActionNode {label = 3, name = "E"}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 19, sourceNode = ADMergeNode {label = 11}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 12, sourceNode = ADDecisionNode {label = 10}},1)]}),
       (SupportST {label = 4},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 14, sourceNode = ADInitialNode {label = 17}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 9, sourceNode = ADObjectNode {label = 7, name = "F"}},1)]}),
       (SupportST {label = 5},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 12, sourceNode = ADDecisionNode {label = 10}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 19, sourceNode = ADMergeNode {label = 11}},1)]}),
       (NormalST {label = 6, sourceNode = ADDecisionNode {label = 9}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 2},1)],
         flowOut = M.fromList [(SupportST {label = 8},1),(SupportST {label = 18},1)]}),
       (NormalST {label = 7, sourceNode = ADObjectNode {label = 5, name = "D"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 16, sourceNode = ADForkNode {label = 13}},1)],
         flowOut = M.fromList [(NormalST {label = 11, sourceNode = ADJoinNode {label = 14}},1)]}),
       (SupportST {label = 8},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 6, sourceNode = ADDecisionNode {label = 9}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 17, sourceNode = ADObjectNode {label = 1, name = "A"}},1)]}),
       (NormalST {label = 9, sourceNode = ADObjectNode {label = 7, name = "F"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 4},1)],
         flowOut = M.fromList [(NormalST {label = 16, sourceNode = ADForkNode {label = 13}},1)]}),
       (NormalST {label = 10, sourceNode = ADActionNode {label = 4, name = "G"}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 20, sourceNode = ADObjectNode {label = 8, name = "H"}},1)],
+      SimpleTransition {
         flowOut = M.empty}),
       (NormalST {label = 11, sourceNode = ADJoinNode {label = 14}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 7, sourceNode = ADObjectNode {label = 5, name = "D"}},1),
-          (NormalST {label = 13, sourceNode = ADObjectNode {label = 6, name = "C"}},1)],
+      SimpleTransition {
         flowOut = M.empty}),
       (NormalST {label = 12, sourceNode = ADDecisionNode {label = 10}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 3, sourceNode = ADActionNode {label = 3, name = "E"}},1)],
         flowOut = M.fromList [(SupportST {label = 2},1),(SupportST {label = 5},1)]}),
       (NormalST {label = 13, sourceNode = ADObjectNode {label = 6, name = "C"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 16, sourceNode = ADForkNode {label = 13}},1)],
         flowOut = M.fromList [(NormalST {label = 11, sourceNode = ADJoinNode {label = 14}},1)]}),
       (NormalST {label = 14, sourceNode = ADInitialNode {label = 17}},
-      PlaceNode {
+      SimplePlace {
         initial = 1,
-        flowIn = M.empty,
         flowOut = M.fromList [(SupportST {label = 4},1)]}),
       (NormalST {label = 15, sourceNode = ADObjectNode {label = 2, name = "B"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 18},1)],
         flowOut = M.fromList [(NormalST {label = 1, sourceNode = ADJoinNode {label = 12}},1)]}),
       (NormalST {label = 16, sourceNode = ADForkNode {label = 13}},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 9, sourceNode = ADObjectNode {label = 7, name = "F"}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 7, sourceNode = ADObjectNode {label = 5, name = "D"}},1),
           (NormalST {label = 13, sourceNode = ADObjectNode {label = 6, name = "C"}},1),
           (NormalST {label = 19, sourceNode = ADMergeNode {label = 11}},1)]}),
       (NormalST {label = 17, sourceNode = ADObjectNode {label = 1, name = "A"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 8},1)],
         flowOut = M.fromList [(NormalST {label = 1, sourceNode = ADJoinNode {label = 12}},1)]}),
       (SupportST {label = 18},
-      TransitionNode {
-        flowIn = M.fromList [(NormalST {label = 6, sourceNode = ADDecisionNode {label = 9}},1)],
+      SimpleTransition {
         flowOut = M.fromList [(NormalST {label = 15, sourceNode = ADObjectNode {label = 2, name = "B"}},1)]}),
       (NormalST {label = 19, sourceNode = ADMergeNode {label = 11}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(SupportST {label = 5},1),(NormalST {label = 16, sourceNode = ADForkNode {label = 13}},1)],
         flowOut = M.fromList [(NormalST {label = 3, sourceNode = ADActionNode {label = 3, name = "E"}},1)]}),
       (NormalST {label = 20, sourceNode = ADObjectNode {label = 8, name = "H"}},
-      PlaceNode {
+      SimplePlace {
         initial = 0,
-        flowIn = M.fromList [(NormalST {label = 1, sourceNode = ADJoinNode {label = 12}},1)],
         flowOut = M.fromList [(NormalST {label = 10, sourceNode = ADActionNode {label = 4, name = "G"}},1)]})
     ]
   }))]

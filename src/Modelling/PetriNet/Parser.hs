@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_GHC -Wwarn=deprecations #-}
 {-|
 A module for parsing Petri Alloy instances into Haskell representations defined
 by the 'Modelling.PetriNet.Types' module.
@@ -24,7 +26,16 @@ import qualified Data.Map.Lazy                    as Map (
   )
 
 import Modelling.Auxiliary.Common       (Object (Object, oName, oIndex), toMap)
-import Modelling.PetriNet.Types
+import Modelling.PetriNet.Types (
+  Net (outFlow),
+  Petri,
+  PetriChange (..),
+  PetriLike (..),
+  PetriNode (..),
+  maybeInitial,
+  petriLikeToPetri,
+  traversePetriLike,
+  )
 
 import Control.Arrow                    (left, second)
 import Data.Bimap                       (Bimap)
@@ -64,10 +75,11 @@ token set names.
 And return an already renamed Petri net.
 -}
 parseRenamedPetriLike
-  :: String
+  :: PetriNode n
+  => String
   -> String
   -> AlloyInstance
-  -> Either String (PetriLike String)
+  -> Either String (PetriLike n String)
 parseRenamedPetriLike flowSetName tokenSetName inst= do
   petriLike <- parsePetriLike flowSetName tokenSetName inst
   let rename = simpleRenameWith petriLike
@@ -77,7 +89,7 @@ parseRenamedPetriLike flowSetName tokenSetName inst= do
 Transform a given value into a 'String' by replacing it according to the
 'simpleNameMap' retrieved by the given 'PetriLike'.
 -}
-simpleRenameWith :: Ord a => PetriLike a -> a -> Either String String
+simpleRenameWith :: (Ord a, PetriNode n) => PetriLike n a -> a -> Either String String
 simpleRenameWith petriLike x = do
   let nameMap = simpleNameMap petriLike
   left show $ BM.lookup x nameMap
@@ -87,10 +99,11 @@ Parse a `PetriLike' graph from an 'AlloyInstance' given the instances flow and
 token set names.
 -}
 parsePetriLike
-  :: String                           -- ^ the name of the flow set
+  :: PetriNode n
+  => String                           -- ^ the name of the flow set
   -> String                           -- ^ the name of the token set
   -> AlloyInstance                    -- ^ the Petri net 'AlloyInstance'
-  -> Either String (PetriLike Object)
+  -> Either String (PetriLike n Object)
 parsePetriLike flowSetName tokenSetName inst = do
   nodes  <- singleSig inst "this" "Nodes" ""
   tkns   <- doubleSig inst "this" "Places" tokenSetName
@@ -100,8 +113,10 @@ parsePetriLike flowSetName tokenSetName inst = do
   let fin' = relToMap id <$> fin
   let fout = relToMap tripleToOut flow
   let fout' = relToMap id <$> fout
-  return $ PetriLike $
-    Set.foldr (\x -> Map.insert x (toNode tokens fin' fout' x)) Map.empty nodes
+  return $ PetriLike $ Set.foldr
+    (\x -> Map.insert x (toNodeFromSets tokens fin' fout' x))
+    Map.empty
+    nodes
   where
     tripleToIn  (x, y, z) = (y, (x, oIndex z))
     tripleToOut (x, y, z) = (x, (y, oIndex z))
@@ -131,8 +146,8 @@ simpleRename x = case oName x of
 Given three maps, and a given key construct a node for that key, containing its
 initial token (if available), its 'Map's for flow from and to other nodes.
 -}
-toNode
-  :: Ord k
+toNodeFromSets
+  :: (Ord k, PetriNode n)
   => Map k (Set Int)
   -- ^ the initial markings (i.e. initial tokens) as a map of singleton sets
   -> Map k (Map k (Set Int))
@@ -140,17 +155,11 @@ toNode
   -> Map k (Map k (Set Int))
   -- ^ all flow in
   -> k
-  -> Node k
-toNode tokens fin fout x = case Map.lookup x tokens >>= Set.lookupMin of
-  Nothing -> TransitionNode {
-    flowIn  = toFlow fin,
-    flowOut = toFlow fout
-    }
-  Just t  -> PlaceNode {
-    initial = t,
-    flowIn  = toFlow fin,
-    flowOut = toFlow fout
-    }
+  -> n k
+toNodeFromSets tokens fin fout x = toNode
+  (Map.lookup x tokens >>= Set.lookupMin)
+  (toFlow fin)
+  (toFlow fout)
   where
     toFlow flow = fromMaybe Map.empty $ do
       xs <- Map.lookup x flow
@@ -217,7 +226,7 @@ Furthermore, each 'PlaceNode's names prefix is a @s@, while each
 These prefixes are followed by numbers starting by 1 and reaching to the number
 of 'PlaceNode's and 'TransitionNode's respectively.
 -}
-simpleNameMap :: Ord a => PetriLike a -> Bimap a String
+simpleNameMap :: (Ord a, PetriNode n) => PetriLike n a -> Bimap a String
 simpleNameMap pl = BM.fromList . fst <$>
   Map.foldlWithKey
   nameIncreasingly
@@ -227,16 +236,16 @@ simpleNameMap pl = BM.fromList . fst <$>
     nameIncreasingly (ys, (p, t)) k x =
       let (k', p', t') = step x p t
       in ((k, k'):ys, (p', t'))
-    step n p t = case n of
-      PlaceNode {}      -> ('s':show p, p + 1, t)
-      TransitionNode {} -> ('t':show t, p, t + 1)
+    step n p t
+      | isPlaceNode n = ('s':show p, p + 1, t)
+      | otherwise     = ('t':show t, p, t + 1)
 
 {-|
 Convert a 'PetriLike' into a 'Gr' enabling to draw it using graphviz.
 -}
 petriLikeToGr
-  :: Ord a
-  => PetriLike a
+  :: (Net PetriLike n, Ord a)
+  => PetriLike n a
   -> Either a (Gr (a, Maybe Int) Int)
 petriLikeToGr plike = do
   nodes <- Map.foldrWithKey convertNode (return []) $ allNodes plike
@@ -246,8 +255,8 @@ petriLikeToGr plike = do
     convertNode k x ns = do
       ns' <- ns
       return $ (indexOf k, (k, maybeInitial x)):ns'
-    convertTransition k x ns =
-      Map.foldrWithKey (convertEdge k) ns $ flowIn x
+    convertTransition k _ ns =
+      Map.foldrWithKey (convertEdge k) ns $ outFlow k plike
     indexOf x = Map.findIndex x $ allNodes plike
-    convertEdge k source target rs =
-      (indexOf source, indexOf k, target) : rs
+    convertEdge k target source rs =
+      (source, indexOf k, indexOf target) : rs

@@ -1,4 +1,5 @@
 {-# Language DuplicateRecordFields #-}
+{-# Language TypeApplications #-}
 
 module Main (main) where
 
@@ -17,6 +18,7 @@ import Modelling.PetriNet.Concurrency (
 import Modelling.PetriNet.Types (
   BasicConfig (..), ChangeConfig (..), FindConcurrencyConfig (..),
   PickConcurrencyConfig (..),
+  SimpleNode,
   defaultFindConcurrencyConfig, defaultPickConcurrencyConfig,
   )
 
@@ -83,7 +85,7 @@ mainPick i = forceErrors $ do
   let c = checkPickConcurrencyConfig config
   if isNothing c
   then do
-    t <- pickConcurrencyGenerate config 0 i
+    t <- pickConcurrencyGenerate @SimpleNode config 0 i
     lift . (`withLang` English) $ pickConcurrencyTask "" t
     lift $ print t
   else

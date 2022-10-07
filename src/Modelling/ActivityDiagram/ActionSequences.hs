@@ -37,7 +37,7 @@ import Data.List (find, union)
 import Data.Maybe(mapMaybe, isJust, fromJust)
 
 
-fromPetriLike :: (Ord a) => PetriLike a -> Net a a
+fromPetriLike :: Ord a => PetriLike Node a -> Net a a
 fromPetriLike petri =
   Net {
       places = S.fromList $ M.keys $ M.filter isPlaceNode $ allNodes petri,
@@ -81,7 +81,11 @@ validActionSequence input diag =
   in length input == length labels && validActionSequence' input' actions petri
 
 
-validActionSequence' :: [PetriKey] -> [PetriKey] -> PetriLike PetriKey -> Bool
+validActionSequence'
+  :: [PetriKey]
+  -> [PetriKey]
+  -> PetriLike Node PetriKey
+  -> Bool
 validActionSequence' input actions petri =
   let net = fromPetriLike petri
       zeroState = State $ M.map (const 0) $ unState $ start net
