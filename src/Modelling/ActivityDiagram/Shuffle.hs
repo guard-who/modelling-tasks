@@ -34,7 +34,7 @@ shuffleADLabels
   -> m (Map Int Int, UMLActivityDiagram)
 shuffleADLabels diag = do
   let labels = map AD.label $ nodes diag
-  relabeling <- M.fromList <$> zip labels <$> shuffleM labels
+  relabeling <- M.fromList . zip labels <$> shuffleM labels
   let newNodes = map (updateNodeLabel relabeling) $ nodes diag
       newConnections = map (updateConnection relabeling) $ connections diag
   return (relabeling, UMLActivityDiagram {nodes=newNodes, connections=newConnections})
@@ -66,7 +66,7 @@ shuffleADNames
   -> m (Map String String, UMLActivityDiagram)
 shuffleADNames UMLActivityDiagram{nodes, connections} = do
   let names = map name $ filter (\n -> isActionNode n || isObjectNode n) nodes
-  renaming <- M.fromList <$> zip names <$> shuffleM names
+  renaming <- M.fromList . zip names <$> shuffleM names
   let newNodes = map (updateName renaming) nodes
   return (renaming, UMLActivityDiagram {nodes=newNodes, connections=connections})
 
@@ -85,7 +85,7 @@ shufflePetri
   -> m (Map Int Int, p n PetriKey)
 shufflePetri petri = do
   let labels = map PK.label $ M.keys $ PN.nodes petri
-  relabeling <- M.fromList <$> zip labels <$> shuffleM labels
+  relabeling <- M.fromList . zip labels <$> shuffleM labels
   return (relabeling, PN.mapNet (updatePetriKey relabeling) petri)
 
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
