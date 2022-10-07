@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 {-|
@@ -22,15 +21,14 @@ import qualified Data.Map                         as M (foldlWithKey)
 
 import Modelling.Auxiliary.Common       (Object)
 import Modelling.PetriNet.Parser (
-  parsePetriLike,
-  petriLikeToGr,
+  netToGr,
+  parseNet,
   simpleRenameWith,
   )
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
   Net (mapNet, traverseNet),
-  PetriLike,
   )
 
 import Control.Arrow                    (ArrowChoice(left), first)
@@ -78,10 +76,10 @@ lin = do
   return font'
 
 cacheNet
-  :: (Net PetriLike n, Ord a)
+  :: (Net p n, Ord a)
   => String
   -> (a -> String)
-  -> PetriLike n a
+  -> p n a
   -> Bool
   -> Bool
   -> Bool
@@ -114,15 +112,15 @@ cacheNet path labelOf pl hidePNames hideTNames hide1 gc = (svg <$) . cache $ do
 short :: Enum a => a -> String
 short x = show $ fromEnum x
 
-{-| Create a 'Diagram's graph of a Petri net like graph definition ('PetriLike')
+{-| Create a 'Diagram's graph of a Petri net like graph definition ('Net')
 by distributing places and transitions using GraphViz.
 The provided 'GraphvizCommand' is used for this distribution.
 -}
 drawNet
-  :: (Net PetriLike n, Ord a)
+  :: (Net p n, Ord a)
   => (a -> String)
   -- ^ how to obtain labels of the nodes
-  -> PetriLike n a
+  -> p n a
   -- ^ the graph definition
   -> Bool
   -- ^ whether to hide place names
@@ -134,7 +132,7 @@ drawNet
   -- ^ how to distribute the nodes
   -> ExceptT String IO (Diagram B)
 drawNet labelOf pl hidePNames hideTNames hide1 gc = do
-  gr    <- except $ left errorMessage $ petriLikeToGr pl
+  gr    <- except $ left errorMessage $ netToGr pl
   graph <- lift $ GV.layoutGraph gc gr
   pfont <- lift lin
   return $ drawGraph labelOf hidePNames hideTNames hide1 pfont graph
@@ -143,10 +141,10 @@ drawNet labelOf pl hidePNames hideTNames hide1 gc = do
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
 
 getNet
-  :: (Net PetriLike n, Traversable t)
+  :: (Net p n, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> ExceptT String IO (PetriLike n String, t String)
+  -> ExceptT String IO (p n String, t String)
 getNet parseInst inst = do
   (net, rename) <-
     getNetWith "flow" "tokens" inst
@@ -155,29 +153,29 @@ getNet parseInst inst = do
   return (net, rconc)
 
 getDefaultNet
-  :: Net PetriLike n
+  :: Net p n
   => AlloyInstance
-  -> ExceptT String IO (PetriLike n String)
+  -> ExceptT String IO (p n String)
 getDefaultNet inst= fst <$>
   getNetWith "defaultFlow" "defaultTokens" inst
 
 {-|
-Returns a Petri net like graph using 'parsePetriLike'.
+Returns a Petri net like graph using 'parseNet'.
 It additionally parses another part of the instance.
 All nodes are renamed using the 'simpleRenameWith' function.
 The renaming is also applied to the additionally parsed instance.
 -}
 getNetWith
-  :: Net PetriLike n
+  :: Net p n
   => String
   -- ^ flow
   -> String
   -- ^ tokens
   -> AlloyInstance
   -- ^ the instance to parse
-  -> ExceptT String IO (PetriLike n String, Object -> Either String String)
+  -> ExceptT String IO (p n String, Object -> Either String String)
 getNetWith f t inst = do
-  pl <- except $ parsePetriLike f t inst
+  pl <- except $ parseNet f t inst
   let rename = simpleRenameWith pl
   pl' <- except $ traverseNet rename pl
   return (pl', rename)
@@ -380,10 +378,10 @@ text' pfont s x = x
   # lwL 0.4
 
 renderWith
-  :: (MonadIO m, Net PetriLike n, OutputMonad m)
+  :: (MonadIO m, Net p n, OutputMonad m)
   => String
   -> String
-  -> PetriLike n String
+  -> p n String
   -> DrawSettings
   -> LangM' m FilePath
 renderWith path task net config = do

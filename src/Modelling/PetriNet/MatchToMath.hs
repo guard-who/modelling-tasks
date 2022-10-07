@@ -59,7 +59,8 @@ import Modelling.PetriNet.Alloy (
 import Modelling.PetriNet.Diagram       (cacheNet)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser (
-  parseChange, parseRenamedPetriLike,
+  parseChange,
+  parseRenamedNet,
   )
 import Modelling.PetriNet.Types (
   AdvConfig,
@@ -318,7 +319,7 @@ matchToMath ds toOutput config segment = do
     else matchToMath ds toOutput config segment
   where
     parse x =
-      lift $ except $ parseRenamedPetriLike "flow" "tokens" x
+      lift $ except $ parseRenamedNet "flow" "tokens" x
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
@@ -341,7 +342,7 @@ mathInstance
   -> AlloyInstance
   -> RandT g (ExceptT String IO) (String, SimplePetriLike String, Math)
 mathInstance config inst = do
-  petriLike <- lift $ except $ parseRenamedPetriLike "flow" "tokens" inst
+  petriLike <- lift $ except $ parseRenamedNet "flow" "tokens" inst
   petriLike' <- fst <$> shuffleNames petriLike
   let math = toPetriMath petriLike'
   let f = renderFalse petriLike' config

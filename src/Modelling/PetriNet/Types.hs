@@ -264,9 +264,6 @@ class Show (n String) => PetriNode n where
   order-preserving.
   -}
   traverseNode      :: (Applicative f, Ord b) => (a -> f b) -> n a -> f (n b)
-  toNode            :: Maybe Int -> Map a Int -> Map a Int -> n a
-
-{-# DEPRECATED toNode "kept only for Modelling.PetriNet.Parser use repsertNode and repsertFlow instead" #-}
 
 {-|
 A node is part of a Petri like graph (see 'PetriLike').
@@ -303,17 +300,6 @@ instance PetriNode Node where
   mapNode f (TransitionNode i o) =
     TransitionNode (M.mapKeys f i) (M.mapKeys f o)
 
-  toNode tokens fin fout = case tokens of
-    Nothing -> TransitionNode {
-      flowIn  = fin,
-      flowOut = fout
-      }
-    Just t  -> PlaceNode {
-      initial = t,
-      flowIn  = fin,
-      flowOut = fout
-    }
-
   traverseNode f (PlaceNode s i o) =
     PlaceNode s <$> traverseKeyMap f i <*> traverseKeyMap f o
   traverseNode f (TransitionNode i o) =
@@ -342,15 +328,6 @@ instance PetriNode SimpleNode where
     SimplePlace s (M.mapKeys f o)
   mapNode f (SimpleTransition o) =
     SimpleTransition (M.mapKeys f o)
-
-  toNode tokens _ fout = case tokens of
-    Nothing -> SimpleTransition {
-      flowOut       = fout
-      }
-    Just t  -> SimplePlace {
-      initial       = t,
-      flowOut       = fout
-    }
 
   traverseNode f (SimplePlace s o)    =
     SimplePlace s <$> traverseKeyMap f o
@@ -395,7 +372,7 @@ traverseKeyAndValueMap f g =
   where
     insertApplicativeKeyValue k x rs = M.insert <$> f k <*> g x <*> rs
 
-class PetriNode n => Net p n where
+class (PetriNode n, Show (p n String)) => Net p n where
   emptyNet :: p n a
   {-|
   Inserts 'flow' into the 'Net' by connecting the provided source and target

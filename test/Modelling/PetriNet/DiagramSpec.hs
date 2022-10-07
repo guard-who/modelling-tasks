@@ -1,14 +1,14 @@
-{-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.DiagramSpec where
 
+import Modelling.Auxiliary.Common        (Object)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.MatchToMath    (petriNetRnd)
 import Modelling.PetriNet.Types (
-  SimpleNode,
+  SimplePetriLike,
   defaultAdvConfig,
   defaultBasicConfig,
   )
-import Modelling.PetriNet.Parser         (parsePetriLike)
+import Modelling.PetriNet.Parser         (parseNet)
 
 import Control.Monad                     ((<=<))
 import Control.Monad.Trans.Class         (lift)
@@ -26,8 +26,8 @@ spec =
       failOnErrors $ do
         (inst:_) <- lift $ getInstances (Just 1)
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
-        pl <- except $ parsePetriLike @SimpleNode "flow" "tokens" inst
-        dia <- drawNet show pl False True True TwoPi
+        pl <- except $ parseNet "flow" "tokens" inst
+        dia <- drawNet show (pl :: SimplePetriLike Object) False True True TwoPi
         lift $ renderSVG "test.svg" (mkWidth 200) dia `shouldReturn` ()
 
 failOnErrors :: ExceptT String IO a -> IO a
