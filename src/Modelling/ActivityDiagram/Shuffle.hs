@@ -23,18 +23,21 @@ import Modelling.PetriNet.Types (
   Net,
   )
 
+import Control.Monad.Random (MonadRandom)
 import Data.Map (Map)
-import System.Random (mkStdGen)
-import System.Random.Shuffle(shuffle')
+import System.Random.Shuffle (shuffleM)
 
 
-shuffleADLabels :: Int -> UMLActivityDiagram -> (Map Int Int, UMLActivityDiagram)
-shuffleADLabels seed diag =
+shuffleADLabels
+  :: (MonadRandom m)
+  => UMLActivityDiagram
+  -> m (Map Int Int, UMLActivityDiagram)
+shuffleADLabels diag = do
   let labels = map AD.label $ nodes diag
-      relabeling = M.fromList $ zip labels $ shuffle' labels (length labels) (mkStdGen seed)
-      newNodes = map (updateNodeLabel relabeling) $ nodes diag
+  relabeling <- M.fromList <$> zip labels <$> shuffleM labels
+  let newNodes = map (updateNodeLabel relabeling) $ nodes diag
       newConnections = map (updateConnection relabeling) $ connections diag
-  in (relabeling, UMLActivityDiagram {nodes=newNodes, connections=newConnections})
+  return (relabeling, UMLActivityDiagram {nodes=newNodes, connections=newConnections})
 
 updateNodeLabel :: Map Int Int -> ADNode -> ADNode
 updateNodeLabel relabeling node =
@@ -57,12 +60,15 @@ updateConnection relabeling ADConnection {from, to, guard} =
   in ADConnection {from=newFrom, to=newTo, guard=guard}
 
 
-shuffleADNames :: Int -> UMLActivityDiagram -> (Map String String, UMLActivityDiagram)
-shuffleADNames seed UMLActivityDiagram{nodes, connections} =
+shuffleADNames
+  :: (MonadRandom m)
+  => UMLActivityDiagram
+  -> m (Map String String, UMLActivityDiagram)
+shuffleADNames UMLActivityDiagram{nodes, connections} = do
   let names = map name $ filter (\n -> isActionNode n || isObjectNode n) nodes
-      renaming = M.fromList $ zip names $ shuffle' names (length names) (mkStdGen seed)
-      newNodes = map (updateName renaming) nodes
-  in (renaming, UMLActivityDiagram {nodes=newNodes, connections=connections})
+  renaming <- M.fromList <$> zip names <$> shuffleM names
+  let newNodes = map (updateName renaming) nodes
+  return (renaming, UMLActivityDiagram {nodes=newNodes, connections=connections})
 
 updateName :: Map String String -> ADNode -> ADNode
 updateName renaming node =
@@ -74,14 +80,13 @@ updateName renaming node =
 
 
 shufflePetri
-  :: Net p n
-  => Int
-  -> p n PetriKey
-  -> (Map Int Int, p n PetriKey)
-shufflePetri seed petri =
+  :: (MonadRandom m, Net p n)
+  => p n PetriKey
+  -> m (Map Int Int, p n PetriKey)
+shufflePetri petri = do
   let labels = map PK.label $ M.keys $ PN.nodes petri
-      relabeling = M.fromList $ zip labels $ shuffle' labels (length labels) (mkStdGen seed)
-  in (relabeling, PN.mapNet (updatePetriKey relabeling) petri)
+  relabeling <- M.fromList <$> zip labels <$> shuffleM labels
+  return (relabeling, PN.mapNet (updatePetriKey relabeling) petri)
 
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
 updatePetriKey relabeling key =
