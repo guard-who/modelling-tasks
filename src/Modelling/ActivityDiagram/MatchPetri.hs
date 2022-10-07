@@ -357,11 +357,10 @@ getMatchPetriTask
 getMatchPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchPetriAlloy config
   rinstas <- shuffleM instas
-  n <- getRandom
   g' <- getRandom
-  let ad = headWithErr "Failed to find task instances"
-        $ map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
-      petri = snd $ shufflePetri n $ convertToPetrinet ad
+  ad <- liftIO $ headWithErr "Failed to find task instances"
+         <$> mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  petri <- liftIO $ fmap snd $ shufflePetri $ convertToPetrinet ad
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
     activityDiagram=ad,

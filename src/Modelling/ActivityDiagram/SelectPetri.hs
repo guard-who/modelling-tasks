@@ -352,8 +352,8 @@ getSelectPetriTask config = do
   n <- getRandom
   g' <- getRandom
   layout <- pickRandomLayout config
-  let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
-      validInsta =
+  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  let validInsta =
         headWithErr "Failed to find task instances"
         $ filter (isNothing . (`checkPetriInstance` config))
         $ map (\x ->
@@ -373,16 +373,23 @@ getSelectPetriTask config = do
                 withGraphvizCommand = layout
               },
             petrinets= selectPetriSolutionToMap g'
-              $ shuffleSolutionNets n
-              $ selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) n x
+              $ selectPetrinet
+               (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) n x
           }) ad
-  return validInsta
+  shuffleSolutionNets validInsta
 
-shuffleSolutionNets :: Int -> SelectPetriSolution -> SelectPetriSolution
-shuffleSolutionNets n sol = SelectPetriSolution {
-  matchingNet = snd $ shufflePetri n (matchingNet sol),
-  wrongNets =  map (snd . shufflePetri n) (wrongNets sol)
-}
+shuffleSolutionNets
+  :: (MonadRandom m)
+  => SelectPetriInstance
+  -> m SelectPetriInstance
+shuffleSolutionNets task = do
+  matchingNet <- fmap snd $ shufflePetri $ head $ filterAndExtractPetri fst (petrinets task)
+  wrongNets <- mapM (fmap snd . shufflePetri) $ filterAndExtractPetri (not. fst) (petrinets task)
+  let newPetrinets = selectPetriSolutionToMap (seed task)
+        SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
+  return task {petrinets = newPetrinets}
+  where
+    filterAndExtractPetri p mapping = map snd $ M.toList $ M.map snd $ M.filter p mapping
 
 defaultSelectPetriInstance :: SelectPetriInstance
 defaultSelectPetriInstance =  SelectPetriInstance {

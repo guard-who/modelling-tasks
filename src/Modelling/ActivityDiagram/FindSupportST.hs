@@ -242,9 +242,8 @@ getFindSupportSTTask
 getFindSupportSTTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ findSupportSTAlloy config
   rinstas <- shuffleM instas
-  n <- getRandom
   g' <- getRandom
-  let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
+  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   return $ FindSupportSTInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
     seed=g',

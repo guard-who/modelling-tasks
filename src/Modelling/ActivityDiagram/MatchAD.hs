@@ -234,9 +234,8 @@ getMatchADTask
 getMatchADTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchADAlloy config
   rinstas <- shuffleM instas
-  n <- getRandom
   g' <- getRandom
-  let ad = map (snd. shuffleADNames n . failWith id . parseInstance) rinstas
+  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   return $ MatchADInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
     seed=g',

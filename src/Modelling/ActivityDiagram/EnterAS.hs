@@ -218,10 +218,9 @@ getEnterASTask
 getEnterASTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ enterASAlloy config
   rinstas <- shuffleM instas
-  n <- getRandom
   g' <- getRandom
-  let ad = map (snd . shuffleADNames n . failWith id . parseInstance) rinstas
-      validInsta =
+  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  let validInsta =
         headWithErr "Failed to find task instances"
         $ filter (isNothing . (`checkEnterASInstance` config))
         $ map (\x -> EnterASInstance {
