@@ -6,9 +6,8 @@ module Modelling.ActivityDiagram.Auxiliary.Util (
   ) where
 
 import Control.Monad.Random (
-  StdGen,
+  MonadRandom,
   fromList,
-  runRand
   )
 import Data.List (delete)
 import Data.Maybe (listToMaybe)
@@ -31,12 +30,12 @@ headWithErr err = failWith id . headEither err
   at a lower index of the list. The total weight of all elements must not be zero.
 -}
 weightedShuffle
-  :: (Eq a, Real w)
-  => StdGen
-  -> [(a,w)]
-  -> [a]
-weightedShuffle _ [] = []
-weightedShuffle g xs =
+  :: (MonadRandom m, Eq a, Real w)
+  => [(a,w)]
+  -> m [a]
+weightedShuffle [] = return []
+weightedShuffle xs = do
   let rs = map (\x -> (x, toRational $ snd x)) xs
-      (a, g') = runRand (fromList rs) g
-  in fst a : weightedShuffle g' (delete a xs)
+  a <- fromList rs
+  ys <- weightedShuffle (delete a xs)
+  return (fst a : ys)

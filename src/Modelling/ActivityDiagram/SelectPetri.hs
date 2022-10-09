@@ -63,7 +63,8 @@ import Control.Monad.Random (
   RandT,
   RandomGen,
   evalRandT,
-  mkStdGen
+  mkStdGen,
+  evalRand
   )
 import Control.Monad.Except (runExceptT)
 import Data.Bifunctor (second)
@@ -228,7 +229,7 @@ modifyAD diag numberOfModifications modifyAtMid seed =
       toBeModified =
         take numberOfModifications
         $ reverse
-        $ weightedShuffle (mkStdGen seed) weightedNodes
+        $ evalRand (weightedShuffle weightedNodes) (mkStdGen seed)
       swappedNodes = map (\x -> if x `elem` toBeModified then swapST x else x) $ nodes diag
   in UMLActivityDiagram {nodes=swappedNodes, connections=connections diag}
 
