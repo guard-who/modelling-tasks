@@ -39,7 +39,6 @@ import Control.Monad.Output (
   printSolutionAndAssert
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
   RandT,
   RandomGen,
   evalRandT,
@@ -53,7 +52,6 @@ import System.Random.Shuffle (shuffleM)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int,
   sampleSequence :: [String]
 } deriving (Show, Eq)
 
@@ -218,14 +216,12 @@ getEnterASTask
 getEnterASTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ enterASAlloy config
   rinstas <- shuffleM instas
-  g' <- getRandom
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   let validInsta =
         headWithErr "Failed to find task instances"
         $ filter (isNothing . (`checkEnterASInstance` config))
         $ map (\x -> EnterASInstance {
           activityDiagram=x,
-          seed=g',
           sampleSequence=sampleSolution $ enterActionSequence x
         }) ad
   return validInsta
@@ -272,6 +268,5 @@ defaultEnterASInstance = EnterASInstance {
       ADConnection {from = 16, to = 7, guard = ""}
     ]
   },
-  seed = -4748947987859297750,
   sampleSequence = ["D","E","G","B","F"]
 }

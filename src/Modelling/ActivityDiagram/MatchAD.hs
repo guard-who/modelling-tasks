@@ -43,7 +43,6 @@ import Control.Monad.Output (
   multipleChoice
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
   RandT,
   RandomGen,
   evalRandT,
@@ -59,7 +58,6 @@ import System.Random.Shuffle (shuffleM)
 
 data MatchADInstance = MatchADInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int,
   plantUMLConf :: PlantUMLConvConf
 } deriving (Show)
 
@@ -234,11 +232,9 @@ getMatchADTask
 getMatchADTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchADAlloy config
   rinstas <- shuffleM instas
-  g' <- getRandom
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   return $ MatchADInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
-    seed=g',
     plantUMLConf=defaultPlantUMLConvConf{suppressBranchConditions = hideBranchConditions config}
   }
 
@@ -286,6 +282,5 @@ defaultMatchADInstance = MatchADInstance {
       ADConnection {from = 17, to = 4, guard = ""}
     ]
   },
-  seed = 5508675034223564747,
   plantUMLConf = defaultPlantUMLConvConf
 }

@@ -69,7 +69,7 @@ import Control.Monad.Output (
   multipleChoice
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
+  MonadRandom,
   RandT,
   RandomGen,
   evalRandT,
@@ -87,7 +87,6 @@ import System.Random.Shuffle (shuffleM)
 data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   petrinet :: SimplePetriLike PetriKey,
-  seed :: Int,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings
 } deriving (Show)
@@ -357,7 +356,6 @@ getMatchPetriTask
 getMatchPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchPetriAlloy config
   rinstas <- shuffleM instas
-  g' <- getRandom
   ad <- liftIO $ headWithErr "Failed to find task instances"
          <$> mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   petri <- liftIO $ fmap snd $ shufflePetri $ convertToPetrinet ad
@@ -365,7 +363,6 @@ getMatchPetriTask config = do
   return $ MatchPetriInstance {
     activityDiagram=ad,
     petrinet = transformNet petri,
-    seed=g',
     plantUMLConf =
       PlantUMLConvConf {
         suppressNodeNames = False,
@@ -829,7 +826,6 @@ defaultMatchPetriInstance = MatchPetriInstance
               ( SupportST
                 { label = 8 }
               , 1 ) ] } ) ] }
-  , seed = 2235774404348116088
   , plantUMLConf = defaultPlantUMLConvConf
   , petriDrawConf =
     DrawSettings {

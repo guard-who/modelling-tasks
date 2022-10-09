@@ -58,7 +58,6 @@ import Control.Monad.Output (
   multipleChoice
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
   RandT,
   RandomGen,
   evalRandT,
@@ -72,7 +71,6 @@ import System.Random.Shuffle (shuffleM)
 
 data FindSupportSTInstance = FindSupportSTInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int,
   plantUMLConf :: PlantUMLConvConf
 } deriving (Show)
 
@@ -242,11 +240,9 @@ getFindSupportSTTask
 getFindSupportSTTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ findSupportSTAlloy config
   rinstas <- shuffleM instas
-  g' <- getRandom
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   return $ FindSupportSTInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
-    seed=g',
     plantUMLConf =
       PlantUMLConvConf {
         suppressNodeNames = hideNodeNames config,
@@ -298,6 +294,5 @@ defaultFindSupportSTInstance = FindSupportSTInstance {
       ADConnection {from = 17, to = 13, guard = ""}
     ]
   },
-  seed = 5508675034223564747,
   plantUMLConf = defaultPlantUMLConvConf
 }
