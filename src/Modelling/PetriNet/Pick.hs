@@ -1,8 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.Pick (
@@ -35,10 +33,8 @@ import Modelling.PetriNet.Diagram       (getDefaultNet, getNet, renderWith)
 import Modelling.PetriNet.Types         (
   BasicConfig (..),
   ChangeConfig (..),
+  Drawable,
   Net (..),
-  PetriLike (..),
-  PetriNet,
-  SimpleNode,
   checkBasicConfig,
   checkChangeConfig,
   checkGraphLayouts,
@@ -81,13 +77,10 @@ import Language.Alloy.Call (
 import System.Random.Shuffle            (shuffleM)
 
 data PickInstance n = PickInstance {
-  nets :: !(Map Int (Bool, PetriNet n)),
+  nets :: !(Map Int (Bool, Drawable n)),
   showSolution :: !Bool
   }
-  deriving (Generic)
-
-deriving instance Show (PickInstance SimpleNode)
-deriving instance Read (PickInstance SimpleNode)
+  deriving (Generic, Read, Show)
 
 -- TODO: replace 'wrong' in 'pickGenerate' by 'wrongInstances'
 -- if this value might be greater than 1 on task generation.
@@ -98,20 +91,20 @@ wrong :: Int
 wrong = 1
 
 pickTaskInstance
-  :: (MonadTrans m, Net PetriLike n, Traversable t)
+  :: (MonadTrans m, Net p n, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> m (ExceptT String IO) [(PetriLike n String, Maybe (t String))]
+  -> m (ExceptT String IO) [(p n String, Maybe (t String))]
 pickTaskInstance parseF inst = lift $ do
   confl <- second Just <$> getNet parseF inst
   net   <- (,Nothing) <$> getDefaultNet inst
   return [confl,net]
 
 pickGenerate
-  :: Net PetriLike n
+  :: (Net p n, Ord b)
   => (c
     -> Int
-    -> RandT StdGen (ExceptT String IO) [(PetriLike n String, Maybe a)]
+    -> RandT StdGen (ExceptT String IO) [(p n b, Maybe a)]
     )
   -> (c -> BasicConfig)
   -> (c -> Bool)
@@ -119,7 +112,7 @@ pickGenerate
   -> c
   -> Int
   -> Int
-  -> ExceptT String IO (PickInstance n)
+  -> ExceptT String IO (PickInstance (p n b))
 pickGenerate pick bc useDifferent withSol config segment seed = flip evalRandT (mkStdGen seed) $ do
   ns <- pick config segment
   ns'  <- shuffleM ns
@@ -173,10 +166,10 @@ pickSolution :: PickInstance n -> Int
 pickSolution = head . M.keys . M.filter fst . nets
 
 renderPick
-  :: (MonadIO m, Net PetriLike n, OutputMonad m)
+  :: (MonadIO m, Net p n, OutputMonad m)
   => String
   -> String
-  -> PickInstance n
+  -> PickInstance (p n String)
   -> LangM' m (Map Int (Bool, String))
 renderPick path task config =
   M.foldrWithKey render' (return mempty) $ nets config

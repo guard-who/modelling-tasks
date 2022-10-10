@@ -1,5 +1,4 @@
 {-# Language DuplicateRecordFields #-}
-{-# Language TypeApplications #-}
 
 module Main (main) where 
 
@@ -11,14 +10,13 @@ import Modelling.PetriNet.Conflict (
   checkFindConflictConfig,
   checkPickConflictConfig,
   findConflictGenerate,
-  findConflictTask,
   pickConflictGenerate,
-  pickConflictTask,
+  simpleFindConflictTask,
+  simplePickConflictTask,
   )
 import Modelling.PetriNet.Types         (
   BasicConfig(..), ChangeConfig(..), FindConflictConfig(..),
   PickConflictConfig(..),
-  SimpleNode,
   defaultFindConflictConfig, defaultPickConflictConfig,
   )
 
@@ -58,7 +56,7 @@ mainFind i = forceErrors $ do
   if isNothing c
   then do
     t <- findConflictGenerate config 0 i
-    lift . (`withLang` English) $ findConflictTask "" t
+    lift . (`withLang` English) $ simpleFindConflictTask "" t
     lift $ print t
   else
     lift $ print c
@@ -85,8 +83,8 @@ mainPick i = forceErrors $ do
   let c = checkPickConflictConfig config
   if isNothing c
   then do
-    t <- pickConflictGenerate @SimpleNode config 0 i
-    lift . (`withLang` English) $ pickConflictTask "" t
+    t <- pickConflictGenerate config 0 i
+    lift . (`withLang` English) $ simplePickConflictTask "" t
     lift $ print c
   else
     lift $ print c

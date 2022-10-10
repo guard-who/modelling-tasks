@@ -3,7 +3,16 @@
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
-module Modelling.PetriNet.ConflictPlaces where
+module Modelling.PetriNet.ConflictPlaces (
+  checkFindConflictPlacesConfig,
+  conflictInitial,
+  defaultFindConflictPlacesConfig,
+  defaultFindConflictPlacesInstance,
+  findConflictPlacesSyntax,
+  findConflictPlacesTask,
+  parseConflictPlacesPrec,
+  simpleFindConflictPlacesTask,
+  ) where
 
 import qualified Data.Map                         as M (empty, fromList)
 
@@ -37,9 +46,11 @@ import Modelling.PetriNet.Types (
   Conflict,
   DrawSettings (..),
   FindConflictConfig (..),
+  Net,
   PetriConflict (..),
   PetriLike (..),
   SimpleNode (..),
+  SimplePetriNet,
   defaultFindConflictConfig,
   lBasicConfig,
   lHidePlaceNames,
@@ -71,10 +82,17 @@ import Text.Parsec (
   )
 import Text.Parsec.String               (Parser)
 
-findConflictPlacesTask
+simpleFindConflictPlacesTask
   :: (MonadIO m, OutputMonad m)
   => FilePath
-  -> FindInstance Conflict
+  -> FindInstance SimplePetriNet Conflict
+  -> LangM m
+simpleFindConflictPlacesTask = findConflictPlacesTask
+
+findConflictPlacesTask
+  :: (MonadIO m, Net p n, OutputMonad m)
+  => FilePath
+  -> FindInstance (p n String) Conflict
   -> LangM m
 findConflictPlacesTask path task = do
   pn <- renderWith path "conflict" (net task) (drawFindWith task)
@@ -117,7 +135,7 @@ conflictInitial = (findInitial, [Place 0, Place 1])
 
 findConflictPlacesSyntax
   :: OutputMonad m
-  => FindInstance Conflict
+  => FindInstance net Conflict
   -> ConflictPlaces
   -> LangM' m ()
 findConflictPlacesSyntax task (conflict, ps) = do
@@ -181,7 +199,7 @@ prohibitHidePlaceNames bc
   | otherwise
   = Nothing
 
-defaultFindConflictPlacesInstance :: FindInstance Conflict
+defaultFindConflictPlacesInstance :: FindInstance SimplePetriNet Conflict
 defaultFindConflictPlacesInstance = FindInstance {
   drawFindWith = DrawSettings {
     withPlaceNames = True,

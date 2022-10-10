@@ -1,7 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -27,7 +24,11 @@ module Modelling.PetriNet.Conflict (
   pickConflict,
   pickConflictGenerate,
   pickConflictTask,
+  simpleFindConflictTask,
+  simplePickConflictTask,
   ) where
+
+import qualified Modelling.PetriNet.Find          as F (showSolution)
 
 import qualified Data.Map                         as M (
   empty,
@@ -109,6 +110,7 @@ import Modelling.PetriNet.Types         (
   PetriLike (PetriLike, allNodes),
   PickConflictConfig (..),
   SimpleNode (..),
+  SimplePetriNet,
   lConflictPlaces,
   transitionPairShow,
   )
@@ -152,10 +154,17 @@ import Language.Alloy.Call (
   AlloyInstance
   )
 
-findConflictTask
+simpleFindConflictTask
   :: (MonadIO m, OutputMonad m)
   => FilePath
-  -> FindInstance Conflict
+  -> FindInstance SimplePetriNet Conflict
+  -> LangM m
+simpleFindConflictTask = findConflictTask
+
+findConflictTask
+  :: (MonadIO m, Net p n, OutputMonad m)
+  => FilePath
+  -> FindInstance (p n String) Conflict
   -> LangM m
 findConflictTask path task = do
   pn <- renderWith path "conflict" (net task) (drawFindWith task)
@@ -186,16 +195,16 @@ findConflictTask path task = do
 
 findConflictSyntax
   :: OutputMonad m
-  => FindInstance Conflict
+  => FindInstance net Conflict
   -> (Transition, Transition)
   -> LangM' m ()
 findConflictSyntax task = toFindSyntax withSol $ numberOfTransitions task
   where
-    withSol = showSolution (task :: FindInstance Conflict)
+    withSol = F.showSolution task
 
 findConflictEvaluation
   :: (Alternative m, OutputMonad m)
-  => FindInstance Conflict
+  => FindInstance net Conflict
   -> (Transition, Transition)
   -> Rated m
 findConflictEvaluation task x = findConflictPlacesEvaluation
@@ -204,7 +213,7 @@ findConflictEvaluation task x = findConflictPlacesEvaluation
 
 type ConflictPlaces = ((Transition, Transition), [Place])
 
-findConflictSolution :: FindInstance (PetriConflict p t) -> (t, t)
+findConflictSolution :: FindInstance net (PetriConflict p t) -> (t, t)
 findConflictSolution = conflictTrans . toFind
 
 conflictPlacesShow
@@ -216,7 +225,7 @@ conflictPlacesShow = bimap
 
 findConflictPlacesEvaluation
   :: (Alternative m, OutputMonad m)
-  => FindInstance Conflict
+  => FindInstance n Conflict
   -> ConflictPlaces
   -> Rated m
 findConflictPlacesEvaluation task (conflict, ps) = do
@@ -241,20 +250,27 @@ findConflictPlacesEvaluation task (conflict, ps) = do
     fixSolution
       | null inducing = id
       | otherwise    = const $ show $ conflictPlacesShow (conf, inducing)
-    withSol = showSolution (task :: FindInstance Conflict)
+    withSol = F.showSolution task
     ps' = nubSort ps
     (correct, wrong') = partition (`elem` inducing) ps
     base = fromIntegral $ 2 + numberOfPlaces task
     len = fromIntegral . length
 
-findConflictPlacesSolution :: FindInstance (PetriConflict p t) -> ((t, t), [p])
+findConflictPlacesSolution :: FindInstance n (PetriConflict p t) -> ((t, t), [p])
 findConflictPlacesSolution task =
   (findConflictSolution task, conflictPlaces $ toFind task)
 
-pickConflictTask
-  :: (MonadIO m, Net PetriLike n, OutputMonad m)
+simplePickConflictTask
+  :: (MonadIO m, OutputMonad m)
   => FilePath
-  -> PickInstance n
+  -> PickInstance SimplePetriNet
+  -> LangM m
+simplePickConflictTask = pickConflictTask
+
+pickConflictTask
+  :: (MonadIO m, Net p n, OutputMonad m)
+  => FilePath
+  -> PickInstance (p n String)
   -> LangM m
 pickConflictTask path task = do
   paragraph $ translate $ do
@@ -281,10 +297,11 @@ pickConflictTask path task = do
   paragraph hoveringInformation
 
 findConflictGenerate
-  :: FindConflictConfig
+  :: Net p n
+  => FindConflictConfig
   -> Int
   -> Int
-  -> ExceptT String IO (FindInstance Conflict)
+  -> ExceptT String IO (FindInstance (p n String) Conflict)
 findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConflict config segment
   gc <- oneOf $ graphLayout bc
@@ -309,11 +326,11 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     bc = basicConfig (config :: FindConflictConfig)
 
 pickConflictGenerate
-  :: Net PetriLike n
+  :: Net p n
   => PickConflictConfig
   -> Int
   -> Int
-  -> ExceptT String IO (PickInstance n)
+  -> ExceptT String IO (PickInstance (p n String))
 pickConflictGenerate = pickGenerate pickConflict bc ud ws
   where
     bc config = basicConfig (config :: PickConflictConfig)
@@ -321,13 +338,13 @@ pickConflictGenerate = pickGenerate pickConflict bc ud ws
     ws config = printSolution (config :: PickConflictConfig)
 
 findConflict
-  :: (Net PetriLike n, RandomGen g)
+  :: (Net p n, RandomGen g)
   => FindConflictConfig
   -> Int
   -> RandT
     g
     (ExceptT String IO)
-    (PetriLike n String, PetriConflict' String)
+    (p n String, PetriConflict' String)
 findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
@@ -350,13 +367,13 @@ petriNetFindConfl FindConflictConfig {
     $ Right advConfig
 
 pickConflict
-  :: (Net PetriLike n, RandomGen g)
+  :: (Net p n, RandomGen g)
   => PickConflictConfig
   -> Int
   -> RandT
     g
     (ExceptT String IO)
-    [(PetriLike n String, Maybe (PetriConflict' String))]
+    [(p n String, Maybe (PetriConflict' String))]
 pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl
@@ -567,7 +584,7 @@ checkPickConflictConfig PickConflictConfig {
   = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
   <|> checkConflictConfig basicConfig conflictConfig
 
-defaultPickConflictInstance :: PickInstance SimpleNode
+defaultPickConflictInstance :: PickInstance SimplePetriNet
 defaultPickConflictInstance = PickInstance {
   nets = M.fromList [
     (1,(False,(
@@ -610,7 +627,7 @@ defaultPickConflictInstance = PickInstance {
   showSolution = False
   }
 
-defaultFindConflictInstance :: FindInstance Conflict
+defaultFindConflictInstance :: FindInstance SimplePetriNet Conflict
 defaultFindConflictInstance = FindInstance {
   drawFindWith = DrawSettings {
     withPlaceNames = False,

@@ -15,8 +15,6 @@ import qualified Data.Map as M
 
 import Modelling.PetriNet.Types (
   Net (..),
-  Node (..),
-  PetriLike (..),
   PetriMath (..),
   PetriNode (..),
   )
@@ -29,23 +27,23 @@ import Data.String.Interpolate      (i)
 import Image.LaTeX.Render           (Formula)
 
 {-|
-Takes a 'PetriLike' net and generates all formulas required in order to
+Takes a 'Net' and generates all formulas required in order to
 represent this net using a mathematical representation ('PetriMath').
 -}
-toPetriMath :: PetriLike Node String -> PetriMath Formula
+toPetriMath :: Net p n => p n String -> PetriMath Formula
 toPetriMath pl = PetriMath {
   netMath            = netLaTeX,
   placesMath         = placesLaTeX places,
-  transitionsMath    = transitionsLaTeX $ fst <$> transitions,
-  tokenChangeMath    = tokenChangeLaTeX places transitions,
+  transitionsMath    = transitionsLaTeX transitions,
+  tokenChangeMath    = tokenChangeLaTeX places transitions net,
   initialMarkingMath = initialMarkingLaTeX pnodes,
   placeOrderMath     = Just $ placeOrderLaTeX places
   }
   where
-    (ps, ts)         = M.partition isPlaceNode allNodes
+    (ps, ts)         = M.partition isPlaceNode $ nodes net
     (places, pnodes) = unzip $ M.toList ps
-    transitions      = M.toList ts
-    PetriLike {allNodes} = toLowerIndexes `mapNet` pl
+    transitions      = M.keys ts
+    net              = toLowerIndexes `mapNet` pl
 
 {-|
 Rewrite the given 'String' to print indexes as subscripts when rendering it
@@ -132,15 +130,16 @@ Create LaTeX-'Formula's representing the tuples for incoming and outgoing flow
 for each of the given transitions in the order of the given places.
 -}
 tokenChangeLaTeX
-  :: [String]
+  :: Net p n
+  => [String]
   -- ^ the names of the places (in this given order)
-  -> [(String, Node String)]
-  -- ^ The transitions together with their names.
-  --   This List should only contain 'TransitionNode's.
+  -> [String]
+  -- ^ the transition names (in this given order).
+  -> p n String
   -> [(Formula, Formula)]
-tokenChangeLaTeX ps ts = (uncurry inT &&& uncurry outT) <$> ts
+tokenChangeLaTeX ps ts net = (inT &&& outT) <$> ts
   where
-    inT  n t = "^{\\bullet}" ++ n ++ tkns (flowIn t)
-    outT n t = n ++ "^{\\bullet}" ++ tkns (flowOut t)
-    tkns xs  = " = " ++ parenthesise (intercalate "," $ show <$> flowList xs)
-    flowList xs = (\x -> fromMaybe 0 $ M.lookup x xs) <$> ps
+    inT  t = "^{\\bullet}" ++ t ++ tkns (`flow` t)
+    outT t = t ++ "^{\\bullet}" ++ tkns (flow t)
+    tkns f  = " = " ++ parenthesise (intercalate "," $ show <$> flowList f)
+    flowList f = (\p -> fromMaybe 0 $ f p net) <$> ps

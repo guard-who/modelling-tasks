@@ -1,10 +1,6 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
-{-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.Concurrency (
   checkFindConcurrencyConfig,
@@ -23,7 +19,11 @@ module Modelling.PetriNet.Concurrency (
   pickConcurrency,
   pickConcurrencyGenerate,
   pickConcurrencyTask,
+  simpleFindConcurrencyTask,
+  simplePickConcurrencyTask,
   ) where
+
+import qualified Modelling.PetriNet.Find          as F (showSolution)
 
 import qualified Data.Map                         as M (
   empty,
@@ -93,6 +93,7 @@ import Modelling.PetriNet.Types         (
   PetriLike (PetriLike, allNodes),
   PickConcurrencyConfig (..),
   SimpleNode (..),
+  SimplePetriNet,
   transitionPairShow,
   )
 
@@ -124,11 +125,17 @@ import Language.Alloy.Call (
   AlloyInstance,
   )
 
-
-findConcurrencyTask
+simpleFindConcurrencyTask
   :: (MonadIO m, OutputMonad m)
   => FilePath
-  -> FindInstance (Concurrent Transition)
+  -> FindInstance SimplePetriNet (Concurrent Transition)
+  -> LangM m
+simpleFindConcurrencyTask = findConcurrencyTask
+
+findConcurrencyTask
+  :: (MonadIO m, Net p n, OutputMonad m)
+  => FilePath
+  -> FindInstance (p n String) (Concurrent Transition)
   -> LangM m
 findConcurrencyTask path task = do
   pn <- renderWith path "concurrent" (net task) (drawFindWith task)
@@ -159,16 +166,16 @@ findConcurrencyTask path task = do
 
 findConcurrencySyntax
   :: OutputMonad m
-  => FindInstance (Concurrent Transition)
+  => FindInstance net (Concurrent Transition)
   -> (Transition, Transition)
   -> LangM' m ()
 findConcurrencySyntax task = toFindSyntax withSol $ numberOfTransitions task
   where
-    withSol = showSolution (task :: FindInstance (Concurrent Transition))
+    withSol = F.showSolution task
 
 findConcurrencyEvaluation
   :: OutputMonad m
-  => FindInstance (Concurrent Transition)
+  => FindInstance net (Concurrent Transition)
   -> (Transition, Transition)
   -> Rated m
 findConcurrencyEvaluation task x = do
@@ -179,17 +186,24 @@ findConcurrencyEvaluation task x = do
   uncurry printSolutionAndAssert result
   where
     concur = findConcurrencySolution task
-    withSol = showSolution (task :: FindInstance (Concurrent Transition))
+    withSol = F.showSolution task
 
-findConcurrencySolution :: FindInstance (Concurrent a) -> (a, a)
+findConcurrencySolution :: FindInstance net (Concurrent a) -> (a, a)
 findConcurrencySolution task = concur
   where
     Concurrent concur = toFind task
 
-pickConcurrencyTask
-  :: (MonadIO m, Net PetriLike n, OutputMonad m)
+simplePickConcurrencyTask
+  :: (MonadIO m, OutputMonad m)
   => FilePath
-  -> PickInstance n
+  -> PickInstance SimplePetriNet
+  -> LangM m
+simplePickConcurrencyTask = pickConcurrencyTask
+
+pickConcurrencyTask
+  :: (MonadIO m, Net p n, OutputMonad m)
+  => FilePath
+  -> PickInstance (p n String)
   -> LangM m
 pickConcurrencyTask path task = do
   paragraph $ translate $ do
@@ -216,10 +230,11 @@ pickConcurrencyTask path task = do
   paragraph hoveringInformation
 
 findConcurrencyGenerate
-  :: FindConcurrencyConfig
+  :: Net p n
+  => FindConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO (FindInstance (Concurrent Transition))
+  -> ExceptT String IO (FindInstance (p n String) (Concurrent Transition))
 findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConcurrency config segment
   gc <- oneOf $ graphLayout bc
@@ -243,10 +258,10 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
     bc = basicConfig (config :: FindConcurrencyConfig)
 
 findConcurrency
-  :: (Net PetriLike n, RandomGen g)
+  :: (Net p n, RandomGen g)
   => FindConcurrencyConfig
   -> Int
-  -> RandT g (ExceptT String IO) (PetriLike n String, Concurrent String)
+  -> RandT g (ExceptT String IO) (p n String, Concurrent String)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
@@ -254,11 +269,11 @@ findConcurrency = taskInstance
   (\c -> alloyConfig (c :: FindConcurrencyConfig))
 
 pickConcurrencyGenerate
-  :: Net PetriLike n
+  :: Net p n
   => PickConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO (PickInstance n)
+  -> ExceptT String IO (PickInstance (p n String))
 pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud ws
   where
     bc config = basicConfig (config :: PickConcurrencyConfig)
@@ -267,13 +282,13 @@ pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud ws
 
 
 pickConcurrency
-  :: (Net PetriLike n, RandomGen g)
+  :: (Net p n, RandomGen g)
   => PickConcurrencyConfig
   -> Int
   -> RandT
     g
     (ExceptT String IO)
-    [(PetriLike n String, Maybe (Concurrent String))]
+    [(p n String, Maybe (Concurrent String))]
 pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
@@ -392,7 +407,7 @@ checkPickConcurrencyConfig PickConcurrencyConfig {
   }
   = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
 
-defaultPickConcurrencyInstance :: PickInstance SimpleNode
+defaultPickConcurrencyInstance :: PickInstance SimplePetriNet
 defaultPickConcurrencyInstance = PickInstance {
   nets = M.fromList [
     (1,(False,(
@@ -437,7 +452,7 @@ defaultPickConcurrencyInstance = PickInstance {
   showSolution = False
   }
 
-defaultFindConcurrencyInstance :: FindInstance (Concurrent Transition)
+defaultFindConcurrencyInstance :: FindInstance SimplePetriNet (Concurrent Transition)
 defaultFindConcurrencyInstance = FindInstance {
   drawFindWith = DrawSettings {
     withPlaceNames = False,

@@ -36,8 +36,6 @@ import Modelling.PetriNet.Types (
   ChangeConfig (..),
   DrawSettings (..),
   Net (..),
-  PetriLike,
-  SimplePetriLike,
   checkBasicConfig,
   checkChangeConfig,
   shuffleNames,
@@ -68,10 +66,10 @@ import Language.Alloy.Call (
   )
 import GHC.Generics                     (Generic)
 
-data FindInstance a = FindInstance {
+data FindInstance n a = FindInstance {
   drawFindWith :: !DrawSettings,
   toFind :: !a,
-  net :: !(SimplePetriLike String),
+  net :: !n,
   numberOfPlaces :: !Int,
   numberOfTransitions :: !Int,
   showSolution :: !Bool
@@ -101,10 +99,10 @@ toFindSyntax withSol n (fi, si) = addPretext $ do
     isValidTransition (Transition x) = x >= 1 && x <= n
 
 findTaskInstance
-  :: (Net PetriLike n, RandomGen g, Traversable t)
+  :: (Net p n, RandomGen g, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> RandT g (ExceptT String IO) (PetriLike n String, t String)
+  -> RandT g (ExceptT String IO) (p n String, t String)
 findTaskInstance f inst = do
   (pl, t) <- lift $ getNet f inst
   (pl', mapping) <- shuffleNames pl

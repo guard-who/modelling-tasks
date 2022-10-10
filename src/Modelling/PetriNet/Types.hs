@@ -27,6 +27,7 @@ module Modelling.PetriNet.Types (
   Concurrent (..),
   Conflict,
   ConflictConfig (..),
+  Drawable,
   DrawSettings (..),
   FindConcurrencyConfig (..),
   FindConflictConfig (..),
@@ -38,12 +39,12 @@ module Modelling.PetriNet.Types (
   PetriConflict' (..),
   PetriLike (..),
   PetriMath (..),
-  PetriNet,
   PetriNode (..),
   PickConcurrencyConfig (..),
   PickConflictConfig (..),
   SimpleNode (..),
   SimplePetriLike,
+  SimplePetriNet,
   checkBasicConfig,
   checkChangeConfig,
   checkGraphLayouts,
@@ -512,6 +513,7 @@ flowOutSN :: SimpleNode a -> Map a Int
 flowOutSN = flowOut
 
 type SimplePetriLike = PetriLike SimpleNode
+type SimplePetriNet = SimplePetriLike String
 
 {-|
 A 'Functor' like 'fmap' on 'PetriLike'.
@@ -833,7 +835,7 @@ data DrawSettings = DrawSettings {
   withGraphvizCommand  :: GraphvizCommand
   } deriving (Generic, Read, Show)
 
-type PetriNet n = (PetriLike n String, DrawSettings)
+type Drawable n = (n, DrawSettings)
 
 drawSettingsWithCommand :: BasicConfig -> GraphvizCommand -> DrawSettings
 drawSettingsWithCommand config c = DrawSettings {

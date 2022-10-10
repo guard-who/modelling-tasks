@@ -68,11 +68,11 @@ import Modelling.PetriNet.Types (
   BasicConfig (..),
   Change,
   ChangeConfig (..),
+  Drawable,
   DrawSettings (..),
   Net (..),
   PetriLike (..),
   PetriMath (..),
-  PetriNet,
   PetriNode (..),
   SimpleNode (..),
   SimplePetriLike,
@@ -89,7 +89,6 @@ import Modelling.PetriNet.Types (
   mapChange,
   randomDrawSettings,
   shuffleNames,
-  transformNet,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
@@ -132,8 +131,8 @@ import System.Random.Shuffle            (shuffleM)
 
 type Math = PetriMath Formula
 
-type GraphToMathInstance = MatchInstance (PetriNet SimpleNode) Math
-type MathToGraphInstance = MatchInstance Math (PetriNet SimpleNode)
+type GraphToMathInstance = MatchInstance (Drawable (SimplePetriLike String)) Math
+type MathToGraphInstance = MatchInstance Math (Drawable (SimplePetriLike String))
 
 {-# DEPRECATED addPartNames "the whole type class NamedParts will be removed" #-}
 class NamedParts n where
@@ -210,16 +209,16 @@ evalRandTWith
 evalRandTWith = flip evalRandT . mkStdGen
 
 writeDia
-  :: (MonadIO m, Net PetriLike n, OutputMonad m)
+  :: (MonadIO m, Net p n, OutputMonad m)
   => FilePath
-  -> MatchInstance (PetriNet n) b
+  -> MatchInstance (Drawable (p n String)) b
   -> LangM' m (MatchInstance FilePath b)
 writeDia path = bimapM (\(n, ds) -> writeGraph ds path "" n) return
 
 writeDias
-  :: (MonadIO m, Net PetriLike n, OutputMonad m)
+  :: (MonadIO m, Net p n, OutputMonad m)
   => FilePath
-  -> MatchInstance a (PetriNet n)
+  -> MatchInstance a (Drawable (p n String))
   -> LangM' m (MatchInstance a FilePath)
 writeDias path inst =
   let inst' = inst {
@@ -229,11 +228,11 @@ writeDias path inst =
   in bimapM return (\(l, (n, d)) -> writeGraph d path l n) inst'
 
 writeGraph
-  :: (MonadIO m, Net PetriLike n, OutputMonad m)
+  :: (MonadIO m, Net p n, OutputMonad m)
   => DrawSettings
   -> FilePath
   -> String
-  -> PetriLike n String
+  -> p n String
   -> LangM' m FilePath
 writeGraph s path index pl = do
   file' <- lift $ liftIO $ runExceptT $
@@ -256,10 +255,11 @@ writeGraph s path index pl = do
       (withGraphvizCommand s)
 
 graphToMath
-  :: MathConfig
+  :: Net p n
+  => MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance (PetriNet SimpleNode) Math)
+  -> ExceptT String IO (MatchInstance (Drawable (p n String)) Math)
 graphToMath c segment seed = evalRandTWith seed $ do
   ds <- randomDrawSettings (basicConfig c)
   (d, m, ms) <-
@@ -267,10 +267,11 @@ graphToMath c segment seed = evalRandTWith seed $ do
   matchMathInstance c d m $ fst <$> ms
 
 mathToGraph
-  :: MathConfig
+  :: Net p n
+  => MathConfig
   -> Int
   -> Int
-  -> ExceptT String IO (MatchInstance Math (PetriNet SimpleNode))
+  -> ExceptT String IO (MatchInstance Math (Drawable (p n String)))
 mathToGraph c segment seed = evalRandTWith seed $ do
   (x, xs) <- second (flip zip) <$>
     if useDifferentGraphLayouts c
@@ -300,12 +301,12 @@ matchMathInstance c x y ys = do
     }
 
 matchToMath
-  :: (Net PetriLike n, RandomGen g)
+  :: (Net p n, RandomGen g)
   => DrawSettings
-  -> ([PetriLike n String] -> [a])
+  -> ([p n String] -> [a])
   -> MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (PetriNet SimpleNode, Math, [(a, Change)])
+  -> RandT g (ExceptT String IO) (Drawable (p n String), Math, [(a, Change)])
 matchToMath ds toOutput config segment = do
   (f, net, math) <- netMathInstance config segment
   fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
@@ -325,10 +326,10 @@ firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
 
 netMathInstance
-  :: RandomGen g
+  :: (Net p n, RandomGen g)
   => MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (String, SimplePetriLike String, Math)
+  -> RandT g (ExceptT String IO) (String, p n String, Math)
 netMathInstance config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
@@ -337,16 +338,16 @@ netMathInstance config = taskInstance
   config
 
 mathInstance
-  :: RandomGen g
+  :: (Net p n, RandomGen g)
   => MathConfig
   -> AlloyInstance
-  -> RandT g (ExceptT String IO) (String, SimplePetriLike String, Math)
+  -> RandT g (ExceptT String IO) (String, p n String, Math)
 mathInstance config inst = do
   petriLike <- lift $ except $ parseRenamedNet "flow" "tokens" inst
   petriLike' <- fst <$> shuffleNames petriLike
   let math = toPetriMath petriLike'
   let f = renderFalse petriLike' config
-  return (f, transformNet petriLike', math)
+  return (f, petriLike', math)
 
 graphToMathTask
   :: (OutputMonad m, MonadIO m)
@@ -567,9 +568,9 @@ run showNets for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth 
   where
     activated = "activatedTrans"
 
-renderFalse :: Net PetriLike n => PetriLike n String -> MathConfig -> String
+renderFalse :: Net p n => p n String -> MathConfig -> String
 renderFalse
-  pl@PetriLike {allNodes}
+  net
   MathConfig {basicConfig, advConfig, changeConfig} = [i|module FalseNet
 
 #{modulePetriSignature}
@@ -594,6 +595,7 @@ pred showFalseNets[#{activated} : set Transitions]{
 run showFalseNets for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitwidth basicConfig} Int
 |]
   where
+    allNodes    = nodes net
     (ps, ts)    = M.partition isPlaceNode allNodes
     activated   = "activatedTrans"
     places      = unlines [extendLine p "givenPlaces" | p <- M.keys ps]
@@ -602,7 +604,7 @@ run showFalseNets for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScop
     defaultFlow = M.foldrWithKey (\k _ -> (printFlow k ++)) "" allNodes
     printFlow :: String -> String
     printFlow x = M.foldrWithKey
-      (\y _ -> (++) $ flowLine x y $ flow x y pl)
+      (\y _ -> (++) $ flowLine x y $ flow x y net)
       ""
       allNodes
     extendLine :: String -> String -> String

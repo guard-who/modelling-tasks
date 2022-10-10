@@ -1,8 +1,11 @@
+{-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.MatchToMathSpec where
 
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types (
   ChangeConfig(..),
+  PetriLike,
+  SimpleNode,
   defaultAlloyConfig,
   maxInstances,
   )
@@ -17,9 +20,9 @@ spec :: Spec
 spec = do
   describe "matchToMath" $ do
     describe "as mathToGraph" $
-      defaultMathTask mathToGraph
+      defaultMathTask (mathToGraph @PetriLike @SimpleNode)
     describe "as graphToMath" $
-      defaultMathTask graphToMath
+      defaultMathTask (graphToMath @PetriLike @SimpleNode)
   describe "checkConfig" $
     it "checks if the input is in given boundaries for the task" $
       checkMathConfig defaultMathConfig `shouldBe` Nothing
