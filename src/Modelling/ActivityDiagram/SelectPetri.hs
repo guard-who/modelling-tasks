@@ -389,7 +389,9 @@ getSelectPetriTask config = do
       Just _ -> return Nothing
       Nothing -> return $ Just petriInst
     ) ad
-  return $ fromJust validInsta
+  case validInsta of
+    Just x -> return x
+    Nothing -> error "Failed to find task instances"
 
 defaultSelectPetriInstance :: SelectPetriInstance
 defaultSelectPetriInstance =  SelectPetriInstance {
