@@ -33,7 +33,7 @@ import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames, shufflePetri)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr, weightedShuffle)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith, weightedShuffle)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
@@ -47,6 +47,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Extra (loopM, firstJustM)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
@@ -63,19 +64,17 @@ import Control.Monad.Random (
   RandT,
   RandomGen,
   evalRandT,
-  mkStdGen,
-  evalRand
+  mkStdGen
   )
 import Control.Monad.Except (runExceptT)
 import Data.Bifunctor (second)
-import Data.List (unfoldr, nubBy, genericLength)
+import Data.List (genericLength)
 import Data.Map (Map)
-import Data.Maybe (isNothing, isJust, fromJust)
+import Data.Maybe (isJust, fromJust)
 import Data.Graph.Inductive (Gr, mkGraph, lab, level)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.String.Interpolate ( i )
 import Language.Alloy.Call (getInstances)
-import System.Random (next)       --To be changed from 'next' to 'uniform', not possible as of now due to dependencies
 import System.Random.Shuffle (shuffle', shuffleM)
 
 
@@ -202,21 +201,37 @@ data SelectPetriSolution = SelectPetriSolution {
   wrongNets :: [SimplePetriLike PetriKey]
 } deriving (Show)
 
-selectPetrinet :: Int -> Int -> Bool -> Int -> UMLActivityDiagram -> SelectPetriSolution
-selectPetrinet numberOfWrongNets numberOfModifications modifyAtMid seed ad =
+selectPetrinet
+  :: (MonadRandom m)
+  => Int
+  -> Int
+  -> Bool
+  -> UMLActivityDiagram
+  -> m SelectPetriSolution
+selectPetrinet numberOfWrongNets numberOfModifications modifyAtMid ad = do
   let matchingNet = convertToPetrinet ad
-      seeds = unfoldr (Just . next) (mkStdGen seed)
-      wrongNets = take numberOfWrongNets
-                  $ nubBy isPetriIsomorphic
-                  $ filter (not . isPetriIsomorphic matchingNet)
-                  $ map (convertToPetrinet . modifyAD ad numberOfModifications modifyAtMid) seeds
-  in SelectPetriSolution {
+  wrongNets <- loopM (\xs -> do
+      modAD <- modifyAD ad numberOfModifications modifyAtMid
+      let petri = convertToPetrinet modAD
+      if any (isPetriIsomorphic petri) (matchingNet:xs)
+        then return $ Left xs
+      else
+        if length (petri:xs) < numberOfWrongNets
+          then return $ Left (petri:xs)
+        else return $ Right (petri:xs)
+    ) []
+  return SelectPetriSolution {
     matchingNet = transformNet matchingNet,
     wrongNets = map transformNet wrongNets
-    }
+  }
 
-modifyAD :: UMLActivityDiagram -> Int -> Bool -> Int -> UMLActivityDiagram
-modifyAD diag numberOfModifications modifyAtMid seed =
+modifyAD
+  :: (MonadRandom m)
+  => UMLActivityDiagram
+  -> Int
+  -> Bool
+  -> m UMLActivityDiagram
+modifyAD diag numberOfModifications modifyAtMid = do
   let ns = distToStartNode diag
       filteredNodes = filter (\(x,_) ->
         not (isInitialNode x) &&
@@ -226,12 +241,10 @@ modifyAD diag numberOfModifications modifyAtMid seed =
         if modifyAtMid then weightBySquaredDev filteredNodes
         else const (1.0 :: Double)
       weightedNodes = map (second weightFunc) filteredNodes
-      toBeModified =
-        take numberOfModifications
-        $ reverse
-        $ evalRand (weightedShuffle weightedNodes) (mkStdGen seed)
+  shuffledNodes <- weightedShuffle weightedNodes
+  let toBeModified = take numberOfModifications $ reverse shuffledNodes
       swappedNodes = map (\x -> if x `elem` toBeModified then swapST x else x) $ nodes diag
-  in UMLActivityDiagram {nodes=swappedNodes, connections=connections diag}
+  return UMLActivityDiagram {nodes=swappedNodes, connections=connections diag}
 
 -- Swap nodes translated to places to nodes translated to transitions and vice versa
 swapST :: ADNode -> ADNode
@@ -350,34 +363,33 @@ getSelectPetriTask
 getSelectPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ selectPetriAlloy config
   rinstas <- shuffleM instas
-  n <- getRandom
   g' <- getRandom
   layout <- pickRandomLayout config
+  let plantUMLConf = PlantUMLConvConf {
+        suppressNodeNames = hideNodeNames config,
+        suppressBranchConditions = hideBranchConditions config
+      }
+      petriDrawConf = DrawSettings {
+        withPlaceNames = not $ hidePetriNodeLabels config,
+        withTransitionNames = not $ hidePetriNodeLabels config,
+        with1Weights = False,
+        withGraphvizCommand = layout
+      }
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
-  let validInsta =
-        headWithErr "Failed to find task instances"
-        $ filter (isNothing . (`checkPetriInstance` config))
-        $ map (\x ->
-          SelectPetriInstance {
-            activityDiagram=x,
-            seed=g',
-            plantUMLConf=
-              PlantUMLConvConf {
-                suppressNodeNames = hideNodeNames config,
-                suppressBranchConditions = hideBranchConditions config
-              },
-            petriDrawConf=
-              DrawSettings {
-                withPlaceNames = not $ hidePetriNodeLabels config,
-                withTransitionNames = not $ hidePetriNodeLabels config,
-                with1Weights = False,
-                withGraphvizCommand = layout
-              },
-            petrinets= selectPetriSolutionToMap g'
-              $ selectPetrinet
-               (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) n x
-          }) ad
-  shuffleSolutionNets validInsta
+  validInsta <- firstJustM (\x -> do
+    sol <- selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) x
+    let petriInst = SelectPetriInstance {
+          activityDiagram=x,
+          seed=g',
+          plantUMLConf=plantUMLConf,
+          petriDrawConf=petriDrawConf,
+          petrinets=selectPetriSolutionToMap g' sol
+        }
+    case checkPetriInstance petriInst config of
+      Just _ -> return Nothing
+      Nothing -> return $ Just petriInst
+    ) ad
+  shuffleSolutionNets $ fromJust validInsta
 
 shuffleSolutionNets
   :: (MonadRandom m)
