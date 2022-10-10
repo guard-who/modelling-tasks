@@ -233,5 +233,5 @@ netToGr plike = do
     convertTransition k _ ns =
       Map.foldrWithKey (convertEdge k) ns $ outFlow k plike
     indexOf x = Map.findIndex x $ PN.nodes plike
-    convertEdge k target source rs =
-      (source, indexOf k, indexOf target) : rs
+    convertEdge source target flow rs =
+      (indexOf source, indexOf target, flow) : rs
