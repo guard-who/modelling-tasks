@@ -60,7 +60,7 @@ import Control.Monad.Output (
   singleChoice, singleChoiceSyntax
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
+  MonadRandom,
   RandT,
   RandomGen,
   evalRandT,
@@ -75,12 +75,11 @@ import Data.Graph.Inductive (Gr, mkGraph, lab, level)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.String.Interpolate ( i )
 import Language.Alloy.Call (getInstances)
-import System.Random.Shuffle (shuffle', shuffleM)
+import System.Random.Shuffle (shuffleM)
 
 
 data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings,
   petrinets :: Map Int (Bool, SimplePetriLike PetriKey)
@@ -312,13 +311,13 @@ Bitte geben Sie ihre Antwort als Zahl an, welche das passende Petrinetz repräse
       german  [i|würde bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
 
 selectPetriSolutionToMap
-  :: Int
-  -> SelectPetriSolution
-  -> Map Int (Bool, SimplePetriLike PetriKey)
-selectPetriSolutionToMap seed sol =
+  :: (MonadRandom m)
+  => SelectPetriSolution
+  -> m (Map Int (Bool, SimplePetriLike PetriKey))
+selectPetriSolutionToMap sol = do
   let xs = (True, matchingNet sol) : map (False, ) (wrongNets sol)
-      solution = shuffle' xs (length xs) (mkStdGen seed)
-  in M.fromList $ zip [1..] solution
+  solution <- shuffleM xs
+  return $ M.fromList $ zip [1..] solution
 
 selectPetriSyntax
   :: (OutputMonad m)
@@ -363,7 +362,6 @@ getSelectPetriTask
 getSelectPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ selectPetriAlloy config
   rinstas <- shuffleM instas
-  g' <- getRandom
   layout <- pickRandomLayout config
   let plantUMLConf = PlantUMLConvConf {
         suppressNodeNames = hideNodeNames config,
@@ -378,31 +376,20 @@ getSelectPetriTask config = do
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   validInsta <- firstJustM (\x -> do
     sol <- selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) x
+    p <- fmap snd $ shufflePetri $ matchingNet sol
+    ps <- mapM (fmap snd . shufflePetri) $ wrongNets sol
+    petrinets <- selectPetriSolutionToMap $ SelectPetriSolution {matchingNet=p, wrongNets=ps}
     let petriInst = SelectPetriInstance {
           activityDiagram=x,
-          seed=g',
           plantUMLConf=plantUMLConf,
           petriDrawConf=petriDrawConf,
-          petrinets=selectPetriSolutionToMap g' sol
+          petrinets=petrinets
         }
     case checkPetriInstance petriInst config of
       Just _ -> return Nothing
       Nothing -> return $ Just petriInst
     ) ad
-  shuffleSolutionNets $ fromJust validInsta
-
-shuffleSolutionNets
-  :: (MonadRandom m)
-  => SelectPetriInstance
-  -> m SelectPetriInstance
-shuffleSolutionNets task = do
-  matchingNet <- fmap snd $ shufflePetri $ head $ filterAndExtractPetri fst (petrinets task)
-  wrongNets <- mapM (fmap snd . shufflePetri) $ filterAndExtractPetri (not. fst) (petrinets task)
-  let newPetrinets = selectPetriSolutionToMap (seed task)
-        SelectPetriSolution {matchingNet=matchingNet, wrongNets=wrongNets}
-  return task {petrinets = newPetrinets}
-  where
-    filterAndExtractPetri p mapping = map snd $ M.toList $ M.map snd $ M.filter p mapping
+  return $ fromJust validInsta
 
 defaultSelectPetriInstance :: SelectPetriInstance
 defaultSelectPetriInstance =  SelectPetriInstance {
@@ -448,7 +435,6 @@ defaultSelectPetriInstance =  SelectPetriInstance {
       ADConnection {from = 17, to = 7, guard = ""}
     ]
   },
-  seed = -4748947987859297750,
   plantUMLConf = defaultPlantUMLConvConf,
   petriDrawConf = DrawSettings {
     withPlaceNames = True,
