@@ -29,9 +29,10 @@ import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), A
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
+import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Extra (firstJustM)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
@@ -44,7 +45,7 @@ import Control.Monad.Output (
   singleChoice, singleChoiceSyntax
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
+  MonadRandom,
   RandT,
   RandomGen,
   evalRandT,
@@ -52,18 +53,17 @@ import Control.Monad.Random (
   )
 import Data.List (permutations, sortBy)
 import Data.Map (Map)
-import Data.Maybe (isNothing, isJust, fromJust)
+import Data.Maybe (isJust, fromJust)
 import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
 import Data.Vector.Distance (Params(..), leastChanges)
 import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
-import System.Random.Shuffle (shuffle', shuffleM)
+import System.Random.Shuffle (shuffleM)
 
 
 data SelectASInstance = SelectASInstance {
   activityDiagram :: UMLActivityDiagram,
-  seed :: Int,
   actionSequences :: Map Int (Bool, [String])
 } deriving (Show, Eq)
 
@@ -217,13 +217,13 @@ Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräs
       german  [i|würde bedeuten, dass Folge 2 die valide Aktionsfolge ist.|]
 
 selectASSolutionToMap
-  :: Int
-  -> SelectASSolution
-  -> Map Int (Bool, [String])
-selectASSolutionToMap seed sol =
+  :: (MonadRandom m)
+  => SelectASSolution
+  -> m (Map Int (Bool, [String]))
+selectASSolutionToMap sol = do
   let xs = (True, correctSequence sol) : map (False, ) (wrongSequences sol)
-      solution = shuffle' xs (length xs) (mkStdGen seed)
-  in M.fromList $ zip [1..] solution
+  solution <- shuffleM xs
+  return $ M.fromList $ zip [1..] solution
 
 selectASSyntax
   :: (OutputMonad m)
@@ -268,19 +268,20 @@ getSelectASTask
 getSelectASTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ selectASAlloy config
   rinstas <- shuffleM instas
-  g' <- getRandom
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
-  let validInsta =
-        headWithErr "Failed to find task instances"
-        $ filter (isNothing . (`checkSelectASInstance` config))
-        $ map (\x ->
-          SelectASInstance {
-            activityDiagram=x,
-            seed=g',
-            actionSequences=selectASSolutionToMap g'
-              $ selectActionSequence (numberOfWrongAnswers config) x
-          }) ad
-  return validInsta
+  validInsta <- firstJustM (\x -> do
+    actionSequences <- selectASSolutionToMap $ selectActionSequence (numberOfWrongAnswers config) x
+    let selectASInst = SelectASInstance {
+          activityDiagram=x,
+          actionSequences=actionSequences
+        }
+    case checkSelectASInstance selectASInst config of
+      Just _ -> return Nothing
+      Nothing -> return $ Just selectASInst
+    ) ad
+  case validInsta of
+    Just x -> return x
+    Nothing -> error "Failed to find task instances"
 
 defaultSelectASInstance :: SelectASInstance
 defaultSelectASInstance = SelectASInstance {
@@ -322,6 +323,5 @@ defaultSelectASInstance = SelectASInstance {
       ADConnection {from = 15, to = 7, guard = ""}
     ]
   },
-  seed = -4748947987859297750,
   actionSequences = M.fromList [(1,(False,["F","B","A","C","D"])),(2,(True,["F","A","B","C","D"])),(3,(False,["A","F","B","C","D"]))]
 }
