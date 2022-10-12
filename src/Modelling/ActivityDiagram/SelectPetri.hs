@@ -2,7 +2,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
-{-# OPTIONS_GHC -Wwarn=deprecations #-}
 
 module Modelling.ActivityDiagram.SelectPetri (
   SelectPetriInstance(..),
