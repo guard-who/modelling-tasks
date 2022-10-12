@@ -10,7 +10,7 @@ import Modelling.PetriNet.Reach.Type (
   )
 import Modelling.PetriNet.Types (
   PetriLike (PetriLike),
-  Node (PlaceNode, TransitionNode),
+  SimpleNode (SimplePlace, SimpleTransition),
   )
 
 import Control.Monad.IO.Class           (MonadIO (liftIO))
@@ -47,7 +47,7 @@ toPetriLike
   => (s -> a)
   -> (t -> a)
   -> Net s t
-  -> PetriLike Node a
+  -> PetriLike SimpleNode a
 toPetriLike fp ft n = PetriLike $ M.fromList $ ps ++ ts
   where
     ps = do
@@ -55,22 +55,15 @@ toPetriLike fp ft n = PetriLike $ M.fromList $ ps ++ ts
       let i = mark (start n) p
           filterC f = filter f $ connections n
           countP = length . filter (p ==)
-          fin = [ (ft t, countP xs)
-                | (_,t,xs) <- filterC (\(_,_,to) -> p `elem` to)]
           fout = [ (ft t, countP xs)
                  | (xs,t,_) <- filterC (\(from,_,_) -> p `elem` from)]
-      return (fp p, PlaceNode i (M.fromList fin) (M.fromList fout))
+      return (fp p, SimplePlace i (M.fromList fout))
     ts = do
       t <- S.toList $ transitions n
       let filterC = filter (\(_,x,_) -> x == t) $ connections n
-          fin =
-            [ (fp $ head xs', length xs')
-            | (xs,_,_) <- filterC,
-              xs' <- group $ sort xs
-            ]
           fout =
             [ (fp $ head xs', length xs')
             | (_,_,xs) <- filterC,
               xs' <- group $ sort xs
             ]
-      return (ft t, TransitionNode (M.fromList fin) (M.fromList fout))
+      return (ft t, SimpleTransition (M.fromList fout))
