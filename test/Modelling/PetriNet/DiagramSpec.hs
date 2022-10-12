@@ -17,6 +17,7 @@ import Data.GraphViz.Attributes.Complete (GraphvizCommand (TwoPi))
 import Diagrams.Backend.SVG             (renderSVG)
 import Diagrams.Prelude                  (mkWidth)
 import Language.Alloy.Call               (getInstances)
+import System.IO.Extra                   (withTempFile)
 import Test.Hspec
 
 spec :: Spec
@@ -28,7 +29,7 @@ spec =
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
         pl <- except $ parseNet "flow" "tokens" inst
         dia <- drawNet show (pl :: SimplePetriLike Object) False True True TwoPi
-        lift $ renderSVG "test.svg" (mkWidth 200) dia `shouldReturn` ()
+        lift $ withTempFile $ \f -> renderSVG f (mkWidth 200) dia `shouldReturn` ()
 
 failOnErrors :: ExceptT String IO a -> IO a
 failOnErrors = either fail return <=< runExceptT
