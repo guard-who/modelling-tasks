@@ -285,7 +285,7 @@ data Node a =
   flowIn  :: Map a Int,
   flowOut :: Map a Int
   }
-  deriving (Generic, Read, Show)
+  deriving (Eq, Generic, Read, Show)
 
 instance PetriNode Node where
   initialTokens = initial
@@ -314,7 +314,7 @@ data SimpleNode a =
   SimpleTransition {
   flowOut           :: Map a Int
   }
-  deriving (Generic, Read, Show)
+  deriving (Eq, Generic, Read, Show)
 
 instance PetriNode SimpleNode where
   initialTokens = initial
@@ -413,6 +413,11 @@ class (PetriNode n, Show (p n String)) => Net p n where
     -> p n a
 
   {-|
+  Removes the flow going from the first given key to the second one..
+  -}
+  deleteFlow        :: Ord a => a -> a -> p n a -> p n a
+
+  {-|
   Removes the 'PetriNode' associated with the key and all connections going
   from or to the removed node.
   -}
@@ -448,7 +453,7 @@ The 'PetriLike' graph is a valid Petri net only if
 newtype PetriLike n a = PetriLike {
   -- | the 'Map' of all nodes the Petri net like graph is made of
   allNodes :: Map a (n a)
-  } deriving (Generic, Read, Show)
+  } deriving (Eq, Generic, Read, Show)
 
 instance Net PetriLike Node where
   emptyNet = PetriLike M.empty
@@ -457,10 +462,15 @@ instance Net PetriLike Node where
 
   nodes = allNodes
 
+  deleteFlow x y (PetriLike ns) = PetriLike
+    . M.adjust (updateNode id (M.delete y)) x
+    . M.adjust (updateNode (M.delete x) id) y
+    $ ns
+
   deleteNode x (PetriLike ns) = PetriLike
-    . M.delete x
     . adjustAll (updateNode id (M.delete x)) (M.keys . flowIn <$> n)
     . adjustAll (updateNode (M.delete x) id) (M.keys . flowOutN <$> n)
+    . M.delete x
     $ ns
     where
       n = M.lookup x ns
@@ -490,14 +500,19 @@ instance Net PetriLike SimpleNode where
 
   nodes = allNodes
 
-  deleteNode x = PetriLike . M.delete x . allNodes
+  deleteFlow x y (PetriLike ns) = PetriLike
+    . M.adjust (updateSimpleNode (M.delete y)) x
+    $ ns
+
+  deleteNode x ns = PetriLike
+    . adjustAll (updateSimpleNode $ M.delete x) (Just $ M.keys $ allNodes ns)
+    . M.delete x
+    . allNodes
+    $ ns
 
   repsertFlow x f y = PetriLike
     . M.adjust (updateSimpleNode (M.insert y f)) x
     . allNodes
-    where
-      updateSimpleNode g (SimplePlace t o)    = SimplePlace t (g o)
-      updateSimpleNode g (SimpleTransition o) = SimpleTransition (g o)
 
   repsertNode x mt = PetriLike . M.alter alterNode x . allNodes
     where
@@ -511,6 +526,10 @@ instance Net PetriLike SimpleNode where
 
 flowOutSN :: SimpleNode a -> Map a Int
 flowOutSN = flowOut
+
+updateSimpleNode :: (Map a Int -> Map b Int) -> SimpleNode a -> SimpleNode b
+updateSimpleNode g (SimplePlace t o)    = SimplePlace t (g o)
+updateSimpleNode g (SimpleTransition o) = SimpleTransition (g o)
 
 type SimplePetriLike = PetriLike SimpleNode
 type SimplePetriNet = SimplePetriLike String
@@ -576,10 +595,12 @@ transformNet
   => p n a
   -> p' n' a
 transformNet ns =
-  M.foldrWithKey fromSimpleNode emptyNet $ nodes ns
+  flip (foldr insertFlows) (M.keys ns')
+  $ M.foldrWithKey fromSimpleNode emptyNet ns'
   where
+    ns' = nodes ns
     insertFlows k xs = M.foldrWithKey (flip (repsertFlow k)) xs (outFlow k ns)
-    fromSimpleNode k n = insertFlows k . repsertNode k (maybeInitial n)
+    fromSimpleNode k n = repsertNode k (maybeInitial n)
 
 {-|
 Transform a 'PetriLike' graph into a 'Petri' net.

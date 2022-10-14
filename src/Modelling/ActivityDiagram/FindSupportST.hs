@@ -3,6 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Modelling.ActivityDiagram.FindSupportST (
   FindSupportSTInstance(..),
@@ -17,6 +18,8 @@ module Modelling.ActivityDiagram.FindSupportST (
   findSupportST,
   defaultFindSupportSTInstance
 ) where
+
+import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
 import qualified Data.Map as M (
   filter,
@@ -41,6 +44,7 @@ import Modelling.PetriNet.Types (
   Net (..),
   PetriLike (..),
   PetriNode (..),
+  SimpleNode,
   isPlaceNode,
   isTransitionNode,
   )
@@ -144,21 +148,24 @@ data FindSupportSTSolution = FindSupportSTSolution {
 
 findSupportSTSolution :: FindSupportSTInstance -> FindSupportSTSolution
 findSupportSTSolution task =
-  findSupportSTSolution' $ convertToPetrinet $ activityDiagram task
+  findSupportSTSolution' @PetriLike @SimpleNode
+  $ convertToPetrinet $ activityDiagram task
 
 findSupportSTSolution'
-  :: Net PetriLike n
-  => PetriLike n PetriKey
+  :: Net p n
+  => p n PetriKey
   -> FindSupportSTSolution
 findSupportSTSolution' petri = FindSupportSTSolution {
-    numberOfPetriNodes = M.size $ allNodes petri,
+    numberOfPetriNodes = M.size $ Petri.nodes petri,
     numberOfSupportPlaces = M.size $ M.filter isPlaceNode supportSTMap,
     numberOfSupportTransitions = M.size $ M.filter isTransitionNode supportSTMap
   }
   where
-    supportSTMap = M.filterWithKey (\k _ -> isSupportST k && not (isSinkST k petri)) $ allNodes petri
+    supportSTMap = M.filterWithKey
+      (\k _ -> isSupportST k && not (isSinkST k petri))
+      $ Petri.nodes petri
 
-isSinkST :: Net PetriLike n => PetriKey -> PetriLike n PetriKey -> Bool
+isSinkST :: Net p n => PetriKey -> p n PetriKey -> Bool
 isSinkST key petri = M.null $ outFlow key petri
 
 isSupportST :: PetriKey -> Bool

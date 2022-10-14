@@ -42,7 +42,6 @@ import Modelling.PetriNet.Types (
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
-  transformNet,
   )
 
 import Control.Applicative (Alternative ((<|>)))
@@ -219,8 +218,8 @@ selectPetrinet numberOfWrongNets numberOfModifications modifyAtMid ad = do
         else return $ Right (petri:xs)
     ) []
   return SelectPetriSolution {
-    matchingNet = transformNet matchingNet,
-    wrongNets = map transformNet wrongNets
+    matchingNet = matchingNet,
+    wrongNets = wrongNets
   }
 
 modifyAD

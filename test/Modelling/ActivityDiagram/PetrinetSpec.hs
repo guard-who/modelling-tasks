@@ -2,7 +2,11 @@ module Modelling.ActivityDiagram.PetrinetSpec where
 
 import qualified Data.Map as M (keys)
 
-import Modelling.ActivityDiagram.Petrinet (PetriKey (..), convertToPetrinet)
+import Modelling.ActivityDiagram.Petrinet (
+  PetriKey (..),
+  convertToPetrinet,
+  convertToSimple,
+  )
 
 import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
@@ -22,7 +26,7 @@ spec =
       let spec' = adConfigToAlloy "" "" defaultADConfig
       it "generates a petrinet with ascending labels" $ do
         inst <- getInstances (Just 50) spec'
-        let petri = map (convertToPetrinet . failWith id . parseInstance) inst
+        let petri = map (convertToSimple . failWith id . parseInstance) inst
         all checkLabels petri `shouldBe` (True::Bool)
       it "generates only valid petrinets" $ do
         inst <- getInstances (Just 50) spec'

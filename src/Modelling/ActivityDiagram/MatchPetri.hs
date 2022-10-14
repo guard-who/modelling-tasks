@@ -22,6 +22,7 @@ module Modelling.ActivityDiagram.MatchPetri (
 
 import qualified Data.Map as M (empty, fromList, keys, null)
 import qualified Modelling.ActivityDiagram.Petrinet as PK (label)
+import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
@@ -52,7 +53,6 @@ import Modelling.PetriNet.Types (
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
-  transformNet,
   )
 
 import Control.Applicative (Alternative ((<|>)))
@@ -179,8 +179,8 @@ matchPetriAlloy MatchPetriConfig {
             _ -> ""
 
 mapTypesToLabels
-  :: Net PetriLike n
-  => PetriLike n PetriKey
+  :: Net p n
+  => p n PetriKey
   -> MatchPetriSolution
 mapTypesToLabels petri =
   MatchPetriSolution {
@@ -205,7 +205,7 @@ mapTypesToLabels petri =
     keysByNodeType fn =
       filter (fn . sourceNode)  $
       filter (not . isSupportST) $
-      M.keys $ allNodes petri
+      M.keys $ Petri.nodes petri
 
 data MatchPetriSolution = MatchPetriSolution {
   actionNodes :: [(String, Int)],
@@ -221,10 +221,12 @@ data MatchPetriSolution = MatchPetriSolution {
 matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
 matchPetriSolution task = mapTypesToLabels $ petrinet task
 
-extractSupportSTs :: Net PetriLike n => PetriLike n PetriKey -> [PetriKey]
-extractSupportSTs petri = filter (\x -> isSupportST x && not (isSinkST x petri)) $ M.keys $ allNodes petri
+extractSupportSTs :: Net p n => p n PetriKey -> [PetriKey]
+extractSupportSTs petri = filter
+  (\x -> isSupportST x && not (isSinkST x petri))
+  $ M.keys $ Petri.nodes petri
 
-isSinkST :: Net PetriLike n => PetriKey -> PetriLike n PetriKey -> Bool
+isSinkST :: Net p n => PetriKey -> p n PetriKey -> Bool
 isSinkST key petri = M.null $ outFlow key petri
 
 isSupportST :: PetriKey -> Bool
@@ -362,7 +364,7 @@ getMatchPetriTask config = do
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
     activityDiagram=ad,
-    petrinet = transformNet petri,
+    petrinet = petri,
     plantUMLConf =
       PlantUMLConvConf {
         suppressNodeNames = False,
