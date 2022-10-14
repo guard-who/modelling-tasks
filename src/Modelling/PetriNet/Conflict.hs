@@ -15,6 +15,7 @@ module Modelling.PetriNet.Conflict (
   findConflict,
   findConflictEvaluation,
   findConflictGenerate,
+  findConflictPlacesEvaluation,
   findConflictPlacesSolution,
   findConflictSyntax,
   findConflictTask,
