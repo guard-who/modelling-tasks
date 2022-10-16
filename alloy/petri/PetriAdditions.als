@@ -3,7 +3,7 @@ module PetriAdditions
 /*
  * Creates petri nets or reconstructs petri net by adding new places or transitions. For reconstructing petri net,
  * predicate noChangesToGivenParts will ensure that no change on the given petri net. That is, no token added on given places,
- * no flow added between given places and given transitions. 
+ * no flow added between given places and given transitions (in either direction).
  * It is forbidden to reconstruct a ordered petri net, only non-ordered petri net is possible.
 */
 
@@ -31,5 +31,5 @@ pred noChangesToGivenParts[]{
 }
 
 fact {
-  no Nodes.defaultFlow[addedNodes]
+  no givenNodes.defaultFlow[addedNodes]
 }
