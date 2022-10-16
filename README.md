@@ -2,7 +2,7 @@
 
 Installation of Haskell packages needed (for the class/object diagrams part):
 
-```
+```shell
 cabal install bytestring
 cabal install digest
 cabal install random-shuffle
