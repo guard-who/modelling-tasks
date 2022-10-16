@@ -41,7 +41,7 @@ ignore$
 \.yml$
 \.zip$
 ^\.github/actions/spelling/
-^\app/
-^\legacy-app/
+^app/
+^legacy-app/
 ^\Qalloy-guidelines/alloy-style.sty\E$
 ^\Qtest/Spec.hs\E$
