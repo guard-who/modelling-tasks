@@ -22,4 +22,5 @@ jobs:
         uses: github/super-linter/slim@v4
         env:
           VALIDATE_JSCPD_ALL_CODEBASE: true
+          YAML_ERROR_ON_WARNING: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
