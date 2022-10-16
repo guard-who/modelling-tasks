@@ -12,4 +12,4 @@
 \b([A-Za-z])\g{-1}{3,}\b
 
 # ignore stuff after "german" appearing in a line
-// german.*$
+german.*$
