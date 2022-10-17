@@ -89,6 +89,7 @@ import Modelling.PetriNet.Types         (
   Concurrent (Concurrent),
   DrawSettings (..),
   FindConcurrencyConfig (..),
+  GraphConfig (..),
   Net (..),
   PetriLike (PetriLike, allNodes),
   PickConcurrencyConfig (..),
@@ -237,16 +238,16 @@ findConcurrencyGenerate
   -> ExceptT String IO (FindInstance (p n String) (Concurrent Transition))
 findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConcurrency config segment
-  gc <- oneOf $ graphLayout bc
+  gl <- oneOf $ graphLayouts gc
   c' <- lift $ except $ traverse
      (parseWith parseTransitionPrec)
      c
   return $ FindInstance {
     drawFindWith   = DrawSettings {
-      withPlaceNames = not $ hidePlaceNames bc,
-      withTransitionNames = not $ hideTransitionNames bc,
-      with1Weights = not $ hideWeight1 bc,
-      withGraphvizCommand = gc
+      withPlaceNames = not $ hidePlaceNames gc,
+      withTransitionNames = not $ hideTransitionNames gc,
+      with1Weights = not $ hideWeight1 gc,
+      withGraphvizCommand = gl
       },
     toFind = c',
     net = d,
@@ -256,6 +257,7 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
     }
   where
     bc = basicConfig (config :: FindConcurrencyConfig)
+    gc = graphConfig (config :: FindConcurrencyConfig)
 
 findConcurrency
   :: (Net p n, RandomGen g)
@@ -274,9 +276,9 @@ pickConcurrencyGenerate
   -> Int
   -> Int
   -> ExceptT String IO (PickInstance (p n String))
-pickConcurrencyGenerate = pickGenerate pickConcurrency bc ud ws
+pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws
   where
-    bc config = basicConfig (config :: PickConcurrencyConfig)
+    gc config = graphConfig (config :: PickConcurrencyConfig)
     ud config = useDifferentGraphLayouts (config :: PickConcurrencyConfig)
     ws config = printSolution (config :: PickConcurrencyConfig)
 
@@ -395,17 +397,24 @@ parseConcurrency inst = do
 checkFindConcurrencyConfig :: FindConcurrencyConfig -> Maybe String
 checkFindConcurrencyConfig FindConcurrencyConfig {
   basicConfig,
-  changeConfig
+  changeConfig,
+  graphConfig
   }
-  = checkConfigForFind basicConfig changeConfig
+  = checkConfigForFind basicConfig changeConfig graphConfig
 
 checkPickConcurrencyConfig :: PickConcurrencyConfig -> Maybe String
 checkPickConcurrencyConfig PickConcurrencyConfig {
   basicConfig,
   changeConfig,
+  graphConfig,
   useDifferentGraphLayouts
   }
-  = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
+  = checkConfigForPick
+    useDifferentGraphLayouts
+    wrong
+    basicConfig
+    changeConfig
+    graphConfig
 
 defaultPickConcurrencyInstance :: PickInstance SimplePetriNet
 defaultPickConcurrencyInstance = PickInstance {

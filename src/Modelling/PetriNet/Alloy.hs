@@ -64,10 +64,10 @@ import Language.Alloy.Call (
 
 petriScopeBitwidth :: BasicConfig -> Int
 petriScopeBitwidth BasicConfig
- {places,transitions,maxFlowOverall,maxTokensOverall} =
+ { flowOverall, places, tokensOverall, transitions } =
   floor
      (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral)
-       (maximum [maxFlowOverall,maxTokensOverall,places,transitions])
+       (maximum [snd flowOverall, snd tokensOverall, places, transitions])
      )
 
 petriScopeMaxSeq :: BasicConfig -> Int
@@ -126,19 +126,17 @@ enforceConstraints
 enforceConstraints underDefault activated BasicConfig {
   atLeastActive,
   isConnected,
-  maxFlowOverall,
+  flowOverall,
   maxFlowPerEdge,
-  maxTokensOverall,
   maxTokensPerPlace,
-  minFlowOverall,
-  minTokensOverall
+  tokensOverall
   } = [i|
   let t = (sum p : #{places} | p.#{tokens}) |
-    t >= #{minTokensOverall} and t <= #{maxTokensOverall}
+    t >= #{fst tokensOverall} and t <= #{snd tokensOverall}
   all p : #{places} | p.#{tokens} =< #{maxTokensPerPlace}
   all weight : #{nodes}.#{flow}[#{nodes}] | weight =< #{maxFlowPerEdge}
   let theflow = (sum f, t : #{nodes} | f.#{flow}[t]) |
-    theflow >= #{minFlowOverall} and #{maxFlowOverall} >= theflow
+    theflow >= #{fst flowOverall} and #{snd flowOverall} >= theflow
   \##{activated} >= #{atLeastActive}
   theActivated#{upperFirst which}Transitions[#{activated}]
   #{connected (prepend "graphIsConnected") isConnected}

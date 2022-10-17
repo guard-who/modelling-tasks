@@ -104,6 +104,7 @@ import Modelling.PetriNet.Types         (
   ConflictConfig (..),
   DrawSettings (..),
   FindConflictConfig (..),
+  GraphConfig (..),
   Net,
   PetriConflict (Conflict, conflictPlaces, conflictTrans),
   PetriConflict' (PetriConflict', toPetriConflict),
@@ -304,17 +305,17 @@ findConflictGenerate
   -> ExceptT String IO (FindInstance (p n String) Conflict)
 findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConflict config segment
-  gc <- oneOf $ graphLayout bc
+  gl <- oneOf $ graphLayouts gc
   c' <- lift $ except $ bitraverse
     (parseWith parsePlacePrec)
     (parseWith parseTransitionPrec)
     $ toPetriConflict c
   return $ FindInstance {
     drawFindWith = DrawSettings {
-      withPlaceNames = not $ hidePlaceNames bc,
-      withTransitionNames = not $ hideTransitionNames bc,
-      with1Weights = not $ hideWeight1 bc,
-      withGraphvizCommand = gc
+      withPlaceNames = not $ hidePlaceNames gc,
+      withTransitionNames = not $ hideTransitionNames gc,
+      with1Weights = not $ hideWeight1 gc,
+      withGraphvizCommand = gl
       },
     toFind = over lConflictPlaces nubSort c',
     net = d,
@@ -324,6 +325,7 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     }
   where
     bc = basicConfig (config :: FindConflictConfig)
+    gc = graphConfig (config :: FindConflictConfig)
 
 pickConflictGenerate
   :: Net p n
@@ -331,9 +333,9 @@ pickConflictGenerate
   -> Int
   -> Int
   -> ExceptT String IO (PickInstance (p n String))
-pickConflictGenerate = pickGenerate pickConflict bc ud ws
+pickConflictGenerate = pickGenerate pickConflict gc ud ws
   where
-    bc config = basicConfig (config :: PickConflictConfig)
+    gc config = graphConfig (config :: PickConflictConfig)
     ud config = useDifferentGraphLayouts (config :: PickConflictConfig)
     ws config = printSolution (config :: PickConflictConfig)
 
@@ -569,9 +571,10 @@ checkFindConflictConfig :: FindConflictConfig -> Maybe String
 checkFindConflictConfig FindConflictConfig {
   basicConfig,
   changeConfig,
-  conflictConfig
+  conflictConfig,
+  graphConfig
   }
-  = checkConfigForFind basicConfig changeConfig
+  = checkConfigForFind basicConfig changeConfig graphConfig
   <|> checkConflictConfig basicConfig conflictConfig
 
 checkPickConflictConfig :: PickConflictConfig -> Maybe String
@@ -579,9 +582,15 @@ checkPickConflictConfig PickConflictConfig {
   basicConfig,
   changeConfig,
   conflictConfig,
+  graphConfig,
   useDifferentGraphLayouts
   }
-  = checkConfigForPick useDifferentGraphLayouts wrong basicConfig changeConfig
+  = checkConfigForPick
+    useDifferentGraphLayouts
+    wrong
+    basicConfig
+    changeConfig
+    graphConfig
   <|> checkConflictConfig basicConfig conflictConfig
 
 defaultPickConflictInstance :: PickInstance SimplePetriNet

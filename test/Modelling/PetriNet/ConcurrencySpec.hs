@@ -39,6 +39,7 @@ import Modelling.PetriNet.TestCommon (
   validAdvConfigs,
   validConfigsForFind,
   validConfigsForPick,
+  validGraphConfig,
   )
 import Settings                         (configDepth)
 
@@ -102,6 +103,7 @@ validFindConcurrencyConfigs
 validFindConcurrencyConfigs cs aconfig =
   uncurry (`FindConcurrencyConfig` aconfig)
     <$> cs
+    ?? validGraphConfig
     ?? False
     ?? alloyTestConfig
 
@@ -110,6 +112,7 @@ validPickConcurrencyConfigs
   -> [PickConcurrencyConfig]
 validPickConcurrencyConfigs cs = uncurry PickConcurrencyConfig
   <$> cs
+  <*> pure validGraphConfig
   <*> pure False
   <*> [False, True]
   ?? False

@@ -31,6 +31,7 @@ module Modelling.PetriNet.Types (
   DrawSettings (..),
   FindConcurrencyConfig (..),
   FindConflictConfig (..),
+  GraphConfig (..),
   Net (..),
   Node (..),
   Petri (..),
@@ -54,6 +55,7 @@ module Modelling.PetriNet.Types (
   defaultChangeConfig,
   defaultFindConcurrencyConfig,
   defaultFindConflictConfig,
+  defaultGraphConfig,
   defaultPickConcurrencyConfig,
   defaultPickConflictConfig,
   drawSettingsWithCommand,
@@ -65,19 +67,18 @@ module Modelling.PetriNet.Types (
   lConflictConfig,
   lConflictPlaces,
   lConflictTrans,
-  lGraphLayout,
+  lFlowOverall,
+  lGraphConfig,
+  lGraphLayouts,
   lHidePlaceNames,
   lHideTransitionNames,
   lHideWeight1,
   lIsConnected,
-  lMaxFlowOverall,
   lMaxFlowPerEdge,
-  lMaxTokensOverall,
   lMaxTokensPerPlace,
-  lMinFlowOverall,
-  lMinTokensOverall,
   lPlaces,
   lPrintSolution,
+  lTokensOverall,
   lTransitions,
   lUniqueConflictPlace,
   manyRandomDrawSettings,
@@ -681,17 +682,13 @@ data BasicConfig = BasicConfig
   { places :: Int
   , transitions :: Int
   , atLeastActive :: Int
-  , minTokensOverall :: Int
-  , maxTokensOverall :: Int
+  , flowOverall :: (Int, Int)
+  -- ^ allowed range of flow edge weights in total (over all edges)
   , maxTokensPerPlace :: Int
-  , minFlowOverall :: Int
-  , maxFlowOverall :: Int
   , maxFlowPerEdge :: Int
+  , tokensOverall :: (Int, Int)
+  -- ^ allowed range of tokens in total (over all places)
   , isConnected :: Maybe Bool
-  , graphLayout :: [GraphvizCommand]
-  , hideWeight1 :: Bool
-  , hidePlaceNames :: Bool
-  , hideTransitionNames :: Bool
   } deriving (Generic, Read, Show)
 
 makeLensesWith lensRulesL ''BasicConfig
@@ -701,18 +698,29 @@ defaultBasicConfig = BasicConfig
   { places = 4
   , transitions = 3
   , atLeastActive = 1
-  , minTokensOverall = 2
-  , maxTokensOverall = 7
+  , flowOverall = (6, 12)
   , maxTokensPerPlace = 2
-  , minFlowOverall = 6
-  , maxFlowOverall = 12
   , maxFlowPerEdge = 2
+  , tokensOverall = (2, 7)
   , isConnected = Just True
-  , graphLayout = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork]
-  , hideWeight1 = True
-  , hidePlaceNames = False
-  , hideTransitionNames = False
   }
+
+data GraphConfig = GraphConfig {
+  graphLayouts :: [GraphvizCommand],
+  hidePlaceNames :: Bool,
+  hideTransitionNames :: Bool,
+  hideWeight1 :: Bool
+  } deriving (Generic, Read, Show)
+
+defaultGraphConfig :: GraphConfig
+defaultGraphConfig = GraphConfig {
+  graphLayouts = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork],
+  hidePlaceNames = False,
+  hideTransitionNames = False,
+  hideWeight1 = True
+  }
+
+makeLensesWith lensRulesL ''GraphConfig
 
 data AdvConfig = AdvConfig
   { presenceOfSelfLoops :: Maybe Bool
@@ -772,6 +780,7 @@ data FindConflictConfig = FindConflictConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
   , conflictConfig :: ConflictConfig
+  , graphConfig :: GraphConfig
   , printSolution :: Bool
   , uniqueConflictPlace :: Maybe Bool
   , alloyConfig  :: AlloyConfig
@@ -781,10 +790,11 @@ makeLensesWith lensRulesL ''FindConflictConfig
 
 defaultFindConflictConfig :: FindConflictConfig
 defaultFindConflictConfig = FindConflictConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
+  { basicConfig = defaultBasicConfig { atLeastActive = 3 }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
   , conflictConfig = defaultConflictConfig
+  , graphConfig = defaultGraphConfig { hidePlaceNames = True }
   , printSolution = False
   , uniqueConflictPlace = Just True
   , alloyConfig  = defaultAlloyConfig
@@ -794,6 +804,7 @@ data PickConflictConfig = PickConflictConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
   , conflictConfig :: ConflictConfig
+  , graphConfig :: GraphConfig
   , printSolution :: Bool
   , prohibitSourceTransitions :: Bool
   , uniqueConflictPlace :: Maybe Bool
@@ -803,9 +814,10 @@ data PickConflictConfig = PickConflictConfig
 
 defaultPickConflictConfig :: PickConflictConfig
 defaultPickConflictConfig = PickConflictConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
+  { basicConfig = defaultBasicConfig { atLeastActive = 2 }
   , changeConfig = defaultChangeConfig
   , conflictConfig = defaultConflictConfig
+  , graphConfig = defaultGraphConfig { hidePlaceNames = True, hideTransitionNames = True }
   , printSolution = False
   , prohibitSourceTransitions = False
   , uniqueConflictPlace = Nothing
@@ -817,15 +829,17 @@ data FindConcurrencyConfig = FindConcurrencyConfig
   { basicConfig :: BasicConfig
   , advConfig :: AdvConfig
   , changeConfig :: ChangeConfig
+  , graphConfig :: GraphConfig
   , printSolution :: Bool
   , alloyConfig  :: AlloyConfig
   } deriving (Generic, Read, Show)
 
 defaultFindConcurrencyConfig :: FindConcurrencyConfig
 defaultFindConcurrencyConfig = FindConcurrencyConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 3, hidePlaceNames = True }
+  { basicConfig = defaultBasicConfig { atLeastActive = 3 }
   , advConfig = defaultAdvConfig{ presenceOfSourceTransitions = Nothing }
   , changeConfig = defaultChangeConfig
+  , graphConfig = defaultGraphConfig { hidePlaceNames = True }
   , printSolution = False
   , alloyConfig  = defaultAlloyConfig
   }
@@ -833,6 +847,7 @@ defaultFindConcurrencyConfig = FindConcurrencyConfig
 data PickConcurrencyConfig = PickConcurrencyConfig
   { basicConfig :: BasicConfig
   , changeConfig :: ChangeConfig
+  , graphConfig :: GraphConfig
   , printSolution :: Bool
   , prohibitSourceTransitions :: Bool
   , useDifferentGraphLayouts :: Bool
@@ -841,8 +856,9 @@ data PickConcurrencyConfig = PickConcurrencyConfig
 
 defaultPickConcurrencyConfig :: PickConcurrencyConfig
 defaultPickConcurrencyConfig = PickConcurrencyConfig
-  { basicConfig = defaultBasicConfig{ atLeastActive = 2, hidePlaceNames = True, hideTransitionNames = True }
+  { basicConfig = defaultBasicConfig { atLeastActive = 2 }
   , changeConfig = defaultChangeConfig
+  , graphConfig = defaultGraphConfig { hidePlaceNames = True, hideTransitionNames = True }
   , printSolution = False
   , prohibitSourceTransitions = False
   , useDifferentGraphLayouts = False
@@ -858,7 +874,7 @@ data DrawSettings = DrawSettings {
 
 type Drawable n = (n, DrawSettings)
 
-drawSettingsWithCommand :: BasicConfig -> GraphvizCommand -> DrawSettings
+drawSettingsWithCommand :: GraphConfig -> GraphvizCommand -> DrawSettings
 drawSettingsWithCommand config c = DrawSettings {
   withPlaceNames = not $ hidePlaceNames config,
   withTransitionNames = not $ hideTransitionNames config,
@@ -870,9 +886,9 @@ drawSettingsWithCommand config c = DrawSettings {
 Provides a 'DrawSetting' by using 'drawSettingsWithCommand' and randomly picking
 one of the provided 'graphLayout's.
 -}
-randomDrawSettings :: MonadRandom m => BasicConfig -> m DrawSettings
+randomDrawSettings :: MonadRandom m => GraphConfig -> m DrawSettings
 randomDrawSettings config =
-  drawSettingsWithCommand config <$> oneOf (graphLayout config)
+  drawSettingsWithCommand config <$> oneOf (graphLayouts config)
 
 {-|
 Provides a list of 'DrawSettings' with as many entries as specified by randomly
@@ -880,13 +896,13 @@ picking while ensuring as few repetitions of provided 'graphLayout's as possible
 -}
 manyRandomDrawSettings
   :: MonadRandom m
-  => BasicConfig
+  => GraphConfig
   -- ^ providing layouts to pick from
   -> Int
   -- ^ how many entries to return
   -> m [DrawSettings]
 manyRandomDrawSettings config n = map (drawSettingsWithCommand config) <$> do
-  let gls = graphLayout config
+  let gls = graphLayouts config
   gls' <- shuffleM gls
   shuffleM $ take n $ concat $ repeat gls'
 
@@ -898,14 +914,11 @@ transitionPairShow = bimap ShowTransition ShowTransition
 checkBasicConfig :: BasicConfig -> Maybe String
 checkBasicConfig BasicConfig{
   atLeastActive,
-  graphLayout,
-  maxFlowOverall,
+  flowOverall,
   maxFlowPerEdge,
-  maxTokensOverall,
   maxTokensPerPlace,
-  minFlowOverall,
-  minTokensOverall,
   places,
+  tokensOverall,
   transitions
   }
  | places <= 0
@@ -920,30 +933,28 @@ checkBasicConfig BasicConfig{
   = Just "The parameter 'atLeastActive' must be non-negative."
  | atLeastActive > transitions
   = Just "There cannot be more active transitions than there are transitions."
- | minTokensOverall < 0
-  = Just "The parameter 'minTokensOverall' must be non-negative."
- | maxTokensOverall < minTokensOverall
-  = Just "The parameter 'minTokensOverall' must not be larger than 'maxTokensOverall'."
+ | fst tokensOverall < 0
+  = Just "The 'tokensOverall' must be non-negative."
+ | uncurry (>) tokensOverall
+  = Just "The minimum (first value) of 'tokensOverall' must not be larger than its maximum (second value)."
  | maxTokensPerPlace < 0
   = Just "The parameter 'maxTokensPerPlace' must be non-negative."
- | maxTokensPerPlace > maxTokensOverall
-  = Just "The parameter 'maxTokensPerPlace' must not be larger than 'maxTokensOverall'."
- | maxTokensOverall > places * maxTokensPerPlace
-  = Just "The parameter 'maxTokensOverall' is set unreasonably high, given the per-place parameter."
- | minFlowOverall < 0
-  = Just "The parameter 'minFlowOverall' must be non-negative."
- | maxFlowOverall < minFlowOverall
-  = Just "The parameter 'minFlowOverall' must not be larger than 'maxFlowOverall'."
+ | maxTokensPerPlace > snd tokensOverall
+  = Just "The parameter 'maxTokensPerPlace' must not be larger than the maximum 'tokensOverall'."
+ | snd tokensOverall > places * maxTokensPerPlace
+  = Just "The maximum 'tokensOverall' is set unreasonably high, given the per-place parameter."
+ | fst flowOverall < 0
+  = Just "The 'flowOverall' must be non-negative."
+ | uncurry (>) tokensOverall
+  = Just "The minimum (first value) of 'flowOverall' must not be larger than its maximum (second value)."
  | maxFlowPerEdge <= 0
   = Just "The parameter 'maxFlowPerEdge' must be positive."
- | maxFlowOverall < maxFlowPerEdge
-  = Just "The parameter 'maxFlowPerEdge' must not be larger than 'maxFlowOverall'."
- | maxFlowOverall > 2 * places * transitions * maxFlowPerEdge
-  = Just "The parameter 'maxFlowOverall' is set unreasonably high, given the other parameters."
- | transitions + places > 1 + minFlowOverall
-  = Just "The number of transitions and places exceeds 'minFlowOverall' too much to create a connected net."
- | null graphLayout
- = Just "At least one graph layout needs to be provided."
+ | snd flowOverall < maxFlowPerEdge
+  = Just "The parameter 'maxFlowPerEdge' must not be larger than the maximum 'flowOverall'."
+ | snd flowOverall > 2 * places * transitions * maxFlowPerEdge
+  = Just "The maximum 'flowOverall' is set unreasonably high, given the other parameters."
+ | transitions + places > 1 + fst flowOverall
+  = Just "The number of transitions and places exceeds the minimum 'flowOverall' too much to create a connected net."
  | otherwise
   = Nothing
 
@@ -952,10 +963,10 @@ checkChangeConfig
   BasicConfig {
     places,
     transitions,
-    maxTokensOverall,
+    flowOverall,
     maxTokensPerPlace,
-    maxFlowOverall,
-    maxFlowPerEdge
+    maxFlowPerEdge,
+    tokensOverall
     }
   ChangeConfig {
     tokenChangeOverall,
@@ -970,8 +981,8 @@ checkChangeConfig
  | maxTokenChangePerPlace > tokenChangeOverall
   = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'tokenChangeOverall'."
  | maxTokenChangePerPlace > maxTokensPerPlace
-  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than 'maxTokensPerPlace'."
- | tokenChangeOverall > 2 * maxTokensOverall
+  = Just "The parameter 'maxTokenChangePerPlace' must not be larger than maximum 'tokensPerPlace'."
+ | tokenChangeOverall > 2 * snd tokensOverall
   = Just "The parameter 'tokenChangeOverall' is set unreasonably high, given the maximal tokens overall."
  | maxTokenChangePerPlace * places < tokenChangeOverall
   = Just "The parameter 'tokenChangeOverall' is set unreasonably high, given the per-place parameter."
@@ -983,16 +994,18 @@ checkChangeConfig
   = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'flowChangeOverall'."
  | maxFlowChangePerEdge > maxFlowPerEdge
   = Just "The parameter 'maxFlowChangePerEdge' must not be larger than 'maxFlowPerEdge'."
- | flowChangeOverall > 2 * maxFlowOverall
+ | flowChangeOverall > 2 * snd flowOverall
   = Just "The parameter 'flowChangeOverall' is set unreasonable high, given the maximal flow overall."
  | 2 * places * transitions * maxFlowChangePerEdge < flowChangeOverall
   = Just "The parameter 'flowChangeOverall' is set unreasonably high, given the other parameters."
  | otherwise
   = Nothing
 
-checkGraphLayouts :: Bool -> Int -> BasicConfig -> Maybe String
-checkGraphLayouts useDifferent wrongInstances bc
-  | useDifferent && length (graphLayout bc) <= wrongInstances
+checkGraphLayouts :: Bool -> Int -> GraphConfig -> Maybe String
+checkGraphLayouts useDifferent wrongInstances gc
+  | null (graphLayouts gc)
+  = Just "At least one graph layout needs to be provided."
+  | useDifferent && length (graphLayouts gc) <= wrongInstances
   = Just "The parameter 'graphLayout' has to contain more entries than the number of 'wrongInstances' if 'useDifferentGraphLayouts' is set."
   | otherwise
   = Nothing

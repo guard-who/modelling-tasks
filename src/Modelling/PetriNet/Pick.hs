@@ -34,6 +34,7 @@ import Modelling.PetriNet.Types         (
   BasicConfig (..),
   ChangeConfig (..),
   Drawable,
+  GraphConfig (..),
   Net (..),
   checkBasicConfig,
   checkChangeConfig,
@@ -106,14 +107,15 @@ pickGenerate
     -> Int
     -> RandT StdGen (ExceptT String IO) [(p n b, Maybe a)]
     )
-  -> (c -> BasicConfig)
+  -> (c -> GraphConfig)
   -> (c -> Bool)
   -> (c -> Bool)
   -> c
   -> Int
   -> Int
   -> ExceptT String IO (PickInstance (p n b))
-pickGenerate pick bc useDifferent withSol config segment seed = flip evalRandT (mkStdGen seed) $ do
+pickGenerate pick gc useDifferent withSol config segment seed
+  = flip evalRandT (mkStdGen seed) $ do
   ns <- pick config segment
   ns'  <- shuffleM ns
   let ts = nubOrd $ concatMap (transitionNames . fst) ns'
@@ -122,7 +124,7 @@ pickGenerate pick bc useDifferent withSol config segment seed = flip evalRandT (
   ps' <- shuffleM ps
   let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
   ns'' <- lift $ bimapM (traverseNet (`BM.lookup` mapping)) return `mapM` ns'
-  s <- randomDrawSettings (bc config)
+  s <- randomDrawSettings (gc config)
   ns''' <- addDrawingSettings s ns''
   return $ PickInstance {
     nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- ns'''],
@@ -131,7 +133,7 @@ pickGenerate pick bc useDifferent withSol config segment seed = flip evalRandT (
   where
     addDrawingSettings s ps = zip ps <$>
       if useDifferent config
-      then manyRandomDrawSettings (bc config) (wrong + 1)
+      then manyRandomDrawSettings (gc config) (wrong + 1)
       else return $ replicate (wrong + 1) s
 
 pickSyntax
@@ -178,8 +180,14 @@ renderPick path task config =
       file <- renderWith path (task ++ '-' : show x) net ds
       M.insert x (b, file) <$> ns
 
-checkConfigForPick :: Bool -> Int -> BasicConfig -> ChangeConfig -> Maybe String
-checkConfigForPick useDifferent numWrongInstances basic change
+checkConfigForPick
+  :: Bool
+  -> Int
+  -> BasicConfig
+  -> ChangeConfig
+  -> GraphConfig
+  -> Maybe String
+checkConfigForPick useDifferent numWrongInstances basic change graph
   = checkBasicConfig basic
   <|> checkChangeConfig basic change
-  <|> checkGraphLayouts useDifferent numWrongInstances basic
+  <|> checkGraphLayouts useDifferent numWrongInstances graph

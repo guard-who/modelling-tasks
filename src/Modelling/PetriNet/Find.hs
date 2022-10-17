@@ -35,6 +35,7 @@ import Modelling.PetriNet.Types (
   BasicConfig (..),
   ChangeConfig (..),
   DrawSettings (..),
+  GraphConfig (..),
   Net (..),
   checkBasicConfig,
   checkChangeConfig,
@@ -136,16 +137,16 @@ checkCConfig BasicConfig { atLeastActive }
   = Just "The parameter 'atLeastActive' must be at least 2 to create the task."
  | otherwise = Nothing
 
-checkConfigForFind :: BasicConfig -> ChangeConfig -> Maybe String
-checkConfigForFind basic change =
+checkConfigForFind :: BasicConfig -> ChangeConfig -> GraphConfig -> Maybe String
+checkConfigForFind basic change graph =
   checkCConfig basic
-  <|> prohibitHideTransitionNames basic
+  <|> prohibitHideTransitionNames graph
   <|> checkBasicConfig basic
   <|> checkChangeConfig basic change
 
-prohibitHideTransitionNames :: BasicConfig -> Maybe String
-prohibitHideTransitionNames bc
-  | hideTransitionNames bc
+prohibitHideTransitionNames :: GraphConfig -> Maybe String
+prohibitHideTransitionNames gc
+  | hideTransitionNames gc
   = Just "Transition names are required for this task type"
   | otherwise
   = Nothing

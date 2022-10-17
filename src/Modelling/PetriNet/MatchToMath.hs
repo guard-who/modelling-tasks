@@ -70,6 +70,7 @@ import Modelling.PetriNet.Types (
   ChangeConfig (..),
   Drawable,
   DrawSettings (..),
+  GraphConfig (..),
   Net (..),
   PetriLike (..),
   PetriMath (..),
@@ -83,6 +84,7 @@ import Modelling.PetriNet.Types (
   defaultAlloyConfig,
   defaultBasicConfig,
   defaultChangeConfig,
+  defaultGraphConfig,
   drawSettingsWithCommand,
   isPlaceNode,
   manyRandomDrawSettings,
@@ -155,6 +157,7 @@ data MathConfig = MathConfig {
   advConfig :: AdvConfig,
   changeConfig :: ChangeConfig,
   generatedWrongInstances :: Int,
+  graphConfig :: GraphConfig,
   printSolution :: Bool,
   useDifferentGraphLayouts :: Bool,
   wrongInstances :: Int,
@@ -170,6 +173,7 @@ defaultMathConfig = MathConfig {
     maxTokenChangePerPlace = 0
     },
   generatedWrongInstances = 50,
+  graphConfig = defaultGraphConfig,
   printSolution = False,
   useDifferentGraphLayouts = False,
   wrongInstances = 3,
@@ -261,7 +265,7 @@ graphToMath
   -> Int
   -> ExceptT String IO (MatchInstance (Drawable (p n String)) Math)
 graphToMath c segment seed = evalRandTWith seed $ do
-  ds <- randomDrawSettings (basicConfig c)
+  ds <- randomDrawSettings (graphConfig c)
   (d, m, ms) <-
     matchToMath ds (map toPetriMath) c segment
   matchMathInstance c d m $ fst <$> ms
@@ -276,11 +280,11 @@ mathToGraph c segment seed = evalRandTWith seed $ do
   (x, xs) <- second (flip zip) <$>
     if useDifferentGraphLayouts c
     then do
-      (x':xs') <- manyRandomDrawSettings (basicConfig c) (wrongInstances c + 1)
+      (x':xs') <- manyRandomDrawSettings (graphConfig c) (wrongInstances c + 1)
       return (x', xs')
     else do
-      s <- drawSettingsWithCommand (basicConfig c)
-        <$> oneOf (graphLayout $ basicConfig c)
+      s <- drawSettingsWithCommand (graphConfig c)
+        <$> oneOf (graphLayouts $ graphConfig c)
       return (s, replicate (wrongInstances c) s)
   (d, m, ds) <- matchToMath x xs c segment
   matchMathInstance c m d $ fst <$> ds
@@ -508,19 +512,20 @@ checkMathConfig :: MathConfig -> Maybe String
 checkMathConfig c@MathConfig {
   basicConfig,
   changeConfig,
+  graphConfig,
   useDifferentGraphLayouts,
   wrongInstances
   } = checkBasicConfig basicConfig
-  <|> prohibitHideNames basicConfig
+  <|> prohibitHideNames graphConfig
   <|> checkChangeConfig basicConfig changeConfig
   <|> checkConfig c
-  <|> checkGraphLayouts useDifferentGraphLayouts wrongInstances basicConfig
+  <|> checkGraphLayouts useDifferentGraphLayouts wrongInstances graphConfig
 
-prohibitHideNames :: BasicConfig -> Maybe String
-prohibitHideNames bc
-  | hidePlaceNames bc
+prohibitHideNames :: GraphConfig -> Maybe String
+prohibitHideNames gc
+  | hidePlaceNames gc
   = Just "Place names are required for this task type"
-  | hideTransitionNames bc
+  | hideTransitionNames gc
   = Just "Transition names are required for this task type"
   | otherwise
   = Nothing

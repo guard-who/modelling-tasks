@@ -10,6 +10,7 @@ module Modelling.PetriNet.TestCommon (
   validAdvConfigs,
   validConfigsForFind,
   validConfigsForPick,
+  validGraphConfig,
   ) where
 
 import qualified Language.Alloy.Call              as A (CallAlloyConfig (..))
@@ -18,6 +19,7 @@ import Modelling.PetriNet.Alloy         (getAlloyInstances)
 import Modelling.PetriNet.Types (
   AlloyConfig (..),
   AdvConfig (AdvConfig), BasicConfig (..), ChangeConfig (ChangeConfig),
+  GraphConfig (..),
   defaultAlloyConfig,
   )
 
@@ -120,9 +122,26 @@ validConfigsForPick = validBasicAndChangeConfigs 0
 validConfigsForFind :: Int -> Int -> [(BasicConfig, ChangeConfig)]
 validConfigsForFind = validBasicAndChangeConfigs 2
 
+validGraphConfig :: GraphConfig
+validGraphConfig = GraphConfig {
+  graphLayouts = [Neato],
+  hidePlaceNames = False,
+  hideTransitionNames = False,
+  hideWeight1 = True
+  }
+
 validBasicAndChangeConfigs :: Int -> Int -> Int -> [(BasicConfig, ChangeConfig)]
 validBasicAndChangeConfigs minala low high =
-  [ (BasicConfig p t ala mintoa maxtoa maxtpp minfoa maxfoa maxfpe iso [Neato] True False False,
+  [ (BasicConfig {
+       places = p,
+       transitions = t,
+       atLeastActive = ala,
+       flowOverall = (minfoa, maxfoa),
+       isConnected = iso,
+       maxTokensPerPlace = maxtpp,
+       maxFlowPerEdge = maxfpe,
+       tokensOverall = (mintoa, maxtoa)
+       },
      ChangeConfig tcoa mtcpp fcoa mfcpe
     )
   | p      <- [mlow1 .. min 8 high]

@@ -42,17 +42,17 @@ import Modelling.PetriNet.Reach.Type (
   parseTransitionPrec,
   )
 import Modelling.PetriNet.Types (
-  BasicConfig (..),
   Conflict,
   DrawSettings (..),
   FindConflictConfig (..),
+  GraphConfig (..),
   Net,
   PetriConflict (..),
   PetriLike (..),
   SimpleNode (..),
   SimplePetriNet,
   defaultFindConflictConfig,
-  lBasicConfig,
+  lGraphConfig,
   lHidePlaceNames,
   )
 
@@ -180,21 +180,22 @@ parseConflictPlacesPrec _  = do
 
 defaultFindConflictPlacesConfig :: FindConflictConfig
 defaultFindConflictPlacesConfig = defaultFindConflictConfig
-  & lBasicConfig . lHidePlaceNames .~ False
+  & lGraphConfig . lHidePlaceNames .~ False
 
 checkFindConflictPlacesConfig :: FindConflictConfig -> Maybe String
 checkFindConflictPlacesConfig FindConflictConfig {
   basicConfig,
   changeConfig,
-  conflictConfig
+  conflictConfig,
+  graphConfig
   }
-  = prohibitHidePlaceNames basicConfig
-  <|> checkConfigForFind basicConfig changeConfig
+  = prohibitHidePlaceNames graphConfig
+  <|> checkConfigForFind basicConfig changeConfig graphConfig
   <|> checkConflictConfig basicConfig conflictConfig
 
-prohibitHidePlaceNames :: BasicConfig -> Maybe String
-prohibitHidePlaceNames bc
-  | hidePlaceNames bc
+prohibitHidePlaceNames :: GraphConfig -> Maybe String
+prohibitHidePlaceNames gc
+  | hidePlaceNames gc
   = Just "Place names are required for this task type."
   | otherwise
   = Nothing

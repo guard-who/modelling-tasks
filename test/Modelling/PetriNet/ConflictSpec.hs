@@ -42,6 +42,7 @@ import Modelling.PetriNet.TestCommon (
   validAdvConfigs,
   validConfigsForFind,
   validConfigsForPick,
+  validGraphConfig,
   )
 import Settings                         (configDepth)
 
@@ -107,6 +108,7 @@ validFindConflictConfigs cs aconfig = do
   (bc, ch) <- cs
   FindConflictConfig bc aconfig ch
     <$> validConflictConfigs bc
+    <*> pure validGraphConfig
     <*> pure False
     <*> [Nothing, Just True, Just False]
     <*> pure alloyTestConfig
@@ -128,6 +130,7 @@ validPickConflictConfigs cs = do
   (bc, ch) <- cs
   PickConflictConfig bc ch
     <$> validConflictConfigs bc
+    <*> pure validGraphConfig
     <*> pure False
     <*> [False, True]
     <*> [Nothing, Just True, Just False]
