@@ -121,7 +121,7 @@ import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Either                      (isLeft)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
-import Data.String.Interpolate          (i)
+import Data.String.Interpolate          (i, iii)
 import Language.Alloy.Call (
   AlloyInstance,
   )
@@ -145,12 +145,24 @@ findConcurrencyTask path task = do
     german "Betrachten Sie dieses Petrinetz"
   image pn
   paragraph $ translate $ do
-    english "Which pair of transitions are concurrently activated under the initial marking?"
-    german "Welches Paar von Transitionen ist unter der Startmarkierung nebenläufig aktiviert?"
+    english [iii|
+      Which pair of transitions are concurrently activated
+      under the initial marking?
+      |]
+    german [iii|
+      Welches Paar von Transitionen ist unter der Startmarkierung
+      nebenläufig aktiviert?
+      |]
   paragraph $ do
     translate $ do
-      english "Please state your answer by giving a pair of concurrently activated transitions. "
-      german "Geben Sie Ihre Antwort durch Angabe eines Paars von nebenläufig aktivierten Transitionen an. "
+      english [iii|
+        Please state your answer by giving a pair
+        of concurrently activated transitions.
+        #{" "}|]
+      german [iii|
+        Geben Sie Ihre Antwort durch Angabe eines Paars
+        von nebenläufig aktivierten Transitionen an.
+        #{" "}|]
     translate $ do
       english [i|Stating |]
       german [i|Die Angabe von |]
@@ -158,11 +170,20 @@ findConcurrencyTask path task = do
     code $ show ts
     translate $ do
       let (t1, t2) = bimap show show ts
-      english [i| as answer would indicate that transitions #{t1} and #{t2} are concurrently activated under the initial marking. |]
-      german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung nebenläufig aktiviert sind. |]
+      english [iii|
+        #{" "}as answer would indicate that transitions #{t1} and #{t2}
+        are concurrently activated under the initial marking.
+        #{" "}|]
+      german [iii|
+        #{" "}als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2}
+        unter der Startmarkierung nebenläufig aktiviert sind.
+        #{" "}|]
     translate $ do
       english "The order of transitions within the pair does not matter here."
-      german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
+      german [iii|
+        Die Reihenfolge der Transitionen innerhalb
+        des Paars spielt hierbei keine Rolle.
+        |]
   paragraph hoveringInformation
 
 findConcurrencySyntax
@@ -208,13 +229,25 @@ pickConcurrencyTask
   -> LangM m
 pickConcurrencyTask path task = do
   paragraph $ translate $ do
-    english "Which of the following Petri nets has exactly one pair of transitions that are concurrently activated?"
-    german "Welches dieser Petrinetze hat genau ein Paar von Transitionen, die nebenläufig aktiviert sind?"
+    english [iii|
+      Which of the following Petri nets has exactly
+      one pair of transitions that are concurrently activated?
+      |]
+    german [iii|
+      Welches dieser Petrinetze hat genau ein Paar von Transitionen,
+      die nebenläufig aktiviert sind?
+      |]
   files <- renderPick path "concurrent" task
   images show snd files
   paragraph $ translate $ do
-    english "Please state your answer by giving only the number of the Petri net having these concurrently activated transitions. "
-    german "Geben Sie Ihre Antwort durch Angabe der Nummer des Petrinetzes an, das diese nebenläufig aktivierten Transitionen hat. "
+    english [iii|
+      Please state your answer by giving only the number of the Petri net
+      having these concurrently activated transitions.
+      #{" "}|]
+    german [iii|
+      Geben Sie Ihre Antwort durch Angabe der Nummer des Petrinetzes an,
+      das diese nebenläufig aktivierten Transitionen hat.
+      #{" "}|]
   let plural = wrongInstances task > 1
   paragraph $ do
     translate $ do
@@ -222,8 +255,16 @@ pickConcurrencyTask path task = do
       german [i|Die Angabe von |]
     code "1"
     translate $ do
-      english [i| as answer would indicate that Petri net 1 has exactly two transitions that are concurrently activated (and the other Petri #{if plural then "nets don't" else "net doesn't"}!).|]
-      german $ "als Antwort würde bedeuten, dass Petrinetz 1 genau zwei nebenläufig aktivierte Transitionen hat (und dass "
+      english [iii|
+        #{" "}as answer would indicate that Petri net 1 has
+        exactly two transitions that are concurrently activated
+        (and the other Petri
+        #{if plural then "nets don't" else "net doesn't"}!).
+        |]
+      german $ [iii|
+        #{" "}als Antwort würde bedeuten, dass Petrinetz 1
+        genau zwei nebenläufig aktivierte Transitionen hat (und dass
+        #{" "}|]
         ++ (if plural
             then "die anderen Petrinetze dies nicht tun"
             else "das andere Petrinetz dies nicht tut")

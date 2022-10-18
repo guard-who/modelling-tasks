@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 module Modelling.CdOd.Output (
   drawCdFromSyntax,
   drawOdFromInstance,
@@ -30,6 +31,7 @@ import Data.List (
 import Data.List.Split                  (splitOn)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
+import Data.String.Interpolate          (iii)
 import Language.Alloy.Call              (AlloyInstance)
 import System.FilePath                  (dropExtension)
 import System.IO.Unsafe                 (unsafePerformIO)
@@ -81,7 +83,14 @@ mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
-drawCdFromSyntax :: Bool -> Bool -> Maybe Attribute -> Syntax -> FilePath -> GraphvizOutput -> IO FilePath
+drawCdFromSyntax
+  :: Bool
+  -> Bool
+  -> Maybe Attribute
+  -> Syntax
+  -> FilePath
+  -> GraphvizOutput
+  -> IO FilePath
 drawCdFromSyntax printNavigations printNames marking syntax file format = do
   let (classes, associations) = syntax
   let classNames = map fst classes
@@ -94,16 +103,40 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
         where
           subs seen name
             | name `elem` seen = []
-            | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((name `elem`) . snd) classes)
+            | otherwise = name : concatMap
+                (subs (name:seen) . fst)
+                (filter ((name `elem`) . snd) classes)
   let assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-  let assocEdges = map (\(a,n,m1,from,to,m2) -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), Assoc a n m1 m2 (shouldBeMarked from to classesWithSubclasses assocsBothWays))) associations
-  let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges) :: Gr String Connection
+  let assocEdges = map (
+        \(a,n,m1,from,to,m2) -> (
+          fromJust (elemIndex from theNodes),
+          fromJust (elemIndex to theNodes),
+          Assoc a n m1 m2 (shouldBeMarked from to classesWithSubclasses assocsBothWays)
+          )
+        ) associations
+  let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges)
+        :: Gr String Connection
   let dotGraph = graphToDot (nonClusteredParams {
-                   fmtNode = \(_,l) -> [toLabel l,
-                                        shape BoxShape, Margin $ DVal 0.04, Width 0, Height 0, FontSize 11],
-                   fmtEdge = \(_,_,l) -> FontSize 11 : connectionArrow printNavigations printNames marking l }) graph
-  quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
+                   fmtNode = \(_,l) -> [
+                       toLabel l,
+                       shape BoxShape,
+                       Margin $ DVal 0.04,
+                       Width 0,
+                       Height 0,
+                       FontSize 11
+                       ],
+                   fmtEdge = \(_,_,l) -> FontSize 11
+                     : connectionArrow printNavigations printNames marking l
+                   }) graph
+  errorWithoutGraphviz
   addExtension (runGraphviz dotGraph) format (dropExtension file)
+
+errorWithoutGraphviz :: IO ()
+errorWithoutGraphviz =
+  quitWithoutGraphviz [iii|
+    Please install GraphViz executables from http://graphviz.org/
+    and put them on your PATH
+    |]
 
 drawOdFromInstance
   :: RandomGen g
@@ -129,8 +162,15 @@ drawOdFromRawInstance
 drawOdFromRawInstance input =
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
       theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
-      theEdges = map ((\[from,v,to] -> (fromJust (elemIndex from theNodes), fromJust (elemIndex to theNodes), takeWhile (/= '$') v)) . splitOn "->") $
-                 filter (not . null) (splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj<:get=" objGetLine)))))
+      theEdges = map ((\[from,v,to] -> (
+                          fromJust (elemIndex from theNodes),
+                          fromJust (elemIndex to theNodes),
+                          takeWhile (/= '$') v)) . splitOn "->"
+                     )
+                 $ filter (not . null)
+                 $ splitOn ", "
+                 $ init $ tail $ fromJust
+                 $ stripPrefix "this/Obj<:get=" objGetLine
   in drawOdFromNodesAndEdges theNodes theEdges (length theNodes `div` 3)
 
 drawOdFromNodesAndEdges
@@ -151,10 +191,19 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
     . drop anonymous
     <$> shuffleM numberedNodes
   let dotGraph = graphToDot (nonClusteredParams {
-                   fmtNode = \(i,l) -> [underlinedLabel (fromMaybe "" (lookup i objectNames) ++ ": " ++ takeWhile (/= '$') l),
-                                        shape BoxShape, Margin $ DVal 0.04, Width 0, Height 0, FontSize 12],
-                   fmtEdge = \(_,_,l) -> arrowHeads l ++ [ArrowSize 0.4, FontSize 12] ++ [toLabel l | printNames] }) graph
-  lift $ quitWithoutGraphviz "Please install GraphViz executables from http://graphviz.org/ and put them on your PATH"
+                   fmtNode = \(i,l) -> [
+                       underlinedLabel $ fromMaybe "" (lookup i objectNames)
+                       ++ ": " ++ takeWhile (/= '$') l,
+                       shape BoxShape,
+                       Margin $ DVal 0.04,
+                       Width 0,
+                       Height 0,
+                       FontSize 12
+                       ],
+                   fmtEdge = \(_,_,l) -> arrowHeads l
+                     ++ [ArrowSize 0.4, FontSize 12]
+                     ++ [toLabel l | printNames] }) graph
+  lift errorWithoutGraphviz
   lift $ addExtension (runGraphvizCommand undirCommand dotGraph) format (dropExtension file)
   where
     removeDollar l = case splitOn "$" l of

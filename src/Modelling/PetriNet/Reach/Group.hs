@@ -177,8 +177,27 @@ equalGroup x y
         sameLength = T.length (T.filter (== '.') x) == T.length (T.filter (== '.') y)
 
 buildSVG :: SVGOptions -> XML.Element
-buildSVG svg = XML.Element "svg" [("xmlns", xmlns svg), ("height", height svg), ("stroke-opacity", iStrokeOpacity svg), ("viewBox", viewBox svg), ("font-size", fontSize svg), ("width", width svg), ("xmlns:xlink", xmlnsXlink svg), ("stroke", iStroke svg), ("version", version svg)]
-  [ XML.NodeElement $ XML.Element "g" [("stroke-linejoin", strokeLinejoin gr), ("stroke-opacity", strokeOpacity gr), ("fill-opacity", fillOpacity gr), ("stroke", stroke gr), ("stroke-width", strokeWidth gr), ("fill", fill gr), ("stroke-linecap", strokeLinecap gr), ("stroke-miterlimit", strokeMiterlimit gr)]
+buildSVG svg = XML.Element "svg" [
+  ("xmlns", xmlns svg),
+  ("height", height svg),
+  ("stroke-opacity", iStrokeOpacity svg),
+  ("viewBox", viewBox svg),
+  ("font-size", fontSize svg),
+  ("width", width svg),
+  ("xmlns:xlink", xmlnsXlink svg),
+  ("stroke", iStroke svg),
+  ("version", version svg)
+  ]
+  [ XML.NodeElement $ XML.Element "g" [
+      ("stroke-linejoin", strokeLinejoin gr),
+      ("stroke-opacity", strokeOpacity gr),
+      ("fill-opacity", fillOpacity gr),
+      ("stroke", stroke gr),
+      ("stroke-width", strokeWidth gr),
+      ("fill", fill gr),
+      ("stroke-linecap", strokeLinecap gr),
+      ("stroke-miterlimit", strokeMiterlimit gr)
+      ]
   [ XML.NodeElement $ XML.Element "path" (M.fromList $
       [("d", d ps), ("class", pClass ps), ("fill-opacity", pFillOpacity ps)]
       ++ [("fill", x)

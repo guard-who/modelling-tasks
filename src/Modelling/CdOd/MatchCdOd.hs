@@ -124,7 +124,7 @@ import Data.List (
   )
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
-import Data.String.Interpolate          (i)
+import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -199,23 +199,52 @@ matchCdOdTask path task = do
     german "Betrachten Sie die folgenden zwei Klassendiagramme."
   images show id cds
   paragraph $ translate $ do
-    english [i|Which of the following five object diagrams conform to which class diagram?
-An object diagram can conform to neither, either, or both class diagrams.|]
-    german [i|Welche der folgenden fünf Objektdiagramme passen zu welchem Klassendiagramm?
-Ein Objektdiagramm kann zu keinem, einem oder beiden Klassendiagrammen passen.|]
+    english [iii|
+      Which of the following five object diagrams conform to which class diagram?
+      \n
+      An object diagram can conform to neither, either, or both class diagrams.
+      |]
+    german [iii|
+      Welche der folgenden fünf Objektdiagramme
+      passen zu welchem Klassendiagramm?
+      \n
+      Ein Objektdiagramm kann zu keinem,
+      einem oder beiden Klassendiagrammen passen.
+      |]
   images (:[]) snd ods
   paragraph $ do
     translate $ do
-      english [i|Please state your answer by giving a list of pairs, each comprising of a class diagram number and object diagram letters.
-Each pair indicates that the mentioned object diagrams conform to the respective class diagram.
-For example, |]
-      german [i|Bitte geben Sie Ihre Antwort in Form einer Liste von Paaren an, die jeweils aus einer Klassendiagrammnummer und aus Objektdiagrammbuchstaben bestehen.
-Jedes Paar gibt an, dass die genannten Objektdiagramme zu dem jeweiligen Klassendiagramm passen.
-Zum Beispiel drückt |]
+      english [iii|
+        Please state your answer by giving a list of pairs,
+        each comprising of a class diagram number and object diagram letters.
+        \n
+        Each pair indicates that the mentioned object diagrams conform to the
+        respective class diagram.
+        \n
+        For example,#{" "}|]
+      german [iii|
+        Bitte geben Sie Ihre Antwort in Form einer Liste von Paaren an,
+        die jeweils aus einer Klassendiagrammnummer und
+        aus Objektdiagrammbuchstaben bestehen.
+        \n
+        Jedes Paar gibt an, dass die genannten Objektdiagramme
+        zu dem jeweiligen Klassendiagramm passen.
+        \n
+        Zum Beispiel drückt#{" "}|]
     code . show $ matchingShow matchCdOdInitial
     translate $ do
-      english [i|expresses that among the offered choices exactly the object diagrams a and b are instances of class diagram 1 and that none of the offered object diagrams are instances of class diagram 2.|]
-      german [i|aus, dass unter den angebotenen Auswahlmöglichkeiten genau die Objektdiagramme a und b Instanzen des Klassendiagramms 1 sind und dass keines der angebotenen Objektdiagramme Instanz des Klassendiagramms 2 ist.|]
+      english [iii|
+        expresses that among the offered choices exactly
+        the object diagrams a and b are instances of class diagram 1 and
+        that none of the offered object diagrams
+        are instances of class diagram 2.
+        |]
+      german [iii|
+        aus, dass unter den angebotenen Auswahlmöglichkeiten
+        genau die Objektdiagramme a und b Instanzen des Klassendiagramms 1 sind
+        und dass keines der angebotenen Objektdiagramme
+        Instanz des Klassendiagramms 2 ist.
+        |]
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
@@ -246,7 +275,9 @@ matchCdOdSyntax
 matchCdOdSyntax task sub = addPretext $ do
   assertion (all availableCd $ fst <$> sub) $ translate $ do
     english "Referenced class diagrams were provided within task?"
-    german "Referenzierte Klassendiagramme sind Bestandteil der Aufgabenstellung?"
+    german [iii|
+      Referenzierte Klassendiagramme sind Bestandteil der Aufgabenstellung?
+      |]
   assertion (all (all availableOd) $ lettersList . snd <$> sub) $ translate $ do
     english "Referenced object diagrams were provided within task?"
     german "Referenzierte Objektdiagramme sind Bestandteil der Aufgabenstellung?"
@@ -299,9 +330,9 @@ getMatchCdOdTask f config = do
   (cds, ods) <- mapRandT liftIO $ f config
   ods' <- runExceptT (mapM (mapM alloyInstanceToOd) ods)
     >>= either fail return
-  let names  = nubOrd $ concat $ classNames <$> cds
-      assocs = nubOrd $ concat (associationNames <$> cds)
-        ++ concat (linkNames . snd <$> ods')
+  let names  = nubOrd $ concatMap classNames cds
+      assocs = nubOrd $ concatMap associationNames cds
+        ++ concatMap (linkNames . snd) ods'
   names'  <- shuffleM names
   assocs' <- shuffleM assocs
   g' <- getRandom
@@ -361,9 +392,9 @@ newMatchCdOdInstances
   => MatchCdOdInstance
   -> RandT g m [MatchCdOdInstance]
 newMatchCdOdInstances inst = do
-  let names = nub $ concat $ classNames <$> diagrams inst
-      assocs = nub $ concat (associationNames <$> diagrams inst)
-        ++ concat (linkNames . snd <$> instances inst)
+  let names = nub $ concatMap classNames (diagrams inst)
+      assocs = nub $ concatMap associationNames (diagrams inst)
+        ++ concatMap (linkNames . snd) (instances inst)
   names'  <- shuffleM $ tail $ permutations names
   assocs' <- shuffleM $ tail $ permutations assocs
   sequence
@@ -401,9 +432,9 @@ renameInstance
 renameInstance inst names' assocs' = do
   let cds = diagrams inst
       ods = instances inst
-      names = nub $ concat $ classNames <$> diagrams inst
-      assocs = nub $ concat (associationNames <$> diagrams inst)
-        ++ concat (linkNames . snd <$> instances inst)
+      names = nub $ concatMap classNames (diagrams inst)
+      assocs = nub $ concatMap associationNames (diagrams inst)
+        ++ concatMap (linkNames . snd) (instances inst)
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd cd = renameClassesInCd bmNames cd >>= renameAssocsInCd bmAssocs

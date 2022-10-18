@@ -99,7 +99,7 @@ import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (permutations, sort)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
-import Data.String.Interpolate          (i)
+import Data.String.Interpolate          (i, iii)
 import Data.Tuple.Extra                 (snd3)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
@@ -200,23 +200,55 @@ differentNamesTask path task = do
   image od'
   paragraph $ do
     translate $ do
-      english [i|Which relationship in the class diagram (CD) corresponds to which of the links in the object diagram (OD)?
-State your answer by giving a mapping of relationships in the CD to links in the OD.
-To state that a in the CD corresponds to x in the OD and b in the CD corresponds to y in the OD write it as:|]
-      german [i|Welche Beziehung im Klassendiagramm (CD) entspricht welchen Links im Objektdiagramm (OD)?
-Geben Sie Ihre Antwort als eine Zuordnung von Beziehungen im CD zu Links im OD an.
-Um anzugeben, dass a im CD zu x im OD und b im CD zu y im OD korrespondieren, schreiben Sie es als:|]
+      english [iii|
+        Which relationship in the class diagram (CD) corresponds
+        to which of the links in the object diagram (OD)?
+        \n
+        State your answer by giving a mapping of
+        relationships in the CD to links in the OD.
+        \n
+        To state that a in the CD corresponds to x in the OD and
+        b in the CD corresponds to y in the OD write it as:
+        |]
+      german [iii|
+        Welche Beziehung im Klassendiagramm (CD)
+        entspricht welchen Links im Objektdiagramm (OD)?
+        \n
+        Geben Sie Ihre Antwort als eine Zuordnung von
+        Beziehungen im CD zu Links im OD an.
+        \n
+        Um anzugeben, dass a im CD zu x im OD und b im CD
+        zu y im OD korrespondieren, schreiben Sie es als:
+        |]
     code . show $ mappingShow differentNamesInitial
   paragraph $ translate $ do
-    english [i|Please note: Links are already grouped correctly and fully, i.e. all links with the same name (and only links with the same name!) in the OD correspond to exactly the same relationship name in the CD.|]
-    german [i|Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert, d.h. alle Links mit dem selben Namen (and auch nur Links mit dem selben Namen!) im OD entsprechen genau dem selben Beziehungsnamen im CD.|]
+    english [iii|
+      Please note: Links are already grouped correctly and fully,
+      i.e. all links with the same name (and only links with the same name!)
+      in the OD correspond to exactly the same relationship name in the CD.
+      |]
+    german [iii|
+      Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert,
+      d.h. alle Links mit dem selben Namen
+      (and auch nur Links mit dem selben Namen!)
+      im OD entsprechen genau dem selben Beziehungsnamen im CD.
+      |]
   paragraph $ translate $ if usesAllRelationships task
     then do
-    english [i|Thus, every link name and every relationship name should occur exactly once in your mapping.|]
-    german [i|Deshalb sollte jeder Linkname and jeder Beziehungsname genau einmal in Ihrer Zuordnung auftauchen.|]
+    english [iii|
+      Thus, every link name and every relationship name should occur
+      exactly once in your mapping.
+      |]
+    german [iii|
+      Deshalb sollte jeder Linkname and jeder Beziehungsname
+      genau einmal in Ihrer Zuordnung auftauchen.
+      |]
     else do
     english [i|Thus, every link name should occur exactly once in your mapping.|]
-    german [i|Deshalb sollte jeder Linkname genau einmal in Ihrer Zuordnung auftauchen.|]
+    german [iii|
+      Deshalb sollte jeder Linkname
+      genau einmal in Ihrer Zuordnung auftauchen.
+      |]
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
@@ -232,8 +264,13 @@ differentNamesSyntax
 differentNamesSyntax task cs = addPretext $ do
   let l = length $ catMaybes $ readMapping m <$> cs
   assertion (l == length cs) $ translate $ do
-    english "All provided pairs are matching a valid link and a valid relationship?"
-    german "Alle angegebenen Paare ordnen einen gültigen Link einer gültigen Beziehung zu?"
+    english [iii|
+      All provided pairs are matching a valid link and a valid relationship?
+      |]
+    german [iii|
+      Alle angegebenen Paare ordnen einen gültigen Link
+      einer gültigen Beziehung zu?
+      |]
   assertion (l == nubLengthOn fst && l == nubLengthOn snd) $ translate $ do
     english "All provided pairs are non-overlapping?"
     german "Alle angegebenen Paare sind nicht überlappend?"
