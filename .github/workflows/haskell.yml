@@ -1,3 +1,4 @@
+---
 name: Haskell CI
 
 on:
@@ -14,10 +15,10 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-#        os: [ubuntu-latest, macOS-latest, windows-latest]
+        # os: [ubuntu-latest, macOS-latest, windows-latest]
         os: [ubuntu-latest]
         plan:
-          - { resolver: "" }
+          - {resolver: ""}
         include:
           - os: ubuntu-latest
             apt-get: graphviz texlive-base texlive-latex-base
@@ -25,64 +26,64 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Install ${{ matrix.os }} Packages
-      uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
-      with:
-        apt-get: ${{ matrix.apt-get }}
-    - uses: actions/checkout@v2
+      - name: Install ${{ matrix.os }} Packages
+        uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
+        with:
+          apt-get: ${{ matrix.apt-get }}
+      - uses: actions/checkout@v2
 
-    - name: Cache Stack on unix
-      id: cache-stack-unix
-      uses: actions/cache@v1
-      with:
-        path: ~/.stack
-        key: ${{ matrix.os }}-${{ matrix.plan.resolver }}-stack-home-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-      if: contains(matrix.os, 'windows') == false
+      - name: Cache Stack on unix
+        id: cache-stack-unix
+        uses: actions/cache@v1
+        with:
+          path: ~/.stack
+          key: ${{ matrix.os }}-${{ matrix.plan.resolver }}-stack-home-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+        if: contains(matrix.os, 'windows') == false
 
-    - name: Cache Stack on windows
-      id: cache-stack-windows
-      uses: actions/cache@v1
-      with:
-        path: ~/AppData/Local/Programs/stack
-        key: ${{ matrix.os }}-${{ matrix.plan.resolver }}-stack-home-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-      if: contains(matrix.os, 'windows')
+      - name: Cache Stack on windows
+        id: cache-stack-windows
+        uses: actions/cache@v1
+        with:
+          path: ~/AppData/Local/Programs/stack
+          key: ${{ matrix.os }}-${{ matrix.plan.resolver }}-stack-home-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+        if: contains(matrix.os, 'windows')
 
-    - name: Setup stack
-      uses: haskell/actions/setup@v1
-      with:
-        enable-stack: true
-        stack-no-global: true
+      - name: Setup stack
+        uses: haskell/actions/setup@v1
+        with:
+          enable-stack: true
+          stack-no-global: true
 
-    - name: Install dependencies on unix
-      run: |
-        set -ex
-        stack --no-terminal --install-ghc $ARGS test --stack-yaml=stack-apps.yaml --bench --only-dependencies
-        set +ex
-      env:
-        ARGS: ${{ matrix.plan.resolver }}
-      if: contains(matrix.os, 'windows') == false
+      - name: Install dependencies on unix
+        run: |
+          set -ex
+          stack --no-terminal --install-ghc "$ARGS" test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+          set +ex
+        env:
+          ARGS: ${{ matrix.plan.resolver }}
+        if: contains(matrix.os, 'windows') == false
 
-    - name: Install dependencies on windows
-      shell: powershell
-      run: |
-        stack --no-terminal --install-ghc ${env:ARGS} test --stack-yaml=stack-apps.yaml --bench --only-dependencies
-      env:
-        ARGS: ${{ matrix.plan.resolver }}
-      if: contains(matrix.os, 'windows')
+      - name: Install dependencies on windows
+        shell: powershell
+        run: |
+          stack --no-terminal --install-ghc ${env:ARGS} test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+        env:
+          ARGS: ${{ matrix.plan.resolver }}
+        if: contains(matrix.os, 'windows')
 
-    - name: Build and test on unix
-      run: |
-        set -ex
-        stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
-        set +ex
-      env:
-        ARGS: ${{ matrix.plan.resolver }}
-      if: contains(matrix.os, 'windows') == false
+      - name: Build and test on unix
+        run: |
+          set -ex
+          stack --no-terminal "$ARGS" test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
+          set +ex
+        env:
+          ARGS: ${{ matrix.plan.resolver }}
+        if: contains(matrix.os, 'windows') == false
 
-    - name: Build and test on windows
-      shell: powershell
-      run: |
-        stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
-      env:
-        ARGS: ${{ matrix.plan.resolver }}
-      if: contains(matrix.os, 'windows')
+      - name: Build and test on windows
+        shell: powershell
+        run: |
+          stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
+        env:
+          ARGS: ${{ matrix.plan.resolver }}
+        if: contains(matrix.os, 'windows')

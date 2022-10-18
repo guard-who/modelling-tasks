@@ -1,3 +1,4 @@
+---
 name: modelling-tasks
 extra-source-files:
   - alloy/ad/ad_actionsequences_rules.als
@@ -121,17 +122,17 @@ tests:
   modelling-tasks-test:
     main: Spec.hs
     source-dirs:
-    - test
+      - test
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - modelling-tasks
-    - QuickCheck
-    - hspec
-    - process
-    - random
+      - modelling-tasks
+      - QuickCheck
+      - hspec
+      - process
+      - random
 flags:
   quick-testing:
     description: Decreases the testing depth resulting in fewer test cases and thus faster testing

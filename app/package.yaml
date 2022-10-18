@@ -1,3 +1,4 @@
+---
 name: modelling-tasks-apps
 build-tools:
   - alex
@@ -12,13 +13,13 @@ ghc-options:
   - -Wwarn=incomplete-uni-patterns
   - -Wwarn=orphans
 dependencies:
- - MonadRandom
- - base
- - containers
- - diagrams-lib
- - diagrams-svg
- - mtl
- - transformers
+  - MonadRandom
+  - base
+  - containers
+  - diagrams-lib
+  - diagrams-svg
+  - mtl
+  - transformers
 executables:
   check-cds:
     main: check-cds.hs
@@ -29,7 +30,7 @@ executables:
       - digest
       - graphviz
       - modelling-tasks
-    other-modules: []
+    other-modules: [ ]
   conflicts:
     main: conflicts.hs
     source-dirs:

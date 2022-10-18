@@ -15,4 +15,4 @@
 german.*$
 
 # ignore urls
-https?://[-0-9a-zA-Z?&=_\/%.]*
+https?://[-+0-9a-zA-Z?&=_\/%.]*
