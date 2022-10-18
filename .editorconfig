@@ -6,7 +6,10 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
-max_line_length = 120
+max_line_length = 175
 
-[test/**.{yml,yaml}]
+[**.als]
+max_line_length = 160
+
+[**.{yml,yaml,md,tex}]
 max_line_length = unset
