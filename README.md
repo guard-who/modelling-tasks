@@ -1,15 +1,10 @@
 # modelling-tasks [![Haskell CI](https://github.com/fmidue/modelling-tasks/workflows/Haskell%20CI/badge.svg)](https://github.com/fmidue/modelling-tasks/actions?query=workflow%3A%22Haskell+CI%22+branch%3Amaster)
 
-Installation of Haskell packages needed (for the class/object diagrams part):
+This repository contains exercise tasks for modelling lecture contents.
 
-```shell
-cabal install bytestring
-cabal install digest
-cabal install random-shuffle
-cabal install graphviz
-cabal install file-embed
-cabal install split
-cabal install bimap
-cabal install string-interpolate
-cabal install call-alloy
-```
+The diagram types covered are
+
+* Activity diagram
+* Class diagram
+* Object diagram
+* Petri net
