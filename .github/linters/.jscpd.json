@@ -6,6 +6,7 @@
   "ignore": [
     "**/__snapshots__/**", "**/app/**", "**/legacy-app/**"
   ],
+  "minLines": 15,
   "max-lines": 2000,
   "absolute": true
 }
