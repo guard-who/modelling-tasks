@@ -41,7 +41,7 @@ main = forceErrors $ do
                 flowChangeOverall = flwChange}
         }
   maybe (return ()) throwE $ checkMathConfig config
-  let switch 
+  let switch
         | sw == "b" = False
         | otherwise = True
   i <- lift instanceInput
@@ -57,7 +57,7 @@ main = forceErrors $ do
     lift $ print inst
 
 userInput :: IO (Int,Int,Int,Int,String)
-userInput = do   
+userInput = do
   putStr "Number of Places: "
   pls <- getLine
   putStr "Number of Transitions: "

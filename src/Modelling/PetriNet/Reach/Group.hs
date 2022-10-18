@@ -158,7 +158,7 @@ formatSVG :: [SVGGroup] -> [SVGGroup]
 formatSVG []     = []
 formatSVG (x:xs) = x{ paths = gpaths } : formatSVG rest
                 where
-                  gpaths 
+                  gpaths
                     | isLabelOrEdge x = concatMap applyClass (filter (equalGroup (svgClass x) . svgClass) (x:xs))
                     | otherwise = applyClass x ++ concatMap applyClass (takeWhile (equalGroup (svgClass x) . svgClass) xs)
                   rest
@@ -210,7 +210,7 @@ buildSVG svg = XML.Element "svg" [
 
 removeDoctype :: Bool -> String -> String
 removeDoctype _ "" = ""
-removeDoctype False s@(c:cs) 
+removeDoctype False s@(c:cs)
   | "<!DOCTYPE" `isPrefixOf` s = removeDoctype True (drop 9 s)
   | otherwise = c : removeDoctype False cs
 removeDoctype True (c:cs)

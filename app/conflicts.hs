@@ -1,6 +1,6 @@
 {-# Language DuplicateRecordFields #-}
 
-module Main (main) where 
+module Main (main) where
 
 import Common (
   forceErrors,
@@ -29,12 +29,12 @@ import System.IO (
 import Text.Pretty.Simple                (pPrint)
 
 main :: IO()
-main = do 
+main = do
   hSetBuffering stdout NoBuffering
   putStr "What type would you like? a: Find a Conflict in a Net, b: Choose the Net with the Conflict"
   sw <- getLine
   i <- instanceInput
-  if i >= 0 
+  if i >= 0
   then if sw == "b" then mainPick i else mainFind i
   else print "There is no negative index"
 
@@ -93,7 +93,7 @@ mainPick i = forceErrors $ do
     bc = basicConfig
     cc :: PickConflictConfig -> ChangeConfig
     cc = changeConfig
-    
+
 userInput :: IO (Int,Int,Int,Int)
 userInput = do
   putStr "Number of Places: "

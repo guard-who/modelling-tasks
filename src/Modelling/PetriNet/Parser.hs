@@ -178,7 +178,7 @@ singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.S
 singleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   getSingleAs rd (return .: Object) sig
-                            
+
 doubleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set (Object,Object))
 doubleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst

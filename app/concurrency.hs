@@ -29,12 +29,12 @@ import System.IO (
 import Text.Pretty.Simple                (pPrint)
 
 main :: IO ()
-main = do 
+main = do
   hSetBuffering stdout NoBuffering
   putStr "What type would you like? a: Find a concurrency in a Net, b: Choose the Net with the concurrency"
   sw <- getLine
   i <- instanceInput
-  if i >= 0 
+  if i >= 0
   then if sw == "b" then mainPick i else mainFind i
   else print "There is no negative index"
 
@@ -65,7 +65,7 @@ mainFind i = forceErrors $ do
     bc = basicConfig
     cc :: FindConcurrencyConfig -> ChangeConfig
     cc = changeConfig
-    
+
 mainPick :: Int -> IO ()
 mainPick i = forceErrors $ do
   lift $ pPrint defaultPickConcurrencyConfig
