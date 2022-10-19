@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TupleSections #-}
 
 {-|
 originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
@@ -82,10 +83,10 @@ validate p n = case p of
     forM_ (connections n) $ \c@(vor, _, nach) -> do
       let badVor =
             M.filter (> m) $
-              M.fromListWith (+) $ zip vor $ repeat 1
+              M.fromListWith (+) $ map (,1) vor
           badNach =
             M.filter (> m) $
-              M.fromListWith (+) $ zip nach $ repeat 1
+              M.fromListWith (+) $ map (,1) nach
       unless (M.null badVor) $
         refuse $ do
           paragraph $ text $ unlines [

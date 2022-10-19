@@ -91,7 +91,7 @@ import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (nub)
 import Data.Map                         (Map)
-import Data.Maybe                       (catMaybes, fromMaybe)
+import Data.Maybe                       (mapMaybe, fromMaybe)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
@@ -431,7 +431,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   inst <- getInstanceWithODs (map isValid cs) rinstas
   let names = nub $ classNames (fst inst)
       assocs = nub $ associationNames (fst inst)
-        ++ catMaybes (addedAssociation . fst . snd <$> snd inst)
+        ++ mapMaybe (addedAssociation . fst . snd) (snd inst)
   names'  <- shuffleM names
   assocs' <- shuffleM assocs
   let bmNames  = BM.fromList $ zip names names'

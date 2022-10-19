@@ -203,8 +203,8 @@ renameInstance
   -> m SelectValidCdInstance
 renameInstance inst names' assocs' = do
   let cds = classDiagrams inst
-      names = nub $ concat $ classNames . snd <$> cds
-      assocs = nub $ concat $ associationNames . snd <$> cds
+      names = nub $ concatMap (classNames . snd) cds
+      assocs = nub $ concatMap (associationNames . snd) cds
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd cd = renameClassesInCd bmNames cd >>= renameAssocsInCd bmAssocs
@@ -220,8 +220,8 @@ newSelectValidCdInstances
   => SelectValidCdInstance
   -> m [SelectValidCdInstance]
 newSelectValidCdInstances inst = do
-  let names = nub $ concat $ classNames . snd <$> classDiagrams inst
-      assocs = nub $ concat $ associationNames . snd <$> classDiagrams inst
+  let names = nub $ concatMap (classNames . snd) (classDiagrams inst)
+      assocs = nub $ concatMap (associationNames . snd) (classDiagrams inst)
   names'  <- shuffleM $ tail $ permutations names
   assocs' <- shuffleM $ tail $ permutations assocs
   sequence

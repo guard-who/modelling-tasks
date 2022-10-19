@@ -98,7 +98,7 @@ import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
 import Data.List                        (permutations, sort)
-import Data.Maybe                       (catMaybes, fromMaybe, isJust)
+import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
 import Data.String.Interpolate          (i, iii)
 import Data.Tuple.Extra                 (snd3)
 import GHC.Generics                     (Generic)
@@ -262,7 +262,7 @@ differentNamesSyntax
   -> [(Name, Name)]
   -> LangM m
 differentNamesSyntax task cs = addPretext $ do
-  let l = length $ catMaybes $ readMapping m <$> cs
+  let l = length $ mapMaybe (readMapping m) cs
   assertion (l == length cs) $ translate $ do
     english [iii|
       All provided pairs are matching a valid link and a valid relationship?
@@ -302,7 +302,7 @@ differentNamesEvaluation task cs = do
         if showSolution task
         then Just . show . mappingShow $ differentNamesSolution task
         else Nothing
-  multipleChoice what solution ms (catMaybes $ readMapping m <$> cs)
+  multipleChoice what solution ms (mapMaybe (readMapping m) cs)
 
 differentNamesSolution :: DifferentNamesInstance -> [(Name, Name)]
 differentNamesSolution = BM.toAscList . nameMapping . mapping

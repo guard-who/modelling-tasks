@@ -57,7 +57,8 @@ jobs:
       - name: Install dependencies on unix
         run: |
           set -ex
-          stack --no-terminal --install-ghc "$ARGS" test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+          # shellcheck disable=SC2086
+          stack --no-terminal --install-ghc $ARGS test --stack-yaml=stack-apps.yaml --bench --only-dependencies
           set +ex
         env:
           ARGS: ${{ matrix.plan.resolver }}
@@ -74,7 +75,8 @@ jobs:
       - name: Build and test on unix
         run: |
           set -ex
-          stack --no-terminal "$ARGS" test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
+          # shellcheck disable=SC2086
+          stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
           set +ex
         env:
           ARGS: ${{ matrix.plan.resolver }}

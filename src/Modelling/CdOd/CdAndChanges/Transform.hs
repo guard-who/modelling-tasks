@@ -131,7 +131,10 @@ changes config propss = uncurry (length propss,,)
 |]
 
 changeWithProperties :: RelationshipProperties -> Int -> (String, String)
-changeWithProperties props n = (change,) [i|
+changeWithProperties props n = (change, alloy)
+  where
+    change = [i|change#{n}|]
+    alloy =  [i|
 sig C#{n} extends Change {}
 
 pred #{change} {
@@ -145,8 +148,6 @@ pred #{change} {
     #{maybeToAlloySet $ hasMarkedEdges props}]
 }
 |]
-  where
-    change = [i|change#{n}|]
 
 matchCdOdChanges :: ClassConfig -> (Int, [String], String)
 matchCdOdChanges config = (3, ["changes", "changeLimits"],) $ [i|
