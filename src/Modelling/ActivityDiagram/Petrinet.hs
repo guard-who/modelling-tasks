@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -33,12 +34,13 @@ import Modelling.PetriNet.Types (
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.List (find)
+import GHC.Generics (Generic)
 import Modelling.ActivityDiagram.Datatype (
   isActivityFinalNode, isFlowFinalNode
   )
 
 
-data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, sourceNode :: AD.ADNode} deriving (Eq, Show)
+data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, sourceNode :: AD.ADNode} deriving (Generic, Eq, Show)
 
 instance Ord PetriKey where
   pk1 `compare` pk2 = label pk1 `compare` label pk2

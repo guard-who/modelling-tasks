@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
@@ -14,6 +15,7 @@ import qualified Data.ByteString as B (writeFile)
 import Data.ByteString (ByteString)
 import Data.List ( delete, intercalate, intersect, union )
 import Data.String.Interpolate ( i, __i )
+import GHC.Generics (Generic)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 import Modelling.ActivityDiagram.Datatype (
@@ -26,7 +28,7 @@ import Modelling.ActivityDiagram.Datatype (
 data PlantUMLConvConf = PlantUMLConvConf {
   suppressNodeNames :: Bool,
   suppressBranchConditions :: Bool
-} deriving (Show, Eq)
+} deriving (Generic, Show, Eq)
 
 defaultPlantUMLConvConf :: PlantUMLConvConf
 defaultPlantUMLConvConf = PlantUMLConvConf {

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
@@ -14,7 +15,7 @@ module Modelling.ActivityDiagram.Config (
 import Modelling.ActivityDiagram.Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
 
 import Data.String.Interpolate ( i )
-
+import GHC.Generics (Generic)
 
 data ADConfig = ADConfig {
   minActions :: Int,
@@ -27,7 +28,7 @@ data ADConfig = ADConfig {
   activityFinalNodes :: Int,
   flowFinalNodes :: Int,
   cycles :: Int
-} deriving (Show)
+} deriving (Generic, Show)
 
 defaultADConfig :: ADConfig
 defaultADConfig = ADConfig

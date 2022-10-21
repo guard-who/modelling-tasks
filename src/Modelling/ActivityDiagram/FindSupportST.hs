@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -70,13 +71,14 @@ import Control.Monad.Random (
 import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
+import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
 
 data FindSupportSTInstance = FindSupportSTInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUMLConvConf
-} deriving (Show)
+} deriving (Generic, Show)
 
 data FindSupportSTConfig = FindSupportSTConfig {
   adConfig :: ADConfig,
@@ -85,7 +87,7 @@ data FindSupportSTConfig = FindSupportSTConfig {
   hideBranchConditions :: Bool,
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool   -- Avoid having to add new sink transitions for representing finals
-} deriving (Show)
+} deriving (Generic, Show)
 
 defaultFindSupportSTConfig :: FindSupportSTConfig
 defaultFindSupportSTConfig = FindSupportSTConfig
@@ -144,7 +146,7 @@ data FindSupportSTSolution = FindSupportSTSolution {
   numberOfPetriNodes :: Int,
   numberOfSupportPlaces :: Int,
   numberOfSupportTransitions :: Int
-} deriving (Show, Eq, Read)
+} deriving (Generic, Show, Eq, Read)
 
 findSupportSTSolution :: FindSupportSTInstance -> FindSupportSTSolution
 findSupportSTSolution task =

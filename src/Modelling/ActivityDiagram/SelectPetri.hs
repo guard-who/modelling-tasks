@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -72,6 +73,7 @@ import Data.Maybe (isJust, fromJust)
 import Data.Graph.Inductive (Gr, mkGraph, lab, level)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.String.Interpolate ( i )
+import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
 
@@ -81,7 +83,7 @@ data SelectPetriInstance = SelectPetriInstance {
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings,
   petrinets :: Map Int (Bool, SimplePetriLike PetriKey)
-} deriving (Show)
+} deriving (Generic, Show)
 
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: ADConfig,
@@ -97,7 +99,7 @@ data SelectPetriConfig = SelectPetriConfig {
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
   noActivityFinalInForkBlocks :: Maybe Bool -- Avoid Activity Finals in concurrent flows to reduce confusion
-} deriving (Show)
+} deriving (Generic, Show)
 
 pickRandomLayout :: (MonadRandom m) => SelectPetriConfig -> m GraphvizCommand
 pickRandomLayout conf = oneOf (petriLayout conf)

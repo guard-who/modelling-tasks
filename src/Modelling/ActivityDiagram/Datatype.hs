@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Modelling.ActivityDiagram.Datatype (
   ADConnection(..),
   ADNode(..),
@@ -16,12 +17,14 @@ module Modelling.ActivityDiagram.Datatype (
   adjNodes
 ) where
 
+import GHC.Generics (Generic)
+
 data ADConnection =
   ADConnection {
     from :: Int,
     to :: Int,
     guard :: String
-  } deriving (Show, Eq, Ord)
+  } deriving (Generic, Show, Eq, Ord)
 
 data ADNode =
   ADActionNode {
@@ -52,14 +55,14 @@ data ADNode =
   }
   | ADInitialNode {
       label :: Int
-  } deriving (Show, Eq)
+  } deriving (Generic, Show, Eq)
 
 
 data UMLActivityDiagram =
   UMLActivityDiagram {
     nodes :: [ADNode],
     connections :: [ADConnection]
-  } deriving (Show, Eq)
+  } deriving (Generic, Show, Eq)
 
 
 adjNodes :: ADNode -> UMLActivityDiagram -> [ADNode]

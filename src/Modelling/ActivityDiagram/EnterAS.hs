@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
@@ -46,6 +47,7 @@ import Control.Monad.Random (
   )
 import Data.Maybe (isNothing, isJust, fromJust)
 import Data.String.Interpolate ( i )
+import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
@@ -53,7 +55,7 @@ import System.Random.Shuffle (shuffleM)
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
   sampleSequence :: [String]
-} deriving (Show, Eq)
+} deriving (Generic, Show, Eq)
 
 data EnterASConfig = EnterASConfig {
   adConfig :: ADConfig,
@@ -61,7 +63,7 @@ data EnterASConfig = EnterASConfig {
   objectNodeOnEveryPath :: Maybe Bool,
   minAnswerLength :: Int,
   maxAnswerLength :: Int
-} deriving (Show)
+} deriving (Generic, Show)
 
 defaultEnterASConfig :: EnterASConfig
 defaultEnterASConfig = EnterASConfig {

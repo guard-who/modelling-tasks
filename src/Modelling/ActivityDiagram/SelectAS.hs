@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -57,6 +58,7 @@ import Data.Maybe (isJust, fromJust)
 import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
 import Data.Vector.Distance (Params(..), leastChanges)
+import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
@@ -65,7 +67,7 @@ import System.Random.Shuffle (shuffleM)
 data SelectASInstance = SelectASInstance {
   activityDiagram :: UMLActivityDiagram,
   actionSequences :: Map Int (Bool, [String])
-} deriving (Show, Eq)
+} deriving (Generic, Show, Eq)
 
 data SelectASConfig = SelectASConfig {
   adConfig :: ADConfig,
@@ -74,7 +76,7 @@ data SelectASConfig = SelectASConfig {
   numberOfWrongAnswers :: Int,
   minAnswerLength :: Int,
   maxAnswerLength :: Int
-} deriving (Show)
+} deriving (Generic, Show)
 
 defaultSelectASConfig :: SelectASConfig
 defaultSelectASConfig = SelectASConfig {

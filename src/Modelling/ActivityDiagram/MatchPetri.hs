@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -80,6 +81,7 @@ import Data.List (sort)
 import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
+import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
 
@@ -89,7 +91,7 @@ data MatchPetriInstance = MatchPetriInstance {
   petrinet :: SimplePetriLike PetriKey,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings
-} deriving (Show)
+} deriving (Generic, Show)
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,
@@ -100,7 +102,7 @@ data MatchPetriConfig = MatchPetriConfig {
   activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
   avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
   noActivityFinalInForkBlocks :: Maybe Bool -- Avoid Activity Finals in concurrent flows to reduce confusion
-} deriving (Show)
+} deriving (Generic, Show)
 
 pickRandomLayout :: (MonadRandom m) => MatchPetriConfig -> m GraphvizCommand
 pickRandomLayout conf = oneOf (petriLayout conf)
@@ -216,7 +218,7 @@ data MatchPetriSolution = MatchPetriSolution {
   joinNodes :: [Int],
   initialNodes :: [Int],
   supportSTs :: [Int]
-} deriving (Show, Eq, Read)
+} deriving (Generic, Show, Eq, Read)
 
 matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
 matchPetriSolution task = mapTypesToLabels $ petrinet task

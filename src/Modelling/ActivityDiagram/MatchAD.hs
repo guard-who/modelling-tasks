@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -52,6 +53,7 @@ import Data.List (sort)
 import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
+import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
@@ -59,14 +61,14 @@ import System.Random.Shuffle (shuffleM)
 data MatchADInstance = MatchADInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUMLConvConf
-} deriving (Show)
+} deriving (Generic, Show)
 
 data MatchADConfig = MatchADConfig {
   adConfig :: ADConfig,
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
   noActivityFinalInForkBlocks :: Maybe Bool
-}
+} deriving (Generic, Show)
 
 defaultMatchADConfig :: MatchADConfig
 defaultMatchADConfig = MatchADConfig {
@@ -121,7 +123,7 @@ data MatchADSolution = MatchADSolution {
   numberOfInitialNodes :: Int,
   numberOfActivityFinalNodes :: Int,
   numberOfFlowFinalNodes :: Int
-} deriving (Eq, Show, Read)
+} deriving (Generic, Eq, Show, Read)
 
 matchADSolution :: MatchADInstance -> MatchADSolution
 matchADSolution task =
