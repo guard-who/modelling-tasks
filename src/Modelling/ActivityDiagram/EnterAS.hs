@@ -12,6 +12,7 @@ module Modelling.ActivityDiagram.EnterAS (
   checkEnterASInstance,
   enterActionSequence,
   enterASTask,
+  enterASInitial,
   enterASSyntax,
   enterASEvaluation,
   enterASSolution,

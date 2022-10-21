@@ -15,6 +15,7 @@ module Modelling.ActivityDiagram.MatchPetri (
   matchPetriSolution,
   extractSupportSTs,
   matchPetriTask,
+  matchPetriInitial,
   matchPetriSyntax,
   matchPetriEvaluation,
   matchPetri,

@@ -15,6 +15,7 @@ module Modelling.ActivityDiagram.FindSupportST (
   findSupportSTSolution,
   findSupportSTAlloy,
   findSupportSTTask,
+  findSupportSTInitial,
   findSupportSTEvaluation,
   findSupportST,
   defaultFindSupportSTInstance

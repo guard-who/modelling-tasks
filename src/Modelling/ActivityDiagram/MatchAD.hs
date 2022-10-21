@@ -12,6 +12,7 @@ module Modelling.ActivityDiagram.MatchAD (
   matchADAlloy,
   matchADSolution,
   matchADTask,
+  matchADInitial,
   matchADSyntax,
   matchADEvaluation,
   matchAD,
