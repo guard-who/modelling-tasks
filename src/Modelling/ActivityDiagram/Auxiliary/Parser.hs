@@ -52,7 +52,7 @@ parseValue = value <* skipSpaceChars
 
 parseString :: Parser String
 parseString =
-  (between (char '"') (char '"') parseAlphaNums) <|>
+  between (char '"') (char '"') parseAlphaNums <|>
   parseAlphaNums
   where parseAlphaNums = many1 (letter <|> digit)
 
