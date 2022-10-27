@@ -36,14 +36,14 @@ parseMappingSequence :: Parser (Map String ParseValue)
 parseMappingSequence = M.fromList . catMaybes <$> (parseMapping `sepEndBy` endOfLine)
 
 parseMapping :: Parser (Maybe (String, ParseValue))
-parseMapping = skipWhitespace *> text
+parseMapping = skipSpaceChars *> text
   where
-    parseLine = (,) <$> (parseString <* char ':' <* skipWhitespace) <*> parseValue
-    emptyLine = skipWhitespace
+    parseLine = (,) <$> (parseString <* char ':' <* skipSpaceChars) <*> parseValue
+    emptyLine = skipSpaceChars
     text = (Just <$> parseLine) <|> (Nothing <$ emptyLine)
 
 parseValue :: Parser ParseValue
-parseValue = value <* skipWhitespace
+parseValue = value <* skipSpaceChars
   where value = choice [ ParseList <$> parseList
                         ,ParseTuple <$> parseTuple
                         ,ParseInt <$> parseInt
@@ -51,17 +51,20 @@ parseValue = value <* skipWhitespace
                         ]
 
 parseString :: Parser String
-parseString = many1 (letter <|> digit)
+parseString =
+  (between (char '"') (char '"') parseAlphaNums) <|>
+  parseAlphaNums
+  where parseAlphaNums = many1 (letter <|> digit)
 
 parseTuple :: Parser (ParseValue, ParseValue)
-parseTuple = between (char '(' <* skipWhitespace) (char ')')
-  $ do x <- parseValue <* char ',' <* skipWhitespace
+parseTuple = between (char '(' <* skipSpaceChars) (char ')')
+  $ do x <- parseValue <* char ',' <* skipSpaceChars
        y <- parseValue
        return (x,y)
 
 parseList :: Parser [ParseValue]
-parseList = between (char '[' <* skipWhitespace) (char ']')
-  $ (parseValue <* skipWhitespace) `sepBy` (char ',' <* skipWhitespace)
+parseList = between (char '[' <* skipSpaceChars) (char ']')
+  $ (parseValue <* skipSpaceChars) `sepBy` (char ',' <* skipSpaceChars)
 
-skipWhitespace :: Parser ()
-skipWhitespace = skipMany $ satisfy (\c -> isSpace c && not (isControl c))
+skipSpaceChars :: Parser ()
+skipSpaceChars = skipMany $ satisfy (\c -> isSpace c && not (isControl c))
