@@ -39,7 +39,8 @@ parseMapping :: Parser (Maybe (String, ParseValue))
 parseMapping = skipWhitespace *> text
   where
     parseLine = (,) <$> (parseString <* char ':' <* skipWhitespace) <*> parseValue
-    text = (Just <$> parseLine) <|> return Nothing
+    emptyLine = skipWhitespace
+    text = (Just <$> parseLine) <|> (Nothing <$ emptyLine)
 
 parseValue :: Parser ParseValue
 parseValue = value <* skipWhitespace
