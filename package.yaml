@@ -75,6 +75,7 @@ library:
     - Modelling.ActivityDiagram.ActionSequences
     - Modelling.ActivityDiagram.Alloy
     - Modelling.ActivityDiagram.Auxiliary.Util
+    - Modelling.ActivityDiagram.Auxiliary.Parser
     - Modelling.ActivityDiagram.Config
     - Modelling.ActivityDiagram.Datatype
     - Modelling.ActivityDiagram.EnterAS
