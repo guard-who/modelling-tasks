@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -36,6 +36,7 @@ library
       Modelling.ActivityDiagram.ActionSequences
       Modelling.ActivityDiagram.Alloy
       Modelling.ActivityDiagram.Auxiliary.Util
+      Modelling.ActivityDiagram.Auxiliary.Parser
       Modelling.ActivityDiagram.Config
       Modelling.ActivityDiagram.Datatype
       Modelling.ActivityDiagram.EnterAS
@@ -98,7 +99,7 @@ library
     , base
     , bimap
     , bytestring
-    , call-alloy ==0.4.*
+    , call-alloy >=0.4.0.1 && <0.5
     , call-plantuml
     , composition
     , containers
@@ -173,7 +174,7 @@ test-suite modelling-tasks-test
     , base
     , bimap
     , bytestring
-    , call-alloy ==0.4.*
+    , call-alloy >=0.4.0.1 && <0.5
     , call-plantuml
     , composition
     , containers
