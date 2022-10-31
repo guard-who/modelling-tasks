@@ -30,7 +30,7 @@ data ParseValue =
   ParseString String |
   ParseTuple (ParseValue, ParseValue) |
   ParseList [ParseValue]
-  deriving (Show)
+  deriving (Eq, Show)
 
 parseMappingSequence :: Parser (Map String ParseValue)
 parseMappingSequence = M.fromList . catMaybes <$> (parseMapping `sepEndBy` endOfLine)
@@ -38,7 +38,7 @@ parseMappingSequence = M.fromList . catMaybes <$> (parseMapping `sepEndBy` endOf
 parseMapping :: Parser (Maybe (String, ParseValue))
 parseMapping = skipSpaceChars *> text
   where
-    parseLine = (,) <$> (parseString <* char ':' <* skipSpaceChars) <*> parseValue
+    parseLine = (,) <$> (parseString <* skipSpaceChars <* char ':' <* skipSpaceChars) <*> parseValue
     emptyLine = skipSpaceChars
     text = (Just <$> parseLine) <|> (Nothing <$ emptyLine)
 
