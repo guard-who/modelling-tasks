@@ -192,7 +192,7 @@ matchCdOdTask path task = do
     `M.traverseWithKey` diagrams task
   ods <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
     (\k (is,o) -> (is,) <$> uncurry drawOdFromNodesAndEdges
-      o (anonymous o) dirs True (odFilename k is) Svg)
+      o (anonymous o) dirs True (odFilename k is))
     `M.traverseWithKey` instances task
   paragraph $ translate $ do
     english "Consider the following two class diagrams."

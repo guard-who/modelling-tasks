@@ -455,7 +455,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
           navigations = foldr (`M.insert` Back)
                               (foldr (`M.insert` Forward) M.empty forwards)
                               backwards
-      in drawOdFromInstance od Nothing navigations True ("od-" ++ show x) Pdf
+      in drawOdFromInstance od Nothing navigations True ("od-" ++ show x)
     getInstanceWithODs _  [] =
       repairIncorrect allowed config noIsolationLimitation maxInsts to
     getInstanceWithODs vs (rinsta:rinstas) = do

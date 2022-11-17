@@ -189,7 +189,7 @@ differentNamesTask path task = do
         (if anonymousObjects task then Just 1000 else Nothing)
   cd' <- lift $ liftIO $ drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od") Svg
+    uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od")
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie das folgende Klassendiagramm:"

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 {-|
@@ -20,6 +19,12 @@ import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
 import Modelling.Auxiliary.Common       (Object)
+import Modelling.Auxiliary.Diagrams (
+  connectOutside'',
+  nonEmptyPathBetween,
+  text',
+  trailBetween,
+  )
 import Modelling.PetriNet.Parser (
   netToGr,
   parseNet,
@@ -44,26 +49,11 @@ import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
-import Data.Data                        (Typeable)
 import Data.Digest.Pure.SHA             (sha512, showDigest)
 import Data.FileEmbed                   (embedFile)
 import Data.List                        (foldl')
-import Data.Maybe
-import Diagrams.Backend.SVG             (B, svgClass, SVG)
-import Diagrams.Path                    (pathPoints)
+import Diagrams.Backend.SVG             (B, svgClass)
 import Diagrams.Prelude
-import Graphics.SVGFonts (
-  TextOpts (..),
-#if MIN_VERSION_SVGFonts(1,8,0)
-  fit_height,
-  set_envelope,
-  svgText,
-#else
-  Spacing (..),
-  Mode (..),
-  textSVG_,
-#endif
-  )
 import Graphics.SVGFonts.ReadFont       (PreparedFont, loadFont')
 import Language.Alloy.Call              (AlloyInstance)
 import System.Directory                 (doesFileExist)
@@ -207,18 +197,15 @@ drawGraph labelOf hidePNames hideTNames hide1 pfont graph = gedges # frame 1
       mempty
       nodes
     gedges = foldl
-      (\g (s, t, l, p) -> g
-        # drawEdge hide1 pfont l (labelOnly s) (labelOnly t) (nonEmpty s t p g)
+      (\g (s, t, l, p) ->
+        let ls = labelOnly s
+            lt = labelOnly t
+        in g # drawEdge hide1 pfont l ls lt (nonEmptyPathBetween p ls lt g)
       )
       gnodes
       edges
     withLabel = first labelOf
     labelOnly = labelOf . fst
-    nonEmpty s t p g =
-      let (x, y, z) = fromJust $ pointsFromTo (labelOnly s) (labelOnly t) g
-      in case pathPoints p of
-        [] -> fromVertices [x, y, z]
-        _  -> p
 
 {-|
 Nodes are either Places (having 'Just' tokens), or Transitions (having
@@ -305,77 +292,7 @@ drawEdge hide1 f l l1 l2 path d =
         | otherwise = atop (place (centerXY $ text' f 20 $ show l) labelPoint # svgClass "elabel")
   in addLabel (connectOutside'' opts l1 l2 d # lwL 0.5) # svgClass "."
   where
-    scaleAndPositionTrail
-      :: Point V2 Double
-      -> Point V2 Double
-      -> Point V2 Double
-      -> Point V2 Double
-      -> Located (Trail V2 Double)
-      -> Located (Trail V2 Double)
-    scaleAndPositionTrail pos e oldPos oldE x = scale
-      (distanceA e pos / distanceA oldPos oldE)
-      (unLoc x)
-      `at` pos
-    trail =
-      let x = head $ pathTrails path
-          points = head $ pathPoints path
-          oldPos = head points
-          oldE = last points
-      in maybe
-           x
-           (\(pos, _, e) -> scaleAndPositionTrail pos e oldPos oldE x)
-           $ pointsFromTo l1 l2 d
-
-pointsFromTo
-  :: (IsName n1, IsName n2, Metric v, RealFloat n, Semigroup m)
-  => n1
-  -> n2
-  -> QDiagram b v n m
-  -> Maybe (Point v n, Point v n, Point v n)
-pointsFromTo n1 n2 g = do
-  b1 <- lookupName n1 g
-  b2 <- lookupName n2 g
-  let v = location b2 .-. location b1
-      midpoint = location b1 .+^ (v ^/ 2)
-      s' = fromMaybe (location b1) $ traceP midpoint (negated v) b1
-      e' = fromMaybe (location b2) $ traceP midpoint v b2
-  return (s', midpoint, e')
-
-connectOutside'' ::  (IsName nm1, IsName nm2, RealFloat n,
-                           Typeable n, Show n) =>
-                          ArrowOpts n
-                          -> nm1
-                          -> nm2
-                          -> QDiagram SVG V2 n Any
-                          -> QDiagram SVG V2 n Any
-connectOutside'' opts n1 n2 g =
-  let (s', _, e') = fromJust $ pointsFromTo n1 n2 g
-  in arrowBetween' opts s' e' # svgClass "edge"
-     `atop` g
-
-{-|
-Render text as a diagram.
--}
-text'
-  :: PreparedFont Double
-  -- ^ which font to use
-  -> Double
-  -- ^ font size
-  -> String
-  -- ^ what to write
-  -> Diagram B
-text' pfont s x = x
-#if MIN_VERSION_SVGFonts(1,8,0)
-  # svgText (def :: TextOpts Double) { textFont = pfont }
-  # fit_height s
-  # set_envelope
-  # lw none
-#else
-  # textSVG_ (TextOpts pfont INSIDE_H KERN False s s)
-#endif
-  # fc black
-  # lc black
-  # lwL 0.4
+    trail = trailBetween path l1 l2 d
 
 renderWith
   :: (MonadIO m, Net p n, OutputMonad m)

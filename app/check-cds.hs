@@ -103,7 +103,7 @@ drawCdAndOdsFor is c dirs cds cmd = do
   ods <- Alloy.getInstances is parts'
   g <- getStdGen
   flip evalRandT g $
-    mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) Pdf >>= liftIO . print)
+    mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) >>= liftIO . print)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
     maxThreeObjects = maxFiveObjects { objects = (1, 3) }
