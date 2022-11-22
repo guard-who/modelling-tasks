@@ -114,7 +114,6 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.GraphViz                    (GraphvizOutput (Svg))
 import Data.List (
   (\\),
   delete,
@@ -188,7 +187,7 @@ matchCdOdTask path task = do
   let dirs = foldr (M.union . getDirs . toEdges) M.empty $ diagrams task
       anonymous o = length (fst o) `div` 3
   cds <- lift $ liftIO $
-    (\k c -> drawCdFromSyntax True True Nothing c (cdFilename k) Svg)
+    (\k c -> drawCdFromSyntax True True mempty c (cdFilename k))
     `M.traverseWithKey` diagrams task
   ods <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
     (\k (is,o) -> (is,) <$> uncurry drawOdFromNodesAndEdges

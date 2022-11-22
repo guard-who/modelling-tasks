@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.Output (
   drawCdFromSyntax,
   drawOdFromInstance,
@@ -16,7 +17,17 @@ import qualified Data.Map                         as M (
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 
 import Modelling.Auxiliary.Common       (lowerFirst)
-import Modelling.Auxiliary.Diagrams     (connectWithPath, textU, varrow)
+import Modelling.Auxiliary.Diagrams (
+  arrowheadDiamond,
+  arrowheadFilledDiamond,
+  arrowheadTriangle,
+  arrowheadVee,
+  connectWithPath,
+  flipArrow,
+  text',
+  textU,
+  varrow,
+  )
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   emptyArr,
@@ -34,20 +45,17 @@ import Control.Monad.Trans.Except       (runExcept)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz (
   DirType (Back, Forward, NoDir),
-  GraphvizOutput,
   GraphvizParams (..),
   Shape (BoxShape),
-  addExtension,
   arrowFrom,
   arrowTo,
   diamond,
+  dirCommand,
   edgeEnds,
-  graphToDot,
   noArrow,
   nonClusteredParams,
   oDiamond,
   quitWithoutGraphviz,
-  runGraphviz,
   shape,
   toLabel,
   toLabelValue,
@@ -64,13 +72,21 @@ import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
 import Data.String.Interpolate          (iii)
 import Diagrams.Align                   (center)
-import Diagrams.Attributes              (lineWidth)
+import Diagrams.Angle                   ((@@), deg)
+import Diagrams.Attributes              (lineWidth, lwL)
 import Diagrams.Backend.SVG             (B)
 import Diagrams.Combinators             (atop, frame)
 import Diagrams.Names                   (IsName, named)
-import Diagrams.Path                    (Path)
+import Diagrams.Path                    (Path, reversePath)
 import Diagrams.Points                  (Point(..))
-import Diagrams.Prelude                 (Diagram, black, local, white)
+import Diagrams.Prelude (
+  Diagram,
+  Style,
+  applyStyle,
+  black,
+  local,
+  white,
+  )
 import Diagrams.Transform               (translate)
 import Diagrams.TwoD                    (V2, bg, snugCenterXY)
 import Diagrams.TwoD.Arrow (
@@ -87,7 +103,6 @@ import Diagrams.Util                    ((#), with)
 import Graphics.SVGFonts.Fonts          (lin)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
-import System.FilePath                  (dropExtension)
 import System.IO.Unsafe                 (unsafePerformIO)
 import System.Random.Shuffle            (shuffleM)
 
@@ -140,12 +155,11 @@ mult (l, Just u) | l == u    = toLabelValue l
 drawCdFromSyntax
   :: Bool
   -> Bool
-  -> Maybe Attribute
+  -> Style V2 Double
   -> Syntax
   -> FilePath
-  -> GraphvizOutput
   -> IO FilePath
-drawCdFromSyntax printNavigations printNames marking syntax file format = do
+drawCdFromSyntax printNavigations printNames marking syntax file = do
   let (classes, associations) = syntax
   let classNames = map fst classes
   let theNodes = classNames
@@ -170,20 +184,111 @@ drawCdFromSyntax printNavigations printNames marking syntax file format = do
         ) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges)
         :: Gr String Connection
-  let dotGraph = graphToDot (nonClusteredParams {
-                   fmtNode = \(_,l) -> [
-                       toLabel l,
-                       shape BoxShape,
-                       Margin $ DVal 0.04,
-                       Width 0,
-                       Height 0,
-                       FontSize 11
-                       ],
-                   fmtEdge = \(_,_,l) -> FontSize 11
-                     : connectionArrow printNavigations printNames marking l
-                   }) graph
+  let params = nonClusteredParams {
+        fmtNode = \(_,l) -> [
+          toLabel l,
+          shape BoxShape,
+          Margin $ DVal 0.02,
+          Width 0,
+          Height 0,
+          FontSize 16
+          ],
+        fmtEdge = \(_,_,l) -> FontSize 16
+          : connectionArrow printNavigations printNames Nothing l
+        }
   errorWithoutGraphviz
-  addExtension (runGraphviz dotGraph) format (dropExtension file)
+  graph' <- layoutGraph' params dirCommand graph
+  sfont  <- lin
+  let (nodes, edges) = GV.getGraph graph'
+      gnodes = M.foldrWithKey
+        (\l p g -> drawClass sfont l p `atop` g)
+        mempty
+        nodes
+      gedges = foldr
+        (\(s, t, l, p) g -> g # drawRel sfont s t l p)
+        gnodes
+        edges
+  let file' = file ++ ".svg"
+  writeSVG file' gedges
+  return file'
+  where
+    drawRel f = drawRelationship f printNavigations printNames marking
+
+drawRelationship
+  :: IsName n
+  => PreparedFont Double
+  -> Bool
+  -> Bool
+  -> (Style V2 Double)
+  -> n
+  -> n
+  -> Connection
+  -> Path V2 Double
+  -> Diagram B
+  -> Diagram B
+drawRelationship sfont printNavigations printNames marking fl tl l path g =
+  connectWithPath opts sfont dir from to ml mfl mtl path' g
+  # applyStyle (if isMarked then marking else mempty)
+  # lwL 0.5
+  where
+    angle :: Double
+    angle = 150
+    opts = with
+      & arrowTail .~ atail (angle @@ deg)
+      & arrowHead .~ ahead (angle @@ deg)
+      & headLength .~ local 7
+      & headGap .~ local 0
+      & tailLength .~ local 7
+    mfl' = case l of
+      Inheritance -> Nothing
+      Assoc Composition _ r _ _ -> rangeWithDefault (1, Just 1) r
+      Assoc _ _ r _ _ -> rangeWithDefault (0, Nothing) r
+    mtl' = case  l of
+      Inheritance -> Nothing
+      Assoc _ _ _ r _ -> rangeWithDefault (0, Nothing) r
+    (from, to, mfl, mtl, path')
+      | flipEdge  = (tl, fl, mtl', mfl', reversePath path)
+      | otherwise = (fl, tl, mfl', mtl', path)
+    atail = const lineTail
+    (flipEdge, ahead) = case l of
+      Inheritance -> (False, arrowheadTriangle)
+      Assoc t _ _ _ _ -> case t of
+        Association -> (
+          False,
+          if printNavigations then arrowheadVee else const (flipArrow lineTail)
+          )
+        Aggregation -> (True, arrowheadDiamond)
+        Composition -> (True, arrowheadFilledDiamond)
+    dir = case l of
+      Assoc Association _ _ _ _ ->
+        if printNavigations then Forward else NoDir
+      _ -> Forward
+    (ml, isMarked) = case l of
+      Inheritance      -> (Nothing, False)
+      Assoc _ al _ _ im -> (,im) $
+        if printNames then Just al else Nothing
+
+rangeWithDefault :: (Int, Maybe Int) -> (Int, Maybe Int) -> Maybe String
+rangeWithDefault def fromTo
+  | def == fromTo = Nothing
+  | otherwise     = Just $ range fromTo
+  where
+    range (l, Nothing) = show l ++ "..*"
+    range (l, Just u)
+      | l == -1   = "*.." ++ show u
+      | l == u    = show l
+      | otherwise = show l ++ ".." ++ show u
+
+drawClass
+  :: PreparedFont Double
+  -> String
+  -> Point V2 Double
+  -> Diagram B
+drawClass sfont l (P p) = translate p
+  $ center $ blackFrame l $ center
+  $ text' sfont 16 l
+  # snugCenterXY
+  # lineWidth 0.6
 
 errorWithoutGraphviz :: IO ()
 errorWithoutGraphviz =
@@ -252,7 +357,7 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
           FontSize 16
           ],
         fmtEdge = \(_,_,l) -> arrowHeads l
-          ++ [ArrowSize 0.4, FontSize 12]
+          ++ [ArrowSize 0.4, FontSize 16]
           ++ [toLabel l | printNames] }
   let objectNames' = (\(i, n) -> (fromMaybe "" $ lookup i numberedNodes, n)) <$> objectNames
   lift errorWithoutGraphviz
@@ -293,14 +398,15 @@ drawLink
   -> Diagram B
   -> Diagram B
 drawLink sfont navigations printNames fl tl l =
-  connectWithPath opts sfont dir fl tl ml
+  connectWithPath opts sfont dir fl tl ml Nothing Nothing
+  # lwL 0.5
   where
     opts = with
       & arrowTail .~ lineTail
       & arrowHead .~ varrow
-      & headLength .~ local 10
-      & headGap .~ local (-0.8)
-      & tailLength .~ local 10
+      & headLength .~ local 7
+      & headGap .~ local 0
+      & tailLength .~ local 7
     ml
       | printNames = Just l
       | otherwise  = Nothing

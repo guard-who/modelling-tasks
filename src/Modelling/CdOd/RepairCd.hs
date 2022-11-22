@@ -88,7 +88,7 @@ import Control.Monad.Random
   (RandT, RandomGen, StdGen, evalRandT, getRandomR, getStdGen, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
-import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
+import Data.GraphViz                    (DirType (..))
 import Data.List                        (nub)
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe, fromMaybe)
@@ -285,9 +285,9 @@ repairCdTask path task = do
   cd <- lift . liftIO $ drawCdFromSyntax
     (withDirections task)
     (withNames task)
-    Nothing
+    mempty
     (classDiagram task)
-    path Svg
+    path
   paragraph $ translate $ do
     english "Consider the following class diagram, which unfortunately is invalid."
     german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist."
@@ -445,7 +445,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     <*> mapM (\(b, (c, cd)) -> fmap (b,) . (,) <$> mapM renameEdge c <*> renameCd cd) (snd inst)
   where
     drawCd :: Syntax -> Integer -> IO FilePath
-    drawCd cd' n = drawCdFromSyntax True True Nothing cd' ("cd-" ++ show n) Pdf
+    drawCd cd' n = drawCdFromSyntax True True mempty cd' ("cd-" ++ show n)
     drawOd :: Syntax -> AlloyInstance -> Integer -> RandT StdGen IO FilePath
     drawOd cd od x =
       let backwards   = [n | (_, _, Assoc t n _ _ _) <- toEdges cd

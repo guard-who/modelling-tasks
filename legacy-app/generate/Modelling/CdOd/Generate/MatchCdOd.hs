@@ -8,9 +8,6 @@ import qualified Data.Map                         as M (
   fromList,
   )
 
-import Modelling.CdOd.Auxiliary.Util (
-  redColor,
-  )
 import Modelling.CdOd.Edges (
   DiagramEdge,
   anyMarkedEdge,
@@ -41,9 +38,10 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen,
   )
-import Data.GraphViz                    (GraphvizOutput (Pdf))
 import Data.Map                         (Map)
 import Data.Set                         (singleton)
+import Diagrams.Prelude                 ((#), red)
+import Diagrams.TwoD.Attributes         (lc)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
@@ -75,7 +73,7 @@ getRandomCDs config = do
     (searchSpace config)
   let cd0 = fromEdges names edges
   -- continueIf (not (anyMarkedEdge cd0)) $ do
-  when debug . liftIO . void $ drawCdFromSyntax False True (Just redColor) cd0 "debug-0" Pdf
+  when debug . liftIO . void $ drawCdFromSyntax False True (mempty # lc red) cd0 "debug-0"
   mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
   let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
   continueWithJust medges1 (const True) $ \edges1 -> do
@@ -89,7 +87,7 @@ getRandomCDs config = do
       continueWithJust medges3 (const True) $ \edges3 -> do
         let cd3         = fromEdges names edges3
         when debug . void . liftIO
-          $ drawCdFromSyntax False True (Just redColor) cd3 "debug-3" Pdf
+          $ drawCdFromSyntax False True (mempty # lc red) cd3 "debug-3"
         return (cd1, cd2, cd3, length names)
   where
     continueWithJust mx p m

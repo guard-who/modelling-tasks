@@ -34,6 +34,7 @@ executables:
       - parser
     dependencies:
       - array
+      - diagrams-lib
       - graphviz
       - modelling-tasks
     other-modules:

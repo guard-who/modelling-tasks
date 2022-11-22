@@ -17,6 +17,8 @@ main = do
    [file] -> readFile file >>= drawOd file
    [file, format]
      | fmap toUpper format == "SVG" -> readFile file >>= drawOd file
+     | otherwise -> error $ "format " ++ format
+         ++ "is not supported, only SVG is supported"
    _ -> error "zu viele Parameter"
 
 drawOd :: FilePath -> String -> IO ()

@@ -96,11 +96,13 @@ import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf, Svg))
+import Data.GraphViz                    (DirType (..))
 import Data.List                        (permutations, sort)
 import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
 import Data.String.Interpolate          (i, iii)
 import Data.Tuple.Extra                 (snd3)
+import Diagrams.Prelude                 ((#), red)
+import Diagrams.TwoD.Attributes         (lc)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
   AlloyInstance,
@@ -187,7 +189,7 @@ differentNamesTask path task = do
       navigations = foldr (`M.insert` Back) M.empty backwards
       anonymous = fromMaybe (length (fst od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)
-  cd' <- lift $ liftIO $ drawCdFromSyntax True True Nothing cd (path ++ "-cd") Svg
+  cd' <- lift $ liftIO $ drawCdFromSyntax True True mempty cd (path ++ "-cd")
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
     uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od")
   paragraph $ translate $ do
@@ -421,7 +423,7 @@ getDifferentNamesTask fhead config names edges' = do
       (show n)
       ""
     drawCd (n, cd) =
-      drawCdFromSyntax True True (Just redColor) cd ("debug-" ++ show n) Pdf
+      drawCdFromSyntax True True (mempty # lc red) cd ("debug-" ++ show n)
     continueWithHead []    _ = fhead
     continueWithHead (x:_) f = f x
     usedLabels :: AlloyInstance -> [String]

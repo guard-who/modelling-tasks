@@ -1,22 +1,30 @@
 module Main (main) where
 
-import Modelling.Auxiliary.Common (upperFirst)
-import Modelling.CdOd.Auxiliary.Util (redColor)
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.Output
 
 import Control.Arrow (first, second)
-import Data.GraphViz
+import Data.Char                        (toUpper)
+import Data.GraphViz ()
 import Data.Maybe    (maybeToList)
+import Diagrams.Attributes              (lw, veryThick)
+import Diagrams.Prelude                 (Style, (#), red)
+import Diagrams.TwoD.Attributes         (lc)
+import Diagrams.TwoD.Types              (V2)
 
 import System.Environment (getArgs)
 
-run :: Bool -> Attribute -> String -> FilePath -> GraphvizOutput -> IO ()
-run printNames howToMark input file format = do
+run
+  :: Bool
+  -> Style V2 Double
+  -> String
+  -> FilePath
+  -> IO ()
+run printNames howToMark input file = do
   let tokens = lexer input
   let syntax = parser tokens
-  output <- drawCdFromSyntax False printNames (Just howToMark) (first (map $ second maybeToList) syntax) file format
+  output <- drawCdFromSyntax False printNames howToMark (first (map $ second maybeToList) syntax) file
   putStrLn $ "Output written to " ++ output
 
 main :: IO ()
@@ -24,14 +32,28 @@ main = do
   args <- getArgs
   let (printNames, args') = stripPrintNamesArg args
   case args' of
-    [] -> getContents >>= \contents -> run printNames redColor contents "output" Pdf
-    [file] -> readFile file >>= \contents -> run printNames redColor contents file Pdf
-    [file, format] -> readFile file >>= \contents -> run printNames redColor contents file (read (upperFirst format))
-    [file, format, x] -> readFile file >>= \contents -> run printNames (specialStyle !! read x) contents file (read (upperFirst format))
+    [] -> getContents >>= \contents -> run printNames redColor contents "output"
+    [file] -> readFile file >>= \contents -> run printNames redColor contents file
+    [file, format]
+      | fmap toUpper format == "SVG" ->
+          readFile file >>= \contents -> run printNames redColor contents file
+      | otherwise -> error $ "format " ++ format
+          ++ "is not supported, only SVG is supported"
+    [file, format, x]
+      | fmap toUpper format == "SVG" ->
+        readFile file >>= \contents ->
+          run printNames (specialStyle !! read x) contents file
+      | otherwise -> error $ "format " ++ format
+          ++ "is not supported, only SVG is supported"
     _ -> error "zu viele Parameter"
   where
     stripPrintNamesArg ("-p":args) = (True, args)
     stripPrintNamesArg args        = (False, args)
+    redColor = mempty # lc red
 
-specialStyle :: [Attribute]
-specialStyle = map style [dashed, dotted, bold]
+specialStyle :: [Style V2 Double]
+specialStyle = map (mempty #) [
+  error "not implemented: it should produce a dashed line (maybe using 'dashing'?)",
+  error "not implemented: it should produce a dotted line (maybe using 'dashing'?)",
+  lw veryThick
+  ]

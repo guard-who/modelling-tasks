@@ -19,7 +19,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.IO.Class           (MonadIO(liftIO))
 import Control.Monad.Random             (evalRandT, getStdGen)
-import Data.GraphViz                    (DirType (..), GraphvizOutput (Pdf))
+import Data.GraphViz                    (DirType (..))
 import Data.Map                         (Map)
 
 v :: DiagramEdge
@@ -97,7 +97,7 @@ drawCdAndOdsFor
   -> String
   -> IO ()
 drawCdAndOdsFor is c dirs cds cmd = do
-  mapM_ (\(cd, i) -> drawCdFromSyntax True True Nothing cd (c ++ "-cd" ++ show i) Pdf >>= print) $ zip cds [0..]
+  mapM_ (\(cd, i) -> drawCdFromSyntax True True mempty cd (c ++ "-cd" ++ show i) >>= print) $ zip cds [0..]
   let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
         ++ createRunCommand cmd 3 maxThreeObjects
   ods <- Alloy.getInstances is parts'

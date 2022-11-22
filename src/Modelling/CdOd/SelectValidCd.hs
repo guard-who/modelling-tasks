@@ -62,7 +62,6 @@ import Control.Monad.Random             (evalRandT, forM_, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
-import Data.GraphViz                    (GraphvizOutput (Svg))
 import Data.List                        (nub, permutations)
 import Data.Map                         (Map)
 import Data.String.Interpolate          (i)
@@ -141,10 +140,9 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
       let f = drawCdFromSyntax
             (withNavigations task)
             (withNames task)
-            Nothing
+            mempty
             cd
             [i|#{path}-#{show x}|]
-            Svg
       in M.insert x ((b,) <$> f) cds
 
 selectValidCdEvaluation
