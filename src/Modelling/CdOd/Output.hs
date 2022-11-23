@@ -74,7 +74,7 @@ import Data.String.Interpolate          (iii)
 import Diagrams.Align                   (center)
 import Diagrams.Angle                   ((@@), deg)
 import Diagrams.Attributes              (lineWidth, lwL)
-import Diagrams.Backend.SVG             (B)
+import Diagrams.Backend.SVG             (B, svgClass)
 import Diagrams.Combinators             (atop, frame)
 import Diagrams.Names                   (IsName, named)
 import Diagrams.Path                    (Path, reversePath)
@@ -289,6 +289,7 @@ drawClass sfont l (P p) = translate p
   $ text' sfont 16 l
   # snugCenterXY
   # lineWidth 0.6
+  # svgClass "label"
 
 errorWithoutGraphviz :: IO ()
 errorWithoutGraphviz =
@@ -424,18 +425,23 @@ drawObject sfont objectNames t (P p) = translate p
       (fromMaybe "" (lookup t objectNames) ++ ": " ++ takeWhile (/= '$') t)
   # snugCenterXY
   # lineWidth 0.6
+  # svgClass "label"
 
 blackFrame
   :: String
   -> Diagram B
   -> Diagram B
 blackFrame t object =
-  frame 1 (frame 2 object
-            # fc black
-            # lc black
-            # bg white)
+  frame 1 (
+    frame 2 object
+      # fc black
+      # lc black
+      # bg white
+      # svgClass "bg"
+    )
   # bg black
   # named t
+  # svgClass "node"
 
 getDirs :: [DiagramEdge] -> Map String DirType
 getDirs es =

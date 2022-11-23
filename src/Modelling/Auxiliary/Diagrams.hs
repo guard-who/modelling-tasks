@@ -36,7 +36,13 @@ import Diagrams.Angle (
   sinA,
   tanA,
   )
-import Diagrams.Attributes              (lw, lwL, none)
+import Diagrams.Attributes (
+#if MIN_VERSION_SVGFonts(1,8,0)
+  lw,
+  none,
+#endif
+  lwL,
+  )
 import Diagrams.Backend.SVG (
   B,
   Options (SVGOptions),
@@ -56,7 +62,9 @@ import Diagrams.Prelude (
   (^-^),
   (^/),
   Affine (..),
+#if MIN_VERSION_SVGFonts(1,8,0)
   Default (def),
+#endif
   Diagram,
   Metric,
   N,
@@ -95,7 +103,6 @@ import Diagrams.TwoD.Arrow              (
   arrowHead,
   arrowShaft,
   arrowTail,
-  connectPerim',
   headGap,
   headLength,
   tailGap,
@@ -155,10 +162,10 @@ arrowheadVee theta len shaftWidth = (
       & polyOrient .~ NoOrient
     )
     # alignL,
-  rect len shaftWidth # alignR
+  mempty
   )
   where
-    start = shaftWidth+ len
+    start = len
     len' = len - w / tanA theta' - w / 2 / sinA theta'
     theta' = halfTurn ^-^ theta
     a1 = halfTurn ^+^ theta'
@@ -321,6 +328,20 @@ pointsFromToWithAngle n1 n2 a1 a2 g = do
       e = fromMaybe oe (maxTraceP oe (unitX # rotate a2) sub2)
   return (s, e)
 
+connectPerim''
+  :: (IsName n1, IsName n2, RealFloat n, Typeable n, Show n)
+  => ArrowOpts n
+  -> n1
+  -> n2
+  -> Angle n
+  -> Angle n
+  -> QDiagram SVG V2 n Any
+  -> QDiagram SVG V2 n Any
+connectPerim'' opts n1 n2 a1 a2 g =
+  let (s', e') = fromJust $ pointsFromToWithAngle n1 n2 a1 a2 g
+  in arrowBetween' opts s' e' # svgClass "edge"
+     `atop` g
+
 trailBetweenWithAngle
   :: (IsName n1, IsName n2)
   => ArrowOpts Double
@@ -375,7 +396,7 @@ connectWithPath
   -> QDiagram SVG V2 Double Any
   -> QDiagram SVG V2 Double Any
 connectWithPath opts font dir l1 l2 ml fl tl path g =
-  foldr addLabel (connectPerim' opts' l1 l2 ang1 ang2 g) lpoints # svgClass "."
+  foldr addLabel (connectPerim'' opts' l1 l2 ang1 ang2 g) lpoints # svgClass "."
   where
     lpoints = [(Middle, ml), (Begin, fl), (End, tl)]
     opts' = amendOptsByDirection opts dir

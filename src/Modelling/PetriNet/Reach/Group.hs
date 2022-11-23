@@ -4,6 +4,13 @@ module Modelling.PetriNet.Reach.Group (writeSVG) where
 
 import qualified Data.ByteString.Lazy             as LBS (ByteString, unpack)
 import qualified Data.Map                         as M (fromList)
+import qualified Data.Text                        as T (
+  Text,
+  filter,
+  isSuffixOf,
+  length,
+  pack,
+  )
 import qualified Data.Text.IO                     as T (writeFile)
 import qualified Data.Text.Lazy                   as LT (Text, toStrict)
 
@@ -39,7 +46,6 @@ import Data.Tree.NTree.TypeDefs (NTree)
 
 import qualified Text.XML as XML
 
-import qualified Data.Text as T (Text, pack, filter, length)
 import Data.List (isPrefixOf)
 import Data.Maybe                       (maybeToList)
 
@@ -58,7 +64,8 @@ data Path = Path {
   pClass            :: T.Text,
   pFill             :: Maybe T.Text,
   pFillOpacity      :: T.Text,
-  pStroke           :: Maybe T.Text
+  pStroke           :: Maybe T.Text,
+  pStrokeWidth      :: Maybe T.Text
   }
   deriving (Show, Eq)
 
@@ -104,12 +111,14 @@ getPath = atTag "path" >>>
     dAtt <- getAttrValue "d" -< p
     pFillAtt <- getAttrValue "fill" -< p
     pStrokeAtt <- getAttrValue "stroke" -< p
+    pStrokeWidthAtt <- getAttrValue "stroke-width" -< p
     returnA -< Path {
       d = T.pack dAtt,
       pClass = "default",
       pFill = mText pFillAtt,
       pFillOpacity = "0",
-      pStroke = mText pStrokeAtt
+      pStroke = mText pStrokeAtt,
+      pStrokeWidth = mText pStrokeWidthAtt
       }
   where
     mText [] = Nothing
@@ -149,7 +158,8 @@ applyClass x = [ modify p | p <- paths x]
       pClass = T.filter (/='.') (svgClass x),
       pFill = mString $ fill x,
       pFillOpacity = fillOpacity x,
-      pStroke = mString $ stroke x
+      pStroke = mString $ stroke x,
+      pStrokeWidth = mString $ strokeWidth x
       }
     mString [] = Nothing
     mString xs = Just xs
@@ -169,7 +179,9 @@ formatSVG (x:xs) = x{ paths = gpaths } : formatSVG rest
 equalGroup :: T.Text -> T.Text -> Bool
 equalGroup x y
   | (fx == "edge" || fx == "elabel") && (fy == "elabel" || fy == "edge") && sameLength = True
-  | (fx == "node") && (fy == "token" || fy == "nlabel") = True
+  | fx == "node"
+  , fy /= "node"
+  , fy == "token" || fy == "nlabel" || "node" `T.isSuffixOf` fy = True
   | (fx == "rect") && (fy == "") = True
   | otherwise = False
   where fx = T.filter (/= '.') x
@@ -199,14 +211,20 @@ buildSVG svg = XML.Element "svg" [
       ("stroke-miterlimit", strokeMiterlimit gr)
       ]
   [ XML.NodeElement $ XML.Element "path" (M.fromList $
-      [("d", d ps), ("class", pClass ps), ("fill-opacity", pFillOpacity ps)]
+      [("d", d ps), ("class", renameClass $ pClass ps), ("fill-opacity", pFillOpacity ps)]
       ++ [("fill", x)
          | pFillOpacity ps /= "0.0", x <- maybeToList $ pFill ps, x /= fill gr]
       ++ [("fill", "none") | pFillOpacity ps == "0.0"]
       ++ [("stroke", x) | x <- maybeToList $ pStroke ps, x /= stroke gr]
+      ++ [("stroke-width", x) | x <- maybeToList $ pStrokeWidth ps, x /= strokeWidth gr]
       )
     []
   | ps <- paths gr] | gr <- groups svg ]
+  where
+    renameClass l = case l of
+      "labelbgnode" -> "nlabel"
+      _ -> l
+
 
 removeDoctype :: Bool -> String -> String
 removeDoctype _ "" = ""
