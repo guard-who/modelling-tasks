@@ -95,7 +95,7 @@ import Diagrams.Trace                   (maxTraceP, traceP)
 import Diagrams.Trail                   (Trail)
 import Diagrams.TrailLike               (fromVertices)
 import Diagrams.Transform               (place, scale, translate)
-import Diagrams.TwoD.Arc                (arcCW)
+import Diagrams.TwoD.Arc                (arcCCW, arcCW)
 import Diagrams.TwoD.Align              (alignL, alignR, centerXY)
 import Diagrams.TwoD.Arrow              (
   ArrowOpts,
@@ -182,7 +182,7 @@ arrowheadTriangle theta len shaftWidth = (
       & polyOrient .~ NoOrient
     )
     # alignL,
-  rect len shaftWidth # alignR
+  mempty
   )
   where
     start = 0
@@ -206,7 +206,7 @@ arrowheadDiamond theta len shaftWidth = (
       & polyOrient .~ NoOrient
     )
     # alignL,
-  rect (2 * len) shaftWidth # alignR
+  mempty
   )
   where
     dw = w + w / sinA theta' / 2
@@ -232,7 +232,7 @@ arrowheadFilledDiamond theta len shaftWidth = (
       & polyOrient .~ NoOrient
     )
     # alignR,
-  rect (2 * len) shaftWidth # alignR
+  mempty
   )
   where
     len' = len - shaftWidth / sinA theta / 2
@@ -367,9 +367,10 @@ trailBetweenWithAngle opts path l1 l2 a1 a2 d = maybe
     points = head $ pathPoints path
     oldPos = head points
     oldE = last points
+    arc = if a1 > a2 then arcCW else arcCCW
     a1' = a1 ^+^ quarterTurn
     a2' = a2 ^-^ quarterTurn
-    unitSelfArc = arcCW (angleDir a1') (angleDir a2')
+    unitSelfArc = arc (angleDir a1') (angleDir a2')
     selfArc = scaleY (portion _y) $ scaleX (portion _x) unitSelfArc
     between = e' ^-^ pos'
     portion f = norm between / 2 * (eSelfArc ^.f / 2)
