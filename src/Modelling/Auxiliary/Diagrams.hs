@@ -224,8 +224,9 @@ arrowheadDiamond theta len shaftWidth = (
 
 arrowheadFilledDiamond :: RealFloat n => Angle n -> ArrowHT n
 arrowheadFilledDiamond theta len shaftWidth = (
-  reflectX $ (
-    polygon $ with
+  reflectX $
+    polygon (
+      with
       & polyType .~ PolySides
         [quarterTurn, a3, a1, a2, a1, a3, quarterTurn, quarterTurn]
         [w, w, len', len, len, len', w, w]

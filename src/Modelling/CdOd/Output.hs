@@ -219,15 +219,15 @@ drawRelationship
   => PreparedFont Double
   -> Bool
   -> Bool
-  -> (Style V2 Double)
+  -> Style V2 Double
   -> n
   -> n
   -> Connection
   -> Path V2 Double
   -> Diagram B
   -> Diagram B
-drawRelationship sfont printNavigations printNames marking fl tl l path g =
-  connectWithPath opts sfont dir from to ml mfl mtl path' g
+drawRelationship sfont printNavigations printNames marking fl tl l path =
+  connectWithPath opts sfont dir from to ml mfl mtl path'
   # applyStyle (if isMarked then marking else mempty)
   # lwL 0.5
   where
