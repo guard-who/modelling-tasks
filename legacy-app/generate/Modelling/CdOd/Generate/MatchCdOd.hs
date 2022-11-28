@@ -73,7 +73,8 @@ getRandomCDs config = do
     (searchSpace config)
   let cd0 = fromEdges names edges
   -- continueIf (not (anyMarkedEdge cd0)) $ do
-  when debug . liftIO . void $ drawCdFromSyntax False True (mempty # lc red) cd0 "debug-0"
+  when debug . liftIO . void
+    $ drawCdFromSyntax False True (mempty # lc red) cd0 "debug-0.svg"
   mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
   let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
   continueWithJust medges1 (const True) $ \edges1 -> do
@@ -87,7 +88,7 @@ getRandomCDs config = do
       continueWithJust medges3 (const True) $ \edges3 -> do
         let cd3         = fromEdges names edges3
         when debug . void . liftIO
-          $ drawCdFromSyntax False True (mempty # lc red) cd3 "debug-3"
+          $ drawCdFromSyntax False True (mempty # lc red) cd3 "debug-3.svg"
         return (cd1, cd2, cd3, length names)
   where
     continueWithJust mx p m

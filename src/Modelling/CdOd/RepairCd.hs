@@ -49,7 +49,11 @@ import Modelling.CdOd.CD2Alloy.Transform (
   )
 import Modelling.CdOd.Edges             (toEdges)
 import Modelling.CdOd.MatchCdOd         (applyChanges)
-import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
+import Modelling.CdOd.Output (
+  cacheCd,
+  drawCdFromSyntax,
+  drawOdFromInstance,
+  )
 import Modelling.CdOd.Types (
   AssociationType (..),
   Change (..),
@@ -282,7 +286,7 @@ repairCdTask
   -> RepairCdInstance
   -> LangM m
 repairCdTask path task = do
-  cd <- lift . liftIO $ drawCdFromSyntax
+  cd <- lift . liftIO $ cacheCd
     (withDirections task)
     (withNames task)
     mempty
@@ -445,7 +449,8 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     <*> mapM (\(b, (c, cd)) -> fmap (b,) . (,) <$> mapM renameEdge c <*> renameCd cd) (snd inst)
   where
     drawCd :: Syntax -> Integer -> IO FilePath
-    drawCd cd' n = drawCdFromSyntax True True mempty cd' ("cd-" ++ show n)
+    drawCd cd' n =
+      drawCdFromSyntax True True mempty cd' ("cd-" ++ show n ++ ".svg")
     drawOd :: Syntax -> AlloyInstance -> Integer -> RandT StdGen IO FilePath
     drawOd cd od x =
       let backwards   = [n | (_, _, Assoc t n _ _ _) <- toEdges cd

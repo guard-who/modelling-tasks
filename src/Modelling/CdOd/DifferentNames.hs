@@ -50,7 +50,7 @@ import Modelling.CdOd.CD2Alloy.Transform (
   )
 import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
 import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
-import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromNodesAndEdges)
+import Modelling.CdOd.Output            (cacheCd, cacheOd, drawCdFromSyntax)
 import Modelling.CdOd.Types (
   AssociationType (..),
   ClassConfig (..),
@@ -189,9 +189,9 @@ differentNamesTask path task = do
       navigations = foldr (`M.insert` Back) M.empty backwards
       anonymous = fromMaybe (length (fst od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)
-  cd' <- lift $ liftIO $ drawCdFromSyntax True True mempty cd (path ++ "-cd")
+  cd' <- lift $ liftIO $ cacheCd True True mempty cd (path ++ "-cd")
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    uncurry drawOdFromNodesAndEdges od anonymous navigations True (path ++ "-od")
+    uncurry cacheOd od anonymous navigations True (path ++ "-od")
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie das folgende Klassendiagramm:"
@@ -422,8 +422,12 @@ getDifferentNamesTask fhead config names edges' = do
       False
       (show n)
       ""
-    drawCd (n, cd) =
-      drawCdFromSyntax True True (mempty # lc red) cd ("debug-" ++ show n)
+    drawCd (n, cd) = drawCdFromSyntax
+      True
+      True
+      (mempty # lc red)
+      cd
+      ("debug-" ++ show n ++ ".svg")
     continueWithHead []    _ = fhead
     continueWithHead (x:_) f = f x
     usedLabels :: AlloyInstance -> [String]

@@ -97,7 +97,7 @@ drawCdAndOdsFor
   -> String
   -> IO ()
 drawCdAndOdsFor is c dirs cds cmd = do
-  mapM_ (\(cd, i) -> drawCdFromSyntax True True mempty cd (c ++ "-cd" ++ show i) >>= print) $ zip cds [0..]
+  mapM_ (\(cd, i) -> drawCd cd i >>= print) $ zip cds [0..]
   let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
         ++ createRunCommand cmd 3 maxThreeObjects
   ods <- Alloy.getInstances is parts'
@@ -106,6 +106,8 @@ drawCdAndOdsFor is c dirs cds cmd = do
     mapM_ (\(od, i) -> drawOdFromInstance od Nothing dirs True (c ++ '-' : shorten cmd ++ "-od" ++ show i) >>= liftIO . print)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
+    drawCd cd i =
+      drawCdFromSyntax True True mempty cd (c ++ "-cd" ++ show i ++ ".svg")
     maxThreeObjects = maxFiveObjects { objects = (1, 3) }
     parts = zipWith (\cd i -> transform (toOldSyntax cd) maxThreeObjects Nothing False (show i) "") cds [0..]
     shorten (' ':'a':'n':'d':' ':'c':'d':ys) =

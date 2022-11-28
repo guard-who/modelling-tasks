@@ -12,13 +12,10 @@ module Modelling.PetriNet.Diagram (
   ) where
 
 import qualified Control.Monad.Output             as OM (translate)
-import qualified Data.ByteString                  as BS (readFile, writeFile)
-import qualified Data.ByteString.Lazy             as LBS (fromStrict)
-import qualified Data.ByteString.UTF8             as BS (fromString)
 import qualified Diagrams.TwoD.GraphViz           as GV
 import qualified Data.Map                         as M (foldlWithKey)
 
-import Modelling.Auxiliary.Common       (Object)
+import Modelling.Auxiliary.Common       (Object, cacheIO, short)
 import Modelling.Auxiliary.Diagrams (
   connectOutside'',
   nonEmptyPathBetween,
@@ -49,14 +46,12 @@ import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
-import Data.Digest.Pure.SHA             (sha512, showDigest)
 import Data.FileEmbed                   (embedFile)
 import Data.List                        (foldl')
 import Diagrams.Backend.SVG             (B, svgClass)
 import Diagrams.Prelude
 import Graphics.SVGFonts.ReadFont       (PreparedFont, loadFont')
 import Language.Alloy.Call              (AlloyInstance)
-import System.Directory                 (doesFileExist)
 
 lin :: IO (PreparedFont Double)
 lin = do
@@ -66,7 +61,7 @@ lin = do
   return font'
 
 cacheNet
-  :: (Net p n, Ord a)
+  :: (Net p n)
   => String
   -> (a -> String)
   -> p n a
@@ -75,32 +70,16 @@ cacheNet
   -> Bool
   -> GraphvizCommand
   -> ExceptT String IO FilePath
-cacheNet path labelOf pl hidePNames hideTNames hide1 gc = (svg <$) . cache $ do
-  dia <- drawNet labelOf pl hidePNames hideTNames hide1 gc
-  liftIO $ writeSVG svg dia
+cacheNet path labelOf pl hidePNames hideTNames hide1 gc =
+  cacheIO path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
+    dia <- drawNet id pl' hidePNames hideTNames hide1 gc
+    liftIO $ writeSVG svg dia
   where
-    cache create = do
-      let create' = create >> liftIO (BS.writeFile petri pl')
-      isFile <- liftIO $ doesFileExist svg
-      if isFile
-        then do
-          f <- liftIO $ BS.readFile petri
-          when (f /= pl') $ do
-            liftIO $ appendFile (path ++ "busted.txt") petriId
-            create'
-        else create'
-    pl' = BS.fromString (show (mapNet labelOf pl))
-    petriId = path ++ "petri" ++ showDigest (sha512 $ LBS.fromStrict pl')
-    petri = petriId ++ ".hs"
-    svg = petriId
-      ++ short hidePNames
+    ext = short hidePNames
       ++ short hideTNames
       ++ short hide1
       ++ short gc
       ++ ".svg"
-
-short :: Enum a => a -> String
-short x = show $ fromEnum x
 
 {-| Create a 'Diagram's graph of a Petri net like graph definition ('Net')
 by distributing places and transitions using GraphViz.

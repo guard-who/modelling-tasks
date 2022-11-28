@@ -63,7 +63,7 @@ import Modelling.CdOd.Edges (
   toEdges,
   )
 import Modelling.CdOd.Output
-  (drawCdFromSyntax, drawOdFromNodesAndEdges, getDirs)
+  (cacheCd, cacheOd, getDirs)
 import Modelling.CdOd.Types (
   AssociationType (Association, Composition),
   ClassConfig (..),
@@ -115,15 +115,13 @@ import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.List (
-  (\\),
   delete,
-  intercalate,
   nub,
   permutations,
   )
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
-import Data.String.Interpolate          (i, iii)
+import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -187,11 +185,11 @@ matchCdOdTask path task = do
   let dirs = foldr (M.union . getDirs . toEdges) M.empty $ diagrams task
       anonymous o = length (fst o) `div` 3
   cds <- lift $ liftIO $
-    (\k c -> drawCdFromSyntax True True mempty c (cdFilename k))
+    (\_ c -> cacheCd True True mempty c path)
     `M.traverseWithKey` diagrams task
   ods <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    (\k (is,o) -> (is,) <$> uncurry drawOdFromNodesAndEdges
-      o (anonymous o) dirs True (odFilename k is))
+    (\_ (is,o) -> (is,) <$> uncurry cacheOd
+      o (anonymous o) dirs True path)
     `M.traverseWithKey` instances task
   paragraph $ translate $ do
     english "Consider the following two class diagrams."
@@ -247,13 +245,6 @@ matchCdOdTask path task = do
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
-  where
-    cdFilename :: Int -> String
-    cdFilename n    = [i|#{path}output-cd#{n}|]
-    odFilename :: Char -> [Int] -> String
-    odFilename n is = [i|#{path}output-od-#{n}-#{toDescription is 2}|]
-    toDescription x n =
-      intercalate "and" (map show x) ++ concatMap (("not" ++) . show) ([1..n] \\ x)
 
 newtype ShowLetters = ShowLetters { showLetters' :: Letters }
 

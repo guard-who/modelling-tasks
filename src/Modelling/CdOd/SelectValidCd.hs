@@ -35,7 +35,7 @@ import Modelling.CdOd.RepairCd (
   allowEverything,
   repairIncorrect,
   )
-import Modelling.CdOd.Output            (drawCdFromSyntax)
+import Modelling.CdOd.Output            (cacheCd)
 import Modelling.CdOd.Types (
   ClassConfig (..),
   Syntax,
@@ -137,12 +137,12 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
   paragraph hoveringInformation
   where
     drawCd x (b, cd) cds =
-      let f = drawCdFromSyntax
+      let f = cacheCd
             (withNavigations task)
             (withNames task)
             mempty
             cd
-            [i|#{path}-#{show x}|]
+            path
       in M.insert x ((b,) <$> f) cds
 
 selectValidCdEvaluation

@@ -1,6 +1,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 module Modelling.CdOd.Output (
+  cacheCd,
+  cacheOd,
   drawCdFromSyntax,
   drawOdFromInstance,
   drawOdFromRawInstance,
@@ -8,6 +11,7 @@ module Modelling.CdOd.Output (
   getDirs,
   ) where
 
+import qualified Data.ByteString.Lazy.UTF8        as LBS (fromString)
 import qualified Data.Map                         as M (
   empty,
   foldrWithKey,
@@ -16,7 +20,7 @@ import qualified Data.Map                         as M (
   )
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 
-import Modelling.Auxiliary.Common       (lowerFirst)
+import Modelling.Auxiliary.Common       (cacheIO, lowerFirst, short)
 import Modelling.Auxiliary.Diagrams (
   arrowheadDiamond,
   arrowheadFilledDiamond,
@@ -39,9 +43,14 @@ import Modelling.CdOd.Edges             (shouldBeMarked)
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 
 import Control.Lens                     ((.~))
-import Control.Monad.Random             (RandT, RandomGen)
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  RandT,
+  RandomGen,
+  )
 import Control.Monad.Trans              (MonadTrans(lift))
 import Control.Monad.Trans.Except       (runExcept)
+import Data.Digest.Pure.SHA             (sha1, showDigest)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz (
   DirType (Back, Forward, NoDir),
@@ -152,6 +161,22 @@ mult (l, Nothing) = toLabelValue (show l ++ "..*")
 mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
+cacheCd
+  :: Bool
+  -> Bool
+  -> Style V2 Double
+  -> Syntax
+  -> FilePath
+  -> IO FilePath
+cacheCd printNavigations printNames marking syntax path =
+  cacheIO path ext "cd" syntax $ flip $
+    drawCdFromSyntax printNavigations printNames marking
+  where
+    ext = short printNavigations
+      ++ short printNames
+      ++ showDigest (sha1 . LBS.fromString $ show marking)
+      ++ ".svg"
+
 drawCdFromSyntax
   :: Bool
   -> Bool
@@ -208,9 +233,8 @@ drawCdFromSyntax printNavigations printNames marking syntax file = do
         (\(s, t, l, p) g -> g # drawRel sfont s t l p)
         gnodes
         edges
-  let file' = file ++ ".svg"
-  writeSVG file' gedges
-  return file'
+  writeSVG file gedges
+  return file
   where
     drawRel f = drawRelationship f printNavigations printNames marking
 
@@ -317,7 +341,7 @@ drawOdFromRawInstance
   -> Bool
   -> FilePath
   -> RandT g IO FilePath
-drawOdFromRawInstance input =
+drawOdFromRawInstance input navigations printNames =
   let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
       theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
       theEdges = map ((\[from,v,to] -> (
@@ -330,6 +354,29 @@ drawOdFromRawInstance input =
                  $ init $ tail $ fromJust
                  $ stripPrefix "this/Obj<:get=" objGetLine
   in drawOdFromNodesAndEdges theNodes theEdges (length theNodes `div` 3)
+     navigations
+     printNames
+     . (++ ".svg")
+
+cacheOd
+  :: RandomGen g
+  => [String]
+  -> [(Int, Int, String)]
+  -> Int
+  -> Map String DirType
+  -> Bool
+  -> FilePath
+  -> RandT g IO FilePath
+cacheOd theNodes theEdges anonymous navigations printNames path = do
+  x <- getRandom
+  cacheIO path (ext x) "od" (theNodes, theEdges) $ \file (nodes, edges) ->
+    drawOdFromNodesAndEdges nodes edges anonymous navigations printNames file
+  where
+    ext x = short anonymous
+      ++ short printNames
+      ++ showDigest (sha1 . LBS.fromString $ show navigations)
+      ++ show @Int x
+      ++ ".svg"
 
 drawOdFromNodesAndEdges
   :: RandomGen g
@@ -373,9 +420,8 @@ drawOdFromNodesAndEdges theNodes theEdges anonymous navigations printNames file 
         (\(s, t, l, p) g -> g # drawLink sfont navigations printNames s t l p)
         gnodes
         edges
-  let file' = file ++ ".svg"
-  lift $ writeSVG file' gedges
-  return file'
+  lift $ writeSVG file gedges
+  return file
   where
     removeDollar l = case splitOn "$" l of
       n:xs@(_:_) ->
