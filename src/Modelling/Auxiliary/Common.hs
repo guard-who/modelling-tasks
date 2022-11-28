@@ -19,7 +19,7 @@ import Control.Monad                    (when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random (MonadRandom (getRandomR))
 import Data.Char                        (digitToInt, isSpace, toLower, toUpper)
-import Data.Digest.Pure.SHA             (sha512, showDigest)
+import Data.Digest.Pure.SHA             (sha256, showDigest)
 import Data.Foldable                    (Foldable (foldl'))
 import Data.Function                    ((&))
 import Control.Lens (
@@ -99,7 +99,7 @@ cacheIO path ext name what how = (file <$) . cache $ how file what
             create'
         else create'
     what' = BS.fromString $ show what
-    whatId = path ++ name ++ showDigest (sha512 $ LBS.fromStrict what')
+    whatId = path ++ name ++ showDigest (sha256 $ LBS.fromStrict what')
     whatFile = whatId ++ ".hs"
     file = whatId ++ ext
 
