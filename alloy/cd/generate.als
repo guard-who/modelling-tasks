@@ -17,15 +17,15 @@ pred sameDirection [r, r2 : Relationship] {
 }
 
 pred doubleRelationship [r, r2 : Relationship] {
-  r != r2 and sameDirection [r, r2]
+  disj [r, r2] and sameDirection [r, r2]
 }
 
 pred reverseRelationship [r, r2 : Relationship] {
-  r != r2 and r.to = r2.from and r.from = r2.to
+  disj [r, r2] and r.to = r2.from and r.from = r2.to
 }
 
 pred multipleInheritance [i, i2 : Inheritance] {
-  i != i2 and i.from = i2.from
+  disj [i, i2] and i.from = i2.from
 }
 
 fun relationship [restriction : set Relationship] : Class -> Class {
@@ -61,7 +61,7 @@ pred noCompositionsPreventParts [is : set Inheritance, cs : set Composition] {
 
 pred thickEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
   let subs = *~(relationship [is]) |
-    (xFrom != yFrom or xTo != yTo)
+    (disj [xFrom, yFrom] or disj[xTo, yTo])
       and let first = yFrom in xFrom.subs, second = yTo in xTo.subs |
         (first and (second or xTo in yTo.subs)
           or second and xFrom in yFrom.subs)
@@ -78,15 +78,15 @@ pred noThickEdges [assocs : set Assoc, is : set Inheritance] {
 }
 
 pred noDoubleRelationships [rs : set Relationship] {
-  no r, r2 : rs | doubleRelationship [r, r2]
+  no disj r, r2 : rs | doubleRelationship [r, r2]
 }
 
 pred noReverseRelationships [rs : set Relationship] {
-  no r, r2 : rs | reverseRelationship [r, r2]
+  no disj r, r2 : rs | reverseRelationship [r, r2]
 }
 
 pred noMultipleInheritances [is : set Inheritance] {
-  no i, i2 : is | multipleInheritance [i, i2]
+  no disj i, i2 : is | multipleInheritance [i, i2]
 }
 
 fact nonEmptyInstancesOnly {
@@ -147,9 +147,9 @@ pred change [c : Change, rs : set Relationship] {
 }
 
 fact changesAreUnique {
-  all c, c2 : Change | c = c2
-    or c.add != c2.add and not sameRelationship [c.add, c2.add]
-    or c.remove != c2.remove and not sameRelationship [c.remove, c2.remove]
+  all disj c, c2 : Change |
+    disj [c.add, c2.add] and not sameRelationship [c.add, c2.add]
+    or disj [c.remove, c2.remove] and not sameRelationship [c.remove, c2.remove]
 }
 
 abstract sig Boolean {}

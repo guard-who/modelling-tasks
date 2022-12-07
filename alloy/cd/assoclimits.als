@@ -114,7 +114,8 @@ pred shiftedRange [a, a2 : Assoc] {
 }
 
 assert sameLimits {
-  all a, a2 : Assoc | sameLimits [a, a2] iff sameFromLimits [a, a2] and sameToLimits [a, a2]
+  all disj a, a2 : Assoc |
+    sameLimits [a, a2] iff sameFromLimits [a, a2] and sameToLimits [a, a2]
 }
 
 assert shiftingLimit {
@@ -122,7 +123,8 @@ assert shiftingLimit {
 }
 
 assert shiftingUp {
-  all l, l2 : Limit | l2 != Zero and one shiftBy [l, l2] implies smaller [l, shiftBy [l, l2]]
+  all disj l, l2 : Limit |
+    l2 != Zero and one shiftBy [l, l2] implies smaller [l, shiftBy [l, l2]]
 }
 
 assert shiftingEqually {
@@ -130,9 +132,11 @@ assert shiftingEqually {
 }
 
 assert shiftedUpIsValid {
-  all a, a2 : Assoc | a != a2 and shiftedRangeUp [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
+  all disj a, a2 : Assoc |
+    shiftedRangeUp [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
 }
 
 assert increasedRangeIsValid {
-  all a, a2 : Assoc | a != a2 and increasedRange [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
+  all disj a, a2 : Assoc |
+    increasedRange [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
 }
