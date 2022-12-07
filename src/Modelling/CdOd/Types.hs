@@ -164,7 +164,7 @@ data RelationshipProperties = RelationshipProperties {
     hasNonTrivialInheritanceCycles :: Bool,
     hasCompositionCycles    :: Bool,
     hasCompositionsPreventingParts :: Bool,
-    hasMarkedEdges          :: Maybe Bool
+    hasThickEdges           :: Maybe Bool
   } deriving (Generic, Read, Show)
 
 defaultProperties :: RelationshipProperties
@@ -180,7 +180,7 @@ defaultProperties = RelationshipProperties {
     hasNonTrivialInheritanceCycles = False,
     hasCompositionCycles    = False,
     hasCompositionsPreventingParts = False,
-    hasMarkedEdges          = Nothing
+    hasThickEdges           = Nothing
   }
 
 toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])

@@ -39,7 +39,7 @@ import Modelling.CdOd.Auxiliary.Util (
   )
 import Modelling.CdOd.Types
   (AssociationType(..), Connection(..), DiagramEdge, Syntax)
-import Modelling.CdOd.Edges             (shouldBeMarked)
+import Modelling.CdOd.Edges             (shouldBeThick)
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 
 import Control.Lens                     ((.~))
@@ -121,9 +121,10 @@ debug = False
 connectionArrow :: Bool -> Bool -> Maybe Attribute -> Connection -> [Attribute]
 connectionArrow _ _ _ Inheritance =
   [arrowTo emptyArr]
-connectionArrow _ printNames marking (Assoc Composition name from to isMarked) =
+connectionArrow _ printNames marking (Assoc Composition name from to isThick) =
   arrow Composition ++ [HeadLabel (mult to)]
-  ++ concat [maybeToList marking | isMarked] ++ [toLabel name | printNames]
+  ++ concat [maybeToList marking | isThick]
+  ++ [toLabel name | printNames]
   ++ case from of
        (1, Just 1) -> []
        (0, Just 1) -> [TailLabel (mult from)]
@@ -136,10 +137,15 @@ connectionArrow _ printNames marking (Assoc Composition name from to isMarked) =
          else id
          )
          [TailLabel (mult from)]
-connectionArrow printNavigations printNames marking (Assoc a name from to isMarked) =
+connectionArrow
+  printNavigations
+  printNames
+  marking
+  (Assoc a name from to isThick) =
   printArrow a
   ++ [TailLabel (mult from), HeadLabel (mult to)]
-  ++ concat [maybeToList marking | isMarked] ++ [toLabel name | printNames]
+  ++ concat [maybeToList marking | isThick]
+  ++ [toLabel name | printNames]
   where
     printArrow
       | printNavigations = arrowDirected
@@ -204,7 +210,8 @@ drawCdFromSyntax printNavigations printNames marking syntax file = do
         \(a,n,m1,from,to,m2) -> (
           fromJust (elemIndex from theNodes),
           fromJust (elemIndex to theNodes),
-          Assoc a n m1 m2 (shouldBeMarked from to classesWithSubclasses assocsBothWays)
+          Assoc a n m1 m2
+            (shouldBeThick from to classesWithSubclasses assocsBothWays)
           )
         ) associations
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges)
@@ -252,7 +259,7 @@ drawRelationship
   -> Diagram B
 drawRelationship sfont printNavigations printNames marking fl tl l path =
   connectWithPath opts sfont dir from to ml mfl mtl path'
-  # applyStyle (if isMarked then marking else mempty)
+  # applyStyle (if isThick then marking else mempty)
   # lwL 0.5
   where
     angle :: Double
@@ -287,7 +294,7 @@ drawRelationship sfont printNavigations printNames marking fl tl l path =
       Assoc Association _ _ _ _ ->
         if printNavigations then Forward else NoDir
       _ -> Forward
-    (ml, isMarked) = case l of
+    (ml, isThick) = case l of
       Inheritance      -> (Nothing, False)
       Assoc _ al _ _ im -> (,im) $
         if printNames then Just al else Nothing

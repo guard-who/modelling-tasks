@@ -1,7 +1,7 @@
 module Modelling.CdOd.GenerateSpec where
 
 import Modelling.CdOd.Edges (
-  anyMarkedEdge,
+  anyThickEdge,
   compositionCycles,
   doubleConnections,
   fromEdges,
@@ -108,13 +108,13 @@ spec =
       (const $ null . inheritanceCycles)
       defaultProperties { hasNonTrivialInheritanceCycles = False }
     generateProperty
-      "anyMarkedEdge"
-      (curry $ anyMarkedEdge . uncurry fromEdges)
-      defaultProperties { hasMarkedEdges = Just True }
+      "anyThickEdge"
+      (curry $ anyThickEdge . uncurry fromEdges)
+      defaultProperties { hasThickEdges = Just True }
     generateProperty
-      "not anyMarkedEdge"
-      (curry $ not . anyMarkedEdge . uncurry fromEdges)
-      defaultProperties { hasMarkedEdges = Just False }
+      "not anyThickEdge"
+      (curry $ not . anyThickEdge . uncurry fromEdges)
+      defaultProperties { hasThickEdges = Just False }
     -- Disabled due to varying definition of composition cycles:
     {- generateProperty
       "compositionCycles"

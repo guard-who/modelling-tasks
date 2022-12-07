@@ -14,7 +14,7 @@ module Modelling.CdOd.Edges (
   inheritanceCycles,
   multipleInheritances,
   selfEdges, wrongLimits,
-  anyMarkedEdge, shouldBeMarked
+  anyThickEdge, shouldBeThick
   ) where
 
 import qualified Data.Bimap                       as BM (lookup)
@@ -154,8 +154,8 @@ getPaths connectionFilter es =
       in [path | p@(s', e', _) <- es', s' /= e', s' /= e, s == e'
                , path <- getPath s' e (p:ps) es'']
 
-anyMarkedEdge :: Syntax -> Bool
-anyMarkedEdge (classes, associations) =
+anyThickEdge :: Syntax -> Bool
+anyThickEdge (classes, associations) =
   let
     classesWithSubclasses = map (\(name, _) -> (name, subs [] name)) classes
       where
@@ -163,10 +163,17 @@ anyMarkedEdge (classes, associations) =
           | name `elem` seen = []
           | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((name `elem`) . snd) classes)
     assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-  in any (\(_,_,_,from,to,_) -> shouldBeMarked from to classesWithSubclasses assocsBothWays) associations
+    isAssocThick (_,_,_,from,to,_) =
+      shouldBeThick from to classesWithSubclasses assocsBothWays
+  in any isAssocThick associations
 
-shouldBeMarked :: String -> String -> [(String, [String])] -> [(String, String)] -> Bool
-shouldBeMarked a b classesWithSubclasses =
+shouldBeThick
+  :: String
+  -> String
+  -> [(String, [String])]
+  -> [(String, String)]
+  -> Bool
+shouldBeThick a b classesWithSubclasses =
   any (\(a',b') ->
          (a /= a' || b /= b')
          && let { one = a' `isSubOf` a; two = b' `isSubOf` b }

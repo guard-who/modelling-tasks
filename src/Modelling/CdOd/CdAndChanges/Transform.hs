@@ -96,7 +96,7 @@ pred cd {
       #{hasReverseInheritances props},
       #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
       #{hasCompositionCycles props}, #{hasCompositionsPreventingParts props},
-      #{maybeToAlloySet $ hasMarkedEdges props}]
+      #{maybeToAlloySet $ hasThickEdges props}]
     #{fst $ associations config} <= \#Association2
     \#Association2 <= #{upper $ associations config}
     #{fst $ aggregations config} <= \#Aggregation2
@@ -145,7 +145,7 @@ pred #{change} {
     #{hasReverseInheritances props},
     #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
     #{hasCompositionCycles props}, #{hasCompositionsPreventingParts props},
-    #{maybeToAlloySet $ hasMarkedEdges props}]
+    #{maybeToAlloySet $ hasThickEdges props}]
 }
 |]
 

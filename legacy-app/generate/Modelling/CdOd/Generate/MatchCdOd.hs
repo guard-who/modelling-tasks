@@ -10,7 +10,7 @@ import qualified Data.Map                         as M (
 
 import Modelling.CdOd.Edges (
   DiagramEdge,
-  anyMarkedEdge,
+  anyThickEdge,
   checkMultiEdge,
   fromEdges,
   )
@@ -72,11 +72,11 @@ getRandomCDs config = do
     (classConfig config)
     (searchSpace config)
   let cd0 = fromEdges names edges
-  -- continueIf (not (anyMarkedEdge cd0)) $ do
+  -- continueIf (not (anyThickEdge cd0)) $ do
   when debug . liftIO . void
     $ drawCdFromSyntax False True (mempty # lc red) cd0 "debug-0.svg"
   mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
-  let medges1 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations
+  let medges1 = getFirstValidSatisfying (not . anyThickEdge) names mutations
   continueWithJust medges1 (const True) $ \edges1 -> do
     mutations' <- shuffleM mutations
     let medges2     = getFirstValidSatisfying (const True) names mutations'
@@ -84,7 +84,8 @@ getRandomCDs config = do
     continueWithJust medges2 notOnlyInhs $ \edges2 -> do
       [cd1, cd2] <- shuffleM [fromEdges names edges1, fromEdges names edges2]
       mutations'' <- shuffleM mutations
-      let medges3 = getFirstValidSatisfying (not . anyMarkedEdge) names mutations''
+      let medges3 =
+            getFirstValidSatisfying (not . anyThickEdge) names mutations''
       continueWithJust medges3 (const True) $ \edges3 -> do
         let cd3         = fromEdges names edges3
         when debug . void . liftIO

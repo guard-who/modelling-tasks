@@ -59,7 +59,7 @@ pred noCompositionsPreventParts [is : set Inheritance, cs : set Composition] {
   no c : Class | isPartOfMultipleCompositions [c, is, cs]
 }
 
-pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
+pred thickEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
   let subs = *~(relationship [is]) |
     (xFrom != yFrom or xTo != yTo)
       and let first = yFrom in xFrom.subs, second = yTo in xTo.subs |
@@ -67,14 +67,14 @@ pred markedEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] 
           or second and xFrom in yFrom.subs)
 }
 
-pred markedEdge [a : Assoc, assocs : set Assoc, is : set Inheritance] {
+pred thickEdge [a : Assoc, assocs : set Assoc, is : set Inheritance] {
   some a2 : assocs |
-    markedEdgeCriterion [a.from, a.to, a2.from, a2.to, is]
-    or markedEdgeCriterion [a.to, a.from, a2.from, a2.to, is]
+    thickEdgeCriterion [a.from, a.to, a2.from, a2.to, is]
+    or thickEdgeCriterion [a.to, a.from, a2.from, a2.to, is]
 }
 
-pred noMarkedEdges [assocs : set Assoc, is : set Inheritance] {
-  no a : assocs | markedEdge [a, assocs, is]
+pred noThickEdges [assocs : set Assoc, is : set Inheritance] {
+  no a : assocs | thickEdge [a, assocs, is]
 }
 
 pred noDoubleRelationships [rs : set Relationship] {
@@ -171,7 +171,7 @@ pred classDiagram [
   hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
   hasCompositionsPreventingParts : one Boolean,
-  hasMarkedEdges : lone Boolean] {
+  hasThickEdges : lone Boolean] {
   #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
   #{ a : assocs | not validFromLimitsAssoc [a] iff validToLimitsAssoc [a]} = wrongAssocs
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
@@ -201,9 +201,9 @@ pred classDiagram [
   hasCompositionsPreventingParts = True
      implies not noCompositionsPreventParts [inheritances, compositions]
      else noCompositionsPreventParts [inheritances, compositions]
-  hasMarkedEdges = True
-    implies not noMarkedEdges[assocs, inheritances]
-    else hasMarkedEdges = False implies noMarkedEdges[assocs, inheritances]
+  hasThickEdges = True
+    implies not noThickEdges[assocs, inheritances]
+    else hasThickEdges = False implies noThickEdges[assocs, inheritances]
 }
 
 pred changeOfFirstCD [
@@ -219,7 +219,7 @@ pred changeOfFirstCD [
   hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
   hasCompositionsPreventingParts : one Boolean,
-  hasMarkedEdges : lone Boolean] {
+  hasThickEdges : lone Boolean] {
     let Assoc2 = Assoc - (Change.add - c.add) - c.remove,
         Composition2 = Composition - (Change.add - c.add) - c.remove,
         Relationship2 = Relationship - (Change.add - c.add) - c.remove,
@@ -229,6 +229,6 @@ pred changeOfFirstCD [
         wrongAssocs, wrongCompositions, selfRelationships, selfInheritances,
         hasDoubleRelationships, hasReverseRelationships, hasReverseInheritances,
         hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,
-        hasCompositionsPreventingParts, hasMarkedEdges]
+        hasCompositionsPreventingParts, hasThickEdges]
   }
 }
