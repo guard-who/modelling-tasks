@@ -8,7 +8,6 @@ module Modelling.CdOd.RepairCd (
   RepairCdConfig (..),
   RepairCdInstance (..),
   checkRepairCdConfig,
-  constrainConfig,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
   allowEverything,
@@ -89,13 +88,13 @@ import Control.Monad.Output (
   translate,
   )
 import Control.Monad.Random
-  (RandT, RandomGen, StdGen, evalRandT, getRandomR, getStdGen, mkStdGen)
+  (RandT, RandomGen, StdGen, evalRandT, getStdGen, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..))
 import Data.List                        (nub)
 import Data.Map                         (Map)
-import Data.Maybe                       (mapMaybe, fromMaybe)
+import Data.Maybe                       (mapMaybe)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
@@ -390,22 +389,6 @@ defaultRepairCdInstance = RepairCdInstance {
   withNames = True
   }
 
-constrainConfig :: RandomGen g => Int -> ClassConfig -> RandT g IO ClassConfig
-constrainConfig n config = do
-  clas <- getRandomR $ classes config
-  let maxAg  = ((clas * (clas - 1)) `div` 2)
-        + n - sum (map (fst . ($ config)) edges)
-  (maxAs, aggs) <- randOf aggregations maxAg
-  (maxCo, asss) <- randOf associations maxAs
-  (maxIn, coms) <- randOf compositions maxCo
-  (_    , inhs) <- randOf inheritances maxIn
-  return $ ClassConfig (clas, clas) aggs asss coms inhs
-  where
-    edges = [aggregations, associations, compositions, inheritances]
-    randOf f maxF = do
-      x <- getRandomR (second (fromMaybe maxF) (f config))
-      return (maxF - x, (x, Just x))
-
 repairIncorrect
   :: RandomGen g
   => AllowedProperties
@@ -423,7 +406,6 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   c0:_    <- shuffleM $ allChanges allowed
   csm     <- shuffleM $ c0 : noChange : addLegals [e0]
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
---  config' <- constrainConfig 5 config
   let alloyCode = Changes.transformChanges config (toProperty e0) (Just config)
         $ map toProperty cs
   when debug $ liftIO $ do
