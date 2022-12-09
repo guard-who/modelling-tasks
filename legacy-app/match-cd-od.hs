@@ -24,7 +24,8 @@ main = do
               aggregations = (0, Just 2),
               associations = (0, Just 2),
               compositions = (0, Just 1),
-              inheritances = (1, Just 2)
+              inheritances = (1, Just 2),
+              relationships = (4, Just 6)
             },
           objectConfig = ObjectConfig {
             links          = (0, Nothing),

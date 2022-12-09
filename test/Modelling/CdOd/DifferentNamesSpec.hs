@@ -5,10 +5,12 @@ module Modelling.CdOd.DifferentNamesSpec where
 import qualified Data.Bimap                       as BM
 
 import Modelling.CdOd.DifferentNames (
+  checkDifferentNamesConfig,
   differentNamesEvaluation,
   differentNamesInitial,
   differentNamesSyntax,
   DifferentNamesInstance (..),
+  defaultDifferentNamesConfig,
   defaultDifferentNamesInstance,
   renameInstance,
   )
@@ -52,6 +54,9 @@ import System.Random.Shuffle            (shuffleM)
 
 spec :: Spec
 spec = do
+  describe "defaultDifferentNamesConfig" $
+    it "is valid" $
+      checkDifferentNamesConfig defaultDifferentNamesConfig `shouldBe` Nothing
   describe "differentNamesEvaluation" $ do
     it "accepts the initial example" $
       let cs = bimap unName unName <$> differentNamesInitial

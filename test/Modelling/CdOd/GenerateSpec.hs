@@ -147,5 +147,6 @@ classConfig = ClassConfig {
   aggregations = (0, Just 2),
   associations = (0, Just 2),
   compositions = (0, Just 3),
-  inheritances = (0, Just 3)
+  inheritances = (0, Just 3),
+  relationships = (2, Just 3)
   }

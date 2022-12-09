@@ -7,6 +7,7 @@ module Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
   MatchCdOdInstance (..),
   applyChanges,
+  checkMatchCdOdConfig,
   debug,
   defaultMatchCdOdConfig,
   defaultMatchCdOdInstance,
@@ -74,6 +75,7 @@ import Modelling.CdOd.Types (
   Od,
   Syntax,
   associationNames,
+  checkClassConfigWithProperties,
   classNames,
   defaultProperties,
   linkNames,
@@ -155,7 +157,8 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
         aggregations = (0, Just 2),
         associations = (0, Just 2),
         compositions = (0, Just 1),
-        inheritances = (1, Just 2)
+        inheritances = (1, Just 2),
+        relationships = (4, Just 6)
       },
     maxInstances     = Nothing,
     objectConfig = ObjectConfig {
@@ -175,6 +178,11 @@ toMatching m =
   where
     cds = take 2 [1 ..]
     ods = take 5 ['a' ..]
+
+checkMatchCdOdConfig :: MatchCdOdConfig -> Maybe String
+checkMatchCdOdConfig config = checkClassConfigWithProperties
+  (classConfig config)
+  defaultProperties
 
 matchCdOdTask
   :: (MonadIO m, OutputMonad m)

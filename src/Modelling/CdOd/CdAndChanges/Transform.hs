@@ -1,6 +1,8 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 module Modelling.CdOd.CdAndChanges.Transform (
   transform,
   transformChanges,
@@ -10,6 +12,7 @@ module Modelling.CdOd.CdAndChanges.Transform (
 import Modelling.CdOd.Types (
   ClassConfig (..),
   RelationshipProperties (..),
+  maxRels,
   )
 
 import Data.Bool                        (bool)
@@ -66,16 +69,6 @@ transformChanges
 transformChanges config props mconfig propss =
   transformWith config props $ changes mconfig propss
 
-maxRels :: ClassConfig -> Int
-maxRels config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2) $ sumOf4
-  <$> snd (aggregations config)
-  <*> snd (associations config)
-  <*> snd (compositions config)
-  <*> snd (inheritances config)
-  where
-    maxClasses = snd $ classes config
-    sumOf4 w x y z = w + x + y + z
-
 classDiagram :: ClassConfig -> RelationshipProperties -> String
 classDiagram config props = [i|
 //////////////////////////////////////////////////
@@ -105,8 +98,9 @@ pred cd {
     \#Composition2 <= #{upper $ compositions config}
     #{fst $ inheritances config} <= \#Inheritance2
     \#Inheritance2 <= #{upper $ inheritances config}
+    #{fst $ relationships config} <= \#Relationship2
+    \#Relationship2 <= #{upper $ relationships config}
     #{fst $ classes config} <= \#Class
-    3 <= \#Relationship2
   }
 }
 |]
@@ -193,11 +187,16 @@ pred changeLimits {
     upper = fromMaybe (maxRels config) . snd
 
 createRunCommand :: ClassConfig -> [String] -> Int ->  String
-createRunCommand config predicates cs = [i|
-run { #{command} } for #{maxRels config + cs} Relationship,
-  #{snd $ classes config} Class, #{cs} Change
+createRunCommand config@ClassConfig {..} predicates cs = [i|
+run { #{command} } for #{rels} Relationship, #{bitSize} Int,
+  exactly #{snd classes} Class, exactly #{cs} Change
 |]
   where
+    relMax = fromMaybe (maxRels config) . snd $ relationships
+    rels = relMax + cs
+    bitSize :: Int
+    bitSize = (+ 1) . ceiling @Double . logBase 2 . fromIntegral
+      $ max rels (snd classes) + 1
     command :: String
     command = foldl ((++) . (++ " and ")) "cd" predicates
 

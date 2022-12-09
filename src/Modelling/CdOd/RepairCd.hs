@@ -7,6 +7,7 @@ module Modelling.CdOd.RepairCd (
   AllowedProperties (..),
   RepairCdConfig (..),
   RepairCdInstance (..),
+  checkClassConfigAndChanges,
   checkRepairCdConfig,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
@@ -63,6 +64,8 @@ import Modelling.CdOd.Types (
   Syntax,
   addedAssociation,
   associationNames,
+  checkClassConfig,
+  checkClassConfigWithProperties,
   classNames,
   defaultProperties,
   maxFiveObjects,
@@ -73,6 +76,7 @@ import Modelling.CdOd.Types (
   toOldSyntax,
   )
 
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    (forM_, void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
@@ -94,8 +98,8 @@ import Data.Bifunctor                   (second)
 import Data.GraphViz                    (DirType (..))
 import Data.List                        (nub)
 import Data.Map                         (Map)
-import Data.Maybe                       (mapMaybe)
-import Data.String.Interpolate          (i)
+import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
+import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -262,7 +266,8 @@ defaultRepairCdConfig = RepairCdConfig {
         aggregations = (0, Just 2),
         associations = (0, Just 2),
         compositions = (0, Just 3),
-        inheritances = (1, Just 3)
+        inheritances = (1, Just 3),
+        relationships = (4, Just 6)
       },
     maxInstances     = Just 200,
     noIsolationLimit = False,
@@ -273,11 +278,27 @@ defaultRepairCdConfig = RepairCdConfig {
   }
 
 checkRepairCdConfig :: RepairCdConfig -> Maybe String
-checkRepairCdConfig config
-  | not (printNames config) && useNames config
-  = Just "use navigations is only possible when printing navigations"
+checkRepairCdConfig RepairCdConfig {..}
+  | not printNames && useNames
+  = Just "use namess is only possible when printing names"
   | otherwise
-  = Nothing
+  = checkClassConfigAndChanges classConfig allowedProperties
+
+checkClassConfigAndChanges
+  :: ClassConfig
+  -> AllowedProperties
+  -> Maybe String
+checkClassConfigAndChanges classConfig allowedProperties =
+  checkClassConfig classConfig
+  <|> onlyFirst (map checkChange $ legalChanges allowedProperties)
+  where
+    checkProp = checkClassConfigWithProperties classConfig
+    onlyFirst = listToMaybe . catMaybes
+    checkChange c =
+      ([iii|
+         You should amend your configuration for
+         or disable the property change "#{changeName c}":|] ++)
+      <$> checkProp (toProperty c)
 
 repairCdTask
   :: (OutputMonad m, MonadIO m)

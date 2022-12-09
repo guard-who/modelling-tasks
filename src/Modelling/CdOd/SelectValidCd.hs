@@ -1,9 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (..),
   SelectValidCdInstance (..),
+  checkSelectValidCdConfig,
   defaultSelectValidCdConfig,
   defaultSelectValidCdInstance,
   selectValidCd,
@@ -33,6 +35,7 @@ import Modelling.Auxiliary.Output (
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
   allowEverything,
+  checkClassConfigAndChanges,
   repairIncorrect,
   )
 import Modelling.CdOd.Output            (cacheCd)
@@ -89,7 +92,8 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         aggregations = (0, Just 2),
         associations = (0, Just 2),
         compositions = (0, Just 3),
-        inheritances = (1, Just 3)
+        inheritances = (1, Just 3),
+        relationships = (4, Just 6)
       },
     maxInstances     = Just 200,
     noIsolationLimit = False,
@@ -97,6 +101,10 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
     printNavigations = True,
     timeout          = Nothing
   }
+
+checkSelectValidCdConfig :: SelectValidCdConfig -> Maybe String
+checkSelectValidCdConfig SelectValidCdConfig {..} =
+  checkClassConfigAndChanges classConfig allowedProperties
 
 data SelectValidCdInstance = SelectValidCdInstance {
     classDiagrams   :: Map Int (Bool, Syntax),

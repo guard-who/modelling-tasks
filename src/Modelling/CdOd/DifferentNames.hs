@@ -1,9 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (..),
   DifferentNamesInstance (..),
+  checkDifferentNamesConfig,
   debug,
   defaultDifferentNamesConfig,
   defaultDifferentNamesInstance,
@@ -62,6 +64,7 @@ import Modelling.CdOd.Types (
   Od,
   Syntax,
   associationNames,
+  checkClassConfigWithProperties,
   classNames,
   defaultProperties,
   fromNameMapping,
@@ -98,7 +101,7 @@ import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..))
 import Data.List                        (permutations, sort)
-import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
+import Data.Maybe                       (fromMaybe, isJust, isNothing, mapMaybe)
 import Data.String.Interpolate          (i, iii)
 import Data.Tuple.Extra                 (snd3)
 import Diagrams.Prelude                 ((#), red)
@@ -141,6 +144,35 @@ data DifferentNamesConfig = DifferentNamesConfig {
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
 
+checkDifferentNamesConfig :: DifferentNamesConfig -> Maybe String
+checkDifferentNamesConfig DifferentNamesConfig {..}
+  | (x, Just y) <- relationships classConfig, x /= y
+  = Just [iii|
+      The minimum number of relationships has to equal its maximum number
+      for this task type.
+      Otherwise task instances would vary too much in complexity.
+      |]
+  | (x, Just y) <- inheritances classConfig, x /= y
+  = Just [iii|
+      The minimum number of inheritances has to equal its maximum number
+      for this task type.
+      Otherwise task instances could vary too much in difficulty.
+      |]
+  | isNothing . snd $ relationships classConfig
+  , any
+      (different . ($ classConfig))
+      [aggregations, associations, compositions]
+  = Just [iii|
+      The minimum number and maximum number
+      of aggregations, associations or compositions may not vary
+      if the maximum number of relationships is not fixed.
+      Otherwise task instances would vary too much in complexity.
+      |]
+  | otherwise = checkClassConfigWithProperties classConfig defaultProperties
+  where
+    different (_, Nothing) = True
+    different (x, Just y)  = x /= y
+
 {-# DEPRECATED searchSpace "because Modelling.Cd.generate' is not used anymore and will be removed soon" #-}
 
 defaultDifferentNamesConfig :: DifferentNamesConfig
@@ -150,7 +182,8 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         aggregations = (1, Just 1),
         associations = (1, Just 1),
         compositions = (1, Just 1),
-        inheritances = (1, Just 1)
+        inheritances = (1, Just 1),
+        relationships = (4, Just 4)
       },
     objectConfig = ObjectConfig {
       links          = (5, Just 10),
