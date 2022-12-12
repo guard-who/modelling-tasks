@@ -189,9 +189,12 @@ pred changeLimits {
 createRunCommand :: ClassConfig -> [String] -> Int ->  String
 createRunCommand config@ClassConfig {..} predicates cs = [i|
 run { #{command} } for #{rels} Relationship, #{bitSize} Int,
-  exactly #{snd classes} Class, exactly #{cs} Change
+  #{exactClass}#{snd classes} Class, exactly #{cs} Change
 |]
   where
+    exactClass
+      | uncurry (==) classes = "exactly "
+      | otherwise            = ""
     relMax = fromMaybe (maxRels config) . snd $ relationships
     rels = relMax + cs
     bitSize :: Int
