@@ -146,7 +146,7 @@ createRunCommand command numClasses objectConfig = [i|
 // Run commands
 ///////////////////////////////////////////////////
 
-run { #{command} } for #{maxObjects} Obj, #{intSize} FName, #{intSize} Int
+run { #{command} } for #{maxObjects} Obj, #{intSize} Int
 |]
   where
     maxObjects = snd $ objects objectConfig
