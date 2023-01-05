@@ -121,13 +121,14 @@ fact LimitLinks {
 // Types wrapping field names
 #{unlines (fieldNames index associations classes)}
 // Types wrapping composite structures and field names
-#{unlines (compositesAndFieldNames index compositions classes)}
+#{if noCompositions then "" else unlines (compositesAndFieldNames index compositions classes)}
 // Properties
 #{predicate index associations classNames}
 |]
     classNames = map fst classes
     classesWithDirectSubclasses =
       map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
+    noCompositions = null compositions
     compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
     loops            = case hasSelfLoops of
       Nothing    -> ""
@@ -216,7 +217,7 @@ pred cd#{index} {
   // Associations
 #{unlines objAttribs}
   // Compositions
-#{unlines compositions}
+#{if anyCompositions then unlines compositions else ""}
 }
 |]
   where
@@ -233,6 +234,7 @@ pred cd#{index} {
       [i|  ObjL#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}]|]
     makeAssoc att from name to (low, Just up) =
       [i|  ObjLU#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}, #{show up}]|]
+    anyCompositions = any (\(a,_,_,_,_,_) -> a == Composition) associations
     compositions = map
       (\name -> [i|  Composition[#{name}#{compositesCD}, #{name}#{compFieldNamesCD}, #{name}]|])
       classNames
