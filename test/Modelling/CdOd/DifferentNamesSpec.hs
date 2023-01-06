@@ -5,6 +5,8 @@ module Modelling.CdOd.DifferentNamesSpec where
 import qualified Data.Bimap                       as BM
 
 import Modelling.CdOd.DifferentNames (
+  DifferentNamesConfig (timeout),
+  differentNames,
   checkDifferentNamesConfig,
   differentNamesEvaluation,
   differentNamesInitial,
@@ -14,6 +16,7 @@ import Modelling.CdOd.DifferentNames (
   defaultDifferentNamesInstance,
   renameInstance,
   )
+import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.CdOd.Types (
   Name (Name, unName),
   associationNames,
@@ -28,11 +31,12 @@ import Control.Monad.Output (
   LangM' (withLang),
   Language (English),
   )
-import Control.Monad.Random             (mkStdGen, randomRIO)
+import Control.Monad.Trans.Except       (runExceptT)
+import Control.Monad.Random             (mkStdGen, randomIO, randomRIO)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Char                        (toUpper)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.Either                      (isLeft)
+import Data.Either                      (isLeft, isRight)
 import Data.List (nub)
 import Data.Maybe                       (fromJust)
 import Data.Ratio                       ((%))
@@ -57,6 +61,14 @@ spec = do
   describe "defaultDifferentNamesConfig" $
     it "is valid" $
       checkDifferentNamesConfig defaultDifferentNamesConfig `shouldBe` Nothing
+  describe "differentNames" $
+    context "using defaultDifferentNamesConfig with reduced timeouts" $
+      it "generates an instance" $ do
+        inst <- runExceptT $ do
+          segment <- oneOf [0 .. 3]
+          seed <- randomIO
+          differentNames cfg segment seed
+        inst `shouldSatisfy` isRight
   describe "differentNamesEvaluation" $ do
     it "accepts the initial example" $
       let cs = bimap unName unName <$> differentNamesInitial
@@ -100,6 +112,10 @@ spec = do
          $ maybe (Left "instance could not be renamed") return mrinst
          >>= \rinst -> differentNamesEvaluation rinst origMap `withLang` English
            :: Either String Rational
+  where
+    cfg = defaultDifferentNamesConfig {
+      timeout = Just 5000000
+      }
 
 renameProperty ::
   Testable prop =>
