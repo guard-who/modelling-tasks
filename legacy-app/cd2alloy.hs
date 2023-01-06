@@ -14,7 +14,7 @@ run input output template index = do
   let tokens = lexer input
   let syntax = parser tokens
   time <- getZonedTime
-  let parts = transform syntax maxFiveObjects Nothing False index (show time)
+  let parts = transform syntax [] maxFiveObjects Nothing False index (show time)
       p1 = part1 parts
       p2 = part2 parts
       p3 = part3 parts

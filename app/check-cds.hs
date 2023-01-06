@@ -109,7 +109,7 @@ drawCdAndOdsFor is c dirs cds cmd = do
     drawCd cd i =
       drawCdFromSyntax True True mempty cd (c ++ "-cd" ++ show i ++ ".svg")
     maxThreeObjects = maxFiveObjects { objects = (1, 3) }
-    parts = zipWith (\cd i -> transform (toOldSyntax cd) maxThreeObjects Nothing False (show i) "") cds [0..]
+    parts = zipWith (\cd i -> transform (toOldSyntax cd) [] maxThreeObjects Nothing False (show i) "") cds [0..]
     shorten (' ':'a':'n':'d':' ':'c':'d':ys) =
       "and" ++ shorten ys
     shorten (' ':'a':'n':'d':' ':'n':'o':'t':' ':'c':'d':ys) =

@@ -483,6 +483,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     getOD cd = do
       let parts = combineParts $ transform
             (toOldSyntax cd)
+            []
             maxFiveObjects
             Nothing
             noIsolationLimitation

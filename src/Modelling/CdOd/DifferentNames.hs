@@ -450,6 +450,7 @@ getDifferentNamesTask fhead config names edges' = do
   where
     alloyFor n cd = transform
       (toOldSyntax cd)
+      []
       (objectConfig config)
       (presenceOfLinkSelfLoops config)
       False

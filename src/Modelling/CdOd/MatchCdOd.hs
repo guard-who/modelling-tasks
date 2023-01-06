@@ -535,6 +535,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
   where
     alloyFor cd nr = transform
       (toOldSyntax cd)
+      []
       (objectConfig config)
       (presenceOfLinkSelfLoops config)
       False
