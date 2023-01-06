@@ -162,7 +162,7 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       },
     maxInstances     = Nothing,
     objectConfig = ObjectConfig {
-      links          = (10, Just 16),
+      links          = (4, Just 10),
       linksPerObject = (0, Just 4),
       objects        = (2, 4)
       },
