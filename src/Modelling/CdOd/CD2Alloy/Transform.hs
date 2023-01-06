@@ -61,7 +61,7 @@ module umlp2alloy/CD#{index}Module
 
 #{template}
 #{objectsFact}
-#{limitLinks}
+#{sizeConstraints}
 #{loops}
 ///////////////////////////////////////////////////
 // Structures potentially common to multiple CDs
@@ -86,23 +86,23 @@ fact NonEmptyInstancesOnly {
     withJusts f xs
       | any isJust xs = f $ catMaybes xs
       | otherwise     = ""
-    limitLinks = withJusts (\ps -> [i|
-fact LimitLinks {
+    sizeConstraints = withJusts (\ps -> [i|
+fact SizeConstraints {
 #{unlines ps}
 }
 |]) [
-      ("  #Obj >= " ++) . show <$> mlower (objects objectConfig),
-      ("  #get >= " ++) . show <$> mlower (links objectConfig),
+      ("  #Obj >= " ++) . show <$> mlower 1 (objects objectConfig),
+      ("  #get >= " ++) . show <$> mlower 0 (links objectConfig),
       ("  #get <= " ++) . show <$> snd (links objectConfig),
-      uncurry linksPerObjects $ first mlow $ linksPerObject objectConfig]
+      uncurry linksPerObjects $ first (mlow 0) $ linksPerObject objectConfig]
     linksPerObjects Nothing Nothing = Nothing
     linksPerObjects mmin mmax = Just $
       "  all o : Obj | let x = plus[#o.get,minus[#get.o,#o.get.o]] |"
       ++ maybe "" ((" x >= " ++) . show) mmin
       ++ maybe "" (const " &&") (mmin >> mmax)
       ++ maybe "" ((" x <= " ++) . show) mmax
-    mlower (x, _) = mlow x
-    mlow x = if x <= 0 then Nothing else Just x
+    mlower l = mlow l . fst
+    mlow l x = if x <= l then Nothing else Just x
     part2 = [i|
 // Concrete names of fields
 #{unlines (associationSigs associations)}
