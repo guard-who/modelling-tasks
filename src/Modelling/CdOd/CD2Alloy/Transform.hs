@@ -17,7 +17,7 @@ import Modelling.CdOd.Types (
   )
 
 import Data.Bifunctor                   (first)
-import Data.List                        (intercalate, union, (\\))
+import Data.List                        ((\\), intercalate, isPrefixOf, union)
 import Data.FileEmbed                   (embedStringFile)
 import Data.Maybe                       (catMaybes, fromMaybe, isJust)
 import Data.String.Interpolate          (i)
@@ -144,13 +144,17 @@ fact NoSelfLoops {
   no o : Obj | o in o.get[FName]
 }|]
 
-createRunCommand :: String -> Int -> ObjectConfig -> String
-createRunCommand command numClasses objectConfig = [i|
+hasLinkNames :: Parts -> Bool
+hasLinkNames Parts { part2 } =
+  any (oneSig `isPrefixOf`) $ lines part2
+
+createRunCommand :: String -> Int -> ObjectConfig -> Parts -> String
+createRunCommand command numClasses objectConfig ps = [i|
 ///////////////////////////////////////////////////
 // Run commands
 ///////////////////////////////////////////////////
 
-run { #{command} } for #{maxObjects} Obj, #{intSize} Int
+run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
 |]
   where
     maxObjects = snd $ objects objectConfig
@@ -158,6 +162,9 @@ run { #{command} } for #{maxObjects} Obj, #{intSize} Int
     intSize = ceiling intSize'
     intSize' :: Double
     intSize' = logBase 2 $ fromIntegral $ 2 * maxInt + 1
+    fnames
+      | hasLinkNames ps = "" :: String
+      | otherwise       = "0 FName, "
     maxInt = maximum [
       numClasses * maxObjects,
       2 * maxObjects,
@@ -166,8 +173,12 @@ run { #{command} } for #{maxObjects} Obj, #{intSize} Int
       ]
     count f = fromMaybe (fst $ f objectConfig) $ snd (f objectConfig)
 
+oneSig :: String
+oneSig = "one sig "
+
 associationSigs :: [Association] -> [String]
-associationSigs = map (\(_,name,_,_,_,_) -> "one sig " ++ name ++ " extends FName {}")
+associationSigs =
+  map (\(_,name,_,_,_,_) -> oneSig ++ name ++ " extends FName {}")
 
 classSigs :: [String] -> [String]
 classSigs = map (\name -> "sig " ++ name ++ " extends Obj {}")

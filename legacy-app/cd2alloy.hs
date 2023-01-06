@@ -23,6 +23,7 @@ run input output template index = do
         ("cd" ++ index)
         (length $ fst syntax)
         maxFiveObjects
+        parts
   case output of
     Just file -> do
       when template $ let out = file ++ ".part1" in writeFile out p1 >> putStrLn ("Some output written to " ++ out)

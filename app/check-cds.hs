@@ -98,8 +98,9 @@ drawCdAndOdsFor
   -> IO ()
 drawCdAndOdsFor is c dirs cds cmd = do
   mapM_ (\(cd, i) -> drawCd cd i >>= print) $ zip cds [0..]
-  let parts' = combineParts (foldr mergeParts (head parts) $ tail parts)
-        ++ createRunCommand cmd 3 maxThreeObjects
+  let mergedParts = foldr mergeParts (head parts) $ tail parts
+  let parts' = combineParts mergedParts
+        ++ createRunCommand cmd 3 maxThreeObjects mergedParts
   ods <- Alloy.getInstances is parts'
   g <- getStdGen
   flip evalRandT g $

@@ -515,15 +515,18 @@ getODInstances config cd1 cd2 cd3 numClasses = do
   let parts1 = alloyFor cd1 "1"
       parts2 = alloyFor cd2 "2"
       parts1and2 = mergeParts parts1 parts2
+      combined1and2 = combineParts parts1and2
       parts3 = alloyFor cd3 "3"
-      cd1not2 = runCommand "cd1 and (not cd2)"
-      cd2not1 = runCommand "cd2 and (not cd1)"
-      cd1and2 = runCommand "cd1 and cd2"
-      cdNot1not2 = runCommand "(not cd1) and (not cd2) and cd3"
-  instances1not2 <- getInstances maxIs to (combineParts parts1and2 ++ cd1not2)
-  instances2not1 <- getInstances maxIs to (combineParts parts1and2 ++ cd2not1)
-  instances1and2 <- getInstances maxIs to (combineParts parts1and2 ++ cd1and2)
-  instancesNot1not2 <- getInstances maxIs to (combineParts (mergeParts parts1and2 parts3) ++ cdNot1not2)
+      parts1to3 = mergeParts parts1and2 parts3
+      cd1not2 = runCommand "cd1 and (not cd2)" parts1and2
+      cd2not1 = runCommand "cd2 and (not cd1)" parts1and2
+      cd1and2 = runCommand "cd1 and cd2" parts1and2
+      cdNot1not2 = runCommand "(not cd1) and (not cd2) and cd3" parts1to3
+  instances1not2 <- getInstances maxIs to (combined1and2 ++ cd1not2)
+  instances2not1 <- getInstances maxIs to (combined1and2 ++ cd2not1)
+  instances1and2 <- getInstances maxIs to (combined1and2 ++ cd1and2)
+  instancesNot1not2 <-
+    getInstances maxIs to (combineParts parts1to3 ++ cdNot1not2)
   when debug . print $ length instances1not2
   when debug . print $ length instances2not1
   when debug . print $ length instances1and2

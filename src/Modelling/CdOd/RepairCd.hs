@@ -481,7 +481,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do
-      let parts = combineParts $ transform
+      let parts = transform
             (toOldSyntax cd)
             []
             maxFiveObjects
@@ -493,7 +493,8 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
             "cd"
             (length $ fst cd)
             maxFiveObjects
-      getInstances (Just 1) to (parts ++ command)
+            parts
+      getInstances (Just 1) to (combineParts parts ++ command)
 
 data AllowedProperties = AllowedProperties {
   compositionCycles      :: Bool,
