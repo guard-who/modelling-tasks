@@ -16,6 +16,7 @@ import qualified Data.Set                         as S (
 
 import Control.Arrow                    (ArrowChoice (left))
 import Control.Monad                    (when)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random (MonadRandom (getRandomR))
 import Data.Char                        (digitToInt, isSpace, toLower, toUpper)
@@ -39,6 +40,10 @@ import Text.ParserCombinators.Parsec (
   optional,
   satisfy,
   )
+
+class Randomise a where
+  -- | Shuffles every component without affecting basic overall properties
+  randomise :: (MonadFail m, MonadRandom m, MonadThrow m) => a -> m a
 
 data Object = Object {
   oName :: String,

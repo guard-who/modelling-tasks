@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wwarn=deprecations #-}
 module Modelling.CdOd.Generate.DifferentNames where
 
+import Modelling.Auxiliary.Common       (Randomise (randomise))
 import Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (..),
   DifferentNamesInstance,
@@ -13,6 +14,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (MonadRandom, evalRandT, mkStdGen)
+import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT)
 import System.Random.Shuffle            (shuffleM)
 
@@ -31,12 +33,13 @@ differentNames config segment seed = do
   where
     fgen = do
       configs <- withMinimalLabels 3 $ classConfig config
-      continueWithHead configs $ \config' -> do
+      inst <- continueWithHead configs $ \config' -> do
         (names, edges) <- generate
           (withNonTrivialInheritance config)
           config'
           (searchSpace config)
         getDifferentNamesTask fgen config names edges
+      lift $ randomise inst
     continueWithHead []    _ = fgen
     continueWithHead (x:_) f = f x
 

@@ -37,6 +37,7 @@ import qualified Data.Map                         as M (
   )
 import qualified Data.Set                         as S (toList)
 
+import Modelling.Auxiliary.Common       (Randomise (randomise))
 import Modelling.Auxiliary.Output (
   addPretext,
   directionsAdvice,
@@ -362,9 +363,10 @@ differentNames config segment seed = do
     fgen []             = error $
       "it seems to be impossible to generate such a model"
       ++ "; check your configuration"
-    fgen (insta:instas) =
+    fgen (insta:instas) = do
       let (names, edges) = either error id $ instanceToEdges insta
-      in getDifferentNamesTask (fgen instas) config names edges
+      inst <- getDifferentNamesTask (fgen instas) config names edges
+      lift $ randomise inst
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, Assoc Association n lf lt im) =
@@ -392,7 +394,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   }
 
 getDifferentNamesTask
-  :: (RandomGen g, MonadIO m, MonadThrow m)
+  :: (RandomGen g, MonadIO m)
   => RandT g m DifferentNamesInstance
   -> DifferentNamesConfig
   -> [String]
@@ -431,22 +433,16 @@ getDifferentNamesTask fhead config names edges' = do
       if maybe (const True) (bool id not) (ignoreOneRelationship config)
          isCompleteMapping
         then do
-        let (assocs, linkNs) = unzip $ BM.toAscList bm
-        names'  <- shuffleM names
-        assocs' <- shuffleM assocs
-        linkNs' <- shuffleM linkNs
         od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
-        gv <- getRandom
-        let inst =  DifferentNamesInstance {
+        return $ DifferentNamesInstance {
               anonymousObjects = onlyAnonymousObjects config,
               cDiagram  = cd1,
-              generatorValue = gv,
+              generatorValue = 0,
               oDiagram  = od1',
               showSolution = printSolution config,
               mapping   = toNameMapping bm',
               usesAllRelationships = isCompleteMapping
               }
-        lift $ renameInstance inst names' assocs' linkNs'
         else fhead
   where
     alloyFor n cd = transform
@@ -471,6 +467,27 @@ getDifferentNamesTask fhead config names edges' = do
           name = const . return
       os    <- lookupSig (scoped "this" "Obj") inst
       map snd3 . S.toList <$> getTripleAs "get" ignore name ignore os
+
+instance Randomise DifferentNamesInstance where
+  randomise inst = do
+    let cd = cDiagram inst
+        od = oDiagram inst
+        names = nubOrd $ classNames cd
+        assocs = nubOrd $ associationNames cd
+        links = linkNames od
+    names'  <- shuffleM names
+    assocs' <- shuffleM assocs
+    links' <- shuffleM links
+    renameInstance inst names' assocs' links'
+      >>= changeGeneratorValue
+
+changeGeneratorValue
+  :: MonadRandom m
+  => DifferentNamesInstance
+  -> m DifferentNamesInstance
+changeGeneratorValue inst = do
+  r <- getRandom
+  return inst { generatorValue = r }
 
 renameInstance
   :: MonadThrow m
