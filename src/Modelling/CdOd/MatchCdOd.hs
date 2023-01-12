@@ -39,6 +39,7 @@ import qualified Data.Map                         as M (
   union,
   )
 
+import Modelling.Auxiliary.Common       (Randomise (randomise))
 import Modelling.Auxiliary.Output (
   addPretext,
   directionsAdvice,
@@ -87,7 +88,7 @@ import Modelling.CdOd.Types (
   toOldSyntax,
   )
 
-import Control.Monad                    (when)
+import Control.Monad                    ((>=>), when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except             (runExceptT)
 #if __GLASGOW_HASKELL__ < 808
@@ -118,7 +119,6 @@ import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.List (
   delete,
-  nub,
   permutations,
   )
 import Data.Map                         (Map)
@@ -316,10 +316,11 @@ matchCdOdSolution = M.toList . reverseMapping . fmap fst . instances
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  evalRandT (getMatchCdOdTask getRandomTask config) g
+  inst <- evalRandT (getMatchCdOdTask getRandomTask config) g
+  randomise inst
 
 getMatchCdOdTask
-  :: (RandomGen g, MonadIO m, MonadFail m, MonadThrow m)
+  :: (MonadIO m, MonadFail m)
   => (MatchCdOdConfig
     -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance)))
   -> MatchCdOdConfig
@@ -328,19 +329,12 @@ getMatchCdOdTask f config = do
   (cds, ods) <- mapRandT liftIO $ f config
   ods' <- runExceptT (mapM (mapM alloyInstanceToOd) ods)
     >>= either fail return
-  let names  = nubOrd $ concatMap classNames cds
-      assocs = nubOrd $ concatMap associationNames cds
-        ++ concatMap (linkNames . snd) ods'
-  names'  <- shuffleM names
-  assocs' <- shuffleM assocs
-  g' <- getRandom
-  let inst = MatchCdOdInstance {
+  return $ MatchCdOdInstance {
         diagrams       = cds,
-        generatorValue = g',
+        generatorValue = 0,
         instances      = ods',
         showSolution   = printSolution config
         }
-  lift $ renameInstance inst names' assocs'
 
 defaultMatchCdOdInstance :: MatchCdOdInstance
 defaultMatchCdOdInstance = MatchCdOdInstance {
@@ -385,20 +379,42 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
   showSolution = False
   }
 
+classAndAssocNames :: MatchCdOdInstance -> ([String], [String])
+classAndAssocNames inst =
+  let names = nubOrd $ concatMap classNames (diagrams inst)
+      assocs = nubOrd $ concatMap associationNames (diagrams inst)
+        ++ concatMap (linkNames . snd) (instances inst)
+  in (names, assocs)
+
 newMatchCdOdInstances
   :: (MonadFail m, MonadRandom m, MonadThrow m, RandomGen g)
   => MatchCdOdInstance
   -> RandT g m [MatchCdOdInstance]
 newMatchCdOdInstances inst = do
-  let names = nub $ concatMap classNames (diagrams inst)
-      assocs = nub $ concatMap associationNames (diagrams inst)
-        ++ concatMap (linkNames . snd) (instances inst)
+  let (names, assocs) = classAndAssocNames inst
   names'  <- shuffleM $ tail $ permutations names
   assocs' <- shuffleM $ tail $ permutations assocs
   sequence
     [ lift $ renameInstance inst ns as >>= shuffleInstance
     | (ns, as) <- zip names' (concat $ replicate 3 assocs')
     ]
+
+instance Randomise MatchCdOdInstance where
+  randomise inst = do
+    let (names, assocs) = classAndAssocNames inst
+    names'  <- shuffleM names
+    assocs' <- shuffleM assocs
+    renameInstance inst names' assocs'
+      >>= shuffleInstance
+      >>= changeGeneratorValue
+
+changeGeneratorValue
+  :: MonadRandom m
+  => MatchCdOdInstance
+  -> m MatchCdOdInstance
+changeGeneratorValue inst = do
+  r <- getRandom
+  return inst { generatorValue = r }
 
 shuffleInstance
   :: (MonadFail m, MonadRandom m)
@@ -430,13 +446,11 @@ renameInstance
 renameInstance inst names' assocs' = do
   let cds = diagrams inst
       ods = instances inst
-      names = nub $ concatMap classNames (diagrams inst)
-      assocs = nub $ concatMap associationNames (diagrams inst)
-        ++ concatMap (linkNames . snd) (instances inst)
+      (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd cd = renameClassesInCd bmNames cd >>= renameAssocsInCd bmAssocs
-      renameOd od = renameClassesInOd bmNames od >>= renameLinksInOd bmAssocs
+      renameCd = renameClassesInCd bmNames >=> renameAssocsInCd bmAssocs
+      renameOd = renameClassesInOd bmNames >=> renameLinksInOd bmAssocs
   cds' <- renameCd `mapM` cds
   ods' <- mapM renameOd `mapM` ods
   return $ MatchCdOdInstance {

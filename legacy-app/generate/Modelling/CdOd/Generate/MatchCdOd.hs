@@ -8,6 +8,7 @@ import qualified Data.Map                         as M (
   fromList,
   )
 
+import Modelling.Auxiliary.Common       (randomise)
 import Modelling.CdOd.Edges (
   DiagramEdge,
   anyThickEdge,
@@ -51,7 +52,8 @@ debug = False
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  evalRandT (getMatchCdOdTask getRandomTask config) g
+  inst <- evalRandT (getMatchCdOdTask getRandomTask config) g
+  randomise inst
 
 getRandomTask
   :: RandomGen g
