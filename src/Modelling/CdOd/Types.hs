@@ -19,7 +19,6 @@ module Modelling.CdOd.Types (
   Od,
   RelationshipProperties (..),
   Syntax,
-  addedAssociation,
   associationNames,
   checkClassConfig,
   checkClassConfigWithProperties,
@@ -62,7 +61,6 @@ import Data.List.Split                  (splitOn)
 import Data.Maybe                       (fromMaybe, listToMaybe)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
-import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 import Text.ParserCombinators.Parsec (
   Parser,
@@ -369,9 +367,6 @@ classNamesOd o = head . splitOn "$" <$> fst o
 
 linkNames :: Od -> [String]
 linkNames o = nub $ (\(_,_,x) -> x) `map` snd o
-
-addedAssociation :: Change DiagramEdge -> Maybe String
-addedAssociation c = add c >>= connectionName . thd3
 
 connectionName :: Connection -> Maybe String
 connectionName (Assoc _ n _ _ _) = Just n

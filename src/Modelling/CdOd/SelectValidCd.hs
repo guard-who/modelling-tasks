@@ -185,7 +185,7 @@ selectValidCd config segment seed = do
     (maxInstances config)
     (timeout config)
   let cds = map (second snd) chs
-  return $ SelectValidCdInstance {
+  randomise $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     withNames       = printNames config,
     withNavigations = printNavigations config

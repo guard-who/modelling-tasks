@@ -66,7 +66,6 @@ import Modelling.CdOd.Types (
   DiagramEdge,
   RelationshipProperties (..),
   Syntax,
-  addedAssociation,
   associationNames,
   checkClassConfig,
   checkClassConfigWithProperties,
@@ -103,7 +102,6 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..))
-import Data.List                        (nub)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.String.Interpolate          (i, iii)
@@ -431,7 +429,7 @@ repairCd config segment seed = do
     (maxInstances config)
     (timeout config)
   let chs' = map (second fst) chs
-  return $ RepairCdInstance
+  randomise $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
     (printNavigations config)
@@ -492,21 +490,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     writeFile "repair.als" alloyCode
   instas  <- liftIO $ getInstances maxInsts to alloyCode
   rinstas <- shuffleM instas
-  inst <- getInstanceWithODs (map isValid cs) rinstas
-  let names = nub $ classNames (fst inst)
-      assocs = nub $ associationNames (fst inst)
-        ++ mapMaybe (addedAssociation . fst . snd) (snd inst)
-  names'  <- shuffleM names
-  assocs' <- shuffleM assocs
-  let bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd cd = renameClassesInCd bmNames cd
-        >>= renameAssocsInCd bmAssocs
-      renameEdge e = renameAssocsInEdge bmAssocs e
-        >>= renameClassesInEdge bmNames
-  liftIO $ (,)
-    <$> renameCd (fst inst)
-    <*> mapM (\(b, (c, cd)) -> fmap (b,) . (,) <$> mapM renameEdge c <*> renameCd cd) (snd inst)
+  getInstanceWithODs (map isValid cs) rinstas
   where
     drawCd :: Syntax -> Integer -> IO FilePath
     drawCd cd' n =
