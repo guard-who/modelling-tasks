@@ -419,7 +419,7 @@ instance RandomiseLayout MatchCdOdInstance where
   randomiseLayout = shuffleNodesAndEdges
 
 shuffleNodesAndEdges
-  :: MonadRandom m
+  :: (MonadRandom m, MonadThrow m)
   => MatchCdOdInstance
   -> m MatchCdOdInstance
 shuffleNodesAndEdges MatchCdOdInstance {..} = do

@@ -75,7 +75,7 @@ class RandomiseLayout a where
   E.g. for a graph by changing the order of edges and nodes which affects
   the layouting performed by the used algorithm.
   -}
-  randomiseLayout :: MonadRandom m => a -> m a
+  randomiseLayout :: (MonadRandom m, MonadThrow m) => a -> m a
 
 data Object = Object {
   oName :: String,
