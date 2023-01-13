@@ -19,8 +19,13 @@ module Modelling.CdOd.Edges (
 
 import qualified Data.Bimap                       as BM (lookup)
 
-import Modelling.CdOd.Types
-  (AssociationType (..), Connection (..), DiagramEdge, Syntax)
+import Modelling.CdOd.Types (
+  AssociationType (..),
+  Connection (..),
+  DiagramEdge,
+  Syntax,
+  renameConnection,
+  )
 import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
 import Data.Bimap                       (Bimap)
@@ -47,10 +52,7 @@ fromEdges classNames es =
 renameEdges :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
 renameEdges bm es =
   [ (from, to, e')
-  | (from, to, e) <- es, e' <- rename e]
-  where
-    rename (Assoc t n m1 m2 b) = [Assoc t n' m1 m2 b | n' <- BM.lookup n bm]
-    rename e@Inheritance       = [e]
+  | (from, to, e) <- es, e' <- renameConnection bm e]
 
 renameClasses :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
 renameClasses bm es =

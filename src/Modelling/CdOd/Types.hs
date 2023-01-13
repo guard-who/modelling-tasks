@@ -25,6 +25,7 @@ module Modelling.CdOd.Types (
   checkClassConfigWithProperties,
   classNames,
   classNamesOd,
+  connectionName,
   defaultProperties,
   fromNameMapping,
   linkNames,
@@ -37,6 +38,7 @@ module Modelling.CdOd.Types (
   renameClassesInCd,
   renameClassesInEdge,
   renameClassesInOd,
+  renameConnection,
   renameLinksInOd,
   showLetters,
   showName,
@@ -60,6 +62,7 @@ import Data.List.Split                  (splitOn)
 import Data.Maybe                       (fromMaybe, listToMaybe)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
+import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 import Text.ParserCombinators.Parsec (
   Parser,
@@ -128,7 +131,7 @@ instance Read NameMapping where
 data Change a = Change {
     add    :: Maybe a,
     remove :: Maybe a
-  } deriving (Foldable, Functor, Generic, Read, Show, Traversable)
+  } deriving (Eq, Foldable, Functor, Generic, Read, Show, Traversable)
 
 data ClassConfig = ClassConfig {
     classes      :: (Int, Int),
@@ -368,21 +371,28 @@ linkNames :: Od -> [String]
 linkNames o = nub $ (\(_,_,x) -> x) `map` snd o
 
 addedAssociation :: Change DiagramEdge -> Maybe String
-addedAssociation c = add c >>= connectionName
-  where
-    connectionName (_, _, Assoc _ n _ _ _) = Just n
-    connectionName (_, _, Inheritance)     = Nothing
+addedAssociation c = add c >>= connectionName . thd3
+
+connectionName :: Connection -> Maybe String
+connectionName (Assoc _ n _ _ _) = Just n
+connectionName Inheritance       = Nothing
+
+renameConnection
+  :: MonadThrow m
+  => Bimap String String
+  -> Connection
+  -> m Connection
+renameConnection bm (Assoc t n m1 m2 b) = do
+  n' <- BM.lookup n bm
+  return $ Assoc t n' m1 m2 b
+renameConnection _ Inheritance = return Inheritance
 
 renameAssocsInEdge
   :: MonadThrow m
   => Bimap String String
   -> DiagramEdge
   -> m DiagramEdge
-renameAssocsInEdge m (f, t, a) = (f, t,) <$> renameConnection a
-  where
-    renameConnection Inheritance           = return Inheritance
-    renameConnection (Assoc ct n lf lt im) = (\n' -> Assoc ct n' lf lt im)
-      <$> BM.lookup n m
+renameAssocsInEdge m (f, t, a) = (f, t,) <$> renameConnection m a
 
 renameAssocsInCd :: MonadThrow m => Bimap String String -> Syntax -> m Syntax
 renameAssocsInCd m cd = (fst cd,) <$> mapM (renameAssocsInAssociation m) (snd cd)

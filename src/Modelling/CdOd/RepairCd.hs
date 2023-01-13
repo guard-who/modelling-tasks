@@ -9,10 +9,12 @@ module Modelling.CdOd.RepairCd (
   RepairCdInstance (..),
   checkClassConfigAndChanges,
   checkRepairCdConfig,
+  classAndAssocNames,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
   allowEverything,
   phraseChange,
+  renameInstance,
   repairCd,
   repairCdEvaluation,
   repairCdSolution,
@@ -28,14 +30,16 @@ import qualified Modelling.CdOd.Types             as T (
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
+  elems,
   empty,
   filter,
-  fromList,
+  fromAscList,
   insert,
   keys,
   toList,
   )
 
+import Modelling.Auxiliary.Common       (Randomise (randomise))
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
@@ -67,6 +71,7 @@ import Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   classNames,
+  connectionName,
   defaultProperties,
   maxFiveObjects,
   renameAssocsInCd,
@@ -77,7 +82,8 @@ import Modelling.CdOd.Types (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    (forM_, void, when)
+import Control.Monad                    ((>=>), forM_, void, when)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   LangM,
@@ -92,14 +98,16 @@ import Control.Monad.Output (
   translate,
   )
 import Control.Monad.Random
-  (RandT, RandomGen, StdGen, evalRandT, getStdGen, mkStdGen)
+  (MonadRandom, RandT, RandomGen, StdGen, evalRandT, getStdGen, mkStdGen)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
+import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (..))
 import Data.List                        (nub)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.String.Interpolate          (i, iii)
+import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -343,7 +351,7 @@ repairCdSyntax inst xs =
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
 repairCdEvaluation inst xs = addPretext $ do
-  let chs = M.fromList [
+  let chs = M.fromAscList [
         (English, "changes"),
         (German, "Änderungen")
         ]
@@ -358,7 +366,56 @@ data RepairCdInstance = RepairCdInstance {
     classDiagram   :: Syntax,
     withDirections :: Bool,
     withNames      :: Bool
-  } deriving (Generic, Read, Show)
+  } deriving (Eq, Generic, Read, Show)
+
+classAndAssocNames :: RepairCdInstance -> ([String], [String])
+classAndAssocNames inst =
+  let cd = classDiagram inst
+      chs = map snd $ M.elems $ changes inst
+      names = classNames cd
+      assocs = nubOrd $ associationNames cd
+        ++ mapMaybe (add >=> connectionName . thd3) chs
+        ++ mapMaybe (remove >=> connectionName . thd3) chs
+  in (names, assocs)
+
+instance Randomise RepairCdInstance where
+  randomise inst = do
+    let (names, assocs) = classAndAssocNames inst
+    names' <- shuffleM names
+    assocs' <- shuffleM assocs
+    renameInstance inst names' assocs'
+      >>= shuffleInstance
+
+shuffleInstance :: MonadRandom m => RepairCdInstance -> m RepairCdInstance
+shuffleInstance inst = do
+  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems $ changes inst)
+  return $ RepairCdInstance {
+    changes = chs,
+    classDiagram = classDiagram inst,
+    withDirections = withDirections inst,
+    withNames = withNames inst
+    }
+
+renameInstance
+  :: MonadThrow m
+  => RepairCdInstance
+  -> [String]
+  -> [String]
+  -> m RepairCdInstance
+renameInstance inst names' assocs' = do
+  let (names, assocs) = classAndAssocNames inst
+      bmNames  = BM.fromList $ zip names names'
+      bmAssocs = BM.fromList $ zip assocs assocs'
+      renameCd = renameClassesInCd bmNames >=> renameAssocsInCd bmAssocs
+      renameEdge = renameClassesInEdge bmNames >=> renameAssocsInEdge bmAssocs
+  cd <- renameCd $ classDiagram inst
+  chs <- mapM (mapM $ mapM renameEdge) $ changes inst
+  return $ RepairCdInstance {
+    changes        = chs,
+    classDiagram   = cd,
+    withDirections = withDirections inst,
+    withNames      = withNames inst
+    }
 
 repairCd
   :: RepairCdConfig
@@ -375,14 +432,14 @@ repairCd config segment seed = do
     (timeout config)
   let chs' = map (second fst) chs
   return $ RepairCdInstance
-    (M.fromList $ zip [1..] chs')
+    (M.fromAscList $ zip [1..] chs')
     cd
     (printNavigations config)
     (printNames config && useNames config)
 
 defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
-  changes = M.fromList [
+  changes = M.fromAscList [
     (1,(False,Change {
           add = Just ("A","D",Assoc Composition "s" (1,Just 1) (2,Nothing) False),
           remove = Just ("A","D",Assoc Composition "v" (1,Just 1) (0,Nothing) False)
