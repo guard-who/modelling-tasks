@@ -27,6 +27,7 @@ import qualified Data.Map                         as M (
   toList,
   )
 
+import Modelling.Auxiliary.Common       (Randomise (randomise))
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
@@ -64,6 +65,7 @@ import Control.Monad.Output (
 import Control.Monad.Random             (evalRandT, forM_, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Control.Monad.Trans              (MonadTrans (lift))
+import Data.Containers.ListUtils        (nubOrd)
 import Data.Bifunctor                   (second)
 import Data.List                        (nub, permutations)
 import Data.Map                         (Map)
@@ -189,6 +191,14 @@ selectValidCd config segment seed = do
     withNavigations = printNavigations config
     }
 
+instance Randomise SelectValidCdInstance where
+  randomise inst = do
+    let (names, assocs) = classAndAssocNames inst
+    names' <- shuffleM names
+    assocs' <- shuffleM assocs
+    renameInstance inst names' assocs'
+      >>= shuffleInstance
+
 shuffleInstance
   :: MonadRandom m
   => SelectValidCdInstance
@@ -201,6 +211,13 @@ shuffleInstance inst = SelectValidCdInstance
   where
     replaceId x (_, cd) = (x, cd)
 
+classAndAssocNames :: SelectValidCdInstance -> ([String], [String])
+classAndAssocNames inst =
+  let cds = classDiagrams inst
+      names = nubOrd $ concatMap (classNames . snd) cds
+      assocs = nubOrd $ concatMap (associationNames . snd) cds
+  in (names, assocs)
+
 renameInstance
   :: MonadThrow m
   => SelectValidCdInstance
@@ -208,15 +225,13 @@ renameInstance
   -> [String]
   -> m SelectValidCdInstance
 renameInstance inst names' assocs' = do
-  let cds = classDiagrams inst
-      names = nub $ concatMap (classNames . snd) cds
-      assocs = nub $ concatMap (associationNames . snd) cds
+  let (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd cd = renameClassesInCd bmNames cd >>= renameAssocsInCd bmAssocs
-  cds' <- mapM (mapM renameCd) cds
+  cds <- mapM (mapM renameCd) $ classDiagrams inst
   return $ SelectValidCdInstance {
-    classDiagrams   = cds',
+    classDiagrams   = cds,
     withNames       = withNames inst,
     withNavigations = withNavigations inst
     }
