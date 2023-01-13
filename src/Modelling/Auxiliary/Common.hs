@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Modelling.Auxiliary.Common where
 
 import qualified Data.ByteString                  as BS (readFile, writeFile)
@@ -30,6 +31,7 @@ import Control.Lens (
   lensRules,
   mappingNamer,
   )
+import GHC.Generics                     (Generic)
 import System.Directory                 (doesFileExist)
 import Text.Parsec                      (parse)
 import Text.ParserCombinators.Parsec (
@@ -41,9 +43,39 @@ import Text.ParserCombinators.Parsec (
   satisfy,
   )
 
+shuffleEverything
+  :: (MonadFail m, MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
+  => a
+  -> m a
+shuffleEverything inst = shuffleInstance (ShuffleInstance inst True)
+
+data ShuffleInstance a = ShuffleInstance {
+  taskInstance                :: a,
+  allowLayoutMangling         :: Bool
+  } deriving (Eq, Generic, Read, Show)
+
+shuffleInstance
+  :: (MonadFail m, MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
+  => ShuffleInstance a
+  -> m a
+shuffleInstance inst =
+  randomise (taskInstance inst)
+  >>= (if allowLayoutMangling inst then randomiseLayout else return)
+
 class Randomise a where
   -- | Shuffles every component without affecting basic overall properties
   randomise :: (MonadFail m, MonadRandom m, MonadThrow m) => a -> m a
+
+class RandomiseLayout a where
+  {-
+  Shuffles the structure of every component
+  without affecting its content and basic overall properties
+  but by (maybe) affecting its layout.
+
+  E.g. for a graph by changing the order of edges and nodes which affects
+  the layouting performed by the used algorithm.
+  -}
+  randomiseLayout :: MonadRandom m => a -> m a
 
 data Object = Object {
   oName :: String,

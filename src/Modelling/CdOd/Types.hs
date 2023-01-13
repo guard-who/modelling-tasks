@@ -41,6 +41,8 @@ module Modelling.CdOd.Types (
   renameLinksInOd,
   showLetters,
   showName,
+  shuffleClassAndConnectionOrder,
+  shuffleObjectAndLinkOrder,
   toNameMapping,
   toOldSyntax,
   ) where
@@ -50,8 +52,9 @@ import qualified Data.Bimap                       as BM
 import Modelling.Auxiliary.Common       (skipSpaces)
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    (void)
+import Control.Monad                    ((>=>), void)
 import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Random             (MonadRandom)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bimapM)
@@ -62,6 +65,7 @@ import Data.Maybe                       (fromMaybe, listToMaybe)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
+import System.Random.Shuffle            (shuffleM)
 import Text.ParserCombinators.Parsec (
   Parser,
   many1,
@@ -70,6 +74,9 @@ import Text.ParserCombinators.Parsec (
   )
 
 type Od = ([String], [(Int, Int, String)])
+
+shuffleObjectAndLinkOrder :: MonadRandom m => Od -> m Od
+shuffleObjectAndLinkOrder = bimapM shuffleM shuffleM
 
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
 
@@ -80,6 +87,10 @@ data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (I
   deriving (Eq, Generic, Read, Show)
 
 type Syntax = ([(String, [String])], [Association])
+
+shuffleClassAndConnectionOrder :: MonadRandom m => Syntax -> m Syntax
+shuffleClassAndConnectionOrder =
+  bimapM (shuffleM >=> mapM (mapM shuffleM)) shuffleM
 
 type DiagramEdge = (String, String, Connection)
 

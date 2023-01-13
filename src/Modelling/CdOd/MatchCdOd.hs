@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
@@ -39,7 +40,11 @@ import qualified Data.Map                         as M (
   union,
   )
 
-import Modelling.Auxiliary.Common       (Randomise (randomise))
+import Modelling.Auxiliary.Common (
+  Randomise (randomise),
+  RandomiseLayout (randomiseLayout),
+  shuffleEverything,
+  )
 import Modelling.Auxiliary.Output (
   addPretext,
   directionsAdvice,
@@ -85,6 +90,8 @@ import Modelling.CdOd.Types (
   renameClassesInOd,
   renameLinksInOd,
   showLetters,
+  shuffleClassAndConnectionOrder,
+  shuffleObjectAndLinkOrder,
   toOldSyntax,
   )
 
@@ -317,7 +324,7 @@ matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   inst <- evalRandT (getMatchCdOdTask getRandomTask config) g
-  randomise inst
+  shuffleEverything inst
 
 getMatchCdOdTask
   :: (MonadIO m, MonadFail m)
@@ -407,6 +414,23 @@ instance Randomise MatchCdOdInstance where
     renameInstance inst names' assocs'
       >>= shuffleInstance
       >>= changeGeneratorValue
+
+instance RandomiseLayout MatchCdOdInstance where
+  randomiseLayout = shuffleNodesAndEdges
+
+shuffleNodesAndEdges
+  :: MonadRandom m
+  => MatchCdOdInstance
+  -> m MatchCdOdInstance
+shuffleNodesAndEdges MatchCdOdInstance {..} = do
+  cds <- mapM shuffleClassAndConnectionOrder diagrams
+  ods <- mapM (mapM shuffleObjectAndLinkOrder) instances
+  return MatchCdOdInstance {
+    diagrams = cds,
+    generatorValue = generatorValue,
+    instances = ods,
+    showSolution = showSolution
+    }
 
 changeGeneratorValue
   :: MonadRandom m
