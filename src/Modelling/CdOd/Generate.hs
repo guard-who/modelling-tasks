@@ -17,6 +17,7 @@ import Modelling.CdOd.CdAndChanges.Transform (
   transformNoChanges,
   )
 import Modelling.CdOd.Edges             (
+  isInheritanceEdge,
   renameClasses,
   )
 import Modelling.CdOd.Types (
@@ -28,6 +29,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (MonadRandom)
+import Data.List                        (partition)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
@@ -52,6 +54,8 @@ instanceToEdges rinsta = do
 
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
 nameEdges es =
-     [e | e@(_, _, Inheritance) <- es]
+     [e | e@(_, _, Inheritance) <- ihs]
   ++ [(s, e, Assoc k [n] m1 m2 b)
-     | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] es]
+     | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] ass]
+  where
+    (ihs, ass) = partition isInheritanceEdge es

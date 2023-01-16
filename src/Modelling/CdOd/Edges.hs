@@ -14,7 +14,8 @@ module Modelling.CdOd.Edges (
   inheritanceCycles,
   multipleInheritances,
   selfEdges, wrongLimits,
-  anyThickEdge, shouldBeThick
+  anyThickEdge, shouldBeThick,
+  isInheritanceEdge,
   ) where
 
 import qualified Data.Bimap                       as BM (lookup)
@@ -38,11 +39,13 @@ toEdges (is, as) =
   [(s, e, Inheritance) | (s, es) <- is, e <- es]
   ++ [(s, e, Assoc t n m1 m2 False) | (t, n, m1, s, e, m2) <- as]
 
+isInheritanceEdge :: DiagramEdge -> Bool
+isInheritanceEdge (_, _, Inheritance) = True
+isInheritanceEdge (_, _, _          ) = False
+
 fromEdges :: [String] -> [DiagramEdge] -> Syntax
 fromEdges classNames es =
-  let isInheritance (_, _, Inheritance) = True
-      isInheritance (_, _, _          ) = False
-      (ihs, ass) = partition isInheritance es
+  let (ihs, ass) = partition isInheritanceEdge es
       classes' = map
         (\x -> (x, [e | (s, e, Inheritance) <- ihs, s == x]))
         classNames
