@@ -84,8 +84,8 @@ shuffleObjectAndLinkOrder (objects, links) = do
       objects' = shuffle objects dist
       isBM = BM.fromList $ zip is is'
       changeIs (x, y, z) = (,,)
-        <$> BM.lookup x isBM
-        <*> BM.lookup y isBM
+        <$> BM.lookupR x isBM
+        <*> BM.lookupR y isBM
         <*> pure z
   links' <- mapM changeIs links >>= shuffleM
   return (objects', links')
