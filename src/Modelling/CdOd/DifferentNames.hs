@@ -40,7 +40,11 @@ import qualified Data.Map                         as M (
   )
 import qualified Data.Set                         as S (toList)
 
-import Modelling.Auxiliary.Common       (Randomise (randomise))
+import Modelling.Auxiliary.Common (
+  Randomise (randomise),
+  RandomiseLayout (randomiseLayout),
+  shuffleEverything,
+  )
 import Modelling.Auxiliary.Output (
   addPretext,
   directionsAdvice,
@@ -78,6 +82,8 @@ import Modelling.CdOd.Types (
   renameClassesInOd,
   renameLinksInOd,
   showName,
+  shuffleClassAndConnectionOrder,
+  shuffleObjectAndLinkOrder,
   toNameMapping,
   toOldSyntax,
   )
@@ -388,7 +394,7 @@ differentNames config segment seed = do
     fgen (insta:instas) = do
       let (names, edges) = either error id $ instanceToEdges insta
       inst <- getDifferentNamesTask (fgen instas) config names edges
-      lift $ randomise inst
+      lift $ shuffleEverything inst
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
 reverseAssociation (from, to, Assoc Association n lf lt im) =
@@ -520,6 +526,21 @@ instance Randomise DifferentNamesInstance where
     links' <- shuffleM links
     renameInstance inst names' assocs' links'
       >>= changeGeneratorValue
+
+instance RandomiseLayout DifferentNamesInstance where
+  randomiseLayout DifferentNamesInstance {..} = do
+    cd <- shuffleClassAndConnectionOrder cDiagram
+    od <- shuffleObjectAndLinkOrder oDiagram
+    return $ DifferentNamesInstance {
+      anonymousObjects = anonymousObjects,
+      cDiagram = cd,
+      generatorValue = generatorValue,
+      oDiagram = od,
+      showSolution = showSolution,
+      mapping = mapping,
+      linkShuffling = linkShuffling,
+      usesAllRelationships = usesAllRelationships
+      }
 
 changeGeneratorValue
   :: MonadRandom m

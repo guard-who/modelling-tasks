@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 module Modelling.Auxiliary.Common where
 
 import qualified Data.ByteString                  as BS (readFile, writeFile)
@@ -16,7 +17,7 @@ import qualified Data.Set                         as S (
   )
 
 import Control.Arrow                    (ArrowChoice (left))
-import Control.Monad                    (when)
+import Control.Monad                    ((>=>), when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random (MonadRandom (getRandomR))
@@ -47,20 +48,28 @@ shuffleEverything
   :: (MonadFail m, MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
   => a
   -> m a
-shuffleEverything inst = shuffleInstance (ShuffleInstance inst True)
+shuffleEverything inst = shuffleInstance $ ShuffleInstance {
+  taskInstance                = inst,
+  allowLayoutMangling         = True,
+  shuffleNames                = True
+  }
 
 data ShuffleInstance a = ShuffleInstance {
   taskInstance                :: a,
-  allowLayoutMangling         :: Bool
+  allowLayoutMangling         :: Bool,
+  shuffleNames                :: Bool
   } deriving (Eq, Generic, Read, Show)
 
 shuffleInstance
   :: (MonadFail m, MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
   => ShuffleInstance a
   -> m a
-shuffleInstance inst =
-  randomise (taskInstance inst)
-  >>= (if allowLayoutMangling inst then randomiseLayout else return)
+shuffleInstance ShuffleInstance {..} =
+  whenM shuffleNames randomise
+  >=> whenM allowLayoutMangling randomiseLayout
+  $ taskInstance
+  where
+    whenM p x = if p then x else return
 
 class Randomise a where
   -- | Shuffles every component without affecting basic overall properties
