@@ -54,7 +54,7 @@ instanceToEdges rinsta = do
 
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
 nameEdges es =
-     [e | e@(_, _, Inheritance) <- ihs]
+     ihs
   ++ [(s, e, Assoc k [n] m1 m2 b)
      | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] ass]
   where

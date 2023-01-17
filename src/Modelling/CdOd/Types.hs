@@ -52,9 +52,9 @@ import qualified Data.Bimap                       as BM
 import Modelling.Auxiliary.Common       (skipSpaces)
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    ((>=>), liftM2, void)
+import Control.Monad                    ((>=>), void)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Random             (MonadRandom, getRandomR)
+import Control.Monad.Random             (MonadRandom)
 import Data.Bifunctor                   (first, second)
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bimapM)
@@ -65,7 +65,7 @@ import Data.Maybe                       (fromMaybe, listToMaybe)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
-import System.Random.Shuffle            (shuffle, shuffleM)
+import System.Random.Shuffle            (shuffleM)
 import Text.ParserCombinators.Parsec (
   Parser,
   many1,
@@ -77,22 +77,14 @@ type Od = ([String], [(Int, Int, String)])
 
 shuffleObjectAndLinkOrder :: (MonadRandom m, MonadThrow m) => Od -> m Od
 shuffleObjectAndLinkOrder (objects, links) = do
-  let len = length objects
-  dist <- rseqM (len - 1)
-  let is = [0 .. len - 1]
-      is' = shuffle is dist
-      objects' = shuffle objects dist
-      isBM = BM.fromList $ zip is is'
+  (is', objects') <- unzip <$> shuffleM (zip [0..] objects)
+  let isBM = BM.fromList $ zip [0..] is'
       changeIs (x, y, z) = (,,)
         <$> BM.lookupR x isBM
         <*> BM.lookupR y isBM
         <*> pure z
   links' <- mapM changeIs links >>= shuffleM
   return (objects', links')
-  where
-    rseqM :: (MonadRandom m) => Int -> m [Int]
-    rseqM 0 = return []
-    rseqM i = liftM2 (:) (getRandomR (0, i)) (rseqM (i - 1))
 
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
 
