@@ -6,6 +6,7 @@ import qualified Data.Bimap                       as BM
 
 import Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (timeout),
+  ShufflingOption (ConsecutiveLetters),
   differentNames,
   checkDifferentNamesConfig,
   differentNamesEvaluation,
@@ -166,6 +167,7 @@ evaluateDifferentNames cs cs' = flip withLang English $ do
         oDiagram = error "oDiagram is undefined",
         showSolution = True,
         mapping = toNameMapping $ BM.fromList cs,
+        linkShuffling = ConsecutiveLetters,
         usesAllRelationships = True
         }
       cs'' = bimap Name Name <$> cs'

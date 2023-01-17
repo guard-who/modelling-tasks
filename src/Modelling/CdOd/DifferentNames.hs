@@ -1,11 +1,14 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (..),
   DifferentNamesInstance (..),
+  ShufflingOption (..),
   checkDifferentNamesConfig,
+  checkDifferentNamesInstance,
   debug,
   defaultDifferentNamesConfig,
   defaultDifferentNamesInstance,
@@ -119,6 +122,11 @@ import System.Random.Shuffle            (shuffleM)
 debug :: Bool
 debug = False
 
+data ShufflingOption a =
+    ConsecutiveLetters
+  | WithAdditionalNames [a]
+  deriving (Eq, Generic, Foldable, Functor, Read, Show, Traversable)
+
 data DifferentNamesInstance = DifferentNamesInstance {
     anonymousObjects :: Bool,
     cDiagram :: Syntax,
@@ -126,9 +134,23 @@ data DifferentNamesInstance = DifferentNamesInstance {
     oDiagram :: Od,
     showSolution :: Bool,
     mapping  :: NameMapping,
+    linkShuffling :: ShufflingOption String,
     -- | whether every relationship has an associated link (in the mapping)
     usesAllRelationships :: Bool
   } deriving (Eq, Generic, Read, Show)
+
+checkDifferentNamesInstance :: DifferentNamesInstance -> Maybe String
+checkDifferentNamesInstance DifferentNamesInstance {..}
+  | WithAdditionalNames xs <- linkShuffling
+  , length (associationNames cDiagram) > length (linkNames oDiagram) - length xs
+  = Just [iii|
+      WithAdditianalNames must provide at least a name for
+      each missing link in the Object diagram,
+      i.e. for which an association in the Class diagram exists,
+      but not a link in the Object diagram.
+      |]
+  | otherwise
+  = Nothing
 
 data DifferentNamesConfig = DifferentNamesConfig {
     classConfig      :: ClassConfig,
@@ -390,6 +412,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
     ),
   showSolution = False,
   mapping = toNameMapping $ BM.fromList [("a","y"),("b","z"),("c","x")],
+  linkShuffling = ConsecutiveLetters,
   usesAllRelationships = True
   }
 
@@ -441,6 +464,7 @@ getDifferentNamesTask fhead config names edges' = do
               oDiagram  = od1',
               showSolution = printSolution config,
               mapping   = toNameMapping bm',
+              linkShuffling = ConsecutiveLetters,
               usesAllRelationships = isCompleteMapping
               }
         else fhead
@@ -468,13 +492,29 @@ getDifferentNamesTask fhead config names edges' = do
       os    <- lookupSig (scoped "this" "Obj") inst
       map snd3 . S.toList <$> getTripleAs "get" ignore name ignore os
 
+{-|
+All names within a 'DifferentNamesInstance'
+including names reserved for shuffling.
+-}
+classAssocAndLinkNames
+  :: DifferentNamesInstance
+  -> ([String], [String], [String])
+classAssocAndLinkNames DifferentNamesInstance {..} =
+  let names = classNames cDiagram
+      assocs = associationNames cDiagram
+      additional = case linkShuffling of
+        ConsecutiveLetters -> []
+        WithAdditionalNames xs -> xs
+      links = linkNames oDiagram ++ additional
+  in (names, assocs, links)
+
 instance Randomise DifferentNamesInstance where
-  randomise inst = do
-    let cd = cDiagram inst
-        od = oDiagram inst
-        names = nubOrd $ classNames cd
-        assocs = nubOrd $ associationNames cd
-        links = linkNames od
+  randomise inst@DifferentNamesInstance {..} = do
+    let (names, assocs, lNames) = classAssocAndLinkNames inst
+        links = case linkShuffling of
+          ConsecutiveLetters -> snd
+          WithAdditionalNames _ -> fst
+          $ unzip $ zip lNames $ map (:[]) ['z', 'y' ..]
     names'  <- shuffleM names
     assocs' <- shuffleM assocs
     links' <- shuffleM links
@@ -499,9 +539,7 @@ renameInstance
 renameInstance inst names' assocs' linkNs' = do
   let cd = cDiagram inst
       od = oDiagram inst
-      names = classNames cd
-      assocs = associationNames cd
-      linkNs = linkNames od
+      (names, assocs, linkNs) = classAssocAndLinkNames inst
       bm = BM.toAscList $ fromNameMapping $ mapping inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
@@ -514,6 +552,7 @@ renameInstance inst names' assocs' linkNs' = do
         ]
   cd' <- renameClassesInCd bmNames =<< renameAssocsInCd bmAssocs cd
   od' <- renameClassesInOd bmNames =<< renameLinksInOd bmLinks od
+  shuffling <- mapM (`BM.lookup` bmLinks) $ linkShuffling inst
   return $ DifferentNamesInstance {
     anonymousObjects = anonymousObjects inst,
     cDiagram  = cd',
@@ -521,6 +560,7 @@ renameInstance inst names' assocs' linkNs' = do
     oDiagram  = od',
     showSolution = showSolution inst,
     mapping   = toNameMapping bm',
+    linkShuffling = shuffling,
     usesAllRelationships = usesAllRelationships inst
     }
 
