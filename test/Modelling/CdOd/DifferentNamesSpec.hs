@@ -6,9 +6,10 @@ import qualified Data.Bimap                       as BM
 
 import Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (timeout),
-  ShufflingOption (ConsecutiveLetters),
+  ShufflingOption (..),
   differentNames,
   checkDifferentNamesConfig,
+  checkDifferentNamesInstance,
   differentNamesEvaluation,
   differentNamesInitial,
   differentNamesSyntax,
@@ -62,6 +63,16 @@ spec = do
   describe "defaultDifferentNamesConfig" $
     it "is valid" $
       checkDifferentNamesConfig defaultDifferentNamesConfig `shouldBe` Nothing
+  describe "defaultDifferentNamesInstance" $ do
+    it "is valid" $
+      checkDifferentNamesInstance defaultDifferentNamesInstance
+      `shouldBe` Nothing
+    context "using WithAdditionalNames" $
+      it "is valid" $
+        checkDifferentNamesInstance defaultDifferentNamesInstance {
+          linkShuffling = WithAdditionalNames ["v"]
+          }
+        `shouldBe` Nothing
   describe "differentNames" $
     context "using defaultDifferentNamesConfig with reduced timeouts" $
       it "generates an instance" $ do

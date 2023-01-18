@@ -148,7 +148,7 @@ data DifferentNamesInstance = DifferentNamesInstance {
 checkDifferentNamesInstance :: DifferentNamesInstance -> Maybe String
 checkDifferentNamesInstance DifferentNamesInstance {..}
   | WithAdditionalNames xs <- linkShuffling
-  , length (associationNames cDiagram) > length (linkNames oDiagram) - length xs
+  , length (associationNames cDiagram) > length (linkNames oDiagram) + length xs
   = Just [iii|
       WithAdditianalNames must provide at least a name for
       each missing link in the Object diagram,
