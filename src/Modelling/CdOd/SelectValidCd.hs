@@ -27,7 +27,11 @@ import qualified Data.Map                         as M (
   toList,
   )
 
-import Modelling.Auxiliary.Common       (Randomise (randomise))
+import Modelling.Auxiliary.Common (
+  Randomise (randomise),
+  RandomiseLayout (randomiseLayout),
+  shuffleEverything,
+  )
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
@@ -45,6 +49,7 @@ import Modelling.CdOd.Types (
   Syntax,
   associationNames,
   classNames,
+  shuffleClassAndConnectionOrder,
   renameAssocsInCd,
   renameClassesInCd,
   )
@@ -185,7 +190,7 @@ selectValidCd config segment seed = do
     (maxInstances config)
     (timeout config)
   let cds = map (second snd) chs
-  randomise $ SelectValidCdInstance {
+  shuffleEverything $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     withNames       = printNames config,
     withNavigations = printNavigations config
@@ -198,6 +203,15 @@ instance Randomise SelectValidCdInstance where
     assocs' <- shuffleM assocs
     renameInstance inst names' assocs'
       >>= shuffleInstance
+
+instance RandomiseLayout SelectValidCdInstance where
+  randomiseLayout SelectValidCdInstance {..} = do
+    cds <- mapM shuffleClassAndConnectionOrder `mapM` classDiagrams
+    return $ SelectValidCdInstance {
+      classDiagrams           = cds,
+      withNames               = withNames,
+      withNavigations         = withNavigations
+      }
 
 shuffleInstance
   :: MonadRandom m
