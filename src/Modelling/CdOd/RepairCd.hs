@@ -39,7 +39,11 @@ import qualified Data.Map                         as M (
   toList,
   )
 
-import Modelling.Auxiliary.Common       (Randomise (randomise))
+import Modelling.Auxiliary.Common (
+  Randomise (randomise),
+  RandomiseLayout (randomiseLayout),
+  shuffleEverything,
+  )
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
@@ -77,6 +81,7 @@ import Modelling.CdOd.Types (
   renameAssocsInEdge,
   renameClassesInCd,
   renameClassesInEdge,
+  shuffleClassAndConnectionOrder,
   toOldSyntax,
   )
 
@@ -384,6 +389,16 @@ instance Randomise RepairCdInstance where
     renameInstance inst names' assocs'
       >>= shuffleInstance
 
+instance RandomiseLayout RepairCdInstance where
+  randomiseLayout RepairCdInstance {..} = do
+    cd <- shuffleClassAndConnectionOrder classDiagram
+    return RepairCdInstance {
+      changes = changes,
+      classDiagram = cd,
+      withDirections = withDirections,
+      withNames = withNames
+      }
+
 shuffleInstance :: MonadRandom m => RepairCdInstance -> m RepairCdInstance
 shuffleInstance inst = do
   chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems $ changes inst)
@@ -429,7 +444,7 @@ repairCd config segment seed = do
     (maxInstances config)
     (timeout config)
   let chs' = map (second fst) chs
-  randomise $ RepairCdInstance
+  shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
     (printNavigations config)
