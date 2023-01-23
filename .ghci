@@ -1,0 +1,7 @@
+:set +s
+:set -XTypeApplications
+:set -iapp/common
+:l app/common/Common.hs
+:m +Control.Monad.Output Control.Monad.Trans.Except
+import qualified Data.Bimap as BM
+import qualified Data.Map as M
