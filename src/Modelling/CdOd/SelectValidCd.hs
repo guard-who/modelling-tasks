@@ -54,6 +54,7 @@ import Modelling.CdOd.Types (
   renameClassesInCd,
   )
 
+import Control.Monad                    ((>=>))
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
@@ -85,6 +86,7 @@ data SelectValidCdConfig = SelectValidCdConfig {
     noIsolationLimit :: Bool,
     printNames       :: Bool,
     printNavigations :: Bool,
+    shuffleEachCd    :: Bool,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
 
@@ -106,6 +108,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
     noIsolationLimit = False,
     printNames       = True,
     printNavigations = True,
+    shuffleEachCd    = False,
     timeout          = Nothing
   }
 
@@ -190,11 +193,15 @@ selectValidCd config segment seed = do
     (maxInstances config)
     (timeout config)
   let cds = map (second snd) chs
-  shuffleEverything $ SelectValidCdInstance {
+  shuffleCds >=> shuffleEverything $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     withNames       = printNames config,
     withNavigations = printNavigations config
     }
+  where
+    shuffleCds
+      | shuffleEachCd config = shuffleEach
+      | otherwise            = return
 
 instance Randomise SelectValidCdInstance where
   randomise inst = do
@@ -212,6 +219,27 @@ instance RandomiseLayout SelectValidCdInstance where
       withNames               = withNames,
       withNavigations         = withNavigations
       }
+
+shuffleEach
+  :: (MonadRandom m, MonadThrow m)
+  => SelectValidCdInstance
+  -> m SelectValidCdInstance
+shuffleEach inst@SelectValidCdInstance {..} = do
+  cds <- mapM shuffleCd `mapM` classDiagrams
+  return $ SelectValidCdInstance {
+    classDiagrams           = cds,
+    withNames               = withNames,
+    withNavigations         = withNavigations
+    }
+  where
+    (names, assocs) = classAndAssocNames inst
+    shuffleCd cd = do
+      names' <- shuffleM names
+      assocs' <- shuffleM assocs
+      let bmNames  = BM.fromList $ zip names names'
+          bmAssocs = BM.fromList $ zip assocs assocs'
+      renameClassesInCd bmNames cd
+        >>= renameAssocsInCd bmAssocs
 
 shuffleInstance
   :: MonadRandom m
