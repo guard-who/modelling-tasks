@@ -150,7 +150,7 @@ checkDifferentNamesInstance DifferentNamesInstance {..}
   | WithAdditionalNames xs <- linkShuffling
   , length (associationNames cDiagram) > length (linkNames oDiagram) + length xs
   = Just [iii|
-      WithAdditianalNames must provide at least a name for
+      WithAdditionalNames must provide at least a name for
       each missing link in the Object diagram,
       i.e. for which an association in the Class diagram exists,
       but not a link in the Object diagram.
