@@ -518,9 +518,8 @@ instance Randomise DifferentNamesInstance where
   randomise inst@DifferentNamesInstance {..} = do
     let (names, assocs, lNames) = classAssocAndLinkNames inst
         links = case linkShuffling of
-          ConsecutiveLetters -> snd
-          WithAdditionalNames _ -> fst
-          $ unzip $ zip lNames $ map (:[]) ['z', 'y' ..]
+          ConsecutiveLetters -> take (length lNames) (map (:[]) ['z', 'y' ..])
+          WithAdditionalNames _ -> lNames
     names'  <- shuffleM names
     assocs' <- shuffleM assocs
     links' <- shuffleM links
