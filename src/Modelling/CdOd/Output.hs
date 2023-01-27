@@ -498,10 +498,5 @@ blackFrame t object =
 
 getDirs :: [DiagramEdge] -> Map String DirType
 getDirs es =
-  let backwards   = [n | (_, _, Assoc t n _ _ _) <-es
-                       , t /= Association]
-      forwards    = [n | (_, _, Assoc t n _ _ _) <- es
-                       , t == Association]
-   in foldr (`M.insert` Back)
-            (foldr (`M.insert` Forward) M.empty forwards)
-             backwards
+  let backwards   = [n | (_, _, Assoc _ n _ _ _) <- es]
+   in foldr (`M.insert` Back) M.empty backwards

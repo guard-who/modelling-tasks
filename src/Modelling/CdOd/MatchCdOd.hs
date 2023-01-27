@@ -72,6 +72,7 @@ import Modelling.CdOd.Edges (
 import Modelling.CdOd.Output
   (cacheCd, cacheOd, getDirs)
 import Modelling.CdOd.Types (
+  Association,
   AssociationType (Association, Composition),
   ClassConfig (..),
   Change (..),
@@ -575,7 +576,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
                        ([]   , instancesNot1not2)]
   where
     alloyFor cd nr = transform
-      (toOldSyntax cd)
+      (toOldSyntax $ map reverseAssociation <$> cd)
       []
       (objectConfig config)
       (presenceOfLinkSelfLoops config)
@@ -588,6 +589,12 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       x
       numClasses
       (objectConfig config)
+
+reverseAssociation :: Association -> Association
+reverseAssociation x = case x of
+  (Association, name, fromL, from, to, toL) ->
+    (Association, name, toL, to, from, fromL)
+  _ -> x
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
