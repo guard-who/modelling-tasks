@@ -251,9 +251,9 @@ differentNamesTask path task = do
       navigations = foldr (`M.insert` Back) M.empty backwards
       anonymous = fromMaybe (length (fst od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)
-  cd' <- lift $ liftIO $ cacheCd True True mempty cd (path ++ "-cd")
+  cd' <- lift $ liftIO $ cacheCd True True mempty cd path
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    uncurry cacheOd od anonymous navigations True (path ++ "-od")
+    uncurry cacheOd od anonymous navigations True path
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie das folgende Klassendiagramm:"
