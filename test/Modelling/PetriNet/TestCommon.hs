@@ -50,13 +50,14 @@ instance Arbitrary RandomGen where
 
 firstInstanceConfig :: AlloyConfig
 firstInstanceConfig = defaultAlloyConfig {
-  maxInstances = Just 1
+  maxInstances = Just 1,
+  timeout = Nothing
   }
 
 alloyTestConfig :: AlloyConfig
 alloyTestConfig = defaultAlloyConfig {
-  maxInstances = Nothing,
-  timeout = Just 300000
+  maxInstances = Just 1000,
+  timeout = Nothing
   }
 
 maxJavaInt :: Int

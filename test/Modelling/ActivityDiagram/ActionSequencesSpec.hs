@@ -50,9 +50,10 @@ spec =
     context "on a list of generated diagrams" $
       it "is consistent with the function generateActionSequence" $ do
         let spec' = adConfigToAlloy modules preds defaultADConfig{minActions=5, maxActions=8, minObjectNodes=0, maxObjectNodes=1}
-        inst <- getInstances (Just 50) spec'
+            depth = 10
+        inst <- getInstances (Just depth) spec'
         let ad = map (failWith id .parseInstance) inst
-        all p ad `shouldBe` (True::Bool)
+        (length inst, all p ad) `shouldBe` (10, True)
       where
         modules = moduleActionSequencesRules
         preds = "someActionNodesExistInEachBlock"

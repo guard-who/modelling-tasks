@@ -99,7 +99,7 @@ library
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.4.0.1 && <0.5
+    , call-alloy >=0.4.0.2 && <0.5
     , call-plantuml
     , composition
     , containers
@@ -163,6 +163,7 @@ test-suite modelling-tasks-test
       Modelling.PetriNet.TestCommon
       Modelling.PetriNet.TypesSpec
       Settings
+      SpecHook
       Paths_modelling_tasks
   hs-source-dirs:
       test
@@ -178,7 +179,7 @@ test-suite modelling-tasks-test
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.4.0.1 && <0.5
+    , call-alloy >=0.4.0.2 && <0.5
     , call-plantuml
     , composition
     , containers

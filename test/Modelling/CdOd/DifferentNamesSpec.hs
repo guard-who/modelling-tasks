@@ -5,7 +5,7 @@ module Modelling.CdOd.DifferentNamesSpec where
 import qualified Data.Bimap                       as BM
 
 import Modelling.CdOd.DifferentNames (
-  DifferentNamesConfig (timeout),
+  DifferentNamesConfig (maxInstances),
   ShufflingOption (..),
   differentNames,
   checkDifferentNamesConfig,
@@ -74,7 +74,7 @@ spec = do
           }
         `shouldBe` Nothing
   describe "differentNames" $
-    context "using defaultDifferentNamesConfig with reduced timeouts" $
+    context "using defaultDifferentNamesConfig with limited instances" $
       it "generates an instance" $ do
         inst <- runExceptT $ do
           segment <- oneOf [0 .. 3]
@@ -126,7 +126,7 @@ spec = do
            :: Either String Rational
   where
     cfg = defaultDifferentNamesConfig {
-      timeout = Just 5000000
+      maxInstances = Just 1000
       }
 
 renameProperty ::

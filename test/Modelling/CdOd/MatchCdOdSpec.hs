@@ -3,7 +3,7 @@ module Modelling.CdOd.MatchCdOdSpec where
 import qualified Data.Map                         as M (lookup, null)
 
 import Modelling.CdOd.MatchCdOd (
-  MatchCdOdConfig (objectConfig, timeout),
+  MatchCdOdConfig (maxInstances, objectConfig),
   checkMatchCdOdConfig,
   defaultMatchCdOdConfig,
   diagrams,
@@ -31,7 +31,7 @@ spec = do
     it "is valid" $
       checkMatchCdOdConfig defaultMatchCdOdConfig `shouldBe` Nothing
   describe "matchCdOd" $
-    context "using defaultMatchCdOdConfig with reduced timeouts" $
+    context "using defaultMatchCdOdConfig with limited instances" $
       it "generates an instance" $
         do
           segment <- oneOf [0 .. 3]
@@ -71,7 +71,7 @@ spec = do
       [(["A$0", "B$0"], [(1, 0, "x")])]
       )
     cfg = defaultMatchCdOdConfig {
-      timeout = Just 5000000
+      maxInstances = Just 20
       }
 
 getOdsFor :: Syntax -> Syntax -> IO ([Od], [Od])
