@@ -39,6 +39,7 @@ module Modelling.CdOd.Types (
   renameClassesInOd,
   renameConnection,
   renameLinksInOd,
+  reverseAssociation,
   showLetters,
   showName,
   shuffleClassAndConnectionOrder,
@@ -87,6 +88,12 @@ shuffleObjectAndLinkOrder (objects, links) = do
   return (objects', links')
 
 type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
+
+reverseAssociation :: Association -> Association
+reverseAssociation x = case x of
+  (Association, name, fromL, from, to, toL) ->
+    (Association, name, toL, to, from, fromL)
+  _ -> x
 
 data AssociationType = Association | Aggregation | Composition
   deriving (Eq, Generic, Read, Show)

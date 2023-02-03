@@ -31,10 +31,8 @@ import qualified Modelling.CdOd.Types             as T (
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   elems,
-  empty,
   filter,
   fromAscList,
-  insert,
   keys,
   toList,
   )
@@ -55,7 +53,6 @@ import Modelling.CdOd.CD2Alloy.Transform (
   createRunCommand,
   transform,
   )
-import Modelling.CdOd.Edges             (toEdges)
 import Modelling.CdOd.MatchCdOd         (applyChanges)
 import Modelling.CdOd.Output (
   cacheCd,
@@ -81,6 +78,7 @@ import Modelling.CdOd.Types (
   renameAssocsInEdge,
   renameClassesInCd,
   renameClassesInEdge,
+  reverseAssociation,
   shuffleClassAndConnectionOrder,
   toOldSyntax,
   )
@@ -510,16 +508,9 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     drawCd :: Syntax -> Integer -> IO FilePath
     drawCd cd' n =
       drawCdFromSyntax True True mempty cd' ("cd-" ++ show n ++ ".svg")
-    drawOd :: Syntax -> AlloyInstance -> Integer -> RandT StdGen IO FilePath
-    drawOd cd od x =
-      let backwards   = [n | (_, _, Assoc t n _ _ _) <- toEdges cd
-                           , t /= Association]
-          forwards    = [n | (_, _, Assoc t n _ _ _) <- toEdges cd
-                           , t == Association]
-          navigations = foldr (`M.insert` Back)
-                              (foldr (`M.insert` Forward) M.empty forwards)
-                              backwards
-      in drawOdFromInstance od Nothing navigations True ("od-" ++ show x)
+    drawOd :: AlloyInstance -> Integer -> RandT StdGen IO FilePath
+    drawOd od x =
+      drawOdFromInstance od Nothing Back True ("od-" ++ show x)
     getInstanceWithODs _  [] =
       repairIncorrect allowed config noIsolationLimitation maxInsts to
     getInstanceWithODs vs (rinsta:rinstas) = do
@@ -533,12 +524,12 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
           void $ drawCd cd 0
           uncurry drawCd `mapM_` zip (map snd chs) [1 ..]
           g <- getStdGen
-          flip evalRandT g $ uncurry (drawOd cd . head) `mapM_` zip ods [1 ..]
+          flip evalRandT g $ uncurry (drawOd . head) `mapM_` zip ods [1 ..]
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do
       let parts = transform
-            (toOldSyntax cd)
+            (toOldSyntax $ map reverseAssociation <$> cd)
             []
             maxFiveObjects
             Nothing

@@ -34,9 +34,7 @@ import qualified Data.Bimap                       as BM (
   twist,
   )
 import qualified Data.Map                         as M (
-  empty,
   fromAscList,
-  insert,
   )
 import qualified Data.Set                         as S (toList)
 
@@ -58,7 +56,7 @@ import Modelling.CdOd.CD2Alloy.Transform (
   mergeParts,
   transform,
   )
-import Modelling.CdOd.Edges             (fromEdges, renameEdges, toEdges)
+import Modelling.CdOd.Edges             (fromEdges, renameEdges)
 import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
 import Modelling.CdOd.Output            (cacheCd, cacheOd, drawCdFromSyntax)
 import Modelling.CdOd.Types (
@@ -109,7 +107,7 @@ import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.GraphViz                    (DirType (..))
+import Data.GraphViz                    (DirType (Back))
 import Data.List                        (permutations, sort)
 import Data.Maybe                       (fromMaybe, isJust, isNothing, mapMaybe)
 import Data.String.Interpolate          (i, iii)
@@ -245,15 +243,11 @@ differentNamesTask
 differentNamesTask path task = do
   let cd = cDiagram task
       od = oDiagram task
-      bm = fromNameMapping $ mapping task
-      backwards   = [n | (_, _, Assoc _ n' _ _ _) <- toEdges cd
-                       , n <- BM.lookup n' bm]
-      navigations = foldr (`M.insert` Back) M.empty backwards
       anonymous = fromMaybe (length (fst od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)
   cd' <- lift $ liftIO $ cacheCd True True mempty cd path
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    uncurry cacheOd od anonymous navigations True path
+    uncurry cacheOd od anonymous Back True path
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie das folgende Klassendiagramm:"

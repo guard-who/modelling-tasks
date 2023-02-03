@@ -5,7 +5,7 @@ import Modelling.CdOd.Output
 import Control.Monad (void)
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Data.Char                        (toUpper)
-import Data.Map      (empty)
+import Data.GraphViz                    (DirType (NoDir))
 
 import System.Environment (getArgs)
 
@@ -24,5 +24,5 @@ main = do
 drawOd :: FilePath -> String -> IO ()
 drawOd file contents = do
   output <- flip evalRandT (mkStdGen 0) $
-    drawOdFromRawInstance contents empty False file
+    drawOdFromRawInstance contents NoDir False file
   putStrLn $ "Output written to " ++ output

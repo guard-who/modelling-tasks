@@ -29,7 +29,6 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 import qualified Data.Bimap                       as BM (fromList, keysR, size)
 import qualified Data.Map                         as M (
   adjust,
-  empty,
   foldrWithKey,
   fromAscList,
   fromList,
@@ -37,7 +36,6 @@ import qualified Data.Map                         as M (
   lookup,
   toList,
   traverseWithKey,
-  union,
   )
 
 import Modelling.Auxiliary.Common (
@@ -67,12 +65,9 @@ import Modelling.CdOd.Edges (
   fromEdges,
   renameClasses,
   renameEdges,
-  toEdges,
   )
-import Modelling.CdOd.Output
-  (cacheCd, cacheOd, getDirs)
+import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
-  Association,
   AssociationType (Association, Composition),
   ClassConfig (..),
   Change (..),
@@ -90,6 +85,7 @@ import Modelling.CdOd.Types (
   renameClassesInCd,
   renameClassesInOd,
   renameLinksInOd,
+  reverseAssociation,
   showLetters,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
@@ -125,6 +121,7 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
+import Data.GraphViz                    (DirType (Back))
 import Data.List (
   delete,
   permutations,
@@ -198,14 +195,13 @@ matchCdOdTask
   -> MatchCdOdInstance
   -> LangM m
 matchCdOdTask path task = do
-  let dirs = foldr (M.union . getDirs . toEdges) M.empty $ diagrams task
-      anonymous o = length (fst o) `div` 3
+  let anonymous o = length (fst o) `div` 3
   cds <- lift $ liftIO $
     (\_ c -> cacheCd True True mempty c path)
     `M.traverseWithKey` diagrams task
   ods <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
     (\_ (is,o) -> (is,) <$> uncurry cacheOd
-      o (anonymous o) dirs True path)
+      o (anonymous o) Back True path)
     `M.traverseWithKey` instances task
   paragraph $ translate $ do
     english "Consider the following two class diagrams."
@@ -589,12 +585,6 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       x
       numClasses
       (objectConfig config)
-
-reverseAssociation :: Association -> Association
-reverseAssociation x = case x of
-  (Association, name, fromL, from, to, toL) ->
-    (Association, name, toL, to, from, fromL)
-  _ -> x
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
