@@ -5,7 +5,7 @@ module Modelling.CdOd.DifferentNamesSpec where
 import qualified Data.Bimap                       as BM
 
 import Modelling.CdOd.DifferentNames (
-  DifferentNamesConfig (maxInstances),
+  DifferentNamesConfig (maxInstances, objectConfig),
   ShufflingOption (..),
   differentNames,
   checkDifferentNamesConfig,
@@ -16,11 +16,18 @@ import Modelling.CdOd.DifferentNames (
   DifferentNamesInstance (..),
   defaultDifferentNamesConfig,
   defaultDifferentNamesInstance,
+  getDifferentNamesTask,
   renameInstance,
   )
 import Modelling.Auxiliary.Common       (oneOf)
+import Modelling.CdOd.Edges             (toEdges)
 import Modelling.CdOd.Types (
+  AssociationType (..),
+  DiagramEdge,
   Name (Name, unName),
+  ObjectConfig (..),
+  Od,
+  Syntax,
   associationNames,
   classNames,
   fromNameMapping,
@@ -34,7 +41,12 @@ import Control.Monad.Output (
   Language (English),
   )
 import Control.Monad.Trans.Except       (runExceptT)
-import Control.Monad.Random             (mkStdGen, randomIO, randomRIO)
+import Control.Monad.Random (
+  evalRandT,
+  mkStdGen,
+  randomIO,
+  randomRIO,
+  )
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Char                        (toUpper)
 import Data.Containers.ListUtils        (nubOrd)
@@ -55,7 +67,7 @@ import Test.QuickCheck (
   sized,
   vectorOf,
   )
-import System.Random                    (setStdGen)
+import System.Random                    (getStdGen, setStdGen)
 import System.Random.Shuffle            (shuffleM)
 
 spec :: Spec
@@ -110,10 +122,10 @@ spec = do
             od = oDiagram inst
             names = classNames cd
             assocs = associationNames cd
-            links  = linkNames od
+            linkNs = linkNames od
         in (Just inst ==)
            $ mrinst
-           >>= (\x -> renameInstance x names assocs links)
+           >>= (\x -> renameInstance x names assocs linkNs)
     it "renames solution" $ renameProperty $ \inst mrinst as ls ->
       let rename xs ys = Name . fromJust . (`lookup` zip xs ys)
           origMap = bimap
@@ -124,10 +136,75 @@ spec = do
          $ maybe (Left "instance could not be renamed") return mrinst
          >>= \rinst -> differentNamesEvaluation rinst origMap `withLang` English
            :: Either String Rational
+  describe "getDifferentNamesTask" $ do
+    it "generates matching OD for association circle" $
+      odFor (cdSimpleCircle Association Association Association)
+      `shouldReturn` simpleCircleOd
+    it "generates matching OD for aggregation circle" $
+      odFor (cdSimpleCircle Aggregation Aggregation Aggregation)
+      `shouldReturn` simpleCircleOd
+    it "generates matching OD for composition and association circle" $
+      odFor (cdSimpleCircle Composition Composition Association)
+      `shouldReturn` simpleCircleOd
+    it "generates matching OD for composition and aggregation circle" $
+      odFor (cdSimpleCircle Composition Composition Aggregation)
+      `shouldReturn` simpleCircleOd
+    it "generates matching OD for association and aggregation circle" $
+      odFor (cdSimpleCircle Association Association Aggregation)
+      `shouldReturn` simpleCircleOd
+    it "generates matching OD for association, aggregation and composition circle" $
+      odFor (cdSimpleCircle Association Aggregation Composition)
+      `shouldReturn` simpleCircleOd
+    it "generates matching OD for circle with inheritance" $
+      odFor cdBCCircle
+      `shouldReturn` (
+        ["A$0", "C$0", "C$1"],
+        [(0, 1, "y"), (0, 2, "y"), (1, 0, "x"), (2, 0, "x")]
+        )
   where
     cfg = defaultDifferentNamesConfig {
       maxInstances = Just 1000
       }
+
+odFor :: Syntax -> IO Od
+odFor cd = oDiagram <$> do
+  g <- getStdGen
+  evalRandT (getDifferentNamesTask failed fewObjects `withCd` cd) g
+  where
+    failed = error "failed generating instance"
+    fewObjects = defaultDifferentNamesConfig { objectConfig = oc }
+    oc = ObjectConfig {
+      links = (0, Just 4),
+      linksPerObject = (0, Just 4),
+      objects = (3, 3)
+      }
+
+withCd :: ([String] -> [DiagramEdge] -> x) -> Syntax -> x
+withCd f cd = f (map fst $ fst cd) $ toEdges cd
+
+cdBCCircle :: Syntax
+cdBCCircle = (
+  [("A", ["B"]), ("B", []), ("C", [])],
+  [(Aggregation, "x", (2, Just 2), "C", "B", (1, Just 1)),
+   (Association, "y", (0, Nothing), "C", "A", (1, Just 1))
+  ]
+  )
+
+cdSimpleCircle :: AssociationType -> AssociationType -> AssociationType -> Syntax
+cdSimpleCircle x y z = (
+  [("A", []), ("B", []), ("C", [])],
+  [edge x "x" "A" "B", edge y "y" "B" "C", edge z "z" "C" "A"]
+  )
+  where
+    one = (1, Just 1)
+    edge ty n f t = case ty of
+      Association -> (Association, n, one, f, t, one)
+      Aggregation -> (Aggregation, n, one, t, f, one)
+      Composition -> (Composition, n, one, t, f, one)
+
+simpleCircleOd :: Od
+simpleCircleOd =
+  (["A$0", "B$0", "C$0"], [(0, 2, "z"), (1, 0, "x"), (2, 1, "y")])
 
 renameProperty ::
   Testable prop =>
