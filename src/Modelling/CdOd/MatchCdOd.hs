@@ -20,7 +20,6 @@ module Modelling.CdOd.MatchCdOd (
   matchCdOdSyntax,
   matchCdOdTask,
   matchingShow,
-  newMatchCdOdInstances,
   takeRandomInstances,
   ) where
 
@@ -124,7 +123,6 @@ import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
 import Data.List (
   delete,
-  permutations,
   )
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
@@ -389,19 +387,6 @@ classAndAssocNames inst =
       assocs = nubOrd $ concatMap associationNames (diagrams inst)
         ++ concatMap (linkNames . snd) (instances inst)
   in (names, assocs)
-
-newMatchCdOdInstances
-  :: (MonadFail m, MonadRandom m, MonadThrow m, RandomGen g)
-  => MatchCdOdInstance
-  -> RandT g m [MatchCdOdInstance]
-newMatchCdOdInstances inst = do
-  let (names, assocs) = classAndAssocNames inst
-  names'  <- shuffleM $ tail $ permutations names
-  assocs' <- shuffleM $ tail $ permutations assocs
-  sequence
-    [ lift $ renameInstance inst ns as >>= shuffleInstance
-    | (ns, as) <- zip names' (concat $ replicate 3 assocs')
-    ]
 
 instance Randomise MatchCdOdInstance where
   randomise inst = do

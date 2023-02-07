@@ -20,7 +20,6 @@ module Modelling.CdOd.DifferentNames (
   differentNamesTask,
   getDifferentNamesTask,
   mappingShow,
-  newDifferentNamesInstances,
   renameInstance,
   ) where
 
@@ -577,19 +576,3 @@ renameInstance inst names' assocs' linkNs' = do
     linkShuffling = shuffling,
     usesAllRelationships = usesAllRelationships inst
     }
-
-newDifferentNamesInstances
-  :: (MonadRandom m, MonadThrow m)
-  => DifferentNamesInstance
-  -> m [DifferentNamesInstance]
-newDifferentNamesInstances inst = do
-  let names = classNames $ cDiagram inst
-      assocs = associationNames $ cDiagram inst
-      linkNs = linkNames $ oDiagram inst
-  names'  <- shuffleM $ tail $ permutations names
-  assocs' <- shuffleM $ tail $ permutations assocs
-  links'  <- shuffleM $ tail $ permutations linkNs
-  sequence
-    [ renameInstance inst ns as ls
-    | (ns, as, ls) <- zip3 names' assocs' links'
-    ]

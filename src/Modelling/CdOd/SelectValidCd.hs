@@ -13,7 +13,6 @@ module Modelling.CdOd.SelectValidCd (
   selectValidCdSolution,
   selectValidCdSyntax,
   selectValidCdTask,
-  newSelectValidCdInstances,
   ) where
 
 import qualified Data.Bimap                       as BM (fromList)
@@ -73,7 +72,6 @@ import Control.Monad.Random.Class       (MonadRandom)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Bifunctor                   (second)
-import Data.List                        (nub, permutations)
 import Data.Map                         (Map)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
@@ -277,20 +275,6 @@ renameInstance inst names' assocs' = do
     withNames       = withNames inst,
     withNavigations = withNavigations inst
     }
-
-newSelectValidCdInstances
-  :: (MonadRandom m, MonadThrow m)
-  => SelectValidCdInstance
-  -> m [SelectValidCdInstance]
-newSelectValidCdInstances inst = do
-  let names = nub $ concatMap (classNames . snd) (classDiagrams inst)
-      assocs = nub $ concatMap (associationNames . snd) (classDiagrams inst)
-  names'  <- shuffleM $ tail $ permutations names
-  assocs' <- shuffleM $ tail $ permutations assocs
-  sequence
-    [ renameInstance inst ns as >>= shuffleInstance
-    | (ns, as) <- zip names' (concat $ replicate 5 assocs')
-    ]
 
 defaultSelectValidCdInstance :: SelectValidCdInstance
 defaultSelectValidCdInstance = SelectValidCdInstance {
