@@ -124,7 +124,7 @@ cacheIO
   => FilePath
   -- ^ base file path (prefix of file name)
   -> String
-  -- ^ path prefix (including dot and extension)
+  -- ^ path suffix (including dot and extension)
   -> String
   -- ^ some identifying name for what (part of file name)
   -> a
