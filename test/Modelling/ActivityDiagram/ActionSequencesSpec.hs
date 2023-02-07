@@ -51,9 +51,9 @@ spec =
       it "is consistent with the function generateActionSequence" $ do
         let spec' = adConfigToAlloy modules preds defaultADConfig{minActions=5, maxActions=8, minObjectNodes=0, maxObjectNodes=1}
             depth = 10
-        inst <- getInstances (Just depth) spec'
+        inst <- getInstances (Just $ fromIntegral depth) spec'
         let ad = map (failWith id .parseInstance) inst
-        (length inst, all p ad) `shouldBe` (10, True)
+        (length inst, all p ad) `shouldBe` (depth, True)
       where
         modules = moduleActionSequencesRules
         preds = "someActionNodesExistInEachBlock"
