@@ -23,11 +23,14 @@ import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.CdOd.Edges             (toEdges)
 import Modelling.CdOd.Types (
   AssociationType (..),
+  Cd,
+  ClassDiagram (..),
   DiagramEdge,
+  LimitedConnector (..),
   Name (Name, unName),
   ObjectConfig (..),
   Od,
-  Syntax,
+  Relationship (..),
   associationNames,
   classNames,
   fromNameMapping,
@@ -138,22 +141,22 @@ spec = do
            :: Either String Rational
   describe "getDifferentNamesTask" $ do
     it "generates matching OD for association circle" $
-      odFor (cdSimpleCircle Association Association Association)
+      odFor (cdSimpleCircle Association' Association' Association')
       `shouldReturn` simpleCircleOd
     it "generates matching OD for aggregation circle" $
-      odFor (cdSimpleCircle Aggregation Aggregation Aggregation)
+      odFor (cdSimpleCircle Aggregation' Aggregation' Aggregation')
       `shouldReturn` simpleCircleOd
     it "generates matching OD for composition and association circle" $
-      odFor (cdSimpleCircle Composition Composition Association)
+      odFor (cdSimpleCircle Composition' Composition' Association')
       `shouldReturn` simpleCircleOd
     it "generates matching OD for composition and aggregation circle" $
-      odFor (cdSimpleCircle Composition Composition Aggregation)
+      odFor (cdSimpleCircle Composition' Composition' Aggregation')
       `shouldReturn` simpleCircleOd
     it "generates matching OD for association and aggregation circle" $
-      odFor (cdSimpleCircle Association Association Aggregation)
+      odFor (cdSimpleCircle Association' Association' Aggregation')
       `shouldReturn` simpleCircleOd
     it "generates matching OD for association, aggregation and composition circle" $
-      odFor (cdSimpleCircle Association Aggregation Composition)
+      odFor (cdSimpleCircle Association' Aggregation' Composition')
       `shouldReturn` simpleCircleOd
     it "generates matching OD for circle with inheritance" $
       odFor cdBCCircle
@@ -166,7 +169,7 @@ spec = do
       maxInstances = Just 1000
       }
 
-odFor :: Syntax -> IO Od
+odFor :: Cd -> IO Od
 odFor cd = oDiagram <$> do
   g <- getStdGen
   evalRandT (getDifferentNamesTask failed fewObjects `withCd` cd) g
@@ -179,28 +182,63 @@ odFor cd = oDiagram <$> do
       objects = (3, 3)
       }
 
-withCd :: ([String] -> [DiagramEdge] -> x) -> Syntax -> x
-withCd f cd = f (map fst $ fst cd) $ toEdges cd
+withCd :: ([String] -> [DiagramEdge] -> x) -> Cd -> x
+withCd f cd = f (classNames cd) $ toEdges cd
 
-cdBCCircle :: Syntax
-cdBCCircle = (
-  [("A", ["B"]), ("B", []), ("C", [])],
-  [(Aggregation, "x", (2, Just 2), "C", "B", (1, Just 1)),
-   (Association, "y", (0, Nothing), "C", "A", (1, Just 1))
-  ]
-  )
+cdBCCircle :: Cd
+cdBCCircle = ClassDiagram {
+  classNames = ["A", "B", "C"],
+  connections = [
+    Inheritance {subClass = "A", superClass = "B"},
+    Aggregation {
+      aggregationName = "x",
+      aggregationPart = LimitedConnector {
+        connectTo = "B",
+        limits = (1, Just 1)
+        },
+      aggregationWhole = LimitedConnector {
+        connectTo = "C",
+        limits = (2, Just 2)
+        }
+       },
+    Association {
+      associationName = "y",
+      associationFrom = LimitedConnector {
+        connectTo = "C",
+        limits = (0, Nothing)
+        },
+      associationTo = LimitedConnector {
+        connectTo = "A",
+        limits = (1, Just 1)
+        }
+       }
+    ]
+  }
 
-cdSimpleCircle :: AssociationType -> AssociationType -> AssociationType -> Syntax
-cdSimpleCircle x y z = (
-  [("A", []), ("B", []), ("C", [])],
-  [edge x "x" "A" "B", edge y "y" "B" "C", edge z "z" "C" "A"]
-  )
+cdSimpleCircle :: AssociationType -> AssociationType -> AssociationType -> Cd
+cdSimpleCircle x y z = ClassDiagram {
+  classNames = ["A", "B", "C"],
+  connections = [edge x "x" "A" "B", edge y "y" "B" "C", edge z "z" "C" "A"]
+  }
   where
     one = (1, Just 1)
+    lcOne c = LimitedConnector {connectTo = c, limits = one}
     edge ty n f t = case ty of
-      Association -> (Association, n, one, f, t, one)
-      Aggregation -> (Aggregation, n, one, t, f, one)
-      Composition -> (Composition, n, one, t, f, one)
+      Association' -> Association {
+        associationName = n,
+        associationFrom = lcOne f,
+        associationTo = lcOne t
+        }
+      Aggregation' -> Aggregation {
+        aggregationName = n,
+        aggregationPart = lcOne f,
+        aggregationWhole = lcOne t
+        }
+      Composition' -> Composition {
+        compositionName = n,
+        compositionPart = lcOne f,
+        compositionWhole = lcOne t
+        }
 
 simpleCircleOd :: Od
 simpleCircleOd =

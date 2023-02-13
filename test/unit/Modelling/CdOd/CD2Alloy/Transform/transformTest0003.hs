@@ -1,4 +1,17 @@
-([("A", Just "B"), ("B", Nothing), ("C", Nothing), ("D", Nothing)],
- [(Composition, "x", (1, Just 1), "C", "D", (0, Nothing))
- ]
-)
+ClassDiagram {
+  classNames = ["A", "B", "C", "D"],
+  connections = [
+    Inheritance {subClass = "A", superClass = "B"},
+    Composition {
+      compositionName = "x",
+      compositionPart = LimitedConnector {
+        connectTo = "D",
+        limits = (0, Nothing)
+        },
+      compositionWhole = LimitedConnector {
+        connectTo = "C",
+        limits = (1, Just 1)
+        }
+      }
+    ]
+  }

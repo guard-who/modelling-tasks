@@ -3,11 +3,11 @@ module Main (main) where
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.Output
+import Modelling.CdOd.Types             (ClassDiagram (..), Relationship (..))
 
-import Control.Arrow (first, second)
 import Data.Char                        (toUpper)
 import Data.GraphViz ()
-import Data.Maybe    (maybeToList)
+import Data.Maybe                       (mapMaybe)
 import Diagrams.Attributes              (lw, veryThick)
 import Diagrams.Prelude                 (Style, (#), red)
 import Diagrams.TwoD.Attributes         (lc)
@@ -23,9 +23,15 @@ run
   -> IO ()
 run printNames howToMark input file = do
   let tokens = lexer input
-  let syntax = parser tokens
-  output <- drawCdFromSyntax False printNames howToMark (first (map $ second maybeToList) syntax) file
+  let parsed = parser tokens
+  output <- drawCd False printNames howToMark (uncurry toCd parsed) file
   putStrLn $ "Output written to " ++ output
+  where
+    toCd cs es = ClassDiagram {
+      classNames = map fst cs,
+      connections = mapMaybe (uncurry toInheritance) cs ++ es
+      }
+    toInheritance sub super = Inheritance sub <$> super
 
 main :: IO ()
 main = do

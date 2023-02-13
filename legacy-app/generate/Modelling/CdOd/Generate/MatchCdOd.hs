@@ -25,10 +25,9 @@ import Modelling.CdOd.MatchCdOd (
   )
 import Modelling.CdOd.Generate.Mutation
   (Target (..), getAllMutationResults, nonTargets)
-import Modelling.CdOd.Output
-  (drawCdFromSyntax)
+import Modelling.CdOd.Output            (drawCd)
 import Modelling.CdOd.Types (
-  Syntax,
+  Cd,
   )
 
 import Control.Monad                    (void, when)
@@ -58,7 +57,7 @@ matchCdOd config segment seed = do
 getRandomTask
   :: RandomGen g
   => MatchCdOdConfig
-  -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
+  -> RandT g IO (Map Int Cd, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
   (cd1, cd2, cd3, numClasses) <- getRandomCDs config
   instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
@@ -67,7 +66,7 @@ getRandomTask config = do
     Nothing      -> getRandomTask config
     Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
 
-getRandomCDs :: RandomGen g => MatchCdOdConfig -> RandT g IO (Syntax, Syntax, Syntax, Int)
+getRandomCDs :: RandomGen g => MatchCdOdConfig -> RandT g IO (Cd, Cd, Cd, Int)
 getRandomCDs config = do
   (names, edges) <- generate
     Nothing
@@ -76,7 +75,7 @@ getRandomCDs config = do
   let cd0 = fromEdges names edges
   -- continueIf (not (anyThickEdge cd0)) $ do
   when debug . liftIO . void
-    $ drawCdFromSyntax False True (mempty # lc red) cd0 "debug-0.svg"
+    $ drawCd False True (mempty # lc red) cd0 "debug-0.svg"
   mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
   let medges1 = getFirstValidSatisfying (not . anyThickEdge) names mutations
   continueWithJust medges1 (const True) $ \edges1 -> do
@@ -91,7 +90,7 @@ getRandomCDs config = do
       continueWithJust medges3 (const True) $ \edges3 -> do
         let cd3         = fromEdges names edges3
         when debug . void . liftIO
-          $ drawCdFromSyntax False True (mempty # lc red) cd3 "debug-3.svg"
+          $ drawCd False True (mempty # lc red) cd3 "debug-3.svg"
         return (cd1, cd2, cd3, length names)
   where
     continueWithJust mx p m
@@ -99,7 +98,7 @@ getRandomCDs config = do
       | otherwise         = getRandomCDs config
 
 getFirstValidSatisfying
-  :: (Syntax -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
+  :: (Cd -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]
 getFirstValidSatisfying _ _     []
   = Nothing
 getFirstValidSatisfying p names (x:xs)

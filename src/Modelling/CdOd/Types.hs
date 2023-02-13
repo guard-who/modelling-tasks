@@ -6,23 +6,24 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.Types (
-  Association,
   AssociationType (..),
+  Cd,
   Change (..),
   ClassConfig (..),
+  ClassDiagram (..),
   Connection (..),
   DiagramEdge,
   Letters (..),
+  LimitedConnector (..),
   Name (..),
   NameMapping (..),
   ObjectConfig (..),
   Od,
+  Relationship (..),
   RelationshipProperties (..),
-  Syntax,
   associationNames,
   checkClassConfig,
   checkClassConfigWithProperties,
-  classNames,
   classNamesOd,
   connectionName,
   defaultProperties,
@@ -32,9 +33,9 @@ module Modelling.CdOd.Types (
   maxRels,
   parseLettersPrec,
   parseNamePrec,
-  renameAssocsInCd,
+  relationshipName,
   renameAssocsInEdge,
-  renameClassesInCd,
+  renameClassesAndRelationshipsInCd,
   renameClassesInEdge,
   renameClassesInOd,
   renameConnection,
@@ -45,24 +46,25 @@ module Modelling.CdOd.Types (
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   toNameMapping,
-  toOldSyntax,
   ) where
+
 
 import qualified Data.Bimap                       as BM
 
 import Modelling.Auxiliary.Common       (skipSpaces)
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    ((>=>), void)
+import Control.Monad                    (void)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom)
-import Data.Bifunctor                   (first, second)
+import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
-import Data.Bitraversable               (bimapM)
+import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Char                        (isAlpha, isAlphaNum)
 import Data.List                        (intercalate, nub)
 import Data.List.Split                  (splitOn)
-import Data.Maybe                       (fromMaybe, listToMaybe)
+import Data.Maybe                       (fromMaybe, mapMaybe)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
@@ -87,25 +89,148 @@ shuffleObjectAndLinkOrder (objects, links) = do
   links' <- mapM changeIs links >>= shuffleM
   return (objects', links')
 
-type Association = (AssociationType, String, (Int, Maybe Int), String, String, (Int, Maybe Int))
+{-|
+A meta-level connection to a node name
+with a (possibly invalid) range of multiplicities
+limiting the number of possible (non-meta-level) connections
+using this specific connector.
+-}
+data LimitedConnector nodeName = LimitedConnector {
+  connectTo                   :: nodeName,
+  limits                      :: (Int, Maybe Int)
+  }
+  deriving (Eq, Functor, Foldable, Generic, Read, Show, Traversable)
 
-reverseAssociation :: Association -> Association
+{-|
+All possible relationships within a `ClassDiagram`.
+-}
+data Relationship className relationshipName
+  = Association {
+    associationName           :: relationshipName,
+    associationFrom           :: LimitedConnector className,
+    associationTo             :: LimitedConnector className
+    }
+  | Aggregation {
+    aggregationName           :: relationshipName,
+    aggregationPart           :: LimitedConnector className,
+    aggregationWhole          :: LimitedConnector className
+    }
+  | Composition {
+    compositionName           :: relationshipName,
+    compositionPart           :: LimitedConnector className,
+    compositionWhole          :: LimitedConnector className
+    }
+  | Inheritance {
+    subClass                  :: className,
+    superClass                :: className
+    }
+  deriving (Eq, Generic, Read, Show)
+
+instance Bifunctor Relationship where
+  bimap f g r = case r of
+    Association {..} -> Association {
+      associationName         = g associationName,
+      associationFrom         = fmap f associationFrom,
+      associationTo           = fmap f associationTo
+      }
+    Aggregation {..} -> Aggregation {
+      aggregationName         = g aggregationName,
+      aggregationPart         = fmap f aggregationPart,
+      aggregationWhole        = fmap f aggregationWhole
+      }
+    Composition {..} -> Composition {
+      compositionName         = g compositionName,
+      compositionPart         = fmap f compositionPart,
+      compositionWhole        = fmap f compositionWhole
+      }
+    Inheritance {..} -> Inheritance {
+      subClass                = f subClass,
+      superClass              = f superClass
+      }
+
+instance Bifoldable Relationship where
+  bifoldMap f g r = case r of
+    Association {..} -> g associationName
+      <> foldMap f associationFrom
+      <> foldMap f associationTo
+    Aggregation {..} -> g aggregationName
+      <> foldMap f aggregationPart
+      <> foldMap f aggregationWhole
+    Composition {..} -> g compositionName
+      <> foldMap f compositionPart
+      <> foldMap f compositionWhole
+    Inheritance {..} -> f subClass
+      <> f superClass
+
+instance Bitraversable Relationship where
+  bitraverse f g r = case r of
+    Association {..} -> Association
+      <$> g associationName
+      <*> traverse f associationFrom
+      <*> traverse f associationTo
+    Aggregation {..} -> Aggregation
+      <$> g aggregationName
+      <*> traverse f aggregationPart
+      <*> traverse f aggregationWhole
+    Composition {..} -> Composition
+      <$> g compositionName
+      <*> traverse f compositionPart
+      <*> traverse f compositionWhole
+    Inheritance {..} -> Inheritance
+      <$> f subClass
+      <*> f superClass
+
+relationshipName :: Relationship c r -> Maybe r
+relationshipName x = case x of
+  Association {..} -> Just associationName
+  Aggregation {..} -> Just aggregationName
+  Composition {..} -> Just compositionName
+  Inheritance {}   -> Nothing
+
+reverseAssociation :: Relationship c r -> Relationship c r
 reverseAssociation x = case x of
-  (Association, name, fromL, from, to, toL) ->
-    (Association, name, toL, to, from, fromL)
-  _ -> x
+  Association {..} -> Association {
+    associationName           = associationName,
+    associationFrom           = associationTo,
+    associationTo             = associationFrom
+    }
+  Aggregation {} -> x
+  Composition {} -> x
+  Inheritance {} -> x
 
-data AssociationType = Association | Aggregation | Composition
+data AssociationType = Association' | Aggregation' | Composition'
   deriving (Eq, Generic, Read, Show)
 
-data Connection = Inheritance | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
+data Connection = Inheritance' | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
   deriving (Eq, Generic, Read, Show)
 
-type Syntax = ([(String, [String])], [Association])
+data ClassDiagram className relationshipName = ClassDiagram {
+  classNames                  :: [className],
+  connections                 :: [Relationship className relationshipName]
+  }
+  deriving (Eq, Generic, Read, Show)
 
-shuffleClassAndConnectionOrder :: MonadRandom m => Syntax -> m Syntax
-shuffleClassAndConnectionOrder =
-  bimapM (shuffleM >=> mapM (mapM shuffleM)) shuffleM
+instance Bifunctor ClassDiagram where
+  bimap f g ClassDiagram {..} = ClassDiagram {
+    classNames  = map f classNames,
+    connections = map (bimap f g) connections
+    }
+
+instance Bifoldable ClassDiagram where
+  bifoldMap f g ClassDiagram {..} = foldMap f classNames
+    <> foldMap (bifoldMap f g) connections
+
+instance Bitraversable ClassDiagram where
+  bitraverse f g ClassDiagram {..} = ClassDiagram
+    <$> traverse f classNames
+    <*> traverse (bitraverse f g) connections
+
+type Cd = ClassDiagram String String
+
+shuffleClassAndConnectionOrder :: MonadRandom m => Cd -> m Cd
+shuffleClassAndConnectionOrder ClassDiagram {..} = ClassDiagram
+  <$> shuffleM classNames
+  <*> shuffleM connections
 
 type DiagramEdge = (String, String, Connection)
 
@@ -377,16 +502,8 @@ defaultProperties = RelationshipProperties {
     hasThickEdges           = Nothing
   }
 
-toOldSyntax :: Syntax -> ([(String, Maybe String)], [Association])
-toOldSyntax = first (map $ second listToMaybe)
-
-classNames :: Syntax -> [String]
-classNames = map fst . fst
-
-associationNames :: Syntax -> [String]
-associationNames = map assocName . snd
-  where
-    assocName (_, x, _, _, _, _) = x
+associationNames :: Cd -> [String]
+associationNames = mapMaybe relationshipName . connections
 
 classNamesOd :: Od -> [String]
 classNamesOd o = head . splitOn "$" <$> fst o
@@ -396,7 +513,7 @@ linkNames o = nub $ (\(_,_,x) -> x) `map` snd o
 
 connectionName :: Connection -> Maybe String
 connectionName (Assoc _ n _ _ _) = Just n
-connectionName Inheritance       = Nothing
+connectionName Inheritance'      = Nothing
 
 renameConnection
   :: MonadThrow m
@@ -406,7 +523,7 @@ renameConnection
 renameConnection bm (Assoc t n m1 m2 b) = do
   n' <- BM.lookup n bm
   return $ Assoc t n' m1 m2 b
-renameConnection _ Inheritance = return Inheritance
+renameConnection _ Inheritance' = return Inheritance'
 
 renameAssocsInEdge
   :: MonadThrow m
@@ -414,20 +531,6 @@ renameAssocsInEdge
   -> DiagramEdge
   -> m DiagramEdge
 renameAssocsInEdge m (f, t, a) = (f, t,) <$> renameConnection m a
-
-renameAssocsInCd :: MonadThrow m => Bimap String String -> Syntax -> m Syntax
-renameAssocsInCd m cd = (fst cd,) <$> mapM (renameAssocsInAssociation m) (snd cd)
-
-renameAssocsInAssociation
-  :: MonadThrow m
-  => Bimap String String
-  -> Association
-  -> m Association
-renameAssocsInAssociation m (t, n, fl, fc, tc, tl) = do
-  n' <- rename n
-  return (t, n', fl, fc, tc, tl)
-  where
-    rename = (`BM.lookup` m)
 
 renameClassesInEdge
   :: MonadThrow m
@@ -438,24 +541,14 @@ renameClassesInEdge m (f, t, a) = (,,a) <$> rename f <*> rename t
   where
     rename = (`BM.lookup` m)
 
-renameClassesInCd :: MonadThrow m => Bimap String String -> Syntax -> m Syntax
-renameClassesInCd m cd = (,)
-  <$> mapM (bimapM rename $ mapM rename) (fst cd)
-  <*> mapM (renameClassesInAssociation m) (snd cd)
-  where
-    rename = (`BM.lookup` m)
-
-renameClassesInAssociation
-  :: MonadThrow m
-  => Bimap String String
-  -> Association
-  -> m Association
-renameClassesInAssociation m (t, n, fl, fc, tc, tl) = do
-  fc' <- rename fc
-  tc' <- rename tc
-  return (t, n, fl, fc', tc', tl)
-  where
-    rename = (`BM.lookup` m)
+renameClassesAndRelationshipsInCd
+  :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')
+  => Bimap c c'
+  -> Bimap r r'
+  -> ClassDiagram c r
+  -> m (ClassDiagram c' r')
+renameClassesAndRelationshipsInCd cm rm =
+  bitraverse (`BM.lookup` cm) (`BM.lookup` rm)
 
 renameLinksInOd :: MonadThrow m => Bimap String String -> Od -> m Od
 renameLinksInOd m od = (fst od,) <$> mapM rename (snd od)

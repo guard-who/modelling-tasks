@@ -1,4 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -11,16 +13,26 @@ module Modelling.CdOd.CD2Alloy.Transform (
   ) where
 
 import Modelling.CdOd.Types (
-  Association,
-  AssociationType (..),
+  Cd,
+  ClassDiagram (..),
+  LimitedConnector (..),
   ObjectConfig (..),
+  Relationship (..),
+  relationshipName,
   )
 
-import Data.Bifunctor                   (first)
+import Data.Bifunctor                   (first, second)
 import Data.List                        ((\\), intercalate, isPrefixOf, union)
 import Data.FileEmbed                   (embedStringFile)
-import Data.Maybe                       (catMaybes, fromMaybe, isJust)
+import Data.Maybe (
+  catMaybes,
+  fromMaybe,
+  isJust,
+  listToMaybe,
+  mapMaybe,
+  )
 import Data.String.Interpolate          (i)
+import Data.Tuple.Extra                 (uncurry3)
 
 {-|
 Parts belonging to the CD2Alloy Alloy program.
@@ -33,7 +45,7 @@ data Parts = Parts {
   }
 
 transform
-  :: ([(String, Maybe String)], [Association])
+  :: Cd
   -> [String]
   -> ObjectConfig
   -> Maybe Bool
@@ -42,7 +54,7 @@ transform
   -> String
   -> Parts
 transform
-  (classes, associations)
+  ClassDiagram {classNames, connections}
   abstractClassNames
   objectConfig
   hasSelfLoops
@@ -107,7 +119,7 @@ fact SizeConstraints {
     mlow l x = if x <= l then Nothing else Just x
     part2 = [i|
 // Concrete names of fields
-#{unlines (associationSigs associations)}
+#{unlines (associationSigs connections)}
 |]
     part3 = [i|
 // Classes (non-abstract)
@@ -119,20 +131,18 @@ fact SizeConstraints {
 ///////////////////////////////////////////////////
 
 // Types wrapping subtypes
-#{unlines (subTypes index abstractClassNames classesWithDirectSubclasses)}
+#{unlines (subTypes index connections abstractClassNames classNames)}
 // Types wrapping field names
-#{unlines (fieldNames index associations classes)}
+#{unlines (fieldNames index connections classNames)}
 // Types wrapping composite structures and field names
-#{if noCompositions then "" else unlines (compositesAndFieldNames index compositions classes)}
+#{if noCompositions then "" else compositeStructures}
 // Properties
-#{predicate index associations nonAbstractClassNames}
+#{predicate index connections nonAbstractClassNames}
 |]
-    classNames = map fst classes
     nonAbstractClassNames = classNames \\ abstractClassNames
-    classesWithDirectSubclasses =
-      map (\(name, _) -> (name, map fst (filter ((== Just name) . snd) classes))) classes
-    noCompositions = null compositions
-    compositions = filter (\(a,_,_,_,_,_) -> a == Composition) associations
+    noCompositions = all (\case Composition {} -> False; _ -> True) connections
+    compositeStructures =
+      unlines (compositesAndFieldNames index connections classNames)
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just True  -> [i|
@@ -176,53 +186,117 @@ run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
 oneSig :: String
 oneSig = "one sig "
 
-associationSigs :: [Association] -> [String]
-associationSigs =
-  map (\(_,name,_,_,_,_) -> oneSig ++ name ++ " extends FName {}")
+associationSigs :: [Relationship c String] -> [String]
+associationSigs = mapMaybe
+  $ fmap (\name -> oneSig ++ name ++ " extends FName {}") . relationshipName
+
 
 classSigs :: [String] -> [String]
 classSigs = map (\name -> "sig " ++ name ++ " extends Obj {}")
 
-subTypes :: String -> [String] -> [(String, [String])] -> [String]
-subTypes index abstractClassNames = concatMap (\(name, directSubclasses) ->
+subTypes
+  :: String
+  -> [Relationship String String]
+  -> [String]
+  -> [String]
+  -> [String]
+subTypes index rs abstractClassNames = concatMap $ \name ->
   [ "fun " ++ name ++ subsCD ++ " : set Obj {"
   , "  " ++ intercalate " + " ((if name `elem` abstractClassNames then "none" else name)
-                               : map (++ subsCD) directSubclasses)
+                               : map (++ subsCD) (directSubclassesOf name))
   , "}"
-  ])
+  ]
   where
     subsCD = "SubsCD" ++ index
+    directSubclassesOf x = (`mapMaybe` rs) $ \case
+      Inheritance { superClass = s, .. } | x == s -> Just subClass
+      _ -> Nothing
 
-fieldNames :: String -> [Association] -> [(String, Maybe String)] -> [String]
-fieldNames index associations = concatMap (\(this, super) ->
-  let thisAssociations = filter (\(_,_,_,from,_,_) -> from == this) associations
+fieldNames
+  :: String
+  -> [Relationship String String]
+  -> [String]
+  -> [String]
+fieldNames index connections = concatMap $ \this ->
+  let (superClasses, associationNames) = connectionsFrom this
   in [ "fun " ++ this ++ fieldNamesCD ++" : set FName {"
-     , "  " ++ intercalate " + " (maybe "none" (++ fieldNamesCD) super
-                                  : map (\(_,name,_,_,_,_) -> name) thisAssociations)
+     , "  " ++ intercalate
+         " + "
+         (maybe "none" (++ fieldNamesCD) (listToMaybe superClasses)
+           : associationNames)
      , "}"
-     ])
+     ]
   where
     fieldNamesCD = "FieldNamesCD" ++ index
+    connectionsFrom from =
+      foldr (supersAndAssociations from) ([], []) connections
+    supersAndAssociations from c = case c of
+      AssociationFrom x | from == x -> second (associationName c :)
+                        | otherwise -> id
+      AggregationFrom x | from == x -> second (aggregationName c :)
+                        | otherwise -> id
+      CompositionFrom x | from == x -> second (compositionName c :)
+                        | otherwise -> id
+      Inheritance {..} | from == subClass -> first (superClass :)
+                       | otherwise -> id
 
-compositesAndFieldNames :: String -> [Association] -> [(String, Maybe String)] -> [String]
-compositesAndFieldNames index compositions = concatMap (\(this, super) ->
-  let thisCompositions = filter (\(_,_,_,_,to,_) -> to == this) compositions
+{-# COMPLETE AssociationFrom, AggregationFrom, CompositionFrom, Inheritance #-}
+{-# COMPLETE Association, Aggregation, CompositionTo, Inheritance #-}
+
+pattern AssociationFrom :: className -> Relationship className relationshipName
+pattern AssociationFrom from <- Association {
+  associationFrom = LimitedConnector { connectTo = from }
+  }
+
+pattern AggregationFrom :: className -> Relationship className relationshipName
+pattern AggregationFrom from <- Aggregation {
+  aggregationWhole = LimitedConnector { connectTo = from }
+  }
+
+pattern CompositionFrom :: className -> Relationship className relationshipName
+pattern CompositionFrom from <- Composition {
+  compositionWhole = LimitedConnector { connectTo = from }
+  }
+
+pattern CompositionTo :: className -> Relationship className relationshipName
+pattern CompositionTo to <- Composition {
+  compositionPart = LimitedConnector { connectTo = to }
+  }
+
+compositesAndFieldNames
+  :: String
+  -> [Relationship String String]
+  -> [String]
+  -> [String]
+compositesAndFieldNames index connections = concatMap $ \this ->
+  let (superClasses, compositions) = compositionsTo this
+      super = listToMaybe superClasses
   in [ "fun " ++ this ++ compositesCD ++ " : set Obj {"
      , "  " ++ intercalate " + " (maybe "none" (++ compositesCD) super
-                                  : map (\(_,_,_,from,_,_) -> from ++ subsCD) thisCompositions)
+                                  : map (\c -> whole c ++ subsCD) compositions)
      , "}"
      , "fun " ++ this ++ compFieldNamesCD ++ " : set FName {"
      , "  " ++ intercalate " + " (maybe "none" (++ compFieldNamesCD) super
-                                  : map (\(_,name,_,_,_,_) -> name) thisCompositions)
+                                  : map compositionName compositions)
      , "}"
-     ])
+     ]
   where
+    whole = connectTo . compositionWhole
     compositesCD = "CompositesCD" ++ index
     compFieldNamesCD = "CompFieldNamesCD" ++ index
     subsCD = "SubsCD" ++ index
+    compositionsTo x =
+      foldr (supersAndCompositionParts x) ([], []) connections
+    supersAndCompositionParts part c = case c of
+      Association {} -> id
+      Aggregation {} -> id
+      CompositionTo x | part == x -> second (c :)
+                      | otherwise -> id
+      Inheritance {..} | part == subClass -> first (superClass :)
+                       | otherwise -> id
 
-predicate :: String -> [Association] -> [String] -> String
-predicate index associations nonAbstractClassNames = [i|
+predicate :: String -> [Relationship String String] -> [String] -> String
+predicate index relationships nonAbstractClassNames = [i|
 pred cd#{index} {
 
   Obj = #{intercalate " + " ("none" : nonAbstractClassNames)}
@@ -237,11 +311,22 @@ pred cd#{index} {
 |]
   where
     objFNames = map (\name -> [i|  ObjFNames[#{name}, #{name}#{fieldNamesCD}]|]) nonAbstractClassNames
+    nameFromTo = \case
+      Association {..} ->
+        Just (associationName, associationFrom, associationTo)
+      Aggregation {..} ->
+        Just (aggregationName, aggregationWhole, aggregationPart)
+      Composition {..} ->
+        Just (compositionName, compositionWhole, compositionPart)
+      Inheritance {} ->
+        Nothing
     objAttribs = concatMap
-      (\(_, name, mult1, class1, class2, mult2) ->
-          [makeAssoc "Attrib" class1 name class2 mult2
-          , makeAssoc "" class2 name class1 mult1])
-      associations
+      (maybe [] (uncurry3 associationFromTo) . nameFromTo)
+      relationships
+    associationFromTo name from to = [
+      makeAssoc "Attrib" (connectTo from) name (connectTo to) (limits to),
+      makeAssoc "" (connectTo to) name (connectTo from) (limits from)
+      ]
     makeAssoc
       :: Show a
       => String -> String -> String -> String -> (a, Maybe a) -> String
@@ -249,7 +334,8 @@ pred cd#{index} {
       [i|  ObjL#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}]|]
     makeAssoc att from name to (low, Just up) =
       [i|  ObjLU#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}, #{show up}]|]
-    anyCompositions = any (\(a,_,_,_,_,_) -> a == Composition) associations
+    anyCompositions =
+      any (\case Composition {} -> True; _ -> False) relationships
     compositions = map
       (\name -> [i|  Composition[#{name}#{compositesCD}, #{name}#{compFieldNamesCD}, #{name}]|])
       nonAbstractClassNames

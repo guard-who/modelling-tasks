@@ -56,17 +56,20 @@ import Modelling.CdOd.CD2Alloy.Transform (
 import Modelling.CdOd.MatchCdOd         (applyChanges)
 import Modelling.CdOd.Output (
   cacheCd,
-  drawCdFromSyntax,
+  drawCd,
   drawOdFromInstance,
   )
 import Modelling.CdOd.Types (
   AssociationType (..),
+  Cd,
   Change (..),
   ClassConfig (..),
+  ClassDiagram (..),
   Connection (..),
   DiagramEdge,
+  LimitedConnector (..),
+  Relationship (..),
   RelationshipProperties (..),
-  Syntax,
   associationNames,
   checkClassConfig,
   checkClassConfigWithProperties,
@@ -74,13 +77,11 @@ import Modelling.CdOd.Types (
   connectionName,
   defaultProperties,
   maxFiveObjects,
-  renameAssocsInCd,
   renameAssocsInEdge,
-  renameClassesInCd,
+  renameClassesAndRelationshipsInCd,
   renameClassesInEdge,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
-  toOldSyntax,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
@@ -130,13 +131,13 @@ phraseChangeDE byName withDir c = case (add c, remove c) of
       | otherwise     = xs
 
 phraseRelationDE :: Bool -> Bool -> DiagramEdge -> String
-phraseRelationDE _ _ (from, to, Inheritance) =
+phraseRelationDE _ _ (from, to, Inheritance') =
   "eine Vererbung, bei der " ++ from ++ " von " ++ to ++ " erbt"
 phraseRelationDE True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
-  Association -> "Assoziation "
-  Aggregation -> "Aggregation "
-  Composition -> "Komposition "
-phraseRelationDE _ False (from, to, Assoc Association _ l h _)
+  Association' -> "Assoziation "
+  Aggregation' -> "Aggregation "
+  Composition' -> "Komposition "
+phraseRelationDE _ False (from, to, Assoc Association' _ l h _)
   | from == to = [i|eine Selbst-Assoziation #{selfParticipates}|]
   | otherwise  = "eine Assoziation" ++ participationsDE l from h to
   where
@@ -145,14 +146,14 @@ phraseRelationDE _ False (from, to, Assoc Association _ l h _)
       [i|für #{from}, wobei es an einem Ende #{phraseLimitDE l} genau einmal und am anderen Ende #{phraseLimitDE h} beteiligt ist|]
 phraseRelationDE _ _ (from, to, Assoc t _ l h _)
   | from == to = case t of
-      Association -> [i|eine Selbst-Assoziation #{selfParticipates}|]
-      Aggregation -> [i|eine Selbst-Aggregation #{selfParticipatesPartWhole}|]
-      Composition -> [i|eine Selbst-Komposition #{selfParticipatesPartWhole}|]
+      Association' -> [i|eine Selbst-Assoziation #{selfParticipates}|]
+      Aggregation' -> [i|eine Selbst-Aggregation #{selfParticipatesPartWhole}|]
+      Composition' -> [i|eine Selbst-Komposition #{selfParticipatesPartWhole}|]
   | otherwise = (++ participationsDE l from h to) $ case t of
-    Association -> "eine Assoziation von " ++ from ++ " nach " ++ to
-    Aggregation -> "eine Beziehung, die " ++ from
+    Association' -> "eine Assoziation von " ++ from ++ " nach " ++ to
+    Aggregation' -> "eine Beziehung, die " ++ from
       ++ " eine Aggregation aus " ++ to ++ "s macht"
-    Composition -> "eine Beziehung, die " ++ from
+    Composition' -> "eine Beziehung, die " ++ from
       ++ " eine Komposition aus " ++ to ++ "s macht"
   where
     selfParticipates :: String
@@ -189,13 +190,13 @@ phraseChange byName withDir c = case (add c, remove c) of
     ++ " by " ++ phraseRelation False withDir e1
 
 phraseRelation :: Bool -> Bool -> DiagramEdge -> String
-phraseRelation _ _ (from, to, Inheritance) =
+phraseRelation _ _ (from, to, Inheritance') =
   "an inheritance where " ++ from ++ " inherits from " ++ to
 phraseRelation True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
-  Association -> "association "
-  Aggregation -> "aggregation "
-  Composition -> "composition "
-phraseRelation _ False (from, to, Assoc Association _ l h _)
+  Association' -> "association "
+  Aggregation' -> "aggregation "
+  Composition' -> "composition "
+phraseRelation _ False (from, to, Assoc Association' _ l h _)
   | from == to = [i|a self-association #{selfParticipates}|]
   | otherwise  = "an association" ++ participations l from h to
   where
@@ -204,14 +205,14 @@ phraseRelation _ False (from, to, Assoc Association _ l h _)
       [i|for #{from} where #{participates l "it"} at one end and #{phraseLimit h} at the other end|]
 phraseRelation _ _ (from, to, Assoc t _ l h _)
   | from == to = case t of
-      Association -> [i|a self-association #{selfParticipates}|]
-      Aggregation -> [i|a self-aggregation #{selfParticipatesPartWhole}|]
-      Composition -> [i|a self-composition #{selfParticipatesPartWhole}|]
+      Association' -> [i|a self-association #{selfParticipates}|]
+      Aggregation' -> [i|a self-aggregation #{selfParticipatesPartWhole}|]
+      Composition' -> [i|a self-composition #{selfParticipatesPartWhole}|]
   | otherwise = (++ participations l from h to) $ case t of
-    Association -> "an association from " ++ from ++ " to " ++ to
-    Aggregation -> "a relationship that makes " ++ from
+    Association' -> "an association from " ++ from ++ " to " ++ to
+    Aggregation' -> "a relationship that makes " ++ from
       ++ " an aggregation of " ++ to ++ "s"
-    Composition -> "a relationship that makes " ++ from
+    Composition' -> "a relationship that makes " ++ from
       ++ " a composition of " ++ to ++ "s"
   where
     selfParticipates :: String
@@ -364,7 +365,7 @@ repairCdSolution = M.keys . M.filter id . fmap fst . changes
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int (Bool, Change DiagramEdge),
-    classDiagram   :: Syntax,
+    classDiagram   :: Cd,
     withDirections :: Bool,
     withNames      :: Bool
   } deriving (Eq, Generic, Read, Show)
@@ -417,7 +418,7 @@ renameInstance inst names' assocs' = do
   let (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesInCd bmNames >=> renameAssocsInCd bmAssocs
+      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
       renameEdge = renameClassesInEdge bmNames >=> renameAssocsInEdge bmAssocs
   cd <- renameCd $ classDiagram inst
   chs <- mapM (mapM $ mapM renameEdge) $ changes inst
@@ -452,28 +453,71 @@ defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
   changes = M.fromAscList [
     (1,(False,Change {
-          add = Just ("A","D",Assoc Composition "s" (1,Just 1) (2,Nothing) False),
-          remove = Just ("A","D",Assoc Composition "v" (1,Just 1) (0,Nothing) False)
+          add = Just ("A","D",Assoc Composition' "s" (1,Just 1) (2,Nothing) False),
+          remove = Just ("A","D",Assoc Composition' "v" (1,Just 1) (0,Nothing) False)
           })),
     (2,(False,Change {
-          add = Just ("C","A",Assoc Aggregation "t" (2,Just 2) (1,Nothing) False),
+          add = Just ("C","A",Assoc Aggregation' "t" (2,Just 2) (1,Nothing) False),
           remove = Nothing
           })),
     (3,(True,Change {
-          add = Just ("B","D",Assoc Composition "z" (1,Just 1) (0,Nothing) False),
-          remove = Just ("D","B",Assoc Composition "x" (1,Just 1) (0,Nothing) False)
+          add = Just ("B","D",Assoc Composition' "z" (1,Just 1) (0,Nothing) False),
+          remove = Just ("D","B",Assoc Composition' "x" (1,Just 1) (0,Nothing) False)
           })),
     (4,(True,Change {
-          add = Just ("A","B",Assoc Composition "u" (1,Just 1) (0,Just 2) False),
-          remove = Just ("B","A",Assoc Composition "w" (1,Just 1) (0,Just 2) False)
+          add = Just ("A","B",Assoc Composition' "u" (1,Just 1) (0,Just 2) False),
+          remove = Just ("B","A",Assoc Composition' "w" (1,Just 1) (0,Just 2) False)
           }))
     ],
-  classDiagram = (
-    [("A",[]),("D",[]),("B",[]),("C",[])],
-    [(Composition,"v",(1,Just 1),"A","D",(0,Nothing)),
-     (Composition,"x",(1,Just 1),"D","B",(0,Nothing)),
-     (Composition,"w",(1,Just 1),"B","A",(0,Just 2)),
-     (Association,"y",(0,Just 2),"C","A",(2,Nothing))]),
+  classDiagram = ClassDiagram {
+    classNames = ["A","D","B","C"],
+    connections = [
+      Composition {
+        compositionName = "v",
+        compositionPart = LimitedConnector {
+          connectTo = "D",
+          limits = (0,Nothing)
+          },
+        compositionWhole = LimitedConnector {
+          connectTo = "A",
+          limits = (1,Just 1)
+          }
+         },
+      Composition {
+        compositionName = "x",
+        compositionPart = LimitedConnector {
+          connectTo = "B",
+          limits = (0,Nothing)
+          },
+        compositionWhole = LimitedConnector {
+          connectTo = "D",
+          limits = (1,Just 1)
+          }
+         },
+      Composition {
+        compositionName = "w",
+        compositionPart = LimitedConnector {
+          connectTo = "A",
+          limits = (0,Just 2)
+          },
+        compositionWhole = LimitedConnector {
+          connectTo = "B",
+          limits = (1,Just 1)
+          }
+         },
+      Association {
+        associationName = "y",
+        associationFrom = LimitedConnector {
+          connectTo = "C",
+          limits = (0,Just 2)
+          },
+        associationTo = LimitedConnector {
+          connectTo = "A",
+          limits = (2,Nothing)
+          }
+        }
+      ]
+    },
   withDirections = False,
   withNames = True
   }
@@ -485,7 +529,7 @@ repairIncorrect
   -> Bool
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g IO (Syntax, [(Bool, (Change DiagramEdge, Syntax))])
+  -> RandT g IO (Cd, [(Bool, (Change DiagramEdge, Cd))])
 repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
@@ -505,9 +549,9 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   rinstas <- shuffleM instas
   getInstanceWithODs (map isValid cs) rinstas
   where
-    drawCd :: Syntax -> Integer -> IO FilePath
-    drawCd cd' n =
-      drawCdFromSyntax True True mempty cd' ("cd-" ++ show n ++ ".svg")
+    drawCd' :: Cd -> Integer -> IO FilePath
+    drawCd' cd' n =
+      drawCd True True mempty cd' ("cd-" ++ show n ++ ".svg")
     drawOd :: AlloyInstance -> Integer -> RandT StdGen IO FilePath
     drawOd od x =
       drawOdFromInstance od Nothing Back True ("od-" ++ show x)
@@ -521,15 +565,15 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
       if not (any null ods)
         then do
         when debug $ liftIO $ do
-          void $ drawCd cd 0
-          uncurry drawCd `mapM_` zip (map snd chs) [1 ..]
+          void $ drawCd' cd 0
+          uncurry drawCd' `mapM_` zip (map snd chs) [1 ..]
           g <- getStdGen
           flip evalRandT g $ uncurry (drawOd . head) `mapM_` zip ods [1 ..]
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do
       let parts = transform
-            (toOldSyntax $ map reverseAssociation <$> cd)
+            (cd {connections = map reverseAssociation $ connections cd})
             []
             maxFiveObjects
             Nothing
@@ -538,7 +582,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
             ""
           command = createRunCommand
             "cd"
-            (length $ fst cd)
+            (length $ classNames cd)
             maxFiveObjects
             parts
       getInstances (Just 1) to (combineParts parts ++ command)

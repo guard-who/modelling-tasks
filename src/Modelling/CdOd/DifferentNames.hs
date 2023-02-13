@@ -57,32 +57,34 @@ import Modelling.CdOd.CD2Alloy.Transform (
   )
 import Modelling.CdOd.Edges             (fromEdges, renameEdges)
 import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
-import Modelling.CdOd.Output            (cacheCd, cacheOd, drawCdFromSyntax)
+import Modelling.CdOd.Output            (cacheCd, cacheOd, drawCd)
 import Modelling.CdOd.Types (
   AssociationType (..),
+  Cd,
   ClassConfig (..),
+  ClassDiagram (..),
   Connection (..),
   DiagramEdge,
+  LimitedConnector (..),
   Name (Name),
   NameMapping (nameMapping),
   ObjectConfig (..),
   Od,
-  Syntax,
+  Relationship (..),
   associationNames,
   checkClassConfigWithProperties,
   classNames,
   defaultProperties,
   fromNameMapping,
   linkNames,
-  renameAssocsInCd,
-  renameClassesInCd,
+  relationshipName,
   renameClassesInOd,
   renameLinksInOd,
+  renameClassesAndRelationshipsInCd,
   showName,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   toNameMapping,
-  toOldSyntax,
   )
 
 import Control.Monad                    (void, when)
@@ -132,7 +134,7 @@ data ShufflingOption a =
 
 data DifferentNamesInstance = DifferentNamesInstance {
     anonymousObjects :: Bool,
-    cDiagram :: Syntax,
+    cDiagram :: Cd,
     generatorValue :: Int,
     oDiagram :: Od,
     showSolution :: Bool,
@@ -390,20 +392,53 @@ differentNames config segment seed = do
       lift $ shuffleEverything inst
 
 reverseAssociation :: DiagramEdge -> DiagramEdge
-reverseAssociation (from, to, Assoc Association n lf lt im) =
-  (to, from, Assoc Association n lt lf im)
+reverseAssociation (from, to, Assoc Association' n lf lt im) =
+  (to, from, Assoc Association' n lt lf im)
 reverseAssociation x = x
 
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
   anonymousObjects = True,
-  cDiagram = (
-    [("A",[]),("D",["A"]),("B",[]),("C",["D"])],
-    [(Aggregation,"b",(0,Nothing),"D","B",(1,Just 1)),
-     (Association,"c",(0,Just 2),"C","A",(0,Just 2)),
-     (Composition,"a",(1,Just 1),"A","B",(2,Nothing))
-    ]
-    ),
+  cDiagram = ClassDiagram {
+    classNames = ["A","D","B","C"],
+    connections = [
+      Inheritance {subClass = "D", superClass = "A"},
+      Inheritance {subClass = "C", superClass = "D"},
+      Aggregation {
+        aggregationName = "b",
+        aggregationPart = LimitedConnector {
+          connectTo = "B",
+          limits = (1,Just 1)
+          },
+        aggregationWhole = LimitedConnector {
+          connectTo = "D",
+          limits = (0,Nothing)
+          }
+         },
+      Association {
+        associationName = "c",
+        associationFrom = LimitedConnector {
+          connectTo = "C",
+          limits = (0,Just 2)
+          },
+        associationTo = LimitedConnector {
+          connectTo = "A",
+          limits = (0,Just 2)
+          }
+         },
+      Composition {
+        compositionName = "a",
+        compositionPart = LimitedConnector {
+          connectTo = "B",
+          limits = (2,Nothing)
+          },
+        compositionWhole = LimitedConnector {
+          connectTo = "A",
+          limits = (1,Just 1)
+          }
+        }
+      ]
+    },
   generatorValue = -3894126834283525023,
   oDiagram = (
     ["C$0","B$0","B$1","B$2"],
@@ -426,7 +461,7 @@ getDifferentNamesTask fhead config names edges' = do
     let edges  = reverseAssociation <$> edges'
         cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = uncurry alloyFor cd0
-        labels = [l | (_, l, _, _, _, _) <- snd $ snd cd0]
+        labels = mapMaybe relationshipName . connections $ snd cd0
         cds    = map
           (fromEdges names . flip renameEdges edges . BM.fromList . zip labels)
           $ drop 1 (permutations labels)
@@ -439,8 +474,8 @@ getDifferentNamesTask fhead config names edges' = do
           (objectConfig config)
           partss'
         partss' = foldr mergeParts parts0 partss
-    when debug . liftIO . void $ drawCd cd0
-    when debug . liftIO . void $ drawCd `mapM_` cds'
+    when debug . liftIO . void $ drawCd' cd0
+    when debug . liftIO . void $ drawCd' `mapM_` cds'
     instances  <- liftIO $ getInstances
       (maxInstances config)
       (timeout config)
@@ -469,14 +504,14 @@ getDifferentNamesTask fhead config names edges' = do
         else fhead
   where
     alloyFor n cd = transform
-      (toOldSyntax cd)
+      cd
       []
       (objectConfig config)
       (presenceOfLinkSelfLoops config)
       False
       (show n)
       ""
-    drawCd (n, cd) = drawCdFromSyntax
+    drawCd' (n, cd) = drawCd
       True
       True
       (mempty # lc red)
@@ -563,7 +598,7 @@ renameInstance inst names' assocs' linkNs' = do
         , a' <- BM.lookup a bmAssocs
         , l' <- BM.lookup l bmLinks
         ]
-  cd' <- renameClassesInCd bmNames =<< renameAssocsInCd bmAssocs cd
+  cd' <- renameClassesAndRelationshipsInCd bmNames bmAssocs cd
   od' <- renameClassesInOd bmNames =<< renameLinksInOd bmLinks od
   shuffling <- mapM (`BM.lookup` bmLinks) $ linkShuffling inst
   return $ DifferentNamesInstance {

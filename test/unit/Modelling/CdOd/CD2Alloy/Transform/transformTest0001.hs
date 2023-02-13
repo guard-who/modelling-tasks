@@ -1,3 +1,4 @@
-([("A", Nothing), ("B", Nothing), ("C", Nothing), ("D", Nothing)],
- []
-)
+ClassDiagram {
+  classNames = ["A", "B", "C", "D"],
+  connections = []
+  }

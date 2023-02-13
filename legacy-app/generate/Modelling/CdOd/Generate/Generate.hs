@@ -110,9 +110,9 @@ generateEdges wnti classs inh com ass agg = fmap (fmap snd) $ foldl
   (\es t -> es >>= maybe (return Nothing) (`generateEdge` t))
   (Just . (, []) <$> getConfig)
   $ replicate inh Nothing
-    ++ replicate com (Just Composition)
-    ++ replicate ass (Just Association)
-    ++ replicate agg (Just Aggregation)
+    ++ replicate com (Just Composition')
+    ++ replicate ass (Just Association')
+    ++ replicate agg (Just Aggregation')
   where
     getConfig = do
       step <- oneOf $ nub [inh, inh + com, inh + com + ass]
@@ -133,7 +133,7 @@ generateEdge (conf, cs) mt
   | null cs, isNothing mt, Just (cl, _) <- withConnection conf = do
       t <- oneOf [ (x, y) | (x, y) <- available conf, x == cl || y == cl]
       let (s, e) = if fst t == cl then swap t else t
-      finish (deletePair t conf, [(s, e, Inheritance)])
+      finish (deletePair t conf, [(s, e, Inheritance')])
   | otherwise = do
       t <- oneOf $ case withConnection conf of
         Just (cl, 0) ->
@@ -157,11 +157,11 @@ generateEdge (conf, cs) mt
       | null (available conf) = return Nothing
       | otherwise             = return $ Just (next gc, des)
     generateLimits :: MonadRandom m => Maybe AssociationType -> m Connection
-    generateLimits Nothing            = return Inheritance
-    generateLimits (Just Composition) = do
+    generateLimits Nothing            = return Inheritance'
+    generateLimits (Just Composition') = do
       ll1 <- getRandomR (0, 1)
       l2  <- generateLimit
-      return $ Assoc Composition "" (ll1, Just 1) l2 False
+      return $ Assoc Composition' "" (ll1, Just 1) l2 False
     generateLimits (Just t          ) = do
       l1 <- generateLimit
       l2 <- generateLimit

@@ -44,13 +44,14 @@ import Modelling.CdOd.RepairCd (
   )
 import Modelling.CdOd.Output            (cacheCd)
 import Modelling.CdOd.Types (
+  Cd,
   ClassConfig (..),
-  Syntax,
+  ClassDiagram (..),
+  Relationship (..),
   associationNames,
   classNames,
   shuffleClassAndConnectionOrder,
-  renameAssocsInCd,
-  renameClassesInCd,
+  renameClassesAndRelationshipsInCd,
   )
 
 import Control.Monad                    ((>=>))
@@ -115,7 +116,7 @@ checkSelectValidCdConfig SelectValidCdConfig {..} =
   checkClassConfigAndChanges classConfig allowedProperties
 
 data SelectValidCdInstance = SelectValidCdInstance {
-    classDiagrams   :: Map Int (Bool, Syntax),
+    classDiagrams   :: Map Int (Bool, Cd),
     withNames       :: Bool,
     withNavigations :: Bool
   } deriving (Generic, Read, Show)
@@ -236,8 +237,7 @@ shuffleEach inst@SelectValidCdInstance {..} = do
       assocs' <- shuffleM assocs
       let bmNames  = BM.fromList $ zip names names'
           bmAssocs = BM.fromList $ zip assocs assocs'
-      renameClassesInCd bmNames cd
-        >>= renameAssocsInCd bmAssocs
+      renameClassesAndRelationshipsInCd bmNames bmAssocs cd
 
 shuffleInstance
   :: MonadRandom m
@@ -268,7 +268,7 @@ renameInstance inst names' assocs' = do
   let (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd cd = renameClassesInCd bmNames cd >>= renameAssocsInCd bmAssocs
+      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
   cds <- mapM (mapM renameCd) $ classDiagrams inst
   return $ SelectValidCdInstance {
     classDiagrams   = cds,
@@ -279,10 +279,38 @@ renameInstance inst names' assocs' = do
 defaultSelectValidCdInstance :: SelectValidCdInstance
 defaultSelectValidCdInstance = SelectValidCdInstance {
   classDiagrams = M.fromAscList [
-    (1,(False,([("D",["B"]),("B",["D"]),("A",["C"]),("C",["B"])],[]))),
-    (2,(True,([("D",["B"]),("B",[]),("A",[]),("C",["B"])],[]))),
-    (3,(False,([("D",["B"]),("B",["D"]),("A",["B"]),("C",["B"])],[]))),
-    (4,(True,([("D",[]),("B",["D"]),("A",[]),("C",["B"])],[])))
+    (1,(False,ClassDiagram {
+        classNames = ["D","B","A","C"],
+        connections = [
+          Inheritance {subClass = "D", superClass = "B"},
+          Inheritance {subClass = "B", superClass = "D"},
+          Inheritance {subClass = "A", superClass = "C"},
+          Inheritance {subClass = "C", superClass = "B"}
+          ]
+        })),
+    (2,(True,ClassDiagram {
+        classNames = ["D","B","A","C"],
+        connections = [
+          Inheritance {subClass = "D", superClass = "B"},
+          Inheritance {subClass = "C", superClass = "B"}
+          ]
+        })),
+    (3,(False,ClassDiagram {
+        classNames = ["D","B","A","C"],
+        connections = [
+          Inheritance {subClass = "D", superClass = "B"},
+          Inheritance {subClass = "B", superClass = "D"},
+          Inheritance {subClass = "A", superClass = "B"},
+          Inheritance {subClass = "C", superClass = "B"}
+          ]
+        })),
+    (4,(True,ClassDiagram {
+        classNames = ["D","B","A","C"],
+        connections = [
+          Inheritance {subClass = "B", superClass = "D"},
+          Inheritance {subClass = "C", superClass = "B"}
+          ]
+        }))
     ],
   withNames = True,
   withNavigations = True

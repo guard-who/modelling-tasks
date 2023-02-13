@@ -5,16 +5,16 @@ import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Modelling.CdOd.CD2Alloy.Transform (combineParts, createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Edges             (fromEdges)
-import Modelling.CdOd.Output            (drawCdFromSyntax, drawOdFromInstance)
+import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
 import Modelling.CdOd.Types (
   AssociationType (..),
+  Cd,
+  ClassDiagram (..),
   Connection (..),
   DiagramEdge,
   ObjectConfig (objects),
-  Syntax,
   maxFiveObjects,
   reverseAssociation,
-  toOldSyntax,
   )
 
 import Control.Monad.IO.Class           (MonadIO(liftIO))
@@ -22,40 +22,40 @@ import Control.Monad.Random             (evalRandT, getStdGen)
 import Data.GraphViz                    (DirType (..))
 
 v :: DiagramEdge
-v = ("C", "B", Assoc Aggregation "v" (0, Nothing) (1, Just 1) False)
+v = ("C", "B", Assoc Aggregation' "v" (0, Nothing) (1, Just 1) False)
 
 w :: DiagramEdge
-w = ("A", "C", Assoc Association "w" (-1, Just 2) (-1, Just 2) False)
+w = ("A", "C", Assoc Association' "w" (-1, Just 2) (-1, Just 2) False)
 
 x :: DiagramEdge
-x = ("C", "B", Assoc Composition "x" (0, Just 1) (1, Just 1) False)
+x = ("C", "B", Assoc Composition' "x" (0, Just 1) (1, Just 1) False)
 
 y' :: DiagramEdge
-y' = ("D", "A", Assoc Association "y" (0, Just 1) (0, Nothing) False)
+y' = ("D", "A", Assoc Association' "y" (0, Just 1) (0, Nothing) False)
 
 y'' :: DiagramEdge
-y'' = ("D", "A", Assoc Association "y" (0, Nothing) (0, Nothing) False)
+y'' = ("D", "A", Assoc Association' "y" (0, Nothing) (0, Nothing) False)
 
 z' :: DiagramEdge
-z' = ("D", "C", Assoc Aggregation "z" (0, Nothing) (2, Nothing) False)
+z' = ("D", "C", Assoc Aggregation' "z" (0, Nothing) (2, Nothing) False)
 
 z'' :: DiagramEdge
-z'' = ("D", "C", Assoc Aggregation "z" (0, Just 1) (2, Nothing) False)
+z'' = ("D", "C", Assoc Aggregation' "z" (0, Just 1) (2, Nothing) False)
 
 inh1 :: DiagramEdge
-inh1 = ("A", "C", Inheritance)
+inh1 = ("A'", "C", Inheritance')
 
 inh2 :: DiagramEdge
-inh2 = ("B", "A", Inheritance)
+inh2 = ("B", "A'", Inheritance')
 
 inh3 :: DiagramEdge
-inh3 = ("C", "A", Inheritance)
+inh3 = ("C", "A'", Inheritance')
 
 a :: DiagramEdge
-a = ("A", "B", Assoc Association "a" (1, Just 1) (1, Just 1) False)
+a = ("A", "B", Assoc Association' "a" (1, Just 1) (1, Just 1) False)
 
 b :: DiagramEdge
-b = ("C", "B", Assoc Association "b" (1, Just 1) (1, Just 1) False)
+b = ("C", "B", Assoc Association' "b" (1, Just 1) (1, Just 1) False)
 
 
 main :: IO ()
@@ -93,11 +93,11 @@ drawCdsAndOds c y z =
 drawCdAndOdsFor
   :: Maybe Integer
   -> String
-  -> [Syntax]
+  -> [Cd]
   -> String
   -> IO ()
 drawCdAndOdsFor is c cds cmd = do
-  mapM_ (\(cd, i) -> drawCd cd i >>= putStrLn) $ zip cds [0..]
+  mapM_ (\(cd, i) -> drawCd' cd i >>= putStrLn) $ zip cds [0..]
   let mergedParts = foldr mergeParts (head parts) $ tail parts
   let parts' = combineParts mergedParts
         ++ createRunCommand cmd 3 maxThreeObjects mergedParts
@@ -113,12 +113,12 @@ drawCdAndOdsFor is c cds cmd = do
       Back
       True
       (c ++ '-' : shorten cmd ++ "-od" ++ show i ++ ".svg")
-    drawCd cd i =
-      drawCdFromSyntax True True mempty cd (c ++ "-cd" ++ show i ++ ".svg")
+    drawCd' cd i =
+      drawCd True True mempty cd (c ++ "-cd" ++ show i ++ ".svg")
     maxThreeObjects = maxFiveObjects { objects = (1, 3) }
     parts = zipWith cdToAlloy cds [0..]
     cdToAlloy cd i = transform
-      (toOldSyntax $ map reverseAssociation <$> cd)
+      (cd {connections = map reverseAssociation $ connections cd})
       []
       maxThreeObjects
       Nothing

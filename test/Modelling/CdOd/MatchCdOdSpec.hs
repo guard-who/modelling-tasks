@@ -12,10 +12,12 @@ import Modelling.CdOd.MatchCdOd (
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.Types (
-  AssociationType (..),
+  Cd,
+  ClassDiagram (..),
+  LimitedConnector (..),
   ObjectConfig (..),
   Od,
-  Syntax,
+  Relationship (..),
   )
 import Modelling.Auxiliary.Common       (oneOf)
 
@@ -74,9 +76,12 @@ spec = do
       maxInstances = Just 20
       }
 
-getOdsFor :: Syntax -> Syntax -> IO ([Od], [Od])
+getOdsFor :: Cd -> Cd -> IO ([Od], [Od])
 getOdsFor cd1 cd2 = do
-  let cd3 = ([("A", ["B"]), ("B", [])],[])
+  let cd3 = ClassDiagram {
+        classNames = ["A", "B"],
+        connections = [Inheritance {subClass = "A", superClass = "B"}]
+        }
   ods <- getODInstances fewObjects cd1 cd2 cd3 2
   Right ods' <- runExceptT $ mapM alloyInstanceToOd `mapM` ods
   return (get [1] ods', get [2] ods')
@@ -89,32 +94,72 @@ getOdsFor cd1 cd2 = do
       objects = (2, 2)
       }
 
-cdAInheritsBandAtoB :: Syntax
-cdAInheritsBandAtoB = (
-  [("A", ["B"]), ("B", [])],
-  [(Association, "x", (1, Just 1), "A", "B", (1, Just 1))]
-  )
+cdAInheritsBandAtoB :: Cd
+cdAInheritsBandAtoB = ClassDiagram {
+  classNames = ["A", "B"],
+  connections = [
+    Inheritance {subClass = "A", superClass = "B"},
+    associationX "A" "B"
+    ]
+  }
 
-cdAggregateBofAs :: Syntax
-cdAggregateBofAs = (
-  [("A", []), ("B", [])],
-  [(Aggregation, "x", (1, Just 1), "B", "A", (1, Just 1))]
-  )
+associationX :: c -> c -> Relationship c String
+associationX from to = Association {
+  associationName = "x",
+  associationFrom = LimitedConnector {
+    connectTo = from,
+    limits = (1, Just 1)
+    },
+  associationTo = LimitedConnector {
+    connectTo = to,
+    limits = (1, Just 1)
+    }
+  }
 
-cdComposeBofAs :: Syntax
-cdComposeBofAs = (
-  [("A", []), ("B", [])],
-  [(Composition, "x", (1, Just 1), "B", "A", (1, Just 1))]
-  )
+cdAggregateBofAs :: Cd
+cdAggregateBofAs = ClassDiagram {
+  classNames = ["A", "B"],
+  connections = [
+    Aggregation {
+      aggregationName = "x",
+      aggregationPart = LimitedConnector {
+        connectTo = "A",
+        limits = (1, Just 1)
+        },
+      aggregationWhole = LimitedConnector {
+        connectTo = "B",
+        limits = (1, Just 1)
+        }
+      }
+    ]
+  }
 
-cdAtoB :: Syntax
-cdAtoB = (
-  [("A", []),("B", [])],
-  [(Association, "x", (1, Just 1), "A", "B", (1, Just 1))]
-  )
+cdComposeBofAs :: Cd
+cdComposeBofAs = ClassDiagram {
+  classNames = ["A", "B"],
+  connections = [
+    Composition {
+      compositionName = "x",
+      compositionPart = LimitedConnector {
+        connectTo = "A",
+        limits = (1, Just 1)
+        },
+      compositionWhole = LimitedConnector {
+        connectTo = "B",
+        limits = (1, Just 1)
+        }
+      }
+    ]
+  }
 
-cdBtoA :: Syntax
-cdBtoA = (
-  [("A", []),("B", [])],
-  [(Association, "x", (1, Just 1), "B", "A", (1, Just 1))]
-  )
+cdAtoB :: Cd
+cdAtoB = ClassDiagram {
+  classNames = ["A", "B"],
+  connections = [associationX "A" "B"]
+  }
+
+cdBtoA :: Cd
+cdBtoA = ClassDiagram {
+  classNames = ["A", "B"],
+  connections = [associationX "B" "A"]
+  }

@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Modelling.CdOd.Edges (
   -- * Types
   DiagramEdge,
@@ -8,6 +9,7 @@ module Modelling.CdOd.Edges (
   -- ** Check sets (reusing single checks)
   checkMultiEdge, checkObvious,
   -- ** Single checks
+  calculateThickEdges,
   compositionCycles,
   doubleConnections,
   hasAssociationAtOneSuperclass,
@@ -22,35 +24,98 @@ import qualified Data.Bimap                       as BM (lookup)
 
 import Modelling.CdOd.Types (
   AssociationType (..),
+  Cd,
+  ClassDiagram (..),
   Connection (..),
   DiagramEdge,
-  Syntax,
+  LimitedConnector (..),
+  Relationship (..),
   renameConnection,
   )
 import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
+import Data.Bifunctor                   (first)
 import Data.Bimap                       (Bimap)
 import Data.List                        (partition)
 import Data.Maybe                       (fromJust)
-import Data.Tuple.Extra                 (thd3)
+import Data.Tuple.Extra                 (dupe, fst3, snd3, thd3)
 
-toEdges :: Syntax -> [DiagramEdge]
-toEdges (is, as) =
-  [(s, e, Inheritance) | (s, es) <- is, e <- es]
-  ++ [(s, e, Assoc t n m1 m2 False) | (t, n, m1, s, e, m2) <- as]
+toEdges :: Cd -> [DiagramEdge]
+toEdges = map relationshipToEdge . connections
+
+relationshipToEdge
+  :: Relationship nodeName String
+  -> (nodeName, nodeName, Connection)
+relationshipToEdge r = case r of
+  Association {..} -> (
+    connectTo associationFrom,
+    connectTo associationTo,
+    Assoc
+      Association'
+      associationName
+      (limits associationFrom)
+      (limits associationTo)
+      False
+    )
+  Aggregation {..} -> (
+    connectTo aggregationWhole,
+    connectTo aggregationPart,
+    Assoc
+      Aggregation'
+      aggregationName
+      (limits aggregationWhole)
+      (limits aggregationPart)
+      False
+    )
+  Composition {..} -> (
+    connectTo compositionWhole,
+    connectTo compositionPart,
+    Assoc
+      Composition'
+      compositionName
+      (limits compositionWhole)
+      (limits compositionPart)
+      False
+    )
+  Inheritance {..} -> (
+    subClass,
+    superClass,
+    Inheritance'
+    )
+
+edgeToRelationship
+  :: (nodeName, nodeName, Connection)
+  -> Relationship nodeName String
+edgeToRelationship (from, to, connection) = case connection of
+  Inheritance' -> Inheritance {
+    subClass                  = from,
+    superClass                = to
+    }
+  Assoc t n s e _ -> case t of
+    Association' -> Association {
+      associationName         = n,
+      associationFrom         = LimitedConnector from s,
+      associationTo           = LimitedConnector to e
+      }
+    Aggregation' -> Aggregation {
+      aggregationName         = n,
+      aggregationPart         = LimitedConnector to e,
+      aggregationWhole        = LimitedConnector from s
+      }
+    Composition' -> Composition {
+      compositionName         = n,
+      compositionPart         = LimitedConnector to e,
+      compositionWhole        = LimitedConnector from s
+      }
 
 isInheritanceEdge :: DiagramEdge -> Bool
-isInheritanceEdge (_, _, Inheritance) = True
+isInheritanceEdge (_, _, Inheritance') = True
 isInheritanceEdge (_, _, _          ) = False
 
-fromEdges :: [String] -> [DiagramEdge] -> Syntax
-fromEdges classNames es =
-  let (ihs, ass) = partition isInheritanceEdge es
-      classes' = map
-        (\x -> (x, [e | (s, e, Inheritance) <- ihs, s == x]))
-        classNames
-      assocs   = [(t, n, m1, s, e, m2) | (s, e, Assoc t n m1 m2 False) <- ass]
-  in (classes', assocs)
+fromEdges :: [String] -> [DiagramEdge] -> Cd
+fromEdges classNames es = ClassDiagram {..}
+  where
+    connections = map edgeToRelationship es
 
 renameEdges :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
 renameEdges bm es =
@@ -73,14 +138,14 @@ doubleConnections es =
 
 multipleInheritances :: [DiagramEdge] -> [(DiagramEdge, DiagramEdge)]
 multipleInheritances es =
-  [(x, y) | x@(s1, e1, Inheritance) <- es, s1 /= e1
-          , y@(s2, e2, Inheritance) <- filterFirst x es, s2 /= e2
+  [(x, y) | x@(s1, e1, Inheritance') <- es, s1 /= e1
+          , y@(s2, e2, Inheritance') <- filterFirst x es, s2 /= e2
           , s1 == s2 && e1 /= e2]
 
 inheritanceCycles :: [DiagramEdge] -> [[DiagramEdge]]
 inheritanceCycles = cycles isInheritance
   where
-    isInheritance Inheritance = True
+    isInheritance Inheritance' = True
     isInheritance _           = False
 
 compositionCycles :: [DiagramEdge] -> [[DiagramEdge]]
@@ -89,7 +154,7 @@ compositionCycles es = cycles isComposition (flatten es)
            , c@(s', e', _) <- filter (isComposition . thd3) es
            , s' == e && s == e' || s' == s && e' == e]
   where
-    isInheritance Inheritance = True
+    isInheritance Inheritance' = True
     isInheritance _           = False
 
 flatten :: [DiagramEdge] -> [DiagramEdge]
@@ -101,19 +166,19 @@ flatten es
 
 findInheritance :: [DiagramEdge] -> Maybe ((String, String), [DiagramEdge])
 findInheritance []                         = Nothing
-findInheritance ((s, e, Inheritance) : es) = Just ((s, e), es)
+findInheritance ((s, e, Inheritance') : es) = Just ((s, e), es)
 findInheritance (e:es)                     = fmap (e:) <$> findInheritance es
 
 flattenInheritance :: String -> String -> DiagramEdge -> [DiagramEdge]
 flattenInheritance s e edge@(s', e', t) = case t of
-  Inheritance | e == s', s /= e' -> [(s, e', Inheritance)]
-              | s == e', e /= s' -> [(s', e, Inheritance)]
+  Inheritance' | e == s', s /= e' -> [(s, e', Inheritance')]
+               | s == e', e /= s' -> [(s', e, Inheritance')]
   Assoc {} | e == s' -> [(s, e', t), edge]
   Assoc {} | e == e' -> [(s', e, t), edge]
   _ -> [edge]
 
 isComposition :: Connection -> Bool
-isComposition (Assoc Composition _ _ _ _) = True
+isComposition (Assoc Composition' _ _ _ _) = True
 isComposition _                           = False
 
 wrongLimits :: [DiagramEdge] -> [DiagramEdge]
@@ -159,18 +224,27 @@ getPaths connectionFilter es =
       in [path | p@(s', e', _) <- es', s' /= e', s' /= e, s == e'
                , path <- getPath s' e (p:ps) es'']
 
-anyThickEdge :: Syntax -> Bool
-anyThickEdge (classes, associations) =
+anyThickEdge :: Cd -> Bool
+anyThickEdge = any fst . snd . calculateThickEdges
+
+calculateThickEdges :: Cd -> ([DiagramEdge], [(Bool, DiagramEdge)])
+calculateThickEdges ClassDiagram {..} =
   let
-    classesWithSubclasses = map (\(name, _) -> (name, subs [] name)) classes
+    classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
       where
         subs seen name
           | name `elem` seen = []
-          | otherwise = name : concatMap (subs (name:seen) . fst) (filter ((name `elem`) . snd) classes)
-    assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-    isAssocThick (_,_,_,from,to,_) =
+          | otherwise = name : concatMap
+              (subs (name:seen) . fst3)
+              (filter ((name ==) . snd3) inheritances)
+    edges = map relationshipToEdge connections
+    (inheritances, associations) = partition isInheritanceEdge edges
+    assocsBothWays = concatMap
+      (\(from,to,_) -> [(from,to), (to,from)])
+      associations
+    isAssocThick (from,to,_) =
       shouldBeThick from to classesWithSubclasses assocsBothWays
-  in any isAssocThick associations
+  in (inheritances, map (first isAssocThick . dupe) associations)
 
 shouldBeThick
   :: String
@@ -203,7 +277,7 @@ hasAssociationAtOneSuperclass cs es = any inheritanceHasOtherEdge cs
   where
     inheritanceHasOtherEdge x = any (x `isInheritedUsing`) es
       && any (x `hasAssociation`) es
-    isInheritedUsing x (_, e, Inheritance) = x == e
+    isInheritedUsing x (_, e, Inheritance') = x == e
     isInheritedUsing _ _                   = False
-    hasAssociation _ (_, _, Inheritance) = False
+    hasAssociation _ (_, _, Inheritance') = False
     hasAssociation x (s, e, _)           = x == s || x == e

@@ -3,7 +3,10 @@
 module Modelling.CdOd.Auxiliary.Parser (parser) where
 
 import Modelling.CdOd.Auxiliary.Lexer (Token(..))
-import Modelling.CdOd.Types (AssociationType(..))
+import Modelling.CdOd.Types (
+  LimitedConnector (..),
+  Relationship (..),
+  )
 
 }
 
@@ -51,11 +54,41 @@ Classes
 
 Associations
   : association name "[" Multiplicity "]" name "->" name "[" Multiplicity "]" ";" Associations
-    { [ (Association, $2, $4, $6, $8, $10) ] ++ $13 }
+    { Association {
+        associationName = $2,
+        associationFrom = LimitedConnector {
+          connectTo = $6,
+          limits = $4
+          },
+        associationTo = LimitedConnector {
+          connectTo = $8,
+          limits = $10
+          }
+        } : $13 }
   | aggregation name "[" Multiplicity "]" name "->" name "[" Multiplicity "]" ";" Associations
-    { [ (Aggregation, $2, $4, $6, $8, $10) ] ++ $13 }
+    { Aggregation {
+        aggregationName = $2,
+        aggregationPart = LimitedConnector {
+          connectTo = $8,
+          limits = $10
+          },
+        aggregationWhole = LimitedConnector {
+          connectTo = $6,
+          limits = $4
+          }
+        } : $13 }
   | composition name "[" CompositionMultiplicity "]" name "->" name "[" Multiplicity "]" ";" Associations
-    { [ (Composition, $2, $4, $6, $8, $10) ] ++ $13 }
+    { Composition {
+        compositionName = $2,
+        compositionPart = LimitedConnector {
+          connectTo = $8,
+          limits = $10
+          },
+        compositionWhole = LimitedConnector {
+          connectTo = $6,
+          limits = $4
+          }
+        } : $13 }
   | {- empty -}
     { [] }
 

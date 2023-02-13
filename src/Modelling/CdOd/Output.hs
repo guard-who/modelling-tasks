@@ -1,10 +1,11 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 module Modelling.CdOd.Output (
   cacheCd,
   cacheOd,
-  drawCdFromSyntax,
+  drawCd,
   drawOdFromInstance,
   drawOdFromRawInstance,
   drawOdFromNodesAndEdges,
@@ -35,10 +36,11 @@ import Modelling.CdOd.Auxiliary.Util (
   )
 import Modelling.CdOd.Types (
   AssociationType(..),
+  Cd,
+  ClassDiagram (..),
   Connection(..),
-  Syntax,
   )
-import Modelling.CdOd.Edges             (shouldBeThick)
+import Modelling.CdOd.Edges             (calculateThickEdges)
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 
 import Control.Lens                     ((.~))
@@ -49,6 +51,7 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans              (MonadTrans(lift))
 import Control.Monad.Trans.Except       (runExcept)
+import Data.Bifunctor                   (second)
 import Data.Digest.Pure.SHA             (sha1, showDigest)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz (
@@ -78,6 +81,7 @@ import Data.List (
 import Data.List.Split                  (splitOn)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
 import Data.String.Interpolate          (iii)
+import Data.Tuple.Extra                 (both)
 import Diagrams.Align                   (center)
 import Diagrams.Angle                   ((@@), deg)
 import Diagrams.Attributes              (lineWidth, lwL)
@@ -117,10 +121,10 @@ debug :: Bool
 debug = False
 
 connectionArrow :: Bool -> Bool -> Maybe Attribute -> Connection -> [Attribute]
-connectionArrow _ _ _ Inheritance =
+connectionArrow _ _ _ Inheritance' =
   [arrowTo emptyArr]
-connectionArrow _ printNames marking (Assoc Composition name from to isThick) =
-  arrow Composition ++ [HeadLabel (mult to)]
+connectionArrow _ printNames marking (Assoc Composition' name from to isThick) =
+  arrow Composition' ++ [HeadLabel (mult to)]
   ++ concat [maybeToList marking | isThick]
   ++ [toLabel name | printNames]
   ++ case from of
@@ -150,13 +154,13 @@ connectionArrow
       | otherwise        = arrow
 
 arrowDirected :: AssociationType -> [Attribute]
-arrowDirected Association = [arrowTo vee, ArrowSize 0.4]
+arrowDirected Association' = [arrowTo vee, ArrowSize 0.4]
 arrowDirected a           = arrow a
 
 arrow :: AssociationType -> [Attribute]
-arrow Association = [ArrowHead noArrow]
-arrow Aggregation = [arrowFrom oDiamond, edgeEnds Back]
-arrow Composition = [arrowFrom diamond, edgeEnds Back]
+arrow Association' = [ArrowHead noArrow]
+arrow Aggregation' = [arrowFrom oDiamond, edgeEnds Back]
+arrow Composition' = [arrowFrom diamond, edgeEnds Back]
 
 mult :: (Int, Maybe Int) -> Label
 mult (-1, Just u) = toLabelValue $ "*.." ++ show u
@@ -169,49 +173,40 @@ cacheCd
   :: Bool
   -> Bool
   -> Style V2 Double
-  -> Syntax
+  -> Cd
   -> FilePath
   -> IO FilePath
 cacheCd printNavigations printNames marking syntax path =
   cacheIO path ext "cd" syntax $ flip $
-    drawCdFromSyntax printNavigations printNames marking
+    drawCd printNavigations printNames marking
   where
     ext = short printNavigations
       ++ short printNames
       ++ showDigest (sha1 . LBS.fromString $ show marking)
       ++ ".svg"
 
-drawCdFromSyntax
+drawCd
   :: Bool
   -> Bool
   -> Style V2 Double
-  -> Syntax
+  -> Cd
   -> FilePath
   -> IO FilePath
-drawCdFromSyntax printNavigations printNames marking syntax file = do
-  let (classes, associations) = syntax
-  let classNames = map fst classes
+drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
   let theNodes = classNames
-  let inhEdges = [( fromJust (elemIndex from theNodes)
-                  , fromJust (elemIndex to theNodes)
-                  , Inheritance)
-                 | (from, tos) <- classes, to <- tos]
-  let classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
-        where
-          subs seen name
-            | name `elem` seen = []
-            | otherwise = name : concatMap
-                (subs (name:seen) . fst)
-                (filter ((name `elem`) . snd) classes)
-  let assocsBothWays = concatMap (\(_,_,_,from,to,_) -> [(from,to), (to,from)]) associations
-  let assocEdges = map (
-        \(a,n,m1,from,to,m2) -> (
+  let diagramEdges = calculateThickEdges cd
+  let toThickEdge (thick, (from, to, Assoc t n s e _)) =
+        (from, to, Assoc t n s e thick)
+      toThickEdge (_, e) = e
+  let toIndexed xs = [(
           fromJust (elemIndex from theNodes),
           fromJust (elemIndex to theNodes),
-          Assoc a n m1 m2
-            (shouldBeThick from to classesWithSubclasses assocsBothWays)
+          e
           )
-        ) associations
+        | (from, to, e) <- xs
+        ]
+  let (inhEdges, assocEdges) = both toIndexed
+        $ second (map toThickEdge) diagramEdges
   let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges)
         :: Gr String Connection
   let params = nonClusteredParams {
@@ -269,31 +264,31 @@ drawRelationship sfont printNavigations printNames marking fl tl l path =
       & headGap .~ local 0
       & tailLength .~ local 7
     mfl' = case l of
-      Inheritance -> Nothing
-      Assoc Composition _ r _ _ -> rangeWithDefault (1, Just 1) r
+      Inheritance' -> Nothing
+      Assoc Composition' _ r _ _ -> rangeWithDefault (1, Just 1) r
       Assoc _ _ r _ _ -> rangeWithDefault (0, Nothing) r
     mtl' = case  l of
-      Inheritance -> Nothing
+      Inheritance' -> Nothing
       Assoc _ _ _ r _ -> rangeWithDefault (0, Nothing) r
     (from, to, mfl, mtl, path')
       | flipEdge  = (tl, fl, mtl', mfl', reversePath path)
       | otherwise = (fl, tl, mfl', mtl', path)
     atail = const lineTail
     (flipEdge, ahead) = case l of
-      Inheritance -> (False, arrowheadTriangle)
+      Inheritance' -> (False, arrowheadTriangle)
       Assoc t _ _ _ _ -> case t of
-        Association -> (
+        Association' -> (
           False,
           if printNavigations then arrowheadVee else const (flipArrow lineTail)
           )
-        Aggregation -> (True, arrowheadDiamond)
-        Composition -> (True, arrowheadFilledDiamond)
+        Aggregation' -> (True, arrowheadDiamond)
+        Composition' -> (True, arrowheadFilledDiamond)
     dir = case l of
-      Assoc Association _ _ _ _ ->
+      Assoc Association' _ _ _ _ ->
         if printNavigations then Forward else NoDir
       _ -> Forward
     (ml, isThick) = case l of
-      Inheritance      -> (Nothing, False)
+      Inheritance'      -> (Nothing, False)
       Assoc _ al _ _ im -> (,im) $
         if printNames then Just al else Nothing
 

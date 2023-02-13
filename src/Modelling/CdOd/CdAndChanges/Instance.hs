@@ -120,10 +120,10 @@ instanceToEdges'
 instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
   inh' <- lookupSig (scoped "this" "Inheritance") insta
   inh  <- S.toList <$> getSingleAs "" (return .: Object) inh'
-  inhs <- (\i -> (i,) <$> rel False i Inheritance) `mapM` inh
-  coms <- lookupAssocs True Composition "Composition"
-  asss <- lookupAssocs False Association "Association"
-  aggs <- lookupAssocs True Aggregation "Aggregation"
+  inhs <- (\i -> (i,) <$> rel False i Inheritance') `mapM` inh
+  coms <- lookupAssocs True Composition' "Composition"
+  asss <- lookupAssocs False Association' "Association"
+  aggs <- lookupAssocs True Aggregation' "Aggregation"
   return $ inhs ++ coms ++ asss ++ aggs
   where
     lookupObj k m = case M.lookup k m of

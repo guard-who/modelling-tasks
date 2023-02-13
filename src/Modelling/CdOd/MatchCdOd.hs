@@ -67,28 +67,28 @@ import Modelling.CdOd.Edges (
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
-  AssociationType (Association, Composition),
+  Cd,
   ClassConfig (..),
+  ClassDiagram (..),
   Change (..),
   Connection (..),
   Letters (Letters, lettersList),
+  LimitedConnector (..),
   ObjectConfig (..),
   Od,
-  Syntax,
+  Relationship (..),
   associationNames,
   checkClassConfigWithProperties,
   classNames,
   defaultProperties,
   linkNames,
-  renameAssocsInCd,
-  renameClassesInCd,
+  renameClassesAndRelationshipsInCd,
   renameClassesInOd,
   renameLinksInOd,
   reverseAssociation,
   showLetters,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
-  toOldSyntax,
   )
 
 import Control.Monad                    ((>=>), when)
@@ -135,7 +135,7 @@ debug :: Bool
 debug = False
 
 data MatchCdOdInstance = MatchCdOdInstance {
-    diagrams       :: Map Int Syntax,
+    diagrams       :: Map Int Cd,
     generatorValue :: Int,
     instances      :: Map Char ([Int], Od),
     showSolution   :: Bool
@@ -324,7 +324,7 @@ matchCdOd config segment seed = do
 getMatchCdOdTask
   :: (MonadIO m, MonadFail m)
   => (MatchCdOdConfig
-    -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance)))
+    -> RandT g IO (Map Int Cd, Map Char ([Int], AlloyInstance)))
   -> MatchCdOdConfig
   -> RandT g m MatchCdOdInstance
 getMatchCdOdTask f config = do
@@ -341,19 +341,75 @@ getMatchCdOdTask f config = do
 defaultMatchCdOdInstance :: MatchCdOdInstance
 defaultMatchCdOdInstance = MatchCdOdInstance {
   diagrams = M.fromList [
-    (1,(
-      [("C",[]),("A",["C"]),("D",[]),("B",[])],
-      [(Association,"z",(2,Just 2),"B","C",(1,Just 2)),
-       (Association,"y",(0,Just 2),"B","D",(0,Just 2)),
-       (Composition,"x",(1,Just 1),"C","D",(0,Just 2))
-      ]
-    )),
-    (2,(
-      [("C",[]),("A",["C"]),("D",[]),("B",[])],
-      [(Composition,"x",(1,Just 1),"C","D",(1,Just 2)),
-       (Association,"y",(0,Just 2),"B","D",(0,Just 2))
-      ]
-    ))
+    (1, ClassDiagram {
+      classNames = ["C","A","D","B"],
+      connections = [
+        Inheritance {subClass = "A", superClass = "C"},
+        Association {
+          associationName = "z",
+          associationFrom = LimitedConnector {
+            connectTo = "B",
+            limits = (2,Just 2)
+            },
+          associationTo = LimitedConnector {
+            connectTo = "C",
+            limits = (1,Just 2)
+            }
+           },
+        Association {
+          associationName = "y",
+          associationFrom = LimitedConnector {
+            connectTo = "B",
+            limits = (0,Just 2)
+            },
+          associationTo = LimitedConnector {
+            connectTo = "D",
+            limits = (0,Just 2)
+            }
+           },
+        Composition {
+          compositionName = "x",
+          compositionPart = LimitedConnector {
+            connectTo = "D",
+            limits = (0,Just 2)
+            },
+          compositionWhole = LimitedConnector {
+            connectTo = "C",
+            limits = (1,Just 1)
+            }
+           }
+        ]
+      }
+    ),
+    (2, ClassDiagram {
+      classNames = ["C","A","D","B"],
+      connections = [
+        Inheritance {subClass = "A", superClass = "C"},
+        Composition {
+          compositionName = "x",
+          compositionPart = LimitedConnector {
+            connectTo = "D",
+            limits = (1,Just 2)
+            },
+          compositionWhole = LimitedConnector {
+            connectTo = "C",
+            limits = (1,Just 1)
+            }
+           },
+        Association {
+          associationName = "y",
+          associationFrom = LimitedConnector {
+            connectTo = "B",
+            limits = (0,Just 2)
+            },
+          associationTo = LimitedConnector {
+            connectTo = "D",
+            limits = (0,Just 2)
+            }
+          }
+        ]
+      }
+    )
     ],
   generatorValue = 7777369639206507645,
   instances = M.fromList [
@@ -455,7 +511,7 @@ renameInstance inst names' assocs' = do
       (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesInCd bmNames >=> renameAssocsInCd bmAssocs
+      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
       renameOd = renameClassesInOd bmNames >=> renameLinksInOd bmAssocs
   cds' <- renameCd `mapM` cds
   ods' <- mapM renameOd `mapM` ods
@@ -469,7 +525,7 @@ renameInstance inst names' assocs' = do
 getRandomTask
   :: RandomGen g
   => MatchCdOdConfig
-  -> RandT g IO (Map Int Syntax, Map Char ([Int], AlloyInstance))
+  -> RandT g IO (Map Int Cd, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
   let alloyCode = Changes.transform (classConfig config) defaultProperties
   instas <- liftIO
@@ -483,7 +539,7 @@ getODsFor
   :: RandomGen g
   => MatchCdOdConfig
   -> [AlloyInstance]
-  -> RandT g IO (Maybe (Map Int Syntax, Map Char ([Int], AlloyInstance)))
+  -> RandT g IO (Maybe (Map Int Cd, Map Char ([Int], AlloyInstance)))
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
   (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
@@ -499,7 +555,7 @@ getODsFor config (cd:cds) = do
 applyChanges
   :: RandomGen g
   => AlloyInstance
-  -> RandT g IO (Syntax, [(Change DiagramEdge, Syntax)], Int)
+  -> RandT g IO (Cd, [(Change DiagramEdge, Cd)], Int)
 applyChanges insta = do
   (names, edges0, changes) <- either error return $ fromInstance insta
   let (cs, es) = names
@@ -525,13 +581,12 @@ applyChanges insta = do
 
 getODInstances
   :: MatchCdOdConfig
-  -> Syntax
-  -> Syntax
-  -> Syntax
+  -> Cd
+  -> Cd
+  -> Cd
   -> Int
   -> IO (Map [Int] [AlloyInstance])
 getODInstances config cd1 cd2 cd3 numClasses = do
-  -- TODO remove `toOldSyntax`
   let parts1 = alloyFor cd1 "1"
       parts2 = alloyFor cd2 "2"
       parts1and2 = mergeParts parts1 parts2
@@ -557,7 +612,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
                        ([]   , instancesNot1not2)]
   where
     alloyFor cd nr = transform
-      (toOldSyntax $ map reverseAssociation <$> cd)
+      (cd {connections = map reverseAssociation $ connections cd})
       []
       (objectConfig config)
       (presenceOfLinkSelfLoops config)
