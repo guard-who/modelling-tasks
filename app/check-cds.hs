@@ -43,13 +43,13 @@ z'' :: DiagramEdge
 z'' = ("D", "C", Assoc Aggregation' "z" (0, Just 1) (2, Nothing) False)
 
 inh1 :: DiagramEdge
-inh1 = ("A'", "C", Inheritance')
+inh1 = ("A", "C", Inheritance')
 
 inh2 :: DiagramEdge
-inh2 = ("B", "A'", Inheritance')
+inh2 = ("B", "A", Inheritance')
 
 inh3 :: DiagramEdge
-inh3 = ("C", "A'", Inheritance')
+inh3 = ("C", "A", Inheritance')
 
 a :: DiagramEdge
 a = ("A", "B", Assoc Association' "a" (1, Just 1) (1, Just 1) False)
