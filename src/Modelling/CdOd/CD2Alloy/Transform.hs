@@ -269,7 +269,7 @@ compositesAndFieldNames
   -> [String]
   -> [String]
 compositesAndFieldNames index connections = concatMap $ \this ->
-  let (superClasses, compositions) = compositionsTo this
+  let (superClasses, compositions) = supersAndCompositionsOf this
       super = listToMaybe superClasses
   in [ "fun " ++ this ++ compositesCD ++ " : set Obj {"
      , "  " ++ intercalate " + " (maybe "none" (++ compositesCD) super
@@ -285,9 +285,9 @@ compositesAndFieldNames index connections = concatMap $ \this ->
     compositesCD = "CompositesCD" ++ index
     compFieldNamesCD = "CompFieldNamesCD" ++ index
     subsCD = "SubsCD" ++ index
-    compositionsTo x =
-      foldr (supersAndCompositionParts x) ([], []) connections
-    supersAndCompositionParts part c = case c of
+    supersAndCompositionsOf x =
+      foldr (addSuperOrComposition x) ([], []) connections
+    addSuperOrComposition part c = case c of
       Association {} -> id
       Aggregation {} -> id
       CompositionTo x | part == x -> second (c :)
