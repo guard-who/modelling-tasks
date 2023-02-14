@@ -1,7 +1,7 @@
 
 // Alloy Model for CD1
 // Produced by Haskell reimplementation of Eclipse plugin transformation
-// Generated: 
+// Generated: -
 
 module umlp2alloy/CD1Module
 

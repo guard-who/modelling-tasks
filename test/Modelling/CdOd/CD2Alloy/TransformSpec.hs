@@ -27,7 +27,7 @@ withUnitTests = do
     res <- runIO $ readFile resultFile
     it ("generates expected Alloy code for " ++ file) $
       let result = combineParts
-            $ transform cd [] objectConfig (Just True) False "1" ""
+            $ transform cd [] objectConfig (Just True) False "1" "-"
       in result `shouldBe` res
   where
     dir = "test/unit/Modelling/CdOd/CD2Alloy/Transform/"
