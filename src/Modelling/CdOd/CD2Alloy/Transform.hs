@@ -228,9 +228,9 @@ fieldNames index connections = concatMap $ \this ->
      ]
   where
     fieldNamesCD = "FieldNamesCD" ++ index
-    connectionsFrom from =
-      foldr (supersAndAssociations from) ([], []) connections
-    supersAndAssociations from c = case c of
+    connectionsFrom x =
+      foldr (addConnection x) ([], []) connections
+    addConnection from c = case c of
       AssociationFrom x | from == x -> second (associationName c :)
                         | otherwise -> id
       AggregationFrom x | from == x -> second (aggregationName c :)
@@ -287,12 +287,12 @@ compositesAndFieldNames index connections = concatMap $ \this ->
     subsCD = "SubsCD" ++ index
     supersAndCompositionsOf x =
       foldr (addSuperOrComposition x) ([], []) connections
-    addSuperOrComposition part c = case c of
+    addSuperOrComposition here c = case c of
       Association {} -> id
       Aggregation {} -> id
-      CompositionTo x | part == x -> second (c :)
+      CompositionTo x | here == x -> second (c :)
                       | otherwise -> id
-      Inheritance {..} | part == subClass -> first (superClass :)
+      Inheritance {..} | here == subClass -> first (superClass :)
                        | otherwise -> id
 
 predicate :: String -> [Relationship String String] -> [String] -> String
