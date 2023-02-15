@@ -4,34 +4,34 @@ ClassDiagram {
     Inheritance {subClass = "A", superClass = "C"},
     Association {
       associationName = "x",
-      associationFrom = LimitedConnector {
-        connectTo = "A",
+      associationFrom = LimitedLinking {
+        linking = "A",
         limits = (0, Nothing)
         },
-      associationTo = LimitedConnector {
-        connectTo = "B",
+      associationTo = LimitedLinking {
+        linking = "B",
         limits = (1, Just 2)
         }
       },
   Aggregation {
       aggregationName = "y",
-      aggregationPart = LimitedConnector {
-        connectTo = "D",
+      aggregationPart = LimitedLinking {
+        linking = "D",
         limits = (0, Nothing)
         },
-      aggregationWhole = LimitedConnector {
-        connectTo = "C",
+      aggregationWhole = LimitedLinking {
+        linking = "C",
         limits = (1, Just 1)
         }
       },
   Composition {
       compositionName = "z",
-      compositionPart = LimitedConnector {
-        connectTo = "B",
+      compositionPart = LimitedLinking {
+        linking = "B",
         limits = (0, Just 2)
         },
-      compositionWhole = LimitedConnector {
-        connectTo = "D",
+      compositionWhole = LimitedLinking {
+        linking = "D",
         limits = (1, Just 1)
         }
       }

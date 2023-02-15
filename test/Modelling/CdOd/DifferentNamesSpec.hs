@@ -26,7 +26,7 @@ import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
   DiagramEdge,
-  LimitedConnector (..),
+  LimitedLinking (..),
   Name (Name, unName),
   ObjectConfig (..),
   Od,
@@ -192,23 +192,23 @@ cdBCCircle = ClassDiagram {
     Inheritance {subClass = "A", superClass = "B"},
     Aggregation {
       aggregationName = "x",
-      aggregationPart = LimitedConnector {
-        connectTo = "B",
+      aggregationPart = LimitedLinking {
+        linking = "B",
         limits = (1, Just 1)
         },
-      aggregationWhole = LimitedConnector {
-        connectTo = "C",
+      aggregationWhole = LimitedLinking {
+        linking = "C",
         limits = (2, Just 2)
         }
        },
     Association {
       associationName = "y",
-      associationFrom = LimitedConnector {
-        connectTo = "C",
+      associationFrom = LimitedLinking {
+        linking = "C",
         limits = (0, Nothing)
         },
-      associationTo = LimitedConnector {
-        connectTo = "A",
+      associationTo = LimitedLinking {
+        linking = "A",
         limits = (1, Just 1)
         }
        }
@@ -222,7 +222,7 @@ cdSimpleCircle x y z = ClassDiagram {
   }
   where
     one = (1, Just 1)
-    lcOne c = LimitedConnector {connectTo = c, limits = one}
+    lcOne c = LimitedLinking {linking = c, limits = one}
     edge ty n f t = case ty of
       Association' -> Association {
         associationName = n,

@@ -15,7 +15,7 @@ module Modelling.CdOd.CD2Alloy.Transform (
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
-  LimitedConnector (..),
+  LimitedLinking (..),
   ObjectConfig (..),
   Relationship (..),
   relationshipName,
@@ -245,22 +245,22 @@ fieldNames index relationships = concatMap $ \this ->
 
 pattern AssociationFrom :: className -> Relationship className relationshipName
 pattern AssociationFrom from <- Association {
-  associationFrom = LimitedConnector { connectTo = from }
+  associationFrom = LimitedLinking { linking = from }
   }
 
 pattern AggregationFrom :: className -> Relationship className relationshipName
 pattern AggregationFrom from <- Aggregation {
-  aggregationWhole = LimitedConnector { connectTo = from }
+  aggregationWhole = LimitedLinking { linking = from }
   }
 
 pattern CompositionFrom :: className -> Relationship className relationshipName
 pattern CompositionFrom from <- Composition {
-  compositionWhole = LimitedConnector { connectTo = from }
+  compositionWhole = LimitedLinking { linking = from }
   }
 
 pattern CompositionTo :: className -> Relationship className relationshipName
 pattern CompositionTo to <- Composition {
-  compositionPart = LimitedConnector { connectTo = to }
+  compositionPart = LimitedLinking { linking = to }
   }
 
 compositesAndFieldNames
@@ -281,7 +281,7 @@ compositesAndFieldNames index relationships = concatMap $ \this ->
      , "}"
      ]
   where
-    whole = connectTo . compositionWhole
+    whole = linking . compositionWhole
     compositesCD = "CompositesCD" ++ index
     compFieldNamesCD = "CompFieldNamesCD" ++ index
     subsCD = "SubsCD" ++ index
@@ -324,8 +324,8 @@ pred cd#{index} {
       (maybe [] (uncurry3 associationFromTo) . nameFromTo)
       relationships
     associationFromTo name from to = [
-      makeAssoc "Attrib" (connectTo from) name (connectTo to) (limits to),
-      makeAssoc "" (connectTo to) name (connectTo from) (limits from)
+      makeAssoc "Attrib" (linking from) name (linking to) (limits to),
+      makeAssoc "" (linking to) name (linking from) (limits from)
       ]
     makeAssoc
       :: Show a

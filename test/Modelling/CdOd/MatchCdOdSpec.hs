@@ -14,7 +14,7 @@ import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
-  LimitedConnector (..),
+  LimitedLinking (..),
   ObjectConfig (..),
   Od,
   Relationship (..),
@@ -106,12 +106,12 @@ cdAInheritsBandAtoB = ClassDiagram {
 associationX :: c -> c -> Relationship c String
 associationX from to = Association {
   associationName = "x",
-  associationFrom = LimitedConnector {
-    connectTo = from,
+  associationFrom = LimitedLinking {
+    linking = from,
     limits = (1, Just 1)
     },
-  associationTo = LimitedConnector {
-    connectTo = to,
+  associationTo = LimitedLinking {
+    linking = to,
     limits = (1, Just 1)
     }
   }
@@ -122,12 +122,12 @@ cdAggregateBofAs = ClassDiagram {
   relationships = [
     Aggregation {
       aggregationName = "x",
-      aggregationPart = LimitedConnector {
-        connectTo = "A",
+      aggregationPart = LimitedLinking {
+        linking = "A",
         limits = (1, Just 1)
         },
-      aggregationWhole = LimitedConnector {
-        connectTo = "B",
+      aggregationWhole = LimitedLinking {
+        linking = "B",
         limits = (1, Just 1)
         }
       }
@@ -140,12 +140,12 @@ cdComposeBofAs = ClassDiagram {
   relationships = [
     Composition {
       compositionName = "x",
-      compositionPart = LimitedConnector {
-        connectTo = "A",
+      compositionPart = LimitedLinking {
+        linking = "A",
         limits = (1, Just 1)
         },
-      compositionWhole = LimitedConnector {
-        connectTo = "B",
+      compositionWhole = LimitedLinking {
+        linking = "B",
         limits = (1, Just 1)
         }
       }

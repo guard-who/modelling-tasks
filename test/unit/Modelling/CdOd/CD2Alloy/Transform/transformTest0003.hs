@@ -4,12 +4,12 @@ ClassDiagram {
     Inheritance {subClass = "A", superClass = "B"},
     Composition {
       compositionName = "x",
-      compositionPart = LimitedConnector {
-        connectTo = "D",
+      compositionPart = LimitedLinking {
+        linking = "D",
         limits = (0, Nothing)
         },
-      compositionWhole = LimitedConnector {
-        connectTo = "C",
+      compositionWhole = LimitedLinking {
+        linking = "C",
         limits = (1, Just 1)
         }
       }

@@ -14,7 +14,7 @@ module Modelling.CdOd.Types (
   Connection (..),
   DiagramEdge,
   Letters (..),
-  LimitedConnector (..),
+  LimitedLinking (..),
   Name (..),
   NameMapping (..),
   ObjectConfig (..),
@@ -95,8 +95,8 @@ with a (possibly invalid) range of multiplicities
 limiting the number of possible (non-meta-level) connections
 using this specific connector.
 -}
-data LimitedConnector nodeName = LimitedConnector {
-  connectTo                   :: nodeName,
+data LimitedLinking nodeName = LimitedLinking {
+  linking                     :: nodeName,
   limits                      :: (Int, Maybe Int)
   }
   deriving (Eq, Functor, Foldable, Generic, Read, Show, Traversable)
@@ -107,18 +107,18 @@ All possible relationships within a `ClassDiagram`.
 data Relationship className relationshipName
   = Association {
     associationName           :: relationshipName,
-    associationFrom           :: LimitedConnector className,
-    associationTo             :: LimitedConnector className
+    associationFrom           :: LimitedLinking className,
+    associationTo             :: LimitedLinking className
     }
   | Aggregation {
     aggregationName           :: relationshipName,
-    aggregationPart           :: LimitedConnector className,
-    aggregationWhole          :: LimitedConnector className
+    aggregationPart           :: LimitedLinking className,
+    aggregationWhole          :: LimitedLinking className
     }
   | Composition {
     compositionName           :: relationshipName,
-    compositionPart           :: LimitedConnector className,
-    compositionWhole          :: LimitedConnector className
+    compositionPart           :: LimitedLinking className,
+    compositionWhole          :: LimitedLinking className
     }
   | Inheritance {
     subClass                  :: className,

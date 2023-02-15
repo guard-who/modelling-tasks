@@ -65,7 +65,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   Connection (..),
   DiagramEdge,
-  LimitedConnector (..),
+  LimitedLinking (..),
   Name (Name),
   NameMapping (nameMapping),
   ObjectConfig (..),
@@ -406,34 +406,34 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
       Inheritance {subClass = "C", superClass = "D"},
       Aggregation {
         aggregationName = "b",
-        aggregationPart = LimitedConnector {
-          connectTo = "B",
+        aggregationPart = LimitedLinking {
+          linking = "B",
           limits = (1,Just 1)
           },
-        aggregationWhole = LimitedConnector {
-          connectTo = "D",
+        aggregationWhole = LimitedLinking {
+          linking = "D",
           limits = (0,Nothing)
           }
          },
       Association {
         associationName = "c",
-        associationFrom = LimitedConnector {
-          connectTo = "C",
+        associationFrom = LimitedLinking {
+          linking = "C",
           limits = (0,Just 2)
           },
-        associationTo = LimitedConnector {
-          connectTo = "A",
+        associationTo = LimitedLinking {
+          linking = "A",
           limits = (0,Just 2)
           }
          },
       Composition {
         compositionName = "a",
-        compositionPart = LimitedConnector {
-          connectTo = "B",
+        compositionPart = LimitedLinking {
+          linking = "B",
           limits = (2,Nothing)
           },
-        compositionWhole = LimitedConnector {
-          connectTo = "A",
+        compositionWhole = LimitedLinking {
+          linking = "A",
           limits = (1,Just 1)
           }
         }

@@ -67,7 +67,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   Connection (..),
   DiagramEdge,
-  LimitedConnector (..),
+  LimitedLinking (..),
   Relationship (..),
   RelationshipProperties (..),
   associationNames,
@@ -474,45 +474,45 @@ defaultRepairCdInstance = RepairCdInstance {
     relationships = [
       Composition {
         compositionName = "v",
-        compositionPart = LimitedConnector {
-          connectTo = "D",
+        compositionPart = LimitedLinking {
+          linking = "D",
           limits = (0,Nothing)
           },
-        compositionWhole = LimitedConnector {
-          connectTo = "A",
+        compositionWhole = LimitedLinking {
+          linking = "A",
           limits = (1,Just 1)
           }
          },
       Composition {
         compositionName = "x",
-        compositionPart = LimitedConnector {
-          connectTo = "B",
+        compositionPart = LimitedLinking {
+          linking = "B",
           limits = (0,Nothing)
           },
-        compositionWhole = LimitedConnector {
-          connectTo = "D",
+        compositionWhole = LimitedLinking {
+          linking = "D",
           limits = (1,Just 1)
           }
          },
       Composition {
         compositionName = "w",
-        compositionPart = LimitedConnector {
-          connectTo = "A",
+        compositionPart = LimitedLinking {
+          linking = "A",
           limits = (0,Just 2)
           },
-        compositionWhole = LimitedConnector {
-          connectTo = "B",
+        compositionWhole = LimitedLinking {
+          linking = "B",
           limits = (1,Just 1)
           }
          },
       Association {
         associationName = "y",
-        associationFrom = LimitedConnector {
-          connectTo = "C",
+        associationFrom = LimitedLinking {
+          linking = "C",
           limits = (0,Just 2)
           },
-        associationTo = LimitedConnector {
-          connectTo = "A",
+        associationTo = LimitedLinking {
+          linking = "A",
           limits = (2,Nothing)
           }
         }

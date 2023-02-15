@@ -73,7 +73,7 @@ import Modelling.CdOd.Types (
   Change (..),
   Connection (..),
   Letters (Letters, lettersList),
-  LimitedConnector (..),
+  LimitedLinking (..),
   ObjectConfig (..),
   Od,
   Relationship (..),
@@ -347,34 +347,34 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         Inheritance {subClass = "A", superClass = "C"},
         Association {
           associationName = "z",
-          associationFrom = LimitedConnector {
-            connectTo = "B",
+          associationFrom = LimitedLinking {
+            linking = "B",
             limits = (2,Just 2)
             },
-          associationTo = LimitedConnector {
-            connectTo = "C",
+          associationTo = LimitedLinking {
+            linking = "C",
             limits = (1,Just 2)
             }
            },
         Association {
           associationName = "y",
-          associationFrom = LimitedConnector {
-            connectTo = "B",
+          associationFrom = LimitedLinking {
+            linking = "B",
             limits = (0,Just 2)
             },
-          associationTo = LimitedConnector {
-            connectTo = "D",
+          associationTo = LimitedLinking {
+            linking = "D",
             limits = (0,Just 2)
             }
            },
         Composition {
           compositionName = "x",
-          compositionPart = LimitedConnector {
-            connectTo = "D",
+          compositionPart = LimitedLinking {
+            linking = "D",
             limits = (0,Just 2)
             },
-          compositionWhole = LimitedConnector {
-            connectTo = "C",
+          compositionWhole = LimitedLinking {
+            linking = "C",
             limits = (1,Just 1)
             }
            }
@@ -387,23 +387,23 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         Inheritance {subClass = "A", superClass = "C"},
         Composition {
           compositionName = "x",
-          compositionPart = LimitedConnector {
-            connectTo = "D",
+          compositionPart = LimitedLinking {
+            linking = "D",
             limits = (1,Just 2)
             },
-          compositionWhole = LimitedConnector {
-            connectTo = "C",
+          compositionWhole = LimitedLinking {
+            linking = "C",
             limits = (1,Just 1)
             }
            },
         Association {
           associationName = "y",
-          associationFrom = LimitedConnector {
-            connectTo = "B",
+          associationFrom = LimitedLinking {
+            linking = "B",
             limits = (0,Just 2)
             },
-          associationTo = LimitedConnector {
-            connectTo = "D",
+          associationTo = LimitedLinking {
+            linking = "D",
             limits = (0,Just 2)
             }
           }

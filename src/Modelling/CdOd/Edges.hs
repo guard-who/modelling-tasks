@@ -28,7 +28,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   Connection (..),
   DiagramEdge,
-  LimitedConnector (..),
+  LimitedLinking (..),
   Relationship (..),
   renameConnection,
   )
@@ -48,8 +48,8 @@ relationshipToEdge
   -> (nodeName, nodeName, Connection)
 relationshipToEdge r = case r of
   Association {..} -> (
-    connectTo associationFrom,
-    connectTo associationTo,
+    linking associationFrom,
+    linking associationTo,
     Assoc
       Association'
       associationName
@@ -58,8 +58,8 @@ relationshipToEdge r = case r of
       False
     )
   Aggregation {..} -> (
-    connectTo aggregationWhole,
-    connectTo aggregationPart,
+    linking aggregationWhole,
+    linking aggregationPart,
     Assoc
       Aggregation'
       aggregationName
@@ -68,8 +68,8 @@ relationshipToEdge r = case r of
       False
     )
   Composition {..} -> (
-    connectTo compositionWhole,
-    connectTo compositionPart,
+    linking compositionWhole,
+    linking compositionPart,
     Assoc
       Composition'
       compositionName
@@ -97,18 +97,18 @@ edgeToRelationship (from, to, connection) = case connection of
   Assoc t n s e False -> case t of
     Association' -> Association {
       associationName         = n,
-      associationFrom         = LimitedConnector from s,
-      associationTo           = LimitedConnector to e
+      associationFrom         = LimitedLinking from s,
+      associationTo           = LimitedLinking to e
       }
     Aggregation' -> Aggregation {
       aggregationName         = n,
-      aggregationPart         = LimitedConnector to e,
-      aggregationWhole        = LimitedConnector from s
+      aggregationPart         = LimitedLinking to e,
+      aggregationWhole        = LimitedLinking from s
       }
     Composition' -> Composition {
       compositionName         = n,
-      compositionPart         = LimitedConnector to e,
-      compositionWhole        = LimitedConnector from s
+      compositionPart         = LimitedLinking to e,
+      compositionWhole        = LimitedLinking from s
       }
 
 isInheritanceEdge :: DiagramEdge -> Bool
