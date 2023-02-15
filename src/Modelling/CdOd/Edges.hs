@@ -91,7 +91,10 @@ edgeToRelationship (from, to, connection) = case connection of
     subClass                  = from,
     superClass                = to
     }
-  Assoc t n s e _ -> case t of
+  Assoc t _ _ _ True -> error
+    $ "This never happens: Got a thick edge of type "
+    ++ show t
+  Assoc t n s e False -> case t of
     Association' -> Association {
       associationName         = n,
       associationFrom         = LimitedConnector from s,

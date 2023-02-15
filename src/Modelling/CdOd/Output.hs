@@ -197,7 +197,8 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
   let diagramEdges = calculateThickEdges cd
   let toThickEdge (thick, (from, to, Assoc t n s e _)) =
         (from, to, Assoc t n s e thick)
-      toThickEdge (_, e) = e
+      toThickEdge (_, (_, _, Inheritance')) =
+        error "This never happens: Got an Inheritance"
   let toIndexed xs = [(
           fromJust (elemIndex from theNodes),
           fromJust (elemIndex to theNodes),
