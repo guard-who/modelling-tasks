@@ -206,31 +206,31 @@ data Connection = Inheritance' | Assoc AssociationType String (Int, Maybe Int) (
 
 data ClassDiagram className relationshipName = ClassDiagram {
   classNames                  :: [className],
-  connections                 :: [Relationship className relationshipName]
+  relationships               :: [Relationship className relationshipName]
   }
   deriving (Eq, Generic, Read, Show)
 
 instance Bifunctor ClassDiagram where
   bimap f g ClassDiagram {..} = ClassDiagram {
     classNames  = map f classNames,
-    connections = map (bimap f g) connections
+    relationships = map (bimap f g) relationships
     }
 
 instance Bifoldable ClassDiagram where
   bifoldMap f g ClassDiagram {..} = foldMap f classNames
-    <> foldMap (bifoldMap f g) connections
+    <> foldMap (bifoldMap f g) relationships
 
 instance Bitraversable ClassDiagram where
   bitraverse f g ClassDiagram {..} = ClassDiagram
     <$> traverse f classNames
-    <*> traverse (bitraverse f g) connections
+    <*> traverse (bitraverse f g) relationships
 
 type Cd = ClassDiagram String String
 
 shuffleClassAndConnectionOrder :: MonadRandom m => Cd -> m Cd
 shuffleClassAndConnectionOrder ClassDiagram {..} = ClassDiagram
   <$> shuffleM classNames
-  <*> shuffleM connections
+  <*> shuffleM relationships
 
 type DiagramEdge = (String, String, Connection)
 
@@ -512,7 +512,7 @@ defaultProperties = RelationshipProperties {
   }
 
 associationNames :: Cd -> [String]
-associationNames = mapMaybe relationshipName . connections
+associationNames = mapMaybe relationshipName . relationships
 
 classNamesOd :: Od -> [String]
 classNamesOd o = head . splitOn "$" <$> fst o

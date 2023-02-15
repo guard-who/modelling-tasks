@@ -1,6 +1,6 @@
 ClassDiagram {
   classNames = ["A", "B", "C", "D"],
-  connections = [
+  relationships = [
     Inheritance {subClass = "A", superClass = "B"},
     Composition {
       compositionName = "x",

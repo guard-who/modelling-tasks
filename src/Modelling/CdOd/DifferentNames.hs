@@ -401,7 +401,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   anonymousObjects = True,
   cDiagram = ClassDiagram {
     classNames = ["A","D","B","C"],
-    connections = [
+    relationships = [
       Inheritance {subClass = "D", superClass = "A"},
       Inheritance {subClass = "C", superClass = "D"},
       Aggregation {
@@ -461,7 +461,7 @@ getDifferentNamesTask fhead config names edges' = do
     let edges  = reverseAssociation <$> edges'
         cd0    = (0 :: Integer, fromEdges names edges)
         parts0 = uncurry alloyFor cd0
-        labels = mapMaybe relationshipName . connections $ snd cd0
+        labels = mapMaybe relationshipName . relationships $ snd cd0
         cds    = map
           (fromEdges names . flip renameEdges edges . BM.fromList . zip labels)
           $ drop 1 (permutations labels)

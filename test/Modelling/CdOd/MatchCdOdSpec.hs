@@ -80,7 +80,7 @@ getOdsFor :: Cd -> Cd -> IO ([Od], [Od])
 getOdsFor cd1 cd2 = do
   let cd3 = ClassDiagram {
         classNames = ["A", "B"],
-        connections = [Inheritance {subClass = "A", superClass = "B"}]
+        relationships = [Inheritance {subClass = "A", superClass = "B"}]
         }
   ods <- getODInstances fewObjects cd1 cd2 cd3 2
   Right ods' <- runExceptT $ mapM alloyInstanceToOd `mapM` ods
@@ -97,7 +97,7 @@ getOdsFor cd1 cd2 = do
 cdAInheritsBandAtoB :: Cd
 cdAInheritsBandAtoB = ClassDiagram {
   classNames = ["A", "B"],
-  connections = [
+  relationships = [
     Inheritance {subClass = "A", superClass = "B"},
     associationX "A" "B"
     ]
@@ -119,7 +119,7 @@ associationX from to = Association {
 cdAggregateBofAs :: Cd
 cdAggregateBofAs = ClassDiagram {
   classNames = ["A", "B"],
-  connections = [
+  relationships = [
     Aggregation {
       aggregationName = "x",
       aggregationPart = LimitedConnector {
@@ -137,7 +137,7 @@ cdAggregateBofAs = ClassDiagram {
 cdComposeBofAs :: Cd
 cdComposeBofAs = ClassDiagram {
   classNames = ["A", "B"],
-  connections = [
+  relationships = [
     Composition {
       compositionName = "x",
       compositionPart = LimitedConnector {
@@ -155,11 +155,11 @@ cdComposeBofAs = ClassDiagram {
 cdAtoB :: Cd
 cdAtoB = ClassDiagram {
   classNames = ["A", "B"],
-  connections = [associationX "A" "B"]
+  relationships = [associationX "A" "B"]
   }
 
 cdBtoA :: Cd
 cdBtoA = ClassDiagram {
   classNames = ["A", "B"],
-  connections = [associationX "B" "A"]
+  relationships = [associationX "B" "A"]
   }

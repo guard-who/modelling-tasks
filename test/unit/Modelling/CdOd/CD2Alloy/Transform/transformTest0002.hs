@@ -1,6 +1,6 @@
 ClassDiagram {
   classNames = ["A", "B", "C", "D"],
-  connections = [
+  relationships = [
     Association {
       associationName = "x",
       associationFrom = LimitedConnector {

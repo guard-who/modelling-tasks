@@ -41,7 +41,7 @@ import Data.Maybe                       (fromJust)
 import Data.Tuple.Extra                 (dupe, fst3, snd3, thd3)
 
 toEdges :: Cd -> [DiagramEdge]
-toEdges = map relationshipToEdge . connections
+toEdges = map relationshipToEdge . relationships
 
 relationshipToEdge
   :: Relationship nodeName String
@@ -118,7 +118,7 @@ isInheritanceEdge (_, _, _          ) = False
 fromEdges :: [String] -> [DiagramEdge] -> Cd
 fromEdges classNames es = ClassDiagram {..}
   where
-    connections = map edgeToRelationship es
+    relationships = map edgeToRelationship es
 
 renameEdges :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
 renameEdges bm es =
@@ -240,7 +240,7 @@ calculateThickEdges ClassDiagram {..} =
           | otherwise = name : concatMap
               (subs (name:seen) . fst3)
               (filter ((name ==) . snd3) inheritances)
-    edges = map relationshipToEdge connections
+    edges = map relationshipToEdge relationships
     (inheritances, associations) = partition isInheritanceEdge edges
     assocsBothWays = concatMap
       (\(from,to,_) -> [(from,to), (to,from)])

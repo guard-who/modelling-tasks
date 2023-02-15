@@ -41,7 +41,7 @@ run input output template index = do
   where
     toCd cs es = ClassDiagram {
       classNames = map fst cs,
-      connections = mapMaybe (uncurry toInheritance) cs ++ es
+      relationships = mapMaybe (uncurry toInheritance) cs ++ es
       }
     toInheritance sub super = Inheritance sub <$> super
 

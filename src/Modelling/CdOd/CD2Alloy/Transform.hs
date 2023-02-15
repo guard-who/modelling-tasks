@@ -54,7 +54,7 @@ transform
   -> String
   -> Parts
 transform
-  ClassDiagram {classNames, connections}
+  ClassDiagram {classNames, relationships}
   abstractClassNames
   objectConfig
   hasSelfLoops
@@ -119,7 +119,7 @@ fact SizeConstraints {
     mlow l x = if x <= l then Nothing else Just x
     part2 = [i|
 // Concrete names of fields
-#{unlines (associationSigs connections)}
+#{unlines (associationSigs relationships)}
 |]
     part3 = [i|
 // Classes (non-abstract)
@@ -131,18 +131,18 @@ fact SizeConstraints {
 ///////////////////////////////////////////////////
 
 // Types wrapping subtypes
-#{unlines (subTypes index connections abstractClassNames classNames)}
+#{unlines (subTypes index relationships abstractClassNames classNames)}
 // Types wrapping field names
-#{unlines (fieldNames index connections classNames)}
+#{unlines (fieldNames index relationships classNames)}
 // Types wrapping composite structures and field names
 #{if noCompositions then "" else compositeStructures}
 // Properties
-#{predicate index connections nonAbstractClassNames}
+#{predicate index relationships nonAbstractClassNames}
 |]
     nonAbstractClassNames = classNames \\ abstractClassNames
-    noCompositions = all (\case Composition {} -> False; _ -> True) connections
+    noCompositions = all (\case Composition {} -> False; _ -> True) relationships
     compositeStructures =
-      unlines (compositesAndFieldNames index connections classNames)
+      unlines (compositesAndFieldNames index relationships classNames)
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just True  -> [i|
@@ -217,8 +217,8 @@ fieldNames
   -> [Relationship String String]
   -> [String]
   -> [String]
-fieldNames index connections = concatMap $ \this ->
-  let (superClasses, associationNames) = connectionsFrom this
+fieldNames index relationships = concatMap $ \this ->
+  let (superClasses, associationNames) = relationshipsFrom this
   in [ "fun " ++ this ++ fieldNamesCD ++" : set FName {"
      , "  " ++ intercalate
          " + "
@@ -228,9 +228,9 @@ fieldNames index connections = concatMap $ \this ->
      ]
   where
     fieldNamesCD = "FieldNamesCD" ++ index
-    connectionsFrom x =
-      foldr (addConnection x) ([], []) connections
-    addConnection from c = case c of
+    relationshipsFrom x =
+      foldr (addRelationship x) ([], []) relationships
+    addRelationship from c = case c of
       AssociationFrom x | from == x -> second (associationName c :)
                         | otherwise -> id
       AggregationFrom x | from == x -> second (aggregationName c :)
@@ -268,7 +268,7 @@ compositesAndFieldNames
   -> [Relationship String String]
   -> [String]
   -> [String]
-compositesAndFieldNames index connections = concatMap $ \this ->
+compositesAndFieldNames index relationships = concatMap $ \this ->
   let (superClasses, compositions) = supersAndCompositionsOf this
       super = singleListToJust superClasses
   in [ "fun " ++ this ++ compositesCD ++ " : set Obj {"
@@ -286,7 +286,7 @@ compositesAndFieldNames index connections = concatMap $ \this ->
     compFieldNamesCD = "CompFieldNamesCD" ++ index
     subsCD = "SubsCD" ++ index
     supersAndCompositionsOf x =
-      foldr (addSuperOrComposition x) ([], []) connections
+      foldr (addSuperOrComposition x) ([], []) relationships
     addSuperOrComposition here c = case c of
       Association {} -> id
       Aggregation {} -> id

@@ -1,6 +1,6 @@
 ClassDiagram {
   classNames = ["A", "B", "C", "D"],
-  connections = [
+  relationships = [
     Inheritance {subClass = "A", superClass = "C"},
     Association {
       associationName = "x",

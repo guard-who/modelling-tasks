@@ -343,7 +343,7 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
   diagrams = M.fromList [
     (1, ClassDiagram {
       classNames = ["C","A","D","B"],
-      connections = [
+      relationships = [
         Inheritance {subClass = "A", superClass = "C"},
         Association {
           associationName = "z",
@@ -383,7 +383,7 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
     ),
     (2, ClassDiagram {
       classNames = ["C","A","D","B"],
-      connections = [
+      relationships = [
         Inheritance {subClass = "A", superClass = "C"},
         Composition {
           compositionName = "x",
@@ -612,7 +612,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
                        ([]   , instancesNot1not2)]
   where
     alloyFor cd nr = transform
-      (cd {connections = map reverseAssociation $ connections cd})
+      (cd {relationships = map reverseAssociation $ relationships cd})
       []
       (objectConfig config)
       (presenceOfLinkSelfLoops config)

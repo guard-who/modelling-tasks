@@ -471,7 +471,7 @@ defaultRepairCdInstance = RepairCdInstance {
     ],
   classDiagram = ClassDiagram {
     classNames = ["A","D","B","C"],
-    connections = [
+    relationships = [
       Composition {
         compositionName = "v",
         compositionPart = LimitedConnector {
@@ -573,7 +573,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
         else getInstanceWithODs vs rinstas
     getOD cd = do
       let parts = transform
-            (cd {connections = map reverseAssociation $ connections cd})
+            (cd {relationships = map reverseAssociation $ relationships cd})
             []
             maxFiveObjects
             Nothing

@@ -188,7 +188,7 @@ withCd f cd = f (classNames cd) $ toEdges cd
 cdBCCircle :: Cd
 cdBCCircle = ClassDiagram {
   classNames = ["A", "B", "C"],
-  connections = [
+  relationships = [
     Inheritance {subClass = "A", superClass = "B"},
     Aggregation {
       aggregationName = "x",
@@ -218,7 +218,7 @@ cdBCCircle = ClassDiagram {
 cdSimpleCircle :: AssociationType -> AssociationType -> AssociationType -> Cd
 cdSimpleCircle x y z = ClassDiagram {
   classNames = ["A", "B", "C"],
-  connections = [edge x "x" "A" "B", edge y "y" "B" "C", edge z "z" "C" "A"]
+  relationships = [edge x "x" "A" "B", edge y "y" "B" "C", edge z "z" "C" "A"]
   }
   where
     one = (1, Just 1)

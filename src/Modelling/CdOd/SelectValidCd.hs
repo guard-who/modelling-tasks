@@ -281,7 +281,7 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
   classDiagrams = M.fromAscList [
     (1,(False,ClassDiagram {
         classNames = ["D","B","A","C"],
-        connections = [
+        relationships = [
           Inheritance {subClass = "D", superClass = "B"},
           Inheritance {subClass = "B", superClass = "D"},
           Inheritance {subClass = "A", superClass = "C"},
@@ -290,14 +290,14 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         })),
     (2,(True,ClassDiagram {
         classNames = ["D","B","A","C"],
-        connections = [
+        relationships = [
           Inheritance {subClass = "D", superClass = "B"},
           Inheritance {subClass = "C", superClass = "B"}
           ]
         })),
     (3,(False,ClassDiagram {
         classNames = ["D","B","A","C"],
-        connections = [
+        relationships = [
           Inheritance {subClass = "D", superClass = "B"},
           Inheritance {subClass = "B", superClass = "D"},
           Inheritance {subClass = "A", superClass = "B"},
@@ -306,7 +306,7 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         })),
     (4,(True,ClassDiagram {
         classNames = ["D","B","A","C"],
-        connections = [
+        relationships = [
           Inheritance {subClass = "B", superClass = "D"},
           Inheritance {subClass = "C", superClass = "B"}
           ]

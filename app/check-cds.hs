@@ -118,7 +118,7 @@ drawCdAndOdsFor is c cds cmd = do
     maxThreeObjects = maxFiveObjects { objects = (1, 3) }
     parts = zipWith cdToAlloy cds [0..]
     cdToAlloy cd i = transform
-      (cd {connections = map reverseAssociation $ connections cd})
+      (cd {relationships = map reverseAssociation $ relationships cd})
       []
       maxThreeObjects
       Nothing
