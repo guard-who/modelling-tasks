@@ -28,11 +28,11 @@ import Data.Maybe (
   catMaybes,
   fromMaybe,
   isJust,
-  listToMaybe,
   mapMaybe,
   )
 import Data.String.Interpolate          (i)
 import Data.Tuple.Extra                 (uncurry3)
+import Polysemy.Plugin.Fundep.Utils     (singleListToJust)
 
 {-|
 Parts belonging to the CD2Alloy Alloy program.
@@ -222,7 +222,7 @@ fieldNames index connections = concatMap $ \this ->
   in [ "fun " ++ this ++ fieldNamesCD ++" : set FName {"
      , "  " ++ intercalate
          " + "
-         (maybe "none" (++ fieldNamesCD) (listToMaybe superClasses)
+         (maybe "none" (++ fieldNamesCD) (singleListToJust superClasses)
            : associationNames)
      , "}"
      ]
@@ -270,7 +270,7 @@ compositesAndFieldNames
   -> [String]
 compositesAndFieldNames index connections = concatMap $ \this ->
   let (superClasses, compositions) = supersAndCompositionsOf this
-      super = listToMaybe superClasses
+      super = singleListToJust superClasses
   in [ "fun " ++ this ++ compositesCD ++ " : set Obj {"
      , "  " ++ intercalate " + " (maybe "none" (++ compositesCD) super
                                   : map (\c -> whole c ++ subsCD) compositions)
