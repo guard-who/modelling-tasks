@@ -49,22 +49,25 @@ withMinimalLabels n config
   | Just u <- upperLimit, n > u = return [config]
   | otherwise       = shuffleM
     [ config {
-        aggregations = (aggrs, snd (aggregations config)),
-        associations = (assos, snd (associations config)),
-        compositions = (comps, snd (compositions config))
+        aggregationLimits = (aggrs, snd (aggregationLimits config)),
+        associationLimits = (assos, snd (associationLimits config)),
+        compositionLimits = (comps, snd (compositionLimits config))
       }
-    | aggrs <- range aggregations  0                           n
-    , assos <- range associations  0                          (n - aggrs)
-    , comps <- range compositions (max 0 $ n - aggrs - assos) (n - aggrs - assos)]
+    | aggrs <- range aggregationLimits 0  n
+    , assos <- range associationLimits 0 (n - aggrs)
+    , comps <- range compositionLimits
+        (max 0 $ n - aggrs - assos)
+        (n - aggrs - assos)
+    ]
   where
     upperLimit = (\x y z -> x + y + z)
-      <$> snd (aggregations config)
-      <*> snd (associations config)
-      <*> snd (compositions config)
+      <$> snd (aggregationLimits config)
+      <*> snd (associationLimits config)
+      <*> snd (compositionLimits config)
     lowerLimit = 0
-      + fst (aggregations config)
-      + fst (associations config)
-      + fst (compositions config)
+      + fst (aggregationLimits config)
+      + fst (associationLimits config)
+      + fst (compositionLimits config)
     min' l1 Nothing   = l1
     min' l1 (Just l2) = min l1 l2
     range f low high  = [low + fst (f config) .. min' high (snd $ f config)]

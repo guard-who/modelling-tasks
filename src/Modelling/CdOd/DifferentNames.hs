@@ -174,22 +174,22 @@ data DifferentNamesConfig = DifferentNamesConfig {
 
 checkDifferentNamesConfig :: DifferentNamesConfig -> Maybe String
 checkDifferentNamesConfig DifferentNamesConfig {..}
-  | (x, Just y) <- relationships classConfig, x /= y
+  | (x, Just y) <- relationshipLimits classConfig, x /= y
   = Just [iii|
       The minimum number of relationships has to equal its maximum number
       for this task type.
       Otherwise task instances would vary too much in complexity.
       |]
-  | (x, Just y) <- inheritances classConfig, x /= y
+  | (x, Just y) <- inheritanceLimits classConfig, x /= y
   = Just [iii|
       The minimum number of inheritances has to equal its maximum number
       for this task type.
       Otherwise task instances could vary too much in difficulty.
       |]
-  | isNothing . snd $ relationships classConfig
+  | isNothing . snd $ relationshipLimits classConfig
   , any
       (different . ($ classConfig))
-      [aggregations, associations, compositions]
+      [aggregationLimits, associationLimits, compositionLimits]
   = Just [iii|
       The minimum number and maximum number
       of aggregations, associations or compositions may not vary
@@ -206,12 +206,12 @@ checkDifferentNamesConfig DifferentNamesConfig {..}
 defaultDifferentNamesConfig :: DifferentNamesConfig
 defaultDifferentNamesConfig = DifferentNamesConfig {
     classConfig  = ClassConfig {
-        classes      = (4, 4),
-        aggregations = (1, Just 1),
-        associations = (1, Just 1),
-        compositions = (1, Just 1),
-        inheritances = (1, Just 1),
-        relationships = (4, Just 4)
+        classLimits        = (4, 4),
+        aggregationLimits  = (1, Just 1),
+        associationLimits  = (1, Just 1),
+        compositionLimits  = (1, Just 1),
+        inheritanceLimits  = (1, Just 1),
+        relationshipLimits = (4, Just 4)
       },
     objectConfig = ObjectConfig {
       links          = (5, Just 10),

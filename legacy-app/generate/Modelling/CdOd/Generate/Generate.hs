@@ -27,11 +27,11 @@ generate
   -> Int
   -> m ([String], [DiagramEdge])
 generate withNonTrivialInheritance c searchSpace = do
-  ncls <- oneOfFirst searchSpace $ toAvailable $ second Just $ classes c
-  nins <- oneOfFirst searchSpace $ toAvailable $ inheritances c
-  ncos <- oneOfFirst searchSpace $ toAvailable $ compositions c
-  nass <- oneOfFirst searchSpace $ toAvailable $ associations c
-  nags <- oneOfFirst searchSpace $ toAvailable $ aggregations c
+  ncls <- oneOfFirst searchSpace $ toAvailable $ second Just $ classLimits c
+  nins <- oneOfFirst searchSpace $ toAvailable $ inheritanceLimits c
+  ncos <- oneOfFirst searchSpace $ toAvailable $ compositionLimits c
+  nass <- oneOfFirst searchSpace $ toAvailable $ associationLimits c
+  nags <- oneOfFirst searchSpace $ toAvailable $ aggregationLimits c
   if isPossible ncls nins ncos nass nags
     then do
       names <- shuffleM $ classNames ncls
@@ -174,11 +174,11 @@ generateEdge (conf, cs) mt
 
 shrink :: ClassConfig -> Int -> ClassConfig
 shrink c searchSpace = c {
-    classes      = increase $ classes c,
-    aggregations = decrease $ aggregations c,
-    associations = decrease $ associations c,
-    compositions = decrease $ compositions c,
-    inheritances = decrease $ inheritances c
+    classLimits       = increase $ classLimits c,
+    aggregationLimits = decrease $ aggregationLimits c,
+    associationLimits = decrease $ associationLimits c,
+    compositionLimits = decrease $ compositionLimits c,
+    inheritanceLimits = decrease $ inheritanceLimits c
   }
   where
     increase (x, y)

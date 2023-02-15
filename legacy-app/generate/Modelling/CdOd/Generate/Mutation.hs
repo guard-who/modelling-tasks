@@ -106,10 +106,10 @@ targetEdgesCount t es = length [e | e <- es, isTargetEdge e t]
 
 configTarget :: Target -> ClassConfig -> (Int, Maybe Int)
 configTarget t = case t of
-  TAssociation -> associations
-  TAggregation -> aggregations
-  TComposition -> compositions
-  TInheritance -> inheritances
+  TAssociation -> associationLimits
+  TAggregation -> aggregationLimits
+  TComposition -> compositionLimits
+  TInheritance -> inheritanceLimits
 
 isLessThan :: Int -> (Int, a) -> Bool
 isLessThan x (y , _) = x < y

@@ -143,10 +143,10 @@ generateProperty property satisfies relProps =
 
 classConfig :: ClassConfig
 classConfig = ClassConfig {
-  classes      = (4, 4),
-  aggregations = (0, Just 2),
-  associations = (0, Just 2),
-  compositions = (0, Just 3),
-  inheritances = (0, Just 3),
-  relationships = (2, Just 3)
+  classLimits        = (4, 4),
+  aggregationLimits  = (0, Just 2),
+  associationLimits  = (0, Just 2),
+  compositionLimits  = (0, Just 3),
+  inheritanceLimits  = (0, Just 3),
+  relationshipLimits = (2, Just 3)
   }

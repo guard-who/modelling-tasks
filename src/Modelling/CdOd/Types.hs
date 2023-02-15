@@ -283,13 +283,13 @@ data Change a = Change {
   } deriving (Eq, Foldable, Functor, Generic, Read, Show, Traversable)
 
 data ClassConfig = ClassConfig {
-    classes      :: (Int, Int),
-    aggregations :: (Int, Maybe Int),
-    associations :: (Int, Maybe Int),
-    compositions :: (Int, Maybe Int),
-    inheritances :: (Int, Maybe Int),
+    classLimits               :: (Int, Int),
+    aggregationLimits         :: (Int, Maybe Int),
+    associationLimits         :: (Int, Maybe Int),
+    compositionLimits         :: (Int, Maybe Int),
+    inheritanceLimits         :: (Int, Maybe Int),
     -- | the number of relationships including inheritances
-    relationships :: (Int, Maybe Int)
+    relationshipLimits        :: (Int, Maybe Int)
   } deriving (Eq, Generic, Read, Show)
 
 checkClassConfigWithProperties
@@ -299,20 +299,20 @@ checkClassConfigWithProperties
 checkClassConfigWithProperties
   c@ClassConfig {..}
   RelationshipProperties {..}
-  | wrongAssocs > maxRelations - fst inheritances
+  | wrongAssocs > maxRelations - fst inheritanceLimits
   || maybe False (wrongAssocs >) maxAssocs'
   = Just [iii|
     The (maximum) number of non-inheritance relationships is too low for
     the targeted wrongAssocs!
     |]
   | wrongCompositions > maxCompositions
-  || maybe False (wrongCompositions >) (snd compositions)
+  || maybe False (wrongCompositions >) (snd compositionLimits)
   = Just [iii|
     The (maximum) number of possible compositions is too low for
     the targeted wrongCompositions!
     |]
   | minCompositions > maxCompositions
-  || maybe False (minCompositions >) (snd compositions)
+  || maybe False (minCompositions >) (snd compositionLimits)
   = Just [iii|
     The (maximum) number of possible compositions is too low for
     the targeted composition properties!
@@ -323,25 +323,30 @@ checkClassConfigWithProperties
     The (maximum) number of possible compositions or inheritances is too low for
     creating composition cycles!
     |]
-  | minAssocs > maxRelations - fst inheritances
+  | minAssocs > maxRelations - fst inheritanceLimits
   || maybe False (minAssocs >) maxAssocs'
   = Just [iii|
     The (maximum) number of possible non-inheritance relationships is too low for
     the targeted non-inheritance relationship properties!
     |]
   | minInheritances > maxInheritances
-  || maybe False (minInheritances >) (snd inheritances)
+  || maybe False (minInheritances >) (snd inheritanceLimits)
   = Just [iii|
     The (maximum) number of possible inheritance relationships is too low for
     the targeted inheritance relationship properties!
     |]
-  | Just x <- snd relationships, Just rels <- relationshipsSum c, x > rels
+  | Just x <- snd relationshipLimits, Just rels <- relationshipsSum c, x > rels
   = Just [iii|
     The maximum number of relationships is too high
     according to individual relationship maxima!
     |]
-  | x@Just {} <- snd relationships
-  , any ((> x) . snd) [aggregations, associations, compositions, inheritances]
+  | x@Just {} <- snd relationshipLimits
+  , any ((> x) . snd) [
+      aggregationLimits,
+      associationLimits,
+      compositionLimits,
+      inheritanceLimits
+      ]
   = Just [iii|
     The maximum number of aggregations, associations, compositions
     as well as inheritances
@@ -365,34 +370,34 @@ checkClassConfigWithProperties
       (2 `for` hasCompositionsPreventingParts)
     minCompositionsInheritances =
       3 `for` hasCompositionCycles
-    maxRelations = fromMaybe (maxRels c) $ snd relationships
+    maxRelations = fromMaybe (maxRels c) $ snd relationshipLimits
     maxCompositionsInheritances = maxRelations
-      - fst aggregations
-      - fst associations
-    maxCompositions = maxCompositionsInheritances - fst inheritances
-    maxInheritances = maxCompositionsInheritances - fst compositions
+      - fst aggregationLimits
+      - fst associationLimits
+    maxCompositions = maxCompositionsInheritances - fst inheritanceLimits
+    maxInheritances = maxCompositionsInheritances - fst compositionLimits
     maxCompositionsInheritances' = (+)
-      <$> snd compositions
-      <*> snd inheritances
+      <$> snd compositionLimits
+      <*> snd inheritanceLimits
     maxAssocs' = (\x y z -> x + y + z)
-      <$> snd aggregations
-      <*> snd associations
-      <*> snd compositions
+      <$> snd aggregationLimits
+      <*> snd associationLimits
+      <*> snd compositionLimits
 
 checkClassConfig :: ClassConfig -> Maybe String
-checkClassConfig c@ClassConfig {..} = checkRange Just "classes" classes
-  <|> checkRange id "aggregations" aggregations
-  <|> checkRange id "associations" associations
-  <|> checkRange id "compositions" compositions
-  <|> checkRange id "inheritances" inheritances
-  <|> checkRange id "relationships" relationships
-  <|> toMaybe (fst relationships < minRels c) [iii|
+checkClassConfig c@ClassConfig {..} = checkRange Just "classLimits" classLimits
+  <|> checkRange id "aggregationLimits" aggregationLimits
+  <|> checkRange id "associationLimits" associationLimits
+  <|> checkRange id "compositionLimits" compositionLimits
+  <|> checkRange id "inheritanceLimits" inheritanceLimits
+  <|> checkRange id "relationshipLimits" relationshipLimits
+  <|> toMaybe (fst relationshipLimits < minRels c) [iii|
       The sum of the minimum number of aggregations, associations, compositions
       and inheritances
       must not be higher than the minimum number of relationships!
       |]
   <|> do
-    void $ snd relationships
+    void $ snd relationshipLimits
     toMaybe isMaxHigherThanAnyIndividual [iii|
       The maximum number of aggregations, associations, compositions
       as well as inheritances
@@ -402,8 +407,12 @@ checkClassConfig c@ClassConfig {..} = checkRange Just "classes" classes
     toMaybe True x = Just x
     toMaybe _    _ = Nothing
     isMaxHigherThanAnyIndividual = any
-      ((> snd relationships) . snd)
-      [aggregations, associations, compositions, inheritances]
+      ((> snd relationshipLimits) . snd) [
+        aggregationLimits,
+        associationLimits,
+        compositionLimits,
+        inheritanceLimits
+        ]
 
 checkRange
   :: (Num n, Ord n, Show b, Show n)
@@ -428,17 +437,17 @@ checkRange g what (low, h) = do
 
 minRels :: ClassConfig -> Int
 minRels ClassConfig {..} =
-  fst aggregations
-  + fst associations
-  + fst compositions
-  + fst inheritances
+  fst aggregationLimits
+  + fst associationLimits
+  + fst compositionLimits
+  + fst inheritanceLimits
 
 relationshipsSum :: ClassConfig -> Maybe Int
 relationshipsSum ClassConfig {..} = sumOf4
-  <$> snd aggregations
-  <*> snd associations
-  <*> snd compositions
-  <*> snd inheritances
+  <$> snd aggregationLimits
+  <*> snd associationLimits
+  <*> snd compositionLimits
+  <*> snd inheritanceLimits
   where
     sumOf4 w x y z = w + x + y + z
 
@@ -446,7 +455,7 @@ maxRels :: ClassConfig -> Int
 maxRels config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2)
   $ relationshipsSum config
   where
-    maxClasses = snd $ classes config
+    maxClasses = snd $ classLimits config
 
 {-|
 Defines the size restrictions of an object diagram.

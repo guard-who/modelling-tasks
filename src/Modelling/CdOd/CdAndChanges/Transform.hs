@@ -90,17 +90,17 @@ pred cd {
       #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
       #{hasCompositionCycles props}, #{hasCompositionsPreventingParts props},
       #{maybeToAlloySet $ hasThickEdges props}]
-    #{fst $ associations config} <= \#Association2
-    \#Association2 <= #{upper $ associations config}
-    #{fst $ aggregations config} <= \#Aggregation2
-    \#Aggregation2 <= #{upper $ aggregations config}
-    #{fst $ compositions config} <= \#Composition2
-    \#Composition2 <= #{upper $ compositions config}
-    #{fst $ inheritances config} <= \#Inheritance2
-    \#Inheritance2 <= #{upper $ inheritances config}
-    #{fst $ relationships config} <= \#Relationship2
-    \#Relationship2 <= #{upper $ relationships config}
-    #{fst $ classes config} <= \#Class
+    #{fst $ associationLimits config} <= \#Association2
+    \#Association2 <= #{upper $ associationLimits config}
+    #{fst $ aggregationLimits config} <= \#Aggregation2
+    \#Aggregation2 <= #{upper $ aggregationLimits config}
+    #{fst $ compositionLimits config} <= \#Composition2
+    \#Composition2 <= #{upper $ compositionLimits config}
+    #{fst $ inheritanceLimits config} <= \#Inheritance2
+    \#Inheritance2 <= #{upper $ inheritanceLimits config}
+    #{fst $ relationshipLimits config} <= \#Relationship2
+    \#Relationship2 <= #{upper $ relationshipLimits config}
+    #{fst $ classLimits config} <= \#Class
   }
 }
 |]
@@ -171,14 +171,14 @@ pred changeLimits {
         Composition2 = Composition - (Change.add - c.add) - c.remove,
         Aggregation2 = Aggregation - (Change.add - c.add) - c.remove,
         Inheritance2 = Inheritance - (Change.add - c.add) - c.remove {
-      #{fst $ associations config} <= \#Association2
-      \#Association2 <= #{upper $ associations config}
-      #{fst $ aggregations config} <= \#Aggregation2
-      \#Aggregation2 <= #{upper $ aggregations config}
-      #{fst $ compositions config} <= \#Composition2
-      \#Composition2 <= #{upper $ compositions config}
-      #{fst $ inheritances config} <= \#Inheritance2
-      \#Inheritance2 <= #{upper $ inheritances config}
+      #{fst $ associationLimits config} <= \#Association2
+      \#Association2 <= #{upper $ associationLimits config}
+      #{fst $ aggregationLimits config} <= \#Aggregation2
+      \#Aggregation2 <= #{upper $ aggregationLimits config}
+      #{fst $ compositionLimits config} <= \#Composition2
+      \#Composition2 <= #{upper $ compositionLimits config}
+      #{fst $ inheritanceLimits config} <= \#Inheritance2
+      \#Inheritance2 <= #{upper $ inheritanceLimits config}
     }
   }
 }
@@ -189,17 +189,17 @@ pred changeLimits {
 createRunCommand :: ClassConfig -> [String] -> Int ->  String
 createRunCommand config@ClassConfig {..} predicates cs = [i|
 run { #{command} } for #{rels} Relationship, #{bitSize} Int,
-  #{exactClass}#{snd classes} Class, exactly #{cs} Change
+  #{exactClass}#{snd classLimits} Class, exactly #{cs} Change
 |]
   where
     exactClass
-      | uncurry (==) classes = "exactly "
+      | uncurry (==) classLimits = "exactly "
       | otherwise            = ""
-    relMax = fromMaybe (maxRels config) . snd $ relationships
+    relMax = fromMaybe (maxRels config) . snd $ relationshipLimits
     rels = relMax + cs
     bitSize :: Int
     bitSize = (+ 1) . ceiling @Double . logBase 2 . fromIntegral
-      $ max rels (snd classes) + 1
+      $ max rels (snd classLimits) + 1
     command :: String
     command = foldl ((++) . (++ " and ")) "cd" predicates
 
