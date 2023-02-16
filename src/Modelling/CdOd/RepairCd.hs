@@ -59,14 +59,19 @@ import Modelling.CdOd.Output (
   drawCd,
   drawOdFromInstance,
   )
-import Modelling.CdOd.Types (
+import Modelling.CdOd.Edges (
   AssociationType (..),
+  Connection (..),
+  DiagramEdge,
+  connectionName,
+  renameAssocsInEdge,
+  renameClassesInEdge,
+  )
+import Modelling.CdOd.Types (
   Cd,
   Change (..),
   ClassConfig (..),
   ClassDiagram (..),
-  Connection (..),
-  DiagramEdge,
   LimitedLinking (..),
   Relationship (..),
   RelationshipProperties (..),
@@ -74,12 +79,9 @@ import Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   classNames,
-  connectionName,
   defaultProperties,
   maxFiveObjects,
-  renameAssocsInEdge,
   renameClassesAndRelationshipsInCd,
-  renameClassesInEdge,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
   )

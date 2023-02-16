@@ -6,13 +6,10 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.Types (
-  AssociationType (..),
   Cd,
   Change (..),
   ClassConfig (..),
   ClassDiagram (..),
-  Connection (..),
-  DiagramEdge,
   Letters (..),
   LimitedLinking (..),
   Name (..),
@@ -25,7 +22,6 @@ module Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   classNamesOd,
-  connectionName,
   defaultProperties,
   fromNameMapping,
   linkNames,
@@ -34,11 +30,8 @@ module Modelling.CdOd.Types (
   parseLettersPrec,
   parseNamePrec,
   relationshipName,
-  renameAssocsInEdge,
   renameClassesAndRelationshipsInCd,
-  renameClassesInEdge,
   renameClassesInOd,
-  renameConnection,
   renameLinksInOd,
   reverseAssociation,
   showLetters,
@@ -198,12 +191,6 @@ reverseAssociation x = case x of
   Composition {} -> x
   Inheritance {} -> x
 
-data AssociationType = Association' | Aggregation' | Composition'
-  deriving (Eq, Generic, Read, Show)
-
-data Connection = Inheritance' | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
-  deriving (Eq, Generic, Read, Show)
-
 data ClassDiagram className relationshipName = ClassDiagram {
   classNames                  :: [className],
   relationships               :: [Relationship className relationshipName]
@@ -231,8 +218,6 @@ shuffleClassAndConnectionOrder :: MonadRandom m => Cd -> m Cd
 shuffleClassAndConnectionOrder ClassDiagram {..} = ClassDiagram
   <$> shuffleM classNames
   <*> shuffleM relationships
-
-type DiagramEdge = (String, String, Connection)
 
 newtype Name = Name { unName :: String }
   deriving (Eq, Generic, Ord, Read, Show)
@@ -519,36 +504,6 @@ classNamesOd o = head . splitOn "$" <$> fst o
 
 linkNames :: Od -> [String]
 linkNames o = nub $ (\(_,_,x) -> x) `map` snd o
-
-connectionName :: Connection -> Maybe String
-connectionName (Assoc _ n _ _ _) = Just n
-connectionName Inheritance'      = Nothing
-
-renameConnection
-  :: MonadThrow m
-  => Bimap String String
-  -> Connection
-  -> m Connection
-renameConnection bm (Assoc t n m1 m2 b) = do
-  n' <- BM.lookup n bm
-  return $ Assoc t n' m1 m2 b
-renameConnection _ Inheritance' = return Inheritance'
-
-renameAssocsInEdge
-  :: MonadThrow m
-  => Bimap String String
-  -> DiagramEdge
-  -> m DiagramEdge
-renameAssocsInEdge m (f, t, a) = (f, t,) <$> renameConnection m a
-
-renameClassesInEdge
-  :: MonadThrow m
-  => Bimap String String
-  -> DiagramEdge
-  -> m DiagramEdge
-renameClassesInEdge m (f, t, a) = (,,a) <$> rename f <*> rename t
-  where
-    rename = (`BM.lookup` m)
 
 renameClassesAndRelationshipsInCd
   :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')

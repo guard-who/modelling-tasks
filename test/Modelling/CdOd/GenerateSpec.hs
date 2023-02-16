@@ -1,6 +1,7 @@
 module Modelling.CdOd.GenerateSpec where
 
 import Modelling.CdOd.Edges (
+  DiagramEdge,
   anyThickEdge,
   compositionCycles,
   doubleConnections,
@@ -14,7 +15,6 @@ import Modelling.CdOd.Edges (
 import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
 import Modelling.CdOd.Types (
   ClassConfig (..),
-  DiagramEdge,
   RelationshipProperties (..),
   defaultProperties,
   )

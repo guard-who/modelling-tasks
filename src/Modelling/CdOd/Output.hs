@@ -34,13 +34,15 @@ import Modelling.CdOd.Auxiliary.Util (
   emptyArr,
   underlinedLabel,
   )
+import Modelling.CdOd.Edges (
+  AssociationType (..),
+  Connection (..),
+  calculateThickEdges,
+  )
 import Modelling.CdOd.Types (
-  AssociationType(..),
   Cd,
   ClassDiagram (..),
-  Connection(..),
   )
-import Modelling.CdOd.Edges             (calculateThickEdges)
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 
 import Control.Lens                     ((.~))

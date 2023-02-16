@@ -20,12 +20,14 @@ import Modelling.CdOd.DifferentNames (
   renameInstance,
   )
 import Modelling.Auxiliary.Common       (oneOf)
-import Modelling.CdOd.Edges             (toEdges)
-import Modelling.CdOd.Types (
+import Modelling.CdOd.Edges (
   AssociationType (..),
+  DiagramEdge,
+  toEdges,
+  )
+import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
-  DiagramEdge,
   LimitedLinking (..),
   Name (Name, unName),
   ObjectConfig (..),

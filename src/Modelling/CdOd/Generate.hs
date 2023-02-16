@@ -17,13 +17,13 @@ import Modelling.CdOd.CdAndChanges.Transform (
   transformNoChanges,
   )
 import Modelling.CdOd.Edges             (
+  Connection (..),
+  DiagramEdge,
   isInheritanceEdge,
   renameClasses,
   )
 import Modelling.CdOd.Types (
   ClassConfig (..),
-  Connection (..),
-  DiagramEdge,
   RelationshipProperties,
   )
 

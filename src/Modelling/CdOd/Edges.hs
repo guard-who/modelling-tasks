@@ -1,10 +1,19 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.Edges (
   -- * Types
+  AssociationType (..),
+  Connection (..),
   DiagramEdge,
+  -- * Getter
+  connectionName,
   -- * Transformation
   fromEdges, toEdges,
+  renameAssocsInEdge,
+  renameClassesInEdge,
   renameClasses, renameEdges,
+  renameConnection,
   -- * Checks
   -- ** Check sets (reusing single checks)
   checkMultiEdge, checkObvious,
@@ -23,22 +32,60 @@ module Modelling.CdOd.Edges (
 import qualified Data.Bimap                       as BM (lookup)
 
 import Modelling.CdOd.Types (
-  AssociationType (..),
   Cd,
   ClassDiagram (..),
-  Connection (..),
-  DiagramEdge,
   LimitedLinking (..),
   Relationship (..),
-  renameConnection,
   )
 import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
+import Control.Monad.Catch              (MonadThrow)
 import Data.Bifunctor                   (first)
 import Data.Bimap                       (Bimap)
 import Data.List                        (partition)
 import Data.Maybe                       (fromJust)
 import Data.Tuple.Extra                 (dupe, fst3, snd3, thd3)
+import GHC.Generics                     (Generic)
+
+data Connection
+  = Inheritance'
+  | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
+  deriving (Eq, Generic, Read, Show)
+
+data AssociationType = Association' | Aggregation' | Composition'
+  deriving (Eq, Generic, Read, Show)
+
+type DiagramEdge = (String, String, Connection)
+
+connectionName :: Connection -> Maybe String
+connectionName (Assoc _ n _ _ _) = Just n
+connectionName Inheritance'      = Nothing
+
+renameConnection
+  :: MonadThrow m
+  => Bimap String String
+  -> Connection
+  -> m Connection
+renameConnection bm (Assoc t n m1 m2 b) = do
+  n' <- BM.lookup n bm
+  return $ Assoc t n' m1 m2 b
+renameConnection _ Inheritance' = return Inheritance'
+
+renameAssocsInEdge
+  :: MonadThrow m
+  => Bimap String String
+  -> DiagramEdge
+  -> m DiagramEdge
+renameAssocsInEdge m (f, t, a) = (f, t,) <$> renameConnection m a
+
+renameClassesInEdge
+  :: MonadThrow m
+  => Bimap String String
+  -> DiagramEdge
+  -> m DiagramEdge
+renameClassesInEdge m (f, t, a) = (,,a) <$> rename f <*> rename t
+  where
+    rename = (`BM.lookup` m)
 
 toEdges :: Cd -> [DiagramEdge]
 toEdges = map relationshipToEdge . relationships

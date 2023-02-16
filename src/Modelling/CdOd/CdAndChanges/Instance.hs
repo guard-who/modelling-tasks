@@ -14,8 +14,12 @@ import qualified Data.Set                         as S (
   )
 
 import Modelling.Auxiliary.Common       (Object (Object, oName), toMap)
-import Modelling.CdOd.Types
-  (AssociationType (..), Change (..), Connection (..), DiagramEdge)
+import Modelling.CdOd.Edges (
+  AssociationType (..),
+  Connection (..),
+  DiagramEdge,
+  )
+import Modelling.CdOd.Types             (Change (..))
 
 import Data.Composition                 ((.:))
 import Data.Map                         (Map)

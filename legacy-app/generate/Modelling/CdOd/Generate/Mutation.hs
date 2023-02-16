@@ -7,9 +7,12 @@ module Modelling.CdOd.Generate.Mutation (
   nonTargets,
   ) where
 
-import Modelling.CdOd.Types
-  (AssociationType (..), ClassConfig (..), Connection (..))
-import Modelling.CdOd.Edges             (DiagramEdge)
+import Modelling.CdOd.Types             (ClassConfig (..))
+import Modelling.CdOd.Edges (
+  AssociationType (..),
+  Connection (..),
+  DiagramEdge,
+  )
 
 import Data.Function                    (on)
 import Data.List                        ((\\))

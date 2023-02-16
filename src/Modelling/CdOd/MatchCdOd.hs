@@ -60,6 +60,7 @@ import Modelling.CdOd.Auxiliary.Util (
   getInstances,
   )
 import Modelling.CdOd.Edges (
+  Connection (..),
   DiagramEdge,
   fromEdges,
   renameClasses,
@@ -71,7 +72,6 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   ClassDiagram (..),
   Change (..),
-  Connection (..),
   Letters (Letters, lettersList),
   LimitedLinking (..),
   ObjectConfig (..),

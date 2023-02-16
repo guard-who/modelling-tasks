@@ -55,16 +55,19 @@ import Modelling.CdOd.CD2Alloy.Transform (
   mergeParts,
   transform,
   )
-import Modelling.CdOd.Edges             (fromEdges, renameEdges)
+import Modelling.CdOd.Edges (
+  AssociationType (..),
+  Connection (..),
+  DiagramEdge,
+  fromEdges,
+  renameEdges,
+  )
 import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
 import Modelling.CdOd.Output            (cacheCd, cacheOd, drawCd)
 import Modelling.CdOd.Types (
-  AssociationType (..),
   Cd,
   ClassConfig (..),
   ClassDiagram (..),
-  Connection (..),
-  DiagramEdge,
   LimitedLinking (..),
   Name (Name),
   NameMapping (nameMapping),

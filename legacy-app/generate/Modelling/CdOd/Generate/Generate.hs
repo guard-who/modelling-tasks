@@ -6,12 +6,14 @@ module Modelling.CdOd.Generate.Generate (
 
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.CdOd.Edges             (
+  AssociationType (..),
+  Connection (..),
+  DiagramEdge,
   checkMultiEdge,
   hasAssociationAtOneSuperclass,
   )
 import Modelling.CdOd.Generate          (nameEdges)
-import Modelling.CdOd.Types
-  (AssociationType (..), ClassConfig (..), Connection (..), DiagramEdge)
+import Modelling.CdOd.Types             (ClassConfig (..))
 
 import Control.Arrow                    (second)
 import Control.Monad.Random             (MonadRandom, getRandomR)

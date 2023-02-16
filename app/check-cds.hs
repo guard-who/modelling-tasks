@@ -4,14 +4,16 @@ module Main where
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Modelling.CdOd.CD2Alloy.Transform (combineParts, createRunCommand, mergeParts, transform)
-import Modelling.CdOd.Edges             (fromEdges)
-import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
-import Modelling.CdOd.Types (
+import Modelling.CdOd.Edges (
   AssociationType (..),
-  Cd,
-  ClassDiagram (..),
   Connection (..),
   DiagramEdge,
+  fromEdges,
+  )
+import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
+import Modelling.CdOd.Types (
+  Cd,
+  ClassDiagram (..),
   ObjectConfig (objects),
   maxFiveObjects,
   reverseAssociation,
