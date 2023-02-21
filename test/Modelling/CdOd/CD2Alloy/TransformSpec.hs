@@ -5,32 +5,18 @@ import Modelling.CdOd.CD2Alloy.Transform (
   transform,
   )
 import Modelling.CdOd.Types             (ObjectConfig (..))
+import Modelling.Common                 (withUnitTests)
 
-import Control.Monad                    (forM_)
-import Data.List                        (isPrefixOf, sort)
-import Data.List.Extra                  (replace)
-import System.Directory                 (getDirectoryContents)
-import System.FilePath                  ((</>), (-<.>))
 import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "transform" withUnitTests
-
-withUnitTests :: Spec
-withUnitTests = do
-  fs <- runIO $ sort <$> getDirectoryContents dir
-  forM_ (filter ("transformTest" `isPrefixOf`) fs) $ \fileName -> do
-    let file = dir </> fileName
-    cd <- runIO $ read <$> readFile file
-    let resultFile = replace "Test" "Result" file -<.> "als"
-    res <- runIO $ readFile resultFile
-    it ("generates expected Alloy code for " ++ file) $
-      let result = combineParts
-            $ transform cd [] objectConfig (Just True) False "1" "-"
-      in result `shouldBe` res
+  withUnitTests "transform" does dir "als" $ shouldBe . getResult . read
   where
+    does = "generates expected Alloy code"
     dir = "test/unit/Modelling/CdOd/CD2Alloy/Transform/"
+    getResult cd = combineParts
+      $ transform cd [] objectConfig (Just True) False "1" "-"
     objectConfig = ObjectConfig {
       links          = (4, Just 10),
       linksPerObject = (0, Just 4),

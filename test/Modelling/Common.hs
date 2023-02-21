@@ -3,12 +3,19 @@
 Provides the ability to test code using the 'OutputMonad' by accepting success
 and printing error messages.
 -}
-module Modelling.Common where
+module Modelling.Common (
+  withUnitTests,
+  ) where
 
 
-import Control.Monad                    (unless)
+import Control.Monad                    (forM_, unless)
 import Control.Monad.Output             (OutputMonad (..))
 import Control.Monad.Trans              (MonadTrans(lift))
+import Data.List                        (isPrefixOf, sort)
+import Data.List.Extra                  (replace)
+import System.Directory                 (getDirectoryContents)
+import System.FilePath                  ((</>), (-<.>))
+import Test.Hspec
 
 instance OutputMonad (Either String) where
   assertion b m = unless b (m >> lift (Left "assertion"))
@@ -25,3 +32,20 @@ instance OutputMonad (Either String) where
   latex _         = return ()
   code _          = return ()
   translated _    = return ()
+
+withUnitTests
+  :: String
+  -> String
+  -> FilePath
+  -> String
+  -> (String -> String -> Expectation)
+  -> Spec
+withUnitTests name does dir extension assertWith = describe name $ do
+  fs <- runIO $ sort <$> getDirectoryContents dir
+  let testName = name ++ "Test"
+  forM_ (filter (testName `isPrefixOf`) fs) $ \fileName -> do
+    let file = dir </> fileName
+    input <- runIO $ readFile file
+    let resultFile = replace "Test" "Result" file -<.> extension
+    expectedResult <- runIO $ readFile resultFile
+    it (does ++ " for " ++ file) $ assertWith input expectedResult
