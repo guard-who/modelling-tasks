@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.CdAndChanges.Instance (
+  ClassDiagramInstance (..),
   fromInstance,
   ) where
 
@@ -14,13 +15,15 @@ import qualified Data.Set                         as S (
   )
 
 import Modelling.Auxiliary.Common       (Object (Object, oName), toMap)
-import Modelling.CdOd.Edges (
-  AssociationType (..),
-  Connection (..),
-  DiagramEdge,
+import Modelling.CdOd.Types (
+  Cd,
+  ClassDiagram (..),
+  Change (..),
+  LimitedLinking (..),
+  Relationship (..),
   )
-import Modelling.CdOd.Types             (Change (..))
 
+import Control.Monad                    (forM)
 import Data.Composition                 ((.:))
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
@@ -50,31 +53,45 @@ newtype NumberedClass = NumberedClass Int
 data NumberedAssoc = NumberedAssoc String Int
   deriving (Eq, Ord)
 
+data ClassDiagramInstance
+  = ClassDiagramInstance {
+    instanceClassDiagram      :: Cd,
+    instanceRelationshipNames :: [String],
+    instanceChanges           :: [Change (Relationship String String)]
+    }
+
 fromInstance
   :: AlloyInstance
-  -> Either String (([String], [String]), [DiagramEdge], [Change DiagramEdge])
+  -> Either String ClassDiagramInstance
 fromInstance insta = do
   es <- instanceToEdges insta
   cs <- instanceToChanges insta
-  ns <- instanceToNames insta
-  return (ns,
-          [e | (o, e) <- es, o `notElem` mapMaybe add cs],
+  namesOfClasses <- instanceToNamesOf insta "Class"
+  namesOfAssocs <- instanceToNamesOf insta "Assoc"
+  return ClassDiagramInstance {
+    instanceClassDiagram = ClassDiagram {
+      classNames = namesOfClasses,
+      relationships =
+        [e | (o, e) <- es, o `notElem` mapMaybe add cs]
+      },
+    instanceRelationshipNames = namesOfAssocs,
+    instanceChanges =
           [Change a r | c <- cs
                       , a <- lookupM (add c) es
-                      , r <- lookupM (remove c) es])
+                      , r <- lookupM (remove c) es]
+    }
   where
     lookupM :: Eq a => Maybe a -> [(a, b)] -> [Maybe b]
     lookupM Nothing  _  = [Nothing]
     lookupM (Just k) ms = [v | let v = lookup k ms, isJust v]
 
-instanceToNames
-  :: AlloyInstance -> Either String ([String], [String])
-instanceToNames insta = do
-  c' <- lookupSig (scoped "this" "Class") insta
-  cs <- map objectName . S.toList <$> getSingleAs "" (return .: Object) c'
-  a' <- lookupSig (scoped "this" "Assoc") insta
-  as <- map objectName . S.toList <$> getSingleAs "" (return .: Object) a'
-  return (cs, as)
+instanceToNamesOf
+  :: AlloyInstance
+  -> String
+  -> Either String [String]
+instanceToNamesOf insta what = do
+  x <- lookupSig (scoped "this" what) insta
+  map objectName . S.toList <$> getSingleAs "" (return .: Object) x
 
 instanceToChanges
   :: AlloyInstance
@@ -98,9 +115,9 @@ getRelation n i = getDoubleAs n (return .: Object) (return .: Object) i
       | otherwise     = fail $ "Relation " ++ n ++ " matches at least one"
         ++ "member of its domain to multiple values of the codomain."
 
-instanceToEdges ::
-  AlloyInstance
-  -> Either String [(Object, DiagramEdge)]
+instanceToEdges
+  :: AlloyInstance
+  -> Either String [(Object, Relationship String String)]
 instanceToEdges insta = do
   r'         <- lookupSig (scoped "this" "Relationship") insta
   rFrom      <- getRelation "from" r'
@@ -120,19 +137,73 @@ instanceToEdges'
   -> Map Object Object
   -> Map Object Object
   -> Map Object Object
-  -> Either String [(Object, DiagramEdge)]
+  -> Either String [(Object, Relationship String String)]
 instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
-  inh' <- lookupSig (scoped "this" "Inheritance") insta
-  inh  <- S.toList <$> getSingleAs "" (return .: Object) inh'
-  inhs <- (\i -> (i,) <$> rel False i Inheritance') `mapM` inh
-  coms <- lookupAssocs True Composition' "Composition"
-  asss <- lookupAssocs False Association' "Association"
-  aggs <- lookupAssocs True Aggregation' "Aggregation"
-  return $ inhs ++ coms ++ asss ++ aggs
+  inheritances <- getInheritances
+  compositions <- getRelationships toComposition "Composition"
+  aggregations <- getRelationships toAggregation "Aggregation"
+  associations <- getRelationships toAssociation "Association"
+  return $ inheritances ++ compositions ++ aggregations ++ associations
   where
-    lookupObj k m = case M.lookup k m of
-      Nothing -> Left "Missing object "
-      Just v  -> Right $ objectName v
+    getInheritances = do
+      inheritance' <- lookupSig (scoped "this" "Inheritance") insta
+      inheritances <-
+        S.toList <$> getSingleAs "" (return .: Object) inheritance'
+      forM inheritances $ \inheritance -> (inheritance,) <$> do
+        from <- lookupObj inheritance rFrom
+        to   <- lookupObj inheritance rTo
+        return Inheritance {
+          subClass = from,
+          superClass = to
+          }
+    getRelationships f relationshipKind = do
+      relationship' <- lookupSig (scoped "this" relationshipKind) insta
+      relationships' <-
+        S.toList <$> getSingleAs "" (return .: Object) relationship'
+      forM relationships' $ \relationship -> (relationship,) <$> do
+        let name = objectName relationship
+        from <- getFrom relationship
+        to   <- getTo relationship
+        return $ f name from to
+    getFrom = getLinking rFrom aFromLower aFromUpper
+    getTo = getLinking rTo aToLower aToUpper
+    toAssociation name from to = Association {
+      associationName = name,
+      associationFrom = from,
+      associationTo = to
+      }
+    toAggregation name from to = Aggregation {
+      aggregationName = name,
+      aggregationPart = from,
+      aggregationWhole = to
+      }
+    toComposition name from to = Composition {
+      compositionName = name,
+      compositionPart = from,
+      compositionWhole = to
+      }
+
+lookupObj :: Ord k => k -> Map k Object -> Either String String
+lookupObj k m = case M.lookup k m of
+  Nothing -> Left "Missing object "
+  Just v  -> Right $ objectName v
+
+getLinking
+  :: Ord k
+  => Map k Object
+  -> Map k Object
+  -> Map k Object
+  -> k
+  -> Either String (LimitedLinking String)
+getLinking link low high x = do
+  link' <- lookupObj x link
+  low'  <- lookupLimit x low
+  high' <- lookupLimit x high
+  return LimitedLinking {
+    linking = link',
+    limits = (fromMaybe (-1) low', high')
+    }
+  where
     lookupLimit k m = case M.lookup k m of
       Nothing -> Left "Missing limit"
       Just o -> case oName o of
@@ -141,23 +212,3 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
         "One"  -> Right $ Just 1
         "Two"  -> Right $ Just 2
         l      -> Left $ "Unknown limit " ++ l
-    rel flipRel r c = do
-      rFrom' <- lookupObj r rFrom
-      rTo'   <- lookupObj r rTo
-      if flipRel
-        then return (rTo', rFrom', c)
-        else return (rFrom', rTo', c)
-    assoc flipRel t a = do
-      aFromLower' <- lookupLimit a aFromLower
-      aFromUpper' <- lookupLimit a aFromUpper
-      aToLower'   <- lookupLimit a aToLower
-      aToUpper'   <- lookupLimit a aToUpper
-      let lower = (fromMaybe (-1) aFromLower', aFromUpper')
-          upper = (fromMaybe (-1) aToLower', aToUpper')
-          (l, h) = if flipRel then (upper, lower) else (lower, upper)
-      fmap (a,) $ rel flipRel a
-        $ Assoc t (objectName a) l h False
-    lookupAssocs flipRel t n = do
-      a' <- lookupSig (scoped "this" n) insta
-      a  <- S.toList <$> getSingleAs "" (return .: Object) a'
-      assoc flipRel t `mapM` a

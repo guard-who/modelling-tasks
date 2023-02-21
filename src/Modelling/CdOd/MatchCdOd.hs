@@ -54,7 +54,10 @@ import Modelling.CdOd.CD2Alloy.Transform (
   mergeParts,
   transform,
   )
-import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
+import Modelling.CdOd.CdAndChanges.Instance (
+  ClassDiagramInstance (..),
+  fromInstance,
+  )
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   getInstances,
@@ -63,6 +66,7 @@ import Modelling.CdOd.Edges (
   Connection (..),
   DiagramEdge,
   fromEdges,
+  relationshipToEdge,
   renameClasses,
   renameEdges,
   )
@@ -557,13 +561,17 @@ applyChanges
   => AlloyInstance
   -> RandT g IO (Cd, [(Change DiagramEdge, Cd)], Int)
 applyChanges insta = do
-  (names, edges0, changes) <- either error return $ fromInstance insta
-  let (cs, es) = names
-  cs' <- shuffleM cs
-  es' <- shuffleM es
+  cdInstance <- either error return $ fromInstance insta
+  let cd' :: Cd
+      cd' = instanceClassDiagram cdInstance
+  cs' <- shuffleM $ classNames cd'
+  es' <- shuffleM $ instanceRelationshipNames cdInstance
   let bme = BM.fromList $ zip es' $ map (:[]) ['z', 'y' ..]
       bmc = BM.fromList $ zip cs' $ map (:[]) ['A' ..]
-      cd  = getSyntax bmc bme edges0 $ Change Nothing Nothing
+      rename = renameClassesAndRelationshipsInCd bmc bme
+  cd <- lift $ rename cd'
+  let edges0 = map relationshipToEdge $ relationships cd'
+      changes = map (fmap relationshipToEdge) $ instanceChanges cdInstance
       cds = map (getSyntax bmc bme edges0) changes
   let changes' = map (fmap $ head . renameClasses bmc . renameEdges bme . (:[])) changes
   return (cd, zip changes' cds, BM.size bmc)

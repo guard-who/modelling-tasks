@@ -11,6 +11,7 @@ import qualified Data.Bimap                       as BM (
 
 import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.CdOd.CdAndChanges.Instance (
+  ClassDiagramInstance (..),
   fromInstance,
   )
 import Modelling.CdOd.CdAndChanges.Transform (
@@ -20,10 +21,12 @@ import Modelling.CdOd.Edges             (
   Connection (..),
   DiagramEdge,
   isInheritanceEdge,
+  relationshipToEdge,
   renameClasses,
   )
 import Modelling.CdOd.Types (
   ClassConfig (..),
+  ClassDiagram (..),
   RelationshipProperties,
   )
 
@@ -48,9 +51,9 @@ generateCds withNonTrivialInheritance config props maxInsts to = do
 
 instanceToEdges :: AlloyInstance -> Either String ([String], [DiagramEdge])
 instanceToEdges rinsta = do
-  ((cs, _), es, []) <- fromInstance rinsta
-  let cns = BM.fromList $ zip cs $ map pure ['A'..]
-  return (BM.keysR cns, nameEdges $ renameClasses cns es)
+  cd <- instanceClassDiagram <$> fromInstance rinsta
+  let cns = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
+  return (BM.keysR cns, nameEdges $ renameClasses cns $ map relationshipToEdge (relationships cd))
 
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
 nameEdges es =

@@ -10,6 +10,7 @@ module Modelling.CdOd.Edges (
   connectionName,
   -- * Transformation
   fromEdges, toEdges,
+  relationshipToEdge,
   renameAssocsInEdge,
   renameClassesInEdge,
   renameClasses, renameEdges,

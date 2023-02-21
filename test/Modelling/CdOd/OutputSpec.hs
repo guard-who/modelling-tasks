@@ -1,7 +1,7 @@
 module Modelling.CdOd.OutputSpec where
 
-import Modelling.CdOd.CdAndChanges.Instance (fromInstance)
-import Modelling.CdOd.Edges             (fromEdges)
+import Modelling.CdOd.CdAndChanges.Instance (
+  ClassDiagramInstance (..), fromInstance)
 import Modelling.CdOd.Output            (drawCd)
 import Modelling.Common                 (withUnitTests)
 
@@ -20,6 +20,6 @@ spec = do
     dir = "test/unit/Modelling/CdOd/Output"
     getResult alloy = withTempFile $ \file -> do
       Right alloyInstance <- runExceptT $ parseInstance (pack alloy)
-      Right ((cs, _), es, _) <- return $ fromInstance alloyInstance
-      void $ drawCd True True mempty (fromEdges cs es) file
+      Right cd <- return $ instanceClassDiagram <$> fromInstance alloyInstance
+      void $ drawCd True True mempty cd file
       readFile file
