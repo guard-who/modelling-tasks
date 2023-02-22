@@ -11,5 +11,8 @@ max_line_length = 175
 [**.als]
 max_line_length = 160
 
+[test/unit/**]
+max_line_length = unset
+
 [**.{yml,yaml,md,tex}]
 max_line_length = unset
