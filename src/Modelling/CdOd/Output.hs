@@ -35,17 +35,18 @@ import Modelling.CdOd.Auxiliary.Util (
   underlinedLabel,
   )
 import Modelling.CdOd.Edges (
-  AssociationType (..),
-  Connection (..),
-  calculateThickEdges,
+  calculateThickRelationships,
   )
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
+  LimitedLinking (..),
+  Relationship (..),
   )
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 
 import Control.Lens                     ((.~))
+import Control.Monad                    (guard)
 import Control.Monad.Random (
   MonadRandom (getRandom),
   RandT,
@@ -53,7 +54,6 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans              (MonadTrans(lift))
 import Control.Monad.Trans.Except       (runExcept)
-import Data.Bifunctor                   (second)
 import Data.Digest.Pure.SHA             (sha1, showDigest)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz (
@@ -122,47 +122,53 @@ import System.Random.Shuffle            (shuffleM)
 debug :: Bool
 debug = False
 
-connectionArrow :: Bool -> Bool -> Maybe Attribute -> Connection -> [Attribute]
-connectionArrow _ _ _ Inheritance' =
-  [arrowTo emptyArr]
-connectionArrow _ printNames marking (Assoc Composition' name from to isThick) =
-  arrow Composition' ++ [HeadLabel (mult to)]
-  ++ concat [maybeToList marking | isThick]
-  ++ [toLabel name | printNames]
-  ++ case from of
-       (1, Just 1) -> []
-       (0, Just 1) -> [TailLabel (mult from)]
-       (0, Nothing)-> [TailLabel $ toLabelValue "0..*"]
-       (_, _)      -> (
-         if debug
-         then \x -> unsafePerformIO $ do
-           putStrLn "invalid composition multiplicity"
-           return x
-         else id
-         )
-         [TailLabel (mult from)]
-connectionArrow
-  printNavigations
-  printNames
-  marking
-  (Assoc a name from to isThick) =
-  printArrow a
-  ++ [TailLabel (mult from), HeadLabel (mult to)]
-  ++ concat [maybeToList marking | isThick]
-  ++ [toLabel name | printNames]
+relationshipArrow
+  :: Bool
+  -> Bool
+  -> Maybe Attribute
+  -> Bool
+  -> Relationship String String
+  -> [Attribute]
+relationshipArrow printNavigations printNames marking isThick relationship =
+  case relationship of
+    Inheritance {} -> [arrowTo emptyArr]
+    Composition {..} -> [
+        arrowFrom diamond,
+        edgeEnds Back,
+        HeadLabel $ mult $ limits compositionPart
+        ]
+      ++ concat [maybeToList marking | isThick]
+      ++ [toLabel compositionName | printNames]
+      ++ case limits compositionWhole of
+           (1, Just 1)   -> []
+           l@(0, Just 1) -> [TailLabel $ mult l]
+           (0, Nothing)  -> [TailLabel $ toLabelValue "0..*"]
+           l@(_, _)      -> (
+             if debug
+             then \x -> unsafePerformIO $ do
+               putStrLn "invalid composition multiplicity"
+               return x
+             else id
+             )
+             [TailLabel $ mult l]
+    Aggregation {..} -> [
+        arrowFrom oDiamond,
+        edgeEnds Back,
+        TailLabel $ mult $ limits aggregationWhole,
+        HeadLabel $ mult $ limits aggregationPart
+        ]
+      ++ concat [maybeToList marking | isThick]
+      ++ [toLabel aggregationName | printNames]
+    Association {..} -> associationArrow ++ [
+        TailLabel $ mult $ limits associationFrom,
+        HeadLabel $ mult $ limits associationTo
+        ]
+      ++ concat [maybeToList marking | isThick]
+      ++ [toLabel associationName | printNames]
   where
-    printArrow
-      | printNavigations = arrowDirected
-      | otherwise        = arrow
-
-arrowDirected :: AssociationType -> [Attribute]
-arrowDirected Association' = [arrowTo vee, ArrowSize 0.4]
-arrowDirected a           = arrow a
-
-arrow :: AssociationType -> [Attribute]
-arrow Association' = [ArrowHead noArrow]
-arrow Aggregation' = [arrowFrom oDiamond, edgeEnds Back]
-arrow Composition' = [arrowFrom diamond, edgeEnds Back]
+    associationArrow
+      | printNavigations = [arrowTo vee, ArrowSize 0.4]
+      | otherwise        = [ArrowHead noArrow]
 
 mult :: (Int, Maybe Int) -> Label
 mult (-1, Just u) = toLabelValue $ "*.." ++ show u
@@ -196,22 +202,17 @@ drawCd
   -> IO FilePath
 drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
   let theNodes = classNames
-  let diagramEdges = calculateThickEdges cd
-  let toThickEdge (thick, (from, to, Assoc t n s e _)) =
-        (from, to, Assoc t n s e thick)
-      toThickEdge (_, (_, _, Inheritance')) =
-        error "This never happens: Got an Inheritance"
   let toIndexed xs = [(
           fromJust (elemIndex from theNodes),
           fromJust (elemIndex to theNodes),
-          e
+          x
           )
-        | (from, to, e) <- xs
+        | x@(_, r) <- xs
+        , let (from, to) = getFromTo r
         ]
-  let (inhEdges, assocEdges) = both toIndexed
-        $ second (map toThickEdge) diagramEdges
-  let graph = mkGraph (zip [0..] theNodes) (inhEdges ++ assocEdges)
-        :: Gr String Connection
+  let thickenedRelationships = toIndexed $ calculateThickRelationships cd
+  let graph = mkGraph (zip [0..] theNodes) thickenedRelationships
+        :: Gr String (Bool, Relationship String String)
   let params = nonClusteredParams {
         fmtNode = \(_,l) -> [
           toLabel l,
@@ -221,8 +222,8 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
           Height 0,
           FontSize 16
           ],
-        fmtEdge = \(_,_,l) -> FontSize 16
-          : connectionArrow printNavigations printNames Nothing l
+        fmtEdge = \(_,_,(isThick, r)) -> FontSize 16
+          : relationshipArrow printNavigations printNames Nothing isThick r
         }
   errorWithoutGraphviz
   graph' <- layoutGraph' params dirCommand graph
@@ -233,12 +234,17 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
         mempty
         nodes
       gedges = foldr
-        (\(s, t, l, p) g -> g # drawRel sfont s t l p)
+        (\(s, t, (isThick, r), p) g -> g # drawRel sfont s t isThick r p)
         gnodes
         edges
   writeSVG file gedges
   return file
   where
+    getFromTo x = case x of
+      Inheritance {..} -> (subClass, superClass)
+      Association {..} -> both linking (associationFrom, associationTo)
+      Aggregation {..} -> both linking (aggregationWhole, aggregationPart)
+      Composition {..} -> both linking (compositionWhole, compositionPart)
     drawRel f = drawRelationship f printNavigations printNames marking
 
 drawRelationship
@@ -249,11 +255,12 @@ drawRelationship
   -> Style V2 Double
   -> n
   -> n
-  -> Connection
+  -> Bool
+  -> Relationship n String
   -> Path V2 Double
   -> Diagram B
   -> Diagram B
-drawRelationship sfont printNavigations printNames marking fl tl l path =
+drawRelationship sfont printNavigations printNames marking fl tl isThick l path =
   connectWithPath opts sfont dir from to ml mfl mtl path'
   # applyStyle (if isThick then marking else mempty)
   # lwL 0.5
@@ -267,33 +274,46 @@ drawRelationship sfont printNavigations printNames marking fl tl l path =
       & headGap .~ local 0
       & tailLength .~ local 7
     mfl' = case l of
-      Inheritance' -> Nothing
-      Assoc Composition' _ r _ _ -> rangeWithDefault (1, Just 1) r
-      Assoc _ _ r _ _ -> rangeWithDefault (0, Nothing) r
+      Inheritance {} -> Nothing
+      Composition {..} ->
+        rangeWithDefault (1, Just 1) $ limits compositionWhole
+      Aggregation {..} ->
+        rangeWithDefault (0, Nothing) $ limits aggregationWhole
+      Association {..} ->
+        rangeWithDefault (0, Nothing) $ limits associationFrom
     mtl' = case  l of
-      Inheritance' -> Nothing
-      Assoc _ _ _ r _ -> rangeWithDefault (0, Nothing) r
+      Inheritance {} -> Nothing
+      Composition {..} ->
+        rangeWithDefault (0, Nothing) $ limits compositionPart
+      Aggregation {..} ->
+        rangeWithDefault (0, Nothing) $ limits aggregationPart
+      Association {..} ->
+        rangeWithDefault (0, Nothing) $ limits associationTo
     (from, to, mfl, mtl, path')
       | flipEdge  = (tl, fl, mtl', mfl', reversePath path)
       | otherwise = (fl, tl, mfl', mtl', path)
     atail = const lineTail
     (flipEdge, ahead) = case l of
-      Inheritance' -> (False, arrowheadTriangle)
-      Assoc t _ _ _ _ -> case t of
-        Association' -> (
+      Inheritance {} -> (False, arrowheadTriangle)
+      Association {} -> (
           False,
           if printNavigations then arrowheadVee else const (flipArrow lineTail)
           )
-        Aggregation' -> (True, arrowheadDiamond)
-        Composition' -> (True, arrowheadFilledDiamond)
+      Aggregation {} -> (True, arrowheadDiamond)
+      Composition {} -> (True, arrowheadFilledDiamond)
     dir = case l of
-      Assoc Association' _ _ _ _ ->
+      Association {} ->
         if printNavigations then Forward else NoDir
-      _ -> Forward
-    (ml, isThick) = case l of
-      Inheritance'      -> (Nothing, False)
-      Assoc _ al _ _ im -> (,im) $
-        if printNames then Just al else Nothing
+      Aggregation {} -> Forward
+      Composition {} -> Forward
+      Inheritance {} -> Forward
+    ml = do
+      guard printNames
+      case l of
+        Inheritance {}   -> Nothing
+        Association {..} -> Just associationName
+        Aggregation {..} -> Just aggregationName
+        Composition {..} -> Just compositionName
 
 rangeWithDefault :: (Int, Maybe Int) -> (Int, Maybe Int) -> Maybe String
 rangeWithDefault def fromTo
