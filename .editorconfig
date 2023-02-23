@@ -13,6 +13,8 @@ max_line_length = 160
 
 [test/unit/**]
 max_line_length = unset
+end_of_line = unset
+insert_final_newline = false
 
 [**.{yml,yaml,md,tex}]
 max_line_length = unset
