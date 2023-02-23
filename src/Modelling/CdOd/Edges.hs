@@ -10,6 +10,7 @@ module Modelling.CdOd.Edges (
   connectionName,
   -- * Transformation
   fromEdges, toEdges,
+  nameEdges,
   relationshipToEdge,
   renameAssocsInEdge,
   renameClassesInEdge,
@@ -40,6 +41,7 @@ import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
 import Control.Monad.Catch              (MonadThrow)
 import Data.Bimap                       (Bimap)
+import Data.List                        (partition)
 import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 
@@ -82,6 +84,14 @@ renameClassesInEdge
 renameClassesInEdge m (f, t, a) = (,,a) <$> rename f <*> rename t
   where
     rename = (`BM.lookup` m)
+
+nameEdges :: [DiagramEdge] -> [DiagramEdge]
+nameEdges es =
+     ihs
+  ++ [(s, e, Assoc k [n] m1 m2 b)
+     | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] ass]
+  where
+    (ihs, ass) = partition isInheritanceEdge es
 
 toEdges :: Cd -> [DiagramEdge]
 toEdges = map relationshipToEdge . relationships

@@ -9,13 +9,15 @@ import Modelling.CdOd.Edges (
   inheritanceCycles,
   multipleInheritances,
   selfEdges,
+  toEdges,
   wrongLimits,
   )
-import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
+import Modelling.CdOd.Generate          (generateCds, instanceToCd)
 import Modelling.CdOd.Types (
   ClassConfig (..),
   RelationshipProperties (..),
   anyThickEdge,
+  classNames,
   defaultProperties,
   )
 
@@ -29,8 +31,10 @@ generateCd
   -> Maybe Integer
   -> Maybe Int
   -> IO ([String], [DiagramEdge])
-generateCd wi c p mis to = either error id . instanceToEdges . head
+generateCd wi c p mis to = toEdges' . either error id . instanceToCd . head
   <$> generateCds wi c p mis to
+  where
+    toEdges' x = (classNames x, toEdges x)
 
 spec :: Spec
 spec =

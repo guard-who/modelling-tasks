@@ -7,6 +7,7 @@ import Modelling.CdOd.DifferentNames (
   DifferentNamesInstance,
   getDifferentNamesTask,
   )
+import Modelling.CdOd.Edges             (fromEdges)
 import Modelling.CdOd.Generate.Generate (generate)
 import Modelling.CdOd.Types (
   ClassConfig (..),
@@ -38,7 +39,7 @@ differentNames config segment seed = do
           (withNonTrivialInheritance config)
           config'
           (searchSpace config)
-        getDifferentNamesTask fgen config names edges
+        getDifferentNamesTask fgen config $ fromEdges names edges
       lift $ randomise inst
     continueWithHead []    _ = fgen
     continueWithHead (x:_) f = f x

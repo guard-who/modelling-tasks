@@ -22,8 +22,6 @@ import Modelling.CdOd.DifferentNames (
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.CdOd.Edges (
   AssociationType (..),
-  DiagramEdge,
-  toEdges,
   )
 import Modelling.CdOd.Types (
   Cd,
@@ -174,7 +172,7 @@ spec = do
 odFor :: Cd -> IO Od
 odFor cd = oDiagram <$> do
   g <- getStdGen
-  evalRandT (getDifferentNamesTask failed fewObjects `withCd` cd) g
+  evalRandT (getDifferentNamesTask failed fewObjects cd) g
   where
     failed = error "failed generating instance"
     fewObjects = defaultDifferentNamesConfig { objectConfig = oc }
@@ -183,9 +181,6 @@ odFor cd = oDiagram <$> do
       linksPerObject = (0, Just 4),
       objects = (3, 3)
       }
-
-withCd :: ([String] -> [DiagramEdge] -> x) -> Cd -> x
-withCd f cd = f (classNames cd) $ toEdges cd
 
 cdBCCircle :: Cd
 cdBCCircle = ClassDiagram {

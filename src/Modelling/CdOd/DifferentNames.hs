@@ -55,14 +55,7 @@ import Modelling.CdOd.CD2Alloy.Transform (
   mergeParts,
   transform,
   )
-import Modelling.CdOd.Edges (
-  AssociationType (..),
-  Connection (..),
-  DiagramEdge,
-  fromEdges,
-  renameEdges,
-  )
-import Modelling.CdOd.Generate          (generateCds, instanceToEdges)
+import Modelling.CdOd.Generate          (generateCds, instanceToCd)
 import Modelling.CdOd.Output            (cacheCd, cacheOd, drawCd)
 import Modelling.CdOd.Types (
   Cd,
@@ -84,6 +77,7 @@ import Modelling.CdOd.Types (
   renameClassesInOd,
   renameLinksInOd,
   renameClassesAndRelationshipsInCd,
+  reverseAssociation,
   showName,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
@@ -109,6 +103,7 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
+import Data.Bitraversable               (bitraverse)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
@@ -390,14 +385,9 @@ differentNames config segment seed = do
       "it seems to be impossible to generate such a model"
       ++ "; check your configuration"
     fgen (insta:instas) = do
-      let (names, edges) = either error id $ instanceToEdges insta
-      inst <- getDifferentNamesTask (fgen instas) config names edges
+      let cd = either error id $ instanceToCd insta
+      inst <- getDifferentNamesTask (fgen instas) config cd
       lift $ shuffleEverything inst
-
-reverseAssociation :: DiagramEdge -> DiagramEdge
-reverseAssociation (from, to, Assoc Association' n lf lt im) =
-  (to, from, Assoc Association' n lt lf im)
-reverseAssociation x = x
 
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
@@ -457,23 +447,24 @@ getDifferentNamesTask
   :: (RandomGen g, MonadIO m)
   => RandT g m DifferentNamesInstance
   -> DifferentNamesConfig
-  -> [String]
-  -> [DiagramEdge]
+  -> Cd
   -> RandT g m DifferentNamesInstance
-getDifferentNamesTask fhead config names edges' = do
-    let edges  = reverseAssociation <$> edges'
-        cd0    = (0 :: Integer, fromEdges names edges)
+getDifferentNamesTask fhead config cd' = do
+    let cd     = cd' {
+          relationships = map reverseAssociation $ relationships cd'
+          }
+        cd0    = (0 :: Integer, cd)
         parts0 = uncurry alloyFor cd0
         labels = mapMaybe relationshipName . relationships $ snd cd0
         cds    = map
-          (fromEdges names . flip renameEdges edges . BM.fromList . zip labels)
+          (flip renameEdges cd . BM.fromList . zip labels)
           $ drop 1 (permutations labels)
         cds'   = zip [1 :: Integer ..] cds
         partss = map (uncurry alloyFor) cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand
           runCmd
-          (length names)
+          (length $ classNames cd)
           (objectConfig config)
           partss'
         partss' = foldr mergeParts parts0 partss
@@ -487,7 +478,7 @@ getDifferentNamesTask fhead config names edges' = do
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
-          cd1 = fromEdges names $ renameEdges (BM.twist bm) edges'
+          cd1 = renameEdges (BM.twist bm) cd'
           bm' = BM.filter (const (`elem` usedLabels od1)) bm
           isCompleteMapping = BM.keysR bm == sort (usedLabels od1)
       if maybe (const True) (bool id not) (ignoreOneRelationship config)
@@ -506,6 +497,7 @@ getDifferentNamesTask fhead config names edges' = do
               }
         else fhead
   where
+    renameEdges bm = either (error . show) id . bitraverse pure (`BM.lookup` bm)
     alloyFor n cd = transform
       cd
       []

@@ -11,8 +11,8 @@ import Modelling.CdOd.Edges             (
   DiagramEdge,
   checkMultiEdge,
   hasAssociationAtOneSuperclass,
+  nameEdges,
   )
-import Modelling.CdOd.Generate          (nameEdges)
 import Modelling.CdOd.Types             (ClassConfig (..))
 
 import Control.Arrow                    (second)
