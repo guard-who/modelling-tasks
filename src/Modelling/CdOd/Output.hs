@@ -34,14 +34,12 @@ import Modelling.CdOd.Auxiliary.Util (
   emptyArr,
   underlinedLabel,
   )
-import Modelling.CdOd.Edges (
-  calculateThickRelationships,
-  )
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
   LimitedLinking (..),
   Relationship (..),
+  calculateThickRelationships,
   )
 import Modelling.PetriNet.Reach.Group   (writeSVG)
 

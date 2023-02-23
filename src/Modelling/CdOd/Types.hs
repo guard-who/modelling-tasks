@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -18,7 +19,9 @@ module Modelling.CdOd.Types (
   Od,
   Relationship (..),
   RelationshipProperties (..),
+  anyThickEdge,
   associationNames,
+  calculateThickRelationships,
   checkClassConfig,
   checkClassConfigWithProperties,
   classNamesOd,
@@ -50,16 +53,17 @@ import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    (void)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom)
-import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Bifunctor                   (Bifunctor (bimap, first))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Char                        (isAlpha, isAlphaNum)
 import Data.List                        (intercalate, nub)
 import Data.List.Split                  (splitOn)
-import Data.Maybe                       (fromMaybe, mapMaybe)
+import Data.Maybe                       (fromJust, fromMaybe, mapMaybe)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
+import Data.Tuple.Extra                 (both, dupe)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
 import Text.ParserCombinators.Parsec (
@@ -533,3 +537,62 @@ renameClassesInOd :: MonadThrow m => Bimap String String -> Od -> m Od
 renameClassesInOd m od = (,snd od) <$> mapM (rename . splitOn "$") (fst od)
   where
     rename (l:ls) = (++ '$' : intercalate "$" ls) <$> BM.lookup l m
+
+anyThickEdge :: Cd -> Bool
+anyThickEdge = any fst . calculateThickRelationships
+
+calculateThickRelationships :: Cd -> [(Bool, Relationship String String)]
+calculateThickRelationships ClassDiagram {..} =
+  map (first isAssocThick . dupe) relationships
+  where
+    classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
+      where
+        subs seen name
+          | name `elem` seen = []
+          | otherwise = name : concatMap
+              (subs (name:seen) . subClass)
+              (filter ((name ==) . superClass) inheritances)
+    inheritances = filter
+      (\case Inheritance {} -> True; _ -> False)
+      relationships
+    assocsBothWays = concatMap
+      (map (both linking) . assocBothWays)
+      relationships
+    isAssocThick r = case r of
+      Inheritance {} -> False
+      Association {..} -> shouldBeThick
+        (linking associationFrom)
+        (linking associationTo)
+        classesWithSubclasses
+        assocsBothWays
+      Aggregation {..} -> shouldBeThick
+        (linking aggregationWhole)
+        (linking aggregationPart)
+        classesWithSubclasses
+        assocsBothWays
+      Composition {..} -> shouldBeThick
+        (linking compositionWhole)
+        (linking compositionPart)
+        classesWithSubclasses
+        assocsBothWays
+    assocBothWays Inheritance {} = []
+    assocBothWays Association {..} =
+      [(associationFrom, associationTo), (associationTo, associationFrom)]
+    assocBothWays Aggregation {..} =
+      [(aggregationPart, aggregationWhole), (aggregationWhole, aggregationPart)]
+    assocBothWays Composition {..} =
+      [(compositionPart, compositionWhole), (compositionWhole, compositionPart)]
+
+shouldBeThick
+  :: String
+  -> String
+  -> [(String, [String])]
+  -> [(String, String)]
+  -> Bool
+shouldBeThick a b classesWithSubclasses =
+  any (\(a',b') ->
+         (a /= a' || b /= b')
+         && let { one = a' `isSubOf` a; two = b' `isSubOf` b }
+            in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
+      )
+  where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)

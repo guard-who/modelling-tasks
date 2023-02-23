@@ -11,7 +11,6 @@ import qualified Data.Map                         as M (
 import Modelling.Auxiliary.Common       (randomise)
 import Modelling.CdOd.Edges (
   DiagramEdge,
-  anyThickEdge,
   checkMultiEdge,
   fromEdges,
   )
@@ -28,6 +27,7 @@ import Modelling.CdOd.Generate.Mutation
 import Modelling.CdOd.Output            (drawCd)
 import Modelling.CdOd.Types (
   Cd,
+  anyThickEdge,
   )
 
 import Control.Monad                    (void, when)

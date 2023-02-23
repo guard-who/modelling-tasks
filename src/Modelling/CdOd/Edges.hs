@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.Edges (
@@ -20,14 +19,12 @@ module Modelling.CdOd.Edges (
   -- ** Check sets (reusing single checks)
   checkMultiEdge, checkObvious,
   -- ** Single checks
-  calculateThickRelationships,
   compositionCycles,
   doubleConnections,
   hasAssociationAtOneSuperclass,
   inheritanceCycles,
   multipleInheritances,
   selfEdges, wrongLimits,
-  anyThickEdge, shouldBeThick,
   isInheritanceEdge,
   ) where
 
@@ -42,10 +39,8 @@ import Modelling.CdOd.Types (
 import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
 import Control.Monad.Catch              (MonadThrow)
-import Data.Bifunctor                   (first)
 import Data.Bimap                       (Bimap)
-import Data.Maybe                       (fromJust)
-import Data.Tuple.Extra                 (both, dupe, thd3)
+import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 
 data Connection
@@ -274,66 +269,6 @@ getPaths connectionFilter es =
       let es'' = filter ((s /=) . start) $ filter ((s /=) . end) es'
       in [path | p@(s', e', _) <- es', s' /= e', s' /= e, s == e'
                , path <- getPath s' e (p:ps) es'']
-
-anyThickEdge :: Cd -> Bool
-anyThickEdge = any fst . calculateThickRelationships
-
-calculateThickRelationships :: Cd -> [(Bool, Relationship String String)]
-calculateThickRelationships ClassDiagram {..} =
-  let
-    classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
-      where
-        subs seen name
-          | name `elem` seen = []
-          | otherwise = name : concatMap
-              (subs (name:seen) . subClass)
-              (filter ((name ==) . superClass) inheritances)
-    inheritances = filter
-      (\case Inheritance {} -> True; _ -> False)
-      relationships
-    assocsBothWays = concatMap
-      (map (both linking) . assocBothWays)
-      relationships
-    isAssocThick r = case r of
-      Inheritance {} -> False
-      Association {..} -> shouldBeThick
-        (linking associationFrom)
-        (linking associationTo)
-        classesWithSubclasses
-        assocsBothWays
-      Aggregation {..} -> shouldBeThick
-        (linking aggregationWhole)
-        (linking aggregationPart)
-        classesWithSubclasses
-        assocsBothWays
-      Composition {..} -> shouldBeThick
-        (linking compositionWhole)
-        (linking compositionPart)
-        classesWithSubclasses
-        assocsBothWays
-  in map (first isAssocThick . dupe) relationships
-  where
-    assocBothWays Inheritance {} = []
-    assocBothWays Association {..} =
-      [(associationFrom, associationTo), (associationTo, associationFrom)]
-    assocBothWays Aggregation {..} =
-      [(aggregationPart, aggregationWhole), (aggregationWhole, aggregationPart)]
-    assocBothWays Composition {..} =
-      [(compositionPart, compositionWhole), (compositionWhole, compositionPart)]
-
-shouldBeThick
-  :: String
-  -> String
-  -> [(String, [String])]
-  -> [(String, String)]
-  -> Bool
-shouldBeThick a b classesWithSubclasses =
-  any (\(a',b') ->
-         (a /= a' || b /= b')
-         && let { one = a' `isSubOf` a; two = b' `isSubOf` b }
-            in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
-      )
-  where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)
 
 checkMultiEdge :: [DiagramEdge] -> Bool
 checkMultiEdge cs =
