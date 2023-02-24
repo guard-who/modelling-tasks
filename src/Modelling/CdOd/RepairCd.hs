@@ -560,7 +560,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     getInstanceWithODs _  [] =
       repairIncorrect allowed config noIsolationLimitation maxInsts to
     getInstanceWithODs vs (rinsta:rinstas) = do
-      (cd, chs, _) <- applyChanges rinsta
+      (cd, chs, _) <- liftIO $ applyChanges rinsta
       let cds  = zip vs (map snd chs)
           chs' = zip vs chs
       ods <- (liftIO . getOD . snd) `mapM` filter fst cds

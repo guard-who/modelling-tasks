@@ -546,7 +546,7 @@ getODsFor
   -> RandT g IO (Maybe (Map Int Cd, Map Char ([Int], AlloyInstance)))
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
-  (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- applyChanges cd
+  (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- liftIO $ applyChanges cd
   instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
@@ -557,19 +557,18 @@ getODsFor config (cd:cds) = do
       )
 
 applyChanges
-  :: RandomGen g
-  => AlloyInstance
-  -> RandT g IO (Cd, [(Change DiagramEdge, Cd)], Int)
+  :: AlloyInstance
+  -> IO (Cd, [(Change DiagramEdge, Cd)], Int)
 applyChanges insta = do
   cdInstance <- either error return $ fromInstance insta
   let cd' :: Cd
       cd' = instanceClassDiagram cdInstance
-  cs' <- shuffleM $ classNames cd'
-  es' <- shuffleM $ instanceRelationshipNames cdInstance
+      cs' = classNames cd'
+      es' = instanceRelationshipNames cdInstance
   let bme = BM.fromList $ zip es' $ map (:[]) ['z', 'y' ..]
       bmc = BM.fromList $ zip cs' $ map (:[]) ['A' ..]
       rename = renameClassesAndRelationshipsInCd bmc bme
-  cd <- lift $ rename cd'
+  cd <- rename cd'
   let edges0 = map relationshipToEdge $ relationships cd'
       changes = map (fmap relationshipToEdge) $ instanceChanges cdInstance
       cds = map (getSyntax bmc bme edges0) changes
