@@ -1,10 +1,15 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.CdAndChanges.Instance (
-  ClassDiagramInstance (..),
+  ChangeAndCd (..),
+  ClassDiagramInstance,
+  GenericClassDiagramInstance (..),
   fromInstance,
+  renameClassesAndRelationshipsInCdInstance,
   ) where
 
+import qualified Data.Bimap                       as BM (lookup)
 import qualified Data.Map                         as M (
   lookup,
   )
@@ -16,7 +21,6 @@ import qualified Data.Set                         as S (
 
 import Modelling.Auxiliary.Common       (Object (Object, oName), toMap)
 import Modelling.CdOd.Types (
-  Cd,
   ClassDiagram (..),
   Change (..),
   LimitedLinking (..),
@@ -24,9 +28,19 @@ import Modelling.CdOd.Types (
   )
 
 import Control.Monad                    (forM)
+import Control.Monad.Catch              (MonadThrow)
+import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Bifoldable                  (Bifoldable (bifoldMap))
+import Data.Bimap                       (Bimap)
+import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Composition                 ((.:))
 import Data.Map                         (Map)
-import Data.Maybe                       (fromMaybe, isJust, mapMaybe)
+import Data.Maybe (
+  fromMaybe,
+  isJust,
+  mapMaybe,
+  maybeToList,
+  )
 #if __GLASGOW_HASKELL__ >= 808
 import Data.String                      (IsString, fromString)
 #endif
@@ -53,12 +67,69 @@ newtype NumberedClass = NumberedClass Int
 data NumberedAssoc = NumberedAssoc String Int
   deriving (Eq, Ord)
 
-data ClassDiagramInstance
-  = ClassDiagramInstance {
-    instanceClassDiagram      :: Cd,
-    instanceRelationshipNames :: [String],
-    instanceChanges           :: [Change (Relationship String String)]
+type ClassDiagramInstance = GenericClassDiagramInstance String String
+
+data ChangeAndCd className relationshipName
+  = ChangeAndCd {
+    relationshipChange
+      :: Change (Relationship className relationshipName),
+    changeClassDiagram
+      :: ClassDiagram className relationshipName
     }
+  deriving (Read, Show)
+
+instance Bifunctor ChangeAndCd where
+  bimap f g ChangeAndCd {..} = ChangeAndCd {
+    relationshipChange = fmap (bimap f g) relationshipChange,
+    changeClassDiagram = bimap f g changeClassDiagram
+    }
+
+instance Bifoldable ChangeAndCd where
+  bifoldMap f g ChangeAndCd {..} = foldMap (bifoldMap f g) relationshipChange
+    <> bifoldMap f g changeClassDiagram
+
+instance Bitraversable ChangeAndCd where
+  bitraverse f g ChangeAndCd {..} = ChangeAndCd
+    <$> traverse (bitraverse f g) relationshipChange
+    <*> bitraverse f g changeClassDiagram
+
+data GenericClassDiagramInstance className relationshipName
+  = ClassDiagramInstance {
+    instanceClassDiagram      :: ClassDiagram className relationshipName,
+    instanceRelationshipNames :: [relationshipName],
+    instanceChangesAndCds     :: [ChangeAndCd className relationshipName]
+    }
+  deriving (Read, Show)
+
+instance Bifunctor GenericClassDiagramInstance where
+  bimap f g ClassDiagramInstance {..} = ClassDiagramInstance {
+    instanceClassDiagram = bimap f g instanceClassDiagram,
+    instanceRelationshipNames = map g instanceRelationshipNames,
+    instanceChangesAndCds = map (bimap f g) instanceChangesAndCds
+    }
+
+instance Bifoldable GenericClassDiagramInstance where
+  bifoldMap f g ClassDiagramInstance {..} = bifoldMap f g instanceClassDiagram
+    <> foldMap g instanceRelationshipNames
+    <> foldMap (bifoldMap f g) instanceChangesAndCds
+
+instance Bitraversable GenericClassDiagramInstance where
+  bitraverse f g ClassDiagramInstance {..} = ClassDiagramInstance
+    <$> bitraverse f g instanceClassDiagram
+    <*> traverse g instanceRelationshipNames
+    <*> traverse (bitraverse f g) instanceChangesAndCds
+
+renameClassesAndRelationshipsInCdInstance
+  :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')
+  => Bimap c c'
+  -> Bimap r r'
+  -> GenericClassDiagramInstance c r
+  -> m (GenericClassDiagramInstance c' r')
+renameClassesAndRelationshipsInCdInstance
+  bmClassNames
+  bmRelationshipNames
+  = bitraverse (`BM.lookup` bmClassNames) (`BM.lookup` bmRelationshipNames)
+
 
 fromInstance
   :: AlloyInstance
@@ -68,17 +139,27 @@ fromInstance insta = do
   cs <- instanceToChanges insta
   namesOfClasses <- instanceToNamesOf insta "Class"
   namesOfAssocs <- instanceToNamesOf insta "Assoc"
+  let baseCd = ClassDiagram {
+        classNames = namesOfClasses,
+        relationships =
+          [e | (o, e) <- es, o `notElem` mapMaybe add cs]
+        }
+      modifiedCd ma mr = baseCd {
+        relationships = maybeToList ma
+          ++ maybe id (filter . (/=)) mr (relationships baseCd)
+        }
   return ClassDiagramInstance {
-    instanceClassDiagram = ClassDiagram {
-      classNames = namesOfClasses,
-      relationships =
-        [e | (o, e) <- es, o `notElem` mapMaybe add cs]
-      },
+    instanceClassDiagram = baseCd,
     instanceRelationshipNames = namesOfAssocs,
-    instanceChanges =
-          [Change a r | c <- cs
-                      , a <- lookupM (add c) es
-                      , r <- lookupM (remove c) es]
+    instanceChangesAndCds = [
+        ChangeAndCd {
+          relationshipChange = Change a r,
+          changeClassDiagram = modifiedCd a r
+          }
+      | c <- cs
+      , a <- lookupM (add c) es
+      , r <- lookupM (remove c) es
+      ]
     }
   where
     lookupM :: Eq a => Maybe a -> [(a, b)] -> [Maybe b]

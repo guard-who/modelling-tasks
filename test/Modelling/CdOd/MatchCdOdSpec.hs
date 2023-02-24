@@ -6,10 +6,10 @@ import qualified Data.Map                         as M (lookup, null)
 import Modelling.Common                 (withUnitTests)
 import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (maxInstances, objectConfig),
-  applyChanges,
   checkMatchCdOdConfig,
   defaultMatchCdOdConfig,
   diagrams,
+  getChangesAndCds,
   getODInstances,
   matchCdOd,
   )
@@ -75,7 +75,7 @@ spec = do
       . runExceptT
       . parseInstance
       . BS.pack
-      >=> fmap show . applyChanges
+      >=> fmap show . getChangesAndCds
     opposingOd = (
       [(["A$0", "B$0"], [(1, 0, "x")])],
       [(["A$0", "B$0"], [(0, 1, "x")])]
@@ -86,7 +86,7 @@ spec = do
       [(["A$0", "B$0"], [(1, 0, "x")])]
       )
     cfg = defaultMatchCdOdConfig {
-      maxInstances = Just 20
+      maxInstances = Just 27
       }
 
 getOdsFor :: Cd -> Cd -> IO ([Od], [Od])

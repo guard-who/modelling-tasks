@@ -1,7 +1,9 @@
 module Modelling.CdOd.OutputSpec where
 
 import Modelling.CdOd.CdAndChanges.Instance (
-  ClassDiagramInstance (..), fromInstance)
+  GenericClassDiagramInstance (..),
+  fromInstance,
+  )
 import Modelling.CdOd.Output            (drawCd)
 import Modelling.Common                 (withUnitTests)
 

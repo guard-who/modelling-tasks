@@ -12,6 +12,7 @@ module Modelling.CdOd.MatchCdOd (
   debug,
   defaultMatchCdOdConfig,
   defaultMatchCdOdInstance,
+  getChangesAndCds,
   getMatchCdOdTask,
   getODInstances,
   matchCdOd,
@@ -55,8 +56,10 @@ import Modelling.CdOd.CD2Alloy.Transform (
   transform,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
-  ClassDiagramInstance (..),
+  ChangeAndCd (..),
+  GenericClassDiagramInstance (..),
   fromInstance,
+  renameClassesAndRelationshipsInCdInstance,
   )
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
@@ -86,6 +89,7 @@ import Modelling.CdOd.Types (
   classNames,
   defaultProperties,
   linkNames,
+  relationshipName,
   renameClassesAndRelationshipsInCd,
   renameClassesInOd,
   renameLinksInOd,
@@ -121,7 +125,7 @@ import Control.Monad.Random (
   mkStdGen,
   )
 import Control.Monad.Trans              (MonadTrans (lift))
-import Data.Bifunctor                   (Bifunctor (second))
+import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
@@ -131,6 +135,7 @@ import Data.List (
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
 import Data.String.Interpolate          (iii)
+import Data.Tuple.Extra                 (dupe)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -546,7 +551,7 @@ getODsFor
   -> RandT g IO (Maybe (Map Int Cd, Map Char ([Int], AlloyInstance)))
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
-  (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- liftIO $ applyChanges cd
+  (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- liftIO $ getChangesAndCds cd
   instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
@@ -555,6 +560,34 @@ getODsFor config (cd:cds) = do
       M.fromList [(1, cd1), (2, cd2)],
       M.fromList $ zip ['a' ..] rinstas
       )
+
+getChangesAndCds
+  :: AlloyInstance
+  -> IO (Cd, [(Change DiagramEdge, Cd)], Int)
+getChangesAndCds insta = do
+  cdInstance <- either error return $ fromInstance insta
+  let cd  = instanceClassDiagram cdInstance
+      cs  = classNames cd
+      es  = instanceRelationshipNames cdInstance
+      bme = BM.fromList $ zip es $ map (:[]) ['z', 'y' ..]
+      bmc = BM.fromList $ zip cs $ map (:[]) ['A' ..]
+      toTuples = map
+        $ bimap (fmap relationshipToEdge . relationshipChange) changeClassDiagram
+        . dupe
+        . deliberatelyNameReplacedEdgesSameInCdOnly
+  ClassDiagramInstance {..} <-
+    renameClassesAndRelationshipsInCdInstance bmc bme cdInstance
+  return (instanceClassDiagram, toTuples instanceChangesAndCds, BM.size bmc)
+  where
+    deliberatelyNameReplacedEdgesSameInCdOnly change =
+      case relationshipChange change of
+        Change {add = Just rx, remove = Just ry}
+          | Just x <- relationshipName rx
+          , Just y <- relationshipName ry -> change {
+            changeClassDiagram = second (\x' -> if x' == x then y else x')
+              $ changeClassDiagram change
+            }
+        _ -> change
 
 applyChanges
   :: AlloyInstance
@@ -570,7 +603,8 @@ applyChanges insta = do
       rename = renameClassesAndRelationshipsInCd bmc bme
   cd <- rename cd'
   let edges0 = map relationshipToEdge $ relationships cd'
-      changes = map (fmap relationshipToEdge) $ instanceChanges cdInstance
+      changes = map (fmap relationshipToEdge . relationshipChange)
+        $ instanceChangesAndCds cdInstance
       cds = map (getSyntax bmc bme edges0) changes
   let changes' = map (fmap $ head . renameClasses bmc . renameEdges bme . (:[])) changes
   return (cd, zip changes' cds, BM.size bmc)

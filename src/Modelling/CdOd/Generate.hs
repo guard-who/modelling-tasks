@@ -9,7 +9,7 @@ import qualified Data.Bimap                       as BM (
 
 import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.CdOd.CdAndChanges.Instance (
-  ClassDiagramInstance (..),
+  GenericClassDiagramInstance (..),
   fromInstance,
   )
 import Modelling.CdOd.CdAndChanges.Transform (
