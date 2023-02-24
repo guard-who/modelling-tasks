@@ -1,9 +1,12 @@
 module Modelling.CdOd.MatchCdOdSpec where
 
+import qualified Data.ByteString.Char8            as BS (pack)
 import qualified Data.Map                         as M (lookup, null)
 
+import Modelling.Common                 (withUnitTests)
 import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (maxInstances, objectConfig),
+  applyChanges,
   checkMatchCdOdConfig,
   defaultMatchCdOdConfig,
   diagrams,
@@ -21,9 +24,11 @@ import Modelling.CdOd.Types (
   )
 import Modelling.Auxiliary.Common       (oneOf)
 
+import Control.Monad                    ((>=>))
 import Control.Monad.Random             (randomIO)
 import Control.Monad.Except             (runExceptT)
 import Data.Maybe                       (fromMaybe)
+import Language.Alloy.Debug             (parseInstance)
 import Test.Hspec
 import Test.QuickCheck                  (ioProperty)
 
@@ -62,7 +67,15 @@ spec = do
     it "generates correct ODs for inheritance and composition" $
       getOdsFor cdAInheritsBandAtoB cdComposeBofAs
       `shouldReturn` inheritOd
+  withUnitTests "applyChanges" does dir "hs" $ shouldReturn . getResult
   where
+    does = "generates expected class diagrams"
+    dir = "test/unit/Modelling/CdOd/MatchCdOd"
+    getResult = fmap (either (error . show) id)
+      . runExceptT
+      . parseInstance
+      . BS.pack
+      >=> fmap show . applyChanges
     opposingOd = (
       [(["A$0", "B$0"], [(1, 0, "x")])],
       [(["A$0", "B$0"], [(0, 1, "x")])]
