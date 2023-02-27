@@ -57,6 +57,7 @@ import Modelling.CdOd.CD2Alloy.Transform (
   )
 import Modelling.CdOd.CdAndChanges.Instance (
   ChangeAndCd (..),
+  ClassDiagramInstance,
   GenericClassDiagramInstance (..),
   fromInstance,
   renameClassesAndRelationshipsInCdInstance,
@@ -125,7 +126,7 @@ import Control.Monad.Random (
   mkStdGen,
   )
 import Control.Monad.Trans              (MonadTrans (lift))
-import Data.Bifunctor                   (Bifunctor (bimap, second))
+import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
@@ -135,7 +136,6 @@ import Data.List (
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
 import Data.String.Interpolate          (iii)
-import Data.Tuple.Extra                 (dupe)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -551,8 +551,9 @@ getODsFor
   -> RandT g IO (Maybe (Map Int Cd, Map Char ([Int], AlloyInstance)))
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
-  (_, [(_, cd1), (_, cd2), (_, cd3)], numClasses) <- liftIO $ getChangesAndCds cd
-  instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
+  [cd1, cd2, cd3] <- map changeClassDiagram . instanceChangesAndCds
+    <$> liftIO (getChangesAndCds cd)
+  instas <- liftIO $ getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
   mrinstas <- takeRandomInstances instas
   case mrinstas of
     Nothing      -> getODsFor config cds
@@ -563,7 +564,7 @@ getODsFor config (cd:cds) = do
 
 getChangesAndCds
   :: AlloyInstance
-  -> IO (Cd, [(Change DiagramEdge, Cd)], Int)
+  -> IO ClassDiagramInstance
 getChangesAndCds insta = do
   cdInstance <- either error return $ fromInstance insta
   let cd  = instanceClassDiagram cdInstance
@@ -571,13 +572,11 @@ getChangesAndCds insta = do
       es  = instanceRelationshipNames cdInstance
       bme = BM.fromList $ zip es $ map (:[]) ['z', 'y' ..]
       bmc = BM.fromList $ zip cs $ map (:[]) ['A' ..]
-      toTuples = map
-        $ bimap (fmap relationshipToEdge . relationshipChange) changeClassDiagram
-        . dupe
-        . deliberatelyNameReplacedEdgesSameInCdOnly
-  ClassDiagramInstance {..} <-
-    renameClassesAndRelationshipsInCdInstance bmc bme cdInstance
-  return (instanceClassDiagram, toTuples instanceChangesAndCds, BM.size bmc)
+  cdInstance' <- renameClassesAndRelationshipsInCdInstance bmc bme cdInstance
+  return $ cdInstance' {
+    instanceChangesAndCds = map deliberatelyNameReplacedEdgesSameInCdOnly
+      $ instanceChangesAndCds cdInstance'
+    }
   where
     deliberatelyNameReplacedEdgesSameInCdOnly change =
       case relationshipChange change of
