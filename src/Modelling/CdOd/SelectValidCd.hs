@@ -36,6 +36,9 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   simplifiedInformation,
   )
+import Modelling.CdOd.CdAndChanges.Instance (
+  ChangeAndCd (..),
+  )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
   allowEverything,
@@ -191,7 +194,7 @@ selectValidCd config segment seed = do
     (noIsolationLimit config)
     (maxInstances config)
     (timeout config)
-  let cds = map (second snd) chs
+  let cds = map (second changeClassDiagram) chs
   shuffleCds >=> shuffleEverything $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     withNames       = printNames config,

@@ -7,7 +7,6 @@
 module Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
   MatchCdOdInstance (..),
-  applyChanges,
   checkMatchCdOdConfig,
   debug,
   defaultMatchCdOdConfig,
@@ -26,7 +25,7 @@ module Modelling.CdOd.MatchCdOd (
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 
-import qualified Data.Bimap                       as BM (fromList, keysR, size)
+import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   adjust,
   foldrWithKey,
@@ -65,14 +64,6 @@ import Modelling.CdOd.CdAndChanges.Instance (
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   getInstances,
-  )
-import Modelling.CdOd.Edges (
-  Connection (..),
-  DiagramEdge,
-  fromEdges,
-  relationshipToEdge,
-  renameClasses,
-  renameEdges,
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
@@ -130,9 +121,6 @@ import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
-import Data.List (
-  delete,
-  )
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust)
 import Data.String.Interpolate          (iii)
@@ -587,37 +575,6 @@ getChangesAndCds insta = do
               $ changeClassDiagram change
             }
         _ -> change
-
-applyChanges
-  :: AlloyInstance
-  -> IO (Cd, [(Change DiagramEdge, Cd)], Int)
-applyChanges insta = do
-  cdInstance <- either error return $ fromInstance insta
-  let cd' :: Cd
-      cd' = instanceClassDiagram cdInstance
-      cs' = classNames cd'
-      es' = instanceRelationshipNames cdInstance
-  let bme = BM.fromList $ zip es' $ map (:[]) ['z', 'y' ..]
-      bmc = BM.fromList $ zip cs' $ map (:[]) ['A' ..]
-      rename = renameClassesAndRelationshipsInCd bmc bme
-  cd <- rename cd'
-  let edges0 = map relationshipToEdge $ relationships cd'
-      changes = map (fmap relationshipToEdge . relationshipChange)
-        $ instanceChangesAndCds cdInstance
-      cds = map (getSyntax bmc bme edges0) changes
-  let changes' = map (fmap $ head . renameClasses bmc . renameEdges bme . (:[])) changes
-  return (cd, zip changes' cds, BM.size bmc)
-  where
-    getSyntax bmc bme es c =
-      fromEdges (BM.keysR bmc) $ renameClasses bmc $ renameEdges bme $ performChange c es
-    performChange c es =
-      let rs = maybe es (`delete` es) $ remove c
-          add' = case (remove c, add c) of
-            (Just (from, to, Assoc t n _ _ _), Just (from', to', Assoc t' _ m1 m2 b))
-              | t == t', from == from' && to == to' || from == to' && to == from' ->
-                Just (from', to', Assoc t' n m1 m2 b)
-            _ -> add c
-      in maybe rs (: rs) add'
 
 getODInstances
   :: MatchCdOdConfig

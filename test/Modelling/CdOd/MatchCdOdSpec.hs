@@ -67,7 +67,7 @@ spec = do
     it "generates correct ODs for inheritance and composition" $
       getOdsFor cdAInheritsBandAtoB cdComposeBofAs
       `shouldReturn` inheritOd
-  withUnitTests "applyChanges" does dir "hs" $ shouldReturn . getResult
+  withUnitTests "getChangesAndCds" does dir "hs" $ shouldReturn . getResult
   where
     does = "generates expected class diagrams"
     dir = "test/unit/Modelling/CdOd/MatchCdOd"

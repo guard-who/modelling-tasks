@@ -53,7 +53,11 @@ import Modelling.CdOd.CD2Alloy.Transform (
   createRunCommand,
   transform,
   )
-import Modelling.CdOd.MatchCdOd         (applyChanges)
+import Modelling.CdOd.CdAndChanges.Instance (
+  ChangeAndCd (..),
+  GenericClassDiagramInstance (..),
+  )
+import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
   cacheCd,
   drawCd,
@@ -64,6 +68,7 @@ import Modelling.CdOd.Edges (
   Connection (..),
   DiagramEdge,
   connectionName,
+  relationshipToEdge,
   renameAssocsInEdge,
   renameClassesInEdge,
   )
@@ -444,7 +449,7 @@ repairCd config segment seed = do
     (noIsolationLimit config)
     (maxInstances config)
     (timeout config)
-  let chs' = map (second fst) chs
+  let chs' = map (second $ fmap relationshipToEdge . relationshipChange) chs
   shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
@@ -531,7 +536,7 @@ repairIncorrect
   -> Bool
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g IO (Cd, [(Bool, (Change DiagramEdge, Cd))])
+  -> RandT g IO (Cd, [(Bool, ChangeAndCd String String)])
 repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
@@ -560,15 +565,16 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     getInstanceWithODs _  [] =
       repairIncorrect allowed config noIsolationLimitation maxInsts to
     getInstanceWithODs vs (rinsta:rinstas) = do
-      (cd, chs, _) <- liftIO $ applyChanges rinsta
-      let cds  = zip vs (map snd chs)
+      cdInstance <- liftIO $ getChangesAndCds rinsta
+      let cd = instanceClassDiagram cdInstance
+          chs = instanceChangesAndCds cdInstance
           chs' = zip vs chs
-      ods <- (liftIO . getOD . snd) `mapM` filter fst cds
+      ods <- (liftIO . getOD . changeClassDiagram . snd) `mapM` filter fst chs'
       if not (any null ods)
         then do
         when debug $ liftIO $ do
           void $ drawCd' cd 0
-          uncurry drawCd' `mapM_` zip (map snd chs) [1 ..]
+          uncurry drawCd' `mapM_` zip (map changeClassDiagram chs) [1 ..]
           g <- getStdGen
           flip evalRandT g $ uncurry (drawOd . head) `mapM_` zip ods [1 ..]
         return (cd, chs')
