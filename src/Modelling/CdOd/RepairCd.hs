@@ -63,15 +63,6 @@ import Modelling.CdOd.Output (
   drawCd,
   drawOdFromInstance,
   )
-import Modelling.CdOd.Edges (
-  AssociationType (..),
-  Connection (..),
-  DiagramEdge,
-  connectionName,
-  relationshipToEdge,
-  renameAssocsInEdge,
-  renameClassesInEdge,
-  )
 import Modelling.CdOd.Types (
   Cd,
   Change (..),
@@ -86,7 +77,9 @@ import Modelling.CdOd.Types (
   classNames,
   defaultProperties,
   maxFiveObjects,
+  relationshipName,
   renameClassesAndRelationshipsInCd,
+  renameClassesAndRelationshipsInRelationship,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
   )
@@ -116,7 +109,6 @@ import Data.GraphViz                    (DirType (..))
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.String.Interpolate          (i, iii)
-import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -124,7 +116,7 @@ import System.Random.Shuffle            (shuffleM)
 debug :: Bool
 debug = False
 
-phraseChangeDE :: Bool -> Bool -> Change DiagramEdge -> String
+phraseChangeDE :: Bool -> Bool -> Change (Relationship String String) -> String
 phraseChangeDE byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "verändere nichts"
   (Just a,  Nothing) -> "ergänze " ++ trailingComma (phraseRelationDE False withDir a)
@@ -137,47 +129,66 @@ phraseChangeDE byName withDir c = case (add c, remove c) of
       | ',' `elem` xs = xs ++ ","
       | otherwise     = xs
 
-phraseRelationDE :: Bool -> Bool -> DiagramEdge -> String
-phraseRelationDE _ _ (from, to, Inheritance') =
-  "eine Vererbung, bei der " ++ from ++ " von " ++ to ++ " erbt"
-phraseRelationDE True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
-  Association' -> "Assoziation "
-  Aggregation' -> "Aggregation "
-  Composition' -> "Komposition "
-phraseRelationDE _ False (from, to, Assoc Association' _ l h _)
-  | from == to = [i|eine Selbst-Assoziation #{selfParticipates}|]
-  | otherwise  = "eine Assoziation" ++ participationsDE l from h to
-  where
-    selfParticipates :: String
-    selfParticipates =
-      [i|für #{from}, wobei es an einem Ende #{phraseLimitDE l} genau einmal und am anderen Ende #{phraseLimitDE h} beteiligt ist|]
-phraseRelationDE _ _ (from, to, Assoc t _ l h _)
-  | from == to = case t of
-      Association' -> [i|eine Selbst-Assoziation #{selfParticipates}|]
-      Aggregation' -> [i|eine Selbst-Aggregation #{selfParticipatesPartWhole}|]
-      Composition' -> [i|eine Selbst-Komposition #{selfParticipatesPartWhole}|]
-  | otherwise = (++ participationsDE l from h to) $ case t of
-    Association' -> "eine Assoziation von " ++ from ++ " nach " ++ to
-    Aggregation' -> "eine Beziehung, die " ++ from
-      ++ " eine Aggregation aus " ++ to ++ "s macht"
-    Composition' -> "eine Beziehung, die " ++ from
-      ++ " eine Komposition aus " ++ to ++ "s macht"
-  where
-    selfParticipates :: String
-    selfParticipates =
-      [i|für #{from}, wobei es am Anfang #{phraseLimitDE l} und am Ende #{phraseLimitDE h} beteiligt ist|]
-    selfParticipatesPartWhole :: String
-    selfParticipatesPartWhole =
-      [i|für #{from}, wobei es #{phraseLimitDE l} als Teil and #{phraseLimitDE h} als Ganzes beteiligt ist|]
+phraseRelationDE :: Bool -> Bool -> Relationship String String -> String
+phraseRelationDE _ _ Inheritance {..} =
+  "eine Vererbung, bei der " ++ subClass ++ " von " ++ superClass ++ " erbt"
+phraseRelationDE True _ Association {..} = "Assoziation " ++ associationName
+phraseRelationDE True _ Aggregation {..} = "Aggregation " ++ aggregationName
+phraseRelationDE True _ Composition {..} = "Komposition " ++ compositionName
+phraseRelationDE _ False Association {..}
+  | linking associationFrom == linking associationTo = [iii|
+    eine Selbst-Assoziation für #{linking associationFrom},
+    wobei es an einem Ende #{phraseLimitDE $ limits associationFrom}
+    und am anderen Ende #{phraseLimitDE $ limits associationTo} beteiligt ist
+    |]
+  | otherwise  = "eine Assoziation"
+      ++ participationsDE associationFrom associationTo
+phraseRelationDE _ _ Association {..}
+  | associationFrom == associationTo = [iii|
+    eine Selbst-Assoziation für #{linking associationFrom},
+    wobei es am Anfang #{phraseLimitDE $ limits associationFrom}
+    und am Ende #{phraseLimitDE $ limits associationTo} beteiligt ist
+    |]
+  | otherwise = [iii|
+    eine Assocziation von #{linking associationFrom}
+    nach #{linking associationTo}
+    |] ++ participationsDE associationFrom associationTo
+phraseRelationDE _ _ Aggregation {..}
+  | aggregationPart == aggregationWhole = [iii|
+    eine Selbst-Aggregation
+    #{selfParticipatesPartWholeDE aggregationPart aggregationWhole}
+    |]
+  | otherwise = [iii|
+    eine Beziehung, die #{linking aggregationWhole}
+    eine Aggregation aus #{linking aggregationPart}s macht
+    |]
+phraseRelationDE _ _ Composition {..}
+  | compositionPart == compositionWhole = [iii|
+    eine Selbst-Komposition
+    #{selfParticipatesPartWholeDE compositionPart compositionWhole}
+    |]
+  | otherwise = [iii|
+    eine Beziehung, die #{linking compositionWhole}
+    eine Komposition aus #{linking compositionPart}s macht
+    |]
+
+selfParticipatesPartWholeDE
+  :: LimitedLinking String
+  -> LimitedLinking String
+  -> String
+selfParticipatesPartWholeDE part whole = [iii|
+  für #{linking part}, wobei es #{phraseLimitDE $ limits part}
+  als Teil and #{phraseLimitDE $ limits whole} als Ganzes beteiligt ist
+  |]
 
 participationsDE
-  :: (Int, Maybe Int)
+  :: LimitedLinking String
+  -> LimitedLinking String
   -> String
-  -> (Int, Maybe Int)
-  -> String
-  -> String
-participationsDE l from h to =
-  [i|, wobei #{from} #{phraseLimitDE l} und #{to} #{phraseLimitDE h} beteiligt ist|]
+participationsDE from to = [iii|
+  , wobei #{linking from} #{phraseLimitDE $ limits from}
+  und #{linking to} #{phraseLimitDE $ limits to} beteiligt ist
+  |]
 
 phraseLimitDE :: (Int, Maybe Int) -> String
 phraseLimitDE (0, Just 0)  = "gar nicht"
@@ -187,7 +198,7 @@ phraseLimitDE (-1, Just n) = "*.." ++ show n ++ "-mal"
 phraseLimitDE (m, Nothing) = show m ++ "..*-mal"
 phraseLimitDE (m, Just n)  = show m ++ ".." ++ show n ++ "-mal"
 
-phraseChange :: Bool -> Bool -> Change DiagramEdge -> String
+phraseChange :: Bool -> Bool -> Change (Relationship String String) -> String
 phraseChange byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "change nothing"
   (Just e,  Nothing) -> "add " ++ phraseRelation False withDir e
@@ -196,47 +207,64 @@ phraseChange byName withDir c = case (add c, remove c) of
     "replace " ++ phraseRelation byName withDir e2
     ++ " by " ++ phraseRelation False withDir e1
 
-phraseRelation :: Bool -> Bool -> DiagramEdge -> String
-phraseRelation _ _ (from, to, Inheritance') =
-  "an inheritance where " ++ from ++ " inherits from " ++ to
-phraseRelation True _ (_, _, Assoc t n _ _ _) = (++ n) $ case t of
-  Association' -> "association "
-  Aggregation' -> "aggregation "
-  Composition' -> "composition "
-phraseRelation _ False (from, to, Assoc Association' _ l h _)
-  | from == to = [i|a self-association #{selfParticipates}|]
-  | otherwise  = "an association" ++ participations l from h to
-  where
-    selfParticipates :: String
-    selfParticipates =
-      [i|for #{from} where #{participates l "it"} at one end and #{phraseLimit h} at the other end|]
-phraseRelation _ _ (from, to, Assoc t _ l h _)
-  | from == to = case t of
-      Association' -> [i|a self-association #{selfParticipates}|]
-      Aggregation' -> [i|a self-aggregation #{selfParticipatesPartWhole}|]
-      Composition' -> [i|a self-composition #{selfParticipatesPartWhole}|]
-  | otherwise = (++ participations l from h to) $ case t of
-    Association' -> "an association from " ++ from ++ " to " ++ to
-    Aggregation' -> "a relationship that makes " ++ from
-      ++ " an aggregation of " ++ to ++ "s"
-    Composition' -> "a relationship that makes " ++ from
-      ++ " a composition of " ++ to ++ "s"
-  where
-    selfParticipates :: String
-    selfParticipates =
-      [i|for #{from} where #{participates l "it"} at its beginning and #{phraseLimit h} at its arrow end|]
-    selfParticipatesPartWhole :: String
-    selfParticipatesPartWhole =
-      [i|for #{from} where #{participates l "it"} as part and #{phraseLimit h} as whole|]
+phraseRelation :: Bool -> Bool -> Relationship String String -> String
+phraseRelation _ _ Inheritance {..} =
+  "an inheritance where " ++ subClass ++ " inherits from " ++ superClass
+phraseRelation True _ Association {..} = "association " ++ associationName
+phraseRelation True _ Aggregation {..} = "aggregation " ++ aggregationName
+phraseRelation True _ Composition {..} = "composition " ++ compositionName
+phraseRelation _ False Association {..}
+  | associationFrom == associationTo = [iii|
+    a self-association for #{linking associationFrom}
+    where #{participates (limits associationFrom) "it"} at one end
+    and #{phraseLimit $ limits associationTo} at the other end
+    |]
+  | otherwise  = "an association"
+    ++ participations associationFrom associationTo
+phraseRelation _ _ Association {..}
+  | associationFrom == associationTo = [iii|
+    a self-association for #{linking associationFrom}
+    where #{participates (limits associationFrom) "it"} at its beginning
+    and #{phraseLimit $ limits associationTo} at its arrow end
+    |]
+  | otherwise = [iii|
+    an association from #{linking associationFrom}
+    to #{linking associationTo}
+    |]
+phraseRelation _ _ Aggregation {..}
+  | aggregationPart == aggregationWhole = [iii|
+    a self-aggregation
+    #{selfParticipatesPartWhole aggregationPart aggregationWhole}
+    |]
+  | otherwise = [iii|
+    a relationship that makes #{linking aggregationPart}
+    an aggregation of #{linking aggregationWhole}s
+    |]
+phraseRelation _ _ Composition {..}
+  | compositionPart == compositionWhole = [iii|
+    a self-composition
+    #{selfParticipatesPartWhole compositionPart compositionWhole}
+    |]
+  | otherwise = [iii|
+    a relationship that makes #{linking compositionPart}
+    a composition of #{linking compositionWhole}s
+    |]
+
+selfParticipatesPartWhole
+  :: LimitedLinking String
+  -> LimitedLinking String
+  -> String
+selfParticipatesPartWhole part whole = [iii|
+  for #{linking part} where #{participates (limits part) "it"} as part
+  and #{phraseLimit $ limits whole} as whole|]
 
 participations
-  :: (Int, Maybe Int)
+  :: LimitedLinking String
+  -> LimitedLinking String
   -> String
-  -> (Int, Maybe Int)
-  -> String
-  -> String
-participations l from h to =
-  " where " ++ participates l from ++ " and " ++ participates h to
+participations from to =
+  " where " ++ participates (limits from) (linking from)
+  ++ " and " ++ participates (limits to) (linking to)
 
 participates :: (Int, Maybe Int) -> String -> String
 participates r c = c ++ " participates " ++ phraseLimit r
@@ -371,7 +399,7 @@ repairCdSolution :: RepairCdInstance -> [Int]
 repairCdSolution = M.keys . M.filter id . fmap fst . changes
 
 data RepairCdInstance = RepairCdInstance {
-    changes        :: Map Int (Bool, Change DiagramEdge),
+    changes        :: Map Int (Bool, Change (Relationship String String)),
     classDiagram   :: Cd,
     withDirections :: Bool,
     withNames      :: Bool
@@ -383,8 +411,8 @@ classAndAssocNames inst =
       chs = map snd $ M.elems $ changes inst
       names = classNames cd
       assocs = nubOrd $ associationNames cd
-        ++ mapMaybe (add >=> connectionName . thd3) chs
-        ++ mapMaybe (remove >=> connectionName . thd3) chs
+        ++ mapMaybe (add >=> relationshipName) chs
+        ++ mapMaybe (remove >=> relationshipName) chs
   in (names, assocs)
 
 instance Randomise RepairCdInstance where
@@ -426,7 +454,7 @@ renameInstance inst names' assocs' = do
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
-      renameEdge = renameClassesInEdge bmNames >=> renameAssocsInEdge bmAssocs
+      renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
   cd <- renameCd $ classDiagram inst
   chs <- mapM (mapM $ mapM renameEdge) $ changes inst
   return $ RepairCdInstance {
@@ -449,7 +477,7 @@ repairCd config segment seed = do
     (noIsolationLimit config)
     (maxInstances config)
     (timeout config)
-  let chs' = map (second $ fmap relationshipToEdge . relationshipChange) chs
+  let chs' = map (second relationshipChange) chs
   shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
@@ -460,20 +488,90 @@ defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
   changes = M.fromAscList [
     (1,(False,Change {
-          add = Just ("A","D",Assoc Composition' "s" (1,Just 1) (2,Nothing) False),
-          remove = Just ("A","D",Assoc Composition' "v" (1,Just 1) (0,Nothing) False)
+          add = Just $ Composition {
+            compositionName = "s",
+            compositionPart = LimitedLinking {
+              linking = "D",
+              limits = (2, Nothing)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "A",
+              limits = (1, Just 1)
+              }
+            },
+          remove = Just $ Composition {
+            compositionName = "v",
+            compositionPart = LimitedLinking {
+              linking = "D",
+              limits = (0, Nothing)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "A",
+              limits = (1, Just 1)
+              }
+            }
           })),
     (2,(False,Change {
-          add = Just ("C","A",Assoc Aggregation' "t" (2,Just 2) (1,Nothing) False),
+          add = Just $ Aggregation {
+            aggregationName = "t",
+            aggregationPart = LimitedLinking {
+              linking = "A",
+              limits = (1, Nothing)
+              },
+            aggregationWhole = LimitedLinking {
+              linking = "C",
+              limits = (2, Just 2)
+              }
+            },
           remove = Nothing
           })),
     (3,(True,Change {
-          add = Just ("B","D",Assoc Composition' "z" (1,Just 1) (0,Nothing) False),
-          remove = Just ("D","B",Assoc Composition' "x" (1,Just 1) (0,Nothing) False)
+          add = Just $ Composition {
+            compositionName = "z",
+            compositionPart = LimitedLinking {
+              linking = "D",
+              limits = (0, Nothing)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "B",
+              limits = (1, Just 1)
+              }
+            },
+          remove = Just $ Composition {
+            compositionName = "x",
+            compositionPart = LimitedLinking {
+              linking = "B",
+              limits = (0, Nothing)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "D",
+              limits = (1, Just 1)
+              }
+            }
           })),
     (4,(True,Change {
-          add = Just ("A","B",Assoc Composition' "u" (1,Just 1) (0,Just 2) False),
-          remove = Just ("B","A",Assoc Composition' "w" (1,Just 1) (0,Just 2) False)
+          add = Just $ Composition {
+            compositionName = "u",
+            compositionPart = LimitedLinking {
+              linking = "B",
+              limits = (0, Just 2)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "A",
+              limits = (1, Just 1)
+              }
+            },
+          remove = Just $ Composition {
+            compositionName = "w",
+            compositionPart = LimitedLinking {
+              linking = "A",
+              limits = (0,Just 2)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "B",
+              limits = (1, Just 1)
+              }
+            }
           }))
     ],
   classDiagram = ClassDiagram {

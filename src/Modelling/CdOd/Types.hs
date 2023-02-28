@@ -34,6 +34,7 @@ module Modelling.CdOd.Types (
   parseNamePrec,
   relationshipName,
   renameClassesAndRelationshipsInCd,
+  renameClassesAndRelationshipsInRelationship,
   renameClassesInOd,
   renameLinksInOd,
   reverseAssociation,
@@ -516,6 +517,15 @@ renameClassesAndRelationshipsInCd
   -> ClassDiagram c r
   -> m (ClassDiagram c' r')
 renameClassesAndRelationshipsInCd cm rm =
+  bitraverse (`BM.lookup` cm) (`BM.lookup` rm)
+
+renameClassesAndRelationshipsInRelationship
+  :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')
+  => Bimap c c'
+  -> Bimap r r'
+  -> Relationship c r
+  -> m (Relationship c' r')
+renameClassesAndRelationshipsInRelationship cm rm =
   bitraverse (`BM.lookup` cm) (`BM.lookup` rm)
 
 renameLinksInOd :: MonadThrow m => Bimap String String -> Od -> m Od
