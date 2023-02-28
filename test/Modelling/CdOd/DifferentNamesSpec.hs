@@ -20,9 +20,6 @@ import Modelling.CdOd.DifferentNames (
   renameInstance,
   )
 import Modelling.Auxiliary.Common       (oneOf)
-import Modelling.CdOd.Edges (
-  AssociationType (..),
-  )
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
@@ -141,22 +138,22 @@ spec = do
            :: Either String Rational
   describe "getDifferentNamesTask" $ do
     it "generates matching OD for association circle" $
-      odFor (cdSimpleCircle Association' Association' Association')
+      odFor (cdSimpleCircle association association association)
       `shouldReturn` simpleCircleOd
     it "generates matching OD for aggregation circle" $
-      odFor (cdSimpleCircle Aggregation' Aggregation' Aggregation')
+      odFor (cdSimpleCircle aggregation aggregation aggregation)
       `shouldReturn` simpleCircleOd
     it "generates matching OD for composition and association circle" $
-      odFor (cdSimpleCircle Composition' Composition' Association')
+      odFor (cdSimpleCircle composition composition association)
       `shouldReturn` simpleCircleOd
     it "generates matching OD for composition and aggregation circle" $
-      odFor (cdSimpleCircle Composition' Composition' Aggregation')
+      odFor (cdSimpleCircle composition composition aggregation)
       `shouldReturn` simpleCircleOd
     it "generates matching OD for association and aggregation circle" $
-      odFor (cdSimpleCircle Association' Association' Aggregation')
+      odFor (cdSimpleCircle association association aggregation)
       `shouldReturn` simpleCircleOd
     it "generates matching OD for association, aggregation and composition circle" $
-      odFor (cdSimpleCircle Association' Aggregation' Composition')
+      odFor (cdSimpleCircle association aggregation composition)
       `shouldReturn` simpleCircleOd
     it "generates matching OD for circle with inheritance" $
       odFor cdBCCircle
@@ -212,30 +209,43 @@ cdBCCircle = ClassDiagram {
     ]
   }
 
-cdSimpleCircle :: AssociationType -> AssociationType -> AssociationType -> Cd
-cdSimpleCircle x y z = ClassDiagram {
+type ToRelationship = String -> String -> String -> Relationship String String
+
+cdSimpleCircle
+  :: ToRelationship
+  -> ToRelationship
+  -> ToRelationship
+  -> Cd
+cdSimpleCircle edgeX edgeY edgeZ = ClassDiagram {
   classNames = ["A", "B", "C"],
-  relationships = [edge x "x" "A" "B", edge y "y" "B" "C", edge z "z" "C" "A"]
+  relationships = [edgeX "x" "A" "B", edgeY "y" "B" "C", edgeZ "z" "C" "A"]
   }
+
+lcOne :: nodeName -> LimitedLinking nodeName
+lcOne c = LimitedLinking {linking = c, limits = one}
   where
     one = (1, Just 1)
-    lcOne c = LimitedLinking {linking = c, limits = one}
-    edge ty n f t = case ty of
-      Association' -> Association {
-        associationName = n,
-        associationFrom = lcOne f,
-        associationTo = lcOne t
-        }
-      Aggregation' -> Aggregation {
-        aggregationName = n,
-        aggregationPart = lcOne f,
-        aggregationWhole = lcOne t
-        }
-      Composition' -> Composition {
-        compositionName = n,
-        compositionPart = lcOne f,
-        compositionWhole = lcOne t
-        }
+
+association :: r -> c -> c -> Relationship c r
+association name from to= Association {
+  associationName = name,
+  associationFrom = lcOne from,
+  associationTo = lcOne to
+  }
+
+aggregation :: r -> c -> c -> Relationship c r
+aggregation name part whole = Aggregation {
+  aggregationName = name,
+  aggregationPart = lcOne part,
+  aggregationWhole = lcOne whole
+  }
+
+composition :: r -> c -> c -> Relationship c r
+composition name part whole = Composition {
+  compositionName = name,
+  compositionPart = lcOne part,
+  compositionWhole = lcOne whole
+  }
 
 simpleCircleOd :: Od
 simpleCircleOd =
