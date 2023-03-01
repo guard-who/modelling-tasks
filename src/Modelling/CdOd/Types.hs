@@ -75,6 +75,59 @@ import Text.ParserCombinators.Parsec (
   )
 
 type Od = ([String], [(Int, Int, String)])
+type Od' = ObjectDiagram String String String
+
+data Object objectName className
+  = Object {
+    objectName                :: objectName,
+    objectClass               :: className
+    }
+  deriving (Eq, Generic, Read, Show)
+
+instance Bifunctor Object where
+  bimap f g Object {..} = Object {
+    objectName      = f objectName,
+    objectClass     = g objectClass
+    }
+
+instance Bifoldable Object where
+  bifoldMap f g Object {..} = f objectName
+    <> g objectClass
+
+instance Bitraversable Object where
+  bitraverse f g Object {..} = Object
+    <$> f objectName
+    <*> g objectClass
+
+data Link objectName linkName
+  = Link {
+    linkName                  :: linkName,
+    linkFrom                  :: objectName,
+    linkTo                    :: objectName
+    }
+  deriving (Eq, Functor, Foldable, Generic, Read, Show, Traversable)
+
+data ObjectDiagram objectName className linkName
+  = ObjectDiagram {
+    objects'                  :: [Object objectName className],
+    links'                    :: [Link objectName linkName]
+    }
+  deriving (Eq, Generic, Read, Show)
+
+instance Bifunctor (ObjectDiagram a) where
+  bimap f g ObjectDiagram {..} = ObjectDiagram {
+    objects'        = map (fmap f) objects',
+    links'          = map (fmap g) links'
+    }
+
+instance Bifoldable (ObjectDiagram a) where
+  bifoldMap f g ObjectDiagram {..} = foldMap (foldMap f) objects'
+    <> foldMap (foldMap g) links'
+
+instance Bitraversable (ObjectDiagram a) where
+  bitraverse f g ObjectDiagram {..} = ObjectDiagram
+    <$> traverse (traverse f) objects'
+    <*> traverse (traverse g) links'
 
 shuffleObjectAndLinkOrder :: (MonadRandom m, MonadThrow m) => Od -> m Od
 shuffleObjectAndLinkOrder (objects, links) = do
