@@ -8,7 +8,7 @@ module Modelling.CdOd.Generate.Mutation (
   ) where
 
 import Modelling.CdOd.Types             (ClassConfig (..))
-import Modelling.CdOd.Edges (
+import Modelling.CdOd.Generate.Edges (
   AssociationType (..),
   Connection (..),
   DiagramEdge,

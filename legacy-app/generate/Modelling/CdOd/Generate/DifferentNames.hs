@@ -7,7 +7,7 @@ import Modelling.CdOd.DifferentNames (
   DifferentNamesInstance,
   getDifferentNamesTask,
   )
-import Modelling.CdOd.Edges             (fromEdges)
+import Modelling.CdOd.Generate.Edges    (fromEdges)
 import Modelling.CdOd.Generate.Generate (generate)
 import Modelling.CdOd.Types (
   ClassConfig (..),

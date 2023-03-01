@@ -5,7 +5,7 @@ module Modelling.CdOd.Generate.Generate (
 
 
 import Modelling.Auxiliary.Common       (oneOf)
-import Modelling.CdOd.Edges             (
+import Modelling.CdOd.Generate.Edges (
   AssociationType (..),
   Connection (..),
   DiagramEdge,

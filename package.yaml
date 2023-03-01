@@ -97,7 +97,6 @@ library:
     - Modelling.CdOd.CdAndChanges.Instance
     - Modelling.CdOd.CdAndChanges.Transform
     - Modelling.CdOd.DifferentNames
-    - Modelling.CdOd.Edges
     - Modelling.CdOd.Generate
     - Modelling.CdOd.MatchCdOd
     - Modelling.CdOd.Output

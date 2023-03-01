@@ -57,7 +57,6 @@ library
       Modelling.CdOd.CdAndChanges.Instance
       Modelling.CdOd.CdAndChanges.Transform
       Modelling.CdOd.DifferentNames
-      Modelling.CdOd.Edges
       Modelling.CdOd.Generate
       Modelling.CdOd.MatchCdOd
       Modelling.CdOd.Output
@@ -150,6 +149,7 @@ test-suite modelling-tasks-test
       Modelling.ActivityDiagram.SelectPetriSpec
       Modelling.CdOd.CD2Alloy.TransformSpec
       Modelling.CdOd.DifferentNamesSpec
+      Modelling.CdOd.Edges
       Modelling.CdOd.GenerateSpec
       Modelling.CdOd.MatchCdOdSpec
       Modelling.CdOd.OutputSpec

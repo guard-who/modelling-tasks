@@ -9,7 +9,7 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Common       (randomise)
-import Modelling.CdOd.Edges (
+import Modelling.CdOd.Generate.Edges (
   DiagramEdge,
   checkMultiEdge,
   fromEdges,

@@ -4,17 +4,13 @@ module Main where
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Modelling.CdOd.CD2Alloy.Transform (combineParts, createRunCommand, mergeParts, transform)
-import Modelling.CdOd.Edges (
-  AssociationType (..),
-  Connection (..),
-  DiagramEdge,
-  fromEdges,
-  )
 import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
+  LimitedLinking (..),
   ObjectConfig (objects),
+  Relationship (..),
   maxFiveObjects,
   reverseAssociation,
   )
@@ -23,49 +19,147 @@ import Control.Monad.IO.Class           (MonadIO(liftIO))
 import Control.Monad.Random             (evalRandT, getStdGen)
 import Data.GraphViz                    (DirType (..))
 
-v :: DiagramEdge
-v = ("C", "B", Assoc Aggregation' "v" (0, Nothing) (1, Just 1) False)
+v :: Relationship String String
+v = Aggregation {
+  aggregationName = "v",
+  aggregationPart = LimitedLinking {
+    linking = "B",
+    limits = (1, Just 1)
+    },
+  aggregationWhole = LimitedLinking {
+    linking = "C",
+    limits = (0, Nothing)
+    }
+  }
 
-w :: DiagramEdge
-w = ("A", "C", Assoc Association' "w" (-1, Just 2) (-1, Just 2) False)
+w :: Relationship String String
+w = Association {
+  associationName = "w",
+  associationFrom = LimitedLinking {
+    linking = "A",
+    limits = (-1, Just 2)
+    },
+  associationTo = LimitedLinking {
+    linking = "C",
+    limits = (-1, Just 2)
+    }
+  }
 
-x :: DiagramEdge
-x = ("C", "B", Assoc Composition' "x" (0, Just 1) (1, Just 1) False)
+x :: Relationship String String
+x = Composition {
+  compositionName = "x",
+  compositionPart = LimitedLinking {
+    linking = "B",
+    limits = (1, Just 1)
+    },
+  compositionWhole = LimitedLinking {
+    linking = "C",
+    limits = (0, Just 1)
+    }
+  }
 
-y' :: DiagramEdge
-y' = ("D", "A", Assoc Association' "y" (0, Just 1) (0, Nothing) False)
+y' :: Relationship String String
+y' = Association {
+  associationName = "y",
+  associationFrom = LimitedLinking {
+    linking = "D",
+    limits = (0, Just 1)
+    },
+  associationTo = LimitedLinking {
+    linking = "A",
+    limits = (0, Nothing)
+    }
+  }
 
-y'' :: DiagramEdge
-y'' = ("D", "A", Assoc Association' "y" (0, Nothing) (0, Nothing) False)
+y'' :: Relationship String String
+y'' = Association {
+  associationName = "y",
+  associationFrom = LimitedLinking {
+    linking = "D",
+    limits = (0, Nothing)
+    },
+  associationTo = LimitedLinking {
+    linking = "A",
+    limits = (0, Nothing)
+    }
+  }
 
-z' :: DiagramEdge
-z' = ("D", "C", Assoc Aggregation' "z" (0, Nothing) (2, Nothing) False)
+z' :: Relationship String String
+z' = Aggregation {
+  aggregationName = "z",
+  aggregationPart = LimitedLinking {
+    linking = "C",
+    limits = (2, Nothing)
+    },
+  aggregationWhole = LimitedLinking {
+    linking = "D",
+    limits = (0, Nothing)
+    }
+  }
 
-z'' :: DiagramEdge
-z'' = ("D", "C", Assoc Aggregation' "z" (0, Just 1) (2, Nothing) False)
+z'' :: Relationship String String
+z'' = Aggregation {
+  aggregationName = "z",
+  aggregationPart = LimitedLinking {
+    linking = "C",
+    limits = (2, Nothing)
+    },
+  aggregationWhole = LimitedLinking {
+    linking = "D",
+    limits = (0, Just 1)
+    }
+  }
 
-inh1 :: DiagramEdge
-inh1 = ("A", "C", Inheritance')
+inh1 :: Relationship String String
+inh1 = Inheritance {
+  subClass = "A",
+  superClass = "C"
+  }
 
-inh2 :: DiagramEdge
-inh2 = ("B", "A", Inheritance')
+inh2 :: Relationship String String
+inh2 = Inheritance {
+  subClass = "B",
+  superClass = "A"
+  }
 
-inh3 :: DiagramEdge
-inh3 = ("C", "A", Inheritance')
+inh3 :: Relationship String String
+inh3 = Inheritance {
+  subClass = "C",
+  superClass = "A"
+  }
 
-a :: DiagramEdge
-a = ("A", "B", Assoc Association' "a" (1, Just 1) (1, Just 1) False)
+a :: Relationship String String
+a = Association {
+  associationName = "a",
+  associationFrom = LimitedLinking {
+    linking = "A",
+    limits = (1, Just 1)
+    },
+  associationTo = LimitedLinking {
+    linking = "B",
+    limits = (1, Just 1)
+    }
+  }
 
-b :: DiagramEdge
-b = ("C", "B", Assoc Association' "b" (1, Just 1) (1, Just 1) False)
-
+b :: Relationship String String
+b = Association {
+  associationName = "b",
+  associationFrom = LimitedLinking {
+    linking = "C",
+    limits = (1, Just 1)
+    },
+  associationTo = LimitedLinking {
+    linking = "B",
+    limits = (1, Just 1)
+    }
+  }
 
 main :: IO ()
 main = do
   -- names are required
-  let cd0 = fromEdges ["A", "B", "C"] [a, b, inh1]
-      cd1 = fromEdges ["A", "B", "C"] [a, inh1]
-      cd2 = fromEdges ["A", "B", "C"] [b, inh1]
+  let cd0 = ClassDiagram ["A", "B", "C"] [a, b, inh1]
+      cd1 = ClassDiagram ["A", "B", "C"] [a, inh1]
+      cd2 = ClassDiagram ["A", "B", "C"] [b, inh1]
   drawCdAndOdsFor Nothing "names" [cd0, cd1, cd2] "cd1 and cd2"
   drawCdAndOdsFor Nothing "names" [cd0, cd1, cd2] "cd1 and not cd2"
   drawCdAndOdsFor Nothing "names" [cd0, cd1, cd2] "cd2 and not cd1"
@@ -76,15 +170,15 @@ main = do
 
 drawCdsAndOds
   :: String
-  -> DiagramEdge
-  -> DiagramEdge
+  -> Relationship String String
+  -> Relationship String String
   -> IO ()
 drawCdsAndOds c y z =
-  let cds = [fromEdges classes [x, y, z, inh1, inh2],
-             fromEdges classes [v, x, y, z, inh1, inh2],
-             fromEdges classes [x, y, z, inh2],
-             fromEdges classes [x, y, z, inh3, inh2],
-             fromEdges classes [w, x, y, z, inh2]]
+  let cds = [ClassDiagram classes [x, y, z, inh1, inh2],
+             ClassDiagram classes [v, x, y, z, inh1, inh2],
+             ClassDiagram classes [x, y, z, inh2],
+             ClassDiagram classes [x, y, z, inh3, inh2],
+             ClassDiagram classes [w, x, y, z, inh2]]
   in foldr
      ((>>) . (\(i, cd) -> drawCdAndOdsFor (Just 1) (c ++ show i) [cd] "cd0"))
      (return ())

@@ -1,24 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.Edges (
   -- * Types
-  AssociationType (..),
-  Connection (..),
   DiagramEdge,
-  -- * Getter
-  connectionName,
   -- * Transformation
   fromEdges, toEdges,
-  nameEdges,
-  relationshipToEdge,
-  renameAssocsInEdge,
-  renameClassesInEdge,
-  renameClasses, renameEdges,
-  renameConnection,
   -- * Checks
-  -- ** Check sets (reusing single checks)
-  checkMultiEdge, checkObvious,
   -- ** Single checks
   compositionCycles,
   doubleConnections,
@@ -26,10 +13,7 @@ module Modelling.CdOd.Edges (
   inheritanceCycles,
   multipleInheritances,
   selfEdges, wrongLimits,
-  isInheritanceEdge,
   ) where
-
-import qualified Data.Bimap                       as BM (lookup)
 
 import Modelling.CdOd.Types (
   Cd,
@@ -39,9 +23,6 @@ import Modelling.CdOd.Types (
   )
 import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
-import Control.Monad.Catch              (MonadThrow)
-import Data.Bimap                       (Bimap)
-import Data.List                        (partition)
 import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 
@@ -54,44 +35,6 @@ data AssociationType = Association' | Aggregation' | Composition'
   deriving (Eq, Generic, Read, Show)
 
 type DiagramEdge = (String, String, Connection)
-
-connectionName :: Connection -> Maybe String
-connectionName (Assoc _ n _ _ _) = Just n
-connectionName Inheritance'      = Nothing
-
-renameConnection
-  :: MonadThrow m
-  => Bimap String String
-  -> Connection
-  -> m Connection
-renameConnection bm (Assoc t n m1 m2 b) = do
-  n' <- BM.lookup n bm
-  return $ Assoc t n' m1 m2 b
-renameConnection _ Inheritance' = return Inheritance'
-
-renameAssocsInEdge
-  :: MonadThrow m
-  => Bimap String String
-  -> DiagramEdge
-  -> m DiagramEdge
-renameAssocsInEdge m (f, t, a) = (f, t,) <$> renameConnection m a
-
-renameClassesInEdge
-  :: MonadThrow m
-  => Bimap String String
-  -> DiagramEdge
-  -> m DiagramEdge
-renameClassesInEdge m (f, t, a) = (,,a) <$> rename f <*> rename t
-  where
-    rename = (`BM.lookup` m)
-
-nameEdges :: [DiagramEdge] -> [DiagramEdge]
-nameEdges es =
-     ihs
-  ++ [(s, e, Assoc k [n] m1 m2 b)
-     | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] ass]
-  where
-    (ihs, ass) = partition isInheritanceEdge es
 
 toEdges :: Cd -> [DiagramEdge]
 toEdges = map relationshipToEdge . relationships
@@ -164,24 +107,10 @@ edgeToRelationship (from, to, connection) = case connection of
       compositionWhole        = LimitedLinking from s
       }
 
-isInheritanceEdge :: DiagramEdge -> Bool
-isInheritanceEdge (_, _, Inheritance') = True
-isInheritanceEdge (_, _, _          ) = False
-
 fromEdges :: [String] -> [DiagramEdge] -> Cd
 fromEdges classNames es = ClassDiagram {..}
   where
     relationships = map edgeToRelationship es
-
-renameEdges :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
-renameEdges bm es =
-  [ (from, to, e')
-  | (from, to, e) <- es, e' <- renameConnection bm e]
-
-renameClasses :: Bimap String String -> [DiagramEdge] -> [DiagramEdge]
-renameClasses bm es =
-  [ (from', to', e)
-  | (from, to, e) <- es, from' <- BM.lookup from bm, to' <- BM.lookup to bm]
 
 selfEdges :: [DiagramEdge] -> [DiagramEdge]
 selfEdges es = [x | x@(s, e, _) <- es, e == s]
@@ -279,18 +208,6 @@ getPaths connectionFilter es =
       let es'' = filter ((s /=) . start) $ filter ((s /=) . end) es'
       in [path | p@(s', e', _) <- es', s' /= e', s' /= e, s == e'
                , path <- getPath s' e (p:ps) es'']
-
-checkMultiEdge :: [DiagramEdge] -> Bool
-checkMultiEdge cs =
-     null (doubleConnections cs)
-  && null (multipleInheritances cs)
-  && null (inheritanceCycles cs)
-  && null (compositionCycles cs)
-
-checkObvious :: [DiagramEdge] -> Bool
-checkObvious cs =
-     null (selfEdges cs)
-  && null (wrongLimits cs)
 
 hasAssociationAtOneSuperclass :: [String] -> [DiagramEdge] -> Bool
 hasAssociationAtOneSuperclass cs es = any inheritanceHasOtherEdge cs
