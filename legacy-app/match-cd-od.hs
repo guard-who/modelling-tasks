@@ -28,9 +28,9 @@ main = do
               relationshipLimits = (4, Just 6)
             },
           objectConfig = ObjectConfig {
-            links          = (0, Nothing),
-            linksPerObject = (0, Nothing),
-            objects        = (2, 4)
+            linkLimits           = (0, Nothing),
+            linksPerObjectLimits = (0, Nothing),
+            objectLimits         = (2, 4)
             },
           maxInstances     = Nothing,
           presenceOfLinkSelfLoops = Nothing,

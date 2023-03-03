@@ -7,17 +7,17 @@ module Modelling.CdOd.Output (
   cacheOd,
   drawCd,
   drawOdFromInstance,
-  drawOdFromRawInstance,
-  drawOdFromNodesAndEdges,
+  drawOd,
   ) where
 
 import qualified Data.ByteString.Lazy.UTF8        as LBS (fromString)
+import qualified Data.Bimap                       as BM (fromList, lookupR)
 import qualified Data.Map                         as M (
   foldrWithKey,
   )
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 
-import Modelling.Auxiliary.Common       (cacheIO, lowerFirst, short)
+import Modelling.Auxiliary.Common       (cacheIO, short)
 import Modelling.Auxiliary.Diagrams (
   arrowheadDiamond,
   arrowheadFilledDiamond,
@@ -38,6 +38,10 @@ import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
   LimitedLinking (..),
+  Link (..),
+  Object (..),
+  ObjectDiagram (..),
+  Od,
   Relationship (..),
   calculateThickRelationships,
   )
@@ -52,6 +56,7 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans              (MonadTrans(lift))
 import Control.Monad.Trans.Except       (runExcept)
+import Data.Bifunctor                   (Bifunctor (second))
 import Data.Digest.Pure.SHA             (sha1, showDigest)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz (
@@ -75,10 +80,7 @@ import Data.GraphViz (
   )
 import Data.GraphViz.Attributes.Complete (Attribute (..), DPoint (..), Label)
 import Data.Function                    ((&))
-import Data.List (
-  elemIndex, intercalate, isPrefixOf, stripPrefix,
-  )
-import Data.List.Split                  (splitOn)
+import Data.List                        (elemIndex)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
 import Data.String.Interpolate          (iii)
 import Data.Tuple.Extra                 (both)
@@ -353,45 +355,20 @@ drawOdFromInstance
   -> RandT g IO FilePath
 drawOdFromInstance i anonymous =
   let g = either error id $ runExcept $ alloyInstanceToOd i
-  in uncurry drawOdFromNodesAndEdges g $ fromMaybe (length (fst g) `div` 3) anonymous
-
-drawOdFromRawInstance
-  :: RandomGen g
-  => String
-  -> DirType
-  -> Bool
-  -> FilePath
-  -> RandT g IO FilePath
-drawOdFromRawInstance input direction printNames =
-  let [objLine, objGetLine] = filter ("this/Obj" `isPrefixOf`) (lines input)
-      theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
-      theEdges = map ((\[from,v,to] -> (
-                          fromJust (elemIndex from theNodes),
-                          fromJust (elemIndex to theNodes),
-                          takeWhile (/= '$') v)) . splitOn "->"
-                     )
-                 $ filter (not . null)
-                 $ splitOn ", "
-                 $ init $ tail $ fromJust
-                 $ stripPrefix "this/Obj<:get=" objGetLine
-  in drawOdFromNodesAndEdges theNodes theEdges (length theNodes `div` 3)
-     direction
-     printNames
-     . (++ ".svg")
+  in drawOd g $ fromMaybe (length (objects g) `div` 3) anonymous
 
 cacheOd
   :: RandomGen g
-  => [String]
-  -> [(Int, Int, String)]
+  => Od
   -> Int
   -> DirType
   -> Bool
   -> FilePath
   -> RandT g IO FilePath
-cacheOd theNodes theEdges anonymous direction printNames path = do
+cacheOd od anonymous direction printNames path = do
   x <- getRandom
-  cacheIO path (ext x) "od" (theNodes, theEdges) $ \file (nodes, edges) ->
-    drawOdFromNodesAndEdges nodes edges anonymous direction printNames file
+  cacheIO path (ext x) "od" od $ \file od' ->
+    drawOd od' anonymous direction printNames file
   where
     ext x = short anonymous
       ++ short printNames
@@ -399,57 +376,56 @@ cacheOd theNodes theEdges anonymous direction printNames path = do
       ++ show @Int x
       ++ ".svg"
 
-drawOdFromNodesAndEdges
+drawOd
   :: RandomGen g
-  => [String]
-  -> [(Int, Int, String)]
+  => Od
   -> Int
   -> DirType
   -> Bool
   -> FilePath
   -> RandT g IO FilePath
-drawOdFromNodesAndEdges theNodes theEdges anonymous direction printNames file = do
-  let numberedNodes = zip [0..] theNodes
-  let graph = mkGraph numberedNodes theEdges :: Gr String String
+drawOd ObjectDiagram {..} anonymous direction printNames file = do
+  let numberedObjects = zip [0..] objects
+      bmObjects = BM.fromList $ map (second objectName) numberedObjects
+      toEdge l@Link {..} = (,,)
+        <$> BM.lookupR linkFrom bmObjects
+        <*> BM.lookupR linkTo bmObjects
+        <*> pure l
+  linkEdges <- lift $ mapM toEdge links
+  let graph = mkGraph numberedObjects linkEdges
   objectNames <-
-    map (\(i, l) -> (i, removeDollar l ++ " "))
+    map (\x -> (objectName x, objectName x ++ " "))
     . drop anonymous
-    <$> shuffleM numberedNodes
+    <$> shuffleM objects
   let params = nonClusteredParams {
-        fmtNode = \(i,l) -> [
-          underlinedLabel $ fromMaybe "" (lookup i objectNames)
-          ++ ": " ++ takeWhile (/= '$') l,
+        fmtNode = \(_, Object {..}) -> [
+          underlinedLabel $ fromMaybe "" (lookup objectName objectNames)
+          ++ ": " ++ objectClass,
           shape BoxShape,
           Margin $ DVal 0.02,
           Width 0,
           Height 0,
           FontSize 16
           ],
-        fmtEdge = \(_,_,l) -> arrowHeads
+        fmtEdge = \(_,_,Link {..}) -> arrowHeads
           ++ [ArrowSize 0.4, FontSize 16]
-          ++ [toLabel l | printNames] }
-  let objectNames' = (\(i, n) -> (fromMaybe "" $ lookup i numberedNodes, n)) <$> objectNames
+          ++ [toLabel linkName | printNames] }
   lift errorWithoutGraphviz
   graph' <- lift $ layoutGraph' params undirCommand graph
   sfont  <- lift lin
   let (nodes, edges) = GV.getGraph graph'
       gnodes = M.foldrWithKey
-        (\l p g -> drawObject sfont objectNames' l p `atop` g)
+        (\l p g -> drawObject sfont objectNames l p `atop` g)
         mempty
         nodes
       gedges = foldr
-        (\(s, t, l, p) g -> g # drawLink sfont direction printNames s t l p)
+        (\(Object {objectName = s}, Object {objectName = t}, l, p) g ->
+           g # drawLink sfont direction printNames s t l p)
         gnodes
         edges
   lift $ writeSVG file gedges
   return file
   where
-    removeDollar l = case splitOn "$" l of
-      n:xs@(_:_) ->
-        let z  = last xs
-            ys = intercalate "$" $ init xs
-        in lowerFirst n ++ ys ++ (if z == "0" then "" else z)
-      _          -> l
     arrowHeads = case direction of
       NoDir  -> [edgeEnds NoDir]
       dir -> [edgeEnds dir, arrowFrom vee, arrowTo vee]
@@ -461,11 +437,11 @@ drawLink
   -> Bool
   -> n1
   -> n2
-  -> String
+  -> Link String String
   -> Path V2 Double
   -> Diagram B
   -> Diagram B
-drawLink sfont direction printNames fl tl l =
+drawLink sfont direction printNames fl tl Link {..} =
   connectWithPath opts sfont direction fl tl ml Nothing Nothing
   # lwL 0.5
   where
@@ -476,19 +452,19 @@ drawLink sfont direction printNames fl tl l =
       & headGap .~ local 0
       & tailLength .~ local 7
     ml
-      | printNames = Just l
+      | printNames = Just linkName
       | otherwise  = Nothing
 
 drawObject
   :: PreparedFont Double
   -> [(String, String)]
-  -> String
+  -> Object String String
   -> Point V2 Double
   -> Diagram B
-drawObject sfont objectNames t (P p) = translate p
-  $ center $ blackFrame t $ center
+drawObject sfont objectNames Object {..} (P p) = translate p
+  $ center $ blackFrame objectName $ center
   $ textU sfont 16
-      (fromMaybe "" (lookup t objectNames) ++ ": " ++ takeWhile (/= '$') t)
+      (fromMaybe "" (lookup objectName objectNames) ++ ": " ++ objectClass)
   # snugCenterXY
   # lineWidth 0.6
   # svgClass "label"

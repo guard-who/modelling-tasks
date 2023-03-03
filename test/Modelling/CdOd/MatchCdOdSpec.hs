@@ -18,7 +18,10 @@ import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
   LimitedLinking (..),
+  Link (..),
+  Object (..),
   ObjectConfig (..),
+  ObjectDiagram (..),
   Od,
   Relationship (..),
   )
@@ -28,6 +31,7 @@ import Control.Monad                    ((>=>))
 import Control.Monad.Random             (randomIO)
 import Control.Monad.Except             (runExceptT)
 import Data.Maybe                       (fromMaybe)
+import Data.Tuple.Extra                 (both)
 import Language.Alloy.Debug             (parseInstance)
 import Test.Hspec
 import Test.QuickCheck                  (ioProperty)
@@ -76,14 +80,56 @@ spec = do
       . parseInstance
       . BS.pack
       >=> fmap show . getChangesAndCds
-    opposingOd = (
-      [(["A$0", "B$0"], [(1, 0, "x")])],
-      [(["A$0", "B$0"], [(0, 1, "x")])]
+    opposingOd = both (:[]) $ (
+      ObjectDiagram {
+        objects = [
+          Object {objectName = "a", objectClass = "A"},
+          Object {objectName = "b", objectClass = "B"}],
+        links = [
+          Link {linkName = "x", linkFrom = "b", linkTo = "a"}]
+        },
+      ObjectDiagram {
+        objects = [
+          Object {objectName = "a", objectClass = "A"},
+          Object {objectName = "b", objectClass = "B"}],
+        links = [
+          Link {linkName = "x", linkFrom = "a", linkTo = "b"}]
+        }
       )
     inheritOd = (
-      [(["A$0", "A$1"], [(0, 0, "x"), (1, 1, "x")]),
-       (["A$0", "A$1"], [(0, 1, "x"), (1, 0, "x")])],
-      [(["A$0", "B$0"], [(1, 0, "x")])]
+      [
+        ObjectDiagram {
+          objects = [
+            Object {objectName = "a", objectClass = "A"},
+            Object {objectName = "a1", objectClass = "A"}
+            ],
+          links = [
+            Link {linkName = "x", linkFrom = "a", linkTo = "a"},
+            Link {linkName = "x", linkFrom = "a1", linkTo = "a1"}
+            ]
+          },
+        ObjectDiagram {
+          objects = [
+            Object {objectName = "a", objectClass = "A"},
+            Object {objectName = "a1", objectClass = "A"}
+            ],
+          links = [
+            Link {linkName = "x", linkFrom = "a", linkTo = "a1"},
+            Link {linkName = "x", linkFrom = "a1", linkTo = "a"}
+            ]
+          }
+        ],
+      [
+        ObjectDiagram {
+          objects = [
+            Object {objectName = "a", objectClass = "A"},
+            Object {objectName = "b", objectClass = "B"}
+            ],
+          links = [
+            Link {linkName = "x", linkFrom = "b", linkTo = "a"}
+            ]
+          }
+        ]
       )
     cfg = defaultMatchCdOdConfig {
       maxInstances = Just 27
@@ -102,9 +148,9 @@ getOdsFor cd1 cd2 = do
     get x = fromMaybe [] . M.lookup x
     fewObjects = defaultMatchCdOdConfig { objectConfig = oc }
     oc = ObjectConfig {
-      links = (0, Just 2),
-      linksPerObject = (0, Just 2),
-      objects = (2, 2)
+      linkLimits = (0, Just 2),
+      linksPerObjectLimits = (0, Just 2),
+      objectLimits = (2, 2)
       }
 
 cdAInheritsBandAtoB :: Cd

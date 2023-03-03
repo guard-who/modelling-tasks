@@ -105,10 +105,13 @@ fact SizeConstraints {
 #{unlines ps}
 }
 |]) [
-      ("  #Obj >= " ++) . show <$> mlower 1 (objects objectConfig),
-      ("  #get >= " ++) . show <$> mlower 0 (links objectConfig),
-      ("  #get <= " ++) . show <$> snd (links objectConfig),
-      uncurry linksPerObjects $ first (mlow 0) $ linksPerObject objectConfig]
+      ("  #Obj >= " ++) . show <$> mlower 1 (objectLimits objectConfig),
+      ("  #get >= " ++) . show <$> mlower 0 (linkLimits objectConfig),
+      ("  #get <= " ++) . show <$> snd (linkLimits objectConfig),
+      uncurry linksPerObjects
+        $ first (mlow 0)
+        $ linksPerObjectLimits objectConfig
+      ]
     linksPerObjects Nothing Nothing = Nothing
     linksPerObjects mmin mmax = Just $
       "  all o : Obj | let x = plus[#o.get,minus[#get.o,#o.get.o]] |"
@@ -167,7 +170,7 @@ createRunCommand command numClasses objectConfig ps = [i|
 run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
 |]
   where
-    maxObjects = snd $ objects objectConfig
+    maxObjects = snd $ objectLimits objectConfig
     intSize :: Int
     intSize = ceiling intSize'
     intSize' :: Double
@@ -178,8 +181,8 @@ run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
     maxInt = maximum [
       numClasses * maxObjects,
       2 * maxObjects,
-      count links,
-      count linksPerObject
+      count linkLimits,
+      count linksPerObjectLimits
       ]
     count f = fromMaybe (fst $ f objectConfig) $ snd (f objectConfig)
 

@@ -73,9 +73,13 @@ executables:
     dependencies:
       - MonadRandom
       - array
+      - bytestring
+      - call-alloy
       - containers
       - graphviz
       - modelling-tasks
+      - mtl
+      - split
   match-cd-od-legacy:
     main: match-cd-od.hs
     source-dirs:

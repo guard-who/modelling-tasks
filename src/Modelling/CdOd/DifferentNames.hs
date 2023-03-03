@@ -62,9 +62,12 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
+  Link (..),
   Name (Name),
   NameMapping (nameMapping),
+  Object (..),
   ObjectConfig (..),
+  ObjectDiagram (..),
   Od,
   Relationship (..),
   associationNames,
@@ -74,8 +77,7 @@ import Modelling.CdOd.Types (
   fromNameMapping,
   linkNames,
   relationshipName,
-  renameClassesInOd,
-  renameLinksInOd,
+  renameObjectsWithClassesAndLinksInOd,
   renameClassesAndRelationshipsInCd,
   reverseAssociation,
   showName,
@@ -212,9 +214,9 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
         relationshipLimits = (4, Just 4)
       },
     objectConfig = ObjectConfig {
-      links          = (5, Just 10),
-      linksPerObject = (0, Just 3),
-      objects        = (4, 6)
+      linkLimits           = (5, Just 10),
+      linksPerObjectLimits = (0, Just 3),
+      objectLimits         = (4, 6)
       },
     onlyAnonymousObjects = True,
     presenceOfLinkSelfLoops = Nothing,
@@ -242,11 +244,11 @@ differentNamesTask
 differentNamesTask path task = do
   let cd = cDiagram task
       od = oDiagram task
-      anonymous = fromMaybe (length (fst od) `div` 3)
+      anonymous = fromMaybe (length (objects od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)
   cd' <- lift $ liftIO $ cacheCd True True mempty cd path
   od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    uncurry cacheOd od anonymous Back True path
+    cacheOd od anonymous Back True path
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie das folgende Klassendiagramm:"
@@ -433,10 +435,21 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
       ]
     },
   generatorValue = -3894126834283525023,
-  oDiagram = (
-    ["C$0","B$0","B$1","B$2"],
-    [(0,1,"y"),(0,2,"y"),(0,3,"y"),(0,0,"x"),(0,3,"z")]
-    ),
+  oDiagram = ObjectDiagram {
+    objects = [
+      Object {objectName = "c", objectClass = "C"},
+      Object {objectName = "b", objectClass = "B"},
+      Object {objectName = "b1", objectClass = "B"},
+      Object {objectName = "b2", objectClass = "B"}
+      ],
+    links = [
+      Link {linkName = "y", linkFrom = "c", linkTo = "b"},
+      Link {linkName = "y", linkFrom = "c", linkTo = "b1"},
+      Link {linkName = "y", linkFrom = "c", linkTo = "b2"},
+      Link {linkName = "x", linkFrom = "c", linkTo = "c"},
+      Link {linkName = "z", linkFrom = "c", linkTo = "b2"}
+      ]
+    },
   showSolution = False,
   mapping = toNameMapping $ BM.fromList [("a","y"),("b","z"),("c","x")],
   linkShuffling = ConsecutiveLetters,
@@ -594,7 +607,7 @@ renameInstance inst names' assocs' linkNs' = do
         , l' <- BM.lookup l bmLinks
         ]
   cd' <- renameClassesAndRelationshipsInCd bmNames bmAssocs cd
-  od' <- renameClassesInOd bmNames =<< renameLinksInOd bmLinks od
+  od' <- renameObjectsWithClassesAndLinksInOd bmNames bmLinks od
   shuffling <- mapM (`BM.lookup` bmLinks) $ linkShuffling inst
   return $ DifferentNamesInstance {
     anonymousObjects = anonymousObjects inst,

@@ -95,9 +95,13 @@ executable instance2pic
       MonadRandom
     , array
     , base
+    , bytestring
+    , call-alloy
     , containers
     , graphviz
     , modelling-tasks
+    , mtl
+    , split
   default-language: Haskell2010
 
 executable match-cd-od-legacy

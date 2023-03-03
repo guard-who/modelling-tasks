@@ -13,9 +13,12 @@ module Modelling.CdOd.Types (
   ClassDiagram (..),
   Letters (..),
   LimitedLinking (..),
+  Link (..),
   Name (..),
   NameMapping (..),
+  Object (..),
   ObjectConfig (..),
+  ObjectDiagram (..),
   Od,
   Relationship (..),
   RelationshipProperties (..),
@@ -35,8 +38,7 @@ module Modelling.CdOd.Types (
   relationshipName,
   renameClassesAndRelationshipsInCd,
   renameClassesAndRelationshipsInRelationship,
-  renameClassesInOd,
-  renameLinksInOd,
+  renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
   showLetters,
   showName,
@@ -48,19 +50,20 @@ module Modelling.CdOd.Types (
 
 import qualified Data.Bimap                       as BM
 
-import Modelling.Auxiliary.Common       (skipSpaces)
+import Modelling.Auxiliary.Common       (lowerFirst, skipSpaces)
 
 import Control.Applicative              (Alternative ((<|>)))
+import Control.Exception                (Exception, throw)
 import Control.Monad                    (void)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom)
-import Data.Bifunctor                   (Bifunctor (bimap, first))
+import Data.Bifunctor                   (Bifunctor (bimap, first, second))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Char                        (isAlpha, isAlphaNum)
-import Data.List                        (intercalate, nub)
-import Data.List.Split                  (splitOn)
+import Data.List                        (stripPrefix)
+import Data.List.Extra                  (nubOrd)
 import Data.Maybe                       (fromJust, fromMaybe, mapMaybe)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
@@ -74,15 +77,14 @@ import Text.ParserCombinators.Parsec (
   endBy,
   )
 
-type Od = ([String], [(Int, Int, String)])
-type Od' = ObjectDiagram String String String
+type Od = ObjectDiagram String String String
 
 data Object objectName className
   = Object {
     objectName                :: objectName,
     objectClass               :: className
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 instance Bifunctor Object where
   bimap f g Object {..} = Object {
@@ -105,40 +107,55 @@ data Link objectName linkName
     linkFrom                  :: objectName,
     linkTo                    :: objectName
     }
-  deriving (Eq, Functor, Foldable, Generic, Read, Show, Traversable)
+  deriving (Eq, Generic, Read, Show)
+
+instance Bifunctor Link where
+  bimap f g Link {..} = Link {
+    linkName      = g linkName,
+    linkFrom      = f linkFrom,
+    linkTo        = f linkTo
+    }
+
+instance Bifoldable Link where
+  bifoldMap f g Link {..} = g linkName
+    <> f linkFrom
+    <> f linkTo
+
+instance Bitraversable Link where
+  bitraverse f g Link {..} = Link
+    <$> g linkName
+    <*> f linkFrom
+    <*> f linkTo
 
 data ObjectDiagram objectName className linkName
   = ObjectDiagram {
-    objects'                  :: [Object objectName className],
-    links'                    :: [Link objectName linkName]
+    objects                   :: [Object objectName className],
+    links                     :: [Link objectName linkName]
     }
   deriving (Eq, Generic, Read, Show)
 
 instance Bifunctor (ObjectDiagram a) where
   bimap f g ObjectDiagram {..} = ObjectDiagram {
-    objects'        = map (fmap f) objects',
-    links'          = map (fmap g) links'
+    objects         = map (second f) objects,
+    links           = map (second g) links
     }
 
 instance Bifoldable (ObjectDiagram a) where
-  bifoldMap f g ObjectDiagram {..} = foldMap (foldMap f) objects'
-    <> foldMap (foldMap g) links'
+  bifoldMap f g ObjectDiagram {..} = foldMap (bifoldMap mempty f) objects
+    <> foldMap (bifoldMap mempty g) links
 
 instance Bitraversable (ObjectDiagram a) where
   bitraverse f g ObjectDiagram {..} = ObjectDiagram
-    <$> traverse (traverse f) objects'
-    <*> traverse (traverse g) links'
+    <$> traverse (bitraverse pure f) objects
+    <*> traverse (bitraverse pure g) links
 
-shuffleObjectAndLinkOrder :: (MonadRandom m, MonadThrow m) => Od -> m Od
-shuffleObjectAndLinkOrder (objects, links) = do
-  (is', objects') <- unzip <$> shuffleM (zip [0..] objects)
-  let isBM = BM.fromList $ zip [0..] is'
-      changeIs (x, y, z) = (,,)
-        <$> BM.lookupR x isBM
-        <*> BM.lookupR y isBM
-        <*> pure z
-  links' <- mapM changeIs links >>= shuffleM
-  return (objects', links')
+shuffleObjectAndLinkOrder
+  :: MonadRandom m
+  => ObjectDiagram objectName className linkName
+  -> m (ObjectDiagram objectName className linkName)
+shuffleObjectAndLinkOrder ObjectDiagram {..} = ObjectDiagram
+  <$> shuffleM objects
+  <*> shuffleM links
 
 {-|
 A meta-level connection to a node name
@@ -505,11 +522,11 @@ Defines the size restrictions of an object diagram.
 -}
 data ObjectConfig = ObjectConfig {
   -- | lower and upper limit of links within the object diagram
-  links             :: !(Int, Maybe Int),
+  linkLimits                  :: !(Int, Maybe Int),
   -- | lower and upper limit of links starting or ending at each object
-  linksPerObject    :: !(Int, Maybe Int),
+  linksPerObjectLimits        :: !(Int, Maybe Int),
   -- | lower and upper limit of objects within the object diagram
-  objects           :: !(Int, Int)
+  objectLimits                :: !(Int, Int)
   } deriving (Eq, Generic, Read, Show)
 
 {-|
@@ -518,9 +535,9 @@ without restricting links.
 -}
 maxFiveObjects :: ObjectConfig
 maxFiveObjects = ObjectConfig {
-  links             = (0, Nothing),
-  linksPerObject    = (0, Nothing),
-  objects           = (1, 5)
+  linkLimits                  = (0, Nothing),
+  linksPerObjectLimits        = (0, Nothing),
+  objectLimits                = (1, 5)
   }
 
 data RelationshipProperties = RelationshipProperties {
@@ -557,11 +574,17 @@ defaultProperties = RelationshipProperties {
 associationNames :: Cd -> [String]
 associationNames = mapMaybe relationshipName . relationships
 
-classNamesOd :: Od -> [String]
-classNamesOd o = head . splitOn "$" <$> fst o
+classNamesOd
+  :: Ord className
+  => ObjectDiagram objectName className linkName
+  -> [className]
+classNamesOd ObjectDiagram {..} = nubOrd $ map objectClass objects
 
-linkNames :: Od -> [String]
-linkNames o = nub $ (\(_,_,x) -> x) `map` snd o
+linkNames
+  :: Ord linkName
+  => ObjectDiagram objectName className linkName
+  -> [linkName]
+linkNames ObjectDiagram {..} = nubOrd $ map linkName links
 
 renameClassesAndRelationshipsInCd
   :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')
@@ -581,25 +604,38 @@ renameClassesAndRelationshipsInRelationship
 renameClassesAndRelationshipsInRelationship cm rm =
   bitraverse (`BM.lookup` cm) (`BM.lookup` rm)
 
-renameLinksInOd :: MonadThrow m => Bimap String String -> Od -> m Od
-renameLinksInOd m od = (fst od,) <$> mapM rename (snd od)
-  where
-    rename (f, t, l) = (f,t,) <$> BM.lookup l m
+data RenameException
+  = ObjectNameNotMatchingToObjectClass
+  deriving Show
 
-{-|
-Renames all the class names by replacing class names by their new version of
-the given mapping.
+instance Exception RenameException
 
-Object diagrams contain class names within their object names.
-The class names, start the object name, they are followed by a @$@ sign.
-Therefore renaming those is sufficient when renaming the classes in ODs.
-There are no empty object diagram names.
-(That is why the non-exhaustive pattern match is safe here.)
--}
-renameClassesInOd :: MonadThrow m => Bimap String String -> Od -> m Od
-renameClassesInOd m od = (,snd od) <$> mapM (rename . splitOn "$") (fst od)
+renameObjectsWithClassesAndLinksInOd
+  :: (MonadThrow m, Ord linkNames, Ord linkNames')
+  => Bimap String String
+  -> Bimap linkNames linkNames'
+  -> ObjectDiagram String String linkNames
+  -> m (ObjectDiagram String String linkNames')
+renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
+  objects' <- traverse renameObject objects
+  let bmObjects = BM.fromList
+        $ zip (fmap objectName objects) (fmap objectName objects')
+  links' <- traverse
+    (bitraverse (`BM.lookup` bmObjects) (`BM.lookup` bmLinks))
+    links
+  return ObjectDiagram {
+    objects = objects',
+    links = links'
+    }
   where
-    rename (l:ls) = (++ '$' : intercalate "$" ls) <$> BM.lookup l m
+    renameObject Object {..} = do
+      className' <- BM.lookup objectClass bmClasses
+      case stripPrefix (lowerFirst objectClass) objectName of
+        Just objectNamePostfix -> return Object {
+          objectName = lowerFirst className' ++ objectNamePostfix,
+          objectClass = className'
+          }
+        Nothing -> throw ObjectNameNotMatchingToObjectClass
 
 anyThickEdge :: Cd -> Bool
 anyThickEdge = any fst . calculateThickRelationships

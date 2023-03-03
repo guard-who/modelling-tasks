@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   emptyArr,
@@ -7,6 +8,14 @@ module Modelling.CdOd.Auxiliary.Util (
   ) where
 
 import qualified Data.Set                         as S
+
+import Modelling.Auxiliary.Common       (lowerFirst)
+import Modelling.CdOd.Types (
+  Link (..),
+  Object (..),
+  ObjectDiagram (..),
+  Od,
+  )
 
 import Language.Alloy.Call              as Alloy (
   AlloyInstance,
@@ -31,8 +40,6 @@ import Data.GraphViz.Attributes.Complete (
   )
 import Data.GraphViz.Attributes.HTML    as Html
   (Label, Format (..), Label (Text), TextItem (..))
-import Data.List                        (elemIndex)
-import Data.Maybe                       (fromJust)
 import Data.Text.Lazy                   (pack)
 
 filterFirst :: Eq a => a -> [a] -> [a]
@@ -60,15 +67,22 @@ getInstances mmaxInstances mtimeout = getInstancesWith $ defaultCallAlloyConfig 
 alloyInstanceToOd
   :: Monad m
   => AlloyInstance
-  -> ExceptT String m ([String], [(Int, Int, String)])
+  -> ExceptT String m Od
 alloyInstanceToOd i = except $ do
   os    <- lookupSig (scoped "this" "Obj") i
-  let withDollar x y = return $ x ++ '$' : show y
-  objs  <- S.toList <$> getSingleAs "" withDollar os
-  links <- fmap (linkOf objs) . S.toList <$> getTripleAs "get" withDollar withDollar withDollar os
-  return (objs, links)
+  objects <- S.toList <$> getSingleAs "" toObject os
+  links <- fmap toLink . S.toList <$> getTripleAs "get" oName nameOnly oName os
+  return ObjectDiagram {..}
   where
-    nameOf   = takeWhile (/= '$')
-    linkOf objs (x, l, y) =
-      let indexOf z = fromJust $ elemIndex z objs
-      in (indexOf x, indexOf y, nameOf l)
+    oName x = return . toObjectName x
+    toObjectName x y = lowerFirst x ++ if y == 0 then [] else show y
+    toObject x y = return $ Object {
+      objectName = toObjectName x y,
+      objectClass = x
+      }
+    nameOnly x _ = return x
+    toLink (x, l, y) = Link {
+      linkName = l,
+      linkFrom = x,
+      linkTo = y
+      }

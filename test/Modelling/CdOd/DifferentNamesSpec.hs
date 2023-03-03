@@ -24,8 +24,11 @@ import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
   LimitedLinking (..),
+  Link (..),
   Name (Name, unName),
+  Object (..),
   ObjectConfig (..),
+  ObjectDiagram (..),
   Od,
   Relationship (..),
   associationNames,
@@ -157,10 +160,19 @@ spec = do
       `shouldReturn` simpleCircleOd
     it "generates matching OD for circle with inheritance" $
       odFor cdBCCircle
-      `shouldReturn` (
-        ["A$0", "C$0", "C$1"],
-        [(0, 1, "y"), (0, 2, "y"), (1, 0, "x"), (2, 0, "x")]
-        )
+      `shouldReturn` ObjectDiagram {
+        objects = [
+          Object {objectName = "a", objectClass = "A"},
+          Object {objectName = "c", objectClass = "C"},
+          Object {objectName = "c1", objectClass = "C"}
+          ],
+        links = [
+          Link {linkName = "y", linkFrom = "a", linkTo = "c"},
+          Link {linkName = "y", linkFrom = "a", linkTo = "c1"},
+          Link {linkName = "x", linkFrom = "c", linkTo = "a"},
+          Link {linkName = "x", linkFrom = "c1", linkTo = "a"}
+          ]
+        }
   where
     cfg = defaultDifferentNamesConfig {
       maxInstances = Just 1000
@@ -174,9 +186,9 @@ odFor cd = oDiagram <$> do
     failed = error "failed generating instance"
     fewObjects = defaultDifferentNamesConfig { objectConfig = oc }
     oc = ObjectConfig {
-      links = (0, Just 4),
-      linksPerObject = (0, Just 4),
-      objects = (3, 3)
+      linkLimits = (0, Just 4),
+      linksPerObjectLimits = (0, Just 4),
+      objectLimits = (3, 3)
       }
 
 cdBCCircle :: Cd
@@ -248,8 +260,18 @@ composition name part whole = Composition {
   }
 
 simpleCircleOd :: Od
-simpleCircleOd =
-  (["A$0", "B$0", "C$0"], [(0, 2, "z"), (1, 0, "x"), (2, 1, "y")])
+simpleCircleOd = ObjectDiagram {
+  objects = [
+    Object {objectName = "a", objectClass = "A"},
+    Object {objectName = "b", objectClass = "B"},
+    Object {objectName = "c", objectClass = "C"}
+    ],
+  links = [
+    Link {linkName = "z", linkFrom = "a", linkTo = "c"},
+    Link {linkName = "x", linkFrom = "b", linkTo = "a"},
+    Link {linkName = "y", linkFrom = "c", linkTo = "b"}
+    ]
+  }
 
 renameProperty ::
   Testable prop =>

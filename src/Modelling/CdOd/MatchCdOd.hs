@@ -73,7 +73,10 @@ import Modelling.CdOd.Types (
   Change (..),
   Letters (Letters, lettersList),
   LimitedLinking (..),
+  Link (..),
+  Object (..),
   ObjectConfig (..),
+  ObjectDiagram (..),
   Od,
   Relationship (..),
   associationNames,
@@ -83,15 +86,14 @@ import Modelling.CdOd.Types (
   linkNames,
   relationshipName,
   renameClassesAndRelationshipsInCd,
-  renameClassesInOd,
-  renameLinksInOd,
+  renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
   showLetters,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   )
 
-import Control.Monad                    ((>=>), when)
+import Control.Monad                    (when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except             (runExceptT)
 #if __GLASGOW_HASKELL__ < 808
@@ -162,9 +164,9 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       },
     maxInstances     = Nothing,
     objectConfig = ObjectConfig {
-      links          = (4, Just 10),
-      linksPerObject = (0, Just 4),
-      objects        = (2, 4)
+      linkLimits           = (4, Just 10),
+      linksPerObjectLimits = (0, Just 4),
+      objectLimits         = (2, 4)
       },
     presenceOfLinkSelfLoops = Nothing,
     printSolution    = False,
@@ -190,12 +192,12 @@ matchCdOdTask
   -> MatchCdOdInstance
   -> LangM m
 matchCdOdTask path task = do
-  let anonymous o = length (fst o) `div` 3
+  let anonymous o = length (objects o) `div` 3
   cds <- lift $ liftIO $
     (\_ c -> cacheCd True True mempty c path)
     `M.traverseWithKey` diagrams task
   ods <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    (\_ (is,o) -> (is,) <$> uncurry cacheOd
+    (\_ (is,o) -> (is,) <$> cacheOd
       o (anonymous o) Back True path)
     `M.traverseWithKey` instances task
   paragraph $ translate $ do
@@ -410,26 +412,66 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
     ],
   generatorValue = 7777369639206507645,
   instances = M.fromList [
-    ('a',([1],(
-      ["B$0","B$1","C$0","D$0"],
-      [(2,0,"z"),(2,1,"z"),(3,1,"y"),(2,3,"x")]
-    ))),
-    ('b',([1],(
-      ["B$0","B$1","C$0","D$0"],
-      [(2,0,"z"),(2,1,"z"),(2,3,"x")]
-    ))),
-    ('c',([2],(
-      ["A$0","C$0","D$0","D$1"],
-      [(0,2,"x"),(1,3,"x")]
-    ))),
-    ('d',([2],(
-      ["A$0","B$0","D$0"],
-      [(0,2,"x")]
-    ))),
-    ('e',([],(
-      ["A$0","B$0","D$0"],
-      [(0,2,"x"),(0,1,"z"),(2,1,"y")]
-    )))
+    ('a',([1],ObjectDiagram {
+      objects = [
+        Object {objectName = "b", objectClass = "B"},
+        Object {objectName = "b1", objectClass = "B"},
+        Object {objectName = "c", objectClass = "C"},
+        Object {objectName = "d", objectClass = "D"}
+        ],
+      links = [
+        Link {linkName = "z", linkFrom = "c", linkTo = "b"},
+        Link {linkName = "z", linkFrom = "c", linkTo = "b1"},
+        Link {linkName = "y", linkFrom = "d", linkTo = "b1"},
+        Link {linkName = "x", linkFrom = "c", linkTo = "d"}
+        ]
+      })),
+    ('b',([1],ObjectDiagram {
+      objects = [
+        Object {objectName = "b", objectClass = "B"},
+        Object {objectName = "b1", objectClass = "B"},
+        Object {objectName = "c", objectClass = "C"},
+        Object {objectName = "d", objectClass = "D"}
+        ],
+      links = [
+        Link {linkName = "z", linkFrom = "c", linkTo = "b"},
+        Link {linkName = "z", linkFrom = "c", linkTo = "b1"},
+        Link {linkName = "x", linkFrom = "c", linkTo = "d"}
+        ]
+      })),
+    ('c',([2],ObjectDiagram {
+      objects = [
+        Object {objectName = "a", objectClass = "A"},
+        Object {objectName = "c", objectClass = "C"},
+        Object {objectName = "d", objectClass = "D"},
+        Object {objectName = "d1", objectClass = "D"}],
+      links = [
+        Link {linkName = "x", linkFrom = "a", linkTo = "d"},
+        Link {linkName = "x", linkFrom = "c", linkTo = "d1"}
+        ]
+      })),
+    ('d',([2],ObjectDiagram {
+      objects = [
+        Object {objectName = "a", objectClass = "A"},
+        Object {objectName = "b", objectClass = "B"},
+        Object {objectName = "d", objectClass = "D"}
+        ],
+      links = [
+        Link {linkName = "x", linkFrom = "a", linkTo = "d"}
+        ]
+      })),
+    ('e',([],ObjectDiagram {
+      objects = [
+        Object {objectName = "a", objectClass = "A"},
+        Object {objectName = "b", objectClass = "B"},
+        Object {objectName = "d", objectClass = "D"}
+        ],
+      links = [
+        Link {linkName = "x", linkFrom = "a", linkTo = "d"},
+        Link {linkName = "z", linkFrom = "a", linkTo = "b"},
+        Link {linkName = "y", linkFrom = "d", linkTo = "b"}
+        ]
+      }))
     ],
   showSolution = False
   }
@@ -454,7 +496,7 @@ instance RandomiseLayout MatchCdOdInstance where
   randomiseLayout = shuffleNodesAndEdges
 
 shuffleNodesAndEdges
-  :: (MonadRandom m, MonadThrow m)
+  :: MonadRandom m
   => MatchCdOdInstance
   -> m MatchCdOdInstance
 shuffleNodesAndEdges MatchCdOdInstance {..} = do
@@ -509,7 +551,7 @@ renameInstance inst names' assocs' = do
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
-      renameOd = renameClassesInOd bmNames >=> renameLinksInOd bmAssocs
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
   cds' <- renameCd `mapM` cds
   ods' <- mapM renameOd `mapM` ods
   return $ MatchCdOdInstance {

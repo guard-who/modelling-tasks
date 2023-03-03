@@ -9,7 +9,7 @@ import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
   LimitedLinking (..),
-  ObjectConfig (objects),
+  ObjectConfig (objectLimits),
   Relationship (..),
   maxFiveObjects,
   reverseAssociation,
@@ -211,7 +211,7 @@ drawCdAndOdsFor is c cds cmd = do
       (c ++ '-' : shorten cmd ++ "-od" ++ show i ++ ".svg")
     drawCd' cd i =
       drawCd True True mempty cd (c ++ "-cd" ++ show i ++ ".svg")
-    maxThreeObjects = maxFiveObjects { objects = (1, 3) }
+    maxThreeObjects = maxFiveObjects { objectLimits = (1, 3) }
     parts = zipWith cdToAlloy cds [0..]
     cdToAlloy cd i = transform
       (cd {relationships = map reverseAssociation $ relationships cd})

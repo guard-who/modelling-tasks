@@ -18,7 +18,7 @@ spec = do
     getResult cd = combineParts
       $ transform cd [] objectConfig (Just True) False "1" "-"
     objectConfig = ObjectConfig {
-      links          = (4, Just 10),
-      linksPerObject = (0, Just 4),
-      objects        = (2, 4)
+      linkLimits           = (4, Just 10),
+      linksPerObjectLimits = (0, Just 4),
+      objectLimits         = (2, 4)
       }
