@@ -38,7 +38,7 @@ import qualified Data.Map                         as M (
 import qualified Data.Set                         as S (toList)
 
 import Modelling.Auxiliary.Common (
-  Randomise (randomise),
+  Randomise (isRandomisable, randomise),
   RandomiseLayout (randomiseLayout),
   shuffleEverything,
   )
@@ -71,7 +71,9 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   associationNames,
+  canShuffleClassNames,
   checkClassConfigWithProperties,
+  checkObjectDiagram,
   classNames,
   defaultProperties,
   fromNameMapping,
@@ -155,7 +157,7 @@ checkDifferentNamesInstance DifferentNamesInstance {..}
       but not a link in the Object diagram.
       |]
   | otherwise
-  = Nothing
+  = checkObjectDiagram oDiagram
 
 data DifferentNamesConfig = DifferentNamesConfig {
     classConfig      :: ClassConfig,
@@ -561,6 +563,14 @@ instance Randomise DifferentNamesInstance where
     links' <- shuffleM links
     renameInstance inst names' assocs' links'
       >>= changeGeneratorValue
+  isRandomisable DifferentNamesInstance {..}
+    | not $ canShuffleClassNames oDiagram
+    = Just [iii|
+      object names of the CD have to match to their class names
+      (e.g. c1 for C or anyOne for AnyOne).
+      |]
+    | otherwise
+    = Nothing
 
 instance RandomiseLayout DifferentNamesInstance where
   randomiseLayout DifferentNamesInstance {..} = do

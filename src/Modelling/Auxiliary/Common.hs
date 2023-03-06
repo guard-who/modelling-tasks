@@ -75,6 +75,12 @@ class Randomise a where
   -- | Shuffles every component without affecting basic overall properties
   randomise :: (MonadFail m, MonadRandom m, MonadThrow m) => a -> m a
 
+  -- | Checks the randomisability of the given value
+  --     * returns Nothing, if it is randomisible
+  --     * returns Just the explanation why not, otherwise
+  isRandomisable :: a -> Maybe String
+  isRandomisable _ = Nothing
+
 class RandomiseLayout a where
   {-
   Shuffles the structure of every component

@@ -25,8 +25,10 @@ module Modelling.CdOd.Types (
   anyThickEdge,
   associationNames,
   calculateThickRelationships,
+  canShuffleClassNames,
   checkClassConfig,
   checkClassConfigWithProperties,
+  checkObjectDiagram,
   classNamesOd,
   defaultProperties,
   fromNameMapping,
@@ -62,7 +64,7 @@ import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Char                        (isAlpha, isAlphaNum)
-import Data.List                        (stripPrefix)
+import Data.List                        (isPrefixOf, stripPrefix)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe                       (fromJust, fromMaybe, mapMaybe)
 import Data.String                      (IsString (fromString))
@@ -495,6 +497,18 @@ checkRange g what (low, h) = do
         |]
       | otherwise = Nothing
 
+checkObjectDiagram
+  :: Ord objectName
+  => ObjectDiagram objectName className linkName
+  -> Maybe String
+checkObjectDiagram ObjectDiagram {..}
+  | objectNames /= nubOrd objectNames
+  = Just "Every objectName has to be unique across the whole object diagram!"
+  | otherwise
+  = Nothing
+  where
+    objectNames = objectName <$> objects
+
 minRels :: ClassConfig -> Int
 minRels ClassConfig {..} =
   fst aggregationLimits
@@ -636,6 +650,10 @@ renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
           objectClass = className'
           }
         Nothing -> throw ObjectNameNotMatchingToObjectClass
+
+canShuffleClassNames :: ObjectDiagram String String linkNames -> Bool
+canShuffleClassNames ObjectDiagram {..} =
+  all (\Object {..} -> lowerFirst objectClass `isPrefixOf` objectName) objects
 
 anyThickEdge :: Cd -> Bool
 anyThickEdge = any fst . calculateThickRelationships

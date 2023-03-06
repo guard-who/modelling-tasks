@@ -8,6 +8,7 @@ module Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
   MatchCdOdInstance (..),
   checkMatchCdOdConfig,
+  checkMatchCdOdInstance,
   debug,
   defaultMatchCdOdConfig,
   defaultMatchCdOdInstance,
@@ -28,6 +29,7 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   adjust,
+  elems,
   foldrWithKey,
   fromAscList,
   fromList,
@@ -38,7 +40,7 @@ import qualified Data.Map                         as M (
   )
 
 import Modelling.Auxiliary.Common (
-  Randomise (randomise),
+  Randomise (isRandomisable, randomise),
   RandomiseLayout (randomiseLayout),
   shuffleEverything,
   )
@@ -80,7 +82,9 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   associationNames,
+  canShuffleClassNames,
   checkClassConfigWithProperties,
+  checkObjectDiagram,
   classNames,
   defaultProperties,
   linkNames,
@@ -185,6 +189,10 @@ checkMatchCdOdConfig :: MatchCdOdConfig -> Maybe String
 checkMatchCdOdConfig config = checkClassConfigWithProperties
   (classConfig config)
   defaultProperties
+
+checkMatchCdOdInstance :: MatchCdOdInstance -> Maybe String
+checkMatchCdOdInstance MatchCdOdInstance {..} =
+  foldr ((<>) . checkObjectDiagram . snd) Nothing $ M.elems instances
 
 matchCdOdTask
   :: (MonadIO m, OutputMonad m)
@@ -491,6 +499,14 @@ instance Randomise MatchCdOdInstance where
     renameInstance inst names' assocs'
       >>= shuffleInstance
       >>= changeGeneratorValue
+  isRandomisable MatchCdOdInstance {..}
+    | not $ all (canShuffleClassNames . snd) instances
+    = Just [iii|
+      object names of each CD have to match to their class names
+      (e.g. c1 for C or anyOne for AnyOne).
+      |]
+    | otherwise
+    = Nothing
 
 instance RandomiseLayout MatchCdOdInstance where
   randomiseLayout = shuffleNodesAndEdges
