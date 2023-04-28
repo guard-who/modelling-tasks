@@ -289,7 +289,9 @@ data Node a =
   deriving (Eq, Generic, Read, Show)
 
 instance PetriNode Node where
-  initialTokens = initial
+  initialTokens PlaceNode {initial} = initial
+  initialTokens TransitionNode {} =
+    error "A TransitionNode does not have initial tokens!"
 
   isPlaceNode PlaceNode {} = True
   isPlaceNode _            = False
@@ -318,7 +320,9 @@ data SimpleNode a =
   deriving (Eq, Generic, Read, Show)
 
 instance PetriNode SimpleNode where
-  initialTokens = initial
+  initialTokens SimplePlace {initial} = initial
+  initialTokens SimpleTransition {} =
+    error "A SimpleTransition does not have initial tokens!"
 
   isPlaceNode SimplePlace {} = True
   isPlaceNode _         = False
@@ -492,7 +496,8 @@ instance Net PetriLike Node where
   traverseNet = traversePetriLike
 
 flowOutN :: Node a -> Map a Int
-flowOutN = flowOut
+flowOutN PlaceNode {flowOut} = flowOut
+flowOutN TransitionNode {flowOut} = flowOut
 
 instance Net PetriLike SimpleNode where
   emptyNet = PetriLike M.empty
@@ -526,7 +531,8 @@ instance Net PetriLike SimpleNode where
   traverseNet = traversePetriLike
 
 flowOutSN :: SimpleNode a -> Map a Int
-flowOutSN = flowOut
+flowOutSN SimplePlace {flowOut} = flowOut
+flowOutSN SimpleTransition {flowOut} = flowOut
 
 updateSimpleNode :: (Map a Int -> Map b Int) -> SimpleNode a -> SimpleNode b
 updateSimpleNode g (SimplePlace t o)    = SimplePlace t (g o)

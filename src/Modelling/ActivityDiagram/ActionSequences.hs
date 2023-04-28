@@ -4,6 +4,10 @@ module Modelling.ActivityDiagram.ActionSequences (
   generateActionSequence,
 ) where
 
+import qualified Modelling.ActivityDiagram.Datatype as AD (
+  ADNode (label),
+  )
+
 import qualified Data.Set as S (fromList)
 import qualified Data.Map as M (filter, map, keys, fromList, toList)
 
@@ -51,8 +55,10 @@ fromPetriLike petri =
 generateActionSequence :: UMLActivityDiagram -> [String]
 generateActionSequence diag =
   let tSeq = generateActionSequence' diag
-      tSeqLabels = map ((label :: ADNode -> Int) . sourceNode) $ filter isNormalST tSeq
-      actions = map (\n -> ((label :: ADNode -> Int) n, name n)) $ filter isActionNode $ nodes diag
+      tSeqLabels = map (AD.label . sourceNode) $ filter isNormalST tSeq
+      actions = map
+        (\n -> (AD.label n, name n))
+        $ filter isActionNode $ nodes diag
   in mapMaybe (`lookup` actions) tSeqLabels
 
 isNormalST :: PetriKey -> Bool
@@ -72,10 +78,14 @@ generateActionSequence' diag =
 
 validActionSequence :: [String] -> UMLActivityDiagram -> Bool
 validActionSequence input diag =
-  let nameMap = map (\n -> (name n, (label :: ADNode -> Int) n)) $ filter isActionNode $ nodes diag
+  let nameMap = map
+        (\n -> (name n, AD.label n))
+        $ filter isActionNode $ nodes diag
       labels = mapMaybe (`lookup` nameMap) input
       petri = convertToPetrinet diag
-      petriKeyMap = map (\k -> ((label :: ADNode -> Int) $ sourceNode k, k)) $ filter isNormalST $ M.keys $ allNodes petri
+      petriKeyMap = map
+        (\k -> (AD.label $ sourceNode k, k))
+        $ filter isNormalST $ M.keys $ allNodes petri
       input' = mapMaybe (`lookup` petriKeyMap) labels
       actions = map snd $ filter (\(l,_) -> l `elem` map snd nameMap) petriKeyMap
   in length input == length labels && validActionSequence' input' actions petri

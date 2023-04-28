@@ -2,6 +2,13 @@
 {-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.ConcurrencySpec where
 
+import qualified Modelling.PetriNet.Types         as Find (
+  FindConcurrencyConfig (..),
+  )
+import qualified Modelling.PetriNet.Types         as Pick (
+  PickConcurrencyConfig (..),
+  )
+
 import Modelling.PetriNet.Concurrency (
   checkFindConcurrencyConfig,
   checkPickConcurrencyConfig,
@@ -53,7 +60,7 @@ spec = do
   describe "findConcurrency" $ do
     defaultConfigTaskGeneration
       (findConcurrency defaultFindConcurrencyConfig {
-          alloyConfig = firstInstanceConfig
+          Find.alloyConfig = firstInstanceConfig
           } 0)
       0
       $ checkFindConcurrencyInstance @(SimplePetriLike _)
@@ -63,7 +70,7 @@ spec = do
   describe "pickConcurrency" $ do
     defaultConfigTaskGeneration
       (pickConcurrency defaultPickConcurrencyConfig {
-          alloyConfig = firstInstanceConfig
+          Pick.alloyConfig = firstInstanceConfig
           } 0)
       0
       $ checkPickConcurrencyInstance @(SimplePetriLike _)

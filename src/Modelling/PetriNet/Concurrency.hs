@@ -24,6 +24,12 @@ module Modelling.PetriNet.Concurrency (
   ) where
 
 import qualified Modelling.PetriNet.Find          as F (showSolution)
+import qualified Modelling.PetriNet.Types         as Find (
+  FindConcurrencyConfig (..),
+  )
+import qualified Modelling.PetriNet.Types         as Pick (
+  PickConcurrencyConfig (..),
+  )
 
 import qualified Data.Map                         as M (
   empty,
@@ -294,11 +300,11 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
     net = d,
     numberOfPlaces = places bc,
     numberOfTransitions = transitions bc,
-    showSolution = printSolution (config :: FindConcurrencyConfig)
+    showSolution = Find.printSolution config
     }
   where
-    bc = basicConfig (config :: FindConcurrencyConfig)
-    gc = graphConfig (config :: FindConcurrencyConfig)
+    bc = Find.basicConfig config
+    gc = Find.graphConfig config
 
 findConcurrency
   :: (Net p n, RandomGen g)
@@ -309,7 +315,7 @@ findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
   parseConcurrency
-  (\c -> alloyConfig (c :: FindConcurrencyConfig))
+  Find.alloyConfig
 
 pickConcurrencyGenerate
   :: Net p n
@@ -319,9 +325,9 @@ pickConcurrencyGenerate
   -> ExceptT String IO (PickInstance (p n String))
 pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws
   where
-    gc config = graphConfig (config :: PickConcurrencyConfig)
-    ud config = useDifferentGraphLayouts (config :: PickConcurrencyConfig)
-    ws config = printSolution (config :: PickConcurrencyConfig)
+    gc config = Pick.graphConfig config
+    ud config = Pick.useDifferentGraphLayouts config
+    ws config = Pick.printSolution config
 
 
 pickConcurrency
@@ -336,7 +342,7 @@ pickConcurrency = taskInstance
   pickTaskInstance
   petriNetPickConcur
   parseConcurrency
-  (\c -> alloyConfig (c :: PickConcurrencyConfig))
+  Pick.alloyConfig
 
 
 petriNetFindConcur :: FindConcurrencyConfig -> String

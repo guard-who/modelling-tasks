@@ -2,6 +2,13 @@
 {-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.ConflictSpec where
 
+import qualified Modelling.PetriNet.Types         as Find (
+  FindConflictConfig (alloyConfig),
+  )
+import qualified Modelling.PetriNet.Types         as Pick (
+  PickConflictConfig (alloyConfig),
+  )
+
 import Modelling.PetriNet.Conflict (
   checkConflictConfig,
   checkFindConflictConfig,
@@ -24,10 +31,10 @@ import Modelling.PetriNet.Types (
   BasicConfig,
   ChangeConfig,
   ConflictConfig (ConflictConfig),
-  FindConflictConfig (FindConflictConfig, alloyConfig),
+  FindConflictConfig (FindConflictConfig),
   PetriConflict (Conflict),
   PetriConflict' (PetriConflict'),
-  PickConflictConfig (PickConflictConfig, alloyConfig),
+  PickConflictConfig (PickConflictConfig),
   SimplePetriLike,
   defaultFindConflictConfig,
   defaultPickConflictConfig,
@@ -57,7 +64,7 @@ spec = do
   describe "findConflicts" $ do
     defaultConfigTaskGeneration
       (findConflict defaultFindConflictConfig {
-          alloyConfig = firstInstanceConfig
+          Find.alloyConfig = firstInstanceConfig
           } 0)
       0
       $ checkFindConflictInstance @(SimplePetriLike _)
@@ -67,7 +74,7 @@ spec = do
   describe "pickConflicts" $ do
     defaultConfigTaskGeneration
       (pickConflict defaultPickConflictConfig {
-          alloyConfig = firstInstanceConfig
+          Pick.alloyConfig = firstInstanceConfig
           } 0)
       0
       $ checkPickConflictInstance @(SimplePetriLike _)

@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 module Modelling.Auxiliary.Diagrams (
   arrowheadDiamond,
   arrowheadFilledDiamond,

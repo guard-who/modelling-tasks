@@ -29,6 +29,12 @@ module Modelling.PetriNet.Conflict (
   ) where
 
 import qualified Modelling.PetriNet.Find          as F (showSolution)
+import qualified Modelling.PetriNet.Types         as Find (
+  FindConflictConfig (..),
+  )
+import qualified Modelling.PetriNet.Types         as Pick (
+  PickConflictConfig (..),
+  )
 
 import qualified Data.Map                         as M (
   empty,
@@ -341,11 +347,11 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     net = d,
     numberOfPlaces = places bc,
     numberOfTransitions = transitions bc,
-    showSolution = printSolution (config :: FindConflictConfig)
+    showSolution = Find.printSolution config
     }
   where
-    bc = basicConfig (config :: FindConflictConfig)
-    gc = graphConfig (config :: FindConflictConfig)
+    bc = Find.basicConfig config
+    gc = Find.graphConfig config
 
 pickConflictGenerate
   :: Net p n
@@ -355,9 +361,9 @@ pickConflictGenerate
   -> ExceptT String IO (PickInstance (p n String))
 pickConflictGenerate = pickGenerate pickConflict gc ud ws
   where
-    gc config = graphConfig (config :: PickConflictConfig)
-    ud config = useDifferentGraphLayouts (config :: PickConflictConfig)
-    ws config = printSolution (config :: PickConflictConfig)
+    gc config = Pick.graphConfig config
+    ud config = Pick.useDifferentGraphLayouts config
+    ws config = Pick.printSolution config
 
 findConflict
   :: (Net p n, RandomGen g)
@@ -371,7 +377,7 @@ findConflict = taskInstance
   findTaskInstance
   petriNetFindConfl
   parseConflict
-  (\c -> alloyConfig (c :: FindConflictConfig))
+  Find.alloyConfig
 
 petriNetFindConfl :: FindConflictConfig -> String
 petriNetFindConfl FindConflictConfig {
@@ -400,7 +406,7 @@ pickConflict = taskInstance
   pickTaskInstance
   petriNetPickConfl
   parseConflict
-  (\c -> alloyConfig (c :: PickConflictConfig))
+  Pick.alloyConfig
 
 petriNetPickConfl :: PickConflictConfig -> String
 petriNetPickConfl PickConflictConfig {
