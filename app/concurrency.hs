@@ -2,6 +2,13 @@
 
 module Main (main) where
 
+import qualified Modelling.PetriNet.Types         as Find (
+  FindConcurrencyConfig (..),
+  )
+import qualified Modelling.PetriNet.Types         as Pick (
+  PickConcurrencyConfig (..),
+  )
+
 import Common (
   forceErrors,
   instanceInput,
@@ -43,11 +50,11 @@ mainFind i = forceErrors $ do
   lift $ pPrint defaultFindConcurrencyConfig
   (pls,trns,tknChange,flwChange) <- lift userInput
   let config = defaultFindConcurrencyConfig {
-        basicConfig = (bc defaultFindConcurrencyConfig) {
+        Find.basicConfig = (Find.basicConfig defaultFindConcurrencyConfig) {
             places = pls,
             transitions = trns
             },
-        changeConfig = (cc defaultFindConcurrencyConfig) {
+        Find.changeConfig = (Find.changeConfig defaultFindConcurrencyConfig) {
             tokenChangeOverall = tknChange,
             flowChangeOverall = flwChange
             }
@@ -60,22 +67,17 @@ mainFind i = forceErrors $ do
     lift $ print t
   else
     lift $ print c
-  where
-    bc :: FindConcurrencyConfig -> BasicConfig
-    bc = basicConfig
-    cc :: FindConcurrencyConfig -> ChangeConfig
-    cc = changeConfig
 
 mainPick :: Int -> IO ()
 mainPick i = forceErrors $ do
   lift $ pPrint defaultPickConcurrencyConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
   let config = defaultPickConcurrencyConfig {
-        basicConfig = (bc defaultPickConcurrencyConfig) {
+        Pick.basicConfig = (Pick.basicConfig defaultPickConcurrencyConfig) {
             places = pls,
             transitions = trns
             },
-        changeConfig = (cc defaultPickConcurrencyConfig) {
+        Pick.changeConfig = (Pick.changeConfig defaultPickConcurrencyConfig) {
             tokenChangeOverall = tknChange,
             flowChangeOverall = flwChange
             }
@@ -88,11 +90,6 @@ mainPick i = forceErrors $ do
     lift $ print t
   else
     lift $ print c
-  where
-    bc :: PickConcurrencyConfig -> BasicConfig
-    bc = basicConfig
-    cc :: PickConcurrencyConfig -> ChangeConfig
-    cc = changeConfig
 
 userInput :: IO (Int,Int,Int,Int)
 userInput = do

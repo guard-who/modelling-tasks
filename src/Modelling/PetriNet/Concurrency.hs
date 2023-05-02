@@ -325,9 +325,9 @@ pickConcurrencyGenerate
   -> ExceptT String IO (PickInstance (p n String))
 pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws
   where
-    gc config = Pick.graphConfig config
-    ud config = Pick.useDifferentGraphLayouts config
-    ws config = Pick.printSolution config
+    gc = Pick.graphConfig
+    ud = Pick.useDifferentGraphLayouts
+    ws = Pick.printSolution
 
 
 pickConcurrency

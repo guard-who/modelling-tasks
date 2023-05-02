@@ -30,7 +30,7 @@ jobs:
         uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
         with:
           apt-get: ${{ matrix.apt-get }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Cache Stack on unix
         id: cache-stack-unix

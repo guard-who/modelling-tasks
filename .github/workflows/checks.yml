@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: stack.yaml has no additions to stack-apps.yaml
         run: "! comm -23 stack.yaml stack-apps.yaml | grep ."

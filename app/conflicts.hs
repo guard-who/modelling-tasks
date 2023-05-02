@@ -2,6 +2,14 @@
 
 module Main (main) where
 
+
+import qualified Modelling.PetriNet.Types         as Find (
+  FindConflictConfig (..),
+  )
+import qualified Modelling.PetriNet.Types         as Pick (
+  PickConflictConfig (..),
+  )
+
 import Common (
   forceErrors,
   instanceInput,
@@ -43,11 +51,11 @@ mainFind i = forceErrors $ do
   pPrint defaultFindConflictConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
   let config = defaultFindConflictConfig {
-        basicConfig = (bc defaultFindConflictConfig) {
+        Find.basicConfig = (Find.basicConfig defaultFindConflictConfig) {
             places = pls,
             transitions = trns
             },
-        changeConfig = (cc defaultFindConflictConfig) {
+        Find.changeConfig = (Find.changeConfig defaultFindConflictConfig) {
             tokenChangeOverall = tknChange,
             flowChangeOverall = flwChange
             }
@@ -60,22 +68,17 @@ mainFind i = forceErrors $ do
     lift $ print t
   else
     lift $ print c
-  where
-    bc :: FindConflictConfig -> BasicConfig
-    bc = basicConfig
-    cc :: FindConflictConfig -> ChangeConfig
-    cc = changeConfig
 
 mainPick :: Int -> IO ()
 mainPick i = forceErrors $ do
   pPrint defaultPickConflictConfig
   (pls, trns, tknChange, flwChange) <- lift userInput
   let config = defaultPickConflictConfig {
-        basicConfig = (bc defaultPickConflictConfig) {
+        Pick.basicConfig = (Pick.basicConfig defaultPickConflictConfig) {
             places = pls,
             transitions = trns
             },
-        changeConfig = (cc defaultPickConflictConfig) {
+        Pick.changeConfig = (Pick.changeConfig defaultPickConflictConfig) {
             tokenChangeOverall = tknChange,
             flowChangeOverall = flwChange
             }
@@ -88,11 +91,6 @@ mainPick i = forceErrors $ do
     lift $ print c
   else
     lift $ print c
-  where
-    bc :: PickConflictConfig -> BasicConfig
-    bc = basicConfig
-    cc :: PickConflictConfig -> ChangeConfig
-    cc = changeConfig
 
 userInput :: IO (Int,Int,Int,Int)
 userInput = do
