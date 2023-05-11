@@ -188,7 +188,7 @@ data PetriConflict p t = Conflict {
   -- | The set of source nodes having not enough tokens to fire both transitions.
   conflictPlaces :: [p]
   }
-  deriving (Generic, Read, Show)
+  deriving (Functor, Generic, Read, Show)
 
 makeLensesWith lensRulesL ''PetriConflict
 
@@ -951,7 +951,7 @@ checkBasicConfig BasicConfig{
   = Just "The maximum 'tokensOverall' is set unreasonably high, given the per-place parameter."
  | fst flowOverall < 0
   = Just "The 'flowOverall' must be non-negative."
- | uncurry (>) tokensOverall
+ | uncurry (>) flowOverall
   = Just "The minimum (first value) of 'flowOverall' must not be larger than its maximum (second value)."
  | maxFlowPerEdge <= 0
   = Just "The parameter 'maxFlowPerEdge' must be positive."

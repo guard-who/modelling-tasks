@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -185,7 +186,7 @@ data MatchInstance a b = MatchInstance {
   showSolution :: Bool,
   to :: Map Int (Bool, b)
   }
-  deriving (Generic, Read, Show)
+  deriving (Functor, Generic, Read, Show)
 
 instance Bifoldable MatchInstance where
   bifoldMap f g m@MatchInstance {} = f (from m) `mappend` foldMap (g . snd) (to m)
