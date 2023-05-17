@@ -80,7 +80,7 @@ spec = do
       . parseInstance
       . BS.pack
       >=> fmap show . getChangesAndCds
-    opposingOd = both (:[]) $ (
+    opposingOd = both (:[]) (
       ObjectDiagram {
         objects = [
           Object {objectName = "a", objectClass = "A"},

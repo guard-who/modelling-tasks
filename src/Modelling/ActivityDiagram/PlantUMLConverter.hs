@@ -113,9 +113,11 @@ handleDecisionOrFork startNode conf diag@(UMLActivityDiagram _ conns) seen start
       newSeen = seen ++ foldr1 union pathsToEnd ++ [endNode]
       newQueue = filter (`notElem` newSeen) (adjNodes endNode diag)
   in
-    [__i|#{startToken}
+    [__i|
+    #{startToken}
     #{intercalate midToken subStrings}#{endToken}
-    #{convertNode' newQueue conf diag newSeen}|]
+    #{convertNode' newQueue conf diag newSeen}
+    |]
 
 
 -- Filter out sublists that are disjunct with all other sublists
@@ -136,9 +138,11 @@ handleRepeat merge conf diag@(UMLActivityDiagram _ conns) seen startToken endTok
       newSeen = seen ++ pathToRepeatEnd ++ [repeatEnd]
       newQueue = filter (`notElem` newSeen) (adjNodes repeatEnd diag)
   in
-    [__i|#{startToken}
+    [__i|
+    #{startToken}
     #{subString}#{endToken}
-    #{convertNode' newQueue conf diag newSeen}|]
+    #{convertNode' newQueue conf diag newSeen}
+    |]
 
 
 --Get reachable (yet unhandled) nodes from passed node

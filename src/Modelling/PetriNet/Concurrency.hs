@@ -270,7 +270,8 @@ pickConcurrencyTask path task = do
       german $ [iii|
         #{" "}als Antwort würde bedeuten, dass Petrinetz 1
         genau zwei nebenläufig aktivierte Transitionen hat (und dass
-        #{" "}|]
+        #{" "}
+        |]
         ++ (if plural
             then "die anderen Petrinetze dies nicht tun"
             else "das andere Petrinetz dies nicht tut")

@@ -161,8 +161,7 @@ arrowheadVee theta len shaftWidth = (
       [a1, quarterTurn, quarterTurn, a2, quarterTurn, quarterTurn, a1, quarterTurn, quarterTurn]
         [start, len', w, len, len, w, len', start, w]
       & polyOrient .~ NoOrient
-    )
-    # alignL,
+    ) # alignL,
   mempty
   )
   where
@@ -181,8 +180,7 @@ arrowheadTriangle theta len shaftWidth = (
         [negated quarterTurn, a1, a2, a1, negated quarterTurn, quarterTurn, quarterTurn, quarterTurn, a1', a2', a1', quarterTurn, negated quarterTurn, quarterTurn]
         [start, len', len, len, len', start, w / 2, w + start, lenI', lenI, lenI, lenI', w + start, w / 2]
       & polyOrient .~ NoOrient
-    )
-    # alignL,
+    ) # alignL,
   mempty
   )
   where
@@ -205,8 +203,7 @@ arrowheadDiamond theta len shaftWidth = (
         [a3, a1, a2, a1, a3, quarterTurn, quarterTurn, a3', a1', a2', a1', a3', quarterTurn, quarterTurn]
         [w, len', len, len, len', w, w / 2, dw, lenI', lenI', lenI', lenI', dw, w / 2]
       & polyOrient .~ NoOrient
-    )
-    # alignL,
+    ) # alignL,
   mempty
   )
   where
@@ -232,8 +229,7 @@ arrowheadFilledDiamond theta len shaftWidth = (
         [quarterTurn, a3, a1, a2, a1, a3, quarterTurn, quarterTurn]
         [w, w, len', len, len, len', w, w]
       & polyOrient .~ NoOrient
-    )
-    # alignR,
+    ) # alignR,
   mempty
   )
   where
