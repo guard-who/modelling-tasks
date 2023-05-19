@@ -19,10 +19,10 @@ import Language.Alloy.Debug             (parseInstance)
 
 spec :: Spec
 spec = do
-  withUnitTests "drawCd" does dir "svg" $ shouldReturn . drawCdInstance
-  withUnitTests "drawOd" does dir "svg" $ shouldReturn . drawOdInstance
+  withUnitTests "drawCd" (draws "class") dir "svg" $ shouldReturn . drawCdInstance
+  withUnitTests "drawOd" (draws "object") dir "svg" $ shouldReturn . drawOdInstance
   where
-    does = "draws expected class diagram"
+    draws what = "draws expected " ++ what ++ " diagram"
     dir = "test/unit/Modelling/CdOd/Output"
     drawCdInstance alloy = withTempFile $ \file -> do
       Right alloyInstance <- runExceptT $ parseInstance (pack alloy)
