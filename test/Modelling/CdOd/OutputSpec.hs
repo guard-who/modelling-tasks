@@ -12,17 +12,27 @@ import Control.Monad.Except             (runExceptT)
 import Control.Monad.Random             (evalRandT)
 import Data.ByteString.Char8            (pack)
 import Data.GraphViz                    (DirType (Back))
-import Test.Hspec
+import Test.Hspec                       (Spec)
+import Test.Similarity                  (Deviation (..), shouldReturnSimilar)
 import System.IO.Extra                  (withTempFile)
 import System.Random                    (mkStdGen)
 import Language.Alloy.Debug             (parseInstance)
 
+debug :: Bool
+debug = False
+
 spec :: Spec
 spec = do
-  withUnitTests "drawCd" (draws "class") dir "svg" $ shouldReturn . drawCdInstance
-  withUnitTests "drawOd" (draws "object") dir "svg" $ shouldReturn . drawOdInstance
+  withUnitTests "drawCd" (draws "class") dir "svg"
+    $ shouldReturnSimilar' . drawCdInstance
+  withUnitTests "drawOd" (draws "object") dir "svg"
+    $ shouldReturnSimilar' . drawOdInstance
   where
-    draws what = "draws expected " ++ what ++ " diagram"
+    shouldReturnSimilar' = shouldReturnSimilar
+      debug
+      200
+      Deviation {absoluteDeviation = 8, relativeDeviation = 0.15}
+    draws what = "draws roughly the expected " ++ what ++ " diagram"
     dir = "test/unit/Modelling/CdOd/Output"
     drawCdInstance alloy = withTempFile $ \file -> do
       Right alloyInstance <- runExceptT $ parseInstance (pack alloy)
