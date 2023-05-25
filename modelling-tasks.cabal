@@ -167,6 +167,7 @@ test-suite modelling-tasks-test
       Modelling.PetriNet.TypesSpec
       Settings
       SpecHook
+      Test.Similarity
       Paths_modelling_tasks
   hs-source-dirs:
       test
@@ -175,7 +176,8 @@ test-suite modelling-tasks-test
       alex
     , happy
   build-depends:
-      MonadRandom
+      HUnit
+    , MonadRandom
     , QuickCheck
     , SHA
     , SVGFonts

@@ -131,6 +131,7 @@ tests:
     dependencies:
       - modelling-tasks
       - QuickCheck
+      - HUnit
       - hspec
       - process
       - random

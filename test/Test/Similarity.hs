@@ -10,6 +10,7 @@ import Control.Applicative              (Alternative ((<|>)), optional)
 import Control.Monad                    (unless, when)
 import Data.Bifunctor                   (first)
 import Data.Char                        (isDigit)
+import Data.Functor                     (($>))
 import Data.List.Extra                  (repeatedly, takeEnd)
 import Data.Maybe                       (fromMaybe)
 import Data.Tuple.Extra                 (both)
@@ -62,7 +63,7 @@ showOriginal (SomeNumber x _ : xs) = x ++ showOriginal xs
 parseXML :: Parser [SomeXMLString]
 parseXML =
   (:) <$> parseXMLString <*> parseXML
-  <|> eof *> pure []
+  <|> eof $> []
 
 parseXMLString :: Parser SomeXMLString
 parseXMLString = parseNumber <|> parseString
