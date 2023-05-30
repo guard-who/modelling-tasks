@@ -5,6 +5,7 @@ and printing error messages.
 -}
 module Modelling.Common (
   withUnitTests,
+  withUnitTestsUsingPath,
   ) where
 
 
@@ -33,14 +34,14 @@ instance OutputMonad (Either String) where
   code _          = return ()
   translated _    = return ()
 
-withUnitTests
+withUnitTestsUsingPath
   :: String
   -> String
   -> FilePath
   -> String
-  -> (String -> String -> Expectation)
+  -> (FilePath -> String -> String -> Expectation)
   -> Spec
-withUnitTests name does dir extension assertWith = describe name $ do
+withUnitTestsUsingPath name does dir extension assertWith = describe name $ do
   fs <- runIO $ sort <$> getDirectoryContents dir
   let testName = name ++ "Test"
   forM_ (filter (testName `isPrefixOf`) fs) $ \fileName -> do
@@ -48,4 +49,14 @@ withUnitTests name does dir extension assertWith = describe name $ do
     input <- runIO $ readFile file
     let resultFile = replace "Test" "Result" file -<.> extension
     expectedResult <- runIO $ readFile resultFile
-    it (does ++ " for " ++ file) $ assertWith input expectedResult
+    it (does ++ " for " ++ file) $ assertWith file input expectedResult
+
+withUnitTests
+  :: String
+  -> String
+  -> FilePath
+  -> String
+  -> (String -> String -> Expectation)
+  -> Spec
+withUnitTests name does dir extension =
+  withUnitTestsUsingPath name does dir extension . const

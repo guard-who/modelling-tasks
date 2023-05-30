@@ -73,6 +73,7 @@ jobs:
         if: contains(matrix.os, 'windows')
 
       - name: Build and test on unix
+        id: test-unix
         run: |
           set -ex
           # shellcheck disable=SC2086
@@ -83,9 +84,17 @@ jobs:
         if: contains(matrix.os, 'windows') == false
 
       - name: Build and test on windows
+        id: test-windows
         shell: powershell
         run: |
           stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
         env:
           ARGS: ${{ matrix.plan.resolver }}
         if: contains(matrix.os, 'windows')
+
+      - name: Archive test artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: artifacts
+        if: ${{ failure() && (steps.test-unix.conclusion == 'failure' || steps.test-windows.conclusion == 'failure') }}

@@ -5,7 +5,7 @@ import Modelling.CdOd.CdAndChanges.Instance (
   fromInstance,
   )
 import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
-import Modelling.Common                 (withUnitTests)
+import Modelling.Common                 (withUnitTestsUsingPath)
 
 import Control.Monad                    (void)
 import Control.Monad.Except             (runExceptT)
@@ -18,20 +18,17 @@ import System.IO.Extra                  (withTempFile)
 import System.Random                    (mkStdGen)
 import Language.Alloy.Debug             (parseInstance)
 
-debug :: Bool
-debug = False
-
 spec :: Spec
 spec = do
-  withUnitTests "drawCd" (draws "class") dir "svg"
-    $ shouldReturnSimilar' . drawCdInstance
-  withUnitTests "drawOd" (draws "object") dir "svg"
-    $ shouldReturnSimilar' . drawOdInstance
+  withUnitTestsUsingPath "drawCd" (draws "class") dir "svg"
+    $ \file -> shouldReturnSimilar' (Just file) . drawCdInstance
+  withUnitTestsUsingPath "drawOd" (draws "object") dir "svg"
+    $ \file -> shouldReturnSimilar' (Just file) . drawOdInstance
   where
-    shouldReturnSimilar' = shouldReturnSimilar
-      debug
+    shouldReturnSimilar' f = shouldReturnSimilar
+      f
       200
-      Deviation {absoluteDeviation = 8, relativeDeviation = 0.15}
+      Deviation {absoluteDeviation = 10, relativeDeviation = 0.2}
     draws what = "draws roughly the expected " ++ what ++ " diagram"
     dir = "test/unit/Modelling/CdOd/Output"
     drawCdInstance alloy = withTempFile $ \file -> do

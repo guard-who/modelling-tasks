@@ -13,6 +13,7 @@
 *.exe
 *.DS_Store
 .stack-work/
+artifacts/
 dist-newstyle/
 stack.yaml.lock
 stack-apps.yaml.lock

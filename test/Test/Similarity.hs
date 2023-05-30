@@ -14,6 +14,8 @@ import Data.Functor                     (($>))
 import Data.List.Extra                  (repeatedly, takeEnd)
 import Data.Maybe                       (fromMaybe)
 import Data.Tuple.Extra                 (both)
+import System.Directory                 (createDirectoryIfMissing)
+import System.FilePath                  (takeDirectory)
 import Test.HUnit.Base                  (Assertion, assertEqual)
 import Text.ParserCombinators.Parsec (
   Parser,
@@ -90,9 +92,9 @@ parseString = fmap SomeString $ many1 $ try $ do
   return x
 
 shouldReturnSimilar
-  :: Bool
+  :: Maybe FilePath
   -- ^ Whether to write the test result to a file
-  -- (for debugging single test cases)
+  -- using the provided file name (and sub-directories)
   -> Int
   -- ^ the length of context before and after differences
   -> Deviation
@@ -102,8 +104,8 @@ shouldReturnSimilar
   -> String
   -- ^ the actual XML String
   -> Assertion
-shouldReturnSimilar debug context deviation action expected =
-  action >>= assertSimilar debug context deviation expected
+shouldReturnSimilar debugFile context deviation action expected =
+  action >>= assertSimilar debugFile context deviation expected
 
 isSimilar :: Deviation -> SomeXMLString -> SomeXMLString -> Bool
 isSimilar _ (SomeString x1) (SomeString x2) = x1 == x2
@@ -122,9 +124,9 @@ Asserts similarity between the given XML Strings by using the specified
 Deviations.
 -}
 assertSimilar
-  :: Bool
+  :: Maybe FilePath
   -- ^ Whether to write the test result to a file
-  -- (for debugging single test cases)
+  -- using the provided file name (and sub-directories)
   -> Int
   -- ^ the length of context before and after differences
   -> Deviation
@@ -134,7 +136,7 @@ assertSimilar
   -> String
   -- ^ the actual XML String
   -> Assertion
-assertSimilar debug context deviation expected actual = do
+assertSimilar debugFile context deviation expected actual = do
   let es = either (error . show) id $ parse parseXML "expected" expected
       as = either (error . show) id $ parse parseXML "actual" actual
       similars = zipWith (isSimilar deviation) es as
@@ -157,9 +159,15 @@ assertSimilar debug context deviation expected actual = do
     debugWriteFile
     assertEqual "" expectedEnd actualEnd
   where
-    debugWriteFile = when debug $ do
-      writeFile "/tmp/expected.svg" expected
-      writeFile "/tmp/actual.svg" actual
+    debugWriteFile
+      | Just file <- debugFile = do
+          let expectedFile = "artifacts/expected/" ++ file
+              actualFile = "artifacts/actual/" ++ file
+          createDirectoryIfMissing True $ takeDirectory expectedFile
+          createDirectoryIfMissing True $ takeDirectory actualFile
+          writeFile expectedFile expected
+          writeFile actualFile actual
+      | otherwise = pure ()
     rejoin (xs : different : same : zs) = xs : rejoin ((different ++ same) : zs)
     rejoin xs = xs
     breakNonEmpty xs = first (map snd) $
