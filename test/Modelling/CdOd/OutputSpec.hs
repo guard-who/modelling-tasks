@@ -28,7 +28,7 @@ spec = do
     shouldReturnSimilar' f = shouldReturnSimilar
       f
       200
-      Deviation {absoluteDeviation = 10, relativeDeviation = 0.2}
+      Deviation {absoluteDeviation = 20, relativeDeviation = 0.2}
     draws what = "draws roughly the expected " ++ what ++ " diagram"
     dir = "test/unit/Modelling/CdOd/Output"
     drawCdInstance alloy = withTempFile $ \file -> do

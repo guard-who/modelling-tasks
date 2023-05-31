@@ -49,7 +49,7 @@ withUnitTestsUsingPath name does dir extension assertWith = describe name $ do
     input <- runIO $ readFile file
     let resultFile = replace "Test" "Result" file -<.> extension
     expectedResult <- runIO $ readFile resultFile
-    it (does ++ " for " ++ file) $ assertWith file input expectedResult
+    it (does ++ " for " ++ file) $ assertWith resultFile input expectedResult
 
 withUnitTests
   :: String
