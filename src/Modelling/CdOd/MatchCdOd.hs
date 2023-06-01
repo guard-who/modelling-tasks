@@ -654,10 +654,15 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       combined1and2 = combineParts parts1and2
       parts3 = alloyFor cd3 "3"
       parts1to3 = mergeParts parts1and2 parts3
-      cd1not2 = runCommand "cd1 and (not cd2)" parts1and2
-      cd2not1 = runCommand "cd2 and (not cd1)" parts1and2
-      cd1and2 = runCommand "cd1 and cd2" parts1and2
-      cdNot1not2 = runCommand "(not cd1) and (not cd2) and cd3" parts1to3
+      relationships1and2 = relationships cd1 ++ relationships cd2
+      relationships1to3 = relationships1and2 ++ relationships cd3
+      cd1not2 = runCommand "cd1 and (not cd2)" relationships1and2 parts1and2
+      cd2not1 = runCommand "cd2 and (not cd1)" relationships1and2 parts1and2
+      cd1and2 = runCommand "cd1 and cd2" relationships1and2 parts1and2
+      cdNot1not2 = runCommand
+        "(not cd1) and (not cd2) and cd3"
+        relationships1to3
+        parts1to3
   instances1not2 <- getInstances maxIs to (combined1and2 ++ cd1not2)
   instances2not1 <- getInstances maxIs to (combined1and2 ++ cd2not1)
   instances1and2 <- getInstances maxIs to (combined1and2 ++ cd1and2)

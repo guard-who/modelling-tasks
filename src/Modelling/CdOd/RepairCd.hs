@@ -678,8 +678,9 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
         return (cd, chs')
         else getInstanceWithODs vs rinstas
     getOD cd = do
-      let parts = transform
-            (cd {relationships = map reverseAssociation $ relationships cd})
+      let reversedRelationships = map reverseAssociation $ relationships cd
+          parts = transform
+            (cd {relationships = reversedRelationships})
             []
             maxFiveObjects
             Nothing
@@ -690,6 +691,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
             "cd"
             (length $ classNames cd)
             maxFiveObjects
+            reversedRelationships
             parts
       getInstances (Just 1) to (combineParts parts ++ command)
 

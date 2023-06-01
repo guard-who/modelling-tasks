@@ -161,8 +161,14 @@ hasLinkNames :: Parts -> Bool
 hasLinkNames Parts { part2 } =
   any (oneSig `isPrefixOf`) $ lines part2
 
-createRunCommand :: String -> Int -> ObjectConfig -> Parts -> String
-createRunCommand command numClasses objectConfig ps = [i|
+createRunCommand
+  :: String
+  -> Int
+  -> ObjectConfig
+  -> [Relationship a b]
+  -> Parts
+  -> String
+createRunCommand command numClasses objectConfig relationships ps = [i|
 ///////////////////////////////////////////////////
 // Run commands
 ///////////////////////////////////////////////////
@@ -170,6 +176,7 @@ createRunCommand command numClasses objectConfig ps = [i|
 run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
 |]
   where
+    maxLimit = maximum $ map maximumLimitOf relationships
     maxObjects = snd $ objectLimits objectConfig
     intSize :: Int
     intSize = ceiling intSize'
@@ -180,11 +187,22 @@ run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
       | otherwise       = "0 FName, "
     maxInt = maximum [
       numClasses * maxObjects,
+      maxLimit,
       2 * maxObjects,
       count linkLimits,
       count linksPerObjectLimits
       ]
     count f = fromMaybe (fst $ f objectConfig) $ snd (f objectConfig)
+
+maximumLimitOf :: Relationship a b -> Int
+maximumLimitOf = \case
+  Association {..} -> maximumLimit associationFrom associationTo
+  Aggregation {..} -> maximumLimit aggregationPart aggregationWhole
+  Composition {..} -> maximumLimit compositionPart compositionWhole
+  Inheritance {}   -> 0
+  where
+    maximumLimit l1 l2 = max (maximumLinking l1) (maximumLinking l2)
+    maximumLinking LimitedLinking {limits = (low, high)} = fromMaybe low high
 
 oneSig :: String
 oneSig = "one sig "

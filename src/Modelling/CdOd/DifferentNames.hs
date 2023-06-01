@@ -481,6 +481,7 @@ getDifferentNamesTask fhead config cd' = do
           runCmd
           (length $ classNames cd)
           (objectConfig config)
+          (concatMap relationships cds)
           partss'
         partss' = foldr mergeParts parts0 partss
     when debug . liftIO . void $ drawCd' cd0

@@ -29,6 +29,7 @@ run input output template index = do
         ("cd" ++ index)
         (length $ classNames cd)
         maxFiveObjects
+        (relationships cd)
         parts
   case output of
     Just file -> do

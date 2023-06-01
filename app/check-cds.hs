@@ -195,8 +195,12 @@ drawCdAndOdsFor
 drawCdAndOdsFor is c cds cmd = do
   mapM_ (\(cd, i) -> drawCd' cd i >>= putStrLn) $ zip cds [0..]
   let mergedParts = foldr mergeParts (head parts) $ tail parts
-  let parts' = combineParts mergedParts
-        ++ createRunCommand cmd 3 maxThreeObjects mergedParts
+  let parts' = combineParts mergedParts ++ createRunCommand
+        cmd
+        3
+        maxThreeObjects
+        (concatMap relationships cds)
+        mergedParts
   ods <- Alloy.getInstances is parts'
   g <- getStdGen
   flip evalRandT g $
