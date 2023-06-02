@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.CdAndChanges.Instance (
@@ -76,7 +77,7 @@ data ChangeAndCd className relationshipName
     changeClassDiagram
       :: ClassDiagram className relationshipName
     }
-  deriving (Read, Show)
+  deriving (Functor, Read, Show)
 
 instance Bifunctor ChangeAndCd where
   bimap f g ChangeAndCd {..} = ChangeAndCd {
@@ -99,7 +100,7 @@ data GenericClassDiagramInstance className relationshipName
     instanceRelationshipNames :: [relationshipName],
     instanceChangesAndCds     :: [ChangeAndCd className relationshipName]
     }
-  deriving (Read, Show)
+  deriving (Functor, Read, Show)
 
 instance Bifunctor GenericClassDiagramInstance where
   bimap f g ClassDiagramInstance {..} = ClassDiagramInstance {

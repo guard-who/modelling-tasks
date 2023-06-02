@@ -86,7 +86,7 @@ data Object objectName className
     objectName                :: objectName,
     objectClass               :: className
     }
-  deriving (Eq, Generic, Ord, Read, Show)
+  deriving (Eq, Functor, Generic, Ord, Read, Show)
 
 instance Bifunctor Object where
   bimap f g Object {..} = Object {
@@ -109,7 +109,7 @@ data Link objectName linkName
     linkFrom                  :: objectName,
     linkTo                    :: objectName
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Eq, Functor, Generic, Read, Show)
 
 instance Bifunctor Link where
   bimap f g Link {..} = Link {
@@ -134,7 +134,7 @@ data ObjectDiagram objectName className linkName
     objects                   :: [Object objectName className],
     links                     :: [Link objectName linkName]
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Eq, Functor, Generic, Read, Show)
 
 instance Bifunctor (ObjectDiagram a) where
   bimap f g ObjectDiagram {..} = ObjectDiagram {
@@ -194,7 +194,7 @@ data Relationship className relationshipName
     subClass                  :: className,
     superClass                :: className
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Eq, Functor, Generic, Read, Show)
 
 instance Bifunctor Relationship where
   bimap f g r = case r of
@@ -272,7 +272,7 @@ data ClassDiagram className relationshipName = ClassDiagram {
   classNames                  :: [className],
   relationships               :: [Relationship className relationshipName]
   }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Eq, Functor, Generic, Read, Show)
 
 instance Bifunctor ClassDiagram where
   bimap f g ClassDiagram {..} = ClassDiagram {
