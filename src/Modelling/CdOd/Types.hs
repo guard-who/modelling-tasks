@@ -308,7 +308,7 @@ showName = unName
 parseNamePrec :: Int -> Parser Name
 parseNamePrec _ = do
   skipSpaces
-  Name <$> many1 (satisfy isAlphaNum)
+  Name <$> many1 (satisfy isAlphaNum) <* skipSpaces
 
 newtype Letters = Letters { lettersList :: String }
   deriving (Eq, Generic, Ord, Read, Show)
