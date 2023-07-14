@@ -161,7 +161,7 @@ phraseRelationDE _ _ Aggregation {..}
   | otherwise = [iii|
     eine Beziehung, die #{linking aggregationWhole}
     eine Aggregation aus #{linking aggregationPart}s macht
-    |]
+    |] ++ participationsDE aggregationWhole aggregationPart
 phraseRelationDE _ _ Composition {..}
   | compositionPart == compositionWhole = [iii|
     eine Selbst-Komposition
@@ -170,7 +170,7 @@ phraseRelationDE _ _ Composition {..}
   | otherwise = [iii|
     eine Beziehung, die #{linking compositionWhole}
     eine Komposition aus #{linking compositionPart}s macht
-    |]
+    |] ++ participationsDE compositionWhole compositionPart
 
 selfParticipatesPartWholeDE
   :: LimitedLinking String
@@ -230,6 +230,7 @@ phraseRelation _ _ Association {..}
   | otherwise = [iii|
     an association from #{linking associationFrom}
     to #{linking associationTo}
+    #{participations associationFrom associationTo}
     |]
 phraseRelation _ _ Aggregation {..}
   | aggregationPart == aggregationWhole = [iii|
@@ -239,6 +240,7 @@ phraseRelation _ _ Aggregation {..}
   | otherwise = [iii|
     a relationship that makes #{linking aggregationPart}
     an aggregation of #{linking aggregationWhole}s
+    #{participations aggregationWhole aggregationPart}
     |]
 phraseRelation _ _ Composition {..}
   | compositionPart == compositionWhole = [iii|
@@ -248,6 +250,7 @@ phraseRelation _ _ Composition {..}
   | otherwise = [iii|
     a relationship that makes #{linking compositionPart}
     a composition of #{linking compositionWhole}s
+    #{participations compositionWhole compositionPart}
     |]
 
 selfParticipatesPartWhole
