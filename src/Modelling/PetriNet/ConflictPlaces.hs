@@ -1,3 +1,5 @@
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -58,19 +60,23 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative              ((<|>))
 import Control.Lens                     ((.~))
-import Control.Monad                    (forM_, void)
+import Control.Monad                    (void)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM',
   LangM,
-  OutputMonad (..),
+  OutputMonad,
+  ($=<<),
   continueOrAbort,
   english,
   german,
   translate,
+  unLangM,
   )
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Function                    ((&))
+import Data.Foldable                    (for_)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo))
 import Data.String.Interpolate          (i)
 import Text.Parsec (
@@ -95,11 +101,11 @@ findConflictPlacesTask
   -> FindInstance (p n String) Conflict
   -> LangM m
 findConflictPlacesTask path task = do
-  pn <- renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Considering this Petri net"
     german "Betrachten Sie folgendes Petrinetz"
-  image pn
+  image
+    $=<< unLangM $ renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions are in conflict because of which place(s) under the initial marking?"
     german "Welches Paar von Transitionen steht wegen welcher konfliktauslösenden Stelle(n) unter der Startmarkierung in Konflikt?"
@@ -128,7 +134,9 @@ die jeweils nicht ausreichend Marken zum gleichzeitigen Feuern der Transitionen 
 The order of places within the lisiting of places inducing the conflict is irrelevant as well.|]
       german [i|Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle.
 Die Reihenfolge von Stellen innerhalb der Auflistung der den Konflikt auslösenden Stellen spielt ebenso keine Rolle.|]
+    pure ()
   paragraph hoveringInformation
+  pure ()
 
 conflictInitial :: ConflictPlaces
 conflictInitial = (findInitial, [Place 0, Place 1])
@@ -140,10 +148,11 @@ findConflictPlacesSyntax
   -> LangM' m ()
 findConflictPlacesSyntax task (conflict, ps) = do
   findConflictSyntax task conflict
-  forM_ ps $ \x -> assert (isValidPlace x) $ translate $ do
+  for_ ps $ \x -> assert (isValidPlace x) $ translate $ do
     let x' = show $ ShowPlace x
     english $ x' ++ " is a valid place of the given Petri net?"
     german $ x' ++ " ist eine gültige Stelle des gegebenen Petrinetzes?"
+  pure ()
   where
     isValidPlace (Place x) = x >= 1 && x <= numberOfPlaces task
     assert = continueOrAbort $ showSolution task

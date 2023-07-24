@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 -- |
 
 module Modelling.CdOd.DifferentNamesSpec where
@@ -37,10 +38,9 @@ import Modelling.CdOd.Types (
   linkNames,
   toNameMapping,
   )
-import Modelling.Common                 ()
+import Modelling.Common                 (withLang)
 
 import Control.Monad.Output (
-  LangM' (withLang),
   Language (English),
   )
 import Control.Monad.Trans.Except       (runExceptT)
@@ -327,7 +327,8 @@ evaluateDifferentNames cs cs' = flip withLang English $ do
         }
       cs'' = bimap Name Name <$> cs'
   differentNamesSyntax i cs''
-  differentNamesEvaluation i cs''
+  points <- differentNamesEvaluation i cs''
+  pure points
 
 isValidMapping :: (Eq a, Eq b) => [(a, b)] -> Bool
 isValidMapping cs

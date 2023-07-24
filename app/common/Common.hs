@@ -1,17 +1,17 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE TypeApplications #-}
 -- | Common functions for application modules
 module Common (
-  forceErrors, instanceInput, printNetAndInfo, renderPetriNet,
+  forceErrors,
+  instanceInput,
+  printNetAndInfo,
+  renderPetriNet,
+  withLang,
   ) where
 
-import qualified Data.Map                         as M (lookup)
+import qualified Control.Monad.Output.Generic     as GenericOutput (withLang)
 
-import Control.Monad                    (unless)
-import Control.Monad.Output             (LangM' (LangM), OutputMonad (..))
-import Control.Monad.Trans              (MonadTrans (lift))
+import Control.Monad.Output             (LangM', Language, ReportT)
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
-import Data.Map                         (foldrWithKey)
-import Data.Maybe                       (fromMaybe)
 import Diagrams.Prelude                 (Diagram, mkWidth)
 import Diagrams.Backend.SVG             (B, renderSVG)
 
@@ -37,30 +37,7 @@ renderPetriNet x dia = do
   where
     name = x ++ "petri.svg"
 
-instance OutputMonad IO where
-  assertion b m = unless b $ m >> error ""
-  image         = lift . putStr . ("file: " ++)
-  images g f    = lift . putStrLn . foldrWithKey
-    (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
-    ""
-  paragraph     = (>> lift (putStrLn ""))
-  text          = lift . putStr
-  enumerateM p  = foldl
-    (\o (x, e) -> paragraph $ do o; p x; lift $ putStr "  "; e)
-    (return ())
-  itemizeM      = foldl
-    (\o x -> paragraph $ do o; lift $ putStr " -  "; x)
-    (return ())
-  indent xs     = do
-    lift $ putStr ">>>>"
-    xs
-    lift $ putStrLn "<<<<"
-  refuse xs     = do
-    xs
-    indent $ text "No"
-    error "refused"
-  latex         = lift . putStrLn . ("LaTeX: " ++)
-  code          = lift . putStr . (\xs -> " <" ++ xs ++ "> ")
-  translated lm = do
-    l <- LangM return
-    text . fromMaybe "" $ M.lookup l lm
+withLang :: LangM' (ReportT (IO ()) IO) a -> Language -> IO a
+withLang x l =
+  maybe (error "failed") id
+  <$> GenericOutput.withLang @Language @(ReportT (IO ()) IO) x l

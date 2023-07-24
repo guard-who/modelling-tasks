@@ -1,4 +1,6 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
@@ -32,9 +34,11 @@ import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
   Rated,
-  OutputMonad (..),
+  OutputMonad,
+  ($=<<),
   english,
   german,
   translate,
@@ -152,11 +156,11 @@ enterASTask
   -> EnterASInstance
   -> LangM m
 enterASTask path task = do
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
-  image ad
+  image $=<< liftIO
+    $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ do
     translate $ do
       english [i|State an action sequence for the diagram, therefore a sequence of actions resulting in
@@ -169,6 +173,8 @@ Zum Beispiel drückt |]
     translate $ do
       english [i|expresses the execution of A, followed by B in the diagram.|]
       german [i|die Ausführung von A, gefolgt von B im Diagramm aus.|]
+    pure ()
+  pure ()
 
 enterASInitial :: [String]
 enterASInitial = ["A", "B"]

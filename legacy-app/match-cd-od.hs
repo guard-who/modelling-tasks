@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wwarn=deprecations #-}
 module Main (main) where
 
-import Common                           ()
+import Common                           (withLang)
 import Modelling.CdOd.Types             (ClassConfig (..), ObjectConfig (..))
 import Modelling.CdOd.Generate.MatchCdOd (
   matchCdOd,
@@ -12,7 +12,7 @@ import Modelling.CdOd.MatchCdOd (
   )
 import EvaluateArgs                     (evaluateArgs)
 
-import Control.Monad.Output             (LangM' (withLang), Language (English))
+import Control.Monad.Output             (Language (English))
 import System.Environment               (getArgs)
 
 main :: IO ()

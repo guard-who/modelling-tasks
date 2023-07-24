@@ -1,3 +1,5 @@
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 {-|
@@ -37,8 +39,10 @@ import Control.Arrow                    (ArrowChoice(left), first)
 import Control.Monad                    (when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM',
-  OutputMonad (..),
+  OutputMonad,
+  ($=<<),
   english,
   german,
   )
@@ -281,16 +285,14 @@ renderWith
   -> DrawSettings
   -> LangM' m FilePath
 renderWith path task net config = do
-  f <- lift $ liftIO $ runExceptT $
-    cacheNet (path ++ task) id net
+  either
+    (const $ (*> pure "") $ refuse $ OM.translate $ do
+      english "Drawing diagram failed!"
+      german "Diagrammzeichnen fehlgeschlagen!"
+    )
+    pure
+    $=<< liftIO $ runExceptT $ cacheNet (path ++ task) id net
       (not $ withPlaceNames config)
       (not $ withTransitionNames config)
       (not $ with1Weights config)
       (withGraphvizCommand config)
-  either
-    (const $ (>> return "") $ refuse $ OM.translate $ do
-      english "Drawing diagram failed!"
-      german "Diagrammzeichnen fehlgeschlagen!"
-    )
-    return
-    f

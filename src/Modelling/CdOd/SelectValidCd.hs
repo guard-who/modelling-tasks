@@ -1,4 +1,6 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -61,21 +63,23 @@ import Control.Monad                    ((>=>))
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
   Language (English, German),
-  OutputMonad (..),
+  OutputMonad,
   Rated,
+  ($=<<),
   english,
   german,
   multipleChoice,
   singleChoiceSyntax,
   translate,
   )
-import Control.Monad.Random             (evalRandT, forM_, mkStdGen)
+import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
-import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Bifunctor                   (second)
+import Data.Foldable                    (for_)
 import Data.Map                         (Map)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
@@ -126,7 +130,7 @@ data SelectValidCdInstance = SelectValidCdInstance {
 
 selectValidCdSyntax :: OutputMonad m => SelectValidCdInstance -> [Int] -> LangM m
 selectValidCdSyntax inst xs =
-  forM_ xs $ singleChoiceSyntax True (M.keys $ classDiagrams inst)
+  for_ xs $ singleChoiceSyntax True (M.keys $ classDiagrams inst)
 
 selectValidCdTask
   :: (OutputMonad m, MonadIO m)
@@ -137,9 +141,8 @@ selectValidCdTask path task = do
   paragraph $ translate $ do
     english [i|Consider the following class diagram candidates.|]
     german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten.|]
-  cds      <- lift $ liftIO $ sequence $
+  images show snd $=<< liftIO $ sequence $
     M.foldrWithKey drawCd mempty $ classDiagrams task
-  images show snd cds
   paragraph $ translate $ do
     english [i|Which of these class diagram candidates are valid class diagrams?
 Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
@@ -153,8 +156,10 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
     translate $ do
       english [i|would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
       german [i|würde bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
+    pure ()
   paragraph simplifiedInformation
   paragraph hoveringInformation
+  pure ()
   where
     drawCd x (b, cd) cds =
       let f = cacheCd

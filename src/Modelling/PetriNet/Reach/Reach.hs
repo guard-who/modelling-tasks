@@ -1,5 +1,7 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -41,21 +43,27 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Applicative              (Alternative)
-import Control.Monad                    (forM, forM_, unless, when)
+import Control.Monad                    (forM, unless, when)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Output (
+  GenericOutputMonad (assertion, code, image, indent, paragraph, refuse, text),
   LangM,
-  OutputMonad (assertion, code, image, indent, paragraph, refuse, text),
+  OutputMonad,
   Rated,
   english,
   german,
   translate,
   yesNo,
   )
+import Control.Monad.Output.Generic (
+  ($>>),
+  ($>>=),
+  )
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Either                      (isRight)
+import Data.Foldable                    (for_, traverse_)
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (minimumBy)
 import Data.List.Extra                  (nubSort)
@@ -73,6 +81,7 @@ verifyReach inst = do
   let n = petriNet inst
   validate Default n
   validate Default $ n { start = goal inst }
+  pure ()
 
 reachTask
   :: (MonadIO m, OutputMonad m, Ord s, Ord t, Show s, Show t)
@@ -80,21 +89,22 @@ reachTask
   -> ReachInstance s t
   -> LangM m
 reachTask path inst = do
-  let n = petriNet inst
-  (g, withoutPlaceNames) <- if showGoalNet inst
+  if showGoalNet inst
     then (,True) . Left
          <$> drawToFile True path (drawUsing inst) 0 (n { start = goal inst })
-    else return (Right $ show $ goal inst, False)
-  img <- drawToFile withoutPlaceNames path (drawUsing inst) (-1) n
-  reportReachFor
+    else pure (Right $ show $ goal inst, False)
+  $>>= \(g, withoutPlaceNames) -> drawToFile withoutPlaceNames path (drawUsing inst) (-1) n
+  $>>= \img -> reportReachFor
     img
     (noLongerThan inst)
     (withLengthHint inst)
     (withMinLengthHint inst)
     (Just g)
+  where
+    n = petriNet inst
 
 reportReachFor
-  :: (MonadIO m, OutputMonad m)
+  :: OutputMonad m
   => FilePath
   -> Maybe Int
   -> Maybe Int
@@ -115,6 +125,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
         english "a transitions sequence is sought, which leads to the following marking:"
         german "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
       paragraph $ either image text g
+      pure ()
   paragraph $ case noLonger of
     Nothing -> translate $ do
       english "State your answer as a (arbitrarily short or long) sequence of the following kind:"
@@ -141,13 +152,14 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
       st1, ", danach ", st2, ", und schließlich ", st3,
       " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
       ]
-  forM_ lengthHint $ \len -> paragraph $ translate $ do
+  for_ lengthHint $ \len -> paragraph $ translate $ do
     english [i|Hint: There is a solution with not more than #{len} transitions.|]
     german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{len} Transitionen.|]
-  forM_ minLengthHint $ \len -> paragraph $ translate $ do
+  for_ minLengthHint $ \len -> paragraph $ translate $ do
     english [i|Hint: There is no solution with less than #{len} transitions.|]
     german [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
   hoveringInformation
+  pure ()
 
 reachInitial :: ReachInstance s Transition -> TransitionsList
 reachInitial = TransitionsList . reverse . S.toList . transitions . petriNet
@@ -161,7 +173,7 @@ reachSyntax inst = transitionsValid (petriNet inst)
 
 transitionsValid :: OutputMonad m => Net s Transition -> [Transition] -> LangM m
 transitionsValid n =
-  mapM_ assertTransition . nubSort
+  traverse_ assertTransition . nubSort
   where
     assertTransition t = assertion (isValidTransition t) $ translate $ do
       let t' = show $ ShowTransition t
@@ -175,17 +187,20 @@ reachEvaluation
   -> ReachInstance s t
   -> [t]
   -> Rated m
-reachEvaluation path inst ts = do
-  isNoLonger (noLongerThan inst) ts
-  paragraph $ translate $ do
-    english "Start marking:"
-    german "Startmarkierung:"
-  indent $ text $ show (start n)
-  eout <- executes path (drawUsing inst) n ts
-  when (isRight eout) $ yesNo (eout == Right (goal inst)) $ translate $ do
-    english "Reached targeted marking?"
-    german "Zielmarkierung erreicht?"
-  assertReachPoints ((==) . goal) minLength inst ts eout
+reachEvaluation path inst ts =
+  do isNoLonger (noLongerThan inst) ts
+     paragraph $ translate $ do
+       english "Start marking:"
+       german "Startmarkierung:"
+     indent $ text $ show (start n)
+     pure ()
+  $>> executes path (drawUsing inst) n ts
+  $>>= \eout -> when (isRight eout) (
+    yesNo (eout == Right (goal inst)) $ translate $ do
+      english "Reached targeted marking?"
+      german "Zielmarkierung erreicht?"
+    )
+  $>> assertReachPoints ((==) . goal) minLength inst ts eout
   where
     n = petriNet inst
 
@@ -207,8 +222,8 @@ assertReachPoints p len inst ts eout = do
         partly
         (\x -> if p inst x then 1 else partly $ length ts)
         eout
-  unless (points >= 1 % 3) $ refuse $ return ()
-  return points
+  unless (points >= 1 % 3) $ refuse $ pure ()
+  pure points
   where
     partly x = partiallyCorrect x $ len inst
     partiallyCorrect x y = min 0.6 $
@@ -218,7 +233,7 @@ assertReachPoints p len inst ts eout = do
 
 isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
 isNoLonger mmaxL ts =
-  forM_ mmaxL $ \maxL ->
+  for_ mmaxL $ \maxL ->
     assertion (length ts <= maxL) $ translate $ do
       english $ unwords ["Not more than ", show maxL, "transitions provided?"]
       german $ unwords ["Nicht mehr als", show maxL, "Transitionen angegeben?"]

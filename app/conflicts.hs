@@ -13,6 +13,7 @@ import qualified Modelling.PetriNet.Types         as Pick (
 import Common (
   forceErrors,
   instanceInput,
+  withLang,
   )
 import Modelling.PetriNet.Conflict (
   checkFindConflictConfig,
@@ -28,7 +29,7 @@ import Modelling.PetriNet.Types         (
   defaultFindConflictConfig, defaultPickConflictConfig,
   )
 
-import Control.Monad.Output             (LangM' (withLang), Language (English))
+import Control.Monad.Output             (Language (English))
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.Maybe                       (isNothing)
 import System.IO (

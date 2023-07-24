@@ -1,4 +1,6 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -35,9 +37,11 @@ import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
   Rated,
-  OutputMonad (..),
+  OutputMonad,
+  ($=<<),
   english,
   german,
   translate,
@@ -147,11 +151,11 @@ matchADTask
   -> MatchADInstance
   -> LangM m
 matchADTask path task = do
-  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
-  image ad
+  image $=<< liftIO
+    $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english [i|State the names of all actions, the names of all object nodes, and the number
 of each other type of component for the given diagram.|]
@@ -162,6 +166,8 @@ aller anderen Arten von Komponenten für das gegebene Aktivitätsdiagramm an.|]
       english [i|To do this, enter your answer as in the following example.|]
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
     code $ show matchADInitial
+    pure ()
+  pure ()
 
 matchADInitial :: MatchADSolution
 matchADInitial = MatchADSolution {

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -50,13 +51,16 @@ import Control.Arrow                    (Arrow (second))
 import Control.Monad.Output (
   LangM',
   LangM,
-  OutputMonad (..),
+  OutputMonad,
   Rated,
   english,
   german,
   singleChoice,
   singleChoiceSyntax,
   translations,
+  )
+import Control.Monad.Output.Generic (
+  ($>>=),
   )
 import Control.Monad.Random (
   RandT,
@@ -174,11 +178,11 @@ renderPick
   -> PickInstance (p n String)
   -> LangM' m (Map Int (Bool, String))
 renderPick path task config =
-  M.foldrWithKey render' (return mempty) $ nets config
+  M.foldrWithKey render' (pure mempty) $ nets config
   where
-    render' x (b, (net, ds)) ns = do
-      file <- renderWith path (task ++ '-' : show x) net ds
-      M.insert x (b, file) <$> ns
+    render' x (b, (net, ds)) ns =
+      renderWith path (task ++ '-' : show x) net ds
+      $>>= \file -> M.insert x (b, file) <$> ns
 
 checkConfigForPick
   :: Bool

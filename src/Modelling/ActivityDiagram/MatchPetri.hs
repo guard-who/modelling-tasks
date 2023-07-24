@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -61,14 +62,16 @@ import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Except (runExceptT)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
   Rated,
-  OutputMonad (..),
+  OutputMonad,
+  ($=<<),
   english,
   german,
   translate,
   translations,
-  multipleChoice
+  multipleChoice,
   )
 import Control.Monad.Random (
   MonadRandom,
@@ -244,23 +247,22 @@ matchPetriTask
   -> MatchPetriInstance
   -> LangM m
 matchPetriTask path task = do
-  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
-  image ad
+  image $=<< liftIO
+    $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following petrinet."
     german "Betrachten Sie das folgende Petrinetz."
   let drawSetting = petriDrawConf task
-  petri <- liftIO
+  image $=<< fmap (failWith id) $ liftIO
     $ runExceptT
     $ cacheNet path (show . PK.label) (petrinet task)
       (not $ withPlaceNames drawSetting)
       (not $ withTransitionNames drawSetting)
       (not $ with1Weights drawSetting)
       (withGraphvizCommand drawSetting)
-  image $ failWith id petri
   paragraph $ translate $ do
     english [i|State the matchings of each action and petrinet node, the matching of each
 object node and petrinet node, the petrinet nodes per component type, as well as all support nodes
@@ -277,6 +279,8 @@ Petrinetzknoten pro Komponententyp und die Hilfsknoten im Petrinetz an.|]
 the petrinet nodes 5 and 7 correspond to decision nodes and the petrinet nodes 13, 14 and 15 are support nodes.|]
       german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
 die Petrinetzknoten 5 und 7 entsprechen mit Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsknoten.|]
+    pure ()
+  pure ()
 
 matchPetriInitial :: MatchPetriSolution
 matchPetriInitial = MatchPetriSolution {
@@ -314,6 +318,7 @@ matchPetriSyntax task sub = addPretext $ do
   assertion (all (`elem` petriLabels) subLabels) $ translate $ do
     english "Referenced petrinet nodes were provided within task?"
     german "Referenzierte Petrinetzknoten sind Bestandteil der Aufgabenstellung?"
+  pure ()
 
 matchPetriEvaluation
   :: OutputMonad m

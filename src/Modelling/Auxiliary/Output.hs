@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 -- | This module provides common skeletons for printing tasks
 module Modelling.Auxiliary.Output (
@@ -9,9 +10,10 @@ module Modelling.Auxiliary.Output (
 
 
 import Control.Monad.Output             (
-  OutputMonad (paragraph),
+  GenericOutputMonad (paragraph),
   LangM,
   LangM',
+  OutputMonad,
   english,
   german,
   translate,
@@ -71,7 +73,7 @@ simplifiedInformation = translate $ do
     endLine = "\n"
 
 addPretext :: OutputMonad m => LangM' m a -> LangM' m a
-addPretext = (>>) $
+addPretext = (*>) $
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"

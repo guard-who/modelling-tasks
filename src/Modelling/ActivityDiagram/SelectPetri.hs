@@ -1,5 +1,7 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -49,9 +51,11 @@ import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Extra (loopM, firstJustM)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
   Rated,
-  OutputMonad (..),
+  OutputMonad,
+  ($=<<),
   english,
   german,
   translate,
@@ -279,23 +283,22 @@ selectPetriTask
   -> LangM m
 selectPetriTask path task = do
   let mapping = M.map snd $ petrinets task
-  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
-  image ad
+  image $=<< liftIO
+    $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   let drawSetting = petriDrawConf task
-  petris <- liftIO $
+  paragraph $ translate $ do
+    english "Consider the following petrinets."
+    german "Betrachten Sie die folgenden Petrinetze."
+  images show id $=<< fmap (M.map (failWith id)) $ liftIO $
     traverse (\c -> runExceptT
       $ cacheNet path (show . PK.label) c
       (not $ withPlaceNames drawSetting)
       (not $ withTransitionNames drawSetting)
       (not $ with1Weights drawSetting)
       (withGraphvizCommand drawSetting)) mapping
-  paragraph $ translate $ do
-    english "Consider the following petrinets."
-    german "Betrachten Sie die folgenden Petrinetze."
-  images show id (M.map (failWith id) petris)
   paragraph $ translate $ do
     english [i|Which of these petrinets matches the given activity diagram?
 Please state your answer by giving a number indicating the matching petrinet.|]
@@ -309,6 +312,8 @@ Bitte geben Sie ihre Antwort als Zahl an, welche das passende Petrinetz repräse
     translate $ do
       english [i|would indicate that petrinet 2 is the matching petrinet.|]
       german  [i|würde bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
+    pure ()
+  pure ()
 
 selectPetriSolutionToMap
   :: (MonadRandom m)

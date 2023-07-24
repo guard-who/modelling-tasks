@@ -1,5 +1,7 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TupleSections #-}
@@ -51,6 +53,10 @@ import Control.Monad.Output (
   translate,
   yesNo,
   )
+import Control.Monad.Output.Generic (
+  ($>>),
+  ($>>=),
+  )
 import Data.Bifunctor                   (Bifunctor (second))
 import Control.Monad                    (forM, guard, when)
 import Control.Monad.IO.Class           (MonadIO)
@@ -76,8 +82,8 @@ deadlockTask
   -> DeadlockInstance s t
   -> LangM m
 deadlockTask path inst = do
-  img <- drawToFile True path (drawUsing inst) 0 $ petriNet inst
-  reportReachFor
+  drawToFile True path (drawUsing inst) 0 (petriNet inst)
+  $>>= \img -> reportReachFor
     img
     (noLongerThan inst)
     (withLengthHint inst)
@@ -100,14 +106,17 @@ deadlockEvaluation
   -> DeadlockInstance s t
   -> [t]
   -> Rated m
-deadlockEvaluation path inst ts = do
+deadlockEvaluation path inst ts =
   isNoLonger (noLongerThan inst) ts
-  eout <- executes path (drawUsing inst) n ts
-  when (isRight eout) $ yesNo (null $ successors n $ fromRight' eout) $
-    translate $ do
-      english "Reached marking has no successors?"
-      german "Zielmarkierung hat keine Nachfolger?"
-  assertReachPoints (const $ null . successors n) minLength inst ts eout
+  $>> executes path (drawUsing inst) n ts
+  $>>= \eout ->
+    when (isRight eout) (
+      yesNo (null $ successors n $ fromRight' eout)
+      $ translate $ do
+          english "Reached marking has no successors?"
+          german "Zielmarkierung hat keine Nachfolger?"
+      )
+  $>> assertReachPoints (const $ null . successors n) minLength inst ts eout
   where
     n = petriNet inst
 

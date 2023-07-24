@@ -1,5 +1,7 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -110,9 +112,11 @@ import Control.Monad.Fail               (MonadFail)
 #endif
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
-  OutputMonad (..),
+  OutputMonad,
   Rated,
+  ($=<<),
   english,
   german,
   multipleChoice,
@@ -127,7 +131,6 @@ import Control.Monad.Random (
   mapRandT,
   mkStdGen,
   )
-import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
@@ -206,17 +209,12 @@ matchCdOdTask
   -> LangM m
 matchCdOdTask path task = do
   let anonymous o = length (objects o) `div` 3
-  cds <- lift $ liftIO $
-    (\_ c -> cacheCd True True mempty c path)
-    `M.traverseWithKey` diagrams task
-  ods <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    (\_ (is,o) -> (is,) <$> cacheOd
-      o (anonymous o) Back True path)
-    `M.traverseWithKey` instances task
   paragraph $ translate $ do
     english "Consider the following two class diagrams."
     german "Betrachten Sie die folgenden zwei Klassendiagramme."
-  images show id cds
+  images show id $=<< liftIO
+    $ (\_ c -> cacheCd True True mempty c path)
+    `M.traverseWithKey` diagrams task
   paragraph $ translate $ do
     english [iii|
       Which of the following five object diagrams conform to which class diagram?
@@ -230,7 +228,10 @@ matchCdOdTask path task = do
       Ein Objektdiagramm kann zu keinem,
       einem oder beiden Klassendiagrammen passen.
       |]
-  images (:[]) snd ods
+  images (:[]) snd $=<< liftIO
+    $ flip evalRandT (mkStdGen $ generatorValue task)
+    $ (\_ (is,o) -> (is,) <$> cacheOd o (anonymous o) Back True path)
+    `M.traverseWithKey` instances task
   paragraph $ do
     translate $ do
       english [iii|
@@ -264,9 +265,11 @@ matchCdOdTask path task = do
         und dass keines der angebotenen Objektdiagramme
         Instanz des Klassendiagramms 2 ist.
         |]
+    pure ()
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
+  pure ()
 
 newtype ShowLetters = ShowLetters { showLetters' :: Letters }
 
@@ -293,6 +296,7 @@ matchCdOdSyntax task sub = addPretext $ do
   assertion (all (all availableOd) $ lettersList . snd <$> sub) $ translate $ do
     english "Referenced object diagrams were provided within task?"
     german "Referenzierte Objektdiagramme sind Bestandteil der Aufgabenstellung?"
+  pure ()
   where
     availableCd = (`elem` M.keys (diagrams task))
     availableOd = (`elem` M.keys (instances task))

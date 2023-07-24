@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -85,14 +86,16 @@ import Modelling.CdOd.Types (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    ((>=>), forM_, void, when)
+import Control.Monad                    ((>=>), void, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
   Language (English, German),
-  OutputMonad (..),
+  OutputMonad,
   Rated,
+  ($=<<),
   english,
   enumerateM,
   german,
@@ -102,9 +105,9 @@ import Control.Monad.Output (
   )
 import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, StdGen, evalRandT, getStdGen, mkStdGen)
-import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (second)
 import Data.Containers.ListUtils        (nubOrd)
+import Data.Foldable                    (for_)
 import Data.GraphViz                    (DirType (..))
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
@@ -354,16 +357,15 @@ repairCdTask
   -> RepairCdInstance
   -> LangM m
 repairCdTask path task = do
-  cd <- lift . liftIO $ cacheCd
+  paragraph $ translate $ do
+    english "Consider the following class diagram, which unfortunately is invalid."
+    german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist."
+  image $=<< liftIO $ cacheCd
     (withDirections task)
     (withNames task)
     mempty
     (classDiagram task)
     path
-  paragraph $ translate $ do
-    english "Consider the following class diagram, which unfortunately is invalid."
-    german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist."
-  image cd
   paragraph $ translate $ do
     english [i|Which of the following changes would repair the class diagram?|]
     german [i|Welche der folgenden Änderungen würden das Klassendiagramm reparieren?|]
@@ -382,12 +384,14 @@ repairCdTask path task = do
     translate $ do
       english [i| would indicate that options 1 and 2 each repair the given class diagram.|]
       german [i| als Angabe würde bedeuten, dass die Optionen 1 und 2 jeweils das gegebene Klassendiagramm reparieren würden.|]
+    pure ()
   paragraph simplifiedInformation
   paragraph hoveringInformation
+  pure ()
 
 repairCdSyntax :: OutputMonad m => RepairCdInstance -> [Int] -> LangM m
 repairCdSyntax inst xs =
-  forM_ xs $ singleChoiceSyntax True (M.keys $ changes inst)
+  for_ xs $ singleChoiceSyntax True (M.keys $ changes inst)
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
 repairCdEvaluation inst xs = addPretext $ do

@@ -12,6 +12,7 @@ import qualified Modelling.PetriNet.Types         as Pick (
 import Common (
   forceErrors,
   instanceInput,
+  withLang,
   )
 import Modelling.PetriNet.Concurrency (
   checkPickConcurrencyConfig,
@@ -27,7 +28,7 @@ import Modelling.PetriNet.Types (
   defaultFindConcurrencyConfig, defaultPickConcurrencyConfig,
   )
 
-import Control.Monad.Output             (LangM' (withLang), Language (English))
+import Control.Monad.Output             (Language (English))
 import Control.Monad.Trans.Class        (lift)
 import Data.Maybe                        (isNothing)
 import System.IO (

@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DuplicateRecordFields #-}
@@ -98,16 +99,19 @@ import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (first)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output       (
+  GenericOutputMonad (..),
   LangM,
   LangM',
   Language,
-  OutputMonad (..),
+  OutputMonad,
   Rated,
+  ($=<<),
   english,
   german,
   singleChoice,
   translate,
   translations,
+  unLangM,
   )
 import Control.Monad.Random             (
   MonadRandom,
@@ -218,7 +222,7 @@ writeDia
   => FilePath
   -> MatchInstance (Drawable (p n String)) b
   -> LangM' m (MatchInstance FilePath b)
-writeDia path = bimapM (\(n, ds) -> writeGraph ds path "" n) return
+writeDia path = bimapM (\(n, ds) -> writeGraph ds path "" n) pure
 
 writeDias
   :: (MonadIO m, Net p n, OutputMonad m)
@@ -230,7 +234,7 @@ writeDias path inst =
         from = from inst,
         to   = mapWithKey (\k -> second (show k,)) $ to inst
         }
-  in bimapM return (\(l, (n, d)) -> writeGraph d path l n) inst'
+  in bimapM pure (\(l, (n, d)) -> writeGraph d path l n) inst'
 
 writeGraph
   :: (MonadIO m, Net p n, OutputMonad m)
@@ -239,16 +243,14 @@ writeGraph
   -> String
   -> p n String
   -> LangM' m FilePath
-writeGraph s path index pl = do
-  file' <- lift $ liftIO $ runExceptT $
-    draw $ path ++ "graph" ++ index
+writeGraph s path index pl =
   either
-    (const $ (>> return "") $ refuse $ translate $ do
+    (const $ (*> pure "") $ refuse $ translate $ do
       english "Drawing diagram failed!"
       german "Diagrammzeichnen fehlgeschlagen!"
     )
-    return
-    file'
+    pure
+    $=<< liftIO $ runExceptT $ draw $ path ++ "graph" ++ index
   where
     draw p = cacheNet
       p
@@ -360,11 +362,10 @@ graphToMathTask
   -> GraphToMathInstance
   -> LangM m
 graphToMathTask path task = do
-  dia <- from <$> writeDia path task
   paragraph $ translate $ do
     english "Consider this graphical representation of a Petri net:"
     german "Betrachten Sie die folgende grafische Darstellung eines Petrinetzes:"
-  image dia
+  image $=<< unLangM $ from <$> writeDia path task
   paragraph $ translate $ do
     english "Which of the following mathematical representations denotes this Petri net?"
     german "Welche der folgenden mathematischen Repräsentationen formalisiert dieses Petrinetz?"
@@ -382,7 +383,9 @@ graphToMathTask path task = do
     translate $ do
       english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
       german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegebenen grafischen Darstellung passen würde (und alle anderen Repräsentationen nicht!).|]
+    pure ()
   paragraph hoveringInformation
+  pure ()
 
 mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
 mathToOutput f pm = paragraph $ do
@@ -399,12 +402,13 @@ mathToOutput f pm = paragraph $ do
     english ", as well as"
     german ", sowie"
   case placeOrderMath pm of
-    Nothing -> return ()
+    Nothing -> pure ()
     Just o  -> do
       translate $ do
         english " using the place ordering "
         german " mit der Stellenreihenfolge "
       f o
+      pure ()
   translate $ english ":"
   itemizeM $ f . fst <$> tokenChangeMath pm
   itemizeM $ f . snd <$> tokenChangeMath pm
@@ -412,6 +416,7 @@ mathToOutput f pm = paragraph $ do
     english "Moreover, "
     german "und "
   f $ initialMarkingMath pm
+  pure ()
 
 mathToGraphTask
   :: (OutputMonad m, MonadIO m)
@@ -419,7 +424,6 @@ mathToGraphTask
   -> MathToGraphInstance
   -> LangM m
 mathToGraphTask path task = do
-  dias <- to <$>  writeDias path task
   paragraph $ translate $ do
     english "Consider this mathematical representation of a Petri net:"
     german "Betrachten Sie diese mathematische Repräsentation eines Petrinetzes:"
@@ -427,7 +431,7 @@ mathToGraphTask path task = do
   paragraph $ translate $ do
     english "Which of the following diagrams represents this Petri net?"
     german "Welches der folgenden Diagramme stellt dieses Petrinetz dar?"
-  images show snd dias
+  images show snd $=<< unLangM $ to <$> writeDias path task
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching diagram only.|]
     german [i|Geben Sie Ihre Antwort durch Angabe der Nummer des passenden Diagramms an.|]
@@ -439,7 +443,9 @@ mathToGraphTask path task = do
     translate $ do
       english [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]
       german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegebenen mathematischen Repräsentation passen würde (und alle anderen Diagramme nicht!).|]
+    pure ()
   paragraph hoveringInformation
+  pure ()
 
 graphToMathSyntax
   :: OutputMonad m

@@ -1,4 +1,6 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# Language DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
 
@@ -105,15 +107,18 @@ import Modelling.PetriNet.Types         (
   )
 
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM',
   LangM,
-  OutputMonad (..),
+  OutputMonad,
   Rated,
+  ($=<<),
   english,
   german,
   printSolutionAndAssert,
   translate,
   translations,
+  unLangM,
   )
 import Control.Monad.Random (
   RandT,
@@ -145,11 +150,11 @@ findConcurrencyTask
   -> FindInstance (p n String) (Concurrent Transition)
   -> LangM m
 findConcurrencyTask path task = do
-  pn <- renderWith path "concurrent" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Considering this Petri net"
     german "Betrachten Sie dieses Petrinetz"
-  image pn
+  image
+    $=<< unLangM $ renderWith path "concurrent" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english [iii|
       Which pair of transitions are concurrently activated
@@ -190,7 +195,9 @@ findConcurrencyTask path task = do
         Die Reihenfolge der Transitionen innerhalb
         des Paars spielt hierbei keine Rolle.
         |]
+    pure ()
   paragraph hoveringInformation
+  pure ()
 
 findConcurrencySyntax
   :: OutputMonad m
@@ -202,7 +209,7 @@ findConcurrencySyntax task = toFindSyntax withSol $ numberOfTransitions task
     withSol = F.showSolution task
 
 findConcurrencyEvaluation
-  :: OutputMonad m
+  :: (Monad m, OutputMonad m)
   => FindInstance net (Concurrent Transition)
   -> (Transition, Transition)
   -> Rated m
@@ -210,8 +217,8 @@ findConcurrencyEvaluation task x = do
   let what = translations $ do
         english "are concurrently activated"
         german "sind nebenläufig aktiviert"
-  result <- toFindEvaluation what withSol concur x
-  uncurry printSolutionAndAssert result
+  uncurry printSolutionAndAssert
+    $=<< unLangM $ toFindEvaluation what withSol concur x
   where
     concur = findConcurrencySolution task
     withSol = F.showSolution task
@@ -243,8 +250,8 @@ pickConcurrencyTask path task = do
       Welches dieser Petrinetze hat genau ein Paar von Transitionen,
       die nebenläufig aktiviert sind?
       |]
-  files <- renderPick path "concurrent" task
-  images show snd files
+  images show snd
+    $=<< unLangM $ renderPick path "concurrent" task
   paragraph $ translate $ do
     english [iii|
       Please state your answer by giving only the number of the Petri net
@@ -276,7 +283,9 @@ pickConcurrencyTask path task = do
             then "die anderen Petrinetze dies nicht tun"
             else "das andere Petrinetz dies nicht tut")
         ++ ")."
+    pure ()
   paragraph hoveringInformation
+  pure ()
 
 findConcurrencyGenerate
   :: Net p n

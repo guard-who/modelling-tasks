@@ -1,5 +1,7 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -92,9 +94,11 @@ import Control.Monad                    (void, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
-  OutputMonad (..),
+  OutputMonad,
   Rated,
+  ($=<<),
   english,
   german,
   multipleChoice,
@@ -248,17 +252,16 @@ differentNamesTask path task = do
       od = oDiagram task
       anonymous = fromMaybe (length (objects od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)
-  cd' <- lift $ liftIO $ cacheCd True True mempty cd path
-  od' <- lift $ liftIO $ flip evalRandT (mkStdGen $ generatorValue task) $
-    cacheOd od anonymous Back True path
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie das folgende Klassendiagramm:"
-  image cd'
+  image $=<< liftIO $ cacheCd True True mempty cd path
   paragraph $ translate $ do
     english "and the following object diagram (which conforms to it):"
     german "und das folgende (dazu passende) Objektdiagramm:"
-  image od'
+  image $=<< liftIO
+    $ flip evalRandT (mkStdGen $ generatorValue task)
+    $ cacheOd od anonymous Back True path
   paragraph $ do
     translate $ do
       english [iii|
@@ -282,6 +285,7 @@ differentNamesTask path task = do
         zu y im OD korrespondieren, schreiben Sie es als:
         |]
     code . show $ mappingShow differentNamesInitial
+    pure ()
   paragraph $ translate $ do
     english [iii|
       Please note: Links are already grouped correctly and fully,
@@ -310,9 +314,11 @@ differentNamesTask path task = do
       Deshalb sollte jeder Linkname
       genau einmal in Ihrer Zuordnung auftauchen.
       |]
+    pure ()
   paragraph simplifiedInformation
   paragraph directionsAdvice
   paragraph hoveringInformation
+  pure ()
 
 differentNamesInitial :: [(Name, Name)]
 differentNamesInitial = bimap Name Name <$> [("a", "x"), ("b", "y")]
@@ -335,6 +341,7 @@ differentNamesSyntax task cs = addPretext $ do
   assertion (l == nubLengthOn fst && l == nubLengthOn snd) $ translate $ do
     english "All provided pairs are non-overlapping?"
     german "Alle angegebenen Paare sind nicht überlappend?"
+  pure ()
   where
     nubLengthOn f = length (nubOrd (map f cs))
     m = nameMapping $ mapping task

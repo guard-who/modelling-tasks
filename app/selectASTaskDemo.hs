@@ -7,10 +7,10 @@ import Modelling.ActivityDiagram.SelectAS (
   selectASSyntax,
   selectASEvaluation
   )
-import Control.Monad.Output             (LangM' (withLang), Language (English))
+import Control.Monad.Output             (Language (English))
 import System.Environment               (getArgs)
 
-import Common ()
+import Common                           (withLang)
 
 main :: IO ()
 main = do

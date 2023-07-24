@@ -1,4 +1,6 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
@@ -36,9 +38,11 @@ import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Extra (firstJustM)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
+  OutputMonad,
   Rated,
-  OutputMonad (..),
+  ($=<<),
   english,
   german,
   translate,
@@ -195,11 +199,11 @@ selectASTask
   -> LangM m
 selectASTask path task = do
   let mapping = M.toList $ M.map snd $ actionSequences task
-  ad <- liftIO $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
-  image ad
+  image $=<< liftIO
+    $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following sequences."
     german "Betrachten Sie die folgenden Folgen."
@@ -217,6 +221,8 @@ Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräs
     translate $ do
       english [i|would indicate that sequence 2 is the valid action sequence.|]
       german  [i|würde bedeuten, dass Folge 2 die valide Aktionsfolge ist.|]
+    pure ()
+  pure ()
 
 selectASSolutionToMap
   :: (MonadRandom m)

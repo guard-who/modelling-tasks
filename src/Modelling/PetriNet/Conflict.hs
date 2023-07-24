@@ -1,4 +1,6 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE LambdaCase #-}
@@ -124,12 +126,14 @@ import Modelling.PetriNet.Types         (
 
 import Control.Applicative              (Alternative, (<|>))
 import Control.Lens                     ((.~), over)
-import Control.Monad                    (forM_, unless)
+import Control.Monad                    (unless)
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM',
   LangM,
-  OutputMonad (..),
+  OutputMonad,
   Rated,
+  ($=<<),
   continueOrAbort,
   english,
   german,
@@ -137,6 +141,10 @@ import Control.Monad.Output (
   recoverFrom,
   translate,
   translations,
+  unLangM,
+  )
+import Control.Monad.Output.Generic (
+  ($>>=),
   )
 import Control.Monad.Random (
   RandT,
@@ -152,6 +160,7 @@ import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Bool                        (bool)
 import Data.Either                      (isLeft)
 import Data.Function                    ((&))
+import Data.Foldable                    (for_)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
 import Data.List                        (partition)
 import Data.List.Extra                  (nubSort)
@@ -174,11 +183,11 @@ findConflictTask
   -> FindInstance (p n String) Conflict
   -> LangM m
 findConflictTask path task = do
-  pn <- renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Considering this Petri net"
     german "Betrachten Sie folgendes Petrinetz"
-  image pn
+  image $=<< unLangM
+    $ renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions are in conflict under the initial marking?"
     german "Welches Paar von Transitionen steht unter der Startmarkierung in Konflikt?"
@@ -198,7 +207,9 @@ findConflictTask path task = do
     translate $ do
       english "The order of transitions within the pair does not matter here."
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
+    pure ()
   paragraph hoveringInformation
+  pure ()
 
 findConflictSyntax
   :: OutputMonad m
@@ -210,7 +221,7 @@ findConflictSyntax task = toFindSyntax withSol $ numberOfTransitions task
     withSol = F.showSolution task
 
 findConflictEvaluation
-  :: (Alternative m, OutputMonad m)
+  :: (Alternative m, Monad m, OutputMonad m)
   => FindInstance net Conflict
   -> (Transition, Transition)
   -> Rated m
@@ -231,25 +242,24 @@ conflictPlacesShow = bimap
   (fmap ShowPlace)
 
 findConflictPlacesEvaluation
-  :: (Alternative m, OutputMonad m)
+  :: (Alternative m, Monad m, OutputMonad m)
   => FindInstance n Conflict
   -> ConflictPlaces
   -> Rated m
-findConflictPlacesEvaluation task (conflict, ps) = do
-  let what = translations $ do
-        english "have a conflict"
-        german "haben einen Konflikt"
-  (ms, res) <- toFindEvaluation what withSol conf conflict
+findConflictPlacesEvaluation task (conflict, ps) =
+  toFindEvaluation what withSol conf conflict $>>= \(ms, res) -> do
   recoverFrom $ unless (null inducing || res == 0) $ do
-    forM_ ps' $ \x -> assert (x `elem` inducing) $ translate $ do
+    for_ ps' $ \x -> assert (x `elem` inducing) $ translate $ do
       let x' = show $ ShowPlace x
       english $ x' ++ " is reason for the conflict?"
       german $ x' ++ " ist auslösende Stelle für den Konflikt?"
     assert (ps' == inducing) $ translate $ do
       english "The given solution is correct and complete?"
       german "Die angegebene Lösung ist korrekt und vollständig?"
+    pure ()
   let result = min res $ (base - len inducing + len correct - len wrong') % base
-  printSolutionAndAssert (fixSolution <$> ms) result
+  points <- printSolutionAndAssert (fixSolution <$> ms) result
+  pure points
   where
     assert = continueOrAbort withSol
     conf = findConflictSolution task
@@ -262,6 +272,9 @@ findConflictPlacesEvaluation task (conflict, ps) = do
     (correct, wrong') = partition (`elem` inducing) ps
     base = fromIntegral $ 2 + numberOfPlaces task
     len = fromIntegral . length
+    what = translations $ do
+        english "have a conflict"
+        german "haben einen Konflikt"
 
 findConflictPlacesSolution :: FindInstance n (PetriConflict p t) -> ((t, t), [p])
 findConflictPlacesSolution task =
@@ -289,8 +302,8 @@ pickConflictTask path task = do
       Welches dieser Petrinetze hat genau ein Paar von Transitionen,
       die in Konflikt stehen?
       |]
-  files <- renderPick path "conflict" task
-  images show snd files
+  images show snd $=<<
+    unLangM $ renderPick path "conflict" task
   paragraph $ translate $ do
     english [iii|
       Please state your answer by giving only the number of the Petri net
@@ -321,7 +334,9 @@ pickConflictTask path task = do
             then "die anderen Petrinetze dies nicht tun"
             else "das andere Petrinetz dies nicht tut")
         ++ ")."
+    pure ()
   paragraph hoveringInformation
+  pure ()
 
 findConflictGenerate
   :: Net p n

@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -48,7 +49,7 @@ import Control.Lens                     (makeLensesFor)
 import Control.Monad.Output (
   LangM',
   Language (English, German),
-  OutputMonad (..),
+  OutputMonad,
   continueOrAbort,
   english,
   german,
@@ -91,6 +92,7 @@ toFindSyntax
 toFindSyntax withSol n (fi, si) = addPretext $ do
   assertTransition fi
   assertTransition si
+  pure ()
   where
     assert = continueOrAbort withSol
     assertTransition t = assert (isValidTransition t) $ translate $ do

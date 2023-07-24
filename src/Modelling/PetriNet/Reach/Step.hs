@@ -1,3 +1,5 @@
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-|
 originally from Autotool (https://gitlab.imn.htwk-leipzig.de/autotool/all0)
 based on revision: ad25a990816a162fdd13941ff889653f22d6ea0a
@@ -29,16 +31,23 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Applicative              (Alternative)
-import Control.Monad                    (foldM, guard, unless)
+import Control.Monad                    (guard, unless)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Output (
+  GenericOutputMonad (image, indent, paragraph, refuse, text),
   LangM',
-  OutputMonad (image, indent, paragraph, refuse, text),
+  OutputMonad,
+  ($=<<),
   english,
   german,
   recoverWith,
   translate,
+  unLangM,
   )
+import Control.Monad.Output.Generic (
+  ($>>=),
+  )
+import Data.Foldable                    (foldl')
 import Data.GraphViz                    (GraphvizCommand)
 
 deadlocks :: Ord s => Net s t -> [[State s]]
@@ -108,16 +117,17 @@ executes
   -> Net s t
   -> [t]
   -> LangM' m (Either Int (State s))
-executes path cmd n ts = foldM
-  (\z (k, t) -> either (return . Left) (step k t) z)
-  (Right $ start n)
+executes path cmd n ts = foldl'
+  (\z (k, t) -> either (pure . Left) (step k t) $=<< unLangM z)
+  (pure $ Right $ start n)
   (zip [1 :: Int ..] ts)
   where
     step k t z = recoverWith (k - 1) $ do
       paragraph $ translate $ do
         english $ "Step " ++ show k
         german $ "Schritt " ++ show k
-      executeIO path cmd k n t z
+      next <- executeIO path cmd k n t z
+      pure next
 
 executeIO
   :: (MonadIO m, OutputMonad m, Show a, Show k, Ord a, Ord k)
@@ -128,30 +138,25 @@ executeIO
   -> a
   -> State k
   -> LangM' m (State k)
-executeIO path cmd i n t z0 = do
-  z2 <- execute n t z0
-  g <- drawToFile False path cmd i $ n {start = z2}
-  image g
-  return z2
+executeIO path cmd i n t z0 = execute n t z0
+  $>>= \z2 -> drawToFile False path cmd i (n {start = z2})
+  $>>= \g -> image g
+  $>>= pure (pure z2)
 
 execute
-  :: (OutputMonad m, Show a, Show k, Ord a, Ord k)
+  :: (Monad m, OutputMonad m, Show a, Show k, Ord a, Ord k)
   => Net k a
   -> a
   -> State k
   -> LangM' m (State k)
 execute n t z0 = do
-  paragraph $ text $ "Transition " ++ show t
-  let cs = do
-        c@(_, t', _) <- connections n
-        guard $ t' == t
-        return c
-  case cs of
+  paragraph (text $ "Transition " ++ show t)
+  next <- case cs of
     [] -> do
       refuse $ translate $ do
         english "does not exist!"
         german "existiert nicht!"
-      return z0
+      pure z0
     [(vor, _, nach)] -> do
       let z1 = change pred vor z0
       paragraph $ translate $ do
@@ -169,8 +174,14 @@ execute n t z0 = do
       unless (conforms (capacity n) z2) $ refuse $ translate $ do
         english "contains more tokens than capacity permits!"
         german "enthält mehr Marken, als die Kapazität zulässt!"
-      return z2
+      pure z2
     _ -> undefined -- TODO Patern match not required?
+  pure next
+  where
+    cs = do
+        c@(_, t', _) <- connections n
+        guard $ t' == t
+        return c
 
 successors
   :: Ord s

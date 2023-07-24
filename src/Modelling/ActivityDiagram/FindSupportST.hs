@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -54,9 +55,11 @@ import Modelling.PetriNet.Types (
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
+  GenericOutputMonad (..),
   LangM,
+  OutputMonad,
   Rated,
-  OutputMonad (..),
+  ($=<<),
   english,
   german,
   translate,
@@ -183,11 +186,11 @@ findSupportSTTask
   -> FindSupportSTInstance
   -> LangM m
 findSupportSTTask path task = do
-  ad <- liftIO $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
-  image ad
+  image $=<< liftIO
+    $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english [i|Translate the given activity diagram into a petrinet, then state the total number of nodes,
 the number of support places and the number of support transitions of the net.|]
@@ -201,6 +204,8 @@ an Knoten, die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des 
     translate $ do
       english [i|In this example, the resulting net contains 10 nodes in total, with 2 support places and 3 support transitions.|]
       german [i|In diesem Beispiel enthält das entstehende Netz etwa 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransition.|]
+    pure ()
+  pure ()
 
 findSupportSTInitial :: FindSupportSTSolution
 findSupportSTInitial = FindSupportSTSolution {
