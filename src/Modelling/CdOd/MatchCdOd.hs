@@ -283,17 +283,17 @@ matchCdOdInitial :: [(Int, Letters)]
 matchCdOdInitial = [(1, Letters "ab"), (2, Letters "")]
 
 matchCdOdSyntax
-  :: (OutputMonad m, Foldable t, Functor t)
+  :: (OutputMonad m, Foldable t)
   => MatchCdOdInstance
   -> t (Int, Letters)
   -> LangM m
 matchCdOdSyntax task sub = addPretext $ do
-  assertion (all availableCd $ fst <$> sub) $ translate $ do
+  assertion (all (availableCd . fst) sub) $ translate $ do
     english "Referenced class diagrams were provided within task?"
     german [iii|
       Referenzierte Klassendiagramme sind Bestandteil der Aufgabenstellung?
       |]
-  assertion (all (all availableOd) $ lettersList . snd <$> sub) $ translate $ do
+  assertion (all (all availableOd . lettersList . snd) sub) $ translate $ do
     english "Referenced object diagrams were provided within task?"
     german "Referenzierte Objektdiagramme sind Bestandteil der Aufgabenstellung?"
   pure ()

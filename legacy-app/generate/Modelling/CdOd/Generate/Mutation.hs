@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.Generate.Mutation (
   -- * Types
   Mutation (..), Targets, Target (..), Alteration (..),
@@ -218,8 +219,8 @@ allLimitsWith c op ts es =
   | e@(sv, ev, Assoc k n sl el _) <- targets ts es, t <- toList ts
   , (sl', el') <- bothLimits sl el t]
   where
-    bothLimits s e t = zip (repeat s) (endLimits e t)
-                    ++ zip (startLimits s t) (repeat e)
+    bothLimits s e t = map (s,) (endLimits e t)
+                    ++ map (,e) (startLimits s t)
     startLimits l t = [l' | l' <- fst $ allLimits c t, l' `op` l]
     endLimits   l t = [l' | l' <- snd $ allLimits c t, l' `op` l]
 

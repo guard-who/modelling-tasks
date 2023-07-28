@@ -58,7 +58,7 @@ import Control.Monad.Output.Generic (
   ($>>=),
   )
 import Data.Bifunctor                   (Bifunctor (second))
-import Control.Monad                    (forM, guard, when)
+import Control.Monad                    (guard, replicateM, when)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
 import Data.Either                      (isRight)
@@ -212,7 +212,7 @@ tries n conf seed = eval out
   where
     eval f = evalRand f $ mkStdGen seed
     out = do
-      xs <- forM [1 .. n] $ const $ try conf
+      xs <- replicateM n $ try conf
       let (l, pn) = maximumBy (comparing fst) $ concat xs
       if l >= minTransitionLength conf
         then (pn,) <$> oneOf (drawCommands conf)

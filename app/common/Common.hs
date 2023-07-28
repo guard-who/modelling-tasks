@@ -12,6 +12,7 @@ import qualified Control.Monad.Output.Generic     as GenericOutput (withLang)
 
 import Control.Monad.Output             (LangM', Language, ReportT)
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Data.Maybe                       (fromMaybe)
 import Diagrams.Prelude                 (Diagram, mkWidth)
 import Diagrams.Backend.SVG             (B, renderSVG)
 
@@ -39,5 +40,5 @@ renderPetriNet x dia = do
 
 withLang :: LangM' (ReportT (IO ()) IO) a -> Language -> IO a
 withLang x l =
-  maybe (error "failed") id
+  fromMaybe (error "failed")
   <$> GenericOutput.withLang @Language @(ReportT (IO ()) IO) x l

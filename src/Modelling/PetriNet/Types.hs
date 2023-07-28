@@ -910,7 +910,7 @@ manyRandomDrawSettings
 manyRandomDrawSettings config n = map (drawSettingsWithCommand config) <$> do
   let gls = graphLayouts config
   gls' <- shuffleM gls
-  shuffleM $ take n $ concat $ repeat gls'
+  shuffleM $ take n $ cycle gls'
 
 transitionPairShow
   :: (Petri.Transition, Petri.Transition)
