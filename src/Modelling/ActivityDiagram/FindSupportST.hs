@@ -192,7 +192,7 @@ findSupportSTTask path task = do
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english [i|Translate the given activity diagram into a petrinet, then state the total number of nodes,
+    english [i|Translate the given activity diagram into a Petri net, then state the total number of nodes,
 the number of support places and the number of support transitions of the net.|]
     german [i|Übersetzen Sie das gegebene Aktivitätsdiagramm in ein Petrinetz, geben Sie anschließend die Gesamtanzahl
 an Knoten, die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]

@@ -290,7 +290,7 @@ selectPetriTask path task = do
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   let drawSetting = petriDrawConf task
   paragraph $ translate $ do
-    english "Consider the following petrinets."
+    english "Consider the following Petri nets."
     german "Betrachten Sie die folgenden Petrinetze."
   images show id $=<< fmap (M.map (failWith id)) $ liftIO $
     traverse (\c -> runExceptT
@@ -300,8 +300,8 @@ selectPetriTask path task = do
       (not $ with1Weights drawSetting)
       (withGraphvizCommand drawSetting)) mapping
   paragraph $ translate $ do
-    english [i|Which of these petrinets matches the given activity diagram?
-Please state your answer by giving a number indicating the matching petrinet.|]
+    english [i|Which of these Petri nets matches the given activity diagram?
+Please state your answer by giving a number indicating the matching Petri net.|]
     german [i|Welcher dieser Petrinetze passt zum gegebenen Aktivitätsdiagramm?
 Bitte geben Sie ihre Antwort als Zahl an, welche das passende Petrinetz repräsentiert.|]
   paragraph $ do
@@ -310,7 +310,7 @@ Bitte geben Sie ihre Antwort als Zahl an, welche das passende Petrinetz repräse
       german [i|Zum Beispiel|]
     code "2"
     translate $ do
-      english [i|would indicate that petrinet 2 is the matching petrinet.|]
+      english [i|would indicate that Petri net 2 is the matching Petri net.|]
       german  [i|würde bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
     pure ()
   pure ()
@@ -340,8 +340,8 @@ selectPetriEvaluation
   -> Rated m
 selectPetriEvaluation task n = addPretext $ do
   let as = translations $ do
-        english "petrinet"
-        german "Petrinet"
+        english "Petri net"
+        german "Petrinetz"
       solMap = petrinets task
       (solution, _) = head $ M.toList $ M.map snd $ M.filter fst solMap
   singleChoice as (Just $ show solution) solution n

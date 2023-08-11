@@ -55,7 +55,7 @@ convertToPetrinet diag =
       st_support_petri = foldr addSupportST st_edges_petri (M.keys $ nodes st_edges_petri)
   in relabelPetri $ removeFinalPlaces st_support_petri
 
--- Relabels petrinet nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
+-- Relabels Petri net nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
 relabelPetri
   :: Net p n
   => p n PetriKey

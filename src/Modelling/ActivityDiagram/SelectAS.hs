@@ -209,7 +209,7 @@ selectASTask path task = do
     german "Betrachten Sie die folgenden Folgen."
   enumerateM (code . show) $ map (\(n,xs) -> (n, code $ show xs)) mapping
   paragraph $ translate $ do
-    english [i|Which of these sequences is a valid action sequences?
+    english [i|Which of these sequences is a valid action sequence?
 Please state your answer by giving a number indicating the valid action sequence.|]
     german [i|Welcher dieser Folgen ist eine valide Aktionsfolge?
 Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräsentiert.|]

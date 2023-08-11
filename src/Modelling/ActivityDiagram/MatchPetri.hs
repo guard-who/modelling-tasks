@@ -253,7 +253,7 @@ matchPetriTask path task = do
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english "Consider the following petrinet."
+    english "Consider the following Petri net."
     german "Betrachten Sie das folgende Petrinetz."
   let drawSetting = petriDrawConf task
   image $=<< fmap (failWith id) $ liftIO
@@ -264,9 +264,9 @@ matchPetriTask path task = do
       (not $ with1Weights drawSetting)
       (withGraphvizCommand drawSetting)
   paragraph $ translate $ do
-    english [i|State the matchings of each action and petrinet node, the matching of each
-object node and petrinet node, the petrinet nodes per component type, as well as all support nodes
-of the petrinet.|]
+    english [i|State the matchings of each action and Petri net node, the matching of each
+object node and Petri net node, the Petri net nodes per component type, as well as all support nodes
+of the Petri net.|]
     german [i|Geben Sie alle Aktion/Petrinetzknotenpaare, Objektknoten/Petrinetzknotenpaare, die
 Petrinetzknoten pro Komponententyp und die Hilfsknoten im Petrinetz an.|]
   paragraph $ do
@@ -275,8 +275,8 @@ Petrinetzknoten pro Komponententyp und die Hilfsknoten im Petrinetz an.|]
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
     code $ show matchPetriInitial
     translate $ do
-      english [i|In this example, the action nodes "A" and "B" are matched with the petrinet nodes 1 and 2,
-the petrinet nodes 5 and 7 correspond to decision nodes and the petrinet nodes 13, 14 and 15 are support nodes.|]
+      english [i|In this example, the action nodes "A" and "B" are matched with the Petri net nodes 1 and 2,
+the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes 13, 14 and 15 are support nodes.|]
       german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
 die Petrinetzknoten 5 und 7 entsprechen mit Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsknoten.|]
     pure ()
@@ -316,7 +316,7 @@ matchPetriSyntax task sub = addPretext $ do
     english "Referenced node names were provided within task?"
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
   assertion (all (`elem` petriLabels) subLabels) $ translate $ do
-    english "Referenced petrinet nodes were provided within task?"
+    english "Referenced Petri net nodes were provided within task?"
     german "Referenzierte Petrinetzknoten sind Bestandteil der Aufgabenstellung?"
   pure ()
 
