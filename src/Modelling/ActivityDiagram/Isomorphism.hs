@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Modelling.ActivityDiagram.Isomorphism (
   isADIsomorphic,
-  isPetriIsomorphic
+  isPetriIsomorphic,
+  petriHasMultipleAutomorphisms,
+  petriToGraph,
 ) where
 
 import qualified Data.Map as M (keys)
@@ -10,11 +12,15 @@ import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
 import Modelling.ActivityDiagram.Petrinet (convertToSimple)
 import Modelling.PetriNet.Types (Net (..))
 import Data.Graph (Graph, graphFromEdges')
-import Data.Graph.Automorphism (isIsomorphic)
+import Data.Graph.Automorphism          (automorphisms, isIsomorphic)
 
 isADIsomorphic :: UMLActivityDiagram -> UMLActivityDiagram -> Bool
 isADIsomorphic ad1 ad2 =
   isPetriIsomorphic (convertToSimple ad1) (convertToSimple ad2)
+
+petriHasMultipleAutomorphisms :: (Net p n, Ord a) => p n a -> Bool
+petriHasMultipleAutomorphisms =
+  not . null . tail . fst . automorphisms [] . petriToGraph
 
 isPetriIsomorphic
   :: (Net p n, Net p' n', Ord a)

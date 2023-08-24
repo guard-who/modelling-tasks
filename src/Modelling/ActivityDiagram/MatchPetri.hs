@@ -39,6 +39,7 @@ import Modelling.ActivityDiagram.Datatype (
   isInitialNode,
   isForkNode
   )
+import Modelling.ActivityDiagram.Isomorphism (petriHasMultipleAutomorphisms)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
@@ -80,11 +81,13 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen
   )
+import Data.Bifunctor                   (second)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.List (sort)
 import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
+import Data.Tuple.Extra                 (dupe)
 import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
@@ -366,13 +369,16 @@ getMatchPetriTask
 getMatchPetriTask config = do
   instas <- liftIO $ getInstances (maxInstances config) $ matchPetriAlloy config
   rinstas <- shuffleM instas
-  ad <- liftIO $ headWithErr "Failed to find task instances"
-         <$> mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
-  petri <- liftIO $ fmap snd $ shufflePetri $ convertToPetrinet ad
+  activityDiagrams <- liftIO
+    $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  let (ad, petri) = headWithErr "Failed to find task instances"
+        $ filter (not . petriHasMultipleAutomorphisms . snd)
+        $ map (second convertToPetrinet . dupe) activityDiagrams
+  shuffledPetri <- liftIO $ snd <$> shufflePetri petri
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
     activityDiagram=ad,
-    petrinet = petri,
+    petrinet = shuffledPetri,
     plantUMLConf =
       PlantUMLConvConf {
         suppressNodeNames = False,
