@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -6,30 +7,36 @@
 module Modelling.CdOd.CdAndChanges.Transform (
   transform,
   transformChanges,
+  transformImproveCd,
   transformNoChanges,
   ) where
 
 import Modelling.CdOd.Types (
   ClassConfig (..),
+  ClassDiagram (..),
+  LimitedLinking (..),
+  Relationship (..),
   RelationshipProperties (..),
   maxRels,
+  towardsValidProperties,
   )
 
 import Data.Bool                        (bool)
 import Data.FileEmbed                   (embedStringFile)
 import Data.Functor                     ((<&>))
+import Data.List                        (intercalate, unzip4)
 import Data.Maybe                       (fromMaybe)
 import Data.String.Interpolate          (i)
 
 transformWith
   :: ClassConfig
-  -> RelationshipProperties
+  -> Either (ClassDiagram String relationship) RelationshipProperties
   -> (Int, [String], String)
   -> String
-transformWith config properties (cs, predicates, part) =
+transformWith config cdOrProperties (cs, predicates, part) =
   removeLine $(embedStringFile "alloy/cd/assoclimits.als")
   ++ removeLines 3 $(embedStringFile "alloy/cd/generate.als")
-  ++ classDiagram config properties
+  ++ either givenClassDiagram (classDiagram config) cdOrProperties
   ++ part
   ++ createRunCommand config predicates cs
 
@@ -43,7 +50,7 @@ transformNoChanges
   -> Maybe Bool
   -> String
 transformNoChanges config properties withNonTrivialInheritance =
-  transformWith config properties (0, [], part)
+  transformWith config (Right properties) (0, [], part)
   where
     part = (`foldMap` trivialInh) $ \x -> [i|fact {
   #{withInheritance}
@@ -58,7 +65,7 @@ transformNoChanges config properties withNonTrivialInheritance =
 
 transform :: ClassConfig -> RelationshipProperties -> String
 transform config props =
-  transformWith config props $ matchCdOdChanges config
+  transformWith config (Right props) $ matchCdOdChanges config
 
 transformChanges
   :: ClassConfig
@@ -67,7 +74,80 @@ transformChanges
   -> [RelationshipProperties]
   -> String
 transformChanges config props mconfig propss =
-  transformWith config props $ changes mconfig propss
+  transformWith config (Right props) $ changes mconfig propss
+
+transformImproveCd
+  :: ClassDiagram String relationship
+  -- ^ the generated CD
+  -> ClassConfig
+  -- ^ the configuration used for generating the CD
+  -> RelationshipProperties
+  -- ^ the properties of the original CD
+  -> String
+transformImproveCd cd config properties = transformWith config (Left cd)
+  $ changes Nothing [towardsValidProperties properties]
+
+givenClassDiagram :: ClassDiagram String relationship -> String
+givenClassDiagram ClassDiagram {classNames, relationships} = [i|
+//////////////////////////////////////////////////
+// Given CD
+//////////////////////////////////////////////////
+
+#{concatMap classSig classNames}
+#{concatMap relationshipSig namedRelationships}
+pred cd {
+  Class = #{unionOf classNames}
+#{concatMap relationshipConstraints namedRelationships}
+  Assoc = Association + Aggregation + Composition
+  Relationship = Assoc + Inheritance
+  Association - Change.add = #{unionOf $ concat associations}
+  Aggregation - Change.add = #{unionOf $ concat aggregations}
+  Composition - Change.add = #{unionOf $ concat compositions}
+  Inheritance - Change.add = #{unionOf $ concat inheritances}
+}
+|]
+  where
+    unionOf xs
+      | null xs = "none"
+      | otherwise = intercalate " + " xs
+    namedRelationships = zip
+      (map (("Relationship" ++) . show) [0 :: Int ..])
+      relationships
+    (associations, aggregations, compositions, inheritances) =
+      unzip4 $ map assocName namedRelationships
+    assocName (name, x) = case x of
+      Association {} -> ([name], [], [], [])
+      Aggregation {} -> ([], [name], [], [])
+      Composition {} -> ([], [], [name], [])
+      Inheritance {} -> ([], [], [], [name])
+    classSig :: String -> String
+    classSig x = [i|one sig #{x} extends Class {}\n|]
+    relationshipSig :: (String, Relationship String relationship) -> String
+    relationshipSig (name, x) = case x of
+      Association {} -> [i|one sig #{name} extends Association {}\n|]
+      Aggregation {} -> [i|one sig #{name} extends Aggregation {}\n|]
+      Composition {} -> [i|one sig #{name} extends Composition {}\n|]
+      Inheritance {} -> [i|one sig #{name} extends Inheritance {}\n|]
+    relationshipConstraints (name, x) = case x of
+      Association {..} -> limitsConstraints name associationFrom associationTo
+      Aggregation {..} -> limitsConstraints name aggregationPart aggregationWhole
+      Composition {..} -> limitsConstraints name compositionPart compositionWhole
+      Inheritance {..} -> [i|  #{name}.from = #{subClass}\n|]
+        ++ [i|  #{name}.to = #{superClass}\n|]
+    limitsConstraints x from to =
+      limitConstraints "from" x from ++ limitConstraints "to" x to
+    limitConstraints :: String -> String -> LimitedLinking String -> String
+    limitConstraints
+      what
+      x
+      LimitedLinking {linking = destination, limits = (low, high)} =
+        [i|  #{x}.#{what} = #{destination}\n|]
+        ++ [i|  #{x}.#{what}Lower = #{limit low}\n|]
+        ++ [i|  #{x}.#{what}Upper = #{limit $ fromMaybe (-1) high}\n|]
+    limit 0 = "Zero"
+    limit 1 = "One"
+    limit 2 = "Two"
+    limit _ = "Star"
 
 classDiagram :: ClassConfig -> RelationshipProperties -> String
 classDiagram config props = [i|

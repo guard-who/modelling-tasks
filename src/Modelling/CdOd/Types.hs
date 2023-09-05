@@ -47,6 +47,7 @@ module Modelling.CdOd.Types (
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   toNameMapping,
+  towardsValidProperties,
   ) where
 
 
@@ -584,6 +585,32 @@ defaultProperties = RelationshipProperties {
     hasCompositionsPreventingParts = False,
     hasThickEdges           = Nothing
   }
+
+towardsValidProperties :: RelationshipProperties -> RelationshipProperties
+towardsValidProperties properties@RelationshipProperties {..} = properties {
+  wrongAssocs = snd betterWrongAssocs,
+  wrongCompositions = snd betterWrongCompositions,
+  selfInheritances = snd betterSelfInheritances,
+  hasReverseInheritances = snd fixedReverseInheritances,
+  hasNonTrivialInheritanceCycles = snd fixedNonTrivialInheritanceCycles,
+  hasCompositionCycles = snd fixedCompositionCycles
+  }
+  where
+    betterWrongAssocs = hasBetter False wrongAssocs
+    betterWrongCompositions =
+      hasBetter (fst betterWrongAssocs) wrongCompositions
+    betterSelfInheritances =
+      hasBetter (fst betterWrongCompositions) selfInheritances
+    fixedReverseInheritances =
+      fixed (fst betterSelfInheritances) hasReverseInheritances
+    fixedNonTrivialInheritanceCycles =
+      fixed (fst fixedReverseInheritances) hasNonTrivialInheritanceCycles
+    fixedCompositionCycles =
+      fixed (fst fixedNonTrivialInheritanceCycles) hasCompositionCycles
+    hasBetter True x = (True, x)
+    hasBetter False x = if x > 0 then (True, x - 1) else (False, x)
+    fixed True x = (True, x)
+    fixed False x = (x, False)
 
 associationNames :: Cd -> [String]
 associationNames = mapMaybe relationshipName . relationships

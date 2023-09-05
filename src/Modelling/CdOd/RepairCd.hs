@@ -6,6 +6,7 @@
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.RepairCd (
   AllowedProperties (..),
+  InValidOption (..),
   RepairCdConfig (..),
   RepairCdInstance (..),
   checkClassConfigAndChanges,
@@ -14,6 +15,8 @@ module Modelling.CdOd.RepairCd (
   defaultRepairCdConfig,
   defaultRepairCdInstance,
   allowEverything,
+  mapInValidOption,
+  mapInValidOptionM,
   phraseChange,
   renameInstance,
   repairCd,
@@ -24,7 +27,10 @@ module Modelling.CdOd.RepairCd (
   repairIncorrect,
   ) where
 
-import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transformChanges)
+import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
+  transformChanges,
+  transformImproveCd,
+  )
 import qualified Modelling.CdOd.Types             as T (
   RelationshipProperties (selfInheritances, selfRelationships),
   )
@@ -48,7 +54,7 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   simplifiedInformation,
   )
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
+import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd, getInstances)
 import Modelling.CdOd.CD2Alloy.Transform (
   combineParts,
   createRunCommand,
@@ -62,7 +68,7 @@ import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
   cacheCd,
   drawCd,
-  drawOdFromInstance,
+  drawOd,
   )
 import Modelling.CdOd.Types (
   Cd,
@@ -70,6 +76,10 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
+  Link (..),
+  Object (..),
+  ObjectDiagram (..),
+  Od,
   Relationship (..),
   RelationshipProperties (..),
   associationNames,
@@ -77,17 +87,21 @@ import Modelling.CdOd.Types (
   checkClassConfigWithProperties,
   classNames,
   defaultProperties,
+  linkNames,
   maxFiveObjects,
   relationshipName,
   renameClassesAndRelationshipsInCd,
   renameClassesAndRelationshipsInRelationship,
+  renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
+  shuffleObjectAndLinkOrder,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    ((>=>), void, when)
+import Control.Monad                    ((>=>), forM, join, void, when, zipWithM)
 import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Except             (runExceptT)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -105,15 +119,17 @@ import Control.Monad.Output (
   )
 import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, StdGen, evalRandT, getStdGen, mkStdGen)
-import Data.Bifunctor                   (second)
+import Data.Bifunctor                   (bimap, second)
+import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
+import Data.Either                      (isRight, partitionEithers)
+import Data.Either.Extra                (eitherToMaybe)
 import Data.Foldable                    (for_)
 import Data.GraphViz                    (DirType (..))
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
-import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
@@ -295,6 +311,43 @@ toProperty p = operation p defaultProperties
 isValid :: PropertyChange -> Bool
 isValid p = validityChange p True
 
+type CdChangeAndCd = InValidOption
+  (ChangeAndCd String String)
+  (Change (Relationship String String))
+  Od
+
+type RelationshipChange = InValidOption
+  (Change (Relationship String String))
+  (Change (Relationship String String))
+  Od
+
+data InValidOption option forInvalidity forValidity = InValidOption {
+  hint :: Either forInvalidity forValidity,
+  option :: option
+  } deriving (Eq, Generic, Read, Show)
+
+mapInValidOption
+  :: (a -> b)
+  -> (c -> d)
+  -> (e -> f)
+  -> InValidOption a c e
+  -> InValidOption b d f
+mapInValidOption f g h InValidOption {..} = InValidOption {
+  hint = bimap g h hint,
+  option = f option
+  }
+
+mapInValidOptionM
+  :: Applicative m
+  => (a -> m b)
+  -> (c -> m d)
+  -> (e -> m f)
+  -> InValidOption a c e
+  -> m (InValidOption b d f)
+mapInValidOptionM f g h InValidOption {..} = InValidOption
+  <$> bimapM g h hint
+  <*> f option
+
 data RepairCdConfig = RepairCdConfig {
     allowedProperties :: AllowedProperties,
     classConfig      :: ClassConfig,
@@ -372,7 +425,9 @@ repairCdTask path task = do
   let phrase x y z = translate $ do
         english $ phraseChange x y z
         german $ phraseChangeDE x y z
-  enumerateM (text . show) $ second (phrase (withNames task) (withDirections task) . snd) <$> M.toList (changes task)
+  enumerateM (text . show)
+    $ second (phrase (withNames task) (withDirections task) . option)
+    <$> M.toList (changes task)
   paragraph $ translate $ do
     english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
     german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren. |]
@@ -399,14 +454,14 @@ repairCdEvaluation inst xs = addPretext $ do
         (English, "changes"),
         (German, "Änderungen")
         ]
-      solution = fst <$> changes inst
+      solution = isRight . hint <$> changes inst
   multipleChoice chs (Just $ show $ repairCdSolution inst) solution xs
 
 repairCdSolution :: RepairCdInstance -> [Int]
-repairCdSolution = M.keys . M.filter id . fmap fst . changes
+repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
 
 data RepairCdInstance = RepairCdInstance {
-    changes        :: Map Int (Bool, Change (Relationship String String)),
+    changes        :: Map Int RelationshipChange,
     classDiagram   :: Cd,
     withDirections :: Bool,
     withNames      :: Bool
@@ -415,11 +470,16 @@ data RepairCdInstance = RepairCdInstance {
 classAndAssocNames :: RepairCdInstance -> ([String], [String])
 classAndAssocNames inst =
   let cd = classDiagram inst
-      chs = map snd $ M.elems $ changes inst
+      allChs = M.elems $ changes inst
+      chs = map option allChs
+      (improves, evidences) = partitionEithers $ map hint allChs
       names = classNames cd
       assocs = nubOrd $ associationNames cd
         ++ mapMaybe (add >=> relationshipName) chs
         ++ mapMaybe (remove >=> relationshipName) chs
+        ++ mapMaybe (add >=> relationshipName) improves
+        ++ mapMaybe (remove >=> relationshipName) improves
+        ++ concatMap linkNames evidences
   in (names, assocs)
 
 instance Randomise RepairCdInstance where
@@ -433,8 +493,10 @@ instance Randomise RepairCdInstance where
 instance RandomiseLayout RepairCdInstance where
   randomiseLayout RepairCdInstance {..} = do
     cd <- shuffleClassAndConnectionOrder classDiagram
+    changes' <- mapInValidOptionM pure pure shuffleObjectAndLinkOrder
+      `mapM` changes
     return RepairCdInstance {
-      changes = changes,
+      changes = changes',
       classDiagram = cd,
       withDirections = withDirections,
       withNames = withNames
@@ -461,9 +523,11 @@ renameInstance inst names' assocs' = do
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
       renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
   cd <- renameCd $ classDiagram inst
-  chs <- mapM (mapM $ mapM renameEdge) $ changes inst
+  chs <- mapM (mapInValidOptionM (mapM renameEdge) (mapM renameEdge) renameOd)
+    $ changes inst
   return $ RepairCdInstance {
     changes        = chs,
     classDiagram   = cd,
@@ -484,7 +548,7 @@ repairCd config segment seed = do
     (noIsolationLimit config)
     (maxInstances config)
     (timeout config)
-  let chs' = map (second relationshipChange) chs
+  let chs' = map (mapInValidOption relationshipChange id id) chs
   shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
@@ -494,139 +558,143 @@ repairCd config segment seed = do
 defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
   changes = M.fromAscList [
-    (1,(False,Change {
-          add = Just $ Composition {
-            compositionName = "s",
-            compositionPart = LimitedLinking {
-              linking = "D",
-              limits = (2, Nothing)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "A",
-              limits = (1, Just 1)
-              }
-            },
-          remove = Just $ Composition {
-            compositionName = "v",
-            compositionPart = LimitedLinking {
-              linking = "D",
-              limits = (0, Nothing)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "A",
-              limits = (1, Just 1)
-              }
-            }
-          })),
-    (2,(False,Change {
-          add = Just $ Aggregation {
-            aggregationName = "t",
-            aggregationPart = LimitedLinking {
-              linking = "A",
-              limits = (1, Nothing)
-              },
-            aggregationWhole = LimitedLinking {
-              linking = "C",
-              limits = (2, Just 2)
-              }
-            },
-          remove = Nothing
-          })),
-    (3,(True,Change {
-          add = Just $ Composition {
-            compositionName = "z",
-            compositionPart = LimitedLinking {
-              linking = "D",
-              limits = (0, Nothing)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "B",
-              limits = (1, Just 1)
-              }
-            },
-          remove = Just $ Composition {
-            compositionName = "x",
-            compositionPart = LimitedLinking {
-              linking = "B",
-              limits = (0, Nothing)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "D",
-              limits = (1, Just 1)
-              }
-            }
-          })),
-    (4,(True,Change {
-          add = Just $ Composition {
-            compositionName = "u",
-            compositionPart = LimitedLinking {
-              linking = "B",
-              limits = (0, Just 2)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "A",
-              limits = (1, Just 1)
-              }
-            },
-          remove = Just $ Composition {
-            compositionName = "w",
-            compositionPart = LimitedLinking {
-              linking = "A",
-              limits = (0,Just 2)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "B",
-              limits = (1, Just 1)
-              }
-            }
-          }))
+    (1, InValidOption {
+      hint = Right $ ObjectDiagram {
+        objects = [
+          Object {objectName = "c2", objectClass = "C"},
+          Object {objectName = "a", objectClass = "A"},
+          Object {objectName = "c", objectClass = "C"},
+          Object {objectName = "d", objectClass = "D"},
+          Object {objectName = "c1", objectClass = "C"}
+          ],
+        links = [
+          Link {linkName = "v", linkFrom = "c2", linkTo = "d"},
+          Link {linkName = "v", linkFrom = "c1", linkTo = "d"},
+          Link {linkName = "x", linkFrom = "d", linkTo = "a"}
+          ]
+        },
+      option = Change {
+        add = Nothing,
+        remove = Just $ Composition {
+          compositionName = "w",
+          compositionPart =
+            LimitedLinking {linking = "B", limits = (2, Just 2)},
+          compositionWhole =
+            LimitedLinking {linking = "A", limits = (0, Just 1)}
+          }
+        }
+      }),
+    (2, InValidOption {
+      hint = Right $ ObjectDiagram {
+        objects = [
+          Object {objectName = "b1", objectClass = "B"},
+          Object {objectName = "b", objectClass = "B"},
+          Object {objectName = "a", objectClass = "A"}
+          ],
+        links = [
+          Link {linkName = "w", linkFrom = "a", linkTo = "b1"},
+          Link {linkName = "w", linkFrom = "a", linkTo = "b"}
+          ]
+        },
+      option = Change {
+        add = Nothing,
+        remove = Just $ Composition {
+          compositionName = "y",
+          compositionPart =
+            LimitedLinking {linking = "D", limits = (2, Just 2)},
+          compositionWhole =
+            LimitedLinking {linking = "B", limits = (0, Just 1)}
+          }
+        }
+      }),
+    (3, InValidOption {
+      hint = Right $ ObjectDiagram {
+        objects = [
+          Object {objectName = "c", objectClass = "C"},
+          Object {objectName = "c1", objectClass = "C"},
+          Object {objectName = "d", objectClass = "D"}
+          ],
+        links = [
+          Link {linkName = "v", linkFrom = "c", linkTo = "d"},
+          Link {linkName = "v", linkFrom = "c1", linkTo = "d"}
+          ]
+        },
+      option = Change {
+        add = Nothing,
+        remove = Just $ Composition {
+          compositionName = "x",
+          compositionPart =
+            LimitedLinking {linking = "A", limits = (1, Just 2)},
+          compositionWhole =
+            LimitedLinking {linking = "D", limits = (0, Just 1)}
+          }
+        }
+      }),
+    (4, InValidOption {
+      hint = Left $ Change {
+        add = Just $ Aggregation {
+          aggregationName = "v",
+          aggregationPart =
+            LimitedLinking {linking = "D", limits = (2, Nothing)},
+          aggregationWhole =
+            LimitedLinking {linking = "B", limits = (0, Just 1)}
+          },
+        remove = Just $ Composition {
+          compositionName = "z",
+          compositionPart =
+            LimitedLinking {linking = "D", limits = (2, Nothing)},
+          compositionWhole =
+            LimitedLinking {linking = "B", limits = (0, Just 1)}
+          }
+        },
+      option = Change {
+        add = Just $ Composition {
+          compositionName = "z",
+          compositionPart =
+            LimitedLinking {linking = "D", limits = (2, Nothing)},
+          compositionWhole =
+            LimitedLinking {linking = "B", limits = (0, Just 1)}
+          },
+        remove = Just $ Composition {
+          compositionName = "y",
+          compositionPart =
+            LimitedLinking {linking = "D", limits = (2, Just 2)},
+          compositionWhole =
+            LimitedLinking {linking = "B", limits = (0, Just 1)}
+          }
+        }
+      })
     ],
   classDiagram = ClassDiagram {
-    classNames = ["A","D","B","C"],
+    classNames = ["A", "C", "D", "B"],
     relationships = [
       Composition {
-        compositionName = "v",
-        compositionPart = LimitedLinking {
-          linking = "D",
-          limits = (0,Nothing)
-          },
-        compositionWhole = LimitedLinking {
-          linking = "A",
-          limits = (1,Just 1)
-          }
-         },
+        compositionName = "w",
+        compositionPart =
+          LimitedLinking {linking = "B", limits = (2, Just 2)},
+        compositionWhole =
+          LimitedLinking {linking = "A", limits = (0, Just 1)}
+        },
       Composition {
         compositionName = "x",
-        compositionPart = LimitedLinking {
-          linking = "B",
-          limits = (0,Nothing)
-          },
-        compositionWhole = LimitedLinking {
-          linking = "D",
-          limits = (1,Just 1)
-          }
-         },
-      Composition {
-        compositionName = "w",
-        compositionPart = LimitedLinking {
-          linking = "A",
-          limits = (0,Just 2)
-          },
-        compositionWhole = LimitedLinking {
-          linking = "B",
-          limits = (1,Just 1)
-          }
-         },
+        compositionPart =
+          LimitedLinking {linking = "A", limits = (1, Just 2)},
+        compositionWhole =
+          LimitedLinking {linking = "D", limits = (0, Just 1)}
+        },
       Association {
-        associationName = "y",
-        associationFrom = LimitedLinking {
-          linking = "C",
-          limits = (0,Just 2)
-          },
-        associationTo = LimitedLinking {
-          linking = "A",
-          limits = (2,Nothing)
-          }
+        associationName = "v",
+        associationFrom =
+          LimitedLinking {linking = "D", limits = (0, Just 1)},
+        associationTo =
+          LimitedLinking {linking = "C", limits = (2, Just 2)}
+        },
+      Composition {
+        compositionName = "y",
+        compositionPart =
+          LimitedLinking {linking = "D", limits = (2, Just 2)},
+        compositionWhole =
+          LimitedLinking {linking = "B", limits = (0, Just 1)}
         }
       ]
     },
@@ -641,7 +709,7 @@ repairIncorrect
   -> Bool
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g IO (Cd, [(Bool, ChangeAndCd String String)])
+  -> RandT g IO (Cd, [CdChangeAndCd])
 repairIncorrect allowed config noIsolationLimitation maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
@@ -659,31 +727,41 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     writeFile "repair.als" alloyCode
   instas  <- liftIO $ getInstances maxInsts to alloyCode
   rinstas <- shuffleM instas
-  getInstanceWithODs (map isValid cs) rinstas
+  getInstanceWithODs cs rinstas
   where
     drawCd' :: Cd -> Integer -> IO FilePath
     drawCd' cd' n =
       drawCd True True mempty cd' ("cd-" ++ show n ++ ".svg")
-    drawOd :: AlloyInstance -> Integer -> RandT StdGen IO FilePath
-    drawOd od x =
-      drawOdFromInstance od Nothing Back True ("od-" ++ show x)
+    drawOd' :: Od -> Integer -> RandT StdGen IO FilePath
+    drawOd' od x =
+      drawOd od 0 Back True ("od-" ++ show x)
     getInstanceWithODs _  [] =
       repairIncorrect allowed config noIsolationLimitation maxInsts to
-    getInstanceWithODs vs (rinsta:rinstas) = do
+    getInstanceWithODs propertyChanges (rinsta:rinstas) = do
       cdInstance <- liftIO $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
           chs = instanceChangesAndCds cdInstance
-          chs' = zip vs chs
-      ods <- (liftIO . getOD . changeClassDiagram . snd) `mapM` filter fst chs'
-      if not (any null ods)
-        then do
-        when debug $ liftIO $ do
-          void $ drawCd' cd 0
-          uncurry drawCd' `mapM_` zip (map changeClassDiagram chs) [1 ..]
-          g <- getStdGen
-          flip evalRandT g $ uncurry (drawOd . head) `mapM_` zip ods [1 ..]
-        return (cd, chs')
-        else getInstanceWithODs vs rinstas
+      hints <- liftIO $ zipWithM getOdOrImprovedCd propertyChanges chs
+      case sequenceA hints of
+        Nothing -> getInstanceWithODs propertyChanges rinstas
+        Just odsAndCds -> do
+          when debug $ liftIO $ do
+            void $ drawCd' cd 0
+            uncurry drawCd' `mapM_` zip (map changeClassDiagram chs) [1 ..]
+            g <- getStdGen
+            flip evalRandT g
+              $ uncurry (either (const $ const $ return "") drawOd')
+              `mapM_` zip odsAndCds [1 ..]
+          return (cd, zipWith InValidOption odsAndCds chs)
+    getOdOrImprovedCd propertyChange change
+      | isValid propertyChange = fmap Right <$> getOD (changeClassDiagram change)
+      | otherwise = fmap Left
+        <$> getImprovedCd (changeClassDiagram change) (toProperty propertyChange)
+    getImprovedCd cd properties = do
+      let alloyCode = Changes.transformImproveCd cd config properties
+      changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
+      fmap (relationshipChange . head . instanceChangesAndCds)
+        <$> traverse getChangesAndCds changes
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
           parts = transform
@@ -700,7 +778,10 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
             maxFiveObjects
             reversedRelationships
             parts
-      getInstances (Just 1) to (combineParts parts ++ command)
+      od <- listToMaybe
+        <$> getInstances (Just 1) to (combineParts parts ++ command)
+      fmap join $ forM od
+        $ runExceptT . alloyInstanceToOd >=> return . eitherToMaybe
 
 data AllowedProperties = AllowedProperties {
   compositionCycles      :: Bool,

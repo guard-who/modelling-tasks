@@ -19,6 +19,7 @@ module Modelling.CdOd.SelectValidCd (
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
+  elems,
   filter,
   foldrWithKey,
   fromAscList,
@@ -43,20 +44,32 @@ import Modelling.CdOd.CdAndChanges.Instance (
   )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
+  InValidOption (..),
   allowEverything,
   checkClassConfigAndChanges,
+  mapInValidOption,
+  mapInValidOptionM,
   repairIncorrect,
   )
 import Modelling.CdOd.Output            (cacheCd)
 import Modelling.CdOd.Types (
   Cd,
+  Change (..),
   ClassConfig (..),
   ClassDiagram (..),
+  Object (..),
+  ObjectDiagram (..),
+  Od,
   Relationship (..),
   associationNames,
   classNames,
+  linkNames,
   shuffleClassAndConnectionOrder,
+  relationshipName,
   renameClassesAndRelationshipsInCd,
+  renameClassesAndRelationshipsInRelationship,
+  renameObjectsWithClassesAndLinksInOd,
+  shuffleObjectAndLinkOrder,
   )
 
 import Control.Monad                    ((>=>))
@@ -78,9 +91,10 @@ import Control.Monad.Output (
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.Bifunctor                   (second)
+import Data.Either                      (isRight, partitionEithers)
 import Data.Foldable                    (for_)
 import Data.Map                         (Map)
+import Data.Maybe                       (mapMaybe)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
@@ -122,8 +136,13 @@ checkSelectValidCdConfig :: SelectValidCdConfig -> Maybe String
 checkSelectValidCdConfig SelectValidCdConfig {..} =
   checkClassConfigAndChanges classConfig allowedProperties
 
+type CdChange = InValidOption
+  Cd
+  (Change (Relationship String String))
+  Od
+
 data SelectValidCdInstance = SelectValidCdInstance {
-    classDiagrams   :: Map Int (Bool, Cd),
+    classDiagrams   :: Map Int CdChange,
     withNames       :: Bool,
     withNavigations :: Bool
   } deriving (Generic, Read, Show)
@@ -161,14 +180,14 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
   paragraph hoveringInformation
   pure ()
   where
-    drawCd x (b, cd) cds =
+    drawCd x theChange cds =
       let f = cacheCd
             (withNavigations task)
             (withNames task)
             mempty
-            cd
+            (option theChange)
             path
-      in M.insert x ((b,) <$> f) cds
+      in M.insert x ((isRight $ hint theChange,) <$> f) cds
 
 selectValidCdEvaluation
   :: OutputMonad m
@@ -180,11 +199,12 @@ selectValidCdEvaluation inst xs = addPretext $ do
         (English, "class diagrams"),
         (German, "Klassendiagramme")
         ]
-      solution = fst <$> classDiagrams inst
+      solution = isRight . hint <$> classDiagrams inst
   multipleChoice cds (Just $ show $ selectValidCdSolution inst) solution xs
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
-selectValidCdSolution = M.keys . M.filter id . fmap fst . classDiagrams
+selectValidCdSolution =
+  M.keys . M.filter id . fmap (isRight . hint) . classDiagrams
 
 selectValidCd
   :: SelectValidCdConfig
@@ -199,7 +219,7 @@ selectValidCd config segment seed = do
     (noIsolationLimit config)
     (maxInstances config)
     (timeout config)
-  let cds = map (second changeClassDiagram) chs
+  let cds = map (mapInValidOption changeClassDiagram id id) chs
   shuffleCds >=> shuffleEverything $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     withNames       = printNames config,
@@ -220,7 +240,11 @@ instance Randomise SelectValidCdInstance where
 
 instance RandomiseLayout SelectValidCdInstance where
   randomiseLayout SelectValidCdInstance {..} = do
-    cds <- mapM shuffleClassAndConnectionOrder `mapM` classDiagrams
+    cds <- mapInValidOptionM
+      shuffleClassAndConnectionOrder
+      pure
+      shuffleObjectAndLinkOrder
+      `mapM` classDiagrams
     return $ SelectValidCdInstance {
       classDiagrams           = cds,
       withNames               = withNames,
@@ -232,7 +256,15 @@ shuffleEach
   => SelectValidCdInstance
   -> m SelectValidCdInstance
 shuffleEach inst@SelectValidCdInstance {..} = do
-  cds <- mapM shuffleCd `mapM` classDiagrams
+  names' <- shuffleM names
+  assocs' <- shuffleM assocs
+  let bmNames  = BM.fromList $ zip names names'
+      bmAssocs = BM.fromList $ zip assocs assocs'
+      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
+      renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
+  cds <- mapInValidOptionM renameCd (mapM renameEdge) renameOd
+    `mapM` classDiagrams
   return $ SelectValidCdInstance {
     classDiagrams           = cds,
     withNames               = withNames,
@@ -240,12 +272,6 @@ shuffleEach inst@SelectValidCdInstance {..} = do
     }
   where
     (names, assocs) = classAndAssocNames inst
-    shuffleCd cd = do
-      names' <- shuffleM names
-      assocs' <- shuffleM assocs
-      let bmNames  = BM.fromList $ zip names names'
-          bmAssocs = BM.fromList $ zip assocs assocs'
-      renameClassesAndRelationshipsInCd bmNames bmAssocs cd
 
 shuffleInstance
   :: MonadRandom m
@@ -262,8 +288,12 @@ shuffleInstance inst = SelectValidCdInstance
 classAndAssocNames :: SelectValidCdInstance -> ([String], [String])
 classAndAssocNames inst =
   let cds = classDiagrams inst
-      names = nubOrd $ concatMap (classNames . snd) cds
-      assocs = nubOrd $ concatMap (associationNames . snd) cds
+      (improves, evidences) = partitionEithers $ map hint $ M.elems cds
+      names = nubOrd $ concatMap (classNames . option) cds
+      assocs = nubOrd $ concatMap (associationNames . option) cds
+        ++ mapMaybe (add >=> relationshipName) improves
+        ++ mapMaybe (remove >=> relationshipName) improves
+        ++ concatMap linkNames evidences
   in (names, assocs)
 
 renameInstance
@@ -277,7 +307,11 @@ renameInstance inst names' assocs' = do
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
-  cds <- mapM (mapM renameCd) $ classDiagrams inst
+      renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
+  cds <- mapM
+    (mapInValidOptionM renameCd (mapM renameEdge) renameOd)
+    $ classDiagrams inst
   return $ SelectValidCdInstance {
     classDiagrams   = cds,
     withNames       = withNames inst,
@@ -287,38 +321,72 @@ renameInstance inst names' assocs' = do
 defaultSelectValidCdInstance :: SelectValidCdInstance
 defaultSelectValidCdInstance = SelectValidCdInstance {
   classDiagrams = M.fromAscList [
-    (1,(False,ClassDiagram {
-        classNames = ["D","B","A","C"],
+    (1, InValidOption {
+      hint = Right $ ObjectDiagram {
+        objects = [
+          Object {objectName = "b", objectClass = "B"},
+          Object {objectName = "b1", objectClass = "B"},
+          Object {objectName = "b2", objectClass = "B"},
+          Object {objectName = "d", objectClass = "D"}
+          ],
+        links = []
+        },
+      option = ClassDiagram {
+        classNames = ["A", "D", "B", "C"],
         relationships = [
-          Inheritance {subClass = "D", superClass = "B"},
-          Inheritance {subClass = "B", superClass = "D"},
-          Inheritance {subClass = "A", superClass = "C"},
-          Inheritance {subClass = "C", superClass = "B"}
+          Inheritance {subClass = "B", superClass = "A"},
+          Inheritance {subClass = "C", superClass = "A"},
+          Inheritance {subClass = "D", superClass = "C"}
           ]
-        })),
-    (2,(True,ClassDiagram {
-        classNames = ["D","B","A","C"],
+        }
+      }),
+    (2, InValidOption {
+      hint = Right $ ObjectDiagram {
+        objects = [
+          Object {objectName = "b2", objectClass = "B"},
+          Object {objectName = "b1", objectClass = "B"},
+          Object {objectName = "d", objectClass = "D"},
+          Object {objectName = "b", objectClass = "B"}
+          ],
+        links = []
+        },
+      option = ClassDiagram {
+        classNames = ["C", "A", "D", "B"],
         relationships = [
-          Inheritance {subClass = "D", superClass = "B"},
-          Inheritance {subClass = "C", superClass = "B"}
-          ]
-        })),
-    (3,(False,ClassDiagram {
-        classNames = ["D","B","A","C"],
-        relationships = [
-          Inheritance {subClass = "D", superClass = "B"},
-          Inheritance {subClass = "B", superClass = "D"},
           Inheritance {subClass = "A", superClass = "B"},
-          Inheritance {subClass = "C", superClass = "B"}
+          Inheritance {subClass = "D", superClass = "C"},
+          Inheritance {subClass = "C", superClass = "A"}
           ]
-        })),
-    (4,(True,ClassDiagram {
-        classNames = ["D","B","A","C"],
+        }
+      }),
+    (3, InValidOption {
+      hint = Left $ Change {
+        add = Nothing,
+        remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+        },
+      option = ClassDiagram {
+        classNames = ["A", "C", "B", "D"],
         relationships = [
-          Inheritance {subClass = "B", superClass = "D"},
-          Inheritance {subClass = "C", superClass = "B"}
+          Inheritance {subClass = "C", superClass = "A"},
+          Inheritance {subClass = "B", superClass = "A"},
+          Inheritance {subClass = "A", superClass = "B"}
           ]
-        }))
+        }
+      }),
+    (4, InValidOption {
+      hint = Left $ Change {
+        add = Nothing,
+        remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+        },
+      option = ClassDiagram {
+        classNames = ["A", "D", "C", "B"],
+        relationships = [
+          Inheritance {subClass = "D", superClass = "C"},
+          Inheritance {subClass = "A", superClass = "B"},
+          Inheritance {subClass = "B", superClass = "A"}
+          ]
+        }
+      })
     ],
   withNames = True,
   withNavigations = True
