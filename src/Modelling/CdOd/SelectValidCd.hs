@@ -152,7 +152,7 @@ data SelectValidCdInstance = SelectValidCdInstance {
 
 selectValidCdSyntax :: OutputMonad m => SelectValidCdInstance -> [Int] -> LangM m
 selectValidCdSyntax inst xs =
-  for_ xs $ singleChoiceSyntax True (M.keys $ classDiagrams inst)
+  for_ xs $ singleChoiceSyntax False (M.keys $ classDiagrams inst)
 
 selectValidCdTask
   :: (OutputMonad m, MonadIO m)

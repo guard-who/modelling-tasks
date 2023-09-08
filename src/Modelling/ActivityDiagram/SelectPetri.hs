@@ -331,7 +331,7 @@ selectPetriSyntax
   -> LangM m
 selectPetriSyntax task sub = addPretext $ do
   let options = M.keys $ petrinets task
-  singleChoiceSyntax True options sub
+  singleChoiceSyntax False options sub
 
 selectPetriEvaluation
   :: OutputMonad m

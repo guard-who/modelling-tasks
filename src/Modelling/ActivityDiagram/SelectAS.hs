@@ -240,7 +240,7 @@ selectASSyntax
   -> LangM m
 selectASSyntax task sub = addPretext $ do
   let options = M.keys $ actionSequences task
-  singleChoiceSyntax True options sub
+  singleChoiceSyntax False options sub
 
 selectASEvaluation
   :: OutputMonad m

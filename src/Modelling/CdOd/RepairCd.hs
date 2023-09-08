@@ -448,7 +448,7 @@ repairCdTask path task = do
 
 repairCdSyntax :: OutputMonad m => RepairCdInstance -> [Int] -> LangM m
 repairCdSyntax inst xs =
-  for_ xs $ singleChoiceSyntax True (M.keys $ changes inst)
+  for_ xs $ singleChoiceSyntax False (M.keys $ changes inst)
 
 repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
 repairCdEvaluation inst xs = addPretext $ do
