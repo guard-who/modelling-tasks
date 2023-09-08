@@ -355,6 +355,7 @@ data RepairCdConfig = RepairCdConfig {
     noIsolationLimit :: Bool,
     printNames       :: Bool,
     printNavigations :: Bool,
+    printSolution    :: Bool,
     timeout          :: Maybe Int,
     useNames         :: Bool
   } deriving (Generic, Read, Show)
@@ -377,6 +378,7 @@ defaultRepairCdConfig = RepairCdConfig {
     noIsolationLimit = False,
     printNames       = True,
     printNavigations = True,
+    printSolution    = False,
     timeout          = Nothing,
     useNames         = False
   }
@@ -455,7 +457,10 @@ repairCdEvaluation inst xs = addPretext $ do
         (German, "Änderungen")
         ]
       solution = isRight . hint <$> changes inst
-  multipleChoice chs (Just $ show $ repairCdSolution inst) solution xs
+      correctAnswer
+        | showSolution inst = Just $ show $ repairCdSolution inst
+        | otherwise = Nothing
+  multipleChoice chs correctAnswer solution xs
 
 repairCdSolution :: RepairCdInstance -> [Int]
 repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
@@ -463,6 +468,7 @@ repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int RelationshipChange,
     classDiagram   :: Cd,
+    showSolution   :: Bool,
     withDirections :: Bool,
     withNames      :: Bool
   } deriving (Eq, Generic, Read, Show)
@@ -498,6 +504,7 @@ instance RandomiseLayout RepairCdInstance where
     return RepairCdInstance {
       changes = changes',
       classDiagram = cd,
+      showSolution = showSolution,
       withDirections = withDirections,
       withNames = withNames
       }
@@ -508,6 +515,7 @@ shuffleInstance inst = do
   return $ RepairCdInstance {
     changes = chs,
     classDiagram = classDiagram inst,
+    showSolution = showSolution inst,
     withDirections = withDirections inst,
     withNames = withNames inst
     }
@@ -531,6 +539,7 @@ renameInstance inst names' assocs' = do
   return $ RepairCdInstance {
     changes        = chs,
     classDiagram   = cd,
+    showSolution   = showSolution inst,
     withDirections = withDirections inst,
     withNames      = withNames inst
     }
@@ -552,6 +561,7 @@ repairCd config segment seed = do
   shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
+    (printSolution config)
     (printNavigations config)
     (printNames config && useNames config)
 
@@ -698,6 +708,7 @@ defaultRepairCdInstance = RepairCdInstance {
         }
       ]
     },
+  showSolution = False,
   withDirections = False,
   withNames = True
   }

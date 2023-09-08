@@ -106,6 +106,7 @@ data SelectValidCdConfig = SelectValidCdConfig {
     noIsolationLimit :: Bool,
     printNames       :: Bool,
     printNavigations :: Bool,
+    printSolution    :: Bool,
     shuffleEachCd    :: Bool,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
@@ -128,6 +129,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
     noIsolationLimit = False,
     printNames       = True,
     printNavigations = True,
+    printSolution    = False,
     shuffleEachCd    = False,
     timeout          = Nothing
   }
@@ -143,6 +145,7 @@ type CdChange = InValidOption
 
 data SelectValidCdInstance = SelectValidCdInstance {
     classDiagrams   :: Map Int CdChange,
+    showSolution    :: Bool,
     withNames       :: Bool,
     withNavigations :: Bool
   } deriving (Generic, Read, Show)
@@ -200,7 +203,10 @@ selectValidCdEvaluation inst xs = addPretext $ do
         (German, "Klassendiagramme")
         ]
       solution = isRight . hint <$> classDiagrams inst
-  multipleChoice cds (Just $ show $ selectValidCdSolution inst) solution xs
+      correctAnswer
+        | showSolution inst = Just $ show $ selectValidCdSolution inst
+        | otherwise = Nothing
+  multipleChoice cds correctAnswer solution xs
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
 selectValidCdSolution =
@@ -222,6 +228,7 @@ selectValidCd config segment seed = do
   let cds = map (mapInValidOption changeClassDiagram id id) chs
   shuffleCds >=> shuffleEverything $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
+    showSolution    = printSolution config,
     withNames       = printNames config,
     withNavigations = printNavigations config
     }
@@ -247,6 +254,7 @@ instance RandomiseLayout SelectValidCdInstance where
       `mapM` classDiagrams
     return $ SelectValidCdInstance {
       classDiagrams           = cds,
+      showSolution            = showSolution,
       withNames               = withNames,
       withNavigations         = withNavigations
       }
@@ -267,6 +275,7 @@ shuffleEach inst@SelectValidCdInstance {..} = do
     `mapM` classDiagrams
   return $ SelectValidCdInstance {
     classDiagrams           = cds,
+    showSolution            = showSolution,
     withNames               = withNames,
     withNavigations         = withNavigations
     }
@@ -280,6 +289,7 @@ shuffleInstance
 shuffleInstance inst = SelectValidCdInstance
   <$> (M.fromAscList . zipWith replaceId [1..]
        <$> shuffleM (M.toList $ classDiagrams inst))
+  <*> pure (showSolution inst)
   <*> pure (withNames inst)
   <*> pure (withNavigations inst)
   where
@@ -314,6 +324,7 @@ renameInstance inst names' assocs' = do
     $ classDiagrams inst
   return $ SelectValidCdInstance {
     classDiagrams   = cds,
+    showSolution    = showSolution inst,
     withNames       = withNames inst,
     withNavigations = withNavigations inst
     }
@@ -388,6 +399,7 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         }
       })
     ],
+  showSolution = False,
   withNames = True,
   withNavigations = True
   }
