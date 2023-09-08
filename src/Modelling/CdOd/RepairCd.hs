@@ -257,8 +257,8 @@ phraseRelation _ _ Aggregation {..}
     #{selfParticipatesPartWhole aggregationPart aggregationWhole}
     |]
   | otherwise = [iii|
-    a relationship that makes #{linking aggregationPart}
-    an aggregation of #{linking aggregationWhole}s
+    a relationship that makes #{linking aggregationWhole}
+    an aggregation of #{linking aggregationPart}s
     #{participations aggregationWhole aggregationPart}
     |]
 phraseRelation _ _ Composition {..}
@@ -267,8 +267,8 @@ phraseRelation _ _ Composition {..}
     #{selfParticipatesPartWhole compositionPart compositionWhole}
     |]
   | otherwise = [iii|
-    a relationship that makes #{linking compositionPart}
-    a composition of #{linking compositionWhole}s
+    a relationship that makes #{linking compositionWhole}
+    a composition of #{linking compositionPart}s
     #{participations compositionWhole compositionPart}
     |]
 
