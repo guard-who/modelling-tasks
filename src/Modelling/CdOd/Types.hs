@@ -19,6 +19,7 @@ module Modelling.CdOd.Types (
   Object (..),
   ObjectConfig (..),
   ObjectDiagram (..),
+  ObjectProperties (..),
   Od,
   Relationship (..),
   RelationshipProperties (..),
@@ -34,6 +35,7 @@ module Modelling.CdOd.Types (
   fromNameMapping,
   linkNames,
   maxFiveObjects,
+  maxObjects,
   maxRels,
   parseLettersPrec,
   parseNamePrec,
@@ -545,14 +547,33 @@ data ObjectConfig = ObjectConfig {
   } deriving (Eq, Generic, Read, Show)
 
 {-|
+Defines structural constraints of an object diagram.
+-}
+data ObjectProperties = ObjectProperties {
+  -- | if there is at least one object for each existing class
+  completelyInhabited         :: !(Maybe Bool),
+  -- | if the number of isolated objects should be restricted
+  hasLimitedIsolatedObjects   :: !Bool,
+  -- | if there are links between the same object
+  hasSelfLoops                :: !(Maybe Bool)
+  } deriving (Eq, Generic, Read, Show)
+
+{-|
 Defines an 'ObjectConfig' demanding at least one but at most five objects
 without restricting links.
 -}
 maxFiveObjects :: ObjectConfig
-maxFiveObjects = ObjectConfig {
+maxFiveObjects = maxObjects 5
+
+{-|
+Defines an 'ObjectConfig' demanding at least one but at most the given number of
+objects without restricting links.
+-}
+maxObjects :: Int -> ObjectConfig
+maxObjects x = ObjectConfig {
   linkLimits                  = (0, Nothing),
   linksPerObjectLimits        = (0, Nothing),
-  objectLimits                = (1, 5)
+  objectLimits                = (1, x)
   }
 
 data RelationshipProperties = RelationshipProperties {

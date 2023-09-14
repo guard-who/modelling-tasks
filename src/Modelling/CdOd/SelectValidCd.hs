@@ -59,6 +59,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   Object (..),
   ObjectDiagram (..),
+  ObjectProperties (..),
   Od,
   Relationship (..),
   associationNames,
@@ -103,7 +104,7 @@ data SelectValidCdConfig = SelectValidCdConfig {
     allowedProperties :: AllowedProperties,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
-    noIsolationLimit :: Bool,
+    objectProperties :: ObjectProperties,
     printNames       :: Bool,
     printNavigations :: Bool,
     printSolution    :: Bool,
@@ -126,7 +127,11 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         relationshipLimits = (4, Just 6)
       },
     maxInstances     = Just 200,
-    noIsolationLimit = False,
+    objectProperties = ObjectProperties {
+      completelyInhabited = Nothing,
+      hasLimitedIsolatedObjects = True,
+      hasSelfLoops = Nothing
+      },
     printNames       = True,
     printNavigations = True,
     printSolution    = False,
@@ -222,7 +227,7 @@ selectValidCd config segment seed = do
   (_, chs)  <- flip evalRandT g $ repairIncorrect
     (allowedProperties config)
     (classConfig config)
-    (noIsolationLimit config)
+    (objectProperties config)
     (maxInstances config)
     (timeout config)
   let cds = map (mapInValidOption changeClassDiagram id id) chs

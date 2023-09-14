@@ -2,7 +2,11 @@
 module Main (main) where
 
 import Common                           (withLang)
-import Modelling.CdOd.Types             (ClassConfig (..), ObjectConfig (..))
+import Modelling.CdOd.Types (
+  ClassConfig (..),
+  ObjectConfig (..),
+  ObjectProperties (..),
+  )
 import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
   matchCdOd,
@@ -31,7 +35,11 @@ main = do
             objectLimits         = (2, 4)
             },
           maxInstances     = Nothing,
-          presenceOfLinkSelfLoops = Nothing,
+          objectProperties = ObjectProperties {
+            completelyInhabited = Nothing,
+            hasLimitedIsolatedObjects = True,
+            hasSelfLoops = Nothing
+            },
           printSolution    = False,
           searchSpace      = 10,
           timeout          = Nothing

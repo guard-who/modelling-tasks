@@ -3,6 +3,7 @@
 module Test.Similarity (
   Deviation (..),
   assertSimilar,
+  debugAssertEqual,
   shouldReturnSimilar,
   ) where
 
@@ -147,7 +148,7 @@ assertSimilar debugFile context deviation expected actual = do
           | length e > context = ".." ++ takeEnd context e
           | otherwise          = e
         (esDiff, asDiff) = (preE ++) `both` diffWithContext context (tail xs)
-    debugWriteFile
+    debugWriteFile debugFile expected actual
     assertEqual "" esDiff asDiff
   let lenEs = length es
       lenAs = length as
@@ -156,18 +157,9 @@ assertSimilar debugFile context deviation expected actual = do
           if lenEs < lenAs
           then ("..", ".." ++ showOriginal (drop lenEs as))
           else (".." ++ showOriginal (drop lenAs es), "..")
-    debugWriteFile
+    debugWriteFile debugFile expected actual
     assertEqual "" expectedEnd actualEnd
   where
-    debugWriteFile
-      | Just file <- debugFile = do
-          let expectedFile = "artifacts/expected/" ++ file
-              actualFile = "artifacts/actual/" ++ file
-          createDirectoryIfMissing True $ takeDirectory expectedFile
-          createDirectoryIfMissing True $ takeDirectory actualFile
-          writeFile expectedFile expected
-          writeFile actualFile actual
-      | otherwise = pure ()
     rejoin (xs : different : same : zs) = xs : rejoin ((different ++ same) : zs)
     rejoin xs = xs
     breakNonEmpty xs = first (map snd) $
@@ -186,3 +178,19 @@ assertSimilar debugFile context deviation expected actual = do
       in if lenSame > context
          then (originalE ++ sameWithDots, originalA ++ sameWithDots)
          else (originalE ++ same ++ es, originalA ++ same ++ as)
+
+debugAssertEqual :: Maybe FilePath -> String -> String -> String -> IO ()
+debugAssertEqual debugFile preface expected actual = do
+  unless (actual == expected) $ debugWriteFile debugFile expected actual
+  assertEqual preface expected actual
+
+debugWriteFile :: Maybe FilePath -> String -> String -> IO ()
+debugWriteFile debugFile expected actual
+  | Just file <- debugFile = do
+      let expectedFile = "artifacts/expected/" ++ file
+          actualFile = "artifacts/actual/" ++ file
+      createDirectoryIfMissing True $ takeDirectory expectedFile
+      createDirectoryIfMissing True $ takeDirectory actualFile
+      writeFile expectedFile expected
+      writeFile actualFile actual
+  | otherwise = pure ()

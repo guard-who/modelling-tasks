@@ -10,6 +10,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   LimitedLinking (..),
   ObjectConfig (objectLimits),
+  ObjectProperties (..),
   Relationship (..),
   maxFiveObjects,
   reverseAssociation,
@@ -221,8 +222,7 @@ drawCdAndOdsFor is c cds cmd = do
       (cd {relationships = map reverseAssociation $ relationships cd})
       []
       maxThreeObjects
-      Nothing
-      False
+      objectProperties
       (show i)
       ""
     shorten (' ':'a':'n':'d':' ':'c':'d':ys) =
@@ -231,3 +231,8 @@ drawCdAndOdsFor is c cds cmd = do
       "not" ++ shorten ys
     shorten (y:ys) = y : shorten ys
     shorten []     = []
+    objectProperties = ObjectProperties {
+      completelyInhabited = Nothing,
+      hasLimitedIsolatedObjects = True,
+      hasSelfLoops = Nothing
+      }

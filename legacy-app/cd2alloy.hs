@@ -5,6 +5,7 @@ import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.CD2Alloy.Transform (Parts (..), createRunCommand, transform)
 import Modelling.CdOd.Types (
   ClassDiagram (..),
+  ObjectProperties (..),
   Relationship (..),
   maxFiveObjects,
   )
@@ -20,7 +21,7 @@ run input output template index = do
   let parsed = parser tokens
   let cd = uncurry toCd parsed
   time <- getZonedTime
-  let parts = transform cd [] maxFiveObjects Nothing False index (show time)
+  let parts = transform cd [] maxFiveObjects objectProperties index (show time)
       p1 = part1 parts
       p2 = part2 parts
       p3 = part3 parts
@@ -45,6 +46,11 @@ run input output template index = do
       relationships = mapMaybe (uncurry toInheritance) cs ++ es
       }
     toInheritance sub super = Inheritance sub <$> super
+    objectProperties = ObjectProperties {
+      completelyInhabited = Nothing,
+      hasLimitedIsolatedObjects = True,
+      hasSelfLoops = Nothing
+      }
 
 main :: IO ()
 main = do

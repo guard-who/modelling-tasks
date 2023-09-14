@@ -67,6 +67,7 @@ fact SizeConstraints {
 fact SomeSelfLoops {
   some o : Obj | o in o.get[FName]
 }
+
 ///////////////////////////////////////////////////
 // Structures potentially common to multiple CDs
 ///////////////////////////////////////////////////

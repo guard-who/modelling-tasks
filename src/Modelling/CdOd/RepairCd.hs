@@ -79,6 +79,7 @@ import Modelling.CdOd.Types (
   Link (..),
   Object (..),
   ObjectDiagram (..),
+  ObjectProperties (..),
   Od,
   Relationship (..),
   RelationshipProperties (..),
@@ -88,7 +89,7 @@ import Modelling.CdOd.Types (
   classNames,
   defaultProperties,
   linkNames,
-  maxFiveObjects,
+  maxObjects,
   relationshipName,
   renameClassesAndRelationshipsInCd,
   renameClassesAndRelationshipsInRelationship,
@@ -352,7 +353,7 @@ data RepairCdConfig = RepairCdConfig {
     allowedProperties :: AllowedProperties,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
-    noIsolationLimit :: Bool,
+    objectProperties :: ObjectProperties,
     printNames       :: Bool,
     printNavigations :: Bool,
     printSolution    :: Bool,
@@ -375,7 +376,11 @@ defaultRepairCdConfig = RepairCdConfig {
         relationshipLimits = (4, Just 6)
       },
     maxInstances     = Just 200,
-    noIsolationLimit = False,
+    objectProperties = ObjectProperties {
+      completelyInhabited = Nothing,
+      hasLimitedIsolatedObjects = True,
+      hasSelfLoops = Nothing
+      },
     printNames       = True,
     printNavigations = True,
     printSolution    = False,
@@ -554,7 +559,7 @@ repairCd config segment seed = do
   (cd, chs) <- flip evalRandT g $ repairIncorrect
     (allowedProperties config)
     (classConfig config)
-    (noIsolationLimit config)
+    (objectProperties config)
     (maxInstances config)
     (timeout config)
   let chs' = map (mapInValidOption relationshipChange id id) chs
@@ -717,11 +722,11 @@ repairIncorrect
   :: RandomGen g
   => AllowedProperties
   -> ClassConfig
-  -> Bool
+  -> ObjectProperties
   -> Maybe Integer
   -> Maybe Int
   -> RandT g IO (Cd, [CdChangeAndCd])
-repairIncorrect allowed config noIsolationLimitation maxInsts to = do
+repairIncorrect allowed config objectProperties maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
   let addLegals
@@ -747,7 +752,7 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
     drawOd' od x =
       drawOd od 0 Back True ("od-" ++ show x)
     getInstanceWithODs _  [] =
-      repairIncorrect allowed config noIsolationLimitation maxInsts to
+      repairIncorrect allowed config objectProperties maxInsts to
     getInstanceWithODs propertyChanges (rinsta:rinstas) = do
       cdInstance <- liftIO $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
@@ -775,18 +780,18 @@ repairIncorrect allowed config noIsolationLimitation maxInsts to = do
         <$> traverse getChangesAndCds changes
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
+          maxNObjects = maxObjects $ snd $ classLimits config
           parts = transform
             (cd {relationships = reversedRelationships})
             []
-            maxFiveObjects
-            Nothing
-            noIsolationLimitation
+            maxNObjects
+            objectProperties
             ""
             ""
           command = createRunCommand
             "cd"
             (length $ classNames cd)
-            maxFiveObjects
+            maxNObjects
             reversedRelationships
             parts
       od <- listToMaybe

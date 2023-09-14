@@ -86,6 +86,7 @@ import Modelling.CdOd.Types (
   Object (..),
   ObjectConfig (..),
   ObjectDiagram (..),
+  ObjectProperties (..),
   Od,
   Relationship (..),
   associationNames,
@@ -156,7 +157,7 @@ data MatchCdOdConfig = MatchCdOdConfig {
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectConfig     :: ObjectConfig,
-    presenceOfLinkSelfLoops :: Maybe Bool,
+    objectProperties :: ObjectProperties,
     printSolution    :: Bool,
     searchSpace      :: Int,
     timeout          :: Maybe Int
@@ -180,7 +181,11 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       linksPerObjectLimits = (0, Just 4),
       objectLimits         = (2, 4)
       },
-    presenceOfLinkSelfLoops = Nothing,
+    objectProperties = ObjectProperties {
+      completelyInhabited = Nothing,
+      hasLimitedIsolatedObjects = True,
+      hasSelfLoops = Nothing
+      },
     printSolution    = False,
     searchSpace      = 10,
     timeout          = Nothing
@@ -689,8 +694,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       (cd {relationships = map reverseAssociation $ relationships cd})
       []
       (objectConfig config)
-      (presenceOfLinkSelfLoops config)
-      False
+      (objectProperties config)
       nr
       ""
     to = timeout config

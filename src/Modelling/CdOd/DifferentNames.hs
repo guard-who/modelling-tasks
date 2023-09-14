@@ -70,6 +70,7 @@ import Modelling.CdOd.Types (
   Object (..),
   ObjectConfig (..),
   ObjectDiagram (..),
+  ObjectProperties (..),
   Od,
   Relationship (..),
   associationNames,
@@ -168,8 +169,8 @@ data DifferentNamesConfig = DifferentNamesConfig {
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
     objectConfig     :: ObjectConfig,
+    objectProperties :: ObjectProperties,
     onlyAnonymousObjects :: Bool,
-    presenceOfLinkSelfLoops :: Maybe Bool,
     -- | whether to enforce one relationship not matching to
     -- any link in the object diagram
     ignoreOneRelationship :: Maybe Bool,
@@ -224,8 +225,12 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
       linksPerObjectLimits = (0, Just 3),
       objectLimits         = (4, 6)
       },
+    objectProperties = ObjectProperties {
+      completelyInhabited = Nothing,
+      hasLimitedIsolatedObjects = True,
+      hasSelfLoops = Nothing
+      },
     onlyAnonymousObjects = True,
-    presenceOfLinkSelfLoops = Nothing,
     ignoreOneRelationship = Just False,
     printSolution    = False,
     withNonTrivialInheritance = Just True,
@@ -525,8 +530,7 @@ getDifferentNamesTask fhead config cd' = do
       cd
       []
       (objectConfig config)
-      (presenceOfLinkSelfLoops config)
-      False
+      (objectProperties config)
       (show n)
       ""
     drawCd' (n, cd) = drawCd

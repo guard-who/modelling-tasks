@@ -17,6 +17,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   LimitedLinking (..),
   ObjectConfig (..),
+  ObjectProperties (..),
   Relationship (..),
   relationshipName,
   )
@@ -48,8 +49,7 @@ transform
   :: Cd
   -> [String]
   -> ObjectConfig
-  -> Maybe Bool
-  -> Bool
+  -> ObjectProperties
   -> String
   -> String
   -> Parts
@@ -57,8 +57,7 @@ transform
   ClassDiagram {classNames, relationships}
   abstractClassNames
   objectConfig
-  hasSelfLoops
-  noIsolationLimitation
+  ObjectProperties {..}
   index
   time =
   Parts { part1, part2, part3, part4 }
@@ -77,16 +76,17 @@ module umlp2alloy/CD#{index}Module
 #{objectsFact}
 #{sizeConstraints}
 #{loops}
+#{inhabitance}
 ///////////////////////////////////////////////////
 // Structures potentially common to multiple CDs
 ///////////////////////////////////////////////////
 |]
     objectsFact :: String
     objectsFact
-      | noIsolationLimitation
-      = noEmptyInstances
-      | otherwise
+      | hasLimitedIsolatedObjects
       = limitIsolatedObjects
+      | otherwise
+      = noEmptyInstances
     limitIsolatedObjects = [i|
 fact LimitIsolatedObjects {
   \#Obj > mul[2, \#{o : Obj | no o.get and no get.o}]
@@ -146,6 +146,16 @@ fact SizeConstraints {
     noCompositions = all (\case Composition {} -> False; _ -> True) relationships
     compositeStructures =
       unlines (compositesAndFieldNames index relationships classNames)
+    inhabitance = case completelyInhabited of
+      Nothing   -> ""
+      Just False -> [i|
+fact NotCompletelyInhabited {
+  #{intercalate " or " $ map ("no " ++) nonAbstractClassNames}
+}|]
+      Just True -> [i|
+fact CompletelyInhabited {
+#{unlines $ map ("  some " ++) nonAbstractClassNames}
+}|]
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just True  -> [i|
