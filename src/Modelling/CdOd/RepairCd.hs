@@ -369,11 +369,11 @@ defaultRepairCdConfig = RepairCdConfig {
         },
     classConfig = ClassConfig {
         classLimits        = (4, 4),
-        aggregationLimits  = (0, Just 2),
-        associationLimits  = (0, Just 2),
-        compositionLimits  = (0, Just 3),
-        inheritanceLimits  = (1, Just 3),
-        relationshipLimits = (4, Just 6)
+        aggregationLimits  = (1, Just 1),
+        associationLimits  = (0, Just 1),
+        compositionLimits  = (2, Just 3),
+        inheritanceLimits  = (0, Just 0),
+        relationshipLimits = (3, Just 5)
       },
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {

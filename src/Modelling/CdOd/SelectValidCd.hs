@@ -115,21 +115,26 @@ data SelectValidCdConfig = SelectValidCdConfig {
 defaultSelectValidCdConfig :: SelectValidCdConfig
 defaultSelectValidCdConfig = SelectValidCdConfig {
     allowedProperties = allowEverything {
-        reverseInheritances    = False,
-        selfInheritances       = False
+        compositionCycles      = False,
+        doubleRelationships    = False,
+        reverseRelationships   = False,
+        selfInheritances       = False,
+        selfRelationships      = False,
+        wrongAssociationLimits = False,
+        wrongCompositionLimits = False
         },
     classConfig = ClassConfig {
         classLimits        = (4, 4),
-        aggregationLimits  = (0, Just 2),
-        associationLimits  = (0, Just 2),
-        compositionLimits  = (0, Just 3),
-        inheritanceLimits  = (1, Just 3),
-        relationshipLimits = (4, Just 6)
+        aggregationLimits  = (0, Just 0),
+        associationLimits  = (0, Just 0),
+        compositionLimits  = (0, Just 0),
+        inheritanceLimits  = (2, Just 4),
+        relationshipLimits = (2, Just 4)
       },
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
-      completelyInhabited = Nothing,
-      hasLimitedIsolatedObjects = True,
+      completelyInhabited = Just True,
+      hasLimitedIsolatedObjects = False,
       hasSelfLoops = Nothing
       },
     printNames       = True,
