@@ -145,8 +145,11 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
   }
 
 checkSelectValidCdConfig :: SelectValidCdConfig -> Maybe String
-checkSelectValidCdConfig SelectValidCdConfig {..} =
-  checkClassConfigAndChanges classConfig allowedProperties
+checkSelectValidCdConfig SelectValidCdConfig {..}
+  | completelyInhabited objectProperties /= Just True
+  = Just "completelyInhabited needs to be set to 'Just True' for this task type"
+  | otherwise
+  = checkClassConfigAndChanges classConfig allowedProperties
 
 type CdChange = InValidOption
   Cd

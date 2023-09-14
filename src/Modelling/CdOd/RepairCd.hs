@@ -391,7 +391,9 @@ defaultRepairCdConfig = RepairCdConfig {
 checkRepairCdConfig :: RepairCdConfig -> Maybe String
 checkRepairCdConfig RepairCdConfig {..}
   | not printNames && useNames
-  = Just "use namess is only possible when printing names"
+  = Just "use names is only possible when printing names"
+  | completelyInhabited objectProperties /= Just True
+  = Just "completelyInhabited needs to be set to 'Just True' for this task type"
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
 
