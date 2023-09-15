@@ -203,6 +203,12 @@ checkDifferentNamesConfig DifferentNamesConfig {..}
       if the maximum number of relationships is not fixed.
       Otherwise task instances would vary too much in complexity.
       |]
+  | fmap not (usesEveryRelationshipName objectProperties)
+    /= ignoreOneRelationship
+  = Just [iii|
+      If 'ignoreOneRelationship' is set, 'usesEveryRelationshipName' must not
+      and vice versa. Or both have to be set to 'Nothing'.
+      |]
   | otherwise = checkClassConfigWithProperties classConfig defaultProperties
   where
     different (_, Nothing) = True
@@ -228,7 +234,8 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     objectProperties = ObjectProperties {
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
-      hasSelfLoops = Nothing
+      hasSelfLoops = Nothing,
+      usesEveryRelationshipName = Just True
       },
     onlyAnonymousObjects = True,
     ignoreOneRelationship = Just False,

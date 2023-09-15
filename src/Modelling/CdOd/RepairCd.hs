@@ -379,7 +379,8 @@ defaultRepairCdConfig = RepairCdConfig {
     objectProperties = ObjectProperties {
       completelyInhabited = Just True,
       hasLimitedIsolatedObjects = True,
-      hasSelfLoops = Nothing
+      hasSelfLoops = Nothing,
+      usesEveryRelationshipName = Just True
       },
     printNames       = True,
     printNavigations = True,
@@ -394,6 +395,10 @@ checkRepairCdConfig RepairCdConfig {..}
   = Just "use names is only possible when printing names"
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
+  | usesEveryRelationshipName objectProperties /= Just True
+  = Just [iii|
+      usesEveryRelationshipName needs to be set to 'Just True' for this task type
+      |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
 

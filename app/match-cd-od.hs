@@ -38,7 +38,8 @@ main = do
           objectProperties = ObjectProperties {
             completelyInhabited = Nothing,
             hasLimitedIsolatedObjects = True,
-            hasSelfLoops = Nothing
+            hasSelfLoops = Nothing,
+            usesEveryRelationshipName = Nothing
             },
           printSolution    = False,
           searchSpace      = 10,

@@ -96,7 +96,7 @@ import Data.Either                      (isRight, partitionEithers)
 import Data.Foldable                    (for_)
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe)
-import Data.String.Interpolate          (i)
+import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
 
@@ -135,7 +135,8 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
     objectProperties = ObjectProperties {
       completelyInhabited = Just True,
       hasLimitedIsolatedObjects = False,
-      hasSelfLoops = Nothing
+      hasSelfLoops = Nothing,
+      usesEveryRelationshipName = Just True
       },
     printNames       = True,
     printNavigations = True,
@@ -148,6 +149,10 @@ checkSelectValidCdConfig :: SelectValidCdConfig -> Maybe String
 checkSelectValidCdConfig SelectValidCdConfig {..}
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
+  | usesEveryRelationshipName objectProperties /= Just True
+  = Just [iii|
+      usesEveryRelationshipName needs to be set to 'Just True' for this task type
+      |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
 

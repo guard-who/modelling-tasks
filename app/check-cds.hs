@@ -234,5 +234,6 @@ drawCdAndOdsFor is c cds cmd = do
     objectProperties = ObjectProperties {
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
-      hasSelfLoops = Nothing
+      hasSelfLoops = Nothing,
+      usesEveryRelationshipName = Nothing
       }

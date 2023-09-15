@@ -555,7 +555,10 @@ data ObjectProperties = ObjectProperties {
   -- | if the number of isolated objects should be restricted
   hasLimitedIsolatedObjects   :: !Bool,
   -- | if there are links between the same object
-  hasSelfLoops                :: !(Maybe Bool)
+  hasSelfLoops                :: !(Maybe Bool),
+  -- | if there is at least one link
+  -- for every association, aggregation and composition
+  usesEveryRelationshipName   :: !(Maybe Bool)
   } deriving (Eq, Generic, Read, Show)
 
 {-|

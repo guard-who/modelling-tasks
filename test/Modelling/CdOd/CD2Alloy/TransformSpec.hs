@@ -30,5 +30,6 @@ spec = do
     objectProperties = ObjectProperties {
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
-      hasSelfLoops = Just True
+      hasSelfLoops = Just True,
+      usesEveryRelationshipName = Nothing
       }

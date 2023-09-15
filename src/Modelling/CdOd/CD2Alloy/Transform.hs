@@ -77,6 +77,7 @@ module umlp2alloy/CD#{index}Module
 #{sizeConstraints}
 #{loops}
 #{inhabitance}
+#{relationshipNameAppearance}
 ///////////////////////////////////////////////////
 // Structures potentially common to multiple CDs
 ///////////////////////////////////////////////////
@@ -156,6 +157,19 @@ fact NotCompletelyInhabited {
 fact CompletelyInhabited {
 #{unlines $ map ("  some " ++) nonAbstractClassNames}
 }|]
+    relationshipNameAppearance = case usesEveryRelationshipName of
+      Nothing -> ""
+      Just False -> [i|
+fact UsesNotEveryRelationshipName {
+  #{intercalate " or " $ map ("no " ++) namesLinkingTo}
+}|]
+      Just True -> [i|
+fact UsesEveryRelationshipName {
+#{unlines $ map ("  some " ++) namesLinkingTo}
+}|]
+    namesLinkingTo = mapMaybe
+      (fmap (\name -> "Obj.get[" ++ name ++ "]") . relationshipName)
+      relationships
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just True  -> [i|

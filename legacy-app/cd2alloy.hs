@@ -49,7 +49,8 @@ run input output template index = do
     objectProperties = ObjectProperties {
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
-      hasSelfLoops = Nothing
+      hasSelfLoops = Nothing,
+      usesEveryRelationshipName = Nothing
       }
 
 main :: IO ()
