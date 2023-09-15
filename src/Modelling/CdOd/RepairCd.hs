@@ -18,6 +18,7 @@ module Modelling.CdOd.RepairCd (
   mapInValidOption,
   mapInValidOptionM,
   phraseChange,
+  phraseChangeDE,
   renameInstance,
   repairCd,
   repairCdEvaluation,

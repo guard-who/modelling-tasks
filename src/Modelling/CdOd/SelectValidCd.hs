@@ -27,6 +27,7 @@ import qualified Data.Map                         as M (
   insert,
   keys,
   toList,
+  traverseWithKey,
   )
 
 import Modelling.Auxiliary.Common (
@@ -49,9 +50,11 @@ import Modelling.CdOd.RepairCd (
   checkClassConfigAndChanges,
   mapInValidOption,
   mapInValidOptionM,
+  phraseChange,
+  phraseChangeDE,
   repairIncorrect,
   )
-import Modelling.CdOd.Output            (cacheCd)
+import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
   Change (..),
@@ -89,11 +92,13 @@ import Control.Monad.Output (
   singleChoiceSyntax,
   translate,
   )
+import Control.Monad.Output.Generic     (($>>=))
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight, partitionEithers)
 import Data.Foldable                    (for_)
+import Data.GraphViz                    (DirType (Back))
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe)
 import Data.String.Interpolate          (i, iii)
@@ -211,11 +216,12 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
       in M.insert x ((isRight $ hint theChange,) <$> f) cds
 
 selectValidCdEvaluation
-  :: OutputMonad m
-  => SelectValidCdInstance
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> SelectValidCdInstance
   -> [Int]
   -> Rated m
-selectValidCdEvaluation inst xs = addPretext $ do
+selectValidCdEvaluation path inst xs = addPretext $ do
   let cds = M.fromList [
         (English, "class diagrams"),
         (German, "Klassendiagramme")
@@ -225,6 +231,60 @@ selectValidCdEvaluation inst xs = addPretext $ do
         | showSolution inst = Just $ show $ selectValidCdSolution inst
         | otherwise = Nothing
   multipleChoice cds correctAnswer solution xs
+    $>>= \x -> M.traverseWithKey
+      (selectValidCdFeedback path (withNavigations inst) (withNames inst) xs)
+      (classDiagrams inst)
+    $>>= const $ pure x
+
+selectValidCdFeedback
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> Bool
+  -> Bool
+  -> [Int]
+  -> Int
+  -> CdChange
+  -> LangM m
+selectValidCdFeedback path withDir byName xs x cdChange =
+  case hint cdChange of
+    Left change | x `elem` xs -> do
+      notCorrect
+      paragraph $ translate $ do
+        english [iii|
+          Class diagram #{x} is in fact invalid.
+          Consider the following change, which aims at fixing a
+          problematic situation within the given class diagram:
+          #{phraseChange byName withDir change}.
+          |]
+        german [iii|
+          Klassendiagramm #{x} ist ungültig.
+          Sehen Sie sich die folgende Änderung an, die darauf abzielt eine
+          problematische Stelle im Klassendiagramm zu beheben:
+          #{phraseChangeDE byName withDir change}.
+          |]
+      pure ()
+    Right od | x `notElem` xs -> do
+      notCorrect
+      paragraph $ translate $ do
+        english [iii|
+          Class diagram #{x} is in fact valid.
+          Consider the following object diagram, which is an instance of the
+          class diagram:
+          |]
+        german [iii|
+          Klassendiagramm #{x} ist gültig.
+          Betrachten Sie zum Beispiel das folgende Objektdiagramm,
+          das Instanz des Klassendiagramms ist:
+          |]
+      paragraph $ image $=<< liftIO
+        $ flip evalRandT (mkStdGen 0)
+        $ cacheOd od 0 Back True path
+      pure ()
+    _ -> pure ()
+  where
+    notCorrect = paragraph $ translate $ do
+      english [iii|Your answer to class diagram #{x} is not correct.|]
+      german [iii|Ihre Antwort zu Klassendiagramm #{x} ist nicht richtig.|]
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
 selectValidCdSolution =
