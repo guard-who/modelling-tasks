@@ -377,7 +377,7 @@ defaultRepairCdConfig = RepairCdConfig {
       },
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
-      completelyInhabited = Nothing,
+      completelyInhabited = Just True,
       hasLimitedIsolatedObjects = True,
       hasSelfLoops = Nothing
       },
