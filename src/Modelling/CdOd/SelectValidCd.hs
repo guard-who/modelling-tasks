@@ -8,6 +8,7 @@ module Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (..),
   SelectValidCdInstance (..),
   checkSelectValidCdConfig,
+  checkSelectValidCdInstance,
   defaultSelectValidCdConfig,
   defaultSelectValidCdInstance,
   selectValidCd,
@@ -76,7 +77,7 @@ import Modelling.CdOd.Types (
   shuffleObjectAndLinkOrder,
   )
 
-import Control.Monad                    ((>=>))
+import Control.Monad                    ((>=>), void, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
@@ -92,7 +93,7 @@ import Control.Monad.Output (
   singleChoiceSyntax,
   translate,
   )
-import Control.Monad.Output.Generic     (($>>=))
+import Control.Monad.Output.Generic     (($>>), ($>>=))
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Data.Containers.ListUtils        (nubOrd)
@@ -110,6 +111,9 @@ data SelectValidCdConfig = SelectValidCdConfig {
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
+    -- | when enabled feedback for wrong answers will be shown
+    -- this might include ODs
+    printExtendedFeedback :: Bool,
     printNames       :: Bool,
     printNavigations :: Bool,
     printSolution    :: Bool,
@@ -143,6 +147,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
       hasSelfLoops = Nothing,
       usesEveryRelationshipName = Just True
       },
+    printExtendedFeedback = False,
     printNames       = True,
     printNavigations = True,
     printSolution    = False,
@@ -158,6 +163,11 @@ checkSelectValidCdConfig SelectValidCdConfig {..}
   = Just [iii|
       usesEveryRelationshipName needs to be set to 'Just True' for this task type
       |]
+  | printExtendedFeedback && not printSolution
+  = Just [iii|
+      printExtendedFeedback leaks the correct solution
+      and thus can only be enabled when printSolution is set to True
+      |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
 
@@ -168,10 +178,23 @@ type CdChange = InValidOption
 
 data SelectValidCdInstance = SelectValidCdInstance {
     classDiagrams   :: Map Int CdChange,
+    -- | when enabled feedback for wrong answers will be shown
+    -- this might include ODs
+    showExtendedFeedback :: Bool,
     showSolution    :: Bool,
     withNames       :: Bool,
     withNavigations :: Bool
   } deriving (Generic, Read, Show)
+
+checkSelectValidCdInstance :: SelectValidCdInstance -> Maybe String
+checkSelectValidCdInstance SelectValidCdInstance {..}
+  | showExtendedFeedback && not showSolution
+  = Just [iii|
+      showExtendedFeedback leaks the correct solution
+      and thus can only be enabled when showSolution is set to True
+      |]
+  | otherwise
+  = Nothing
 
 selectValidCdSyntax :: OutputMonad m => SelectValidCdInstance -> [Int] -> LangM m
 selectValidCdSyntax inst xs =
@@ -231,10 +254,12 @@ selectValidCdEvaluation path inst xs = addPretext $ do
         | showSolution inst = Just $ show $ selectValidCdSolution inst
         | otherwise = Nothing
   multipleChoice cds correctAnswer solution xs
-    $>>= \x -> M.traverseWithKey
-      (selectValidCdFeedback path (withNavigations inst) (withNames inst) xs)
-      (classDiagrams inst)
-    $>>= const $ pure x
+    $>>= \x -> when (showExtendedFeedback inst) (
+      void $ M.traverseWithKey
+        (selectValidCdFeedback path (withNavigations inst) (withNames inst) xs)
+        (classDiagrams inst)
+      )
+    $>> pure x
 
 selectValidCdFeedback
   :: (MonadIO m, OutputMonad m)
@@ -306,6 +331,7 @@ selectValidCd config segment seed = do
   let cds = map (mapInValidOption changeClassDiagram id id) chs
   shuffleCds >=> shuffleEverything $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
+    showExtendedFeedback = printExtendedFeedback config,
     showSolution    = printSolution config,
     withNames       = printNames config,
     withNavigations = printNavigations config
@@ -332,6 +358,7 @@ instance RandomiseLayout SelectValidCdInstance where
       `mapM` classDiagrams
     return $ SelectValidCdInstance {
       classDiagrams           = cds,
+      showExtendedFeedback    = showExtendedFeedback,
       showSolution            = showSolution,
       withNames               = withNames,
       withNavigations         = withNavigations
@@ -353,6 +380,7 @@ shuffleEach inst@SelectValidCdInstance {..} = do
     `mapM` classDiagrams
   return $ SelectValidCdInstance {
     classDiagrams           = cds,
+    showExtendedFeedback    = showExtendedFeedback,
     showSolution            = showSolution,
     withNames               = withNames,
     withNavigations         = withNavigations
@@ -367,6 +395,7 @@ shuffleInstance
 shuffleInstance inst = SelectValidCdInstance
   <$> (M.fromAscList . zipWith replaceId [1..]
        <$> shuffleM (M.toList $ classDiagrams inst))
+  <*> pure (showExtendedFeedback inst)
   <*> pure (showSolution inst)
   <*> pure (withNames inst)
   <*> pure (withNavigations inst)
@@ -402,6 +431,7 @@ renameInstance inst names' assocs' = do
     $ classDiagrams inst
   return $ SelectValidCdInstance {
     classDiagrams   = cds,
+    showExtendedFeedback = showExtendedFeedback inst,
     showSolution    = showSolution inst,
     withNames       = withNames inst,
     withNavigations = withNavigations inst
@@ -477,6 +507,7 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         }
       })
     ],
+  showExtendedFeedback = False,
   showSolution = False,
   withNames = True,
   withNavigations = True
