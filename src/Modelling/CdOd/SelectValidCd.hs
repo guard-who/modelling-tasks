@@ -53,6 +53,8 @@ import Modelling.CdOd.RepairCd (
   mapInValidOptionM,
   phraseChange,
   phraseChangeDE,
+  phraseRelation,
+  phraseRelationDE,
   repairIncorrect,
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
@@ -274,19 +276,33 @@ selectValidCdFeedback path withDir byName xs x cdChange =
   case hint cdChange of
     Left change | x `elem` xs -> do
       notCorrect
-      paragraph $ translate $ do
-        english [iii|
-          Class diagram #{x} is in fact invalid.
-          Consider the following change, which aims at fixing a
-          problematic situation within the given class diagram:
-          #{phraseChange byName withDir change}.
-          |]
-        german [iii|
-          Klassendiagramm #{x} ist ungültig.
-          Sehen Sie sich die folgende Änderung an, die darauf abzielt eine
-          problematische Stelle im Klassendiagramm zu beheben:
-          #{phraseChangeDE byName withDir change}.
-          |]
+      paragraph $ translate $ case remove change of
+        Nothing -> do
+          english [iii|
+            Class diagram #{x} is in fact invalid.
+            Consider the following change, which aims at fixing a
+            problematic situation within the given class diagram:
+            #{phraseChange byName withDir change}.
+            |]
+          german [iii|
+            Klassendiagramm #{x} ist ungültig.
+            Sehen Sie sich die folgende Änderung an, die darauf abzielt eine
+            problematische Stelle im Klassendiagramm zu beheben:
+            #{phraseChangeDE byName withDir change}.
+            |]
+        Just relation -> do
+          english [iii|
+            Class diagram #{x} is in fact invalid.
+            Within the diagram
+            #{phraseRelation byName withDir relation}
+            is problematic.
+            |]
+          german [iii|
+            Klassendiagramm #{x} ist ungültig.
+            Im Diagramm ist
+            #{phraseRelationDE byName withDir relation}
+            problematisch.
+            |]
       pure ()
     Right od | x `notElem` xs -> do
       notCorrect
