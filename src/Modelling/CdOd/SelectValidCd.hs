@@ -56,6 +56,7 @@ import Modelling.CdOd.RepairCd (
   phraseRelation,
   phraseRelationDE,
   repairIncorrect,
+  trailingCommaDE,
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
@@ -293,15 +294,15 @@ selectValidCdFeedback path withDir byName xs x cdChange =
         Just relation -> do
           english [iii|
             Class diagram #{x} is in fact invalid.
-            Within the diagram
+            If there would not be
             #{phraseRelation byName withDir relation}
-            is problematic.
+            it would be valid.
             |]
           german [iii|
             Klassendiagramm #{x} ist ungültig.
-            Im Diagramm ist
-            #{phraseRelationDE byName withDir relation}
-            problematisch.
+            Wenn es
+            #{trailingCommaDE $ phraseRelationDE byName withDir relation}
+            nicht gäbe, wäre es gültig.
             |]
       pure ()
     Right od | x `notElem` xs -> do

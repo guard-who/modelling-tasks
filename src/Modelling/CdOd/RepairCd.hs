@@ -28,6 +28,7 @@ module Modelling.CdOd.RepairCd (
   repairCdSyntax,
   repairCdTask,
   repairIncorrect,
+  trailingCommaDE,
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
@@ -142,13 +143,15 @@ debug = False
 phraseChangeDE :: Bool -> Bool -> Change (Relationship String String) -> String
 phraseChangeDE byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "verändere nichts"
-  (Just a,  Nothing) -> "ergänze " ++ trailingComma (phraseRelationDE False withDir a)
+  (Just a,  Nothing) -> "ergänze "
+    ++ trailingCommaDE (phraseRelationDE False withDir a)
   (Nothing, Just e)  -> "entferne " ++ phraseRelationDE byName withDir e
   (Just a,  Just e)  ->
-    "ersetze " ++ trailingComma (phraseRelationDE byName withDir e)
+    "ersetze " ++ trailingCommaDE (phraseRelationDE byName withDir e)
     ++ " durch " ++ phraseRelationDE False withDir a
-  where
-    trailingComma xs
+
+trailingCommaDE :: String -> String
+trailingCommaDE xs
       | ',' `elem` xs = xs ++ ","
       | otherwise     = xs
 
