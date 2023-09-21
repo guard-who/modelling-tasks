@@ -46,6 +46,7 @@ import qualified Data.Map                         as M (
   fromAscList,
   keys,
   toList,
+  traverseWithKey,
   )
 
 import Modelling.Auxiliary.Common (
@@ -80,9 +81,6 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
-  Link (..),
-  Object (..),
-  ObjectDiagram (..),
   ObjectProperties (..),
   Od,
   Relationship (..),
@@ -92,15 +90,12 @@ import Modelling.CdOd.Types (
   checkClassConfigWithProperties,
   classNames,
   defaultProperties,
-  linkNames,
   maxObjects,
   relationshipName,
   renameClassesAndRelationshipsInCd,
   renameClassesAndRelationshipsInRelationship,
-  renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
-  shuffleObjectAndLinkOrder,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
@@ -127,7 +122,7 @@ import Control.Monad.Random
 import Data.Bifunctor                   (bimap, second)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.Either                      (isRight, partitionEithers)
+import Data.Either                      (isRight)
 import Data.Either.Extra                (eitherToMaybe)
 import Data.Foldable                    (for_)
 import Data.GraphViz                    (DirType (..))
@@ -325,8 +320,8 @@ type CdChangeAndCd = InValidOption
 
 type RelationshipChange = InValidOption
   (Change (Relationship String String))
-  (Change (Relationship String String))
-  Od
+  Cd
+  Cd
 
 data InValidOption option forInvalidity forValidity = InValidOption {
   hint :: Either forInvalidity forValidity,
@@ -468,8 +463,13 @@ repairCdSyntax :: OutputMonad m => RepairCdInstance -> [Int] -> LangM m
 repairCdSyntax inst xs =
   for_ xs $ singleChoiceSyntax False (M.keys $ changes inst)
 
-repairCdEvaluation :: OutputMonad m => RepairCdInstance -> [Int] -> Rated m
-repairCdEvaluation inst xs = addPretext $ do
+repairCdEvaluation
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> RepairCdInstance
+  -> [Int]
+  -> Rated m
+repairCdEvaluation path inst xs = addPretext $ do
   let chs = M.fromAscList [
         (English, "changes"),
         (German, "Änderungen")
@@ -478,7 +478,46 @@ repairCdEvaluation inst xs = addPretext $ do
       correctAnswer
         | showSolution inst = Just $ show $ repairCdSolution inst
         | otherwise = Nothing
-  multipleChoice chs correctAnswer solution xs
+  x <- multipleChoice chs correctAnswer solution xs
+  M.traverseWithKey
+    (repairCdFeedback path (withDirections inst) (withNames inst) xs)
+    (changes inst)
+  pure x
+
+repairCdFeedback
+  :: (MonadIO m, OutputMonad m)
+  => FilePath
+  -> Bool
+  -> Bool
+  -> [Int]
+  -> Int
+  -> RelationshipChange
+  -> LangM m
+repairCdFeedback path withDir byName xs x cdChange =
+  case hint cdChange of
+    Left cd
+      | x `elem` xs -> notCorrect *> makesCorrect *> showCd cd
+      | otherwise   -> correct *> makesIncorrect *> showCd cd
+    Right cd
+      | x `elem` xs -> correct *> makesCorrect *> showCd cd
+      | otherwise   -> notCorrect *> makesIncorrect *> showCd cd
+  where
+    correct = paragraph $ translate $ do
+      english [iii|Your answer to change #{x} is correct.|]
+      german [iii|Ihre Antwort zu Änderung #{x} ist richtig.|]
+    notCorrect = paragraph $ translate $ do
+      english [iii|Your answer to change #{x} is not correct.|]
+      german [iii|Ihre Antwort zu Änderung #{x} ist nicht richtig.|]
+    makesCorrect = paragraph $ translate $ do
+      english [iii|It repairs the class diagram as it results in:|]
+      german [iii|Es repariert das Klassendiagramm, da es dann so aussieht:|]
+    makesIncorrect = paragraph $ translate $ do
+      english [iii|It does not repair the class diagram as it results in:|]
+      german [iii|
+        Es repariert das Klassendiagramm nicht, da es dann so aussieht:
+        |]
+    showCd cd = paragraph $
+      image $=<< liftIO $ cacheCd withDir byName mempty cd path
 
 repairCdSolution :: RepairCdInstance -> [Int]
 repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
@@ -495,15 +534,14 @@ classAndAssocNames :: RepairCdInstance -> ([String], [String])
 classAndAssocNames inst =
   let cd = classDiagram inst
       allChs = M.elems $ changes inst
+      cds = map (either id id . hint) allChs
       chs = map option allChs
-      (improves, evidences) = partitionEithers $ map hint allChs
-      names = classNames cd
+      names = nubOrd $ classNames cd
+        ++ concatMap classNames cds
       assocs = nubOrd $ associationNames cd
         ++ mapMaybe (add >=> relationshipName) chs
         ++ mapMaybe (remove >=> relationshipName) chs
-        ++ mapMaybe (add >=> relationshipName) improves
-        ++ mapMaybe (remove >=> relationshipName) improves
-        ++ concatMap linkNames evidences
+        ++ concatMap associationNames cds
   in (names, assocs)
 
 instance Randomise RepairCdInstance where
@@ -517,7 +555,10 @@ instance Randomise RepairCdInstance where
 instance RandomiseLayout RepairCdInstance where
   randomiseLayout RepairCdInstance {..} = do
     cd <- shuffleClassAndConnectionOrder classDiagram
-    changes' <- mapInValidOptionM pure pure shuffleObjectAndLinkOrder
+    changes' <- mapInValidOptionM
+      pure
+      shuffleClassAndConnectionOrder
+      shuffleClassAndConnectionOrder
       `mapM` changes
     return RepairCdInstance {
       changes = changes',
@@ -549,10 +590,9 @@ renameInstance inst names' assocs' = do
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
-      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
       renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
   cd <- renameCd $ classDiagram inst
-  chs <- mapM (mapInValidOptionM (mapM renameEdge) (mapM renameEdge) renameOd)
+  chs <- mapM (mapInValidOptionM (mapM renameEdge) renameCd renameCd)
     $ changes inst
   return $ RepairCdInstance {
     changes        = chs,
@@ -575,154 +615,213 @@ repairCd config segment seed = do
     (objectProperties config)
     (maxInstances config)
     (timeout config)
-  let chs' = map (mapInValidOption relationshipChange id id) chs
+  let chs' = map cdAsHint chs
   shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
     (printSolution config)
     (printNavigations config)
     (printNames config && useNames config)
+  where
+    cdAsHint x =
+      let cd _ = changeClassDiagram $ option x
+      in mapInValidOption relationshipChange cd cd x
 
 defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
   changes = M.fromAscList [
     (1, InValidOption {
-      hint = Right $ ObjectDiagram {
-        objects = [
-          Object {objectName = "c2", objectClass = "C"},
-          Object {objectName = "a", objectClass = "A"},
-          Object {objectName = "c", objectClass = "C"},
-          Object {objectName = "d", objectClass = "D"},
-          Object {objectName = "c1", objectClass = "C"}
-          ],
-        links = [
-          Link {linkName = "v", linkFrom = "c2", linkTo = "d"},
-          Link {linkName = "v", linkFrom = "c1", linkTo = "d"},
-          Link {linkName = "x", linkFrom = "d", linkTo = "a"}
+      hint = Left $ ClassDiagram {
+        classNames = ["A", "D", "B", "C"],
+        relationships = [
+          Composition {
+            compositionName = "x",
+            compositionPart =
+              LimitedLinking {linking = "B", limits = (0, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "D", limits = (0, Just 1)}
+            },
+          Composition {
+            compositionName = "v",
+            compositionPart =
+              LimitedLinking {linking = "A", limits = (1, Just 0)},
+            compositionWhole =
+              LimitedLinking {linking = "C", limits = (0, Just 1)}
+            },
+          Aggregation {
+            aggregationName = "z",
+            aggregationPart =
+              LimitedLinking {linking = "A", limits = (0, Just 1)},
+            aggregationWhole =
+              LimitedLinking {linking = "B", limits = (0, Just 1)}
+            }
           ]
         },
       option = Change {
         add = Nothing,
         remove = Just $ Composition {
-          compositionName = "w",
-          compositionPart =
-            LimitedLinking {linking = "B", limits = (2, Just 2)},
-          compositionWhole =
-            LimitedLinking {linking = "A", limits = (0, Just 1)}
+          compositionName = "y",
+          compositionPart = LimitedLinking {linking = "D", limits = (0, Just 2)},
+          compositionWhole = LimitedLinking {linking = "A", limits = (0, Just 1)}
           }
         }
       }),
     (2, InValidOption {
-      hint = Right $ ObjectDiagram {
-        objects = [
-          Object {objectName = "b1", objectClass = "B"},
-          Object {objectName = "b", objectClass = "B"},
-          Object {objectName = "a", objectClass = "A"}
-          ],
-        links = [
-          Link {linkName = "w", linkFrom = "a", linkTo = "b1"},
-          Link {linkName = "w", linkFrom = "a", linkTo = "b"}
+      hint = Right $ ClassDiagram {
+        classNames = ["D", "B", "A", "C"],
+        relationships = [
+          Composition {
+            compositionName = "x",
+            compositionPart =
+              LimitedLinking {linking = "B", limits = (0, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "D", limits = (0, Just 1)}
+            },
+          Aggregation {
+            aggregationName = "z",
+            aggregationPart =
+              LimitedLinking {linking = "A", limits = (0, Just 1)},
+            aggregationWhole =
+              LimitedLinking {linking = "B", limits = (0, Just 1)}
+            },
+          Composition {
+            compositionName = "v",
+            compositionPart =
+              LimitedLinking {linking = "A", limits = (1, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "C", limits = (0, Just 1)}
+            },
+          Composition {
+            compositionName = "y",
+            compositionPart =
+              LimitedLinking {linking = "D", limits = (0, Just 2)},
+            compositionWhole =
+              LimitedLinking {linking = "A", limits = (0, Just 1)}
+            }
           ]
         },
       option = Change {
-        add = Nothing,
+        add = Just $ Composition {
+          compositionName = "w",
+          compositionPart = LimitedLinking {linking = "A", limits = (1, Just 1)},
+          compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
+          },
         remove = Just $ Composition {
-          compositionName = "y",
-          compositionPart =
-            LimitedLinking {linking = "D", limits = (2, Just 2)},
-          compositionWhole =
-            LimitedLinking {linking = "B", limits = (0, Just 1)}
+          compositionName = "v",
+          compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
+          compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
           }
         }
       }),
     (3, InValidOption {
-      hint = Right $ ObjectDiagram {
-        objects = [
-          Object {objectName = "c", objectClass = "C"},
-          Object {objectName = "c1", objectClass = "C"},
-          Object {objectName = "d", objectClass = "D"}
-          ],
-        links = [
-          Link {linkName = "v", linkFrom = "c", linkTo = "d"},
-          Link {linkName = "v", linkFrom = "c1", linkTo = "d"}
+      hint = Right $ ClassDiagram {
+        classNames = ["C", "A", "B", "D"],
+        relationships = [
+          Composition {
+            compositionName = "y",
+            compositionPart =
+              LimitedLinking {linking = "D", limits = (0, Just 2)},
+            compositionWhole =
+              LimitedLinking {linking = "A", limits = (0, Just 1)}
+            },
+          Aggregation {
+            aggregationName = "z",
+            aggregationPart =
+              LimitedLinking {linking = "A", limits = (0, Just 1)},
+            aggregationWhole =
+              LimitedLinking {linking = "B", limits = (0, Just 1)}
+            },
+          Composition {
+            compositionName = "x",
+            compositionPart =
+              LimitedLinking {linking = "B", limits = (0, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "D", limits = (0, Just 1)}
+            }
           ]
         },
       option = Change {
         add = Nothing,
         remove = Just $ Composition {
-          compositionName = "x",
-          compositionPart =
-            LimitedLinking {linking = "A", limits = (1, Just 2)},
-          compositionWhole =
-            LimitedLinking {linking = "D", limits = (0, Just 1)}
+          compositionName = "v",
+          compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
+          compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
           }
         }
       }),
     (4, InValidOption {
-      hint = Left $ Change {
-        add = Just $ Aggregation {
-          aggregationName = "v",
-          aggregationPart =
-            LimitedLinking {linking = "D", limits = (2, Nothing)},
-          aggregationWhole =
-            LimitedLinking {linking = "B", limits = (0, Just 1)}
-          },
-        remove = Just $ Composition {
-          compositionName = "z",
-          compositionPart =
-            LimitedLinking {linking = "D", limits = (2, Nothing)},
-          compositionWhole =
-            LimitedLinking {linking = "B", limits = (0, Just 1)}
-          }
+      hint = Left $ ClassDiagram {
+        classNames = ["A", "D", "B", "C"],
+        relationships = [
+          Association {
+            associationName = "u",
+            associationFrom =
+              LimitedLinking {linking = "C", limits = (2, Just 2)},
+            associationTo =
+              LimitedLinking {linking = "A", limits = (2, Just 2)}
+            },
+          Composition {
+            compositionName = "y",
+            compositionPart =
+              LimitedLinking {linking = "D", limits = (0, Just 2)},
+            compositionWhole =
+              LimitedLinking {linking = "A", limits = (0, Just 1)}
+            },
+          Aggregation {
+            aggregationName = "z",
+            aggregationPart =
+              LimitedLinking {linking = "A", limits = (0, Just 1)},
+            aggregationWhole =
+              LimitedLinking {linking = "B", limits = (0, Just 1)}
+            },
+          Composition {
+            compositionName = "v",
+            compositionPart =
+              LimitedLinking {linking = "A", limits = (1, Just 0)},
+            compositionWhole =
+              LimitedLinking {linking = "C", limits = (0, Just 1)}
+            },
+          Composition {
+            compositionName = "x",
+            compositionPart =
+              LimitedLinking {linking = "B", limits = (0, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "D", limits = (0, Just 1)}
+            }
+          ]
         },
       option = Change {
-        add = Just $ Composition {
-          compositionName = "z",
-          compositionPart =
-            LimitedLinking {linking = "D", limits = (2, Nothing)},
-          compositionWhole =
-            LimitedLinking {linking = "B", limits = (0, Just 1)}
+        add = Just $ Association {
+          associationName = "u",
+          associationFrom = LimitedLinking {linking = "C", limits = (2, Just 2)},
+          associationTo = LimitedLinking {linking = "A", limits = (2, Just 2)}
           },
-        remove = Just $ Composition {
-          compositionName = "y",
-          compositionPart =
-            LimitedLinking {linking = "D", limits = (2, Just 2)},
-          compositionWhole =
-            LimitedLinking {linking = "B", limits = (0, Just 1)}
-          }
+        remove = Nothing
         }
       })
     ],
   classDiagram = ClassDiagram {
-    classNames = ["A", "C", "D", "B"],
+    classNames = ["D", "A", "C", "B"],
     relationships = [
       Composition {
-        compositionName = "w",
-        compositionPart =
-          LimitedLinking {linking = "B", limits = (2, Just 2)},
-        compositionWhole =
-          LimitedLinking {linking = "A", limits = (0, Just 1)}
+        compositionName = "x",
+        compositionPart = LimitedLinking {linking = "B", limits = (0, Just 1)},
+        compositionWhole = LimitedLinking {linking = "D", limits = (0, Just 1)}
+        },
+      Aggregation {
+        aggregationName = "z",
+        aggregationPart = LimitedLinking {linking = "A", limits = (0, Just 1)},
+        aggregationWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
         },
       Composition {
-        compositionName = "x",
-        compositionPart =
-          LimitedLinking {linking = "A", limits = (1, Just 2)},
-        compositionWhole =
-          LimitedLinking {linking = "D", limits = (0, Just 1)}
-        },
-      Association {
-        associationName = "v",
-        associationFrom =
-          LimitedLinking {linking = "D", limits = (0, Just 1)},
-        associationTo =
-          LimitedLinking {linking = "C", limits = (2, Just 2)}
+        compositionName = "v",
+        compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
+        compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
         },
       Composition {
         compositionName = "y",
-        compositionPart =
-          LimitedLinking {linking = "D", limits = (2, Just 2)},
-        compositionWhole =
-          LimitedLinking {linking = "B", limits = (0, Just 1)}
+        compositionPart = LimitedLinking {linking = "D", limits = (0, Just 2)},
+        compositionWhole = LimitedLinking {linking = "A", limits = (0, Just 1)}
         }
       ]
     },
