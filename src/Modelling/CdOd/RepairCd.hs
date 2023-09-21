@@ -11,6 +11,7 @@ module Modelling.CdOd.RepairCd (
   RepairCdInstance (..),
   checkClassConfigAndChanges,
   checkRepairCdConfig,
+  checkRepairCdInstance,
   classAndAssocNames,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
@@ -355,6 +356,7 @@ data RepairCdConfig = RepairCdConfig {
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
+    printExtendedFeedback :: Bool,
     printNames       :: Bool,
     printNavigations :: Bool,
     printSolution    :: Bool,
@@ -383,6 +385,7 @@ defaultRepairCdConfig = RepairCdConfig {
       hasSelfLoops = Nothing,
       usesEveryRelationshipName = Just True
       },
+    printExtendedFeedback = False,
     printNames       = True,
     printNavigations = True,
     printSolution    = False,
@@ -399,6 +402,11 @@ checkRepairCdConfig RepairCdConfig {..}
   | usesEveryRelationshipName objectProperties /= Just True
   = Just [iii|
       usesEveryRelationshipName needs to be set to 'Just True' for this task type
+      |]
+  | printExtendedFeedback && not printSolution
+  = Just [iii|
+      printExtendedFeedback leaks the correct solution
+      and thus can only be enabled when printSolution is set to True
       |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
@@ -479,7 +487,7 @@ repairCdEvaluation path inst xs = addPretext $ do
         | showSolution inst = Just $ show $ repairCdSolution inst
         | otherwise = Nothing
   x <- multipleChoice chs correctAnswer solution xs
-  M.traverseWithKey
+  when (showExtendedFeedback inst) $ void $ M.traverseWithKey
     (repairCdFeedback path (withDirections inst) (withNames inst) xs)
     (changes inst)
   pure x
@@ -525,10 +533,21 @@ repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int RelationshipChange,
     classDiagram   :: Cd,
+    showExtendedFeedback :: Bool,
     showSolution   :: Bool,
     withDirections :: Bool,
     withNames      :: Bool
   } deriving (Eq, Generic, Read, Show)
+
+checkRepairCdInstance :: RepairCdInstance -> Maybe String
+checkRepairCdInstance RepairCdInstance {..}
+  | showExtendedFeedback && not showSolution
+  = Just [iii|
+      showExtendedFeedback leaks the correct solution
+      and thus can only be enabled when showSolution is set to True
+      |]
+  | otherwise
+  = Nothing
 
 classAndAssocNames :: RepairCdInstance -> ([String], [String])
 classAndAssocNames inst =
@@ -563,6 +582,7 @@ instance RandomiseLayout RepairCdInstance where
     return RepairCdInstance {
       changes = changes',
       classDiagram = cd,
+      showExtendedFeedback = showExtendedFeedback,
       showSolution = showSolution,
       withDirections = withDirections,
       withNames = withNames
@@ -574,6 +594,7 @@ shuffleInstance inst = do
   return $ RepairCdInstance {
     changes = chs,
     classDiagram = classDiagram inst,
+    showExtendedFeedback = showExtendedFeedback inst,
     showSolution = showSolution inst,
     withDirections = withDirections inst,
     withNames = withNames inst
@@ -597,6 +618,7 @@ renameInstance inst names' assocs' = do
   return $ RepairCdInstance {
     changes        = chs,
     classDiagram   = cd,
+    showExtendedFeedback = showExtendedFeedback inst,
     showSolution   = showSolution inst,
     withDirections = withDirections inst,
     withNames      = withNames inst
@@ -619,6 +641,7 @@ repairCd config segment seed = do
   shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
+    (printExtendedFeedback config)
     (printSolution config)
     (printNavigations config)
     (printNames config && useNames config)
@@ -825,6 +848,7 @@ defaultRepairCdInstance = RepairCdInstance {
         }
       ]
     },
+  showExtendedFeedback = False,
   showSolution = False,
   withDirections = False,
   withNames = True
