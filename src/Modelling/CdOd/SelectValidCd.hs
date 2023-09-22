@@ -39,6 +39,7 @@ import Modelling.Auxiliary.Common (
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
+  rerefuse,
   simplifiedInformation,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
@@ -80,6 +81,7 @@ import Modelling.CdOd.Types (
   shuffleObjectAndLinkOrder,
   )
 
+import Control.Applicative              (Alternative)
 import Control.Monad                    ((>=>), void, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
@@ -96,7 +98,6 @@ import Control.Monad.Output (
   singleChoiceSyntax,
   translate,
   )
-import Control.Monad.Output.Generic     (($>>), ($>>=))
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
 import Data.Containers.ListUtils        (nubOrd)
@@ -242,7 +243,7 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
       in M.insert x ((isRight $ hint theChange,) <$> f) cds
 
 selectValidCdEvaluation
-  :: (MonadIO m, OutputMonad m)
+  :: (Alternative m, MonadIO m, OutputMonad m)
   => FilePath
   -> SelectValidCdInstance
   -> [Int]
@@ -256,13 +257,11 @@ selectValidCdEvaluation path inst xs = addPretext $ do
       correctAnswer
         | showSolution inst = Just $ show $ selectValidCdSolution inst
         | otherwise = Nothing
-  multipleChoice cds correctAnswer solution xs
-    $>>= \x -> when (showExtendedFeedback inst) (
-      void $ M.traverseWithKey
-        (selectValidCdFeedback path (withNavigations inst) (withNames inst) xs)
-        (classDiagrams inst)
-      )
-    $>> pure x
+  rerefuse (multipleChoice cds correctAnswer solution xs)
+    $ when (showExtendedFeedback inst)
+    $ void $ M.traverseWithKey
+      (selectValidCdFeedback path (withNavigations inst) (withNames inst) xs)
+      (classDiagrams inst)
 
 selectValidCdFeedback
   :: (MonadIO m, OutputMonad m)

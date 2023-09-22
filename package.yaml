@@ -56,7 +56,7 @@ dependencies:
   - latex-svg-image
   - lens
   - mtl
-  - output-monad
+  - output-monad >= 0.1
   - parsec
   - polysemy-plugin
   - random

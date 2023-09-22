@@ -58,6 +58,7 @@ import Modelling.Auxiliary.Common (
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
+  rerefuse,
   simplifiedInformation,
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd, getInstances)
@@ -472,7 +473,7 @@ repairCdSyntax inst xs =
   for_ xs $ singleChoiceSyntax False (M.keys $ changes inst)
 
 repairCdEvaluation
-  :: (MonadIO m, OutputMonad m)
+  :: (Alternative m, MonadIO m, OutputMonad m)
   => FilePath
   -> RepairCdInstance
   -> [Int]
@@ -486,11 +487,12 @@ repairCdEvaluation path inst xs = addPretext $ do
       correctAnswer
         | showSolution inst = Just $ show $ repairCdSolution inst
         | otherwise = Nothing
-  x <- multipleChoice chs correctAnswer solution xs
-  when (showExtendedFeedback inst) $ void $ M.traverseWithKey
-    (repairCdFeedback path (withDirections inst) (withNames inst) xs)
-    (changes inst)
-  pure x
+  rerefuse
+    (multipleChoice chs correctAnswer solution xs)
+    $ when (showExtendedFeedback inst)
+    $ void $ M.traverseWithKey
+      (repairCdFeedback path (withDirections inst) (withNames inst) xs)
+      (changes inst)
 
 repairCdFeedback
   :: (MonadIO m, OutputMonad m)

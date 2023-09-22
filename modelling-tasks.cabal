@@ -118,7 +118,7 @@ library
     , latex-svg-image
     , lens
     , mtl
-    , output-monad
+    , output-monad >=0.1
     , parsec
     , polysemy-plugin
     , random
@@ -206,7 +206,7 @@ test-suite modelling-tasks-test
     , lens
     , modelling-tasks
     , mtl
-    , output-monad
+    , output-monad >=0.1
     , parsec
     , polysemy-plugin
     , process

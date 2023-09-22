@@ -5,19 +5,23 @@ module Modelling.Auxiliary.Output (
   addPretext,
   directionsAdvice,
   hoveringInformation,
+  rerefuse,
   simplifiedInformation,
   ) where
 
-
+import Control.Applicative              (Alternative)
 import Control.Monad.Output             (
-  GenericOutputMonad (paragraph),
+  GenericOutputMonad (paragraph, refuse),
   LangM,
   LangM',
   OutputMonad,
+  Rated,
   english,
   german,
+  recoverWith,
   translate,
   )
+import Control.Monad.Output.Generic     (($>>), ($>>=))
 import Data.String.Interpolate          (iii)
 
 hoveringInformation :: OutputMonad m => LangM m
@@ -77,3 +81,13 @@ addPretext = (*>) $
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
+
+rerefuse
+  :: (Monad m, Alternative m, OutputMonad m)
+  => Rated m
+  -> LangM m
+  -> Rated m
+rerefuse xs ys =
+  recoverWith (pure 0) xs
+    $>>= \x -> ys
+    $>> either (refuse (pure ()) *>) pure x
