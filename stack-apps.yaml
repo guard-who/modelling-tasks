@@ -9,7 +9,7 @@ flags:
     quick-testing: true
 extra-deps:
   - git: https://github.com/fmidue/output-monad.git
-    commit: 1b459456361fbfa3dbab7fe53755feeb6ac67cfc
+    commit: dee586e12b62b0b854070c1bbd59749ad7ff3b0c
     subdirs:
       - output-monad
   - call-alloy-0.4.0.2
