@@ -172,7 +172,7 @@ data LimitedLinking nodeName = LimitedLinking {
   linking                     :: nodeName,
   limits                      :: (Int, Maybe Int)
   }
-  deriving (Eq, Functor, Foldable, Generic, Read, Show, Traversable)
+  deriving (Eq, Functor, Foldable, Generic, Ord, Read, Show, Traversable)
 
 {-|
 All possible relationships within a `ClassDiagram`.
@@ -197,7 +197,7 @@ data Relationship className relationshipName
     subClass                  :: className,
     superClass                :: className
     }
-  deriving (Eq, Functor, Generic, Read, Show)
+  deriving (Eq, Functor, Generic, Ord, Read, Show)
 
 instance Bifunctor Relationship where
   bimap f g r = case r of

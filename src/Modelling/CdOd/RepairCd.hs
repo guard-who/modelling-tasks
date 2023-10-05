@@ -30,6 +30,11 @@ module Modelling.CdOd.RepairCd (
   repairCdTask,
   repairIncorrect,
   trailingCommaDE,
+  PropertyChange (..),
+  (.&.),
+  illegalChanges,
+  legalChanges,
+  toProperty,
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
@@ -424,7 +429,7 @@ checkClassConfigAndChanges classConfig allowedProperties =
     onlyFirst = listToMaybe . catMaybes
     checkChange c =
       ([iii|
-         You should amend your configuration for
+         You should amend your class configuration for
          or disable the property change "#{changeName c}":|] ++)
       <$> checkProp (toProperty c)
 
@@ -916,6 +921,7 @@ repairIncorrect allowed config objectProperties maxInsts to = do
       changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
       fmap (relationshipChange . head . instanceChangesAndCds)
         <$> traverse getChangesAndCds changes
+    getOD :: Cd -> IO (Maybe Od)
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
           maxNObjects = maxObjects $ snd $ classLimits config

@@ -7,11 +7,13 @@
 module Modelling.CdOd.CdAndChanges.Transform (
   transform,
   transformChanges,
+  transformGetNextFix,
   transformImproveCd,
   transformNoChanges,
   ) where
 
 import Modelling.CdOd.Types (
+  Cd,
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -87,8 +89,32 @@ transformImproveCd
 transformImproveCd cd config properties = transformWith config (Left cd)
   $ changes Nothing [towardsValidProperties properties]
 
+transformGetNextFix
+  :: Maybe Cd
+  -> ClassConfig
+  -> RelationshipProperties
+  -> String
+transformGetNextFix maybeCd config properties = transformWith
+  config
+  (maybe (Right properties) Left maybeCd)
+  (n, ps, part ++ restrictChanges)
+  where
+    (n, ps, part) = changes Nothing [towardsValidProperties properties]
+    restrictChanges = [i|
+fact restrictChanges {
+  no Change.add
+}
+|]
+
+nameRelationships
+  :: ClassDiagram className relationshipName
+  -> [(String, Relationship className relationshipName)]
+nameRelationships ClassDiagram {relationships} = zip
+  (map (("Relationship" ++) . show) [0 :: Int ..])
+  relationships
+
 givenClassDiagram :: ClassDiagram String relationship -> String
-givenClassDiagram ClassDiagram {classNames, relationships} = [i|
+givenClassDiagram cd@ClassDiagram {classNames} = [i|
 //////////////////////////////////////////////////
 // Given CD
 //////////////////////////////////////////////////
@@ -110,9 +136,7 @@ pred cd {
     unionOf xs
       | null xs = "none"
       | otherwise = intercalate " + " xs
-    namedRelationships = zip
-      (map (("Relationship" ++) . show) [0 :: Int ..])
-      relationships
+    namedRelationships = nameRelationships cd
     (associations, aggregations, compositions, inheritances) =
       unzip4 $ map assocName namedRelationships
     assocName (name, x) = case x of

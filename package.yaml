@@ -34,6 +34,7 @@ dependencies:
   - MonadRandom
   - SHA
   - SVGFonts
+  - aeson
   - base
   - bimap
   - bytestring
@@ -70,6 +71,7 @@ dependencies:
   - vector
   - hxt
   - xml-conduit
+  - yaml
 library:
   source-dirs: src
   exposed-modules:
@@ -99,6 +101,7 @@ library:
     - Modelling.CdOd.DifferentNames
     - Modelling.CdOd.Generate
     - Modelling.CdOd.MatchCdOd
+    - Modelling.CdOd.NameCdError
     - Modelling.CdOd.Output
     - Modelling.CdOd.RepairCd
     - Modelling.CdOd.SelectValidCd
