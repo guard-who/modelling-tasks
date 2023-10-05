@@ -74,6 +74,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   ObjectProperties (..),
   Relationship (..),
+  RelationshipProperties (..),
   associationNames,
   classNames,
   maxObjects,
@@ -436,10 +437,15 @@ nameCdError allowed config objectProperties maxInsts to = do
   where
     getInstanceWithODs _ [] =
       nameCdError allowed config objectProperties maxInsts to
-    getInstanceWithODs p (rinsta:rinstas) = do
+    getInstanceWithODs change (rinsta:rinstas) = do
       cdInstance <- liftIO $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
-          alloyCode = Changes.transformGetNextFix (Just cd) config (toProperty p)
+          p = (toProperty change) {
+            hasDoubleRelationships = Nothing,
+            hasReverseRelationships = Nothing,
+            hasMultipleInheritances = Nothing
+            }
+          alloyCode = Changes.transformGetNextFix (Just cd) config p
       instas <- liftIO $ getInstances Nothing to alloyCode
       correctInstance <- liftIO $ mapM getChangesAndCds instas
       let allChs = concatMap instanceChangesAndCds correctInstance
@@ -448,8 +454,8 @@ nameCdError allowed config objectProperties maxInsts to = do
         liftIO $ mapM (getOD . changeClassDiagram) allChs
         return $ traverse (remove . relationshipChange) allChs
       case mremoves of
-        Nothing -> getInstanceWithODs p rinstas
-        Just removes -> return (cd2, changeName p, removes)
+        Nothing -> getInstanceWithODs change rinstas
+        Just removes -> return (cd2, changeName change, removes)
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
           maxNObjects = maxObjects $ snd $ classLimits config

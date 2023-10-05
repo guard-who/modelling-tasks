@@ -69,7 +69,12 @@ import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Char                        (isAlpha, isAlphaNum)
 import Data.List                        (isPrefixOf, stripPrefix)
 import Data.List.Extra                  (nubOrd)
-import Data.Maybe                       (fromJust, fromMaybe, mapMaybe)
+import Data.Maybe (
+  fromJust,
+  fromMaybe,
+  isNothing,
+  mapMaybe,
+  )
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
 import Data.Tuple.Extra                 (both, dupe)
@@ -364,6 +369,18 @@ checkClassConfigWithProperties
 checkClassConfigWithProperties
   c@ClassConfig {..}
   RelationshipProperties {..}
+  | isNothing hasDoubleRelationships
+  = Just [iii|
+    'hasDoubleRelationships' must not be set to 'Nothing'
+    |]
+  | isNothing hasReverseRelationships
+  = Just [iii|
+    'hasReverseRelationships' must not be set to 'Nothing'
+    |]
+  | isNothing hasMultipleInheritances
+  = Just [iii|
+    'hasMultipleInheritances' must not be set to 'Nothing'
+    |]
   | wrongAssocs > maxRelations - fst inheritanceLimits
   || maybe False (wrongAssocs >) maxAssocs'
   = Just [iii|
@@ -420,14 +437,17 @@ checkClassConfigWithProperties
   | otherwise = checkClassConfig c
   where
     for x y = if y then x else 0
+    forMaybe x y
+      | Just False == y = 0
+      | otherwise = x
     plusOne x = if x /= 0 then x + 1 else x
     minAssocs = (+ selfRelationships) . plusOne $ sum [
-      1 `for` hasDoubleRelationships,
-      1 `for` hasReverseRelationships
+      1 `forMaybe` hasDoubleRelationships,
+      1 `forMaybe` hasReverseRelationships
       ]
     minInheritances = (+ selfInheritances) . plusOne $ sum [
       1 `for` hasReverseInheritances,
-      1 `for` hasMultipleInheritances,
+      1 `forMaybe` hasMultipleInheritances,
       2 `for` hasNonTrivialInheritanceCycles
       ]
     minCompositions = max
@@ -584,10 +604,10 @@ data RelationshipProperties = RelationshipProperties {
     wrongCompositions       :: Int,
     selfRelationships       :: Int,
     selfInheritances        :: Int,
-    hasDoubleRelationships  :: Bool,
-    hasReverseRelationships :: Bool,
+    hasDoubleRelationships  :: Maybe Bool,
+    hasReverseRelationships :: Maybe Bool,
     hasReverseInheritances  :: Bool,
-    hasMultipleInheritances :: Bool,
+    hasMultipleInheritances :: Maybe Bool,
     hasNonTrivialInheritanceCycles :: Bool,
     hasCompositionCycles    :: Bool,
     hasCompositionsPreventingParts :: Bool,
@@ -600,10 +620,10 @@ defaultProperties = RelationshipProperties {
     wrongCompositions       = 0,
     selfRelationships       = 0,
     selfInheritances        = 0,
-    hasDoubleRelationships  = False,
-    hasReverseRelationships = False,
+    hasDoubleRelationships  = Just False,
+    hasReverseRelationships = Just False,
     hasReverseInheritances  = False,
-    hasMultipleInheritances = False,
+    hasMultipleInheritances = Just False,
     hasNonTrivialInheritanceCycles = False,
     hasCompositionCycles    = False,
     hasCompositionsPreventingParts = False,

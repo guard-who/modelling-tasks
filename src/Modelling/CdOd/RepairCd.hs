@@ -996,10 +996,10 @@ legalChanges allowed = noChange : [
       = config { T.selfRelationships = selfRelationships + 1 }
     withDoubleRelationships :: RelationshipProperties -> RelationshipProperties
     withDoubleRelationships config
-      = config { hasDoubleRelationships = True }
+      = config { hasDoubleRelationships = Just True }
     withReverseRelationships :: RelationshipProperties -> RelationshipProperties
     withReverseRelationships config
-      = config { hasReverseRelationships = True }
+      = config { hasReverseRelationships = Just True }
     -- withMultipleInheritances :: RelationshipProperties -> RelationshipProperties
     -- withMultipleInheritances config
     --   = config { hasMultipleInheritances = True }

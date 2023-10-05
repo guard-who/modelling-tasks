@@ -80,29 +80,29 @@ spec =
     generateProperty
       "doubleConnections (same direction)"
       (const $ not . null . doubleConnections)
-      defaultProperties { hasDoubleRelationships = True }
+      defaultProperties { hasDoubleRelationships = Just True }
     generateProperty
       "doubleConnections (reverse direction)"
       (const $ not . null . doubleConnections)
-      defaultProperties { hasReverseRelationships = True }
+      defaultProperties { hasReverseRelationships = Just True }
     generateProperty
       "no doubleConnections"
       (const $ null . doubleConnections)
       defaultProperties {
-        hasDoubleRelationships = False,
+        hasDoubleRelationships = Just False,
         hasReverseInheritances = False,
-        hasReverseRelationships = False
+        hasReverseRelationships = Just False
         }
     -- Disabled due to varying definitions of multiple inheritances:
     {- generateProperty
       "multipleInheritances"
       (const $ not . null . multipleInheritances)
-      defaultProperties { hasMultipleInheritances = True }
+      defaultProperties { hasMultipleInheritances = Just True }
     -}
     generateProperty
       "no multipleInheritances"
       (const $ null . multipleInheritances)
-      defaultProperties { hasMultipleInheritances = False }
+      defaultProperties { hasMultipleInheritances = Just False }
     generateProperty
       "inheritanceCycles"
       (const $ not . null . inheritanceCycles)

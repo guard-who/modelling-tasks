@@ -189,9 +189,11 @@ pred cd {
     classDiagram [Assoc2, Composition2, Inheritance2, Relationship2,
       #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
       #{selfInheritances props},
-      #{hasDoubleRelationships props}, #{hasReverseRelationships props},
+      #{maybeToAlloySet $ hasDoubleRelationships props},
+      #{maybeToAlloySet $ hasReverseRelationships props},
       #{hasReverseInheritances props},
-      #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
+      #{maybeToAlloySet $ hasMultipleInheritances props},
+      #{hasNonTrivialInheritanceCycles props},
       #{hasCompositionCycles props}, #{hasCompositionsPreventingParts props},
       #{maybeToAlloySet $ hasThickEdges props}]
     #{fst $ associationLimits config} <= \#Association2
@@ -239,9 +241,11 @@ pred #{change} {
   changeOfFirstCD [C#{n},
     #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
     #{selfInheritances props},
-    #{hasDoubleRelationships props}, #{hasReverseRelationships props},
+    #{maybeToAlloySet $ hasDoubleRelationships props},
+    #{maybeToAlloySet $ hasReverseRelationships props},
     #{hasReverseInheritances props},
-    #{hasMultipleInheritances props}, #{hasNonTrivialInheritanceCycles props},
+    #{maybeToAlloySet $ hasMultipleInheritances props},
+    #{hasNonTrivialInheritanceCycles props},
     #{hasCompositionCycles props}, #{hasCompositionsPreventingParts props},
     #{maybeToAlloySet $ hasThickEdges props}]
 }

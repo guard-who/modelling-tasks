@@ -182,16 +182,16 @@ pred classDiagram [
     sameDirection [i, a] or reverseRelationship [i, a]
   hasDoubleRelationships = True
     implies not noDoubleRelationships [assocs]
-    else noDoubleRelationships [assocs]
+    else hasDoubleRelationships = False implies noDoubleRelationships [assocs]
   hasReverseRelationships = True
     implies not noReverseRelationships [assocs]
-    else noReverseRelationships [assocs]
+    else hasReverseRelationships = False implies noReverseRelationships [assocs]
   hasReverseInheritances = True
     implies not noReverseRelationships [inheritances]
     else noReverseRelationships [inheritances]
   hasMultipleInheritances = True
      implies not noMultipleInheritances [inheritances]
-     else noMultipleInheritances [inheritances]
+     else hasMultipleInheritances = False implies noMultipleInheritances [inheritances]
   hasNonTrivialInheritanceCycles = True
     implies not noNonTrivialInheritanceCycles [inheritances]
     else noNonTrivialInheritanceCycles [inheritances]
