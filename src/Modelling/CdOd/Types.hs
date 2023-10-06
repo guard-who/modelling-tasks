@@ -381,6 +381,10 @@ checkClassConfigWithProperties
   = Just [iii|
     'hasMultipleInheritances' must not be set to 'Nothing'
     |]
+  | isNothing hasCompositionsPreventingParts
+  = Just [iii|
+    'hasCompositionsPreventingParts' must not be set to 'Nothing'
+    |]
   | wrongAssocs > maxRelations - fst inheritanceLimits
   || maybe False (wrongAssocs >) maxAssocs'
   = Just [iii|
@@ -452,7 +456,7 @@ checkClassConfigWithProperties
       ]
     minCompositions = max
       (1 `for` hasCompositionCycles)
-      (2 `for` hasCompositionsPreventingParts)
+      (2 `forMaybe` hasCompositionsPreventingParts)
     minCompositionsInheritances =
       3 `for` hasCompositionCycles
     maxRelations = fromMaybe (maxRels c) $ snd relationshipLimits
@@ -610,7 +614,7 @@ data RelationshipProperties = RelationshipProperties {
     hasMultipleInheritances :: Maybe Bool,
     hasNonTrivialInheritanceCycles :: Bool,
     hasCompositionCycles    :: Bool,
-    hasCompositionsPreventingParts :: Bool,
+    hasCompositionsPreventingParts :: Maybe Bool,
     hasThickEdges           :: Maybe Bool
   } deriving (Generic, Read, Show)
 
@@ -626,7 +630,7 @@ defaultProperties = RelationshipProperties {
     hasMultipleInheritances = Just False,
     hasNonTrivialInheritanceCycles = False,
     hasCompositionCycles    = False,
-    hasCompositionsPreventingParts = False,
+    hasCompositionsPreventingParts = Just False,
     hasThickEdges           = Nothing
   }
 

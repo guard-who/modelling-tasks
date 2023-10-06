@@ -194,7 +194,8 @@ pred cd {
       #{hasReverseInheritances props},
       #{maybeToAlloySet $ hasMultipleInheritances props},
       #{hasNonTrivialInheritanceCycles props},
-      #{hasCompositionCycles props}, #{hasCompositionsPreventingParts props},
+      #{hasCompositionCycles props},
+      #{maybeToAlloySet $ hasCompositionsPreventingParts props},
       #{maybeToAlloySet $ hasThickEdges props}]
     #{fst $ associationLimits config} <= \#Association2
     \#Association2 <= #{upper $ associationLimits config}
@@ -246,7 +247,8 @@ pred #{change} {
     #{hasReverseInheritances props},
     #{maybeToAlloySet $ hasMultipleInheritances props},
     #{hasNonTrivialInheritanceCycles props},
-    #{hasCompositionCycles props}, #{hasCompositionsPreventingParts props},
+    #{hasCompositionCycles props},
+    #{maybeToAlloySet $ hasCompositionsPreventingParts props},
     #{maybeToAlloySet $ hasThickEdges props}]
 }
 |]

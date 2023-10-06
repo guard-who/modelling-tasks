@@ -445,6 +445,7 @@ nameCdError allowed config objectProperties maxInsts to = do
       cdInstance <- liftIO $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
           p = (toProperty change) {
+            hasCompositionsPreventingParts = Nothing,
             hasDoubleRelationships = Nothing,
             hasReverseRelationships = Nothing,
             hasMultipleInheritances = Nothing

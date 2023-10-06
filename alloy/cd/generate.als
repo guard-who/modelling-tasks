@@ -164,13 +164,13 @@ pred classDiagram [
   wrongCompositions : one Int,
   selfRelationships : one Int,
   selfInheritances : one Int,
-  hasDoubleRelationships : one Boolean,
-  hasReverseRelationships : one Boolean,
+  hasDoubleRelationships : lone Boolean,
+  hasReverseRelationships : lone Boolean,
   hasReverseInheritances : one Boolean,
-  hasMultipleInheritances : one Boolean,
+  hasMultipleInheritances : lone Boolean,
   hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
-  hasCompositionsPreventingParts : one Boolean,
+  hasCompositionsPreventingParts : lone Boolean,
   hasThickEdges : lone Boolean] {
   #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
   #{ a : assocs | not validFromLimitsAssoc [a] iff validToLimitsAssoc [a]} = wrongAssocs
@@ -199,8 +199,9 @@ pred classDiagram [
     implies not noCompositionCycles [inheritances, compositions]
     else noCompositionCycles [inheritances, compositions]
   hasCompositionsPreventingParts = True
-     implies not noCompositionsPreventParts [inheritances, compositions]
-     else noCompositionsPreventParts [inheritances, compositions]
+    implies not noCompositionsPreventParts [inheritances, compositions]
+    else hasCompositionsPreventingParts = False
+      implies noCompositionsPreventParts [inheritances, compositions]
   hasThickEdges = True
     implies not noThickEdges[assocs, inheritances]
     else hasThickEdges = False implies noThickEdges[assocs, inheritances]
@@ -212,13 +213,13 @@ pred changeOfFirstCD [
   wrongCompositions : one Int,
   selfRelationships : one Int,
   selfInheritances : one Int,
-  hasDoubleRelationships : one Boolean,
-  hasReverseRelationships : one Boolean,
+  hasDoubleRelationships : lone Boolean,
+  hasReverseRelationships : lone Boolean,
   hasReverseInheritances : one Boolean,
-  hasMultipleInheritances : one Boolean,
+  hasMultipleInheritances : lone Boolean,
   hasNonTrivialInheritanceCycles : one Boolean,
   hasCompositionCycles : one Boolean,
-  hasCompositionsPreventingParts : one Boolean,
+  hasCompositionsPreventingParts : lone Boolean,
   hasThickEdges : lone Boolean] {
     let Assoc2 = Assoc - (Change.add - c.add) - c.remove,
         Composition2 = Composition - (Change.add - c.add) - c.remove,
