@@ -155,6 +155,7 @@ test-suite modelling-tasks-test
       Modelling.CdOd.Edges
       Modelling.CdOd.GenerateSpec
       Modelling.CdOd.MatchCdOdSpec
+      Modelling.CdOd.NameCdErrorSpec
       Modelling.CdOd.OutputSpec
       Modelling.CdOd.RepairCdSpec
       Modelling.CdOd.SelectValidCdSpec

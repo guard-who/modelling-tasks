@@ -11,6 +11,7 @@ module Modelling.CdOd.NameCdError (
   NameCdErrorInstance (..),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
+  classAndAssocNames,
   defaultNameCdErrorConfig,
   defaultNameCdErrorInstance,
   nameCdErrorEvaluation,
@@ -18,6 +19,7 @@ module Modelling.CdOd.NameCdError (
   nameCdErrorSolution,
   nameCdErrorSyntax,
   nameCdErrorTask,
+  renameInstance,
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
