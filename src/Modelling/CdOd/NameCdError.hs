@@ -12,6 +12,7 @@ module Modelling.CdOd.NameCdError (
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
   defaultNameCdErrorConfig,
+  defaultNameCdErrorInstance,
   nameCdErrorEvaluation,
   nameCdErrorGenerate,
   nameCdErrorSolution,
@@ -72,6 +73,7 @@ import Modelling.CdOd.Types (
   Change (..),
   ClassConfig (..),
   ClassDiagram (..),
+  LimitedLinking (..),
   ObjectProperties (..),
   Relationship (..),
   RelationshipProperties (..),
@@ -476,3 +478,62 @@ nameCdError allowed config objectProperties maxInsts to = do
         <$> getInstances (Just 1) to (combineParts parts ++ command)
       fmap join $ forM od
         $ runExceptT . alloyInstanceToOd >=> return . eitherToMaybe
+
+defaultNameCdErrorInstance :: NameCdErrorInstance
+defaultNameCdErrorInstance = NameCdErrorInstance {
+  allRelationships = M.fromAscList [
+    (1, (True, Composition {
+      compositionName = "z",
+      compositionPart = LimitedLinking {linking = "D", limits = (1, Nothing)},
+      compositionWhole = LimitedLinking {linking = "A", limits = (1, Just 1)}
+      })),
+    (2, (True, Composition {
+      compositionName = "w",
+      compositionPart = LimitedLinking {linking = "B", limits = (1, Nothing)},
+      compositionWhole = LimitedLinking {linking = "D", limits = (1, Just 1)}
+      })),
+    (3, (False, Aggregation {
+      aggregationName = "y",
+      aggregationPart = LimitedLinking {linking = "B", limits = (2, Nothing)},
+      aggregationWhole = LimitedLinking {linking = "D", limits = (2, Just 2)}
+      })),
+    (4, (True, Composition {
+      compositionName = "x", compositionPart = LimitedLinking {
+      linking = "A", limits = (0, Just 1)},
+      compositionWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
+      }))
+    ],
+  classDiagram = ClassDiagram {
+    classNames = ["D","C","B","A"],
+    relationships = [
+      Aggregation {
+        aggregationName = "y",
+        aggregationPart = LimitedLinking {linking = "B", limits = (2, Nothing)},
+        aggregationWhole = LimitedLinking {linking = "D", limits = (2, Just 2)}
+        },
+      Composition {
+        compositionName = "x",
+        compositionPart = LimitedLinking {linking = "A", limits = (0, Just 1)},
+        compositionWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
+        },
+      Composition {
+        compositionName = "w",
+        compositionPart = LimitedLinking {linking = "B", limits = (1, Nothing)},
+        compositionWhole = LimitedLinking {linking = "D", limits = (1, Just 1)}
+        },
+      Composition {
+        compositionName = "z",
+        compositionPart = LimitedLinking {linking = "D", limits = (1, Nothing)},
+        compositionWhole = LimitedLinking {linking = "A", limits = (1, Just 1)}
+        }
+      ]
+    },
+  errorReasons = M.fromAscList [
+    (1, (True, M.fromAscList [
+      (English, "force composition cycles + force double relationships"),
+      (German, "force composition cycles + force double relationships")]))
+    ],
+  showSolution = False,
+  withDirections = True,
+  withNames = True
+  }
