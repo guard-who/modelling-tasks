@@ -6,6 +6,7 @@ import Modelling.CdOd.RepairCd (
   RepairCdConfig (timeout),
   RepairCdInstance (changes),
   checkRepairCdConfig,
+  checkRepairCdInstance,
   classAndAssocNames,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
@@ -23,6 +24,9 @@ spec = do
   describe "defaultRepairCdConfig" $
     it "is valid" $
       checkRepairCdConfig defaultRepairCdConfig `shouldBe` Nothing
+  describe "defaultRepairCdInstance" $
+    it "is valid" $
+      checkRepairCdInstance defaultRepairCdInstance `shouldBe` Nothing
   describe "repairCd" $
     context "using defaultRepairCdConfig with reduced timeouts" $
       it "generates an instance" $

@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -21,6 +22,7 @@ module Modelling.CdOd.Types (
   ObjectDiagram (..),
   ObjectProperties (..),
   Od,
+  Property (..),
   Relationship (..),
   RelationshipProperties (..),
   anyThickEdge,
@@ -33,6 +35,7 @@ module Modelling.CdOd.Types (
   classNamesOd,
   defaultProperties,
   fromNameMapping,
+  isIllegal,
   linkNames,
   maxFiveObjects,
   maxObjects,
@@ -49,11 +52,13 @@ module Modelling.CdOd.Types (
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   toNameMapping,
+  toPropertySet,
   towardsValidProperties,
   ) where
 
 
 import qualified Data.Bimap                       as BM
+import qualified Data.Set                         as S (fromList)
 
 import Modelling.Auxiliary.Common       (lowerFirst, skipSpaces)
 
@@ -70,11 +75,13 @@ import Data.Char                        (isAlpha, isAlphaNum)
 import Data.List                        (isPrefixOf, stripPrefix)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe (
+  catMaybes,
   fromJust,
   fromMaybe,
   isNothing,
   mapMaybe,
   )
+import Data.Set                         (Set)
 import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
 import Data.Tuple.Extra                 (both, dupe)
@@ -659,6 +666,55 @@ towardsValidProperties properties@RelationshipProperties {..} = properties {
     hasBetter False x = if x > 0 then (True, x - 1) else (False, x)
     fixed True x = (True, x)
     fixed False x = (x, False)
+
+data Property =
+    CompositionCycles
+  | DoubleRelationships
+  | InheritanceCycles
+  | MultipleInheritances
+  | ReverseInheritances
+  | ReverseRelationships
+  | SelfInheritances
+  | SelfRelationships
+  | WrongAssociationLimits
+  | WrongComposistionLimits
+  deriving (Bounded, Enum, Eq, Ord, Read, Show)
+
+isIllegal :: Property -> Bool
+isIllegal x = case x of
+  CompositionCycles -> True
+  DoubleRelationships -> False
+  InheritanceCycles -> True
+  MultipleInheritances -> False
+  ReverseInheritances -> True
+  ReverseRelationships -> False
+  SelfInheritances -> True
+  SelfRelationships -> False
+  WrongAssociationLimits -> True
+  WrongComposistionLimits -> True
+
+{-|
+Create a set of properties based on a 'RelationshipProperties' configuration.
+-}
+toPropertySet :: RelationshipProperties -> Set Property
+toPropertySet RelationshipProperties {..} =
+  S.fromList $ catMaybes [
+    ifTrue hasCompositionCycles CompositionCycles,
+    ifJustTrue hasDoubleRelationships DoubleRelationships,
+    ifTrue hasNonTrivialInheritanceCycles InheritanceCycles,
+    ifJustTrue hasMultipleInheritances MultipleInheritances,
+    ifTrue hasReverseInheritances ReverseInheritances,
+    ifJustTrue hasReverseRelationships ReverseRelationships,
+    ifAny selfInheritances SelfInheritances,
+    ifAny selfRelationships SelfRelationships,
+    ifAny wrongAssocs WrongAssociationLimits,
+    ifAny wrongCompositions WrongComposistionLimits
+    ]
+  where
+    ifAny x p = if x > 0 then Just p else Nothing
+    ifTrue x p = if x then Just p else Nothing
+    ifJustTrue Nothing _ = Nothing
+    ifJustTrue (Just x) p = ifTrue x p
 
 associationNames :: Cd -> [String]
 associationNames = mapMaybe relationshipName . relationships

@@ -34,10 +34,18 @@ import qualified Data.Map                         as M (
   keys,
   toList,
   )
+import qualified Data.Set                         as S (
+  (\\),
+  filter,
+  fromList,
+  null,
+  toList,
+  )
 
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
-  RandomiseLayout (randomiseLayout), shuffleEverything,
+  RandomiseLayout (randomiseLayout),
+  shuffleEverything,
   )
 import Modelling.Auxiliary.Output (
   addPretext,
@@ -60,7 +68,6 @@ import Modelling.CdOd.Output (
   )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
-  PropertyChange (..),
   (.&.),
   allowEverything,
   checkClassConfigAndChanges,
@@ -77,16 +84,20 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   LimitedLinking (..),
   ObjectProperties (..),
+  Property (..),
   Relationship (..),
   RelationshipProperties (..),
   associationNames,
   classNames,
+  isIllegal,
   maxObjects,
   relationshipName,
   renameClassesAndRelationshipsInCd,
   renameClassesAndRelationshipsInRelationship,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
+  toPropertySet,
+  towardsValidProperties,
   )
 
 import Control.Monad                    ((>=>), forM, join)
@@ -108,6 +119,7 @@ import Control.Monad.Output (
   singleChoice,
   singleChoiceSyntax,
   translate,
+  translations,
   )
 import Control.Monad.Output.Generic     (($>>=))
 import Control.Monad.Random
@@ -120,17 +132,26 @@ import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe)
 import Data.Foldable                    (for_)
 import Data.Map                         (Map)
-import Data.Maybe                       (listToMaybe, mapMaybe)
+import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
+import Data.Set                         (Set)
 import Data.String.Interpolate          (i, iii)
 import Data.Yaml                        (encode)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
+
+data NameCdErrorAnswer = NameCdErrorAnswer {
+  reason                      :: Int,
+  contributing                :: [Int]
+  } deriving (Read, Show)
+
+$(deriveJSON defaultOptions ''NameCdErrorAnswer)
 
 data NameCdErrorConfig = NameCdErrorConfig {
   allowedProperties           :: AllowedProperties,
   classConfig                 :: ClassConfig,
   maxInstances                :: Maybe Integer,
   objectProperties            :: ObjectProperties,
+  possibleReasons             :: [Map Language String],
   printNames                  :: Bool,
   printNavigations            :: Bool,
   printSolution               :: Bool,
@@ -159,6 +180,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     hasSelfLoops = Nothing,
     usesEveryRelationshipName = Just True
     },
+  possibleReasons = map (translateProperty True) [minBound ..],
   printNames = True,
   printNavigations = True,
   printSolution = False,
@@ -176,8 +198,42 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
   = Just [iii|
       usesEveryRelationshipName needs to be set to 'Just True' for this task type
       |]
+  | S.null illegalProperties
+  = Just [iii|
+      There has to be set at least one illegal property for this task type,
+      amend your allowedProperties
+      |]
+  | any (`notElem` possibleReasons) illegalReasons
+  = Just [iii|
+      possibleReasons must contain at least #{illegalReasons}
+      considering your current configuration.
+      Suggested additional reasons are: #{additionalReasons}
+      |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
+  where
+    properties = allowedPropertiesToPropertySet allowedProperties
+    illegalProperties = S.filter isIllegal properties
+    illegalReasons = map (translateProperty printNavigations)
+      $ S.toList illegalProperties
+    additionalReasons = map (translateProperty printNames)
+      $ S.toList (properties S.\\ illegalProperties)
+
+allowedPropertiesToPropertySet :: AllowedProperties -> Set Property
+allowedPropertiesToPropertySet AllowedProperties {..} =
+  S.fromList $ catMaybes [
+    ifTrue compositionCycles CompositionCycles,
+    ifTrue doubleRelationships DoubleRelationships,
+    ifTrue inheritanceCycles InheritanceCycles,
+    ifTrue reverseInheritances ReverseInheritances,
+    ifTrue reverseRelationships ReverseRelationships,
+    ifTrue selfInheritances SelfInheritances,
+    ifTrue selfRelationships SelfRelationships,
+    ifTrue wrongAssociationLimits WrongAssociationLimits,
+    ifTrue wrongCompositionLimits WrongComposistionLimits
+    ]
+  where
+    ifTrue x p = if x then Just p else Nothing
 
 data NameCdErrorInstance = NameCdErrorInstance {
   allRelationships            :: Map Int (Bool, Relationship String String),
@@ -204,13 +260,6 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   = Nothing
   where
     relationshipsOnly = map snd (M.elems allRelationships)
-
-data NameCdErrorAnswer = NameCdErrorAnswer {
-  reason                      :: Int,
-  contributing                :: [Int]
-  } deriving (Read, Show)
-
-$(deriveJSON defaultOptions ''NameCdErrorAnswer)
 
 nameCdErrorTask
   :: (OutputMonad m, MonadIO m)
@@ -258,7 +307,8 @@ nameCdErrorTask path task = do
     paragraph $ translate $ do
       english [iii|
         Please state your answer by providing one number for reason,
-        indicating the conceptual reason why the class diagram is invalid
+        indicating the most specific, conceptual reason
+        why this class diagram is invalid
         and a list of numbers for relationships,
         indicating the relationships that form the issue.
         E.g.
@@ -266,8 +316,9 @@ nameCdErrorTask path task = do
       german [iii|
         Bitte geben Sie Ihre Antwort an, indem Sie folgendes angeben:
         eine Zahl für den Grund,
-        der Ihrer Meinung nach der konzeptuelle Grund dafür ist,
-        dass das Klassendiagramm ungültig ist,
+        der Ihrer Meinung nach der möglichst genaue,
+        konzeptuelle Grund dafür ist,
+        dass dieses Klassendiagramm ungültig ist,
         und eine Liste von Zahlen für die Beziehungen,
         die Ihrer Meinung nach das Problem bilden.
         Zum Beispiel
@@ -403,23 +454,24 @@ nameCdErrorGenerate
   -> Int
   -> Int
   -> IO NameCdErrorInstance
-nameCdErrorGenerate config segment seed = do
+nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (cd, reason, rs) <- flip evalRandT g $ nameCdError
-    (allowedProperties config)
-    (classConfig config)
-    (objectProperties config)
-    (maxInstances config)
-    (timeout config)
+    allowedProperties
+    classConfig
+    objectProperties
+    printNavigations
+    maxInstances
+    timeout
   shuffleEverything $ NameCdErrorInstance {
     allRelationships = M.fromAscList
       $ zip [1..] $ map (\x -> (x `elem` rs, x)) $ relationships cd,
     classDiagram = cd,
-    errorReasons = M.fromAscList
-      [(1, (True, M.fromAscList [(English, reason), (German, reason)]))],
-    showSolution = printSolution config,
-    withDirections = printNavigations config,
-    withNames = printNames config
+    errorReasons = M.fromAscList $ zip [1..]
+      $ (True, reason) : map (False,) possibleReasons,
+    showSolution = printSolution,
+    withDirections = printNavigations,
+    withNames = printNames
     }
 
 nameCdError
@@ -427,30 +479,35 @@ nameCdError
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
+  -> Bool
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g IO (Cd, String, [Relationship String String])
-nameCdError allowed config objectProperties maxInsts to = do
-  e0:_    <- shuffleM $ illegalChanges allowed
-  l0:_   <- shuffleM $ legalChanges allowed
-  let p = e0 .&. l0
-      alloyCode = Changes.transformGetNextFix Nothing config (toProperty p)
-  instas  <- liftIO $ getInstances maxInsts to alloyCode
-  rinstas <- shuffleM instas
-  getInstanceWithODs p rinstas
+  -> RandT g IO (Cd, Map Language String, [Relationship String String])
+nameCdError allowed config objectProperties withDir maxInsts to = do
+  changes <- shuffleM $ (,)
+    <$> illegalChanges allowed
+    <*> legalChanges allowed
+  getInstanceWithChanges changes
   where
-    getInstanceWithODs _ [] =
-      nameCdError allowed config objectProperties maxInsts to
-    getInstanceWithODs change (rinsta:rinstas) = do
+    getInstanceWithChanges [] =
+      error "there seems to be no instance for the provided configuration"
+    getInstanceWithChanges ((e0, l0) : chs) = do
+      let p = toProperty $ e0 .&. l0
+          alloyCode = Changes.transformGetNextFix Nothing config p
+      instas  <- liftIO $ getInstances maxInsts to alloyCode
+      rinstas <- shuffleM instas
+      getInstanceWithODs chs p rinstas
+    getInstanceWithODs chs _ [] = getInstanceWithChanges chs
+    getInstanceWithODs chs p (rinsta:rinstas) = do
       cdInstance <- liftIO $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
-          p = (toProperty change) {
+          p' = p {
             hasCompositionsPreventingParts = Nothing,
             hasDoubleRelationships = Nothing,
             hasReverseRelationships = Nothing,
             hasMultipleInheritances = Nothing
             }
-          alloyCode = Changes.transformGetNextFix (Just cd) config p
+          alloyCode = Changes.transformGetNextFix (Just cd) config p'
       instas <- liftIO $ getInstances Nothing to alloyCode
       correctInstance <- liftIO $ mapM getChangesAndCds instas
       let allChs = concatMap instanceChangesAndCds correctInstance
@@ -459,8 +516,13 @@ nameCdError allowed config objectProperties maxInsts to = do
         liftIO $ mapM (getOD . changeClassDiagram) allChs
         return $ traverse (remove . relationshipChange) allChs
       case mremoves of
-        Nothing -> getInstanceWithODs change rinstas
-        Just removes -> return (cd2, changeName change, removes)
+        Nothing -> getInstanceWithODs chs p rinstas
+        Just removes ->
+          let fixes = toPropertySet p
+                S.\\ toPropertySet (towardsValidProperties p)
+          in case S.toList fixes of
+            [problem] -> return (cd2, translateProperty withDir problem, removes)
+            _ -> error "error in task type: property fix is not unique"
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
           maxNObjects = maxObjects $ snd $ classLimits config
@@ -481,6 +543,74 @@ nameCdError allowed config objectProperties maxInsts to = do
         <$> getInstances (Just 1) to (combineParts parts ++ command)
       fmap join $ forM od
         $ runExceptT . alloyInstanceToOd >=> return . eitherToMaybe
+
+translateProperty :: Bool -> Property -> Map Language String
+translateProperty True x = translatePropertyWithDirections x
+translateProperty False x = case x of
+  DoubleRelationships -> doubleOrReverseRelationships
+  _ -> translatePropertyWithDirections x
+  where
+    doubleOrReverseRelationships = translations $ do
+      english [iii|
+        contains at least two non-inheritance relationships
+        between the same two classes
+        |]
+      german [iii|
+        enthält mindestens zwei Nicht-Vererbungs-Beziehungen
+        zwischen den selben beiden Klassen
+        |]
+
+translatePropertyWithDirections :: Property -> Map Language String
+translatePropertyWithDirections x = translations $ case x of
+  CompositionCycles -> do
+    english "contains at least one composition cycle"
+    german "enthält mindestens einen Komposistionszyklus"
+  DoubleRelationships -> do
+    english [iii|
+      contains at least two non-inheritance relationships
+      between the same two classes each pointing in the same directions
+      |]
+    german [iii|
+      enthält mindestens zwei Nicht-Vererbungs-Beziehungen
+      zwischen den selben beiden Klassen, die in die selbe Richtung zeigen
+      |]
+  InheritanceCycles -> do
+    english "contains at least one inheritance cycle"
+    german "enthält mindestens einen Vererbungszyklus"
+  MultipleInheritances -> do
+    english "contains at least one multiple inheritance"
+    german "enthält mindestens eine Mehrfachvererbung"
+  ReverseInheritances -> do
+    english "contains at least one pair of classes inheriting each other"
+    german [iii|
+      enthält wenigstens ein Paar von Klassen, die sich gegenseiting beerben
+      |]
+  ReverseRelationships -> do
+    english [iii|
+      contains at least two non-inheritance relationships
+      between the same two classes pointing in opposing directions
+      |]
+    german [iii|
+      enthält mindestens zwei Nicht-Vererbungs-Beziehungen
+      zwischen den selben beiden Klassen,
+      die in entgegengesetzte Richtungen zeigen
+      |]
+  SelfInheritances -> do
+    english "contains at least one self-inheritance"
+    german "enthält mindestens eine Selbstvererbung"
+  SelfRelationships -> do
+    english "contains at least one self-relationship that is no inheritance"
+    german "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist"
+  WrongAssociationLimits -> do
+    english "contains at least one invalid multiplicity at any relationship"
+    german "enthält mindestens eine ungültige Multiplizität an einer Beziehung"
+  WrongComposistionLimits -> do
+    english [iii|
+      contains at least one invalid multiplicity near the whole of a composition
+      |]
+    german [iii|
+      enthält mindestens eine ungültige Multiplizität am Ganzen einer Komposition
+      |]
 
 defaultNameCdErrorInstance :: NameCdErrorInstance
 defaultNameCdErrorInstance = NameCdErrorInstance {
@@ -532,9 +662,56 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
       ]
     },
   errorReasons = M.fromAscList [
-    (1, (True, M.fromAscList [
-      (English, "force composition cycles + force double relationships"),
-      (German, "force composition cycles + force double relationships")]))
+    (1, (False, M.fromAscList [
+      (English, "contains at least one self-inheritance"),
+      (German, "enthält mindestens eine Selbstvererbung")
+      ])),
+    (2, (False, M.fromAscList [
+      (English, "contains at least one multiple inheritance"),
+      (German, "enthält mindestens eine Mehrfachvererbung")
+      ])),
+    (3, (False, M.fromAscList [
+      (English, "contains at least one self-relationship that is no inheritance"),
+      (German, "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist")
+      ])),
+    (4, (False, M.fromAscList [
+      (English, "contains at least two non-inheritance relationships "
+        ++ "between the same two classes pointing in opposing directions"),
+      (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
+        ++ "zwischen den selben beiden Klassen, die in entgegengesetzte Richtungen zeigen")
+      ])),
+    (5, (False, M.fromAscList [
+      (English, "contains at least one composition cycle"),
+      (German, "enthält mindestens einen Komposistionszyklus")
+      ])),
+    (6, (False, M.fromAscList [
+      (English, "contains at least two non-inheritance relationships "
+        ++ "between the same two classes each pointing in the same directions"),
+      (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
+        ++ "zwischen den selben beiden Klassen, die in die selbe Richtung zeigen")
+      ])),
+    (7, (True, M.fromAscList [
+      (English, "contains at least one composition cycle"),
+      (German, "enthält mindestens einen Komposistionszyklus")
+      ])),
+    (8, (False, M.fromAscList [
+      (English, "contains at least one inheritance cycle"),
+      (German, "enthält mindestens einen Vererbungszyklus")
+      ])),
+    (9, (False, M.fromAscList [
+      (English, "contains at least one invalid multiplicity "
+        ++ "near the whole of a composition"),
+      (German, "enthält mindestens eine ungültige Multiplizität "
+        ++ "am Ganzen einer Komposition")
+      ])),
+    (10, (False, M.fromAscList [
+      (English, "contains at least one pair of classes inheriting each other"),
+      (German, "enthält wenigstens ein Paar von Klassen, die sich gegenseiting beerben")
+      ])),
+    (11, (False, M.fromAscList [
+      (English, "contains at least one invalid multiplicity at any relationship"),
+      (German, "enthält mindestens eine ungültige Multiplizität an einer Beziehung")
+      ]))
     ],
   showSolution = False,
   withDirections = True,

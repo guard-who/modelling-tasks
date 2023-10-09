@@ -6,6 +6,7 @@ import Modelling.CdOd.NameCdError (
   NameCdErrorConfig (timeout),
   NameCdErrorInstance (allRelationships, errorReasons),
   checkNameCdErrorConfig,
+  checkNameCdErrorInstance,
   classAndAssocNames,
   defaultNameCdErrorConfig,
   defaultNameCdErrorInstance,
@@ -23,6 +24,9 @@ spec = do
   describe "defaultNameCdErrorConfig" $
     it "is valid" $
       checkNameCdErrorConfig defaultNameCdErrorConfig `shouldBe` Nothing
+  describe "defaultNameCdErrorInstance" $
+    it "is valid" $
+      checkNameCdErrorInstance defaultNameCdErrorInstance `shouldBe` Nothing
   describe "nameCdErrorGenerate" $
     context "using defaultNameCdErrorConfig with reduced timeouts" $
       it "generates an instance" $
