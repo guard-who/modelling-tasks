@@ -104,6 +104,7 @@ import Modelling.CdOd.Types (
   towardsValidProperties,
   )
 
+import Control.Applicative              (Alternative)
 import Control.Monad                    ((>=>), forM, join)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except             (runExceptT)
@@ -120,6 +121,7 @@ import Control.Monad.Output (
   german,
   multipleChoice,
   printSolutionAndAssert,
+  recoverWith,
   singleChoice,
   singleChoiceSyntax,
   translate,
@@ -133,7 +135,7 @@ import Data.Aeson.TH                    (defaultOptions, deriveJSON)
 import Data.Bifunctor                   (second)
 import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.Either.Extra                (eitherToMaybe)
+import Data.Either.Extra                (eitherToMaybe, fromEither)
 import Data.Foldable                    (for_)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
@@ -369,7 +371,13 @@ nameCdErrorSyntax
   -> NameCdErrorAnswer
   -> LangM m
 nameCdErrorSyntax inst x = do
+  paragraph $ translate $ do
+    english "Feedback on chosen reason:"
+    german "Hinweis zum gewählten Grund:"
   singleChoiceSyntax False (M.keys $ errorReasons inst) $ reason x
+  paragraph $ translate $ do
+    english "Feedback on chosen relationships:"
+    german "Hinweis zu gewählten Beziehungen:"
   for_ (contributing x) $ singleChoiceSyntax False (M.keys $ allRelationships inst)
   pure ()
 
@@ -379,26 +387,36 @@ nameCdErrorSyntax inst x = do
  * otherwise, multiple choice grading for answer on contributing relationships
 -}
 nameCdErrorEvaluation
-  :: (Monad m, OutputMonad m)
+  :: (Alternative m, Monad m, OutputMonad m)
   => NameCdErrorInstance
   -> NameCdErrorAnswer
   -> Rated m
 nameCdErrorEvaluation inst x = addPretext $ do
-  let chs = M.fromAscList [
-        (English, "changes"),
-        (German, "Änderungen")
+  let reasonTranslation = M.fromAscList [
+        (English, "reason"),
+        (German, "Grund")
+        ]
+      contributingTranslation = M.fromAscList [
+        (English, "contributing relationships"),
+        (German, "zum Problem beitragende Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons inst
       solutionContributing = fst <$> allRelationships inst
       correctAnswer
         | showSolution inst = Just $ toString $ encode $ nameCdErrorSolution inst
         | otherwise = Nothing
-  singleChoice chs Nothing solutionReason (reason x)
+  recoverWith 0 (
+    singleChoice reasonTranslation Nothing solutionReason (reason x)
     $>>= \p ->
-    if p < 1
-    then pure 0
-    else multipleChoice chs Nothing solutionContributing (contributing x)
-    $>>= printSolutionAndAssert correctAnswer
+      if p < 1
+      then pure 0
+      else multipleChoice
+        contributingTranslation
+        Nothing
+        solutionContributing
+        (contributing x)
+    )
+    $>>= printSolutionAndAssert correctAnswer . fromEither
 
 nameCdErrorSolution :: NameCdErrorInstance -> NameCdErrorAnswer
 nameCdErrorSolution x = NameCdErrorAnswer {
