@@ -7,11 +7,13 @@
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.CdOd.NameCdError (
+  NameCdErrorAnswer (..),
   NameCdErrorConfig (..),
   NameCdErrorInstance (..),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
   classAndAssocNames,
+  defaultNameCdErrorAnswer,
   defaultNameCdErrorConfig,
   defaultNameCdErrorInstance,
   nameCdErrorEvaluation,
@@ -19,7 +21,9 @@ module Modelling.CdOd.NameCdError (
   nameCdErrorSolution,
   nameCdErrorSyntax,
   nameCdErrorTask,
+  parseNameCdErrorAnswer,
   renameInstance,
+  showNameCdErrorAnswer,
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
@@ -127,7 +131,7 @@ import Control.Monad.Random
 import Control.Monad.Trans.State        (put)
 import Data.Aeson.TH                    (defaultOptions, deriveJSON)
 import Data.Bifunctor                   (second)
-import Data.ByteString.UTF8             (toString)
+import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe)
 import Data.Foldable                    (for_)
@@ -135,14 +139,16 @@ import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Set                         (Set)
 import Data.String.Interpolate          (i, iii)
-import Data.Yaml                        (encode)
+import Data.Yaml                        (decodeEither', encode)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
+import Text.Parsec                      (parserFail, parserReturn)
+import Text.ParserCombinators.Parsec    (Parser, anyToken, many)
 
 data NameCdErrorAnswer = NameCdErrorAnswer {
   reason                      :: Int,
   contributing                :: [Int]
-  } deriving (Read, Show)
+  } deriving (Generic, Read, Show)
 
 $(deriveJSON defaultOptions ''NameCdErrorAnswer)
 
@@ -300,6 +306,9 @@ nameCdErrorTask path task = do
   paragraph $ translate $ do
     english [i|Possible reasons are:|]
     german [i|Mögliche Gründe sind:|]
+  paragraph $ translate $ do
+    english [i|The class diagram ...|]
+    german [i|Das Klassendiagramm ...|]
   enumerateM (text . show)
     $ second (translate . put . snd)
     <$> M.toList (errorReasons task)
@@ -323,10 +332,7 @@ nameCdErrorTask path task = do
         die Ihrer Meinung nach das Problem bilden.
         Zum Beispiel
         |]
-    paragraph $ code $ toString $ encode $ NameCdErrorAnswer {
-      reason = 2,
-      contributing = [3, 4]
-      }
+    paragraph $ code $ showNameCdErrorAnswer defaultNameCdErrorAnswer
     paragraph $ translate $ do
       english [iii|
         would indicate that the class diagram is invalid because of reason 2
@@ -340,6 +346,22 @@ nameCdErrorTask path task = do
   paragraph simplifiedInformation
   paragraph hoveringInformation
   pure ()
+
+defaultNameCdErrorAnswer :: NameCdErrorAnswer
+defaultNameCdErrorAnswer = NameCdErrorAnswer {
+  reason = 2,
+  contributing = [3, 4]
+  }
+
+showNameCdErrorAnswer :: NameCdErrorAnswer -> String
+showNameCdErrorAnswer = toString . encode
+
+parseNameCdErrorAnswer :: Parser NameCdErrorAnswer
+parseNameCdErrorAnswer = do
+  xs <- many anyToken
+  case decodeEither' $ fromString xs of
+    Left e -> parserFail $ show e
+    Right r -> parserReturn r
 
 nameCdErrorSyntax
   :: OutputMonad m
