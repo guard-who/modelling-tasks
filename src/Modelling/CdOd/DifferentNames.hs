@@ -267,11 +267,11 @@ differentNamesTask path task = do
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie das folgende Klassendiagramm:"
-  image $=<< liftIO $ cacheCd True True mempty cd path
+  paragraph $ image $=<< liftIO $ cacheCd True True mempty cd path
   paragraph $ translate $ do
     english "and the following object diagram (which conforms to it):"
     german "und das folgende (dazu passende) Objektdiagramm:"
-  image $=<< liftIO
+  paragraph $ image $=<< liftIO
     $ flip evalRandT (mkStdGen $ generatorValue task)
     $ cacheOd od anonymous Back True path
   paragraph $ do
