@@ -137,6 +137,7 @@ import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe, fromEither)
 import Data.Foldable                    (for_)
+import Data.List                        (delete)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Set                         (Set)
@@ -264,9 +265,14 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
       'allRelationships' must contain only relationships that are in fact
       relationships of the 'classDiagram'.
       |]
+  | length (nubOrd reasons) /= length reasons
+  = Just [iii|
+      'possibleReasons' must not contain any duplicates.
+      |]
   | otherwise
   = Nothing
   where
+    reasons = map snd $ M.elems errorReasons
     relationshipsOnly = map snd (M.elems allRelationships)
 
 nameCdErrorTask
@@ -508,7 +514,7 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
       $ zip [1..] $ map (\x -> (x `elem` rs, x)) $ relationships cd,
     classDiagram = cd,
     errorReasons = M.fromAscList $ zip [1..]
-      $ (True, reason) : map (False,) possibleReasons,
+      $ (True, reason) : map (False,) (delete reason possibleReasons),
     showSolution = printSolution,
     withDirections = printNavigations,
     withNames = printNames
@@ -721,34 +727,30 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
         ++ "zwischen den selben beiden Klassen, die in entgegengesetzte Richtungen zeigen")
       ])),
     (5, (False, M.fromAscList [
-      (English, "contains at least one composition cycle"),
-      (German, "enthält mindestens einen Komposistionszyklus")
-      ])),
-    (6, (False, M.fromAscList [
       (English, "contains at least two non-inheritance relationships "
         ++ "between the same two classes each pointing in the same directions"),
       (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
         ++ "zwischen den selben beiden Klassen, die in die selbe Richtung zeigen")
       ])),
-    (7, (True, M.fromAscList [
+    (6, (True, M.fromAscList [
       (English, "contains at least one composition cycle"),
       (German, "enthält mindestens einen Komposistionszyklus")
       ])),
-    (8, (False, M.fromAscList [
+    (7, (False, M.fromAscList [
       (English, "contains at least one inheritance cycle"),
       (German, "enthält mindestens einen Vererbungszyklus")
       ])),
-    (9, (False, M.fromAscList [
+    (8, (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity "
         ++ "near the whole of a composition"),
       (German, "enthält mindestens eine ungültige Multiplizität "
         ++ "am Ganzen einer Komposition")
       ])),
-    (10, (False, M.fromAscList [
+    (9, (False, M.fromAscList [
       (English, "contains at least one pair of classes inheriting each other"),
       (German, "enthält wenigstens ein Paar von Klassen, die sich gegenseiting beerben")
       ])),
-    (11, (False, M.fromAscList [
+    (10, (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity at any relationship"),
       (German, "enthält mindestens eine ungültige Multiplizität an einer Beziehung")
       ]))
