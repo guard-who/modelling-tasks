@@ -137,7 +137,7 @@ import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe, fromEither)
 import Data.Foldable                    (for_)
-import Data.List                        (delete)
+import Data.List                        (delete, singleton)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Set                         (Set)
@@ -149,7 +149,7 @@ import Text.Parsec                      (parserFail, parserReturn)
 import Text.ParserCombinators.Parsec    (Parser, anyToken, many)
 
 data NameCdErrorAnswer = NameCdErrorAnswer {
-  reason                      :: Int,
+  reason                      :: Char,
   contributing                :: [Int]
   } deriving (Generic, Read, Show)
 
@@ -247,7 +247,7 @@ allowedPropertiesToPropertySet AllowedProperties {..} =
 data NameCdErrorInstance = NameCdErrorInstance {
   allRelationships            :: Map Int (Bool, Relationship String String),
   classDiagram                :: Cd,
-  errorReasons                :: Map Int (Bool, Map Language String),
+  errorReasons                :: Map Char (Bool, Map Language String),
   showSolution                :: Bool,
   withDirections              :: Bool,
   withNames                   :: Bool
@@ -317,7 +317,7 @@ nameCdErrorTask path task = do
   paragraph $ translate $ do
     english [i|The class diagram ...|]
     german [i|Das Klassendiagramm ...|]
-  enumerateM (text . show)
+  enumerateM (text . singleton)
     $ second (translate . put . snd)
     <$> M.toList (errorReasons task)
   paragraph $ do
@@ -340,25 +340,35 @@ nameCdErrorTask path task = do
         die Ihrer Meinung nach das Problem bilden.
         Zum Beispiel
         |]
-    paragraph $ code $ showNameCdErrorAnswer defaultNameCdErrorAnswer
+    let answer = defaultNameCdErrorAnswer
+    paragraph $ code $ showNameCdErrorAnswer answer
     paragraph $ translate $ do
       english [iii|
-        would indicate that the class diagram is invalid because of reason 2
-        and that relationship 3 and 4 contribute to the problem.
+        would indicate that the class diagram is invalid
+        because of reason #{singleton $ reason answer}
+        and that relationship #{contributing1} and #{contributing2}
+        contribute to the problem.
         |]
       german [iii|
         würde bedeuten, dass das Klassendiagramm wegen Grund 2 ungültig ist
-        und dass die Beziehungen 3 und 4 zum Problem beitragen.
+        und dass die Beziehungen #{contributing1} und #{contributing2}
+        zum Problem beitragen.
         |]
     pure ()
   paragraph simplifiedInformation
   paragraph hoveringInformation
   pure ()
 
+contributing1 :: Int
+contributing1 = 3
+
+contributing2 :: Int
+contributing2 = 4
+
 defaultNameCdErrorAnswer :: NameCdErrorAnswer
 defaultNameCdErrorAnswer = NameCdErrorAnswer {
-  reason = 2,
-  contributing = [3, 4]
+  reason = 'b',
+  contributing = [contributing1, contributing2]
   }
 
 showNameCdErrorAnswer :: NameCdErrorAnswer -> String
@@ -462,7 +472,7 @@ instance RandomiseLayout NameCdErrorInstance where
 shuffleInstance :: MonadRandom m => NameCdErrorInstance -> m NameCdErrorInstance
 shuffleInstance inst = do
   chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems $ allRelationships inst)
-  rs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems $ errorReasons inst)
+  rs <- M.fromAscList . zip ['a' ..] <$> shuffleM (M.elems $ errorReasons inst)
   return $ NameCdErrorInstance {
     allRelationships = chs,
     classDiagram = classDiagram inst,
@@ -513,7 +523,7 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
     allRelationships = M.fromAscList
       $ zip [1..] $ map (\x -> (x `elem` rs, x)) $ relationships cd,
     classDiagram = cd,
-    errorReasons = M.fromAscList $ zip [1..]
+    errorReasons = M.fromAscList $ zip ['a' ..]
       $ (True, reason) : map (False,) (delete reason possibleReasons),
     showSolution = printSolution,
     withDirections = printNavigations,
@@ -708,49 +718,49 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
       ]
     },
   errorReasons = M.fromAscList [
-    (1, (False, M.fromAscList [
+    ('a', (False, M.fromAscList [
       (English, "contains at least one self-inheritance"),
       (German, "enthält mindestens eine Selbstvererbung")
       ])),
-    (2, (False, M.fromAscList [
+    ('b', (False, M.fromAscList [
       (English, "contains at least one multiple inheritance"),
       (German, "enthält mindestens eine Mehrfachvererbung")
       ])),
-    (3, (False, M.fromAscList [
+    ('c', (False, M.fromAscList [
       (English, "contains at least one self-relationship that is no inheritance"),
       (German, "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist")
       ])),
-    (4, (False, M.fromAscList [
+    ('d', (False, M.fromAscList [
       (English, "contains at least two non-inheritance relationships "
         ++ "between the same two classes pointing in opposing directions"),
       (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
         ++ "zwischen den selben beiden Klassen, die in entgegengesetzte Richtungen zeigen")
       ])),
-    (5, (False, M.fromAscList [
+    ('e', (False, M.fromAscList [
       (English, "contains at least two non-inheritance relationships "
         ++ "between the same two classes each pointing in the same directions"),
       (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
         ++ "zwischen den selben beiden Klassen, die in die selbe Richtung zeigen")
       ])),
-    (6, (True, M.fromAscList [
+    ('f', (True, M.fromAscList [
       (English, "contains at least one composition cycle"),
       (German, "enthält mindestens einen Komposistionszyklus")
       ])),
-    (7, (False, M.fromAscList [
+    ('g', (False, M.fromAscList [
       (English, "contains at least one inheritance cycle"),
       (German, "enthält mindestens einen Vererbungszyklus")
       ])),
-    (8, (False, M.fromAscList [
+    ('h', (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity "
         ++ "near the whole of a composition"),
       (German, "enthält mindestens eine ungültige Multiplizität "
         ++ "am Ganzen einer Komposition")
       ])),
-    (9, (False, M.fromAscList [
+    ('i', (False, M.fromAscList [
       (English, "contains at least one pair of classes inheriting each other"),
       (German, "enthält wenigstens ein Paar von Klassen, die sich gegenseiting beerben")
       ])),
-    (10, (False, M.fromAscList [
+    ('j', (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity at any relationship"),
       (German, "enthält mindestens eine ungültige Multiplizität an einer Beziehung")
       ]))
