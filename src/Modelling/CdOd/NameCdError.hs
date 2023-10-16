@@ -1,6 +1,7 @@
 {-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -10,6 +11,9 @@ module Modelling.CdOd.NameCdError (
   NameCdErrorAnswer (..),
   NameCdErrorConfig (..),
   NameCdErrorInstance (..),
+  NameCdErrorTaskText,
+  NameCdErrorTaskTextElement (..),
+  TaskTextPart (..),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
   classAndAssocNames,
@@ -137,7 +141,7 @@ import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe, fromEither)
 import Data.Foldable                    (for_)
-import Data.List                        (delete, singleton)
+import Data.List                        ((\\), delete, singleton)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Set                         (Set)
@@ -244,62 +248,135 @@ allowedPropertiesToPropertySet AllowedProperties {..} =
   where
     ifTrue x p = if x then Just p else Nothing
 
+type NameCdErrorTaskText = [TaskTextPart NameCdErrorTaskTextElement]
+
+data TaskTextPart element =
+  Code String |
+  Paragraph [TaskTextPart element] |
+  TaskSpecific element |
+  Translated (Map Language String)
+  deriving (Eq, Foldable, Generic, Read, Show)
+
+data NameCdErrorTaskTextElement =
+  IncorrectCd |
+  ReasonsList |
+  RelationshipsList
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
+toTaskText
+  :: (OutputMonad m, MonadIO m)
+  => NameCdErrorTaskText
+  -> FilePath
+  -> NameCdErrorInstance
+  -> LangM m
+toTaskText xs path task =
+  for_ xs $ \x -> toTaskTextPart x path task
+
+toTaskTextPart
+  :: (OutputMonad m, MonadIO m)
+  => TaskTextPart NameCdErrorTaskTextElement
+  -> FilePath
+  -> NameCdErrorInstance
+  -> LangM m
+toTaskTextPart output path task = case output of
+  Code c -> code c
+  Paragraph xs -> paragraph $ for_ xs $ \x -> toTaskTextPart x path task
+  TaskSpecific element -> case element of
+    IncorrectCd -> image $=<< liftIO $ cacheCd
+      (withDirections task)
+      (withNames task)
+      mempty
+      (classDiagram task)
+      path
+    ReasonsList -> enumerateM (text . singleton)
+      $ second (translate . put . snd)
+      <$> M.toList (errorReasons task)
+    RelationshipsList -> do
+      let phrase x y z = translate $ do
+            english $ phraseRelation x y z
+            german $ phraseRelationDE x y z
+      enumerateM (text . show)
+        $ second (phrase (withNames task) (withDirections task) . snd)
+        <$> M.toList (allRelationships task)
+  Translated xs -> translate $ put xs
+
 data NameCdErrorInstance = NameCdErrorInstance {
   allRelationships            :: Map Int (Bool, Relationship String String),
   classDiagram                :: Cd,
   errorReasons                :: Map Char (Bool, Map Language String),
   showSolution                :: Bool,
+  taskText                    :: NameCdErrorTaskText,
   withDirections              :: Bool,
   withNames                   :: Bool
   } deriving (Eq, Generic, Read, Show)
 
 checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
 checkNameCdErrorInstance NameCdErrorInstance {..}
-  | any (`notElem` relationshipsOnly) $ relationships classDiagram
+  | x:_ <- relationshipsCd \\ relationshipsOnly
   = Just [iii|
-      'allRelationships' must contain all relationships that are
-      relationships of the 'classDiagram'.
+      The class diagram contains Relationship '#{x}'
+      which is missing in 'allRelationships'.
       |]
-  | any (`notElem` relationships classDiagram) relationshipsOnly
+  | x:_ <- relationshipsOnly \\ relationshipsCd
   = Just [iii|
-      'allRelationships' must contain only relationships that are in fact
-      relationships of the 'classDiagram'.
+      'allRelationships' is containing Relationship '#{x}'
+      which is not part of the specified class diagram.
       |]
-  | length (nubOrd reasons) /= length reasons
+  | x:_ <- reasons \\ nubOrd reasons
   = Just [iii|
-      'possibleReasons' must not contain any duplicates.
+      'errorReasons' contains duplicate '#{x}' which is not allowed.
       |]
+  | x:_ <- mapMaybe checkTranslation reasons
+  = Just $ [i|Problem within 'errorReasons': |] ++ x
   | otherwise
-  = Nothing
+  = checkNameCdErrorTaskText taskText
   where
     reasons = map snd $ M.elems errorReasons
     relationshipsOnly = map snd (M.elems allRelationships)
+    relationshipsCd = relationships classDiagram
 
-nameCdErrorTask
-  :: (OutputMonad m, MonadIO m)
-  => FilePath
-  -> NameCdErrorInstance
-  -> LangM m
-nameCdErrorTask path task = do
-  paragraph $ translate $ do
+checkTranslation :: Map Language String -> Maybe String
+checkTranslation xs
+  | x:_ <- [minBound ..] \\ M.keys xs
+  = Just [i|Missing #{x} translation for #{xs}.|]
+  | otherwise
+  = Nothing
+
+checkTranslations :: TaskTextPart element -> [Maybe String]
+checkTranslations output = case output of
+  Code {} -> []
+  Paragraph xs -> concatMap checkTranslations xs
+  TaskSpecific {} -> []
+  Translated xs -> [checkTranslation xs]
+
+checkNameCdErrorTaskText :: NameCdErrorTaskText -> Maybe String
+checkNameCdErrorTaskText xs
+  | x:_ <- allElements \\ usedElements
+  = Just [iii|Your task text is incomplete as it is missing '#{x}'.|]
+  | x:_ <- usedElements \\ allElements
+  = Just [iii|
+      Your task text is using '#{x}' at least twice,
+      but it should appear exactly once.
+      |]
+  | x:_ <- concatMap checkTranslations xs
+  = ([i|Problem within your task text: |] ++) <$> x
+  | otherwise
+  = Nothing
+  where
+    usedElements = concatMap (concatMap singleton) xs
+    allElements = [minBound ..]
+
+defaultNameCdErrorTaskText :: NameCdErrorTaskText
+defaultNameCdErrorTaskText = [
+  Paragraph $ singleton $ Translated $ translations $ do
     english "Consider the following class diagram, which unfortunately is invalid."
-    german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist."
-  image $=<< liftIO $ cacheCd
-    (withDirections task)
-    (withNames task)
-    mempty
-    (classDiagram task)
-    path
-  paragraph $ translate $ do
+    german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist.",
+  Paragraph $ singleton $ TaskSpecific IncorrectCd,
+  Paragraph $ singleton $ Translated $ translations $ do
     english "It consists of the following relationships:"
-    german "Es besteht aus den folgenden Beziehungen:"
-  let phrase x y z = translate $ do
-        english $ phraseRelation x y z
-        german $ phraseRelationDE x y z
-  enumerateM (text . show)
-    $ second (phrase (withNames task) (withDirections task) . snd)
-    <$> M.toList (allRelationships task)
-  paragraph $ translate $ do
+    german "Es besteht aus den folgenden Beziehungen:",
+  Paragraph $ singleton $ TaskSpecific RelationshipsList,
+  Paragraph $ singleton $ Translated $ translations $ do
     english [iii|
       Choose the reason why you think that this class diagram is incorrect
       and state all relationships that contribute to the problem,
@@ -310,18 +387,16 @@ nameCdErrorTask path task = do
       dass dieses Klassendiagramm ungültig ist
       und nennen Sie alle Beziehungen, die zum Problem beitragen,
       d.h. deren Entfernung das Problem jeweils beheben würde.
-      |]
-  paragraph $ translate $ do
+      |],
+  Paragraph $ singleton $ Translated $ translations $ do
     english [i|Possible reasons are:|]
-    german [i|Mögliche Gründe sind:|]
-  paragraph $ translate $ do
+    german [i|Mögliche Gründe sind:|],
+  Paragraph $ singleton $ Translated $ translations $ do
     english [i|The class diagram ...|]
-    german [i|Das Klassendiagramm ...|]
-  enumerateM (text . singleton)
-    $ second (translate . put . snd)
-    <$> M.toList (errorReasons task)
-  paragraph $ do
-    paragraph $ translate $ do
+    german [i|Das Klassendiagramm ...|],
+  Paragraph $ singleton $ TaskSpecific ReasonsList,
+  Paragraph [
+    Paragraph $ singleton $ Translated $ translations $ do
       english [iii|
         Please state your answer by providing one number for reason,
         indicating the most specific, conceptual reason
@@ -339,10 +414,9 @@ nameCdErrorTask path task = do
         und eine Liste von Zahlen für die Beziehungen,
         die Ihrer Meinung nach das Problem bilden.
         Zum Beispiel
-        |]
-    let answer = defaultNameCdErrorAnswer
-    paragraph $ code $ showNameCdErrorAnswer answer
-    paragraph $ translate $ do
+        |],
+    Paragraph $ singleton $ Code $ showNameCdErrorAnswer answer,
+    Paragraph $ singleton $ Translated $ translations $ do
       english [iii|
         would indicate that the class diagram is invalid
         because of reason #{singleton $ reason answer}
@@ -354,7 +428,18 @@ nameCdErrorTask path task = do
         und dass die Beziehungen #{contributing1} und #{contributing2}
         zum Problem beitragen.
         |]
-    pure ()
+    ]
+  ]
+  where
+    answer = defaultNameCdErrorAnswer
+
+nameCdErrorTask
+  :: (OutputMonad m, MonadIO m)
+  => FilePath
+  -> NameCdErrorInstance
+  -> LangM m
+nameCdErrorTask path task = do
+  toTaskText (taskText task) path task
   paragraph simplifiedInformation
   paragraph hoveringInformation
   pure ()
@@ -465,21 +550,23 @@ instance RandomiseLayout NameCdErrorInstance where
       classDiagram = cd,
       errorReasons = errorReasons,
       showSolution = showSolution,
+      taskText = taskText,
       withDirections = withDirections,
       withNames = withNames
       }
 
 shuffleInstance :: MonadRandom m => NameCdErrorInstance -> m NameCdErrorInstance
-shuffleInstance inst = do
-  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems $ allRelationships inst)
-  rs <- M.fromAscList . zip ['a' ..] <$> shuffleM (M.elems $ errorReasons inst)
+shuffleInstance NameCdErrorInstance {..} = do
+  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems allRelationships)
+  rs <- M.fromAscList . zip ['a' ..] <$> shuffleM (M.elems errorReasons)
   return $ NameCdErrorInstance {
     allRelationships = chs,
-    classDiagram = classDiagram inst,
+    classDiagram = classDiagram,
     errorReasons = rs,
-    showSolution = showSolution inst,
-    withDirections = withDirections inst,
-    withNames = withNames inst
+    showSolution = showSolution,
+    taskText = taskText,
+    withDirections = withDirections,
+    withNames = withNames
     }
 
 renameInstance
@@ -488,21 +575,22 @@ renameInstance
   -> [String]
   -> [String]
   -> m NameCdErrorInstance
-renameInstance inst names' assocs' = do
+renameInstance inst@NameCdErrorInstance {..} names' assocs' = do
   let (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
       renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
-  cd <- renameCd $ classDiagram inst
-  chs <- mapM (mapM renameEdge) $ allRelationships inst
+  cd <- renameCd classDiagram
+  chs <- mapM (mapM renameEdge) allRelationships
   return $ NameCdErrorInstance {
     allRelationships = chs,
     classDiagram = cd,
-    errorReasons = errorReasons inst,
-    showSolution = showSolution inst,
-    withDirections = withDirections inst,
-    withNames = withNames inst
+    errorReasons = errorReasons,
+    showSolution = showSolution,
+    taskText = taskText,
+    withDirections = withDirections,
+    withNames = withNames
     }
 
 nameCdErrorGenerate
@@ -526,6 +614,7 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
     errorReasons = M.fromAscList $ zip ['a' ..]
       $ (True, reason) : map (False,) (delete reason possibleReasons),
     showSolution = printSolution,
+    taskText = defaultNameCdErrorTaskText,
     withDirections = printNavigations,
     withNames = printNames
     }
@@ -766,6 +855,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
       ]))
     ],
   showSolution = False,
+  taskText = defaultNameCdErrorTaskText,
   withDirections = True,
   withNames = True
   }
