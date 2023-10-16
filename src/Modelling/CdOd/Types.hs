@@ -677,7 +677,7 @@ data Property =
   | SelfInheritances
   | SelfRelationships
   | WrongAssociationLimits
-  | WrongComposistionLimits
+  | WrongCompositionLimits
   deriving (Bounded, Enum, Eq, Ord, Read, Show)
 
 isIllegal :: Property -> Bool
@@ -691,7 +691,7 @@ isIllegal x = case x of
   SelfInheritances -> True
   SelfRelationships -> False
   WrongAssociationLimits -> True
-  WrongComposistionLimits -> True
+  WrongCompositionLimits -> True
 
 {-|
 Create a set of properties based on a 'RelationshipProperties' configuration.
@@ -708,7 +708,7 @@ toPropertySet RelationshipProperties {..} =
     ifAny selfInheritances SelfInheritances,
     ifAny selfRelationships SelfRelationships,
     ifAny wrongAssocs WrongAssociationLimits,
-    ifAny wrongCompositions WrongComposistionLimits
+    ifAny wrongCompositions WrongCompositionLimits
     ]
   where
     ifAny x p = if x > 0 then Just p else Nothing

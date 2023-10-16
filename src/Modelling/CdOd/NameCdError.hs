@@ -243,7 +243,7 @@ allowedPropertiesToPropertySet AllowedProperties {..} =
     ifTrue selfInheritances SelfInheritances,
     ifTrue selfRelationships SelfRelationships,
     ifTrue wrongAssociationLimits WrongAssociationLimits,
-    ifTrue wrongCompositionLimits WrongComposistionLimits
+    ifTrue wrongCompositionLimits WrongCompositionLimits
     ]
   where
     ifTrue x p = if x then Just p else Nothing
@@ -749,7 +749,7 @@ translatePropertyWithDirections x = translations $ case x of
   WrongAssociationLimits -> do
     english "contains at least one invalid multiplicity at any relationship"
     german "enthält mindestens eine ungültige Multiplizität an einer Beziehung"
-  WrongComposistionLimits -> do
+  WrongCompositionLimits -> do
     english [iii|
       contains at least one invalid multiplicity near the whole of a composition
       |]
