@@ -373,19 +373,19 @@ defaultNameCdErrorTaskText = [
     german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist.",
   Paragraph $ singleton $ TaskSpecific IncorrectCd,
   Paragraph $ singleton $ Translated $ translations $ do
-    english "It consists of the following relationships:"
-    german "Es besteht aus den folgenden Beziehungen:",
+    english "It contains the following relationships between classes:"
+    german "Es enthält die folgenden Beziehungen zwischen Klassen:",
   Paragraph $ singleton $ TaskSpecific RelationshipsList,
   Paragraph $ singleton $ Translated $ translations $ do
     english [iii|
-      Choose the reason why you think that this class diagram is incorrect
-      and state all relationships that contribute to the problem,
+      Choose what you think is the single reason that this class diagram is incorrect,
+      and mention all relationships that definitely contribute to the problem,
       i.e. removing any of them would fix the problem.
       |]
     german [iii|
-      Wählen Sie den Grund aus, warum Sie denken,
-      dass dieses Klassendiagramm ungültig ist
-      und nennen Sie alle Beziehungen, die zum Problem beitragen,
+      Wählen Sie aus, was Sie für den einen Grund dafür halten,
+      dass dieses Klassendiagramm ungültig ist,
+      und nennen Sie alle Beziehungen, die definitiv zum Problem beitragen,
       d.h. deren Entfernung das Problem jeweils beheben würde.
       |],
   Paragraph $ singleton $ Translated $ translations $ do
@@ -398,21 +398,21 @@ defaultNameCdErrorTaskText = [
   Paragraph [
     Paragraph $ singleton $ Translated $ translations $ do
       english [iii|
-        Please state your answer by providing one number for reason,
-        indicating the most specific, conceptual reason
-        why this class diagram is invalid
-        and a list of numbers for relationships,
-        indicating the relationships that form the issue.
+        Please state your answer by providing a letter for the reason,
+        indicating the most specifically expressed reason
+        for which you think this class diagram is invalid,
+        and a list of numbers for those relationships
+        on whose individual presence the problem depends.
         E.g.
         |]
       german [iii|
-        Bitte geben Sie Ihre Antwort an, indem Sie folgendes angeben:
-        eine Zahl für den Grund,
-        der Ihrer Meinung nach der möglichst genaue,
-        konzeptuelle Grund dafür ist,
+        Bitte geben Sie Ihre Antwort an, indem Sie Folgendes angeben:
+        einen Buchstaben für den Grund,
+        der Ihrer Meinung nach der am spezifischsten
+        ausgedrückte Grund dafür ist,
         dass dieses Klassendiagramm ungültig ist,
-        und eine Liste von Zahlen für die Beziehungen,
-        die Ihrer Meinung nach das Problem bilden.
+        und eine Liste von Zahlen für diejenigen Beziehungen,
+        von deren individueller Präsenz das Problem abhängt.
         Zum Beispiel
         |],
     Paragraph $ singleton $ Code $ showNameCdErrorAnswer answer,
@@ -420,13 +420,13 @@ defaultNameCdErrorTaskText = [
       english [iii|
         would indicate that the class diagram is invalid
         because of reason #{singleton $ reason answer}
-        and that relationship #{contributing1} and #{contributing2}
-        contribute to the problem.
+        and that the relationships #{contributing1} and #{contributing2}
+        make the problem appear.
         |]
       german [iii|
-        würde bedeuten, dass das Klassendiagramm wegen Grund 2 ungültig ist
+        würde bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
         und dass die Beziehungen #{contributing1} und #{contributing2}
-        zum Problem beitragen.
+        das Problem erschaffen.
         |]
     ]
   ]
@@ -498,7 +498,7 @@ nameCdErrorEvaluation inst x = addPretext $ do
         (German, "Grund")
         ]
       contributingTranslation = M.fromAscList [
-        (English, "contributing relationships"),
+        (English, "relationships contributing to the problem"),
         (German, "zum Problem beitragende Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons inst
@@ -698,63 +698,63 @@ translateProperty False x = case x of
     doubleOrReverseRelationships = translations $ do
       english [iii|
         contains at least two non-inheritance relationships
-        between the same two classes
+        between the same two classes.
         |]
       german [iii|
         enthält mindestens zwei Nicht-Vererbungs-Beziehungen
-        zwischen den selben beiden Klassen
+        zwischen denselben beiden Klassen.
         |]
 
 translatePropertyWithDirections :: Property -> Map Language String
 translatePropertyWithDirections x = translations $ case x of
   CompositionCycles -> do
-    english "contains at least one composition cycle"
-    german "enthält mindestens einen Komposistionszyklus"
+    english "contains at least one composition cycle."
+    german "enthält mindestens einen Kompositionszyklus."
   DoubleRelationships -> do
     english [iii|
       contains at least two non-inheritance relationships
-      between the same two classes each pointing in the same directions
+      between the same two classes each pointing in the same direction.
       |]
     german [iii|
       enthält mindestens zwei Nicht-Vererbungs-Beziehungen
-      zwischen den selben beiden Klassen, die in die selbe Richtung zeigen
+      zwischen denselben beiden Klassen, die in dieselbe Richtung zeigen.
       |]
   InheritanceCycles -> do
-    english "contains at least one inheritance cycle"
-    german "enthält mindestens einen Vererbungszyklus"
+    english "contains at least one inheritance cycle."
+    german "enthält mindestens einen Vererbungszyklus."
   MultipleInheritances -> do
-    english "contains at least one multiple inheritance"
-    german "enthält mindestens eine Mehrfachvererbung"
+    english "contains at least one multiple inheritance."
+    german "enthält mindestens eine Mehrfachvererbung."
   ReverseInheritances -> do
-    english "contains at least one pair of classes inheriting each other"
+    english "contains at least one pair of classes each inheriting from the other."
     german [iii|
-      enthält wenigstens ein Paar von Klassen, die sich gegenseiting beerben
+      enthält mindestens ein Paar von Klassen, die sich gegenseiting beerben.
       |]
   ReverseRelationships -> do
     english [iii|
       contains at least two non-inheritance relationships
-      between the same two classes pointing in opposing directions
+      between the same two classes pointing in opposite directions.
       |]
     german [iii|
       enthält mindestens zwei Nicht-Vererbungs-Beziehungen
-      zwischen den selben beiden Klassen,
-      die in entgegengesetzte Richtungen zeigen
+      zwischen denselben beiden Klassen,
+      die in entgegengesetzte Richtungen zeigen.
       |]
   SelfInheritances -> do
-    english "contains at least one self-inheritance"
-    german "enthält mindestens eine Selbstvererbung"
+    english "contains at least one self-inheritance."
+    german "enthält mindestens eine Selbstvererbung."
   SelfRelationships -> do
-    english "contains at least one self-relationship that is no inheritance"
-    german "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist"
+    english "contains at least one self-relationship that is no inheritance."
+    german "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist."
   WrongAssociationLimits -> do
-    english "contains at least one invalid multiplicity at any relationship"
-    german "enthält mindestens eine ungültige Multiplizität an einer Beziehung"
+    english "contains at least one invalid multiplicity at some relationship."
+    german "enthält mindestens eine ungültige Multiplizität an einer Beziehung."
   WrongCompositionLimits -> do
     english [iii|
-      contains at least one invalid multiplicity near the whole of a composition
+      contains at least one invalid multiplicity near the whole of a composition.
       |]
     german [iii|
-      enthält mindestens eine ungültige Multiplizität am Ganzen einer Komposition
+      enthält mindestens eine ungültige Multiplizität am Ganzen einer Komposition.
       |]
 
 defaultNameCdErrorInstance :: NameCdErrorInstance
@@ -808,50 +808,50 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
     },
   errorReasons = M.fromAscList [
     ('a', (False, M.fromAscList [
-      (English, "contains at least one self-inheritance"),
-      (German, "enthält mindestens eine Selbstvererbung")
+      (English, "contains at least one self-inheritance."),
+      (German, "enthält mindestens eine Selbstvererbung.")
       ])),
     ('b', (False, M.fromAscList [
-      (English, "contains at least one multiple inheritance"),
-      (German, "enthält mindestens eine Mehrfachvererbung")
+      (English, "contains at least one multiple inheritance."),
+      (German, "enthält mindestens eine Mehrfachvererbung.")
       ])),
     ('c', (False, M.fromAscList [
-      (English, "contains at least one self-relationship that is no inheritance"),
-      (German, "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist")
+      (English, "contains at least one self-relationship that is no inheritance."),
+      (German, "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist.")
       ])),
     ('d', (False, M.fromAscList [
       (English, "contains at least two non-inheritance relationships "
-        ++ "between the same two classes pointing in opposing directions"),
+        ++ "between the same two classes pointing in opposite directions."),
       (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
-        ++ "zwischen den selben beiden Klassen, die in entgegengesetzte Richtungen zeigen")
+        ++ "zwischen denselben beiden Klassen, die in entgegengesetzte Richtungen zeigen.")
       ])),
     ('e', (False, M.fromAscList [
       (English, "contains at least two non-inheritance relationships "
-        ++ "between the same two classes each pointing in the same directions"),
+        ++ "between the same two classes each pointing in the same direction."),
       (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
-        ++ "zwischen den selben beiden Klassen, die in die selbe Richtung zeigen")
+        ++ "zwischen denselben beiden Klassen, die in dieselbe Richtung zeigen.")
       ])),
     ('f', (True, M.fromAscList [
-      (English, "contains at least one composition cycle"),
-      (German, "enthält mindestens einen Komposistionszyklus")
+      (English, "contains at least one composition cycle."),
+      (German, "enthält mindestens einen Kompositionszyklus.")
       ])),
     ('g', (False, M.fromAscList [
-      (English, "contains at least one inheritance cycle"),
-      (German, "enthält mindestens einen Vererbungszyklus")
+      (English, "contains at least one inheritance cycle."),
+      (German, "enthält mindestens einen Vererbungszyklus.")
       ])),
     ('h', (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity "
-        ++ "near the whole of a composition"),
+        ++ "near the whole of a composition."),
       (German, "enthält mindestens eine ungültige Multiplizität "
-        ++ "am Ganzen einer Komposition")
+        ++ "am Ganzen einer Komposition.")
       ])),
     ('i', (False, M.fromAscList [
-      (English, "contains at least one pair of classes inheriting each other"),
-      (German, "enthält wenigstens ein Paar von Klassen, die sich gegenseiting beerben")
+      (English, "contains at least one pair of classes each inheriting from the other."),
+      (German, "enthält mindestens ein Paar von Klassen, die sich gegenseiting beerben.")
       ])),
     ('j', (False, M.fromAscList [
-      (English, "contains at least one invalid multiplicity at any relationship"),
-      (German, "enthält mindestens eine ungültige Multiplizität an einer Beziehung")
+      (English, "contains at least one invalid multiplicity at some relationship."),
+      (German, "enthält mindestens eine ungültige Multiplizität an einer Beziehung.")
       ]))
     ],
   showSolution = False,
