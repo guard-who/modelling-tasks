@@ -498,8 +498,8 @@ nameCdErrorEvaluation inst x = addPretext $ do
         (German, "Grund")
         ]
       contributingTranslation = M.fromAscList [
-        (English, "relationships contributing to the problem"),
-        (German, "zum Problem beitragende Beziehungen")
+        (English, "relationships constituting the problem"),
+        (German, "das Problem ausmachende Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons inst
       solutionContributing = fst <$> allRelationships inst
