@@ -99,9 +99,7 @@ import Modelling.CdOd.Types (
   classNames,
   isIllegal,
   maxObjects,
-  relationshipName,
   renameClassesAndRelationshipsInCd,
-  renameClassesAndRelationshipsInRelationship,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
   toPropertySet,
@@ -295,13 +293,18 @@ toTaskTextPart output path task = case output of
       let phrase x y z = translate $ do
             english $ phraseRelation x y z
             german $ phraseRelationDE x y z
+          phraseRelationship =
+            phrase (withNames task) (withDirections task)
+            . (relationships (classDiagram task) !!)
       enumerateM (text . show)
-        $ second (phrase (withNames task) (withDirections task) . snd)
-        <$> M.toList (allRelationships task)
+        $ second (phraseRelationship . snd)
+        <$> M.toList (relevantRelationships task)
   Translated xs -> translate $ put xs
 
 data NameCdErrorInstance = NameCdErrorInstance {
-  allRelationships            :: Map Int (Bool, Relationship String String),
+  -- | maps the value to the index of 'relationships' of the specified
+  --   'classDiagram' (starting at @0@).
+  relevantRelationships       :: Map Int (Bool, Int),
   classDiagram                :: Cd,
   errorReasons                :: Map Char (Bool, Map Language String),
   showSolution                :: Bool,
@@ -312,15 +315,20 @@ data NameCdErrorInstance = NameCdErrorInstance {
 
 checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
 checkNameCdErrorInstance NameCdErrorInstance {..}
-  | x:_ <- relationshipsCd \\ relationshipsOnly
+  | x:_ <- filter (\x -> x < 0 || x >= numberOfRelationships) relationshipsOnly
   = Just [iii|
-      The class diagram contains Relationship '#{x}'
-      which is missing in 'allRelationships'.
+      The index '#{x}' in 'relevantRelationships' is out of the
+      possible range 0..#{numberOfRelationships - 1}.
       |]
-  | x:_ <- relationshipsOnly \\ relationshipsCd
+  | x:_ <- relationshipsOnly \\ nubOrd relationshipsOnly
   = Just [iii|
-      'allRelationships' is containing Relationship '#{x}'
-      which is not part of the specified class diagram.
+      'relevantRelationships' references '#{x}' at least twice
+      which is not allowed.
+      |]
+  | x:_ <- filter (`notElem` letters) $ M.keys errorReasons
+  = Just [iii|
+      'errorReasons' defines the invalid key character '#{x}' as one option,
+      please choose one of #{letters} instead.
       |]
   | x:_ <- reasons \\ nubOrd reasons
   = Just [iii|
@@ -331,9 +339,10 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   | otherwise
   = checkNameCdErrorTaskText taskText
   where
+    letters = ['a' .. 'z'] ++ ['A' .. 'Z']
+    numberOfRelationships = length $ relationships classDiagram
     reasons = map snd $ M.elems errorReasons
-    relationshipsOnly = map snd (M.elems allRelationships)
-    relationshipsCd = relationships classDiagram
+    relationshipsOnly = map snd (M.elems relevantRelationships)
 
 checkTranslation :: Map Language String -> Maybe String
 checkTranslation xs
@@ -479,7 +488,9 @@ nameCdErrorSyntax inst x = do
   paragraph $ translate $ do
     english "Feedback on chosen relationships:"
     german "Hinweis zu gewählten Beziehungen:"
-  for_ (contributing x) $ singleChoiceSyntax False (M.keys $ allRelationships inst)
+  for_
+    (contributing x)
+    $ singleChoiceSyntax False (M.keys $ relevantRelationships inst)
   pure ()
 
 {-| Grading is done the following way:
@@ -502,7 +513,7 @@ nameCdErrorEvaluation inst x = addPretext $ do
         (German, "das Problem ausmachende Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons inst
-      solutionContributing = fst <$> allRelationships inst
+      solutionContributing = fst <$> relevantRelationships inst
       correctAnswer
         | showSolution inst = Just $ toString $ encode $ nameCdErrorSolution inst
         | otherwise = Nothing
@@ -522,16 +533,14 @@ nameCdErrorEvaluation inst x = addPretext $ do
 nameCdErrorSolution :: NameCdErrorInstance -> NameCdErrorAnswer
 nameCdErrorSolution x = NameCdErrorAnswer {
   reason = head . M.keys . M.filter fst $ errorReasons x,
-  contributing = M.keys . M.filter fst $ allRelationships x
+  contributing = M.keys . M.filter fst $ relevantRelationships x
   }
 
 classAndAssocNames :: NameCdErrorInstance -> ([String], [String])
 classAndAssocNames inst =
   let cd = classDiagram inst
-      relationships = map snd $ M.elems $ allRelationships inst
       names = nubOrd $ classNames cd
       assocs = nubOrd $ associationNames cd
-        ++ mapMaybe relationshipName relationships
   in (names, assocs)
 
 instance Randomise NameCdErrorInstance where
@@ -546,7 +555,7 @@ instance RandomiseLayout NameCdErrorInstance where
   randomiseLayout NameCdErrorInstance {..} = do
     cd <- shuffleClassAndConnectionOrder classDiagram
     return NameCdErrorInstance {
-      allRelationships = allRelationships,
+      relevantRelationships = relevantRelationships,
       classDiagram = cd,
       errorReasons = errorReasons,
       showSolution = showSolution,
@@ -557,10 +566,10 @@ instance RandomiseLayout NameCdErrorInstance where
 
 shuffleInstance :: MonadRandom m => NameCdErrorInstance -> m NameCdErrorInstance
 shuffleInstance NameCdErrorInstance {..} = do
-  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems allRelationships)
+  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems relevantRelationships)
   rs <- M.fromAscList . zip ['a' ..] <$> shuffleM (M.elems errorReasons)
   return $ NameCdErrorInstance {
-    allRelationships = chs,
+    relevantRelationships = chs,
     classDiagram = classDiagram,
     errorReasons = rs,
     showSolution = showSolution,
@@ -580,11 +589,9 @@ renameInstance inst@NameCdErrorInstance {..} names' assocs' = do
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
       renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
-      renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
   cd <- renameCd classDiagram
-  chs <- mapM (mapM renameEdge) allRelationships
   return $ NameCdErrorInstance {
-    allRelationships = chs,
+    relevantRelationships = relevantRelationships,
     classDiagram = cd,
     errorReasons = errorReasons,
     showSolution = showSolution,
@@ -608,8 +615,10 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
     maxInstances
     timeout
   shuffleEverything $ NameCdErrorInstance {
-    allRelationships = M.fromAscList
-      $ zip [1..] $ map (\x -> (x `elem` rs, x)) $ relationships cd,
+    relevantRelationships = M.fromAscList $ zipWith
+      (\x r -> (x, (r, x - 1)))
+      [1..]
+      $ map (`elem` rs) $ relationships cd,
     classDiagram = cd,
     errorReasons = M.fromAscList $ zip ['a' ..]
       $ (True, reason) : map (False,) (delete reason possibleReasons),
@@ -759,27 +768,11 @@ translatePropertyWithDirections x = translations $ case x of
 
 defaultNameCdErrorInstance :: NameCdErrorInstance
 defaultNameCdErrorInstance = NameCdErrorInstance {
-  allRelationships = M.fromAscList [
-    (1, (True, Composition {
-      compositionName = "z",
-      compositionPart = LimitedLinking {linking = "D", limits = (1, Nothing)},
-      compositionWhole = LimitedLinking {linking = "A", limits = (1, Just 1)}
-      })),
-    (2, (True, Composition {
-      compositionName = "w",
-      compositionPart = LimitedLinking {linking = "B", limits = (1, Nothing)},
-      compositionWhole = LimitedLinking {linking = "D", limits = (1, Just 1)}
-      })),
-    (3, (False, Aggregation {
-      aggregationName = "y",
-      aggregationPart = LimitedLinking {linking = "B", limits = (2, Nothing)},
-      aggregationWhole = LimitedLinking {linking = "D", limits = (2, Just 2)}
-      })),
-    (4, (True, Composition {
-      compositionName = "x", compositionPart = LimitedLinking {
-      linking = "A", limits = (0, Just 1)},
-      compositionWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
-      }))
+  relevantRelationships = M.fromAscList [
+    (1, (True, 3)),
+    (2, (True, 2)),
+    (3, (False, 0)),
+    (4, (True, 1))
     ],
   classDiagram = ClassDiagram {
     classNames = ["D","C","B","A"],

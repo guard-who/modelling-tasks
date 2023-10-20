@@ -4,7 +4,7 @@ import qualified Data.Map                         as M (null)
 
 import Modelling.CdOd.NameCdError (
   NameCdErrorConfig (timeout),
-  NameCdErrorInstance (allRelationships, errorReasons),
+  NameCdErrorInstance (errorReasons, relevantRelationships),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
   classAndAssocNames,
@@ -33,7 +33,7 @@ spec = do
         do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
-          let check x = not (M.null $ allRelationships x)
+          let check x = not (M.null $ relevantRelationships x)
                 && not (M.null $ errorReasons x)
           check <$> nameCdErrorGenerate cfg segment seed
         `shouldReturn` True
