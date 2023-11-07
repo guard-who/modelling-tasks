@@ -105,8 +105,9 @@ import Modelling.CdOd.Types (
   shuffleObjectAndLinkOrder,
   )
 
+import Control.Exception                (Exception)
 import Control.Monad                    (when)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Except             (runExceptT)
 #if __GLASGOW_HASKELL__ < 808
 import Control.Monad.Fail               (MonadFail)
@@ -145,6 +146,11 @@ import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
 debug = False
+
+instance Exception MatchCdOdException
+
+data MatchCdOdException = InvalidMatchCdOdInstance
+  deriving Show
 
 data MatchCdOdInstance = MatchCdOdInstance {
     diagrams       :: Map Int Cd,
@@ -549,7 +555,7 @@ changeGeneratorValue inst = do
   return inst { generatorValue = r }
 
 shuffleInstance
-  :: (MonadFail m, MonadRandom m)
+  :: (MonadThrow m, MonadRandom m)
   => MatchCdOdInstance
   -> m MatchCdOdInstance
 shuffleInstance inst = do
@@ -558,7 +564,7 @@ shuffleInstance inst = do
   let changeId x (y, cd) = ((y, x), (x, cd))
       (idMap, cds') = unzip $ zipWith changeId [1..] cds
       replaceId x (_, od) = (x, od)
-      rename = maybe (fail "invalid match-cd-od instance") return
+      rename = maybe (throwM InvalidMatchCdOdInstance) return
         . (`lookup` idMap)
   ods' <- mapM (mapM $ bimapM (mapM rename) return)
     $ zipWith replaceId ['a'..] ods

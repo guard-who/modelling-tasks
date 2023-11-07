@@ -1,6 +1,24 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards #-}
-module Modelling.Auxiliary.Common where
+module Modelling.Auxiliary.Common (
+  Object (..),
+  Randomise (..),
+  RandomiseLayout (..),
+  ShuffleInstance (..),
+  cacheIO,
+  lensRulesL,
+  lowerFirst,
+  oneOf,
+  parseInt,
+  parseWith,
+  short,
+  shuffleEverything,
+  shuffleInstanceWith,
+  skipSpaces,
+  toMap,
+  upperFirst,
+  ) where
 
 import qualified Data.ByteString                  as BS (readFile, writeFile)
 import qualified Data.ByteString.Lazy             as LBS (fromStrict)
@@ -17,10 +35,17 @@ import qualified Data.Set                         as S (
   )
 
 import Control.Arrow                    (ArrowChoice (left))
+import Control.Exception                (SomeException)
 import Control.Monad                    ((>=>), when)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Random (MonadRandom (getRandomR))
+import Control.Monad.Random (
+  MonadRandom (getRandomR),
+  RandomGen,
+  RandT,
+  evalRandT,
+  )
+import Control.Monad.Trans.Class        (lift)
 import Data.Char                        (digitToInt, isSpace, toLower, toUpper)
 import Data.Digest.Pure.SHA             (sha256, showDigest)
 import Data.Foldable                    (Foldable (foldl'))
@@ -44,8 +69,23 @@ import Text.ParserCombinators.Parsec (
   satisfy,
   )
 
+newtype ShuffleExcept g a = ShuffleExcept {
+  unShuffleExcept :: RandT g (Either SomeException) a
+  }
+  deriving (Applicative, Functor, Monad, MonadRandom)
+
+instance MonadThrow (ShuffleExcept g) where
+  throwM = ShuffleExcept . lift . throwM
+
+shuffleInstanceWith
+  :: (RandomGen g, Randomise a, RandomiseLayout a)
+  => ShuffleInstance a
+  -> g
+  -> Either SomeException a
+shuffleInstanceWith x = evalRandT (unShuffleExcept $ shuffleInstance x)
+
 shuffleEverything
-  :: (MonadFail m, MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
+  :: (MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
   => a
   -> m a
 shuffleEverything inst = shuffleInstance $ ShuffleInstance {
@@ -61,7 +101,7 @@ data ShuffleInstance a = ShuffleInstance {
   } deriving (Eq, Generic, Read, Show)
 
 shuffleInstance
-  :: (MonadFail m, MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
+  :: (MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
   => ShuffleInstance a
   -> m a
 shuffleInstance ShuffleInstance {..} =
@@ -73,7 +113,7 @@ shuffleInstance ShuffleInstance {..} =
 
 class Randomise a where
   -- | Shuffles every component without affecting basic overall properties
-  randomise :: (MonadFail m, MonadRandom m, MonadThrow m) => a -> m a
+  randomise :: (MonadRandom m, MonadThrow m) => a -> m a
 
   -- | Checks the randomisability of the given value
   --     * returns Nothing, if it is randomisible
