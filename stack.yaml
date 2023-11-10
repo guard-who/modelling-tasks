@@ -7,11 +7,11 @@ flags:
     quick-testing: true
 extra-deps:
   - git: https://github.com/fmidue/output-monad.git
-    commit: dee586e12b62b0b854070c1bbd59749ad7ff3b0c
+    commit: a0758bd19e830d8c3f6e5898a07b3dbf57ad013c
     subdirs:
       - output-monad
   - call-alloy-0.4.0.2
-  - call-plantuml-0.0.1.1@sha256:886c047088c9204e3ca6096d7b586ae4f30e4cac27a3f31a1b42936a7a42f9f4,2043
+  - call-plantuml-0.0.1.2
   - diagrams-graphviz-1.4.1.1@sha256:e71afa8f89904c2a6a2cb490dba7108c6425779c2174b90bd90dbaf507a9d3dc,1388
   - hgal-2.0.0.2@sha256:13d58afd0668b9cb881c612eff8488a0e289edd4bbffa893df4beee60cfeb73b,653
   - latex-svg-image-0.2@sha256:b282a74a96724037ec3d24b664118e51170c8152aff12f363ddb715a38ef053a,1830
