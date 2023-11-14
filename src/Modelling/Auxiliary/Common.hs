@@ -18,6 +18,7 @@ module Modelling.Auxiliary.Common (
   skipSpaces,
   toMap,
   upperFirst,
+  upperToDash,
   ) where
 
 import qualified Data.ByteString                  as BS (readFile, writeFile)
@@ -46,7 +47,13 @@ import Control.Monad.Random (
   evalRandT,
   )
 import Control.Monad.Trans.Class        (lift)
-import Data.Char                        (digitToInt, isSpace, toLower, toUpper)
+import Data.Char (
+  digitToInt,
+  isSpace,
+  isUpper,
+  toLower,
+  toUpper,
+  )
 import Data.Digest.Pure.SHA             (sha256, showDigest)
 import Data.Foldable                    (Foldable (foldl'))
 import Data.Function                    ((&))
@@ -131,6 +138,12 @@ class RandomiseLayout a where
   the layouting performed by the used algorithm.
   -}
   randomiseLayout :: (MonadRandom m, MonadThrow m) => a -> m a
+
+upperToDash :: String -> String
+upperToDash [] = []
+upperToDash (y:ys) = toLower y : foldr
+  (\x xs -> if isUpper x then '-' : toLower x:xs else x:xs) ""
+  ys
 
 data Object = Object {
   oName :: String,

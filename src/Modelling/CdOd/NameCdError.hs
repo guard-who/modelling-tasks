@@ -54,6 +54,7 @@ import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
   shuffleEverything,
+  upperToDash,
   )
 import Modelling.Auxiliary.Output (
   addPretext,
@@ -133,7 +134,7 @@ import Control.Monad.Output.Generic     (($>>=))
 import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans.State        (put)
-import Data.Aeson.TH                    (defaultOptions, deriveJSON)
+import Data.Aeson.TH                    (Options (..), defaultOptions, deriveJSON)
 import Data.Bifunctor                   (second)
 import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
@@ -152,15 +153,15 @@ import Text.ParserCombinators.Parsec    (Parser, anyToken, many)
 
 data NameCdErrorAnswer = NameCdErrorAnswer {
   reason                      :: Char,
-  contributing                :: [Int]
+  dueTo                       :: [Int]
   } deriving (Generic, Read, Show)
+
+$(deriveJSON defaultOptions {fieldLabelModifier = upperToDash} ''NameCdErrorAnswer)
 
 data Reason
   = Custom (Map Language String)
   | PreDefined Property
   deriving (Eq, Generic, Read, Show)
-
-$(deriveJSON defaultOptions ''NameCdErrorAnswer)
 
 data NameCdErrorConfig = NameCdErrorConfig {
   allowedProperties           :: AllowedProperties,
@@ -433,12 +434,12 @@ defaultNameCdErrorTaskText = [
       english [iii|
         would indicate that the class diagram is invalid
         because of reason #{singleton $ reason answer}
-        and that the relationships #{contributing1} and #{contributing2}
+        and that the relationships #{dueTo1} and #{dueTo2}
         make the problem appear.
         |]
       german [iii|
         würde bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
-        und dass die Beziehungen #{contributing1} und #{contributing2}
+        und dass die Beziehungen #{dueTo1} und #{dueTo2}
         das Problem erschaffen.
         |]
     ]
@@ -457,16 +458,16 @@ nameCdErrorTask path task = do
   paragraph hoveringInformation
   pure ()
 
-contributing1 :: Int
-contributing1 = 3
+dueTo1 :: Int
+dueTo1 = 3
 
-contributing2 :: Int
-contributing2 = 4
+dueTo2 :: Int
+dueTo2 = 4
 
 defaultNameCdErrorAnswer :: NameCdErrorAnswer
 defaultNameCdErrorAnswer = NameCdErrorAnswer {
   reason = 'b',
-  contributing = [contributing1, contributing2]
+  dueTo = [dueTo1, dueTo2]
   }
 
 showNameCdErrorAnswer :: NameCdErrorAnswer -> String
@@ -493,14 +494,14 @@ nameCdErrorSyntax inst x = do
     english "Feedback on chosen relationships:"
     german "Hinweis zu gewählten Beziehungen:"
   for_
-    (contributing x)
+    (dueTo x)
     $ singleChoiceSyntax False (M.keys $ relevantRelationships inst)
   pure ()
 
 {-| Grading is done the following way:
 
  * 0 points if the reason is wrong
- * otherwise, multiple choice grading for answer on contributing relationships
+ * otherwise, multiple choice grading for answer on dueTo relationships
 -}
 nameCdErrorEvaluation
   :: (Alternative m, Monad m, OutputMonad m)
@@ -512,12 +513,12 @@ nameCdErrorEvaluation inst x = addPretext $ do
         (English, "reason"),
         (German, "Grund")
         ]
-      contributingTranslation = M.fromAscList [
+      dueToTranslation = M.fromAscList [
         (English, "relationships constituting the problem"),
         (German, "das Problem ausmachende Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons inst
-      solutionContributing = fst <$> relevantRelationships inst
+      solutionDueTo = fst <$> relevantRelationships inst
       correctAnswer
         | showSolution inst = Just $ toString $ encode $ nameCdErrorSolution inst
         | otherwise = Nothing
@@ -527,17 +528,17 @@ nameCdErrorEvaluation inst x = addPretext $ do
       if p < 1
       then pure 0
       else multipleChoice
-        contributingTranslation
+        dueToTranslation
         Nothing
-        solutionContributing
-        (contributing x)
+        solutionDueTo
+        (dueTo x)
     )
     $>>= printSolutionAndAssert correctAnswer . fromEither
 
 nameCdErrorSolution :: NameCdErrorInstance -> NameCdErrorAnswer
 nameCdErrorSolution x = NameCdErrorAnswer {
   reason = head . M.keys . M.filter fst $ errorReasons x,
-  contributing = M.keys . M.filter fst $ relevantRelationships x
+  dueTo = M.keys . M.filter fst $ relevantRelationships x
   }
 
 classAndAssocNames :: NameCdErrorInstance -> ([String], [String])
