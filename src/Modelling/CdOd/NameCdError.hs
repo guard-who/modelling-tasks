@@ -155,6 +155,11 @@ data NameCdErrorAnswer = NameCdErrorAnswer {
   contributing                :: [Int]
   } deriving (Generic, Read, Show)
 
+data Reason
+  = Custom (Map Language String)
+  | PreDefined Property
+  deriving (Eq, Generic, Read, Show)
+
 $(deriveJSON defaultOptions ''NameCdErrorAnswer)
 
 data NameCdErrorConfig = NameCdErrorConfig {
@@ -162,7 +167,7 @@ data NameCdErrorConfig = NameCdErrorConfig {
   classConfig                 :: ClassConfig,
   maxInstances                :: Maybe Integer,
   objectProperties            :: ObjectProperties,
-  possibleReasons             :: [Map Language String],
+  possibleReasons             :: [Reason],
   printNames                  :: Bool,
   printNavigations            :: Bool,
   printSolution               :: Bool,
@@ -191,7 +196,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     hasSelfLoops = Nothing,
     usesEveryRelationshipName = Just True
     },
-  possibleReasons = map (translateProperty True) [minBound ..],
+  possibleReasons = map PreDefined [minBound ..],
   printNames = True,
   printNavigations = True,
   printSolution = False,
@@ -225,8 +230,7 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
   where
     properties = allowedPropertiesToPropertySet allowedProperties
     illegalProperties = S.filter isIllegal properties
-    illegalReasons = map (translateProperty printNavigations)
-      $ S.toList illegalProperties
+    illegalReasons = map PreDefined $ S.toList illegalProperties
     additionalReasons = map (translateProperty printNames)
       $ S.toList (properties S.\\ illegalProperties)
 
@@ -611,7 +615,6 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
     allowedProperties
     classConfig
     objectProperties
-    printNavigations
     maxInstances
     timeout
   shuffleEverything $ NameCdErrorInstance {
@@ -621,23 +624,28 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
       $ map (`elem` rs) $ relationships cd,
     classDiagram = cd,
     errorReasons = M.fromAscList $ zip ['a' ..]
-      $ (True, reason) : map (False,) (delete reason possibleReasons),
+      $ map (second toTranslations)
+      $ (True, PreDefined reason)
+      : map (False,) (delete (PreDefined reason) possibleReasons),
     showSolution = printSolution,
     taskText = defaultNameCdErrorTaskText,
     withDirections = printNavigations,
     withNames = printNames
     }
+  where
+    toTranslations x = case x of
+      Custom y -> y
+      PreDefined y -> translateProperty printNavigations y
 
 nameCdError
   :: RandomGen g
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
-  -> Bool
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g IO (Cd, Map Language String, [Relationship String String])
-nameCdError allowed config objectProperties withDir maxInsts to = do
+  -> RandT g IO (Cd, Property, [Relationship String String])
+nameCdError allowed config objectProperties maxInsts to = do
   changes <- shuffleM $ (,)
     <$> illegalChanges allowed
     <*> legalChanges allowed
@@ -675,7 +683,7 @@ nameCdError allowed config objectProperties withDir maxInsts to = do
           let fixes = toPropertySet p
                 S.\\ toPropertySet (towardsValidProperties p)
           in case S.toList fixes of
-            [problem] -> return (cd2, translateProperty withDir problem, removes)
+            [problem] -> return (cd2, problem, removes)
             _ -> error "error in task type: property fix is not unique"
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
