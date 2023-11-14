@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -140,7 +141,7 @@ import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe, fromEither)
 import Data.Foldable                    (for_)
-import Data.List                        ((\\), delete, singleton)
+import Data.List                        ((\\), delete, partition, singleton)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Set                         (Set)
@@ -163,6 +164,17 @@ data Reason
   | PreDefined Property
   deriving (Eq, Generic, Read, Show)
 
+isCustom :: Reason -> Bool
+isCustom = \case
+  Custom {} -> True
+  PreDefined {} -> False
+
+data NumberOfReasons = NumberOfReasons {
+  customReasons :: Int,
+  preDefinedInvalid :: Int,
+  preDefinedValid :: Int
+  } deriving (Generic, Read, Show)
+
 data NameCdErrorConfig = NameCdErrorConfig {
   allowedProperties           :: AllowedProperties,
   classConfig                 :: ClassConfig,
@@ -172,6 +184,7 @@ data NameCdErrorConfig = NameCdErrorConfig {
   printNames                  :: Bool,
   printNavigations            :: Bool,
   printSolution               :: Bool,
+  reasonsPerInstance          :: NumberOfReasons,
   timeout                     :: Maybe Int,
   useNames                    :: Bool
   } deriving (Generic, Read, Show)
@@ -201,6 +214,11 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
   printNames = True,
   printNavigations = True,
   printSolution = False,
+  reasonsPerInstance = NumberOfReasons {
+    customReasons = 0,
+    preDefinedInvalid = length $ filter isIllegal [minBound ..],
+    preDefinedValid = length $ filter (not . isIllegal) [minBound ..]
+    },
   timeout = Nothing,
   useNames = False
   }
@@ -226,13 +244,38 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
       considering your current configuration.
       Suggested additional reasons are: #{additionalReasons}
       |]
+  | customReasons reasonsPerInstance < 0
+  = Just "customReasons must not be negative"
+  | preDefinedValid reasonsPerInstance < 0
+  = Just "preDefinedVvalid must not be negative"
+  | preDefinedInvalid reasonsPerInstance < 1
+  = Just "preDefinedInvalid must be set at least to one"
+  | customReasons reasonsPerInstance > length (filter isCustom possibleReasons)
+  = Just [iii|
+      customReasons is set higher than the number of Custom reasons
+      defined within possibleReasons
+      |]
+  | preDefinedInvalid reasonsPerInstance > length (filter isIllegal predefined)
+  = Just [iii|
+      preDefinedInvalid is set higher than the number of PreDefined reasons
+      of illegal properties defined within possibleReasons
+      |]
+  | preDefinedValid reasonsPerInstance
+    > length (filter (not . isIllegal) predefined)
+  = Just [iii|
+      preDefinedValid is set higher than the number of PreDefined reasons
+      of legal properties defined within possibleReasons
+      |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
   where
+    predefined = concatMap
+      (\case Custom {} -> []; PreDefined x -> [x])
+      possibleReasons
     properties = allowedPropertiesToPropertySet allowedProperties
     illegalProperties = S.filter isIllegal properties
     illegalReasons = map PreDefined $ S.toList illegalProperties
-    additionalReasons = map (translateProperty printNames)
+    additionalReasons = map PreDefined
       $ S.toList (properties S.\\ illegalProperties)
 
 allowedPropertiesToPropertySet :: AllowedProperties -> Set Property
@@ -618,6 +661,14 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
     objectProperties
     maxInstances
     timeout
+  reasons <- shuffleM possibleReasons
+  let (custom, predefined) = partition isCustom $ delete (PreDefined reason) reasons
+      (invalid, valid) = partition
+        (\case (PreDefined x) -> isIllegal x; Custom {} -> False)
+        predefined
+      chosenReasons = drop (customReasons reasonsPerInstance) custom
+        ++ drop (preDefinedInvalid reasonsPerInstance - 1) invalid
+        ++ drop (preDefinedValid reasonsPerInstance) valid
   shuffleEverything $ NameCdErrorInstance {
     relevantRelationships = M.fromAscList $ zipWith
       (\x r -> (x, (r, x - 1)))
@@ -627,7 +678,7 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
     errorReasons = M.fromAscList $ zip ['a' ..]
       $ map (second toTranslations)
       $ (True, PreDefined reason)
-      : map (False,) (delete (PreDefined reason) possibleReasons),
+      : map (False,) chosenReasons,
     showSolution = printSolution,
     taskText = defaultNameCdErrorTaskText,
     withDirections = printNavigations,
