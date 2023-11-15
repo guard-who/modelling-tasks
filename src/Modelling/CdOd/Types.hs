@@ -28,7 +28,6 @@ module Modelling.CdOd.Types (
   anyThickEdge,
   associationNames,
   calculateThickRelationships,
-  canShuffleClassNames,
   checkClassConfig,
   checkClassConfigWithProperties,
   checkObjectDiagram,
@@ -36,6 +35,7 @@ module Modelling.CdOd.Types (
   defaultProperties,
   fromNameMapping,
   isIllegal,
+  isObjectDiagramRandomisable,
   linkNames,
   maxFiveObjects,
   maxObjects,
@@ -785,6 +785,18 @@ renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
 canShuffleClassNames :: ObjectDiagram String String linkNames -> Bool
 canShuffleClassNames ObjectDiagram {..} =
   all (\Object {..} -> lowerFirst objectClass `isPrefixOf` objectName) objects
+
+isObjectDiagramRandomisable
+  :: ObjectDiagram String String linkNames
+  -> Maybe String
+isObjectDiagramRandomisable od
+  | not $ canShuffleClassNames od
+  = Just [iii|
+      object names of the CD have to match to their class names
+      (e.g. c1 for C or anyOne for AnyOne).
+      |]
+  | otherwise
+  = Nothing
 
 anyThickEdge :: Cd -> Bool
 anyThickEdge = any fst . calculateThickRelationships

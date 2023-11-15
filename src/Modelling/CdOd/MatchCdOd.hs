@@ -90,11 +90,11 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   associationNames,
-  canShuffleClassNames,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   classNames,
   defaultProperties,
+  isObjectDiagramRandomisable,
   linkNames,
   relationshipName,
   renameClassesAndRelationshipsInCd,
@@ -138,7 +138,7 @@ import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
 import Data.Map                         (Map)
-import Data.Maybe                       (fromJust)
+import Data.Maybe                       (fromJust, listToMaybe, mapMaybe)
 import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
@@ -520,14 +520,8 @@ instance Randomise MatchCdOdInstance where
     renameInstance inst names' assocs'
       >>= shuffleInstance
       >>= changeGeneratorValue
-  isRandomisable MatchCdOdInstance {..}
-    | not $ all (canShuffleClassNames . snd) instances
-    = Just [iii|
-      object names of each CD have to match to their class names
-      (e.g. c1 for C or anyOne for AnyOne).
-      |]
-    | otherwise
-    = Nothing
+  isRandomisable MatchCdOdInstance {..} = listToMaybe
+    $ mapMaybe (isObjectDiagramRandomisable . snd) $ M.elems instances
 
 instance RandomiseLayout MatchCdOdInstance where
   randomiseLayout = shuffleNodesAndEdges

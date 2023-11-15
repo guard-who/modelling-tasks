@@ -363,6 +363,11 @@ data NameCdErrorInstance = NameCdErrorInstance {
 
 checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
 checkNameCdErrorInstance NameCdErrorInstance {..}
+  | 1 /= length (filter fst $ M.elems errorReasons)
+  = Just [iii|
+      There needs to be exactly one error defined within errorReasons
+      (i.e. set to 'True')
+      |]
   | x:_ <- filter (\x -> x < 0 || x >= numberOfRelationships) relationshipsOnly
   = Just [iii|
       The index '#{x}' in 'relevantRelationships' is out of the
