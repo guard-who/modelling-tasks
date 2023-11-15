@@ -678,7 +678,7 @@ data Property =
   | SelfRelationships
   | WrongAssociationLimits
   | WrongCompositionLimits
-  deriving (Bounded, Enum, Eq, Ord, Read, Show)
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
 
 isIllegal :: Property -> Bool
 isIllegal x = case x of
