@@ -286,7 +286,7 @@ selectValidCdFeedback path withDir byName xs x cdChange =
             |]
           german [iii|
             Klassendiagramm #{x} ist ungültig.
-            Sehen Sie sich die folgende Änderung an, die darauf abzielt eine
+            Sehen Sie sich die folgende Änderung an, die darauf abzielt, eine
             problematische Stelle im Klassendiagramm zu beheben:
             #{phraseChangeDE byName withDir change}.
             |]
@@ -294,7 +294,7 @@ selectValidCdFeedback path withDir byName xs x cdChange =
           english [iii|
             Class diagram #{x} is in fact invalid.
             If there would not be
-            #{phraseRelation byName withDir relation}
+            #{phraseRelation byName withDir relation},
             it would be valid.
             |]
           german [iii|
@@ -309,13 +309,13 @@ selectValidCdFeedback path withDir byName xs x cdChange =
       paragraph $ translate $ do
         english [iii|
           Class diagram #{x} is in fact valid.
-          Consider the following object diagram, which is an instance of the
+          Consider the following object diagram, which is an instance of this
           class diagram:
           |]
         german [iii|
           Klassendiagramm #{x} ist gültig.
           Betrachten Sie zum Beispiel das folgende Objektdiagramm,
-          das Instanz des Klassendiagramms ist:
+          das Instanz dieses Klassendiagramms ist:
           |]
       paragraph $ image $=<< liftIO
         $ flip evalRandT (mkStdGen 0)
