@@ -673,9 +673,9 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
       (invalid, valid) = partition
         (\case (PreDefined x) -> isIllegal x; Custom {} -> False)
         predefined
-      chosenReasons = drop (customReasons reasonsPerInstance) custom
-        ++ drop (preDefinedInvalid reasonsPerInstance - 1) invalid
-        ++ drop (preDefinedValid reasonsPerInstance) valid
+      chosenReasons = take (customReasons reasonsPerInstance) custom
+        ++ take (preDefinedInvalid reasonsPerInstance - 1) invalid
+        ++ take (preDefinedValid reasonsPerInstance) valid
   shuffleEverything $ NameCdErrorInstance {
     relevantRelationships = M.fromAscList $ zipWith
       (\x r -> (x, (r, x - 1)))
