@@ -27,8 +27,8 @@ import Data.String.Interpolate          (iii)
 hoveringInformation :: OutputMonad m => LangM m
 hoveringInformation = translate $ do
   english [iii|
-    Please note: Hovering over or clicking on edges / nodes
-    or their labels highlights the respective matching parts.
+    Please note: When hovering over or clicking on edges / nodes or their
+    labels, the respective components that belong together are highlighted.
     |]
   german [iii|
     Bitte beachten Sie: Beim Bewegen über oder Klicken auf
