@@ -9,6 +9,7 @@ module Modelling.Auxiliary.Common (
   cacheIO,
   lensRulesL,
   lowerFirst,
+  mapIndicesTo,
   oneOf,
   parseInt,
   parseWith,
@@ -36,7 +37,7 @@ import qualified Data.Set                         as S (
   )
 
 import Control.Arrow                    (ArrowChoice (left))
-import Control.Exception                (SomeException)
+import Control.Exception                (Exception, SomeException)
 import Control.Monad                    ((>=>), when)
 import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.IO.Class           (MonadIO (liftIO))
@@ -75,6 +76,34 @@ import Text.ParserCombinators.Parsec (
   optional,
   satisfy,
   )
+
+data MatchListsException =
+  FirstListIsLonger
+  | SecondListIsLonger
+  | ListsDoNotContainSameElements
+  deriving Show
+
+instance Exception MatchListsException
+
+mapIndicesTo :: (Eq a, MonadThrow m) => [a] -> [a] -> m [(Int, Int)]
+mapIndicesTo xs ys = mapIndicesToHelper (zip [0 ..] xs) (zip [0 ..] ys)
+
+mapIndicesToHelper
+  :: (Eq a, MonadThrow m)
+  => [(Int, a)]
+  -> [(Int, a)]
+  -> m [(Int, Int)]
+mapIndicesToHelper [] [] = pure []
+mapIndicesToHelper [] _ = throwM SecondListIsLonger
+mapIndicesToHelper _ [] = throwM FirstListIsLonger
+mapIndicesToHelper ((k, x):xs) ys = do
+  (l, ys') <- getFirstIn ys
+  ((k, l) :) <$> mapIndicesToHelper xs ys'
+  where
+    getFirstIn [] = throwM ListsDoNotContainSameElements
+    getFirstIn ((l, y) : ys')
+      | x == y = pure (l, ys')
+      | otherwise = fmap ((l, y) :) <$> getFirstIn ys'
 
 newtype ShuffleExcept g a = ShuffleExcept {
   unShuffleExcept :: RandT g (Either SomeException) a

@@ -37,7 +37,7 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
   transformGetNextFix,
   )
 
-import qualified Data.Bimap                       as BM (fromList)
+import qualified Data.Bimap                       as BM (fromList, lookup)
 import qualified Data.Map                         as M (
   elems,
   filter,
@@ -56,6 +56,7 @@ import qualified Data.Set                         as S (
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
+  mapIndicesTo,
   shuffleEverything,
   upperToDash,
   )
@@ -609,8 +610,11 @@ instance Randomise NameCdErrorInstance where
 instance RandomiseLayout NameCdErrorInstance where
   randomiseLayout NameCdErrorInstance {..} = do
     cd <- shuffleClassAndConnectionOrder classDiagram
+    mapping <- BM.fromList
+      <$> mapIndicesTo (relationships classDiagram) (relationships cd)
+    relevant <- traverse (traverse (`BM.lookup` mapping)) relevantRelationships
     return NameCdErrorInstance {
-      relevantRelationships = relevantRelationships,
+      relevantRelationships = relevant,
       classDiagram = cd,
       errorReasons = errorReasons,
       showSolution = showSolution,
