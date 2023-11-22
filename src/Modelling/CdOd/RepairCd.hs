@@ -518,7 +518,7 @@ repairCdFeedback path withDir byName xs x cdChange =
       | otherwise   -> notCorrect *> makesCorrect *> showCd cd
   where
     correct = paragraph $ translate $ do
-      english [iii|Your answer abaut change #{x} is correct.|]
+      english [iii|Your answer about change #{x} is correct.|]
       german [iii|Ihre Antwort zu Änderung #{x} ist richtig.|]
     notCorrect = paragraph $ translate $ do
       english [iii|Your answer about change #{x} is not correct.|]
