@@ -20,7 +20,7 @@ import Modelling.CdOd.DifferentNames (
   getDifferentNamesTask,
   renameInstance,
   )
-import Modelling.Auxiliary.Common       (oneOf)
+import Modelling.Auxiliary.Common       (lowerFirst, oneOf)
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
@@ -288,7 +288,7 @@ renameProperty p = property $ \n1 n2 n3 n4 a1 a2 a3 l1 l2 l3 ->
       ls = map unName [l1, l2, l3]
       distinct xs = length (nubOrd xs) == length xs
       mrinst = renameInstance inst ns as ls
-  in distinct ns && distinct as && distinct ls
+  in distinct (map lowerFirst ns) && distinct as && distinct ls
      ==> p inst mrinst as ls
 
 instance Arbitrary Name where
