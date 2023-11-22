@@ -511,25 +511,27 @@ repairCdFeedback
 repairCdFeedback path withDir byName xs x cdChange =
   case hint cdChange of
     Left cd
-      | x `elem` xs -> notCorrect *> makesCorrect *> showCd cd
+      | x `elem` xs -> notCorrect *> makesIncorrect *> showCd cd
       | otherwise   -> correct *> makesIncorrect *> showCd cd
     Right cd
       | x `elem` xs -> correct *> makesCorrect *> showCd cd
-      | otherwise   -> notCorrect *> makesIncorrect *> showCd cd
+      | otherwise   -> notCorrect *> makesCorrect *> showCd cd
   where
     correct = paragraph $ translate $ do
-      english [iii|Your answer to change #{x} is correct.|]
+      english [iii|Your answer abaut change #{x} is correct.|]
       german [iii|Ihre Antwort zu Änderung #{x} ist richtig.|]
     notCorrect = paragraph $ translate $ do
-      english [iii|Your answer to change #{x} is not correct.|]
+      english [iii|Your answer about change #{x} is not correct.|]
       german [iii|Ihre Antwort zu Änderung #{x} ist nicht richtig.|]
     makesCorrect = paragraph $ translate $ do
-      english [iii|It repairs the class diagram as it results in:|]
-      german [iii|Es repariert das Klassendiagramm, da es dann so aussieht:|]
-    makesIncorrect = paragraph $ translate $ do
-      english [iii|It does not repair the class diagram as it results in:|]
+      english [iii|The change repairs the class diagram as it results in:|]
       german [iii|
-        Es repariert das Klassendiagramm nicht, da es dann so aussieht:
+        Die Änderung repariert das Klassendiagramm, da es dann so aussieht:
+        |]
+    makesIncorrect = paragraph $ translate $ do
+      english [iii|The change does not repair the class diagram as it results in:|]
+      german [iii|
+        Die Änderung repariert das Klassendiagramm nicht, da es dann so aussieht:
         |]
     showCd cd = paragraph $
       image $=<< liftIO $ cacheCd withDir byName mempty cd path
