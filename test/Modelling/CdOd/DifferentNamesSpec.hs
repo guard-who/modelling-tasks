@@ -175,7 +175,7 @@ spec = do
         }
   where
     cfg = defaultDifferentNamesConfig {
-      maxInstances = Just 1000
+      maxInstances = Just 200
       }
 
 odFor :: Cd -> IO Od

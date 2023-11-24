@@ -3,7 +3,7 @@ module Modelling.CdOd.RepairCdSpec where
 import qualified Data.Map                         as M (null)
 
 import Modelling.CdOd.RepairCd (
-  RepairCdConfig (timeout),
+  RepairCdConfig (maxInstances),
   RepairCdInstance (changes),
   checkRepairCdConfig,
   checkRepairCdInstance,
@@ -28,7 +28,7 @@ spec = do
     it "is valid" $
       checkRepairCdInstance defaultRepairCdInstance `shouldBe` Nothing
   describe "repairCd" $
-    context "using defaultRepairCdConfig with reduced timeouts" $
+    context "using defaultRepairCdConfig with limited instances" $
       it "generates an instance" $
         do
           segment <- oneOf [0 .. 3]
@@ -45,5 +45,5 @@ spec = do
       renameInstance renamed names assocs `shouldReturn` inst
   where
     cfg = defaultRepairCdConfig {
-      timeout = Just 5000000
+      maxInstances = Just 27
       }
