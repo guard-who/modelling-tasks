@@ -42,7 +42,9 @@ pred noNonTrivialInheritanceCycles [is : set Inheritance] {
 pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
   let inheritance = relationship [is],
       composition = relationship [cs] |
-  no c : Class | c in c.^(*inheritance.composition).*~inheritance
+  no c : Class |
+    c in c.^(*inheritance.composition).*~inheritance
+      + c.^(*inheritance.~composition).*~inheritance
 }
 
 pred isPartOfMultipleCompositions [c : Class, is : set Inheritance, cs : set Composition] {
