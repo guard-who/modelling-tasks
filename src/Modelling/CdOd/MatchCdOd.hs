@@ -166,7 +166,8 @@ data MatchCdOdConfig = MatchCdOdConfig {
     objectProperties :: ObjectProperties,
     printSolution    :: Bool,
     searchSpace      :: Int,
-    timeout          :: Maybe Int
+    timeout          :: Maybe Int,
+    withNonTrivialInheritance :: Maybe Bool
   } deriving (Generic, Read, Show)
 
 {-# DEPRECATED searchSpace "because Modelling.Cd.generate' is not used anymore and will be removed soon" #-}
@@ -195,7 +196,8 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       },
     printSolution    = False,
     searchSpace      = 10,
-    timeout          = Nothing
+    timeout          = Nothing,
+    withNonTrivialInheritance = Just True
   }
 
 toMatching :: Map Char [Int] -> Map (Int, Char) Bool
@@ -597,7 +599,10 @@ getRandomTask
   => MatchCdOdConfig
   -> RandT g IO (Map Int Cd, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
-  let alloyCode = Changes.transform (classConfig config) defaultProperties
+  let alloyCode = Changes.transform
+        (classConfig config)
+        defaultProperties
+        (withNonTrivialInheritance config)
   instas <- liftIO
     $ getInstances (maxInstances config) (timeout config) alloyCode
   when debug $ debugAls "raw" config alloyCode

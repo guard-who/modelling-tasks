@@ -28,7 +28,7 @@ import Data.FileEmbed                   (embedStringFile)
 import Data.Functor                     ((<&>))
 import Data.List                        (intercalate, unzip4)
 import Data.Maybe                       (fromMaybe)
-import Data.String.Interpolate          (i)
+import Data.String.Interpolate          (__i, i)
 
 transformWith
   :: ClassConfig
@@ -54,10 +54,17 @@ transformNoChanges
 transformNoChanges config properties withNonTrivialInheritance =
   transformWith config (Right properties) (0, [], part)
   where
-    part = (`foldMap` trivialInh) $ \x -> [i|fact {
-  #{withInheritance}
-  #{x} i : Inheritance | i.to in (Assoc.from + Assoc.to)
-}|]
+    part = [__i|
+      fact{
+      #{nonTrivialInheritanceConstraint "Inheritance" "Assoc" withNonTrivialInheritance}
+      }
+      |]
+
+nonTrivialInheritanceConstraint :: String -> String -> Maybe Bool -> String
+nonTrivialInheritanceConstraint inheritances assocs withNonTrivialInheritance =
+  (`foldMap` trivialInh) $ \x -> [i|  #{withInheritance}
+  #{x} i : #{inheritances} | i.to in (#{assocs}.from + #{assocs}.to)|]
+  where
     trivialInh = withNonTrivialInheritance
       <&> bool "no" "all"
     withInheritance = maybe
@@ -65,9 +72,10 @@ transformNoChanges config properties withNonTrivialInheritance =
       (bool "" "some Inheritance")
       withNonTrivialInheritance
 
-transform :: ClassConfig -> RelationshipProperties -> String
-transform config props =
-  transformWith config (Right props) $ matchCdOdChanges config
+transform :: ClassConfig -> RelationshipProperties -> Maybe Bool -> String
+transform config props withNonTrivialInheritance =
+  transformWith config (Right props)
+  $ matchCdOdChanges config withNonTrivialInheritance
 
 transformChanges
   :: ClassConfig
@@ -253,8 +261,9 @@ pred #{change} {
 }
 |]
 
-matchCdOdChanges :: ClassConfig -> (Int, [String], String)
-matchCdOdChanges config = (3, ["changes", "changeLimits"],) $ [i|
+matchCdOdChanges :: ClassConfig -> Maybe Bool -> (Int, [String], String)
+matchCdOdChanges config withNonTrivialInheritance =
+  (3, ["changes", "changeLimits"],) $ [i|
 //////////////////////////////////////////////////
 // Changes
 //////////////////////////////////////////////////
@@ -264,8 +273,14 @@ pred changes {
   one m1, m2 : Boolean {
     m1 = False or m2 = False
     let c1Assocs = Assoc - (Change.add - Assoc <: C1.add) - C1.remove,
-        c2Assocs = Assoc - (Change.add - Assoc <: C2.add) - C2.remove |
-    some c1Assocs or some c2Assocs
+        c2Assocs = Assoc - (Change.add - Assoc <: C2.add) - C2.remove {
+      some c1Assocs or some c2Assocs
+      let c1Inheritances = Inheritance - (Change.add - Inheritance <: C1.add) - C1.remove,
+          c2Inheritances = Inheritance - (Change.add - Inheritance <: C2.add) - C2.remove {
+        #{nonTrivialInheritanceConstraint "c1Inheritances" "c1Assocs" withNonTrivialInheritance}
+        #{nonTrivialInheritanceConstraint "c2Inheritances" "c2Assocs" withNonTrivialInheritance}
+      }
+    }
     changeOfFirstCD [C1, 0, 0, 0, 0, False, False, False, False, False, False, False, m1]
     changeOfFirstCD [C2, 0, 0, 0, 0, False, False, False, False, False, False, False, m2]
     changeOfFirstCD [C3, 0, 0, 0, 0, False, False, False, False, False, False, False, False]

@@ -45,7 +45,8 @@ main = do
             },
           printSolution    = False,
           searchSpace      = 10,
-          timeout          = Nothing
+          timeout          = Nothing,
+          withNonTrivialInheritance = Nothing
         }
   putStrLn $ "Seed: " ++ show seed
   putStrLn $ "Segment: " ++ show s
