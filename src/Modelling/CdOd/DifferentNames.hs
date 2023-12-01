@@ -369,7 +369,7 @@ differentNamesSyntax DifferentNamesInstance {..} cs = addPretext $ do
   whenJust (listToMaybe invalidMappings) $ \x ->
     refuse $ paragraph $ translate $ do
       let y = bimap ShowName ShowName x
-      english [i|The mapping '#{y}' uses an non-existing identifier.|]
+      english [i|The mapping '#{y}' uses a non-existing identifier.|]
       german [iii|
         Die Zuordnung '#{y}' benutzt einen nicht vorhandenen Bezeichner.
         |]
