@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE LambdaCase #-}
 -- |
 
 module Modelling.CdOd.DifferentNamesSpec where

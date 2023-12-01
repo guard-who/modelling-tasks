@@ -93,6 +93,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad                    (void, when)
 import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Extra              (whenJust)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -105,6 +106,7 @@ import Control.Monad.Output (
   multipleChoice,
   translations,
   translate,
+  yesNo,
   )
 import Control.Monad.Random
   (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
@@ -116,10 +118,16 @@ import Data.Bitraversable               (bitraverse)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
-import Data.List                        (permutations, sort)
-import Data.Maybe                       (fromMaybe, isJust, isNothing, mapMaybe)
+import Data.List                        (group, intersect, permutations, sort)
+import Data.Maybe (
+  fromMaybe,
+  isJust,
+  isNothing,
+  listToMaybe,
+  mapMaybe,
+  )
 import Data.String.Interpolate          (i, iii)
-import Data.Tuple.Extra                 (snd3)
+import Data.Tuple.Extra                 (snd3, swap)
 import Diagrams.Prelude                 ((#), red)
 import Diagrams.TwoD.Attributes         (lc)
 import GHC.Generics                     (Generic)
@@ -154,15 +162,23 @@ data DifferentNamesInstance = DifferentNamesInstance {
 checkDifferentNamesInstance :: DifferentNamesInstance -> Maybe String
 checkDifferentNamesInstance DifferentNamesInstance {..}
   | WithAdditionalNames xs <- linkShuffling
-  , length (associationNames cDiagram) > length (linkNames oDiagram) + length xs
+  , length associations > length links + length xs
   = Just [iii|
       WithAdditionalNames must provide at least a name for
       each missing link in the Object diagram,
       i.e. for which an association in the Class diagram exists,
       but not a link in the Object diagram.
       |]
+  | (x:_) <- nubOrd links `intersect` nubOrd associations
+  = Just [iii|
+      Link names and association names must be disjoint
+      but currently "#{x}" is among both.
+      |]
   | otherwise
   = checkObjectDiagram oDiagram
+  where
+    associations = associationNames cDiagram
+    links = linkNames oDiagram
 
 data DifferentNamesConfig = DifferentNamesConfig {
     classConfig      :: ClassConfig,
@@ -340,23 +356,46 @@ differentNamesSyntax
   => DifferentNamesInstance
   -> [(Name, Name)]
   -> LangM m
-differentNamesSyntax task cs = addPretext $ do
-  let l = length $ mapMaybe (readMapping m) cs
-  assertion (l == length cs) $ translate $ do
+differentNamesSyntax DifferentNamesInstance {..} cs = addPretext $ do
+  yesNo (null invalidMappings) $ translate $ do
     english [iii|
-      All provided pairs are matching a valid link and a valid relationship?
+      All provided pairs are matching an existing relationship
+      and an existing link?
       |]
     german [iii|
-      Alle angegebenen Paare ordnen einen gültigen Link
-      einer gültigen Beziehung zu?
+      Alle angegebenen Paare ordnen einen vorhandenen Link
+      einer vorhandenen Beziehung zu?
       |]
-  assertion (l == nubLengthOn fst && l == nubLengthOn snd) $ translate $ do
+  whenJust (listToMaybe invalidMappings) $ \x ->
+    refuse $ paragraph $ translate $ do
+      let y = bimap ShowName ShowName x
+      english [i|The mapping '#{y}' uses an non-existing identifier.|]
+      german [iii|
+        Die Zuordnung '#{y}' benutzt einen nicht vorhandenen Bezeichner.
+        |]
+  yesNo (null allMappingValues) $ translate $ do
     english "All provided pairs are non-overlapping?"
     german "Alle angegebenen Paare sind nicht überlappend?"
+  case allMappingValues of
+    (x:_):_ -> refuse $ paragraph $ translate $ do
+      let y = ShowName x
+      english [i|The identifier '#{y}' appears twice within the given mappings.|]
+      german [i|
+        Der Bezeichner '#{y}' existiert doppelt in den angegebenen Zuordnungen.
+        |]
+    _ -> pure ()
   pure ()
   where
-    nubLengthOn f = length (nubOrd (map f cs))
-    m = nameMapping $ mapping task
+    links = linkNames oDiagram
+    associations = associationNames cDiagram
+    isAssociationMappingForward (Name x, Name y) =
+      x `elem` associations && y `elem` links
+    isAssociationMapping x = isAssociationMappingForward x
+      || isAssociationMappingForward (swap x)
+    invalidMappings = filter (not . isAssociationMapping) cs
+    allMappingValues = filter
+      (not . null . tail)
+      $ group $ sort (map fst cs ++ map snd cs)
 
 readMapping :: Ord a => Bimap a a -> (a, a) -> Maybe (a, a)
 readMapping m (x, y)
