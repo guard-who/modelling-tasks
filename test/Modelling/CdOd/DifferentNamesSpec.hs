@@ -55,13 +55,11 @@ import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Char                        (toUpper)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isLeft, isRight)
-import Data.List (nub)
 import Data.Maybe                       (fromJust)
 import Data.Ratio                       ((%))
 import Data.Tuple                       (swap)
 import Test.Hspec
 import Test.QuickCheck (
-  (===),
   (==>),
   Arbitrary (arbitrary),
   Property,
@@ -100,26 +98,28 @@ spec = do
   describe "differentNamesEvaluation" $ do
     it "accepts the initial example" $
       let cs = bimap unName unName <$> differentNamesInitial
-      in Right 1 == evaluateDifferentNames cs cs
+      in property $ \bs ->
+        not (null bs) ==> Right 1 == evaluateDifferentNames bs cs cs
     it "accepts correct solutions" $
-      property $ \cs g -> not (null cs) && isValidMapping cs
+      property $ \cs g bs -> not (null cs) && not (null bs)
         ==> ioProperty $ do
+          let checkResult = if isValidMapping cs then (Right 1 ==) else isLeft
           cs' <- flipCoin g `mapM` cs >>= shuffleM
-          return $ Right 1 === evaluateDifferentNames cs cs'
+          return $ checkResult $ evaluateDifferentNames bs cs cs'
     it "accepts with percentage or rejects too short solutions" $
-      property $ \cs n -> not (null cs) && isValidMapping cs
+      property $ \cs n bs -> not (null cs) && not (null bs) && isValidMapping cs
         ==> ioProperty $ do
           let n' = abs n
               l = fromIntegral $ length cs
               r = (l - fromIntegral n') % l
           cs' <- drop n' <$> shuffleM cs
           return $ (if r >= 0.5 then (Right r ==) else isLeft)
-            $ evaluateDifferentNames cs cs'
+            $ evaluateDifferentNames bs cs cs'
     it "rejects too long solutions" $
-      property $ \cs w ->
+      property $ \cs w bs ->
         let cs' = cs ++ w
-        in not (null w) && isValidMapping cs
-           ==> isLeft $ evaluateDifferentNames cs cs'
+        in not (null w) && not (null bs) && isValidMapping cs
+           ==> isLeft $ evaluateDifferentNames bs cs cs'
   describe "renameInstance" $ do
     it "is reversable" $ renameProperty $ \inst mrinst _ _ ->
         let cd = cDiagram inst
@@ -310,17 +310,25 @@ flipCoin g p = do
   return $ (if b then swap else id) p
 
 evaluateDifferentNames
-  :: [(String, String)]
+  :: [Bool]
+  -- ^ random distribution (must not be empty)
+  -> [(String, String)]
   -- ^ task instance mapping
   -> [(String, String)]
   -- ^ submitted mapping
   -> Either String Rational
-evaluateDifferentNames cs cs' = flip withLang English $ do
+evaluateDifferentNames coins cs cs' = flip withLang English $ do
   let i = DifferentNamesInstance {
         anonymousObjects = error "anonymousObjects is undefined",
-        cDiagram = error "cDiagram is undefined",
+        cDiagram = ClassDiagram {
+          classNames = [classA],
+          relationships = map newAssociation associationsToUse
+          },
         generatorValue = 1,
-        oDiagram = error "oDiagram is undefined",
+        oDiagram = ObjectDiagram {
+          objects = [Object linkA classA],
+          links = map newLink linksToUse
+          },
         showSolution = True,
         mapping = toNameMapping $ BM.fromList cs,
         linkShuffling = ConsecutiveLetters,
@@ -330,14 +338,20 @@ evaluateDifferentNames cs cs' = flip withLang English $ do
   differentNamesSyntax i cs''
   points <- differentNamesEvaluation i cs''
   pure points
+  where
+    linkA = "a"
+    classA = "A"
+    (associationsToUse, linksToUse) =
+      unzip $ zipWith (\case True -> swap; False -> id) (cycle coins) cs
+    newAssociation x = Association
+      x
+      (LimitedLinking classA (0, Just 1))
+      (LimitedLinking classA (0, Just 1))
+    newLink x = Link x linkA linkA
 
-isValidMapping :: (Eq a, Eq b) => [(a, b)] -> Bool
+isValidMapping :: Ord a => [(a, a)] -> Bool
 isValidMapping cs
-  | l > length (nub $ fst <$> cs)
-  = False
-  | l > length (nub $ snd <$> cs)
+  | 2 * length cs > length (nubOrd $ map fst cs ++ map snd cs)
   = False
   | otherwise
   = True
-  where
-    l = length cs
