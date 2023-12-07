@@ -62,7 +62,6 @@ import Modelling.CdOd.RepairCd (
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
-  Change (..),
   ClassConfig (..),
   ClassDiagram (..),
   Object (..),
@@ -80,6 +79,7 @@ import Modelling.CdOd.Types (
   renameObjectsWithClassesAndLinksInOd,
   shuffleObjectAndLinkOrder,
   )
+import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative)
 import Control.Monad                    ((>=>), void, when)

@@ -122,6 +122,7 @@ library:
     - Modelling.PetriNet.Reach.Reach
     - Modelling.PetriNet.Reach.Step
     - Modelling.PetriNet.Reach.Type
+    - Modelling.Types
 tests:
   modelling-tasks-test:
     main: Spec.hs

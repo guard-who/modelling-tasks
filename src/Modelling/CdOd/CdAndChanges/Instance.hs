@@ -23,10 +23,10 @@ import qualified Data.Set                         as S (
 import Modelling.Auxiliary.Common       (Object (Object, oName), toMap)
 import Modelling.CdOd.Types (
   ClassDiagram (..),
-  Change (..),
   LimitedLinking (..),
   Relationship (..),
   )
+import Modelling.Types                  (Change (..))
 
 import Control.Monad                    (forM)
 import Control.Monad.Catch              (MonadThrow)

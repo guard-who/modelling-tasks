@@ -27,7 +27,6 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   LimitedLinking (..),
   Link (..),
-  Name (Name, unName),
   Object (..),
   ObjectConfig (..),
   ObjectDiagram (..),
@@ -35,11 +34,14 @@ import Modelling.CdOd.Types (
   Relationship (..),
   associationNames,
   classNames,
-  fromNameMapping,
   linkNames,
-  toNameMapping,
   )
 import Modelling.Common                 (withLang)
+import Modelling.Types (
+  Name (Name, unName),
+  fromNameMapping,
+  toNameMapping,
+  )
 
 import Control.Monad.Output (
   Language (English),

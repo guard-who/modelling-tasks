@@ -92,7 +92,6 @@ import Modelling.CdOd.RepairCd (
   )
 import Modelling.CdOd.Types (
   Cd,
-  Change (..),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -110,6 +109,7 @@ import Modelling.CdOd.Types (
   toPropertySet,
   towardsValidProperties,
   )
+import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative)
 import Control.Monad                    ((>=>), forM, join)

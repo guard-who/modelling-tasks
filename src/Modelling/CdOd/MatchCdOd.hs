@@ -79,8 +79,6 @@ import Modelling.CdOd.Types (
   Cd,
   ClassConfig (..),
   ClassDiagram (..),
-  Change (..),
-  Letters (Letters, lettersList),
   LimitedLinking (..),
   Link (..),
   Object (..),
@@ -100,9 +98,13 @@ import Modelling.CdOd.Types (
   renameClassesAndRelationshipsInCd,
   renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
-  showLetters,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
+  )
+import Modelling.Types (
+  Change (..),
+  Letters (Letters, lettersList),
+  showLetters,
   )
 
 import Control.Exception                (Exception)

@@ -9,14 +9,10 @@
 {-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.Types (
   Cd,
-  Change (..),
   ClassConfig (..),
   ClassDiagram (..),
-  Letters (..),
   LimitedLinking (..),
   Link (..),
-  Name (..),
-  NameMapping (..),
   Object (..),
   ObjectConfig (..),
   ObjectDiagram (..),
@@ -33,25 +29,19 @@ module Modelling.CdOd.Types (
   checkObjectDiagram,
   classNamesOd,
   defaultProperties,
-  fromNameMapping,
   isIllegal,
   isObjectDiagramRandomisable,
   linkNames,
   maxFiveObjects,
   maxObjects,
   maxRels,
-  parseLettersPrec,
-  parseNamePrec,
   relationshipName,
   renameClassesAndRelationshipsInCd,
   renameClassesAndRelationshipsInRelationship,
   renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
-  showLetters,
-  showName,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
-  toNameMapping,
   toPropertySet,
   towardsValidProperties,
   ) where
@@ -60,7 +50,7 @@ module Modelling.CdOd.Types (
 import qualified Data.Bimap                       as BM
 import qualified Data.Set                         as S (fromList)
 
-import Modelling.Auxiliary.Common       (lowerFirst, skipSpaces)
+import Modelling.Auxiliary.Common       (lowerFirst)
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Exception                (Exception, throw)
@@ -71,7 +61,6 @@ import Data.Bifunctor                   (Bifunctor (bimap, first, second))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
-import Data.Char                        (isAlpha, isAlphaNum)
 import Data.List                        (isPrefixOf, stripPrefix)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe (
@@ -82,17 +71,10 @@ import Data.Maybe (
   mapMaybe,
   )
 import Data.Set                         (Set)
-import Data.String                      (IsString (fromString))
 import Data.String.Interpolate          (iii)
 import Data.Tuple.Extra                 (both, dupe)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
-import Text.ParserCombinators.Parsec (
-  Parser,
-  many1,
-  satisfy,
-  endBy,
-  )
 
 type Od = ObjectDiagram String String String
 
@@ -310,54 +292,6 @@ shuffleClassAndConnectionOrder :: MonadRandom m => Cd -> m Cd
 shuffleClassAndConnectionOrder ClassDiagram {..} = ClassDiagram
   <$> shuffleM classNames
   <*> shuffleM relationships
-
-newtype Name = Name { unName :: String }
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance IsString Name where
-  fromString = Name
-
-showName :: Name -> String
-showName = unName
-
-parseNamePrec :: Int -> Parser Name
-parseNamePrec _ = do
-  skipSpaces
-  Name <$> many1 (satisfy isAlphaNum) <* skipSpaces
-
-newtype Letters = Letters { lettersList :: String }
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance IsString Letters where
-  fromString = Letters
-
-showLetters :: Letters -> String
-showLetters = lettersList
-
-parseLettersPrec :: Int -> Parser Letters
-parseLettersPrec _ = do
-  skipSpaces
-  Letters <$> endBy (satisfy isAlpha) skipSpaces
-
-newtype NameMapping = NameMapping { nameMapping :: Bimap Name Name }
-  deriving (Eq, Generic)
-
-fromNameMapping :: NameMapping -> Bimap String String
-fromNameMapping = BM.mapMonotonic unName . BM.mapMonotonicR unName . nameMapping
-
-toNameMapping :: Bimap String String -> NameMapping
-toNameMapping = NameMapping . BM.mapMonotonic Name . BM.mapMonotonicR Name
-
-instance Show NameMapping where
-  show = show . BM.toList . nameMapping
-
-instance Read NameMapping where
-  readsPrec p xs = [(NameMapping $ BM.fromList y, ys) | (y, ys) <- readsPrec p xs]
-
-data Change a = Change {
-    add    :: Maybe a,
-    remove :: Maybe a
-  } deriving (Eq, Foldable, Functor, Generic, Read, Show, Traversable)
 
 data ClassConfig = ClassConfig {
     classLimits               :: (Int, Int),

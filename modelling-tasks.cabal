@@ -80,6 +80,7 @@ library
       Modelling.PetriNet.Reach.Reach
       Modelling.PetriNet.Reach.Step
       Modelling.PetriNet.Reach.Type
+      Modelling.Types
   other-modules:
       Modelling.Auxiliary.Diagrams
       Modelling.PetriNet.Reach.Draw

@@ -84,7 +84,6 @@ import Modelling.CdOd.Output (
   )
 import Modelling.CdOd.Types (
   Cd,
-  Change (..),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -104,6 +103,7 @@ import Modelling.CdOd.Types (
   reverseAssociation,
   shuffleClassAndConnectionOrder,
   )
+import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, join, void, when, zipWithM)

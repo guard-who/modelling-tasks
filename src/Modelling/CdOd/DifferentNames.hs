@@ -65,8 +65,6 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   LimitedLinking (..),
   Link (..),
-  Name (Name),
-  NameMapping (nameMapping),
   Object (..),
   ObjectConfig (..),
   ObjectDiagram (..),
@@ -78,16 +76,20 @@ import Modelling.CdOd.Types (
   checkObjectDiagram,
   classNames,
   defaultProperties,
-  fromNameMapping,
   isObjectDiagramRandomisable,
   linkNames,
   relationshipName,
   renameObjectsWithClassesAndLinksInOd,
   renameClassesAndRelationshipsInCd,
   reverseAssociation,
-  showName,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
+  )
+import Modelling.Types (
+  Name (Name),
+  NameMapping (nameMapping),
+  fromNameMapping,
+  showName,
   toNameMapping,
   )
 
