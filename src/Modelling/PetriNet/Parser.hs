@@ -26,7 +26,10 @@ import qualified Data.Set                         as Set (
   Set, findMin, fromList, lookupMin, null, size, toList,
   )
 import qualified Data.Map.Lazy                    as Map (
-  findIndex, foldrWithKey, lookup,
+  findIndex,
+  foldlWithKey',
+  foldrWithKey,
+  lookup,
   )
 
 import Modelling.Auxiliary.Common       (Object (Object, oName, oIndex), toMap)
@@ -203,12 +206,12 @@ of place nodes and transition nodes respectively.
 -}
 simpleNameMap :: (Net p n, Ord a) => p n a -> Bimap a String
 simpleNameMap pl = BM.fromList . fst <$>
-  Map.foldrWithKey
+  Map.foldlWithKey'
   nameIncreasingly
   ([], (1 :: Integer, 1 :: Integer))
   $ PN.nodes pl
   where
-    nameIncreasingly k x (ys, (p, t)) =
+    nameIncreasingly (ys, (p, t)) k x =
       let (k', p', t') = step x p t
       in ((k, k'):ys, (p', t'))
     step n p t
