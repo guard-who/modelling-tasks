@@ -63,13 +63,13 @@ transformNoChanges config properties withNonTrivialInheritance =
 nonTrivialInheritanceConstraint :: String -> String -> Maybe Bool -> String
 nonTrivialInheritanceConstraint inheritances assocs withNonTrivialInheritance =
   (`foldMap` trivialInh) $ \x -> [i|  #{withInheritance}
-  #{x} i : #{inheritances} | i.to in (#{assocs}.from + #{assocs}.to)|]
+  #{x} i : #{inheritances} | i.to in ((#{assocs} + #{inheritances}).from + #{assocs}.to)|]
   where
     trivialInh = withNonTrivialInheritance
       <&> bool "no" "all"
     withInheritance = maybe
       ""
-      (bool "" "some Inheritance")
+      (bool "" [i|some Inheritance <: #{inheritances}|])
       withNonTrivialInheritance
 
 transform :: ClassConfig -> RelationshipProperties -> Maybe Bool -> String
