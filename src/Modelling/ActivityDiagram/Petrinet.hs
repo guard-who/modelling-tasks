@@ -40,7 +40,8 @@ import Modelling.ActivityDiagram.Datatype (
   )
 
 
-data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, sourceNode :: AD.ADNode} deriving (Generic, Eq, Show)
+data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, sourceNode :: AD.ADNode}
+  deriving (Generic, Eq, Read, Show)
 
 instance Ord PetriKey where
   pk1 `compare` pk2 = label pk1 `compare` label pk2

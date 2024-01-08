@@ -24,7 +24,7 @@ data ADConnection =
     from :: Int,
     to :: Int,
     guard :: String
-  } deriving (Generic, Show, Eq, Ord)
+  } deriving (Generic, Read, Show, Eq, Ord)
 
 data ADNode =
   ADActionNode {
@@ -55,14 +55,14 @@ data ADNode =
   }
   | ADInitialNode {
       label :: Int
-  } deriving (Generic, Show, Eq)
+  } deriving (Generic, Read, Show, Eq)
 
 
 data UMLActivityDiagram =
   UMLActivityDiagram {
     nodes :: [ADNode],
     connections :: [ADConnection]
-  } deriving (Generic, Show, Eq)
+  } deriving (Generic, Read, Show, Eq)
 
 
 adjNodes :: ADNode -> UMLActivityDiagram -> [ADNode]

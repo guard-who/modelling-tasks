@@ -69,8 +69,9 @@ nonTrivialInheritanceConstraint inheritances assocs withNonTrivialInheritance =
       <&> bool "no" "all"
     withInheritance = maybe
       ""
-      (bool "" [i|some Inheritance <: #{inheritances}|])
+      (bool "" someInheritance)
       withNonTrivialInheritance
+    someInheritance = [i|some Inheritance <: #{inheritances}|]
 
 transform :: ClassConfig -> RelationshipProperties -> Maybe Bool -> String
 transform config props withNonTrivialInheritance =

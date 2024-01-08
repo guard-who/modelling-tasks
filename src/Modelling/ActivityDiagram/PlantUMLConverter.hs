@@ -28,7 +28,7 @@ import Modelling.ActivityDiagram.Datatype (
 data PlantUMLConvConf = PlantUMLConvConf {
   suppressNodeNames :: Bool,
   suppressBranchConditions :: Bool
-} deriving (Generic, Show, Eq)
+} deriving (Generic, Read, Show, Eq)
 
 defaultPlantUMLConvConf :: PlantUMLConvConf
 defaultPlantUMLConvConf = PlantUMLConvConf {
