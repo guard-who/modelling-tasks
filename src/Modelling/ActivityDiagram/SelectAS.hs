@@ -219,8 +219,12 @@ Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräs
       german [i|Zum Beispiel|]
     code "2"
     translate $ do
-      english [i|would indicate that sequence 2 is the valid action sequence.|]
-      german  [i|würde bedeuten, dass Folge 2 die valide Aktionsfolge ist.|]
+      english [i|
+        would indicate that sequence 2 is the valid sequence of action nodes.
+        |]
+      german  [i|
+        würde bedeuten, dass Folge 2 die valide Folge von Aktionsknoten ist.
+        |]
     pure ()
   pure ()
 

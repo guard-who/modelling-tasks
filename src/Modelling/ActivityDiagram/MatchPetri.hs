@@ -86,7 +86,7 @@ import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.List (sort)
 import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate (i, iii)
 import Data.Tuple.Extra                 (dupe)
 import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
@@ -267,11 +267,17 @@ matchPetriTask path task = do
       (not $ with1Weights drawSetting)
       (withGraphvizCommand drawSetting)
   paragraph $ translate $ do
-    english [i|State the matchings of each action and Petri net node, the matching of each
-object node and Petri net node, the Petri net nodes per component type, as well as all support nodes
-of the Petri net.|]
-    german [i|Geben Sie alle Aktion/Petrinetzknotenpaare, Objektknoten/Petrinetzknotenpaare, die
-Petrinetzknoten pro Komponententyp und die Hilfsknoten im Petrinetz an.|]
+    english [iii|
+      State the matchings of each action node and Petri net node,
+      the matching of each object node and Petri net node,
+      the Petri net nodes per component type, as well as all support nodes
+      of the Petri net.
+      |]
+    german [iii|
+      Geben Sie alle Aktionsknoten/Petrinetzknotenpaare,
+      Objektknoten/Petrinetzknotenpaare, die Petrinetzknoten pro Komponententyp
+      und die Hilfsknoten im Petrinetz an.
+      |]
   paragraph $ do
     translate $ do
       english [i|To do this, enter your answer as in the following example.|]

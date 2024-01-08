@@ -57,7 +57,7 @@ import Control.Monad.Random (
 import Data.List (sort)
 import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
@@ -157,10 +157,15 @@ matchADTask path task = do
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english [i|State the names of all actions, the names of all object nodes, and the number
-of each other type of component for the given diagram.|]
-    german [i|Geben Sie die Namen aller Aktionen, die Namen aller Objektknoten, sowie die Anzahl
-aller anderen Arten von Komponenten für das gegebene Aktivitätsdiagramm an.|]
+    english [iii|
+      State the names of all action nodes, the names of all object nodes,
+      and the number of each other type of component for the given diagram.
+      |]
+    german [iii|
+      Geben Sie die Namen aller Aktionsknoten, die Namen aller Objektknoten,
+      sowie die Anzahl aller anderen Arten von Komponenten für
+      das gegebene Aktivitätsdiagramm an.
+      |]
   paragraph $ do
     translate $ do
       english [i|To do this, enter your answer as in the following example.|]

@@ -51,7 +51,7 @@ import Control.Monad.Random (
   mkStdGen,
   )
 import Data.Maybe (isNothing, isJust, fromJust)
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
 import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
@@ -163,12 +163,18 @@ enterASTask path task = do
     $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
   paragraph $ do
     translate $ do
-      english [i|State an action sequence for the diagram, therefore a sequence of actions resulting in
-the termination of all flows of the diagram, by entering a list of action names.
-For example, |]
-      german [i|Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge von Aktionen welche in
-das Terminieren aller Abläufe des Diagramms resultiert, indem Sie eine Liste von Aktionsnamen angeben.
-Zum Beispiel drückt |]
+      english [iii|
+        State an action sequence for the diagram, i.e. a sequence of
+        action nodes resulting in the termination of all flows of the diagram,
+        by entering a list of action names.
+        \n
+        For example, |]
+      german [iii|
+        Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge
+        von Aktionsknoten welche in das Terminieren aller Abläufe des Diagramms
+        resultiert, indem Sie eine Liste von Aktionsnamen angeben.
+        \n
+        Zum Beispiel drückt |]
     code $ show enterASInitial
     translate $ do
       english [i|expresses the execution of A, followed by B in the diagram.|]
