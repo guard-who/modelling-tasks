@@ -98,7 +98,7 @@ data MatchPetriInstance = MatchPetriInstance {
   petrinet :: SimplePetriLike PetriKey,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: ADConfig,

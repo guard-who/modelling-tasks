@@ -70,7 +70,8 @@ import System.Random.Shuffle (shuffleM)
 
 data SelectASInstance = SelectASInstance {
   activityDiagram :: UMLActivityDiagram,
-  actionSequences :: Map Int (Bool, [String])
+  actionSequences :: Map Int (Bool, [String]),
+  showSolution :: Bool
 } deriving (Generic, Show, Eq)
 
 data SelectASConfig = SelectASConfig {
@@ -79,7 +80,8 @@ data SelectASConfig = SelectASConfig {
   objectNodeOnEveryPath :: Maybe Bool,
   numberOfWrongAnswers :: Int,
   minAnswerLength :: Int,
-  maxAnswerLength :: Int
+  maxAnswerLength :: Int,
+  printSolution :: Bool
 } deriving (Generic, Show)
 
 defaultSelectASConfig :: SelectASConfig
@@ -96,7 +98,8 @@ defaultSelectASConfig = SelectASConfig {
   objectNodeOnEveryPath = Just True,
   numberOfWrongAnswers = 2,
   minAnswerLength = 5,
-  maxAnswerLength = 8
+  maxAnswerLength = 8,
+  printSolution = False
 }
 
 checkSelectASConfig :: SelectASConfig -> Maybe String
@@ -257,7 +260,11 @@ selectASEvaluation task n = addPretext $ do
         german "Aktionsfolge"
       solMap = actionSequences task
       (solution, validAS) = head $ M.toList $ M.map snd $ M.filter fst solMap
-  singleChoice as (Just $ show validAS) solution n
+      solutionString =
+        if showSolution task
+        then Just $ show validAS
+        else Nothing
+  singleChoice as solutionString solution n
 
 selectASSolution
   :: SelectASInstance
@@ -285,7 +292,8 @@ getSelectASTask config = do
     actionSequences <- selectASSolutionToMap $ selectActionSequence (numberOfWrongAnswers config) x
     let selectASInst = SelectASInstance {
           activityDiagram=x,
-          actionSequences=actionSequences
+          actionSequences = actionSequences,
+          showSolution = printSolution config
         }
     case checkSelectASInstance selectASInst config of
       Just _ -> return Nothing
@@ -335,5 +343,10 @@ defaultSelectASInstance = SelectASInstance {
       ADConnection {from = 15, to = 7, guard = ""}
     ]
   },
-  actionSequences = M.fromList [(1,(False,["F","B","A","C","D"])),(2,(True,["F","A","B","C","D"])),(3,(False,["A","F","B","C","D"]))]
+  actionSequences = M.fromList [
+    (1, (False,["F","B","A","C","D"])),
+    (2, (True,["F","A","B","C","D"])),
+    (3, (False,["A","F","B","C","D"]))
+    ],
+  showSolution = False
 }

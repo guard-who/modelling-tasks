@@ -65,14 +65,16 @@ import System.Random.Shuffle (shuffleM)
 
 data MatchADInstance = MatchADInstance {
   activityDiagram :: UMLActivityDiagram,
-  plantUMLConf :: PlantUMLConvConf
+  plantUMLConf :: PlantUMLConvConf,
+  showSolution :: Bool
 } deriving (Generic, Show)
 
 data MatchADConfig = MatchADConfig {
   adConfig :: ADConfig,
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
-  noActivityFinalInForkBlocks :: Maybe Bool
+  noActivityFinalInForkBlocks :: Maybe Bool,
+  printSolution :: Bool
 } deriving (Generic, Show)
 
 defaultMatchADConfig :: MatchADConfig
@@ -80,7 +82,8 @@ defaultMatchADConfig = MatchADConfig {
   adConfig = defaultADConfig,
   maxInstances = Just 50,
   hideBranchConditions = False,
-  noActivityFinalInForkBlocks = Just False
+  noActivityFinalInForkBlocks = Just False,
+  printSolution = False
 }
 
 checkMatchADConfig :: MatchADConfig -> Maybe String
@@ -209,9 +212,13 @@ matchADEvaluation task sub = addPretext $ do
         english "partial answers"
         german "Teilantworten"
       sol = matchADSolution task
+      solutionString =
+        if showSolution task
+        then Just $ show sol
+        else Nothing
       solution = matchADSolutionMap sol
       sub' = M.keys $ matchADSolutionMap sub
-  multipleChoice as (Just $ show sol) solution sub'
+  multipleChoice as solutionString solution sub'
 
 matchADSolutionMap
   :: MatchADSolution
@@ -249,7 +256,10 @@ getMatchADTask config = do
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   return $ MatchADInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
-    plantUMLConf=defaultPlantUMLConvConf{suppressBranchConditions = hideBranchConditions config}
+    plantUMLConf = defaultPlantUMLConvConf {
+      suppressBranchConditions = hideBranchConditions config
+      },
+    showSolution = printSolution config
   }
 
 defaultMatchADInstance :: MatchADInstance
@@ -296,5 +306,6 @@ defaultMatchADInstance = MatchADInstance {
       ADConnection {from = 17, to = 4, guard = ""}
     ]
   },
-  plantUMLConf = defaultPlantUMLConvConf
+  plantUMLConf = defaultPlantUMLConvConf,
+  showSolution = False
 }
