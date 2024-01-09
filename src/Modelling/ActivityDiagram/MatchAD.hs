@@ -162,11 +162,11 @@ matchADTask path task = do
   paragraph $ translate $ do
     english [iii|
       State the names of all action nodes, the names of all object nodes,
-      and the number of each other type of component for the given diagram.
+      and the count of each other kind of component for the given activity diagram.
       |]
     german [iii|
       Geben Sie die Namen aller Aktionsknoten, die Namen aller Objektknoten,
-      sowie die Anzahl aller anderen Arten von Komponenten für
+      sowie die Anzahl jeder anderen Art von Komponente für
       das gegebene Aktivitätsdiagramm an.
       |]
   paragraph $ do

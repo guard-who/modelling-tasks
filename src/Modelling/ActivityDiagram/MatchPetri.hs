@@ -268,15 +268,15 @@ matchPetriTask path task = do
       (withGraphvizCommand drawSetting)
   paragraph $ translate $ do
     english [iii|
-      State the matchings of each action node and Petri net node,
-      the matching of each object node and Petri net node,
-      the Petri net nodes per component type, as well as all support nodes
-      of the Petri net.
+      State each matching of action node and Petri net node,
+      each matching of object node and Petri net node,
+      the Petri net nodes per other component kind, as well as all auxiliary nodes
+      in the Petri net.
       |]
     german [iii|
-      Geben Sie alle Aktionsknoten/Petrinetzknotenpaare,
-      Objektknoten/Petrinetzknotenpaare, die Petrinetzknoten pro Komponententyp
-      und die Hilfsknoten im Petrinetz an.
+      Geben Sie alle Aktionsknoten/Petrinetzknoten-Paare,
+      alle Objektknoten/Petrinetzknoten-Paare, die Petrinetzknoten pro anderer Komponentenart
+      und alle Hilfsknoten im Petrinetz an.
       |]
   paragraph $ do
     translate $ do
@@ -285,7 +285,7 @@ matchPetriTask path task = do
     code $ show matchPetriInitial
     translate $ do
       english [i|In this example, the action nodes "A" and "B" are matched with the Petri net nodes 1 and 2,
-the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes 13, 14 and 15 are support nodes.|]
+the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes 13, 14 and 15 are auxiliary nodes.|]
       german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
 die Petrinetzknoten 5 und 7 entsprechen mit Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsknoten.|]
     pure ()

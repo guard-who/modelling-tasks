@@ -164,14 +164,14 @@ enterASTask path task = do
   paragraph $ do
     translate $ do
       english [iii|
-        State an action sequence for the diagram, i.e. a sequence of
+        State an action sequence for the diagram, i.e., a sequence of
         action nodes resulting in the termination of all flows of the diagram,
         by entering a list of action names.
         \n
         For example, |]
       german [iii|
-        Geben Sie eine Aktionsfolge für das Diagramm an, d.h. eine Folge
-        von Aktionsknoten welche in das Terminieren aller Abläufe des Diagramms
+        Geben Sie eine Aktionsfolge für das Diagramm an, d.h., eine Folge
+        von Aktionsknoten, welche in das Terminieren aller Abläufe des Diagramms
         resultiert, indem Sie eine Liste von Aktionsnamen angeben.
         \n
         Zum Beispiel drückt |]
