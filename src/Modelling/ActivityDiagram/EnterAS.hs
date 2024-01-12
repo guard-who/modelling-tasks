@@ -59,7 +59,8 @@ import System.Random.Shuffle (shuffleM)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
-  sampleSequence :: [String]
+  sampleSequence :: [String],
+  showSolution :: Bool
 } deriving (Generic, Show, Eq)
 
 data EnterASConfig = EnterASConfig {
@@ -67,7 +68,8 @@ data EnterASConfig = EnterASConfig {
   maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
   minAnswerLength :: Int,
-  maxAnswerLength :: Int
+  maxAnswerLength :: Int,
+  printSolution :: Bool
 } deriving (Generic, Show)
 
 defaultEnterASConfig :: EnterASConfig
@@ -83,7 +85,8 @@ defaultEnterASConfig = EnterASConfig {
   maxInstances = Just 50,
   objectNodeOnEveryPath = Just True,
   minAnswerLength = 5,
-  maxAnswerLength = 8
+  maxAnswerLength = 8,
+  printSolution = False
 }
 
 checkEnterASConfig :: EnterASConfig -> Maybe String
@@ -207,7 +210,10 @@ enterASEvaluation
 enterASEvaluation task sub = do
   let correct = validActionSequence sub $ activityDiagram task
       points = if correct then 1 else 0
-      msolutionString = Just $ show $ sampleSequence task
+      msolutionString =
+        if showSolution task
+        then Just $ show $ sampleSequence task
+        else Nothing
   printSolutionAndAssert msolutionString points
 
 enterASSolution
@@ -237,7 +243,8 @@ getEnterASTask config = do
         $ filter (isNothing . (`checkEnterASInstance` config))
         $ map (\x -> EnterASInstance {
           activityDiagram=x,
-          sampleSequence=sampleSolution $ enterActionSequence x
+          sampleSequence = sampleSolution $ enterActionSequence x,
+          showSolution = printSolution config
         }) ad
   return validInsta
 
@@ -283,5 +290,6 @@ defaultEnterASInstance = EnterASInstance {
       ADConnection {from = 16, to = 7, guard = ""}
     ]
   },
-  sampleSequence = ["D","E","G","B","F"]
+  sampleSequence = ["D","E","G","B","F"],
+  showSolution = False
 }

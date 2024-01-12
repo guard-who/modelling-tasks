@@ -97,7 +97,8 @@ data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   petrinet :: SimplePetriLike PetriKey,
   plantUMLConf :: PlantUMLConvConf,
-  petriDrawConf :: DrawSettings
+  petriDrawConf :: DrawSettings,
+  showSolution :: Bool
 } deriving (Generic, Read, Show)
 
 data MatchPetriConfig = MatchPetriConfig {
@@ -105,10 +106,15 @@ data MatchPetriConfig = MatchPetriConfig {
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
   petriLayout :: [GraphvizCommand],
-  supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
-  activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
-  avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
-  noActivityFinalInForkBlocks :: Maybe Bool -- Avoid Activity Finals in concurrent flows to reduce confusion
+  -- | Option to prevent support STs from occurring
+  supportSTAbsent :: Maybe Bool,
+  -- | Option to disallow activity finals to reduce semantic confusion
+  activityFinalsExist :: Maybe Bool,
+  -- | Avoid having to add new sink transitions for representing finals
+  avoidAddingSinksForFinals :: Maybe Bool,
+  -- | Avoid Activity Finals in concurrent flows to reduce confusion
+  noActivityFinalInForkBlocks :: Maybe Bool,
+  printSolution :: Bool
 } deriving (Generic, Show)
 
 pickRandomLayout :: (MonadRandom m) => MatchPetriConfig -> m GraphvizCommand
@@ -123,7 +129,8 @@ defaultMatchPetriConfig = MatchPetriConfig
     supportSTAbsent = Nothing,
     activityFinalsExist = Just True,
     avoidAddingSinksForFinals = Nothing,
-    noActivityFinalInForkBlocks = Just False
+    noActivityFinalInForkBlocks = Just False,
+    printSolution = False
   }
 
 checkMatchPetriConfig :: MatchPetriConfig -> Maybe String
@@ -339,9 +346,13 @@ matchPetriEvaluation task sub = addPretext $ do
         english "partial answers"
         german "Teilantworten"
       sol = matchPetriSolution task
+      msolutionString =
+        if showSolution task
+        then Just $ show sol
+        else Nothing
       solution = matchPetriSolutionMap sol
       sub' = M.keys $ matchPetriSolutionMap sub
-  multipleChoice as (Just $ show sol) solution sub'
+  multipleChoice as msolutionString solution sub'
 
 matchPetriSolutionMap
   :: MatchPetriSolution
@@ -396,7 +407,8 @@ getMatchPetriTask config = do
         withTransitionNames = True,
         with1Weights = False,
         withGraphvizCommand = layout
-      }
+      },
+    showSolution = printSolution config
   }
 
 defaultMatchPetriInstance :: MatchPetriInstance
@@ -855,5 +867,6 @@ defaultMatchPetriInstance = MatchPetriInstance
       withTransitionNames = True,
       with1Weights = False,
       withGraphvizCommand = Dot
-    }
+    },
+  showSolution = False
   }

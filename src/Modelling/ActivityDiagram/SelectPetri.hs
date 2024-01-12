@@ -86,7 +86,8 @@ data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings,
-  petrinets :: Map Int (Bool, SimplePetriLike PetriKey)
+  petrinets :: Map Int (Bool, SimplePetriLike PetriKey),
+  showSolution :: Bool
 } deriving (Generic, Show)
 
 data SelectPetriConfig = SelectPetriConfig {
@@ -99,10 +100,15 @@ data SelectPetriConfig = SelectPetriConfig {
   numberOfWrongAnswers :: Int,
   numberOfModifications :: Int,
   modifyAtMid :: Bool,
-  supportSTAbsent :: Maybe Bool,            -- Option to prevent support STs from occurring
-  activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
-  avoidAddingSinksForFinals :: Maybe Bool,  -- Avoid having to add new sink transitions for representing finals
-  noActivityFinalInForkBlocks :: Maybe Bool -- Avoid Activity Finals in concurrent flows to reduce confusion
+  -- | Option to prevent support STs from occurring
+  supportSTAbsent :: Maybe Bool,
+  -- | Option to disallow activity finals to reduce semantic confusion
+  activityFinalsExist :: Maybe Bool,
+  -- | Avoid having to add new sink transitions for representing finals
+  avoidAddingSinksForFinals :: Maybe Bool,
+  -- | Avoid Activity Finals in concurrent flows to reduce confusion
+  noActivityFinalInForkBlocks :: Maybe Bool,
+  printSolution :: Bool
 } deriving (Generic, Show)
 
 pickRandomLayout :: (MonadRandom m) => SelectPetriConfig -> m GraphvizCommand
@@ -122,7 +128,8 @@ defaultSelectPetriConfig = SelectPetriConfig {
   supportSTAbsent = Nothing,
   activityFinalsExist = Just True,
   avoidAddingSinksForFinals = Nothing,
-  noActivityFinalInForkBlocks = Just False
+  noActivityFinalInForkBlocks = Just False,
+  printSolution = False
 }
 
 checkSelectPetriConfig :: SelectPetriConfig -> Maybe String
@@ -344,7 +351,11 @@ selectPetriEvaluation task n = addPretext $ do
         german "Petrinetz"
       solMap = petrinets task
       (solution, _) = head $ M.toList $ M.map snd $ M.filter fst solMap
-  singleChoice as (Just $ show solution) solution n
+      msolutionString =
+        if showSolution task
+        then Just $ show solution
+        else Nothing
+  singleChoice as msolutionString solution n
 
 selectPetriSolution
   :: SelectPetriInstance
@@ -388,7 +399,8 @@ getSelectPetriTask config = do
           activityDiagram=x,
           plantUMLConf=plantUMLConf,
           petriDrawConf=petriDrawConf,
-          petrinets=petrinets
+          petrinets = petrinets,
+          showSolution = printSolution config
         }
     case checkPetriInstance petriInst config of
       Just _ -> return Nothing
@@ -690,5 +702,6 @@ defaultSelectPetriInstance =  SelectPetriInstance {
         initial = 0,
         flowOut = M.fromList [(NormalST {label = 10, sourceNode = ADActionNode {label = 4, name = "G"}},1)]})
     ]
-  }))]
+  }))],
+  showSolution = False
 }

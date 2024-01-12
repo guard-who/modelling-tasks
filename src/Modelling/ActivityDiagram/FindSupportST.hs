@@ -81,7 +81,8 @@ import System.Random.Shuffle (shuffleM)
 
 data FindSupportSTInstance = FindSupportSTInstance {
   activityDiagram :: UMLActivityDiagram,
-  plantUMLConf :: PlantUMLConvConf
+  plantUMLConf :: PlantUMLConvConf,
+  showSolution :: Bool
 } deriving (Generic, Show)
 
 data FindSupportSTConfig = FindSupportSTConfig {
@@ -89,8 +90,11 @@ data FindSupportSTConfig = FindSupportSTConfig {
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
   hideBranchConditions :: Bool,
-  activityFinalsExist :: Maybe Bool,        -- Option to disallow activity finals to reduce semantic confusion
-  avoidAddingSinksForFinals :: Maybe Bool   -- Avoid having to add new sink transitions for representing finals
+  -- | Option to disallow activity finals to reduce semantic confusion
+  activityFinalsExist :: Maybe Bool,
+  -- | Avoid having to add new sink transitions for representing finals
+  avoidAddingSinksForFinals :: Maybe Bool,
+  printSolution :: Bool
 } deriving (Generic, Show)
 
 defaultFindSupportSTConfig :: FindSupportSTConfig
@@ -100,7 +104,8 @@ defaultFindSupportSTConfig = FindSupportSTConfig
     hideNodeNames = False,
     hideBranchConditions = False,
     activityFinalsExist = Nothing,
-    avoidAddingSinksForFinals = Nothing
+    avoidAddingSinksForFinals = Nothing,
+    printSolution = False
   }
 
 checkFindSupportSTConfig :: FindSupportSTConfig -> Maybe String
@@ -226,7 +231,11 @@ findSupportSTEvaluation task sub = addPretext $ do
       sol = findSupportSTSolution task
       solution = findSupportSTSolutionMap sol
       sub' = M.keys $ findSupportSTSolutionMap sub
-  multipleChoice as (Just $ show sol) solution sub'
+      msolutionString =
+        if showSolution task
+        then Just $ show sol
+        else Nothing
+  multipleChoice as msolutionString solution sub'
 
 findSupportSTSolutionMap
   :: FindSupportSTSolution
@@ -262,7 +271,8 @@ getFindSupportSTTask config = do
       PlantUMLConvConf {
         suppressNodeNames = hideNodeNames config,
         suppressBranchConditions = hideBranchConditions config
-      }
+      },
+    showSolution = printSolution config
   }
 
 defaultFindSupportSTInstance :: FindSupportSTInstance
@@ -309,5 +319,6 @@ defaultFindSupportSTInstance = FindSupportSTInstance {
       ADConnection {from = 17, to = 13, guard = ""}
     ]
   },
-  plantUMLConf = defaultPlantUMLConvConf
+  plantUMLConf = defaultPlantUMLConvConf,
+  showSolution = False
 }
