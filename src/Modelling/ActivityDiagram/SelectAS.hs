@@ -30,7 +30,11 @@ import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..))
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
+import Modelling.ActivityDiagram.PlantUMLConverter (
+  PlantUMLConvConf (..),
+  defaultPlantUMLConvConf,
+  drawADToFile,
+  )
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 
@@ -67,15 +71,16 @@ import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
 
-
 data SelectASInstance = SelectASInstance {
   activityDiagram :: UMLActivityDiagram,
   actionSequences :: Map Int (Bool, [String]),
+  drawSettings :: PlantUMLConvConf,
   showSolution :: Bool
 } deriving (Generic, Show, Eq)
 
 data SelectASConfig = SelectASConfig {
   adConfig :: ADConfig,
+  hideBranchConditions :: Bool,
   maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
   numberOfWrongAnswers :: Int,
@@ -94,6 +99,7 @@ defaultSelectASConfig = SelectASConfig {
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },
+  hideBranchConditions = True,
   maxInstances = Just 50,
   objectNodeOnEveryPath = Just True,
   numberOfWrongAnswers = 2,
@@ -148,8 +154,18 @@ selectASAlloy SelectASConfig {
             Just False -> [i| not #{s}|]
             _ -> ""
 
-checkSelectASInstance :: SelectASInstance -> SelectASConfig -> Maybe String
-checkSelectASInstance inst SelectASConfig {
+checkSelectASInstance :: SelectASInstance -> Maybe String
+checkSelectASInstance inst
+  | suppressNodeNames (drawSettings inst)
+  = Just "'suppressNodeNames' must be set to 'False' for this task type"
+  | otherwise
+  = Nothing
+
+checkSelectASInstanceForConfig
+  :: SelectASInstance
+  -> SelectASConfig
+  -> Maybe String
+checkSelectASInstanceForConfig inst SelectASConfig {
     minAnswerLength,
     maxAnswerLength
   }
@@ -206,7 +222,7 @@ selectASTask path task = do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
   image $=<< liftIO
-    $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
+    $ drawADToFile path (drawSettings task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following sequences."
     german "Betrachten Sie die folgenden Folgen."
@@ -293,9 +309,12 @@ getSelectASTask config = do
     let selectASInst = SelectASInstance {
           activityDiagram=x,
           actionSequences = actionSequences,
+          drawSettings = defaultPlantUMLConvConf {
+            suppressBranchConditions = hideBranchConditions config
+            },
           showSolution = printSolution config
         }
-    case checkSelectASInstance selectASInst config of
+    case checkSelectASInstanceForConfig selectASInst config of
       Just _ -> return Nothing
       Nothing -> return $ Just selectASInst
     ) ad
@@ -348,5 +367,6 @@ defaultSelectASInstance = SelectASInstance {
     (2, (True,["F","A","B","C","D"])),
     (3, (False,["A","F","B","C","D"]))
     ],
+  drawSettings = defaultPlantUMLConvConf,
   showSolution = False
 }

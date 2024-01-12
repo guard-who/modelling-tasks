@@ -33,7 +33,7 @@ data PlantUMLConvConf = PlantUMLConvConf {
 defaultPlantUMLConvConf :: PlantUMLConvConf
 defaultPlantUMLConvConf = PlantUMLConvConf {
   suppressNodeNames = False,
-  suppressBranchConditions = False
+  suppressBranchConditions = True
 }
 
 drawADToFile :: FilePath -> PlantUMLConvConf -> UMLActivityDiagram -> IO FilePath

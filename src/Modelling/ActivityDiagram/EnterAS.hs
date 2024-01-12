@@ -27,7 +27,11 @@ import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..), isActionNode, isObjectNode)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (drawADToFile, defaultPlantUMLConvConf)
+import Modelling.ActivityDiagram.PlantUMLConverter (
+  PlantUMLConvConf (..),
+  defaultPlantUMLConvConf,
+  drawADToFile,
+  )
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
@@ -59,12 +63,14 @@ import System.Random.Shuffle (shuffleM)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
+  drawSettings :: PlantUMLConvConf,
   sampleSequence :: [String],
   showSolution :: Bool
 } deriving (Generic, Show, Eq)
 
 data EnterASConfig = EnterASConfig {
   adConfig :: ADConfig,
+  hideBranchConditions :: Bool,
   maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
   minAnswerLength :: Int,
@@ -82,6 +88,7 @@ defaultEnterASConfig = EnterASConfig {
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },
+  hideBranchConditions = True,
   maxInstances = Just 50,
   objectNodeOnEveryPath = Just True,
   minAnswerLength = 5,
@@ -132,8 +139,15 @@ enterASAlloy EnterASConfig {
             Just False -> [i| not #{s}|]
             _ -> ""
 
-checkEnterASInstance :: EnterASInstance -> EnterASConfig -> Maybe String
-checkEnterASInstance inst EnterASConfig {
+checkEnterASInstance :: EnterASInstance -> Maybe String
+checkEnterASInstance inst
+  | suppressNodeNames (drawSettings inst)
+  = Just "'suppressNodeNames' must be set to 'False' for this task type"
+  | otherwise
+  = Nothing
+
+checkEnterASInstanceForConfig :: EnterASInstance -> EnterASConfig -> Maybe String
+checkEnterASInstanceForConfig inst EnterASConfig {
     minAnswerLength,
     maxAnswerLength
   }
@@ -163,7 +177,7 @@ enterASTask path task = do
     english "Consider the following activity diagram."
     german "Betrachten Sie das folgende Aktivitätsdiagramm."
   image $=<< liftIO
-    $ drawADToFile path defaultPlantUMLConvConf $ activityDiagram task
+    $ drawADToFile path (drawSettings task) $ activityDiagram task
   paragraph $ do
     translate $ do
       english [iii|
@@ -240,9 +254,12 @@ getEnterASTask config = do
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   let validInsta =
         headWithErr "Failed to find task instances"
-        $ filter (isNothing . (`checkEnterASInstance` config))
+        $ filter (isNothing . (`checkEnterASInstanceForConfig` config))
         $ map (\x -> EnterASInstance {
           activityDiagram=x,
+          drawSettings = defaultPlantUMLConvConf {
+            suppressBranchConditions = hideBranchConditions config
+            },
           sampleSequence = sampleSolution $ enterActionSequence x,
           showSolution = printSolution config
         }) ad
@@ -290,6 +307,7 @@ defaultEnterASInstance = EnterASInstance {
       ADConnection {from = 16, to = 7, guard = ""}
     ]
   },
+  drawSettings = defaultPlantUMLConvConf,
   sampleSequence = ["D","E","G","B","F"],
   showSolution = False
 }
