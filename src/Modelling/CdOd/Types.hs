@@ -330,19 +330,19 @@ checkClassConfigWithProperties
   || maybe False (wrongAssocs >) maxAssocs'
   = Just [iii|
     The (maximum) number of non-inheritance relationships is too low for
-    the targeted wrongAssocs!
+    the aimed at wrongAssocs!
     |]
   | wrongCompositions > maxCompositions
   || maybe False (wrongCompositions >) (snd compositionLimits)
   = Just [iii|
     The (maximum) number of possible compositions is too low for
-    the targeted wrongCompositions!
+    the aimed at wrongCompositions!
     |]
   | minCompositions > maxCompositions
   || maybe False (minCompositions >) (snd compositionLimits)
   = Just [iii|
     The (maximum) number of possible compositions is too low for
-    the targeted composition properties!
+    the aimed at composition properties!
     |]
   | minCompositionsInheritances > maxCompositionsInheritances
   || maybe False (minCompositionsInheritances >) maxCompositionsInheritances'
@@ -354,13 +354,13 @@ checkClassConfigWithProperties
   || maybe False (minAssocs >) maxAssocs'
   = Just [iii|
     The (maximum) number of possible non-inheritance relationships is too low for
-    the targeted non-inheritance relationship properties!
+    the aimed at non-inheritance relationship properties!
     |]
   | minInheritances > maxInheritances
   || maybe False (minInheritances >) (snd inheritanceLimits)
   = Just [iii|
     The (maximum) number of possible inheritance relationships is too low for
-    the targeted inheritance relationship properties!
+    the aimed at inheritance relationship properties!
     |]
   | Just x <- snd relationshipLimits, Just rels <- relationshipsSum c, x > rels
   = Just [iii|

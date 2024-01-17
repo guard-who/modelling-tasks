@@ -118,17 +118,17 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   image img
   paragraph $ case mgoal of
     Nothing -> translate $ do
-      english "a transition sequence is sought, which leads to a marking without successors (i.e. to a deadlock)."
+      english "a transition sequence is sought which leads to a marking without successors (i.e., to a deadlock)."
       german "eine Transitionsfolge, die zu einer Markierung ohne Nachfolger (also zu einem Deadlock) führt."
     Just g -> do
       translate $ do
-        english "a transitions sequence is sought, which leads to the following marking:"
+        english "a transition sequence is sought which leads to the following marking:"
         german "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
       paragraph $ either image text g
       pure ()
   paragraph $ case noLonger of
     Nothing -> translate $ do
-      english "State your answer as a (arbitrarily short or long) sequence of the following kind:"
+      english "State your answer as an (arbitrarily short or long) sequence of the following kind:"
       german "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
     Just maxL -> translate $ do
       english $ concat [
@@ -143,7 +143,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
   code $ show $ TransitionsList [t1, t2, t3]
   paragraph $ translate $ do
     english $ concat [
-      "This statement should mean that after firing ",
+      "Where this statement means that after firing ",
       st1, ", then ", st2, ", and finally ", st3,
       " (in exactly this order), the sought marking is reached."
       ]
@@ -197,7 +197,7 @@ reachEvaluation path inst ts =
   $>> executes path (drawUsing inst) n ts
   $>>= \eout -> when (isRight eout) (
     yesNo (eout == Right (goal inst)) $ translate $ do
-      english "Reached targeted marking?"
+      english "Reached target marking?"
       german "Zielmarkierung erreicht?"
     )
   $>> assertReachPoints ((==) . goal) minLength inst ts eout

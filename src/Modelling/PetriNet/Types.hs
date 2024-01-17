@@ -404,7 +404,7 @@ class (PetriNode n, Show (p n String)) => Net p n where
    * a place node with the desired initial tokes if Just such are provided,
    * a transition node otherwise.
 
-  If the desired key already exists the targeted 'PetriNode' is replaced
+  If the desired key already exists, the targeted 'PetriNode' is replaced
   without affecting preexisting 'flow'.
   (use 'deleteNode' first if you desire to clear related flow)
   -}
