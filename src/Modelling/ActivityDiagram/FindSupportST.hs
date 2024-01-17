@@ -226,7 +226,7 @@ findSupportSTEvaluation
   -> Rated m
 findSupportSTEvaluation task sub = addPretext $ do
   let as = translations $ do
-        english "partial answers"
+        english "answer parts"
         german "Teilantworten"
       sol = findSupportSTSolution task
       solution = findSupportSTSolutionMap sol

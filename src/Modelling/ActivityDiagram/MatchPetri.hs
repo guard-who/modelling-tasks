@@ -343,7 +343,7 @@ matchPetriEvaluation
   -> Rated m
 matchPetriEvaluation task sub = addPretext $ do
   let as = translations $ do
-        english "partial answers"
+        english "answer parts"
         german "Teilantworten"
       sol = matchPetriSolution task
       msolutionString =

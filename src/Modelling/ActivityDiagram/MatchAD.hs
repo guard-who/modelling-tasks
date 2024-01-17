@@ -209,7 +209,7 @@ matchADEvaluation
   -> Rated m
 matchADEvaluation task sub = addPretext $ do
   let as = translations $ do
-        english "partial answers"
+        english "answer parts"
         german "Teilantworten"
       sol = matchADSolution task
       solutionString =
