@@ -192,8 +192,8 @@ findSupportSTTask
   -> LangM m
 findSupportSTTask path task = do
   paragraph $ translate $ do
-    english "Consider the following activity diagram."
-    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+    english "Consider the following activity diagram:"
+    german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do

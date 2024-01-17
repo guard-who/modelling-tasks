@@ -151,8 +151,8 @@ findConcurrencyTask
   -> LangM m
 findConcurrencyTask path task = do
   paragraph $ translate $ do
-    english "Considering this Petri net"
-    german "Betrachten Sie dieses Petrinetz"
+    english "Consider the following Petri net:"
+    german "Betrachten Sie folgendes Petrinetz:"
   image
     $=<< unLangM $ renderWith path "concurrent" (net task) (drawFindWith task)
   paragraph $ translate $ do

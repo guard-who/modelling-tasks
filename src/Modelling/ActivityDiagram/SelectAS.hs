@@ -219,13 +219,13 @@ selectASTask
 selectASTask path task = do
   let mapping = M.toList $ M.map snd $ actionSequences task
   paragraph $ translate $ do
-    english "Consider the following activity diagram."
-    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+    english "Consider the following activity diagram:"
+    german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
     $ drawADToFile path (drawSettings task) $ activityDiagram task
   paragraph $ translate $ do
-    english "Consider the following sequences."
-    german "Betrachten Sie die folgenden Folgen."
+    english "Consider the following sequences:"
+    german "Betrachten Sie die folgenden Folgen:"
   enumerateM (code . show) $ map (\(n,xs) -> (n, code $ show xs)) mapping
   paragraph $ translate $ do
     english [i|Which of these sequences is a valid action sequence?

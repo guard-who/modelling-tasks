@@ -258,13 +258,13 @@ matchPetriTask
   -> LangM m
 matchPetriTask path task = do
   paragraph $ translate $ do
-    english "Consider the following activity diagram."
-    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+    english "Consider the following activity diagram:"
+    german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english "Consider the following Petri net."
-    german "Betrachten Sie das folgende Petrinetz."
+    english "Consider the following Petri net:"
+    german "Betrachten Sie folgendes Petrinetz:"
   let drawSetting = petriDrawConf task
   image $=<< fmap (failWith id) $ liftIO
     $ runExceptT

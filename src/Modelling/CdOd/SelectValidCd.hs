@@ -211,8 +211,8 @@ selectValidCdTask
   -> LangM m
 selectValidCdTask path task = do
   paragraph $ translate $ do
-    english [i|Consider the following class diagram candidates.|]
-    german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten.|]
+    english [i|Consider the following class diagram candidates:|]
+    german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten:|]
   images show snd $=<< liftIO $ sequence $
     M.foldrWithKey drawCd mempty $ classDiagrams task
   paragraph $ translate $ do

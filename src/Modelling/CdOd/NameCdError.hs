@@ -434,8 +434,8 @@ checkNameCdErrorTaskText xs
 defaultNameCdErrorTaskText :: NameCdErrorTaskText
 defaultNameCdErrorTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
-    english "Consider the following class diagram, which unfortunately is invalid."
-    german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist.",
+    english "Consider the following class diagram, which unfortunately is invalid:"
+    german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:",
   Paragraph $ singleton $ TaskSpecific IncorrectCd,
   Paragraph $ singleton $ Translated $ translations $ do
     english "It contains the following relationships between classes:"

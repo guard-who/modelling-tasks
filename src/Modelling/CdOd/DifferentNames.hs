@@ -284,7 +284,7 @@ differentNamesTask path task = do
         (if anonymousObjects task then Just 1000 else Nothing)
   paragraph $ translate $ do
     english "Consider the following class diagram:"
-    german "Betrachten Sie das folgende Klassendiagramm:"
+    german "Betrachten Sie folgendes Klassendiagramm:"
   paragraph $ image $=<< liftIO $ cacheCd True True mempty cd path
   paragraph $ translate $ do
     english "and the following object diagram (which conforms to it):"

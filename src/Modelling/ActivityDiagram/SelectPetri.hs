@@ -291,14 +291,14 @@ selectPetriTask
 selectPetriTask path task = do
   let mapping = M.map snd $ petrinets task
   paragraph $ translate $ do
-    english "Consider the following activity diagram."
-    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+    english "Consider the following activity diagram:"
+    german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   let drawSetting = petriDrawConf task
   paragraph $ translate $ do
-    english "Consider the following Petri nets."
-    german "Betrachten Sie die folgenden Petrinetze."
+    english "Consider the following Petri nets:"
+    german "Betrachten Sie die folgenden Petrinetze:"
   images show id $=<< fmap (M.map (failWith id)) $ liftIO $
     traverse (\c -> runExceptT
       $ cacheNet path (show . PK.label) c

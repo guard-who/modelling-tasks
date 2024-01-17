@@ -440,8 +440,8 @@ repairCdTask
   -> LangM m
 repairCdTask path task = do
   paragraph $ translate $ do
-    english "Consider the following class diagram, which unfortunately is invalid."
-    german "Betrachten Sie das folgende Klassendiagramm, welches leider ungültig ist."
+    english "Consider the following class diagram, which unfortunately is invalid:"
+    german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:"
   image $=<< liftIO $ cacheCd
     (withDirections task)
     (withNames task)

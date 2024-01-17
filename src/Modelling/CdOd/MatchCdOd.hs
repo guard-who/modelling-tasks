@@ -226,8 +226,8 @@ matchCdOdTask
 matchCdOdTask path task = do
   let anonymous o = length (objects o) `div` 3
   paragraph $ translate $ do
-    english "Consider the following two class diagrams."
-    german "Betrachten Sie die folgenden zwei Klassendiagramme."
+    english "Consider the following two class diagrams:"
+    german "Betrachten Sie die folgenden zwei Klassendiagramme:"
   images show id $=<< liftIO
     $ (\_ c -> cacheCd True True mempty c path)
     `M.traverseWithKey` diagrams task

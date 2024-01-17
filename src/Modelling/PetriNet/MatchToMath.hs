@@ -363,8 +363,8 @@ graphToMathTask
   -> LangM m
 graphToMathTask path task = do
   paragraph $ translate $ do
-    english "Consider this graphical representation of a Petri net:"
-    german "Betrachten Sie die folgende grafische Darstellung eines Petrinetzes:"
+    english "Consider the following graphical representation of a Petri net:"
+    german "Betrachten Sie folgende grafische Darstellung eines Petrinetzes:"
   image $=<< unLangM $ from <$> writeDia path task
   paragraph $ translate $ do
     english "Which of the following mathematical representations denotes this Petri net?"
@@ -425,8 +425,8 @@ mathToGraphTask
   -> LangM m
 mathToGraphTask path task = do
   paragraph $ translate $ do
-    english "Consider this mathematical representation of a Petri net:"
-    german "Betrachten Sie diese mathematische Repräsentation eines Petrinetzes:"
+    english "Consider the following mathematical representation of a Petri net:"
+    german "Betrachten Sie folgende mathematische Repräsentation eines Petrinetzes:"
   mathToOutput latex $ from task
   paragraph $ translate $ do
     english "Which of the following diagrams represents this Petri net?"

@@ -174,8 +174,8 @@ enterASTask
   -> LangM m
 enterASTask path task = do
   paragraph $ translate $ do
-    english "Consider the following activity diagram."
-    german "Betrachten Sie das folgende Aktivitätsdiagramm."
+    english "Consider the following activity diagram:"
+    german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
     $ drawADToFile path (drawSettings task) $ activityDiagram task
   paragraph $ do
