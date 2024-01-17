@@ -57,7 +57,7 @@ deadlocks n = do
 
 {-|
 The returned trace for each state is in reversed order,
-i.e. undoing the firing on the returned deadlock state
+i.e., undoing the firing on the returned deadlock state
 in order of the returned transitions list
 leads to the initial state of the net.
 (Only states of and traces to deadlocks are returned.)
@@ -84,7 +84,7 @@ levels n =
 
 {-|
 The returned trace for each state is in reversed order,
-i.e. undoing the firing on the returned target state
+i.e., undoing the firing on the returned target state
 in order of the returned transitions list
 leads to the initial state of the net.
 -}

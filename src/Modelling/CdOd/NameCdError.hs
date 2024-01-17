@@ -369,7 +369,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   | 1 /= length (filter fst $ M.elems errorReasons)
   = Just [iii|
       There needs to be exactly one error defined within errorReasons
-      (i.e. set to 'True')
+      (i.e., set to 'True')
       |]
   | x:_ <- filter (\x -> x < 0 || x >= numberOfRelationships) relationshipsOnly
   = Just [iii|
@@ -445,13 +445,13 @@ defaultNameCdErrorTaskText = [
     english [iii|
       Choose what you think is the single reason that this class diagram is incorrect,
       and mention all relationships that definitely contribute to the problem,
-      i.e. removing any of them would fix the problem.
+      i.e., removing any of them would fix the problem.
       |]
     german [iii|
       Wählen Sie aus, was Sie für den einen Grund dafür halten,
       dass dieses Klassendiagramm ungültig ist,
       und nennen Sie alle Beziehungen, die definitiv zum Problem beitragen,
-      d.h. deren Entfernung das Problem jeweils beheben würde.
+      d.h., deren Entfernung das Problem jeweils beheben würde.
       |],
   Paragraph $ singleton $ Translated $ translations $ do
     english [i|Possible reasons are:|]

@@ -168,7 +168,7 @@ checkDifferentNamesInstance DifferentNamesInstance {..}
   = Just [iii|
       WithAdditionalNames must provide at least a name for
       each missing link in the Object diagram,
-      i.e. for which an association in the Class diagram exists,
+      i.e., for which an association in the Class diagram exists
       but not a link in the Object diagram.
       |]
   | (x:_) <- nubOrd links `intersect` nubOrd associations
@@ -319,12 +319,12 @@ differentNamesTask path task = do
   paragraph $ translate $ do
     english [iii|
       Please note: Links are already grouped correctly and fully,
-      i.e. all links with the same name (and only links with the same name!)
+      i.e., all links with the same name (and only links with the same name!)
       in the OD correspond to exactly the same relationship name in the CD.
       |]
     german [iii|
       Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert,
-      d.h. alle Links mit dem selben Namen
+      d.h., alle Links mit dem selben Namen
       (and auch nur Links mit dem selben Namen!)
       im OD entsprechen genau dem selben Beziehungsnamen im CD.
       |]

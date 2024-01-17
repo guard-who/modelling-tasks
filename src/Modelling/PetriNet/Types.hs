@@ -452,7 +452,7 @@ The 'PetriLike' graph is a valid Petri net only if
 
  * 'PlaceNode's are only successors of 'TransitionNode's
  * 'TransitionNode's are only successors of 'PlaceNode's
- * the initial marking is valid (i.e. all initial tokens are not negative)
+ * the initial marking is valid (i.e., all initial tokens are nonnegative)
  * every weight is greater than zero
 -}
 newtype PetriLike n a = PetriLike {

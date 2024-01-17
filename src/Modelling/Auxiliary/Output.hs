@@ -42,13 +42,13 @@ directionsAdvice = translate $ do
     As navigation directions are used,
     please note that aggregations and compositions are only navigable
     from the "part" toward the "whole",
-    i.e. they are not navigable in the opposite direction!
+    i.e., they are not navigable in the opposite direction!
     |]
   german [iii|
     Da Navigationsrichtungen verwendet werden, beachten Sie bitte,
     dass Aggregationen und Kompositionen
     nur vom "Teil" zum "Ganzen" navigierbar sind,
-    d.h. sie sind nicht in der entgegengesetzten Richtung navigierbar!
+    d.h., sie sind nicht in der entgegengesetzten Richtung navigierbar!
     |]
 
 simplifiedInformation :: OutputMonad m => LangM m

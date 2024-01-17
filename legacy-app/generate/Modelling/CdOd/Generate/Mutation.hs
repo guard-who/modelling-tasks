@@ -166,7 +166,7 @@ assocType TComposition = Just Composition'
 assocType TInheritance = Nothing
 
 {-|
-Generates a list of all limits (i.e. multiplicities) for the given target.
+Generates a list of all limits (i.e., multiplicities) for the given target.
 The resulting tuple contains the list of all multiplicities at the edges start
 and the list of all multiplicities at the edges end.
 
