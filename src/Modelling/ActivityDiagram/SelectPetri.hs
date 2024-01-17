@@ -39,6 +39,7 @@ import Modelling.ActivityDiagram.Auxiliary.Util (failWith, weightedShuffle)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
@@ -78,7 +79,6 @@ import Data.Graph.Inductive (Gr, mkGraph, lab, level)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.String.Interpolate ( i )
 import GHC.Generics (Generic)
-import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
 
 
@@ -376,7 +376,10 @@ getSelectPetriTask
   => SelectPetriConfig
   -> RandT g m SelectPetriInstance
 getSelectPetriTask config = do
-  instas <- liftIO $ getInstances (maxInstances config) $ selectPetriAlloy config
+  instas <- liftIO $ getInstances
+    (maxInstances config)
+    Nothing
+    $ selectPetriAlloy config
   rinstas <- shuffleM instas
   layout <- pickRandomLayout config
   let plantUMLConf = PlantUMLConvConf {

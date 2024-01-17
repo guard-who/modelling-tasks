@@ -43,6 +43,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaul
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Output (addPretext)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Types (
   Net (..),
   PetriLike (..),
@@ -76,7 +77,6 @@ import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
 import GHC.Generics (Generic)
-import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
 
 data FindSupportSTInstance = FindSupportSTInstance {
@@ -262,7 +262,10 @@ getFindSupportSTTask
   => FindSupportSTConfig
   -> RandT g m FindSupportSTInstance
 getFindSupportSTTask config = do
-  instas <- liftIO $ getInstances (maxInstances config) $ findSupportSTAlloy config
+  instas <- liftIO $ getInstances
+    (maxInstances config)
+    Nothing
+    $ findSupportSTAlloy config
   rinstas <- shuffleM instas
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   return $ FindSupportSTInstance {

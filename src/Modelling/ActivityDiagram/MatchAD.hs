@@ -33,6 +33,7 @@ import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -59,7 +60,6 @@ import Data.Map (Map)
 import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
-import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
 
@@ -251,7 +251,10 @@ getMatchADTask
   => MatchADConfig
   -> RandT g m MatchADInstance
 getMatchADTask config = do
-  instas <- liftIO $ getInstances (maxInstances config) $ matchADAlloy config
+  instas <- liftIO $ getInstances
+    (maxInstances config)
+    Nothing
+    $ matchADAlloy config
   rinstas <- shuffleM instas
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   return $ MatchADInstance {

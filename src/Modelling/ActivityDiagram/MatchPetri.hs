@@ -50,6 +50,7 @@ import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
@@ -89,7 +90,6 @@ import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate (i, iii)
 import Data.Tuple.Extra                 (dupe)
 import GHC.Generics (Generic)
-import Language.Alloy.Call (getInstances)
 import System.Random.Shuffle (shuffleM)
 
 
@@ -384,7 +384,10 @@ getMatchPetriTask
   => MatchPetriConfig
   -> RandT g m MatchPetriInstance
 getMatchPetriTask config = do
-  instas <- liftIO $ getInstances (maxInstances config) $ matchPetriAlloy config
+  instas <- liftIO $ getInstances
+    (maxInstances config)
+    Nothing
+    $ matchPetriAlloy config
   rinstas <- shuffleM instas
   activityDiagrams <- liftIO
     $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas

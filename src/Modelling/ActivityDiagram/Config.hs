@@ -32,11 +32,11 @@ data ADConfig = ADConfig {
 
 defaultADConfig :: ADConfig
 defaultADConfig = ADConfig
-  { minActions = 3,
+  { minActions = 5,
     maxActions = 5,
-    minObjectNodes = 3,
-    maxObjectNodes = 5,
-    maxNamedNodes = 8,
+    minObjectNodes = 1,
+    maxObjectNodes = 1,
+    maxNamedNodes = 7,
     decisionMergePairs = 2,
     forkJoinPairs = 1,
     activityFinalNodes = 1,

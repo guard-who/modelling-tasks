@@ -9,7 +9,7 @@ import Modelling.ActivityDiagram.Datatype (
   )
 
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
-import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig, ADConfig(..))
+import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 import Language.Alloy.Call (getInstances)
@@ -49,7 +49,7 @@ spec =
         validActionSequence (generateActionSequence testDiagram) testDiagram `shouldBe` (True::Bool)
     context "on a list of generated diagrams" $
       it "is consistent with the function generateActionSequence" $ do
-        let spec' = adConfigToAlloy modules preds defaultADConfig{minActions=5, maxActions=8, minObjectNodes=0, maxObjectNodes=1}
+        let spec' = adConfigToAlloy modules preds defaultADConfig
             depth = 10
         inst <- getInstances (Just $ fromIntegral depth) spec'
         let ad = map (failWith id .parseInstance) inst

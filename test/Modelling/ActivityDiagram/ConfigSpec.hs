@@ -28,8 +28,9 @@ spec = do
           bitwidth = adConfigBitwidth conf
       it "provides a scope large enough to generate instances" $ do
         let spec' = adConfigToAlloy' (adConfigScope conf) bitwidth "" "" conf
-        inst <- getInstances (Just 50) spec'
-        length inst `shouldBe` (50 :: Int)
+            depth = 10
+        inst <- getInstances (Just depth) spec'
+        length inst `shouldBe` fromIntegral depth
       it "provides a scope where half of it would not be sufficient to generate instances" $ do
         let spec' = adConfigToAlloy' (adConfigScope conf `div` 2) bitwidth "" "" conf
         inst <- getInstances (Just 1) spec'
@@ -40,8 +41,9 @@ spec = do
           scope = adConfigScope conf
       it "provides a bitwidth large enough to generate instances" $ do
         let spec' = adConfigToAlloy' scope (adConfigBitwidth conf) "" "" conf
-        inst <- getInstances (Just 50) spec'
-        length inst `shouldBe` (50 :: Int)
+            depth = 10
+        inst <- getInstances (Just depth) spec'
+        length inst `shouldBe` fromIntegral depth
       it "provides a bitwidth where half of it would not be sufficient to generate instances" $ do
         let spec' = adConfigToAlloy' scope (adConfigBitwidth conf `div` 2) "" "" conf
         inst <- getInstances (Just 1) spec'

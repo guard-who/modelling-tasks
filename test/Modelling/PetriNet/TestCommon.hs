@@ -13,9 +13,7 @@ module Modelling.PetriNet.TestCommon (
   validGraphConfig,
   ) where
 
-import qualified Language.Alloy.Call              as A (CallAlloyConfig (..))
-
-import Modelling.PetriNet.Alloy         (getAlloyInstances)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Types (
   AlloyConfig (..),
   AdvConfig (AdvConfig), BasicConfig (..), ChangeConfig (ChangeConfig),
@@ -25,11 +23,11 @@ import Modelling.PetriNet.Types (
 
 import Control.Monad.Random             (RandT, evalRandT, getRandomR)
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Control.Monad.Trans.Except       (ExceptT, runExceptT, throwE)
 import Data.GraphViz                    (GraphvizCommand (Neato))
 import GHC.Base                         (maxInt, minInt)
 import Language.Alloy.Call (
-  AlloyInstance, defaultCallAlloyConfig,
+  AlloyInstance,
   )
 import System.Random                    (StdGen, mkStdGen, randomR)
 
@@ -82,16 +80,18 @@ testTaskGeneration alloyGen taskInst checkInst cs =
     ti <- runExceptT $ flip evalRandT g $ do
       let conf = cs !! r
       r' <- getRandomR (0, maxJavaInt)
-      is <- lift $ getAlloyInstances
-        defaultCallAlloyConfig {
-           A.maxInstances = Just $ toInteger r',
-           A.timeout = Just 5000000
-           }
+      is <- lift $ lift $ getInstances
+        (Just $ toInteger r')
+        (Just 5000000)
         $ alloyGen conf
-      r'' <- if r' >= length is
-        then getRandomR (0, length is - 1)
-        else return r'
-      taskInst (is !! r'')
+      if null is
+        then lift $ throwE "no instance available"
+        else do
+        let instances = length is
+        r'' <- if r' >= instances
+          then getRandomR (0, instances - 1)
+          else return r'
+        taskInst (is !! r'')
     return $ isResult checkInst ti
 
 defaultConfigTaskGeneration

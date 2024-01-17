@@ -101,7 +101,7 @@ library
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.4.0.2 && <0.5
+    , call-alloy >=0.4.1 && <0.5
     , call-plantuml
     , composition
     , containers
@@ -190,7 +190,7 @@ test-suite modelling-tasks-test
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.4.0.2 && <0.5
+    , call-alloy >=0.4.1 && <0.5
     , call-plantuml
     , composition
     , containers

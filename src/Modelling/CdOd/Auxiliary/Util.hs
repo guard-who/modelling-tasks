@@ -20,6 +20,7 @@ import Modelling.CdOd.Types (
 import Language.Alloy.Call              as Alloy (
   AlloyInstance,
   CallAlloyConfig (..),
+  SatSolver (..),
   defaultCallAlloyConfig,
   getInstancesWith,
   getSingleAs,
@@ -61,6 +62,7 @@ redColor = Color [toWColor Red]
 getInstances :: Maybe Integer -> Maybe Int -> String -> IO [AlloyInstance]
 getInstances mmaxInstances mtimeout = getInstancesWith $ defaultCallAlloyConfig {
   maxInstances = mmaxInstances,
+  satSolver    = MiniSat,
   timeout      = mtimeout
   }
 

@@ -11,7 +11,6 @@ module Modelling.PetriNet.Alloy (
   compChange,
   connected,
   defaultConstraints,
-  getAlloyInstances,
   isolated,
   moduleHelpers,
   modulePetriAdditions,
@@ -27,6 +26,7 @@ module Modelling.PetriNet.Alloy (
   ) where
 
 import Modelling.Auxiliary.Common       (Object (Object), upperFirst)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Types (
   AdvConfig (..),
   AlloyConfig,
@@ -54,9 +54,6 @@ import Data.Set                         (Set)
 import Data.String.Interpolate          (i)
 import Language.Alloy.Call (
   AlloyInstance,
-  CallAlloyConfig (maxInstances, timeout),
-  defaultCallAlloyConfig,
-  getInstancesWith,
   getSingleAs,
   lookupSig,
   unscoped,
@@ -187,15 +184,6 @@ compChange ChangeConfig
   maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
 |]
 
-getAlloyInstances
-  :: CallAlloyConfig
-  -> String
-  -> ExceptT String IO [AlloyInstance]
-getAlloyInstances config alloy = do
-  list <- lift $ getInstancesWith config alloy
-  when (null list) $ except $ Left "no instance available"
-  return list
-
 {-|
 Generates signatures of the given kind, number of places and transitions.
 -}
@@ -226,12 +214,8 @@ taskInstance
   -> RandT g (ExceptT String IO) a
 taskInstance taskF alloyF parseF alloyC config segment = do
   let is = T.maxInstances (alloyC config)
-  list <- lift $ getAlloyInstances
-    defaultCallAlloyConfig {
-      maxInstances = is,
-      timeout      = T.timeout (alloyC config)
-      }
-    (alloyF config)
+  list <- lift $ lift
+    $ getInstances is (T.timeout $ alloyC config) (alloyF config)
   when (null $ drop segment list)
     $ lift $ except $ Left "instance not available"
   inst <- case fromIntegral <$> is of

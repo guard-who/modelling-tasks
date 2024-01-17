@@ -34,6 +34,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -57,7 +58,6 @@ import Control.Monad.Random (
 import Data.Maybe (isNothing, isJust, fromJust)
 import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
-import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
 
@@ -249,7 +249,10 @@ getEnterASTask
   => EnterASConfig
   -> RandT g m EnterASInstance
 getEnterASTask config = do
-  instas <- liftIO $ getInstances (maxInstances config) $ enterASAlloy config
+  instas <- liftIO $ getInstances
+    (maxInstances config)
+    Nothing
+    $ enterASAlloy config
   rinstas <- shuffleM instas
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   let validInsta =

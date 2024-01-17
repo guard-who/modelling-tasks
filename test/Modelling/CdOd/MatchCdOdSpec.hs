@@ -132,7 +132,7 @@ spec = do
         ]
       )
     cfg = defaultMatchCdOdConfig {
-      maxInstances = Just 27
+      maxInstances = Just 300
       }
 
 getOdsFor :: Cd -> Cd -> IO ([Od], [Od])

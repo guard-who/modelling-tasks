@@ -37,6 +37,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
+import Modelling.CdOd.Auxiliary.Util    (getInstances)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Extra (firstJustM)
@@ -67,7 +68,6 @@ import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate ( i )
 import Data.Vector.Distance (Params(..), leastChanges)
 import GHC.Generics (Generic)
-import Language.Alloy.Call (getInstances)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
 
@@ -301,7 +301,10 @@ getSelectASTask
   => SelectASConfig
   -> RandT g m SelectASInstance
 getSelectASTask config = do
-  instas <- liftIO $ getInstances (maxInstances config) $ selectASAlloy config
+  instas <- liftIO $ getInstances
+    (maxInstances config)
+    Nothing
+    $ selectASAlloy config
   rinstas <- shuffleM instas
   ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
   validInsta <- firstJustM (\x -> do
