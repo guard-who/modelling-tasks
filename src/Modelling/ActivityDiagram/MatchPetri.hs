@@ -277,12 +277,12 @@ matchPetriTask path task = do
     english [iii|
       State each matching of action node and Petri net node,
       each matching of object node and Petri net node,
-      the Petri net nodes per other component kind, as well as all auxiliary nodes
+      the Petri net nodes per other element kind, as well as all auxiliary nodes
       in the Petri net.
       |]
     german [iii|
       Geben Sie alle Aktionsknoten/Petrinetzknoten-Paare,
-      alle Objektknoten/Petrinetzknoten-Paare, die Petrinetzknoten pro anderer Komponentenart
+      alle Objektknoten/Petrinetzknoten-Paare, die Petrinetzknoten je anderer Elementart
       und alle Hilfsknoten im Petrinetz an.
       |]
   paragraph $ do
