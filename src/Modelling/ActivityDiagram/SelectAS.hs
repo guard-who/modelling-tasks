@@ -230,8 +230,8 @@ selectASTask path task = do
   paragraph $ translate $ do
     english [i|Which of these sequences is a valid action sequence?
 Please state your answer by giving a number indicating the valid action sequence.|]
-    german [i|Welcher dieser Folgen ist eine valide Aktionsfolge?
-Bitte geben Sie ihre Antwort als Zahl an, welche die valide Aktionsfolge repräsentiert.|]
+    german [i|Welche dieser Folgen ist eine valide Aktionsfolge?
+Bitte geben Sie Ihre Antwort als Zahl an, welche die valide Aktionsfolge repräsentiert.|]
   paragraph $ do
     translate $ do
       english [i|For example,|]

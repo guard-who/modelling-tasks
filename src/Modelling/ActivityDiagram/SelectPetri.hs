@@ -309,8 +309,8 @@ selectPetriTask path task = do
   paragraph $ translate $ do
     english [i|Which of these Petri nets matches the given activity diagram?
 Please state your answer by giving a number indicating the matching Petri net.|]
-    german [i|Welcher dieser Petrinetze passt zum gegebenen Aktivitätsdiagramm?
-Bitte geben Sie ihre Antwort als Zahl an, welche das passende Petrinetz repräsentiert.|]
+    german [i|Welches dieser Petrinetze passt zum gegebenen Aktivitätsdiagramm?
+Bitte geben Sie Ihre Antwort als Zahl an, welche das passende Petrinetz repräsentiert.|]
   paragraph $ do
     translate $ do
       english [i|For example,|]
