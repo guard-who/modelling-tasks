@@ -314,11 +314,11 @@ Bitte geben Sie Ihre Antwort als Zahl an, welche das passende Petrinetz repräse
   paragraph $ do
     translate $ do
       english [i|For example,|]
-      german [i|Zum Beispiel|]
+      german [i|Zum Beispiel würde|]
     code "2"
     translate $ do
       english [i|would indicate that Petri net 2 is the matching Petri net.|]
-      german  [i|würde bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
+      german  [i|bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
     pure ()
   pure ()
 

@@ -223,11 +223,11 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
   paragraph $ do
     translate $ do
       english [i|For example,|]
-      german [i|Zum Beispiel|]
+      german [i|Zum Beispiel würde|]
     code "[1, 2]"
     translate $ do
       english [i|would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
-      german [i|würde bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
+      german [i|bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
     pure ()
   paragraph simplifiedInformation
   paragraph hoveringInformation

@@ -727,7 +727,7 @@ isObjectDiagramRandomisable od
   | not $ canShuffleClassNames od
   = Just [iii|
       object names of the CD have to match to their class names
-      (e.g. c1 for C or anyOne for AnyOne).
+      (e.g., c1 for C or anyOne for AnyOne).
       |]
   | otherwise
   = Nothing

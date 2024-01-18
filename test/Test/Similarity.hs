@@ -41,7 +41,7 @@ data Deviation
     -- | Absolute value change that is allowed
     absoluteDeviation :: Double,
     -- | Relative change that is allowed,
-    -- e.g. 0.1 times of the original value
+    -- e.g., 0.1 times of the original value
     relativeDeviation :: Double
     }
 

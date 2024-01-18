@@ -381,8 +381,8 @@ graphToMathTask path task = do
       german [i|Die Angabe von |]
     code "1"
     translate $ do
-      english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't!).|]
-      german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegebenen grafischen Darstellung passen würde (und alle anderen Repräsentationen nicht!).|]
+      english [i| as answer would indicate that representation 1 matches the given graphical representation (and the other mathematical representations don't).|]
+      german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegebenen grafischen Darstellung passt (und die anderen mathematischen Repräsentationen nicht).|]
     pure ()
   paragraph hoveringInformation
   pure ()
@@ -441,8 +441,8 @@ mathToGraphTask path task = do
       german [i|Die Angabe von |]
     code "1"
     translate $ do
-      english [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't!).|]
-      german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegebenen mathematischen Repräsentation passen würde (und alle anderen Diagramme nicht!).|]
+      english [i| as answer would indicate that diagram 1 matches the given mathematical representation (and the other diagrams don't).|]
+      german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegebenen mathematischen Repräsentation passt (und die anderen Diagramme nicht).|]
     pure ()
   paragraph hoveringInformation
   pure ()

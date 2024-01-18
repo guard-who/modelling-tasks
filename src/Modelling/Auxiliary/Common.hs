@@ -163,7 +163,7 @@ class RandomiseLayout a where
   without affecting its content and basic overall properties
   but by (maybe) affecting its layout.
 
-  E.g. for a graph by changing the order of edges and nodes which affects
+  For a graph, for example, by changing the order of edges and nodes which affects
   the layouting performed by the used algorithm.
   -}
   randomiseLayout :: (MonadRandom m, MonadThrow m) => a -> m a

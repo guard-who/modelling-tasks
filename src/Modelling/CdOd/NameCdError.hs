@@ -468,7 +468,7 @@ defaultNameCdErrorTaskText = [
         for which you think this class diagram is invalid,
         and a list of numbers for those relationships
         on whose individual presence the problem depends.
-        E.g.
+        For example,
         |]
       german [iii|
         Bitte geben Sie Ihre Antwort an, indem Sie Folgendes angeben:
@@ -478,7 +478,7 @@ defaultNameCdErrorTaskText = [
         dass dieses Klassendiagramm ungültig ist,
         und eine Liste von Zahlen für diejenigen Beziehungen,
         von deren individueller Präsenz das Problem abhängt.
-        Zum Beispiel
+        Zum Beispiel würde
         |],
     Paragraph $ singleton $ Code $ showNameCdErrorAnswer answer,
     Paragraph $ singleton $ Translated $ translations $ do
@@ -489,7 +489,7 @@ defaultNameCdErrorTaskText = [
         make the problem appear.
         |]
       german [iii|
-        würde bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
+        bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
         und dass die Beziehungen #{dueTo1} und #{dueTo2}
         das Problem erschaffen.
         |]

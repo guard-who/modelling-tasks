@@ -462,12 +462,12 @@ repairCdTask path task = do
     german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren. |]
   paragraph $ do
     translate $ do
-      english [i|Answer by giving a comma separated list of all valid options, e.g. |]
+      english [i|Answer by giving a comma separated list of all valid options, e.g., |]
       german [i|Antworten Sie durch Angabe einer durch Komma separierten Liste aller gültigen Optionen. Zum Beispiel |]
     code "[1, 2]"
     translate $ do
       english [i| would indicate that options 1 and 2 each repair the given class diagram.|]
-      german [i| als Angabe würde bedeuten, dass die Optionen 1 und 2 jeweils das gegebene Klassendiagramm reparieren würden.|]
+      german [i| als Angabe würde bedeuten, dass die Optionen 1 und 2 jeweils das gegebene Klassendiagramm reparieren.|]
     pure ()
   paragraph simplifiedInformation
   paragraph hoveringInformation

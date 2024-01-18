@@ -194,8 +194,8 @@ enterASTask path task = do
         Zum Beispiel drückt |]
     code $ show enterASInitial
     translate $ do
-      english [i|expresses the execution of A, followed by B in the diagram.|]
-      german [i|die Ausführung von A, gefolgt von B im Diagramm aus.|]
+      english [i|expresses the execution of A followed by B.|]
+      german [i|die Ausführung von A gefolgt von B aus.|]
     pure ()
   pure ()
 
