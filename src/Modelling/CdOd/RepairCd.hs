@@ -459,7 +459,7 @@ repairCdTask path task = do
     <$> M.toList (changes task)
   paragraph $ translate $ do
     english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
-    german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren. |]
+    german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren.|]
   paragraph $ do
     translate $ do
       english [i|Answer by giving a comma separated list of all valid options, e.g., |]

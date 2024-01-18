@@ -327,7 +327,7 @@ pickConflictTask path task = do
         #{if plural then "nets don't" else "net doesn't"}!).
         |]
       german $ [iii|
-        als Antwort würde bedeuten, dass Petrinetz 1 genau zwei
+        #{" "}als Antwort würde bedeuten, dass Petrinetz 1 genau zwei
         in Konflikt stehende Transitionen hat (und dass
         |]
         ++ (if plural
