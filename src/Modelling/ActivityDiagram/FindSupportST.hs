@@ -203,8 +203,8 @@ the count of auxiliary places and the count of auxiliary transitions of the net.
 an Knoten, die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]
   paragraph $ do
     translate $ do
-      english [i|To do this, enter your answer as in the following example.|]
-      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
+      english [i|To do this, enter your answer as in the following example:|]
+      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
     code $ show findSupportSTInitial
     translate $ do
       english [i|In this example, the resulting net contains 10 nodes in total, with 2 auxiliary places and 3 auxiliary transitions.|]

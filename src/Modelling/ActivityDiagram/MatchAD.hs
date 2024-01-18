@@ -171,8 +171,8 @@ matchADTask path task = do
       |]
   paragraph $ do
     translate $ do
-      english [i|To do this, enter your answer as in the following example.|]
-      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
+      english [i|To do this, enter your answer as in the following example:|]
+      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
     code $ show matchADInitial
     pure ()
   pure ()
