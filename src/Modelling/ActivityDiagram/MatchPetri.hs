@@ -277,13 +277,13 @@ matchPetriTask path task = do
     english [iii|
       State each matching of action node and Petri net node,
       each matching of object node and Petri net node,
-      the Petri net nodes per other element kind, as well as all auxiliary nodes
-      in the Petri net.
+      the Petri net nodes per other element kind, as well as all auxiliary places
+      and auxiliary transitions in the Petri net.
       |]
     german [iii|
       Geben Sie alle Aktionsknoten/Petrinetzknoten-Paare,
       alle Objektknoten/Petrinetzknoten-Paare, die Petrinetzknoten je anderer Elementart
-      und alle Hilfsknoten im Petrinetz an.
+      und alle Hilfsstellen und -transitionen im Petrinetz an.
       |]
   paragraph $ do
     translate $ do
@@ -292,9 +292,9 @@ matchPetriTask path task = do
     code $ show matchPetriInitial
     translate $ do
       english [i|In this example, the action nodes "A" and "B" are matched with the Petri net nodes 1 and 2,
-the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes 13, 14 and 15 are auxiliary nodes.|]
+the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes 13, 14 and 15 are auxiliary places or auxiliary transitions.|]
       german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
-die Petrinetzknoten 5 und 7 entsprechen mit Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsknoten.|]
+die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsstellen oder -transitionen.|]
     pure ()
   pure ()
 
