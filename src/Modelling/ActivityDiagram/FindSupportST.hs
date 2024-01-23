@@ -197,9 +197,9 @@ findSupportSTTask path task = do
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english [i|Translate the given activity diagram into a Petri net, then state the total count of nodes,
-the count of auxiliary places and the count of auxiliary transitions of the net.|]
-    german [i|Übersetzen Sie das gegebene Aktivitätsdiagramm in ein Petrinetz, geben Sie anschließend die Gesamtanzahl
+    english [i|Translate the given activity diagram into a Petri net (on paper or in your head) and then state the total count of nodes,
+the count of auxiliary places and the count of auxiliary transitions in the net.|]
+    german [i|Übersetzen Sie das gegebene Aktivitätsdiagramm in ein Petrinetz (auf dem Papier oder in Ihrem Kopf) und geben Sie dann die Gesamtanzahl
 an Knoten, die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]
   paragraph $ do
     translate $ do
@@ -207,8 +207,8 @@ an Knoten, die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des 
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
     code $ show findSupportSTInitial
     translate $ do
-      english [i|In this example, the resulting net contains 10 nodes in total, with 2 auxiliary places and 3 auxiliary transitions.|]
-      german [i|In diesem Beispiel enthält das entstehende Netz etwa 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransition.|]
+      english [i|In this example, the resulting net contains 10 nodes in total, of which 2 are auxiliary places and 3 are auxiliary transitions.|]
+      german [i|In diesem Beispiel etwa enthält das entstehende Netz insgesamt 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransitionen.|]
     pure ()
   pure ()
 
