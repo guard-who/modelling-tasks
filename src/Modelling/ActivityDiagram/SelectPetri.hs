@@ -307,9 +307,9 @@ selectPetriTask path task = do
       (not $ with1Weights drawSetting)
       (withGraphvizCommand drawSetting)) mapping
   paragraph $ translate $ do
-    english [i|Which of these Petri nets matches the given activity diagram?
+    english [i|Which of these Petri nets is the translation of the given activity diagram?
 Please state your answer by giving a number indicating the matching Petri net.|]
-    german [i|Welches dieser Petrinetze passt zum gegebenen Aktivitätsdiagramm?
+    german [i|Welches dieser Petrinetze ist die Übersetzung des gegebenen Aktivitätsdiagramms?
 Bitte geben Sie Ihre Antwort als Zahl an, welche das passende Petrinetz repräsentiert.|]
   paragraph $ do
     translate $ do

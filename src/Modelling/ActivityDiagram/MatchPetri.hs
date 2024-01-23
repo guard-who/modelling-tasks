@@ -263,8 +263,8 @@ matchPetriTask path task = do
   image $=<< liftIO
     $ drawADToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english "Consider the following Petri net:"
-    german "Betrachten Sie folgendes Petrinetz:"
+    english "Consider the following Petri net as translation of this activity diagram:"
+    german "Betrachten Sie folgendes Petrinetz als Übersetzung dieses Aktivitätsdiagramms:"
   let drawSetting = petriDrawConf task
   image $=<< fmap (failWith id) $ liftIO
     $ runExceptT
@@ -287,8 +287,8 @@ matchPetriTask path task = do
       |]
   paragraph $ do
     translate $ do
-      english [i|To do this, enter your answer as in the following example.|]
-      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an.|]
+      english [i|To do this, enter your answer as in the following example:|]
+      german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
     code $ show matchPetriInitial
     translate $ do
       english [i|In this example, the action nodes "A" and "B" are matched with the Petri net nodes 1 and 2,
