@@ -47,6 +47,7 @@ import Modelling.CdOd.CdAndChanges.Instance (
   )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
+  ArticleToUse (DefiniteArticle),
   InValidOption (..),
   allowEverything,
   checkClassConfigAndChanges,
@@ -54,8 +55,8 @@ import Modelling.CdOd.RepairCd (
   mapInValidOptionM,
   phraseChange,
   phraseChangeDE,
-  phraseRelation,
-  phraseRelationDE,
+  phraseRelationship,
+  phraseRelationshipDE,
   repairIncorrect,
   trailingCommaDE,
   )
@@ -282,25 +283,25 @@ selectValidCdFeedback path withDir byName xs x cdChange =
             Class diagram #{x} is in fact invalid.
             Consider the following change, which aims at fixing a
             problematic situation within the given class diagram:
-            #{phraseChange byName withDir change}.
+            #{phraseChange DefiniteArticle byName withDir change}.
             |]
           german [iii|
             Klassendiagramm #{x} ist ungültig.
             Sehen Sie sich die folgende Änderung an, die darauf abzielt, eine
             problematische Stelle im Klassendiagramm zu beheben:
-            #{phraseChangeDE byName withDir change}.
+            #{phraseChangeDE DefiniteArticle byName withDir change}.
             |]
         Just relation -> do
           english [iii|
             Class diagram #{x} is in fact invalid.
             If there would not be
-            #{phraseRelation byName withDir relation},
+            #{phraseRelationship DefiniteArticle byName withDir relation},
             it would be valid.
             |]
           german [iii|
             Klassendiagramm #{x} ist ungültig.
             Wenn es
-            #{trailingCommaDE $ phraseRelationDE byName withDir relation}
+            #{trailingCommaDE $ phraseRelationshipDE DefiniteArticle byName withDir relation}
             nicht gäbe, wäre es gültig.
             |]
       pure ()

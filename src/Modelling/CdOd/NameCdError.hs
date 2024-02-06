@@ -81,13 +81,14 @@ import Modelling.CdOd.Output (
   )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
+  ArticleToUse (..),
   (.&.),
   allowEverything,
   checkClassConfigAndChanges,
   illegalChanges,
   legalChanges,
-  phraseRelation,
-  phraseRelationDE,
+  phraseRelationship,
+  phraseRelationshipDE,
   toProperty,
   )
 import Modelling.CdOd.Types (
@@ -342,13 +343,13 @@ toTaskTextPart output path task = case output of
       <$> M.toList (errorReasons task)
     RelationshipsList -> do
       let phrase x y z = translate $ do
-            english $ phraseRelation x y z
-            german $ phraseRelationDE x y z
-          phraseRelationship =
+            english $ phraseRelationship DefiniteArticle x y z
+            german $ phraseRelationshipDE DefiniteArticle x y z
+          phraseRelationship' =
             phrase (withNames task) (withDirections task)
             . (relationships (classDiagram task) !!)
       enumerateM (text . show)
-        $ second (phraseRelationship . snd)
+        $ second (phraseRelationship' . snd)
         <$> M.toList (relevantRelationships task)
   Translated xs -> translate $ put xs
 

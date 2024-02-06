@@ -1,11 +1,13 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.RepairCd (
   AllowedProperties (..),
+  ArticleToUse (..),
   InValidOption (..),
   RepairCdConfig (..),
   RepairCdInstance (..),
@@ -20,8 +22,8 @@ module Modelling.CdOd.RepairCd (
   mapInValidOptionM,
   phraseChange,
   phraseChangeDE,
-  phraseRelation,
-  phraseRelationDE,
+  phraseRelationship,
+  phraseRelationshipDE,
   renameInstance,
   repairCd,
   repairCdEvaluation,
@@ -142,61 +144,108 @@ import System.Random.Shuffle            (shuffleM)
 debug :: Bool
 debug = False
 
-phraseChangeDE :: Bool -> Bool -> Change (Relationship String String) -> String
-phraseChangeDE byName withDir c = case (add c, remove c) of
+data ArticleToUse
+  = DefiniteArticle
+  | IndefiniteArticle
+
+data NonInheritancePhrasing
+  = ByDirection
+  | ByName
+  | Lengthy
+  -- ^ Associations are phrased lengthy, others as by direction
+
+toPhrasing :: Bool -> Bool -> NonInheritancePhrasing
+toPhrasing byName withDir
+  | byName = ByName
+  | withDir = ByDirection
+  | otherwise = Lengthy
+
+phraseChangeDE
+  :: ArticleToUse
+  -> Bool
+  -> Bool
+  -> Change (Relationship String String)
+  -> String
+phraseChangeDE article byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "verändere nichts"
   (Just a,  Nothing) -> "ergänze "
-    ++ trailingCommaDE (phraseRelationDE False withDir a)
-  (Nothing, Just e)  -> "entferne " ++ phraseRelationDE byName withDir e
+    ++ trailingCommaDE (phrasingNew a)
+  (Nothing, Just e)  -> "entferne " ++ phrasingOld e
   (Just a,  Just e)  ->
-    "ersetze " ++ trailingCommaDE (phraseRelationDE byName withDir e)
-    ++ " durch " ++ phraseRelationDE False withDir a
+    "ersetze " ++ trailingCommaDE (phrasingOld e)
+    ++ " durch " ++ phrasingNew a
+  where
+    phrasingOld = phraseRelationDE article $ toPhrasing byName withDir
+    phrasingNew = phraseRelationDE IndefiniteArticle $ toPhrasing False withDir
 
 trailingCommaDE :: String -> String
 trailingCommaDE xs
       | ',' `elem` xs = xs ++ ","
       | otherwise     = xs
 
-phraseRelationDE :: Bool -> Bool -> Relationship String String -> String
-phraseRelationDE _ _ Inheritance {..} =
-  "eine Vererbung, bei der " ++ subClass ++ " von " ++ superClass ++ " erbt"
-phraseRelationDE True _ Association {..} = "Assoziation " ++ associationName
-phraseRelationDE True _ Aggregation {..} = "Aggregation " ++ aggregationName
-phraseRelationDE True _ Composition {..} = "Komposition " ++ compositionName
-phraseRelationDE _ False Association {..}
+femaleArticleDE :: ArticleToUse -> String
+femaleArticleDE = \case
+  DefiniteArticle -> "die"
+  IndefiniteArticle -> "eine"
+
+phraseRelationshipDE
+  :: ArticleToUse
+  -> Bool
+  -> Bool
+  -> Relationship String String
+  -> String
+phraseRelationshipDE article byName withDir = phraseRelationDE article phrasing
+  where
+    phrasing = toPhrasing byName withDir
+
+phraseRelationDE
+  :: ArticleToUse
+  -> NonInheritancePhrasing
+  -> Relationship String String
+  -> String
+phraseRelationDE article _ Inheritance {..} = [iii|
+  #{femaleArticleDE article} Vererbung,
+  bei der #{subClass} von #{superClass} erbt
+  |]
+phraseRelationDE _ ByName Association {..} = "Assoziation " ++ associationName
+phraseRelationDE _ ByName Aggregation {..} = "Aggregation " ++ aggregationName
+phraseRelationDE _ ByName Composition {..} = "Komposition " ++ compositionName
+phraseRelationDE article Lengthy Association {..}
   | linking associationFrom == linking associationTo = [iii|
-    eine Selbst-Assoziation für #{linking associationFrom},
-    wobei es an einem Ende #{phraseLimitDE $ limits associationFrom}
+    #{femaleArticleDE article} Selbst-Assoziation für #{linking associationFrom},
+    bei der #{linking associationFrom}
+    an einem Ende #{phraseLimitDE $ limits associationFrom}
     und am anderen Ende #{phraseLimitDE $ limits associationTo} beteiligt ist
     |]
-  | otherwise  = "eine Assoziation"
+  | otherwise = femaleArticleDE article ++ " Assoziation"
       ++ participationsDE associationFrom associationTo
-phraseRelationDE _ _ Association {..}
+phraseRelationDE article ByDirection Association {..}
   | associationFrom == associationTo = [iii|
-    eine Selbst-Assoziation für #{linking associationFrom},
-    wobei es am Anfang #{phraseLimitDE $ limits associationFrom}
+    #{femaleArticleDE article} Selbst-Assoziation für #{linking associationFrom},
+    bei der {linking associationFrom}
+    am Anfang #{phraseLimitDE $ limits associationFrom}
     und am Ende #{phraseLimitDE $ limits associationTo} beteiligt ist
     |]
   | otherwise = [iii|
-    eine Assocziation von #{linking associationFrom}
+    #{femaleArticleDE article} Assocziation von #{linking associationFrom}
     nach #{linking associationTo}
     |] ++ participationsDE associationFrom associationTo
-phraseRelationDE _ _ Aggregation {..}
+phraseRelationDE article _ Aggregation {..}
   | aggregationPart == aggregationWhole = [iii|
-    eine Selbst-Aggregation
+    #{femaleArticleDE article} Selbst-Aggregation
     #{selfParticipatesPartWholeDE aggregationPart aggregationWhole}
     |]
   | otherwise = [iii|
-    eine Beziehung, die #{linking aggregationWhole}
+    #{femaleArticleDE article} Beziehung, die #{linking aggregationWhole}
     eine Aggregation aus #{linking aggregationPart}s macht
     |] ++ participationsDE aggregationWhole aggregationPart
-phraseRelationDE _ _ Composition {..}
+phraseRelationDE article _ Composition {..}
   | compositionPart == compositionWhole = [iii|
-    eine Selbst-Komposition
+    #{femaleArticleDE article} Selbst-Komposition
     #{selfParticipatesPartWholeDE compositionPart compositionWhole}
     |]
   | otherwise = [iii|
-    eine Beziehung, die #{linking compositionWhole}
+    #{femaleArticleDE article} Beziehung, die #{linking compositionWhole}
     eine Komposition aus #{linking compositionPart}s macht
     |] ++ participationsDE compositionWhole compositionPart
 
@@ -205,7 +254,7 @@ selfParticipatesPartWholeDE
   -> LimitedLinking String
   -> String
 selfParticipatesPartWholeDE part whole = [iii|
-  für #{linking part}, wobei es #{phraseLimitDE $ limits part}
+  für #{linking part}, wobei #{linking part} #{phraseLimitDE $ limits part}
   als Teil and #{phraseLimitDE $ limits whole} als Ganzes beteiligt ist
   |]
 
@@ -226,57 +275,95 @@ phraseLimitDE (-1, Just n) = "*.." ++ show n ++ "-mal"
 phraseLimitDE (m, Nothing) = show m ++ "..*-mal"
 phraseLimitDE (m, Just n)  = show m ++ ".." ++ show n ++ "-mal"
 
-phraseChange :: Bool -> Bool -> Change (Relationship String String) -> String
-phraseChange byName withDir c = case (add c, remove c) of
+phraseChange
+  :: ArticleToUse
+  -> Bool
+  -> Bool
+  -> Change (Relationship String String)
+  -> String
+phraseChange article byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "change nothing"
-  (Just e,  Nothing) -> "add " ++ phraseRelation False withDir e
-  (Nothing, Just e ) -> "remove " ++ phraseRelation byName withDir e
+  (Just e,  Nothing) -> "add " ++ phrasingNew e
+  (Nothing, Just e ) -> "remove " ++ phrasingOld e
   (Just e1, Just e2) ->
-    "replace " ++ phraseRelation byName withDir e2
-    ++ " by " ++ phraseRelation False withDir e1
+    "replace " ++ phrasingOld e2
+    ++ " by " ++ phrasingNew e1
+  where
+    phrasingOld = phraseRelation article $ toPhrasing byName withDir
+    phrasingNew = phraseRelation IndefiniteArticle $ toPhrasing False withDir
 
-phraseRelation :: Bool -> Bool -> Relationship String String -> String
-phraseRelation _ _ Inheritance {..} =
-  "an inheritance where " ++ subClass ++ " inherits from " ++ superClass
-phraseRelation True _ Association {..} = "association " ++ associationName
-phraseRelation True _ Aggregation {..} = "aggregation " ++ aggregationName
-phraseRelation True _ Composition {..} = "composition " ++ compositionName
-phraseRelation _ False Association {..}
+consonantArticle :: ArticleToUse -> String
+consonantArticle = \case
+  DefiniteArticle -> "the"
+  IndefiniteArticle -> "a"
+
+vowelArticle :: ArticleToUse -> String
+vowelArticle = \case
+  DefiniteArticle -> "the"
+  IndefiniteArticle -> "an"
+
+phraseRelationship
+  :: ArticleToUse
+  -> Bool
+  -> Bool
+  -> Relationship String String
+  -> String
+phraseRelationship article byName withDir = phraseRelation article phrasing
+  where
+    phrasing = toPhrasing byName withDir
+
+phraseRelation
+  :: ArticleToUse
+  -> NonInheritancePhrasing
+  -> Relationship String String
+  -> String
+phraseRelation article _ Inheritance {..} = [iii|
+  #{vowelArticle article} inheritance
+  where #{subClass} inherits from #{superClass}
+  |]
+phraseRelation _ ByName Association {..} = "association " ++ associationName
+phraseRelation _ ByName Aggregation {..} = "aggregation " ++ aggregationName
+phraseRelation _ ByName Composition {..} = "composition " ++ compositionName
+phraseRelation article Lengthy Association {..}
   | associationFrom == associationTo = [iii|
-    a self-association for #{linking associationFrom}
+    #{consonantArticle article} self-association for #{linking associationFrom}
     where #{participates (limits associationFrom) "it"} at one end
     and #{phraseLimit $ limits associationTo} at the other end
     |]
-  | otherwise  = "an association"
-    ++ participations associationFrom associationTo
-phraseRelation _ _ Association {..}
+  | otherwise  = [iii|
+    #{vowelArticle article} association
+    #{participations associationFrom associationTo}
+    |]
+phraseRelation article ByDirection Association {..}
   | associationFrom == associationTo = [iii|
-    a self-association for #{linking associationFrom}
+    #{consonantArticle article} self-association for #{linking associationFrom}
     where #{participates (limits associationFrom) "it"} at its beginning
     and #{phraseLimit $ limits associationTo} at its arrow end
     |]
   | otherwise = [iii|
-    an association from #{linking associationFrom}
+    #{vowelArticle article} association from #{linking associationFrom}
     to #{linking associationTo}
     #{participations associationFrom associationTo}
     |]
-phraseRelation _ _ Aggregation {..}
+phraseRelation article _ Aggregation {..}
   | aggregationPart == aggregationWhole = [iii|
-    a self-aggregation
+    #{consonantArticle article} self-aggregation
     #{selfParticipatesPartWhole aggregationPart aggregationWhole}
     |]
   | otherwise = [iii|
-    a relationship that makes #{linking aggregationWhole}
+    #{consonantArticle article} relationship
+    that makes #{linking aggregationWhole}
     an aggregation of #{linking aggregationPart}s
     #{participations aggregationWhole aggregationPart}
     |]
-phraseRelation _ _ Composition {..}
+phraseRelation article _ Composition {..}
   | compositionPart == compositionWhole = [iii|
-    a self-composition
+    #{consonantArticle article} self-composition
     #{selfParticipatesPartWhole compositionPart compositionWhole}
     |]
   | otherwise = [iii|
-    a relationship that makes #{linking compositionWhole}
+    #{consonantArticle article} relationship
+    that makes #{linking compositionWhole}
     a composition of #{linking compositionPart}s
     #{participations compositionWhole compositionPart}
     |]
@@ -293,9 +380,10 @@ participations
   :: LimitedLinking String
   -> LimitedLinking String
   -> String
-participations from to =
-  " where " ++ participates (limits from) (linking from)
-  ++ " and " ++ participates (limits to) (linking to)
+participations from to = [iii|
+  where #{participates (limits from) (linking from)}
+  and #{participates (limits to) (linking to)}
+  |]
 
 participates :: (Int, Maybe Int) -> String -> String
 participates r c = c ++ " participates " ++ phraseLimit r
@@ -452,8 +540,8 @@ repairCdTask path task = do
     english [i|Which of the following changes would repair the class diagram?|]
     german [i|Welche der folgenden Änderungen würden das Klassendiagramm reparieren?|]
   let phrase x y z = translate $ do
-        english $ phraseChange x y z
-        german $ phraseChangeDE x y z
+        english $ phraseChange DefiniteArticle x y z
+        german $ phraseChangeDE DefiniteArticle x y z
   enumerateM (text . show)
     $ second (phrase (withNames task) (withDirections task) . option)
     <$> M.toList (changes task)
