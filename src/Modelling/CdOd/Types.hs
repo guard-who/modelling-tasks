@@ -44,6 +44,10 @@ module Modelling.CdOd.Types (
   shuffleObjectAndLinkOrder,
   toPropertySet,
   towardsValidProperties,
+  -- * Phrasing
+  ArticleToUse (..),
+  NonInheritancePhrasing (..),
+  toPhrasing,
   ) where
 
 
@@ -790,3 +794,19 @@ shouldBeThick a b classesWithSubclasses =
             in (one && (two || b `isSubOf` b') || two && (one || a `isSubOf` a'))
       )
   where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)
+
+data ArticleToUse
+  = DefiniteArticle
+  | IndefiniteArticle
+
+data NonInheritancePhrasing
+  = ByDirection
+  | ByName
+  | Lengthy
+  -- ^ Associations are phrased lengthy, others as by direction
+
+toPhrasing :: Bool -> Bool -> NonInheritancePhrasing
+toPhrasing byName withDir
+  | byName = ByName
+  | withDir = ByDirection
+  | otherwise = Lengthy

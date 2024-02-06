@@ -45,23 +45,23 @@ import Modelling.Auxiliary.Output (
 import Modelling.CdOd.CdAndChanges.Instance (
   ChangeAndCd (..),
   )
+import Modelling.CdOd.Phrasing (
+  phraseChange,
+  phraseRelationship,
+  trailingCommaGerman,
+  )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
-  ArticleToUse (DefiniteArticle),
   InValidOption (..),
   allowEverything,
   checkClassConfigAndChanges,
   mapInValidOption,
   mapInValidOptionM,
-  phraseChange,
-  phraseChangeDE,
-  phraseRelationship,
-  phraseRelationshipDE,
   repairIncorrect,
-  trailingCommaDE,
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
+  ArticleToUse (DefiniteArticle),
   Cd,
   ClassConfig (..),
   ClassDiagram (..),
@@ -283,25 +283,27 @@ selectValidCdFeedback path withDir byName xs x cdChange =
             Class diagram #{x} is in fact invalid.
             Consider the following change, which aims at fixing a
             problematic situation within the given class diagram:
-            #{phraseChange DefiniteArticle byName withDir change}.
+            #{phraseChange English DefiniteArticle byName withDir change}.
             |]
           german [iii|
             Klassendiagramm #{x} ist ungültig.
             Sehen Sie sich die folgende Änderung an, die darauf abzielt, eine
             problematische Stelle im Klassendiagramm zu beheben:
-            #{phraseChangeDE DefiniteArticle byName withDir change}.
+            #{phraseChange German DefiniteArticle byName withDir change}.
             |]
         Just relation -> do
+          let phrase l =
+                phraseRelationship l DefiniteArticle byName withDir relation
           english [iii|
             Class diagram #{x} is in fact invalid.
             If there would not be
-            #{phraseRelationship DefiniteArticle byName withDir relation},
+            #{phrase English},
             it would be valid.
             |]
           german [iii|
             Klassendiagramm #{x} ist ungültig.
             Wenn es
-            #{trailingCommaDE $ phraseRelationshipDE DefiniteArticle byName withDir relation}
+            #{trailingCommaGerman $ phrase German}
             nicht gäbe, wäre es gültig.
             |]
       pure ()

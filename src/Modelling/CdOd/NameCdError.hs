@@ -79,19 +79,20 @@ import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
   cacheCd,
   )
+import Modelling.CdOd.Phrasing (
+  phraseRelationship,
+  )
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
-  ArticleToUse (..),
   (.&.),
   allowEverything,
   checkClassConfigAndChanges,
   illegalChanges,
   legalChanges,
-  phraseRelationship,
-  phraseRelationshipDE,
   toProperty,
   )
 import Modelling.CdOd.Types (
+  ArticleToUse (..),
   Cd,
   ClassConfig (..),
   ClassDiagram (..),
@@ -343,8 +344,8 @@ toTaskTextPart output path task = case output of
       <$> M.toList (errorReasons task)
     RelationshipsList -> do
       let phrase x y z = translate $ do
-            english $ phraseRelationship DefiniteArticle x y z
-            german $ phraseRelationshipDE DefiniteArticle x y z
+            english $ phraseRelationship English DefiniteArticle x y z
+            german $ phraseRelationship German DefiniteArticle x y z
           phraseRelationship' =
             phrase (withNames task) (withDirections task)
             . (relationships (classDiagram task) !!)
