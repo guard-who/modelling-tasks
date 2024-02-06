@@ -88,7 +88,7 @@ phraseRelation article ByDirection Association {..}
     und am Ende #{phraseLimit $ limits associationTo} beteiligt ist
     |]
   | otherwise = [iii|
-    #{femaleArticle article} Assocziation von #{linking associationFrom}
+    #{femaleArticle article} Assoziation von #{linking associationFrom}
     nach #{linking associationTo}
     |] ++ participations associationFrom associationTo
 phraseRelation article _ Aggregation {..}
