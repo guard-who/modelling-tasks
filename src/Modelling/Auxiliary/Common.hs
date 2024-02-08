@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Modelling.Auxiliary.Common (
   Object (..),
   Randomise (..),
@@ -84,6 +85,9 @@ data MatchListsException =
   deriving Show
 
 instance Exception MatchListsException
+
+instance MonadThrow m => MonadThrow (RandT g m) where
+  throwM = lift . throwM
 
 mapIndicesTo :: (Eq a, MonadThrow m) => [a] -> [a] -> m [(Int, Int)]
 mapIndicesTo xs ys = mapIndicesToHelper (zip [0 ..] xs) (zip [0 ..] ys)

@@ -685,9 +685,16 @@ nameCdErrorGenerate
   -> Int
   -> Int
   -> IO NameCdErrorInstance
-nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
+nameCdErrorGenerate inst segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  (cd, reason, rs) <- flip evalRandT g $ nameCdError
+  flip evalRandT g $ generateAndRandomise inst
+
+generateAndRandomise
+  :: RandomGen g
+  => NameCdErrorConfig
+  -> RandT g IO NameCdErrorInstance
+generateAndRandomise NameCdErrorConfig {..} = do
+  (cd, reason, rs) <- nameCdError
     allowedProperties
     classConfig
     objectProperties
