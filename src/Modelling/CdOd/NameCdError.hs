@@ -92,6 +92,9 @@ import Modelling.CdOd.RepairCd (
   toProperty,
   )
 import Modelling.CdOd.Types (
+  Annotation (..),
+  AnnotatedCd,
+  AnnotatedClassDiagram (..),
   ArticleToUse (..),
   Cd,
   ClassConfig (..),
@@ -105,11 +108,12 @@ import Modelling.CdOd.Types (
   classNames,
   isIllegal,
   maxObjects,
-  renameClassesAndRelationshipsInCd,
+  renameClassesAndRelationships,
   reverseAssociation,
-  shuffleClassAndConnectionOrder,
+  shuffleAnnotatedClassAndConnectionOrder,
   toPropertySet,
   towardsValidProperties,
+  unannotateCd,
   )
 import Modelling.Types                  (Change (..))
 
@@ -337,7 +341,7 @@ toTaskTextPart output path task = case output of
       (withDirections task)
       (withNames task)
       mempty
-      (classDiagram task)
+      (unannotateCd $ classDiagram task)
       path
     ReasonsList -> enumerateM (text . singleton)
       $ second (translate . put . snd)
@@ -348,7 +352,7 @@ toTaskTextPart output path task = case output of
             german $ phraseRelationship German DefiniteArticle x y z
           phraseRelationship' =
             phrase (withNames task) (withDirections task)
-            . (relationships (classDiagram task) !!)
+            . (relationships (unannotateCd $ classDiagram task) !!)
       enumerateM (text . show)
         $ second (phraseRelationship' . snd)
         <$> M.toList (relevantRelationships task)
@@ -358,13 +362,28 @@ data NameCdErrorInstance = NameCdErrorInstance {
   -- | maps the value to the index of 'relationships' of the specified
   --   'classDiagram' (starting at @0@).
   relevantRelationships       :: Map Int (Bool, Int),
-  classDiagram                :: Cd,
+  classDiagram                :: AnnotatedCd Relevance,
   errorReasons                :: Map Char (Bool, Map Language String),
   showSolution                :: Bool,
   taskText                    :: NameCdErrorTaskText,
   withDirections              :: Bool,
   withNames                   :: Bool
   } deriving (Eq, Generic, Read, Show)
+
+data Relevance
+  = NotRelevant
+  | Relevant {
+    contributingToProblem     :: Bool,
+    -- | for 'randomiseLayout' to work without influencing
+    --   the order of the relationships in the list of relevant relationships
+    --   each priority has to be unique for each class diagram
+    --
+    --   * the order applies to the list of relevant relationships
+    --   * a lower number means higher priority
+    listingPriority           :: Int,
+    referenceUsing            :: ArticleToUse
+    }
+  deriving (Eq, Generic, Read, Show)
 
 checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
 checkNameCdErrorInstance NameCdErrorInstance {..}
@@ -398,7 +417,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   = checkNameCdErrorTaskText taskText
   where
     letters = ['a' .. 'z'] ++ ['A' .. 'Z']
-    numberOfRelationships = length $ relationships classDiagram
+    numberOfRelationships = length $ relationships $ unannotateCd classDiagram
     reasons = map snd $ M.elems errorReasons
     relationshipsOnly = map snd (M.elems relevantRelationships)
 
@@ -596,7 +615,7 @@ nameCdErrorSolution x = NameCdErrorAnswer {
 
 classAndAssocNames :: NameCdErrorInstance -> ([String], [String])
 classAndAssocNames inst =
-  let cd = classDiagram inst
+  let cd = unannotateCd $ classDiagram inst
       names = nubOrd $ classNames cd
       assocs = nubOrd $ associationNames cd
   in (names, assocs)
@@ -611,9 +630,9 @@ instance Randomise NameCdErrorInstance where
 
 instance RandomiseLayout NameCdErrorInstance where
   randomiseLayout NameCdErrorInstance {..} = do
-    cd <- shuffleClassAndConnectionOrder classDiagram
+    cd <- shuffleAnnotatedClassAndConnectionOrder classDiagram
     mapping <- BM.fromList
-      <$> mapIndicesTo (relationships classDiagram) (relationships cd)
+      <$> mapIndicesTo (relationships $ unannotateCd classDiagram) (relationships $ unannotateCd cd)
     relevant <- traverse (traverse (`BM.lookup` mapping)) relevantRelationships
     return NameCdErrorInstance {
       relevantRelationships = relevant,
@@ -649,7 +668,7 @@ renameInstance inst@NameCdErrorInstance {..} names' assocs' = do
   let (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
+      renameCd = renameClassesAndRelationships bmNames bmAssocs
   cd <- renameCd classDiagram
   return $ NameCdErrorInstance {
     relevantRelationships = relevantRelationships,
@@ -687,7 +706,13 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
       (\x r -> (x, (r, x - 1)))
       [1..]
       $ map (`elem` rs) $ relationships cd,
-    classDiagram = cd,
+    classDiagram = AnnotatedClassDiagram {
+      annotatedClasses = classNames cd,
+      annotatedRelationships = zipWith
+        (relevanceFor rs)
+        [1..]
+        (relationships cd)
+      },
     errorReasons = M.fromAscList $ zip ['a' ..]
       $ map (second toTranslations)
       $ (True, PreDefined reason)
@@ -698,6 +723,14 @@ nameCdErrorGenerate NameCdErrorConfig {..} segment seed = do
     withNames = printNames
     }
   where
+    relevanceFor xs n x = Annotation {
+      annotated = x,
+      annotation = Relevant {
+        contributingToProblem = x `elem` xs,
+        listingPriority = n,
+        referenceUsing = DefiniteArticle
+        }
+      }
     toTranslations x = case x of
       Custom y -> y
       PreDefined y -> translateProperty printNavigations y
@@ -847,28 +880,56 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
     (3, (False, 0)),
     (4, (True, 1))
     ],
-  classDiagram = ClassDiagram {
-    classNames = ["D","C","B","A"],
-    relationships = [
-      Aggregation {
-        aggregationName = "y",
-        aggregationPart = LimitedLinking {linking = "B", limits = (2, Nothing)},
-        aggregationWhole = LimitedLinking {linking = "D", limits = (2, Just 2)}
+  classDiagram = AnnotatedClassDiagram {
+    annotatedClasses = ["D","C","B","A"],
+    annotatedRelationships = [
+      Annotation {
+        annotated = Aggregation {
+          aggregationName = "y",
+          aggregationPart = LimitedLinking {linking = "B", limits = (2, Nothing)},
+          aggregationWhole = LimitedLinking {linking = "D", limits = (2, Just 2)}
+          },
+        annotation = Relevant {
+          contributingToProblem = False,
+          listingPriority = 3,
+          referenceUsing = DefiniteArticle
+          }
         },
-      Composition {
-        compositionName = "x",
-        compositionPart = LimitedLinking {linking = "A", limits = (0, Just 1)},
-        compositionWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
+      Annotation {
+        annotated = Composition {
+          compositionName = "x",
+          compositionPart = LimitedLinking {linking = "A", limits = (0, Just 1)},
+          compositionWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
+          },
+        annotation = Relevant {
+          contributingToProblem = True,
+          listingPriority = 4,
+          referenceUsing = DefiniteArticle
+          }
         },
-      Composition {
-        compositionName = "w",
-        compositionPart = LimitedLinking {linking = "B", limits = (1, Nothing)},
-        compositionWhole = LimitedLinking {linking = "D", limits = (1, Just 1)}
+      Annotation {
+        annotated = Composition {
+          compositionName = "w",
+          compositionPart = LimitedLinking {linking = "B", limits = (1, Nothing)},
+          compositionWhole = LimitedLinking {linking = "D", limits = (1, Just 1)}
+          },
+        annotation = Relevant {
+          contributingToProblem = True,
+          listingPriority = 2,
+          referenceUsing = DefiniteArticle
+          }
         },
-      Composition {
-        compositionName = "z",
-        compositionPart = LimitedLinking {linking = "D", limits = (1, Nothing)},
-        compositionWhole = LimitedLinking {linking = "A", limits = (1, Just 1)}
+      Annotation {
+        annotated = Composition {
+          compositionName = "z",
+          compositionPart = LimitedLinking {linking = "D", limits = (1, Nothing)},
+          compositionWhole = LimitedLinking {linking = "A", limits = (1, Just 1)}
+          },
+        annotation = Relevant {
+          contributingToProblem = True,
+          listingPriority = 1,
+          referenceUsing = DefiniteArticle
+          }
         }
       ]
     },

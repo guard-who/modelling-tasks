@@ -98,8 +98,7 @@ import Modelling.CdOd.Types (
   defaultProperties,
   maxObjects,
   relationshipName,
-  renameClassesAndRelationshipsInCd,
-  renameClassesAndRelationshipsInRelationship,
+  renameClassesAndRelationships,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
   )
@@ -453,8 +452,8 @@ renameInstance inst names' assocs' = do
   let (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
-      renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
+      renameCd = renameClassesAndRelationships bmNames bmAssocs
+      renameEdge = renameClassesAndRelationships bmNames bmAssocs
   cd <- renameCd $ classDiagram inst
   chs <- mapM (mapInValidOptionM (mapM renameEdge) renameCd renameCd)
     $ changes inst

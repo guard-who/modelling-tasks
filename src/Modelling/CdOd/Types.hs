@@ -8,6 +8,9 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.Types (
+  AnnotatedCd,
+  AnnotatedClassDiagram (..),
+  Annotation (..),
   Cd,
   ClassConfig (..),
   ClassDiagram (..),
@@ -36,14 +39,15 @@ module Modelling.CdOd.Types (
   maxObjects,
   maxRels,
   relationshipName,
-  renameClassesAndRelationshipsInCd,
-  renameClassesAndRelationshipsInRelationship,
+  renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
+  shuffleAnnotatedClassAndConnectionOrder,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   toPropertySet,
   towardsValidProperties,
+  unannotateCd,
   -- * Phrasing
   ArticleToUse (..),
   NonInheritancePhrasing (..),
@@ -269,6 +273,44 @@ reverseAssociation x = case x of
   Composition {} -> x
   Inheritance {} -> x
 
+data Annotation annotation annotated = Annotation {
+  annotated                   :: annotated,
+  annotation                  :: annotation
+  }
+  deriving (Eq, Foldable, Functor, Generic, Read, Show, Traversable)
+
+data AnnotatedClassDiagram relationshipAnnotation className relationshipName
+  = AnnotatedClassDiagram {
+    annotatedClasses
+      :: [className],
+    annotatedRelationships
+      :: [Annotation relationshipAnnotation (Relationship className relationshipName)]
+    }
+  deriving (Eq, Functor, Generic, Read, Show)
+
+instance Bifunctor (AnnotatedClassDiagram annotation) where
+  bimap f g AnnotatedClassDiagram {..} = AnnotatedClassDiagram {
+    annotatedClasses  = map f annotatedClasses,
+    annotatedRelationships = map (fmap (bimap f g)) annotatedRelationships
+    }
+
+instance Bifoldable (AnnotatedClassDiagram annotation) where
+  bifoldMap f g AnnotatedClassDiagram {..} = foldMap f annotatedClasses
+    <> foldMap (foldMap (bifoldMap f g)) annotatedRelationships
+
+instance Bitraversable (AnnotatedClassDiagram annotation) where
+  bitraverse f g AnnotatedClassDiagram {..} = AnnotatedClassDiagram
+    <$> traverse f annotatedClasses
+    <*> traverse (traverse (bitraverse f g)) annotatedRelationships
+
+unannotateCd
+  :: AnnotatedClassDiagram relationshipAnnotation className relationshipName
+  -> ClassDiagram className relationshipName
+unannotateCd AnnotatedClassDiagram {..} = ClassDiagram {
+  classNames = annotatedClasses,
+  relationships = map annotated annotatedRelationships
+  }
+
 data ClassDiagram className relationshipName = ClassDiagram {
   classNames                  :: [className],
   relationships               :: [Relationship className relationshipName]
@@ -291,6 +333,15 @@ instance Bitraversable ClassDiagram where
     <*> traverse (bitraverse f g) relationships
 
 type Cd = ClassDiagram String String
+type AnnotatedCd annotation = AnnotatedClassDiagram annotation String String
+
+shuffleAnnotatedClassAndConnectionOrder
+  :: MonadRandom m
+  => AnnotatedClassDiagram annotation classes relationships
+  -> m (AnnotatedClassDiagram annotation classes relationships)
+shuffleAnnotatedClassAndConnectionOrder AnnotatedClassDiagram {..} = AnnotatedClassDiagram
+  <$> shuffleM annotatedClasses
+  <*> shuffleM annotatedRelationships
 
 shuffleClassAndConnectionOrder :: MonadRandom m => Cd -> m Cd
 shuffleClassAndConnectionOrder ClassDiagram {..} = ClassDiagram
@@ -669,22 +720,18 @@ linkNames
   -> [linkName]
 linkNames ObjectDiagram {..} = nubOrd $ map linkName links
 
-renameClassesAndRelationshipsInCd
-  :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')
-  => Bimap c c'
-  -> Bimap r r'
-  -> ClassDiagram c r
-  -> m (ClassDiagram c' r')
-renameClassesAndRelationshipsInCd cm rm =
-  bitraverse (`BM.lookup` cm) (`BM.lookup` rm)
 
-renameClassesAndRelationshipsInRelationship
-  :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')
+{-|
+Renaming 'AnnotatedClassDiagram'gs, `ClassDiagram`s and `Relationship`s
+is possible using this function
+-}
+renameClassesAndRelationships
+  :: (Bitraversable f, MonadThrow m, Ord c, Ord c', Ord r, Ord r')
   => Bimap c c'
   -> Bimap r r'
-  -> Relationship c r
-  -> m (Relationship c' r')
-renameClassesAndRelationshipsInRelationship cm rm =
+  -> f c r
+  -> m (f c' r')
+renameClassesAndRelationships cm rm =
   bitraverse (`BM.lookup` cm) (`BM.lookup` rm)
 
 data RenameException
@@ -798,6 +845,7 @@ shouldBeThick a b classesWithSubclasses =
 data ArticleToUse
   = DefiniteArticle
   | IndefiniteArticle
+  deriving (Eq, Generic, Read, Show)
 
 data NonInheritancePhrasing
   = ByDirection

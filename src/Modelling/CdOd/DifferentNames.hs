@@ -80,7 +80,7 @@ import Modelling.CdOd.Types (
   linkNames,
   relationshipName,
   renameObjectsWithClassesAndLinksInOd,
-  renameClassesAndRelationshipsInCd,
+  renameClassesAndRelationships,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
@@ -670,7 +670,7 @@ renameInstance inst names' assocs' linkNs' = do
         , a' <- BM.lookup a bmAssocs
         , l' <- BM.lookup l bmLinks
         ]
-  cd' <- renameClassesAndRelationshipsInCd bmNames bmAssocs cd
+  cd' <- renameClassesAndRelationships bmNames bmAssocs cd
   od' <- renameObjectsWithClassesAndLinksInOd bmNames bmLinks od
   shuffling <- mapM (`BM.lookup` bmLinks) $ linkShuffling inst
   return $ DifferentNamesInstance {

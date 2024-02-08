@@ -75,8 +75,7 @@ import Modelling.CdOd.Types (
   linkNames,
   shuffleClassAndConnectionOrder,
   relationshipName,
-  renameClassesAndRelationshipsInCd,
-  renameClassesAndRelationshipsInRelationship,
+  renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
   shuffleObjectAndLinkOrder,
   )
@@ -392,9 +391,9 @@ shuffleEach inst@SelectValidCdInstance {..} = do
   assocs' <- shuffleM assocs
   let bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
+      renameCd = renameClassesAndRelationships bmNames bmAssocs
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
-      renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
+      renameEdge = renameClassesAndRelationships bmNames bmAssocs
   cds <- mapInValidOptionM renameCd (mapM renameEdge) renameOd
     `mapM` classDiagrams
   return $ SelectValidCdInstance {
@@ -442,8 +441,8 @@ renameInstance inst names' assocs' = do
   let (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
-      renameEdge = renameClassesAndRelationshipsInRelationship bmNames bmAssocs
+      renameCd = renameClassesAndRelationships bmNames bmAssocs
+      renameEdge = renameClassesAndRelationships bmNames bmAssocs
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
   cds <- mapM
     (mapInValidOptionM renameCd (mapM renameEdge) renameOd)

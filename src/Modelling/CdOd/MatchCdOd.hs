@@ -95,7 +95,7 @@ import Modelling.CdOd.Types (
   isObjectDiagramRandomisable,
   linkNames,
   relationshipName,
-  renameClassesAndRelationshipsInCd,
+  renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
@@ -585,7 +585,7 @@ renameInstance inst names' assocs' = do
       (names, assocs) = classAndAssocNames inst
       bmNames  = BM.fromList $ zip names names'
       bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationshipsInCd bmNames bmAssocs
+      renameCd = renameClassesAndRelationships bmNames bmAssocs
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
   cds' <- renameCd `mapM` cds
   ods' <- mapM renameOd `mapM` ods

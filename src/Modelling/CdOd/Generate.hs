@@ -28,7 +28,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   RelationshipProperties,
   relationshipName,
-  renameClassesAndRelationshipsInCd,
+  renameClassesAndRelationships,
   )
 
 import Control.Monad.IO.Class           (MonadIO (liftIO))
@@ -66,4 +66,4 @@ instanceToCd rinsta = do
   let cns = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
       relationshipNames = mapMaybe relationshipName $ relationships cd
       rns = BM.fromList $ zip relationshipNames $ map pure ['z', 'y' ..]
-  first show $ renameClassesAndRelationshipsInCd cns rns cd
+  first show $ renameClassesAndRelationships cns rns cd
