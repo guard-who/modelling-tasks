@@ -37,7 +37,7 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
   transformGetNextFix,
   )
 
-import qualified Data.Bimap                       as BM (fromList, lookup)
+import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   elems,
   filter,
@@ -56,7 +56,6 @@ import qualified Data.Set                         as S (
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
-  mapIndicesTo,
   shuffleEverything,
   upperToDash,
   )
@@ -150,7 +149,13 @@ import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe, fromEither)
 import Data.Foldable                    (for_)
-import Data.List                        ((\\), delete, partition, singleton)
+import Data.List (
+  (\\),
+  delete,
+  partition,
+  singleton,
+  sortOn,
+  )
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Set                         (Set)
@@ -347,21 +352,20 @@ toTaskTextPart output path task = case output of
       $ second (translate . put . snd)
       <$> M.toList (errorReasons task)
     RelationshipsList -> do
-      let phrase x y z = translate $ do
-            english $ phraseRelationship English DefiniteArticle x y z
-            german $ phraseRelationship German DefiniteArticle x y z
-          phraseRelationship' =
-            phrase (withNames task) (withDirections task)
-            . (relationships (unannotateCd $ classDiagram task) !!)
+      let phrase article x y z = translate $ do
+            english $ phraseRelationship English article x y z
+            german $ phraseRelationship German article x y z
+          phraseRelationship' Annotation {..} = phrase
+            (referenceUsing annotation)
+            (withNames task)
+            (withDirections task)
+            annotated
       enumerateM (text . show)
-        $ second (phraseRelationship' . snd)
-        <$> M.toList (relevantRelationships task)
+        $ map (second phraseRelationship')
+        $ relevantRelationships task
   Translated xs -> translate $ put xs
 
 data NameCdErrorInstance = NameCdErrorInstance {
-  -- | maps the value to the index of 'relationships' of the specified
-  --   'classDiagram' (starting at @0@).
-  relevantRelationships       :: Map Int (Bool, Int),
   classDiagram                :: AnnotatedCd Relevance,
   errorReasons                :: Map Char (Bool, Map Language String),
   showSolution                :: Bool,
@@ -369,6 +373,14 @@ data NameCdErrorInstance = NameCdErrorInstance {
   withDirections              :: Bool,
   withNames                   :: Bool
   } deriving (Eq, Generic, Read, Show)
+
+relevantRelationships
+  :: NameCdErrorInstance
+  -> [(Int, Annotation Relevance (Relationship String String))]
+relevantRelationships NameCdErrorInstance {..} = zip [1..]
+  . sortOn (listingPriority . annotation)
+  . filter isRelevant
+  $ annotatedRelationships classDiagram
 
 data Relevance
   = NotRelevant
@@ -385,6 +397,11 @@ data Relevance
     }
   deriving (Eq, Generic, Read, Show)
 
+isRelevant :: Annotation Relevance annotated -> Bool
+isRelevant =
+  (\case NotRelevant -> False; Relevant {} -> True)
+  . annotation
+
 checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
 checkNameCdErrorInstance NameCdErrorInstance {..}
   | 1 /= length (filter fst $ M.elems errorReasons)
@@ -392,15 +409,10 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
       There needs to be exactly one error defined within errorReasons
       (i.e., set to 'True')
       |]
-  | x:_ <- filter (\x -> x < 0 || x >= numberOfRelationships) relationshipsOnly
+  | x:_ <- linstingPriorities \\ nubOrd linstingPriorities
   = Just [iii|
-      The index '#{x}' in 'relevantRelationships' is out of the
-      possible range 0..#{numberOfRelationships - 1}.
-      |]
-  | x:_ <- relationshipsOnly \\ nubOrd relationshipsOnly
-  = Just [iii|
-      'relevantRelationships' references '#{x}' at least twice
-      which is not allowed.
+      'listingPriority' has to be unique for the class diagram,
+      but '#{x}' appears twice which is not allowed.
       |]
   | x:_ <- filter (`notElem` letters) $ M.keys errorReasons
   = Just [iii|
@@ -417,9 +429,10 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   = checkNameCdErrorTaskText taskText
   where
     letters = ['a' .. 'z'] ++ ['A' .. 'Z']
-    numberOfRelationships = length $ relationships $ unannotateCd classDiagram
     reasons = map snd $ M.elems errorReasons
-    relationshipsOnly = map snd (M.elems relevantRelationships)
+    linstingPriorities = map (listingPriority . annotation)
+      . filter isRelevant
+      $ annotatedRelationships classDiagram
 
 checkTranslation :: Map Language String -> Maybe String
 checkTranslation xs
@@ -567,7 +580,7 @@ nameCdErrorSyntax inst x = do
     german "Hinweis zu gewählten Beziehungen:"
   for_
     (dueTo x)
-    $ singleChoiceSyntax False (M.keys $ relevantRelationships inst)
+    $ singleChoiceSyntax False (map fst $ relevantRelationships inst)
   pure ()
 
 {-| Grading is done the following way:
@@ -590,7 +603,9 @@ nameCdErrorEvaluation inst x = addPretext $ do
         (German, "das Problem ausmachenden Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons inst
-      solutionDueTo = fst <$> relevantRelationships inst
+      solutionDueTo = M.fromAscList
+        $ map (second (contributingToProblem . annotation))
+        $ relevantRelationships inst
       correctAnswer
         | showSolution inst = Just $ toString $ encode $ nameCdErrorSolution inst
         | otherwise = Nothing
@@ -610,7 +625,9 @@ nameCdErrorEvaluation inst x = addPretext $ do
 nameCdErrorSolution :: NameCdErrorInstance -> NameCdErrorAnswer
 nameCdErrorSolution x = NameCdErrorAnswer {
   reason = head . M.keys . M.filter fst $ errorReasons x,
-  dueTo = M.keys . M.filter fst $ relevantRelationships x
+  dueTo = map fst
+    . filter (contributingToProblem . annotation . snd)
+    $ relevantRelationships x
   }
 
 classAndAssocNames :: NameCdErrorInstance -> ([String], [String])
@@ -631,11 +648,7 @@ instance Randomise NameCdErrorInstance where
 instance RandomiseLayout NameCdErrorInstance where
   randomiseLayout NameCdErrorInstance {..} = do
     cd <- shuffleAnnotatedClassAndConnectionOrder classDiagram
-    mapping <- BM.fromList
-      <$> mapIndicesTo (relationships $ unannotateCd classDiagram) (relationships $ unannotateCd cd)
-    relevant <- traverse (traverse (`BM.lookup` mapping)) relevantRelationships
     return NameCdErrorInstance {
-      relevantRelationships = relevant,
       classDiagram = cd,
       errorReasons = errorReasons,
       showSolution = showSolution,
@@ -646,17 +659,33 @@ instance RandomiseLayout NameCdErrorInstance where
 
 shuffleInstance :: MonadRandom m => NameCdErrorInstance -> m NameCdErrorInstance
 shuffleInstance NameCdErrorInstance {..} = do
-  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems relevantRelationships)
+  priorities <- shuffleM
+    $ map (listingPriority . annotation)
+    $ filter isRelevant
+    $ annotatedRelationships classDiagram
   rs <- M.fromAscList . zip ['a' ..] <$> shuffleM (M.elems errorReasons)
   return $ NameCdErrorInstance {
-    relevantRelationships = chs,
-    classDiagram = classDiagram,
+    classDiagram = classDiagram {
+      annotatedRelationships = snd $ foldr
+        updatePriority
+        (priorities, [])
+        (annotatedRelationships classDiagram)
+      },
     errorReasons = rs,
     showSolution = showSolution,
     taskText = taskText,
     withDirections = withDirections,
     withNames = withNames
     }
+  where
+    updatePriority x (priorities, ys) = case x of
+      Annotation {annotation = NotRelevant} -> (priorities, x : ys)
+      Annotation {..} -> (tail priorities,) $
+        Annotation {
+          annotation = annotation {listingPriority = head priorities},
+          annotated = annotated
+          }
+        : ys
 
 renameInstance
   :: MonadThrow m
@@ -671,7 +700,6 @@ renameInstance inst@NameCdErrorInstance {..} names' assocs' = do
       renameCd = renameClassesAndRelationships bmNames bmAssocs
   cd <- renameCd classDiagram
   return $ NameCdErrorInstance {
-    relevantRelationships = relevantRelationships,
     classDiagram = cd,
     errorReasons = errorReasons,
     showSolution = showSolution,
@@ -709,10 +737,6 @@ generateAndRandomise NameCdErrorConfig {..} = do
         ++ take (preDefinedInvalid reasonsPerInstance - 1) invalid
         ++ take (preDefinedValid reasonsPerInstance) valid
   shuffleEverything $ NameCdErrorInstance {
-    relevantRelationships = M.fromAscList $ zipWith
-      (\x r -> (x, (r, x - 1)))
-      [1..]
-      $ map (`elem` rs) $ relationships cd,
     classDiagram = AnnotatedClassDiagram {
       annotatedClasses = classNames cd,
       annotatedRelationships = zipWith
@@ -881,12 +905,6 @@ translatePropertyWithDirections x = translations $ case x of
 
 defaultNameCdErrorInstance :: NameCdErrorInstance
 defaultNameCdErrorInstance = NameCdErrorInstance {
-  relevantRelationships = M.fromAscList [
-    (1, (True, 3)),
-    (2, (True, 2)),
-    (3, (False, 0)),
-    (4, (True, 1))
-    ],
   classDiagram = AnnotatedClassDiagram {
     annotatedClasses = ["D","C","B","A"],
     annotatedRelationships = [
