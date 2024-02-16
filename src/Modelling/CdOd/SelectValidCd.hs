@@ -299,8 +299,7 @@ selectValidCdFeedback path withDir byName xs x cdChange =
                 phraseRelationship l article byName withDir relation
           english [iii|
             Class diagram #{x} is in fact invalid.
-            If there would not be
-            #{phrase English},
+            If #{phrase English} would not be there,
             it would be valid.
             |]
           german [iii|
