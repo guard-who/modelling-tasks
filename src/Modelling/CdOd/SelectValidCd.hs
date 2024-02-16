@@ -43,7 +43,7 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
-  ChangeAndCd (..),
+  AnnotatedChangeAndCd (..),
   )
 import Modelling.CdOd.Phrasing (
   phraseChange,
@@ -53,6 +53,7 @@ import Modelling.CdOd.Phrasing (
 import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
   InValidOption (..),
+  RelationshipChangeWithArticle,
   allowEverything,
   checkClassConfigAndChanges,
   mapInValidOption,
@@ -61,6 +62,7 @@ import Modelling.CdOd.RepairCd (
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
+  Annotation (..),
   ArticleToUse (DefiniteArticle),
   Cd,
   ClassConfig (..),
@@ -177,7 +179,7 @@ checkSelectValidCdConfig SelectValidCdConfig {..}
 
 type CdChange = InValidOption
   Cd
-  (Change (Relationship String String))
+  RelationshipChangeWithArticle
   Od
 
 data SelectValidCdInstance = SelectValidCdInstance {
@@ -274,7 +276,9 @@ selectValidCdFeedback
   -> LangM m
 selectValidCdFeedback path withDir byName xs x cdChange =
   case hint cdChange of
-    Left change | x `elem` xs -> do
+    Left articleAndChange | x `elem` xs -> do
+      let change = annotated articleAndChange
+          article = annotation articleAndChange
       notCorrect
       paragraph $ translate $ case remove change of
         Nothing -> do
@@ -282,17 +286,17 @@ selectValidCdFeedback path withDir byName xs x cdChange =
             Class diagram #{x} is in fact invalid.
             Consider the following change, which aims at fixing a
             problematic situation within the given class diagram:
-            #{phraseChange English DefiniteArticle byName withDir change}.
+            #{phraseChange English article byName withDir change}.
             |]
           german [iii|
             Klassendiagramm #{x} ist ungültig.
             Sehen Sie sich die folgende Änderung an, die darauf abzielt, eine
             problematische Stelle im Klassendiagramm zu beheben:
-            #{phraseChange German DefiniteArticle byName withDir change}.
+            #{phraseChange German article byName withDir change}.
             |]
         Just relation -> do
           let phrase l =
-                phraseRelationship l DefiniteArticle byName withDir relation
+                phraseRelationship l article byName withDir relation
           english [iii|
             Class diagram #{x} is in fact invalid.
             If there would not be
@@ -346,7 +350,7 @@ selectValidCd config segment seed = do
     (objectProperties config)
     (maxInstances config)
     (timeout config)
-  let cds = map (mapInValidOption changeClassDiagram id id) chs
+  let cds = map (mapInValidOption annotatedChangeClassDiagram id id) chs
   shuffleCds >=> shuffleEverything $ SelectValidCdInstance {
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     showExtendedFeedback = printExtendedFeedback config,
@@ -394,7 +398,7 @@ shuffleEach inst@SelectValidCdInstance {..} = do
       renameCd = renameClassesAndRelationships bmNames bmAssocs
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
       renameEdge = renameClassesAndRelationships bmNames bmAssocs
-  cds <- mapInValidOptionM renameCd (mapM renameEdge) renameOd
+  cds <- mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd
     `mapM` classDiagrams
   return $ SelectValidCdInstance {
     classDiagrams           = cds,
@@ -426,8 +430,8 @@ classAndAssocNames inst =
       (improves, evidences) = partitionEithers $ map hint $ M.elems cds
       names = nubOrd $ concatMap (classNames . option) cds
       assocs = nubOrd $ concatMap (associationNames . option) cds
-        ++ mapMaybe (add >=> relationshipName) improves
-        ++ mapMaybe (remove >=> relationshipName) improves
+        ++ mapMaybe (add . annotated >=> relationshipName) improves
+        ++ mapMaybe (remove . annotated >=> relationshipName) improves
         ++ concatMap linkNames evidences
   in (names, assocs)
 
@@ -445,7 +449,7 @@ renameInstance inst names' assocs' = do
       renameEdge = renameClassesAndRelationships bmNames bmAssocs
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
   cds <- mapM
-    (mapInValidOptionM renameCd (mapM renameEdge) renameOd)
+    (mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd)
     $ classDiagrams inst
   return $ SelectValidCdInstance {
     classDiagrams   = cds,
@@ -497,9 +501,12 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         }
       }),
     (3, InValidOption {
-      hint = Left $ Change {
-        add = Nothing,
-        remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+      hint = Left $ Annotation {
+          annotated = Change {
+            add = Nothing,
+            remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+            },
+          annotation = DefiniteArticle
         },
       option = ClassDiagram {
         classNames = ["A", "C", "B", "D"],
@@ -511,9 +518,12 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         }
       }),
     (4, InValidOption {
-      hint = Left $ Change {
-        add = Nothing,
-        remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+      hint = Left $ Annotation {
+          annotated = Change {
+            add = Nothing,
+            remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+            },
+          annotation = DefiniteArticle
         },
       option = ClassDiagram {
         classNames = ["A", "D", "C", "B"],

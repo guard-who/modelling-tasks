@@ -8,6 +8,7 @@
 module Modelling.CdOd.RepairCd (
   AllowedProperties (..),
   InValidOption (..),
+  RelationshipChangeWithArticle,
   RepairCdConfig (..),
   RepairCdInstance (..),
   checkClassConfigAndChanges,
@@ -69,8 +70,10 @@ import Modelling.CdOd.CD2Alloy.Transform (
   transform,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
+  AnnotatedChangeAndCd (..),
   ChangeAndCd (..),
   GenericClassDiagramInstance (..),
+  uniformlyAnnotateChangeAndCd,
   )
 import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
@@ -82,6 +85,7 @@ import Modelling.CdOd.Phrasing (
   phraseChange,
   )
 import Modelling.CdOd.Types (
+  Annotation (..),
   ArticleToUse (DefiniteArticle),
   Cd,
   ClassConfig (..),
@@ -125,7 +129,7 @@ import Control.Monad.Output (
   )
 import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, StdGen, evalRandT, getStdGen, mkStdGen)
-import Data.Bifunctor                   (bimap, second)
+import Data.Bifunctor                   (bimap, first, second)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight)
@@ -153,13 +157,16 @@ toProperty p = operation p defaultProperties
 isValid :: PropertyChange -> Bool
 isValid p = validityChange p True
 
+type RelationshipChangeWithArticle
+  = Annotation ArticleToUse (Change (Relationship String String))
+
 type CdChangeAndCd = InValidOption
-  (ChangeAndCd String String)
-  (Change (Relationship String String))
+  (AnnotatedChangeAndCd ArticleToUse String String)
+  RelationshipChangeWithArticle
   Od
 
 type RelationshipChange = InValidOption
-  (Change (Relationship String String))
+  RelationshipChangeWithArticle
   Cd
   Cd
 
@@ -284,9 +291,9 @@ repairCdTask path task = do
   paragraph $ translate $ do
     english [i|Which of the following changes would repair the class diagram?|]
     german [i|Welche der folgenden Änderungen würden das Klassendiagramm reparieren?|]
-  let phrase x y z = translate $ do
-        english $ phraseChange English DefiniteArticle x y z
-        german $ phraseChange German DefiniteArticle x y z
+  let phrase x y Annotation {..} = translate $ do
+        english $ phraseChange English annotation x y annotated
+        german $ phraseChange German annotation x y annotated
   enumerateM (text . show)
     $ second (phrase (withNames task) (withDirections task) . option)
     <$> M.toList (changes task)
@@ -400,8 +407,8 @@ classAndAssocNames inst =
       names = nubOrd $ classNames cd
         ++ concatMap classNames cds
       assocs = nubOrd $ associationNames cd
-        ++ mapMaybe (add >=> relationshipName) chs
-        ++ mapMaybe (remove >=> relationshipName) chs
+        ++ mapMaybe (add . annotated >=> relationshipName) chs
+        ++ mapMaybe (remove . annotated >=> relationshipName) chs
         ++ concatMap associationNames cds
   in (names, assocs)
 
@@ -455,7 +462,7 @@ renameInstance inst names' assocs' = do
       renameCd = renameClassesAndRelationships bmNames bmAssocs
       renameEdge = renameClassesAndRelationships bmNames bmAssocs
   cd <- renameCd $ classDiagram inst
-  chs <- mapM (mapInValidOptionM (mapM renameEdge) renameCd renameCd)
+  chs <- mapM (mapInValidOptionM (mapM $ mapM renameEdge) renameCd renameCd)
     $ changes inst
   return $ RepairCdInstance {
     changes        = chs,
@@ -489,8 +496,8 @@ repairCd config segment seed = do
     (printNames config && useNames config)
   where
     cdAsHint x =
-      let cd _ = changeClassDiagram $ option x
-      in mapInValidOption relationshipChange cd cd x
+      let cd _ = annotatedChangeClassDiagram $ option x
+      in mapInValidOption annotatedRelationshipChange cd cd x
 
 defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
@@ -522,13 +529,16 @@ defaultRepairCdInstance = RepairCdInstance {
             }
           ]
         },
-      option = Change {
-        add = Nothing,
-        remove = Just $ Composition {
-          compositionName = "y",
-          compositionPart = LimitedLinking {linking = "D", limits = (0, Just 2)},
-          compositionWhole = LimitedLinking {linking = "A", limits = (0, Just 1)}
-          }
+      option = Annotation {
+        annotated = Change {
+          add = Nothing,
+          remove = Just $ Composition {
+            compositionName = "y",
+            compositionPart = LimitedLinking {linking = "D", limits = (0, Just 2)},
+            compositionWhole = LimitedLinking {linking = "A", limits = (0, Just 1)}
+            }
+          },
+        annotation = DefiniteArticle
         }
       }),
     (2, InValidOption {
@@ -565,17 +575,20 @@ defaultRepairCdInstance = RepairCdInstance {
             }
           ]
         },
-      option = Change {
-        add = Just $ Composition {
-          compositionName = "w",
-          compositionPart = LimitedLinking {linking = "A", limits = (1, Just 1)},
-          compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
+      option = Annotation {
+        annotated = Change {
+          add = Just $ Composition {
+            compositionName = "w",
+            compositionPart = LimitedLinking {linking = "A", limits = (1, Just 1)},
+            compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
+            },
+          remove = Just $ Composition {
+            compositionName = "v",
+            compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
+            compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
+            }
           },
-        remove = Just $ Composition {
-          compositionName = "v",
-          compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
-          compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
-          }
+        annotation = DefiniteArticle
         }
       }),
     (3, InValidOption {
@@ -605,13 +618,16 @@ defaultRepairCdInstance = RepairCdInstance {
             }
           ]
         },
-      option = Change {
-        add = Nothing,
-        remove = Just $ Composition {
-          compositionName = "v",
-          compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
-          compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
-          }
+      option = Annotation {
+        annotated = Change {
+          add = Nothing,
+          remove = Just $ Composition {
+            compositionName = "v",
+            compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
+            compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
+            }
+          },
+        annotation = DefiniteArticle
         }
       }),
     (4, InValidOption {
@@ -655,13 +671,16 @@ defaultRepairCdInstance = RepairCdInstance {
             }
           ]
         },
-      option = Change {
-        add = Just $ Association {
-          associationName = "u",
-          associationFrom = LimitedLinking {linking = "C", limits = (2, Just 2)},
-          associationTo = LimitedLinking {linking = "A", limits = (2, Just 2)}
+      option = Annotation {
+        annotated = Change {
+          add = Just $ Association {
+            associationName = "u",
+            associationFrom = LimitedLinking {linking = "C", limits = (2, Just 2)},
+            associationTo = LimitedLinking {linking = "A", limits = (2, Just 2)}
+            },
+          remove = Nothing
           },
-        remove = Nothing
+        annotation = DefiniteArticle
         }
       })
     ],
@@ -746,7 +765,10 @@ repairIncorrect allowed config objectProperties maxInsts to = do
             flip evalRandT g
               $ uncurry (either (const $ const $ return "") drawOd')
               `mapM_` zip odsAndCds [1 ..]
-          return (cd, zipWith InValidOption odsAndCds chs)
+          let odsAndCdWithArticle = map (first addArticle) odsAndCds
+              chs' = map (uniformlyAnnotateChangeAndCd DefiniteArticle) chs
+          return (cd, zipWith InValidOption odsAndCdWithArticle chs')
+    addArticle = (`Annotation` DefiniteArticle)
     getOdOrImprovedCd propertyChange change
       | isValid propertyChange = fmap Right <$> getOD (changeClassDiagram change)
       | otherwise = fmap Left

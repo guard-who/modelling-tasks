@@ -3,11 +3,13 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.CdAndChanges.Instance (
+  AnnotatedChangeAndCd (..),
   ChangeAndCd (..),
   ClassDiagramInstance,
   GenericClassDiagramInstance (..),
   fromInstance,
   renameClassesAndRelationshipsInCdInstance,
+  uniformlyAnnotateChangeAndCd,
   ) where
 
 import qualified Data.Bimap                       as BM (lookup)
@@ -22,6 +24,7 @@ import qualified Data.Set                         as S (
 
 import Modelling.Auxiliary.Common       (Object (Object, oName), toMap)
 import Modelling.CdOd.Types (
+  Annotation (..),
   ClassDiagram (..),
   LimitedLinking (..),
   Relationship (..),
@@ -70,6 +73,17 @@ data NumberedAssoc = NumberedAssoc String Int
 
 type ClassDiagramInstance = GenericClassDiagramInstance String String
 
+data AnnotatedChangeAndCd annotation className relationshipName
+  = AnnotatedChangeAndCd {
+    annotatedRelationshipChange
+      :: Annotation
+         annotation
+         (Change (Relationship className relationshipName)),
+    annotatedChangeClassDiagram
+      :: ClassDiagram className relationshipName
+    }
+  deriving (Functor, Read, Show)
+
 data ChangeAndCd className relationshipName
   = ChangeAndCd {
     relationshipChange
@@ -93,6 +107,18 @@ instance Bitraversable ChangeAndCd where
   bitraverse f g ChangeAndCd {..} = ChangeAndCd
     <$> traverse (bitraverse f g) relationshipChange
     <*> bitraverse f g changeClassDiagram
+
+uniformlyAnnotateChangeAndCd
+  :: annotation
+  -> ChangeAndCd className relationshipName
+  -> AnnotatedChangeAndCd annotation className relationshipName
+uniformlyAnnotateChangeAndCd annotation ChangeAndCd {..} = AnnotatedChangeAndCd {
+  annotatedRelationshipChange = Annotation {
+    annotated = relationshipChange,
+    annotation = annotation
+    },
+  annotatedChangeClassDiagram = changeClassDiagram
+  }
 
 data GenericClassDiagramInstance className relationshipName
   = ClassDiagramInstance {
