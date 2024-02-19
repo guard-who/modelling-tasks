@@ -416,8 +416,8 @@ shuffleInstance
   :: MonadRandom m
   => SelectValidCdInstance
   -> m SelectValidCdInstance
-shuffleInstance inst = SelectValidCdInstance
-  <$> (M.fromAscList . zipWith replaceId [1..]
+shuffleInstance inst =
+  (SelectValidCdInstance . M.fromAscList . zipWith replaceId [1..]
        <$> shuffleM (M.toList $ classDiagrams inst))
   <*> pure (showExtendedFeedback inst)
   <*> pure (showSolution inst)

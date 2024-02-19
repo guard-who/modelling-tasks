@@ -234,7 +234,9 @@ drawNode hidePName _ pfont (l, Just i) p
     emptyPlace = circle 20 # lwL 0.5 # named l # svgClass "node"
     label
       | hidePName = mempty
-      | otherwise = center (text' pfont 18 l) # translate (r2 (0, -3 * spacer)) # svgClass "nlabel"
+      | otherwise = center (text' pfont 18 l)
+        # translate (r2 (0, - (3 * spacer)))
+        # svgClass "nlabel"
     tokenGrey = sRGB24 136 136 136
     token = circle 4.5 # lc tokenGrey # fc tokenGrey # lwL 0 # svgClass "token"
     placeToken j = token
