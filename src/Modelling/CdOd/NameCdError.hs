@@ -23,6 +23,7 @@ module Modelling.CdOd.NameCdError (
   defaultNameCdErrorAnswer,
   defaultNameCdErrorConfig,
   defaultNameCdErrorInstance,
+  isRelevant,
   nameCdErrorEvaluation,
   nameCdErrorGenerate,
   nameCdErrorSolution,

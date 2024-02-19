@@ -4,14 +4,18 @@ import qualified Data.Map                         as M (null)
 
 import Modelling.CdOd.NameCdError (
   NameCdErrorConfig (timeout),
-  NameCdErrorInstance (errorReasons, relevantRelationships),
+  NameCdErrorInstance (classDiagram, errorReasons),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
   classAndAssocNames,
   defaultNameCdErrorConfig,
   defaultNameCdErrorInstance,
+  isRelevant,
   renameInstance,
   nameCdErrorGenerate,
+  )
+import Modelling.CdOd.Types (
+  AnnotatedClassDiagram (annotatedRelationships),
   )
 import Modelling.Auxiliary.Common       (oneOf)
 
@@ -33,7 +37,7 @@ spec = do
         do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
-          let check x = not (M.null $ relevantRelationships x)
+          let check x = any isRelevant (annotatedRelationships $ classDiagram x)
                 && not (M.null $ errorReasons x)
           check <$> nameCdErrorGenerate cfg segment seed
         `shouldReturn` True
