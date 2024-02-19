@@ -114,6 +114,7 @@ import System.Random.Shuffle            (shuffleM)
 
 data SelectValidCdConfig = SelectValidCdConfig {
     allowedProperties :: AllowedProperties,
+    articleToUse      :: ArticleToUse,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
@@ -138,6 +139,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         wrongAssociationLimits = False,
         wrongCompositionLimits = False
         },
+    articleToUse = DefiniteArticle,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
         aggregationLimits  = (0, Just 0),
@@ -347,6 +349,7 @@ selectValidCd config segment seed = do
     (allowedProperties config)
     (classConfig config)
     (objectProperties config)
+    (articleToUse config)
     (maxInstances config)
     (timeout config)
   let cds = map (mapInValidOption annotatedChangeClassDiagram id id) chs

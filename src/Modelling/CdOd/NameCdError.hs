@@ -191,6 +191,7 @@ data NumberOfReasons = NumberOfReasons {
 
 data NameCdErrorConfig = NameCdErrorConfig {
   allowedProperties           :: AllowedProperties,
+  articleToUse                :: ArticleToUse,
   classConfig                 :: ClassConfig,
   maxInstances                :: Maybe Integer,
   objectProperties            :: ObjectProperties,
@@ -209,6 +210,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     reverseInheritances = False,
     Modelling.CdOd.RepairCd.selfInheritances = False
     },
+  articleToUse = DefiniteArticle,
   classConfig = ClassConfig {
     classLimits = (4, 4),
     aggregationLimits = (1, Just 1),
@@ -713,9 +715,9 @@ nameCdErrorGenerate
   -> Int
   -> Int
   -> IO NameCdErrorInstance
-nameCdErrorGenerate inst segment seed = do
+nameCdErrorGenerate config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  flip evalRandT g $ generateAndRandomise inst
+  flip evalRandT g $ generateAndRandomise config
 
 generateAndRandomise
   :: RandomGen g
@@ -759,7 +761,7 @@ generateAndRandomise NameCdErrorConfig {..} = do
       annotation = Relevant {
         contributingToProblem = x `elem` xs,
         listingPriority = n,
-        referenceUsing = DefiniteArticle
+        referenceUsing = articleToUse
         }
       }
     toTranslations x = case x of

@@ -199,6 +199,7 @@ mapInValidOptionM f g h InValidOption {..} = InValidOption
 
 data RepairCdConfig = RepairCdConfig {
     allowedProperties :: AllowedProperties,
+    articleToUse      :: ArticleToUse,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
@@ -216,6 +217,7 @@ defaultRepairCdConfig = RepairCdConfig {
         reverseInheritances    = False,
         Modelling.CdOd.RepairCd.selfInheritances = False
         },
+    articleToUse = DefiniteArticle,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
         aggregationLimits  = (1, Just 1),
@@ -484,6 +486,7 @@ repairCd config segment seed = do
     (allowedProperties config)
     (classConfig config)
     (objectProperties config)
+    (articleToUse config)
     (maxInstances config)
     (timeout config)
   let chs' = map cdAsHint chs
@@ -720,10 +723,11 @@ repairIncorrect
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
+  -> ArticleToUse
   -> Maybe Integer
   -> Maybe Int
   -> RandT g IO (Cd, [CdChangeAndCd])
-repairIncorrect allowed config objectProperties maxInsts to = do
+repairIncorrect allowed config objectProperties article maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
   let addLegals
@@ -749,7 +753,7 @@ repairIncorrect allowed config objectProperties maxInsts to = do
     drawOd' od x =
       drawOd od 0 Back True ("od-" ++ show x)
     getInstanceWithODs _  [] =
-      repairIncorrect allowed config objectProperties maxInsts to
+      repairIncorrect allowed config objectProperties article maxInsts to
     getInstanceWithODs propertyChanges (rinsta:rinstas) = do
       cdInstance <- liftIO $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
@@ -766,9 +770,9 @@ repairIncorrect allowed config objectProperties maxInsts to = do
               $ uncurry (either (const $ const $ return "") drawOd')
               `mapM_` zip odsAndCds [1 ..]
           let odsAndCdWithArticle = map (first addArticle) odsAndCds
-              chs' = map (uniformlyAnnotateChangeAndCd DefiniteArticle) chs
+              chs' = map (uniformlyAnnotateChangeAndCd article) chs
           return (cd, zipWith InValidOption odsAndCdWithArticle chs')
-    addArticle = (`Annotation` DefiniteArticle)
+    addArticle = (`Annotation` article)
     getOdOrImprovedCd propertyChange change
       | isValid propertyChange = fmap Right <$> getOD (changeClassDiagram change)
       | otherwise = fmap Left
