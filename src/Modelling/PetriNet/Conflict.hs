@@ -329,6 +329,7 @@ pickConflictTask path task = do
       german $ [iii|
         #{" "}als Antwort würde bedeuten, dass Petrinetz 1 genau zwei
         in Konflikt stehende Transitionen hat (und dass
+        #{" "}
         |]
         ++ (if plural
             then "die anderen Petrinetze dies nicht tun"
