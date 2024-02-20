@@ -264,7 +264,7 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
   | customReasons reasonsPerInstance < 0
   = Just "customReasons must not be negative"
   | preDefinedValid reasonsPerInstance < 0
-  = Just "preDefinedVvalid must not be negative"
+  = Just "preDefinedValid must not be negative"
   | preDefinedInvalid reasonsPerInstance < 1
   = Just "preDefinedInvalid must be set at least to one"
   | customReasons reasonsPerInstance > length (filter isCustom possibleReasons)
