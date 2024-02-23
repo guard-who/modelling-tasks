@@ -1,7 +1,7 @@
 ---
 cradle:
   stack:
-    stackYaml: "../stack-example.yaml"
+    stackYaml: "../stack-examples.yaml"
     components:
       - path: "../src"
         component: "modelling-tasks:lib"
