@@ -50,7 +50,9 @@ module Modelling.CdOd.Types (
   unannotateCd,
   -- * Phrasing
   ArticleToUse (..),
+  ArticlePreference (..),
   NonInheritancePhrasing (..),
+  toArticleToUse,
   toPhrasing,
   ) where
 
@@ -842,17 +844,51 @@ shouldBeThick a b classesWithSubclasses =
       )
   where x `isSubOf` y = x `elem` fromJust (lookup y classesWithSubclasses)
 
-data ArticleToUse
-  = DefiniteArticle
-  | IndefiniteArticle
+{-|
+When indefinite articles can not be avoided completely
+-}
+data ArticlePreference
+  = UseDefiniteArticleWherePossible
+  -- ^ prefer definite articles
+  | UseIndefiniteArticleEverywhere
+  -- ^ always use indefinite articles
   deriving (Eq, Generic, Read, Show)
 
+{-|
+Convert 'ArticlePreference' directly to 'ArticleToUse' (without conditions).
+-}
+toArticleToUse :: ArticlePreference -> ArticleToUse
+toArticleToUse = \case
+  UseDefiniteArticleWherePossible -> DefiniteArticle
+  UseIndefiniteArticleEverywhere -> IndefiniteArticle
+
+{-|
+When choosing the article(s) is possible
+-}
+data ArticleToUse
+  = DefiniteArticle
+  -- ^ use definite article(s)
+  | IndefiniteArticle
+  -- ^ use indefinite article(s)
+  deriving (Eq, Generic, Read, Show)
+
+{-|
+How to phrase non inheritance relationships
+-}
 data NonInheritancePhrasing
   = ByDirection
+  -- ^ refer in some way to start and end
   | ByName
+  -- ^ refer to the name
   | Lengthy
-  -- ^ Associations are phrased lengthy, others as by direction
+  -- ^ Associations are phrased lengthy, others as 'ByDirection'
 
+{-|
+Choose 'NonInheritancePhrasing' according to parameters in this order
+ * by name (first parameter)
+ * by direction (second parameter)
+ * otherwise lengthy
+-}
 toPhrasing :: Bool -> Bool -> NonInheritancePhrasing
 toPhrasing byName withDir
   | byName = ByName

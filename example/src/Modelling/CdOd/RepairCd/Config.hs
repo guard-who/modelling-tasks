@@ -7,7 +7,7 @@ import Modelling.CdOd.RepairCd (
   RepairCdConfig (..),
   )
 import Modelling.CdOd.Types (
-  ArticleToUse (..),
+  ArticlePreference (..),
   ClassConfig (..),
   ObjectProperties (..),
   )
@@ -25,7 +25,7 @@ task07 = RepairCdConfig {
     wrongAssociationLimits = False,
     wrongCompositionLimits = True
     },
-  articleToUse = DefiniteArticle,
+  articleToUse = UseDefiniteArticleWherePossible,
   classConfig = ClassConfig {
     classLimits = (5, 5),
     aggregationLimits = (2, Just 3),
@@ -62,7 +62,7 @@ task08 = RepairCdConfig {
     wrongAssociationLimits = False,
     wrongCompositionLimits = False
     },
-  articleToUse = DefiniteArticle,
+  articleToUse = UseDefiniteArticleWherePossible,
   classConfig = ClassConfig {
     classLimits = (5, 5),
     aggregationLimits = (2, Just 2),

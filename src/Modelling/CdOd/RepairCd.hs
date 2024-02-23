@@ -86,6 +86,7 @@ import Modelling.CdOd.Phrasing (
   )
 import Modelling.CdOd.Types (
   Annotation (..),
+  ArticlePreference (..),
   ArticleToUse (DefiniteArticle),
   Cd,
   ClassConfig (..),
@@ -105,6 +106,7 @@ import Modelling.CdOd.Types (
   renameClassesAndRelationships,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
+  toArticleToUse,
   )
 import Modelling.Types                  (Change (..))
 
@@ -199,7 +201,8 @@ mapInValidOptionM f g h InValidOption {..} = InValidOption
 
 data RepairCdConfig = RepairCdConfig {
     allowedProperties :: AllowedProperties,
-    articleToUse      :: ArticleToUse,
+    -- | the article preference when referring to relationships
+    articleToUse      :: ArticlePreference,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
@@ -217,7 +220,7 @@ defaultRepairCdConfig = RepairCdConfig {
         reverseInheritances    = False,
         Modelling.CdOd.RepairCd.selfInheritances = False
         },
-    articleToUse = DefiniteArticle,
+    articleToUse = UseDefiniteArticleWherePossible,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
         aggregationLimits  = (1, Just 1),
@@ -723,11 +726,11 @@ repairIncorrect
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
-  -> ArticleToUse
+  -> ArticlePreference
   -> Maybe Integer
   -> Maybe Int
   -> RandT g IO (Cd, [CdChangeAndCd])
-repairIncorrect allowed config objectProperties article maxInsts to = do
+repairIncorrect allowed config objectProperties preference maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
   let addLegals
@@ -746,6 +749,7 @@ repairIncorrect allowed config objectProperties article maxInsts to = do
   rinstas <- shuffleM instas
   getInstanceWithODs cs rinstas
   where
+    article = toArticleToUse preference
     drawCd' :: Cd -> Integer -> IO FilePath
     drawCd' cd' n =
       drawCd True True mempty cd' ("cd-" ++ show n ++ ".svg")
@@ -753,7 +757,7 @@ repairIncorrect allowed config objectProperties article maxInsts to = do
     drawOd' od x =
       drawOd od 0 Back True ("od-" ++ show x)
     getInstanceWithODs _  [] =
-      repairIncorrect allowed config objectProperties article maxInsts to
+      repairIncorrect allowed config objectProperties preference maxInsts to
     getInstanceWithODs propertyChanges (rinsta:rinstas) = do
       cdInstance <- liftIO $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance

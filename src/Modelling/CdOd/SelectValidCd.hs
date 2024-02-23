@@ -63,6 +63,7 @@ import Modelling.CdOd.RepairCd (
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Annotation (..),
+  ArticlePreference (..),
   ArticleToUse (DefiniteArticle),
   Cd,
   ClassConfig (..),
@@ -114,7 +115,8 @@ import System.Random.Shuffle            (shuffleM)
 
 data SelectValidCdConfig = SelectValidCdConfig {
     allowedProperties :: AllowedProperties,
-    articleToUse      :: ArticleToUse,
+    -- | the article preference when referring to relationships
+    articleToUse      :: ArticlePreference,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
@@ -139,7 +141,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         wrongAssociationLimits = False,
         wrongCompositionLimits = False
         },
-    articleToUse = DefiniteArticle,
+    articleToUse = UseDefiniteArticleWherePossible,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
         aggregationLimits  = (0, Just 0),

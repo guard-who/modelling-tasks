@@ -95,6 +95,7 @@ import Modelling.CdOd.Types (
   Annotation (..),
   AnnotatedCd,
   AnnotatedClassDiagram (..),
+  ArticlePreference (..),
   ArticleToUse (..),
   Cd,
   ClassConfig (..),
@@ -192,7 +193,8 @@ data NumberOfReasons = NumberOfReasons {
 
 data NameCdErrorConfig = NameCdErrorConfig {
   allowedProperties           :: AllowedProperties,
-  articleToUse                :: ArticleToUse,
+  -- | the article preference when referring to relationships
+  articleToUse                :: ArticlePreference,
   classConfig                 :: ClassConfig,
   maxInstances                :: Maybe Integer,
   objectProperties            :: ObjectProperties,
@@ -211,7 +213,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     reverseInheritances = False,
     Modelling.CdOd.RepairCd.selfInheritances = False
     },
-  articleToUse = DefiniteArticle,
+  articleToUse = UseDefiniteArticleWherePossible,
   classConfig = ClassConfig {
     classLimits = (4, 4),
     aggregationLimits = (1, Just 1),
@@ -762,12 +764,26 @@ generateAndRandomise NameCdErrorConfig {..} = do
       annotation = Relevant {
         contributingToProblem = x `elem` xs,
         listingPriority = n,
-        referenceUsing = articleToUse
+        referenceUsing = articleForRelationship articleToUse useNames x
         }
       }
     toTranslations x = case x of
       Custom y -> y
       PreDefined y -> translateProperty printNavigations y
+
+{-|
+Use 'IndefiniteArticle' when phrasing of relationships could become ambiguous.
+-}
+articleForRelationship
+  :: ArticlePreference
+  -> Bool
+  -> Relationship className relationshipName
+  -> ArticleToUse
+articleForRelationship preference byName relationship = case preference of
+  UseIndefiniteArticleEverywhere -> IndefiniteArticle
+  UseDefiniteArticleWherePossible -> case relationship of
+    Inheritance {} -> DefiniteArticle
+    _ -> if byName then DefiniteArticle else IndefiniteArticle
 
 nameCdError
   :: RandomGen g
