@@ -1,0 +1,15 @@
+---
+name: modelling-tasks-examples
+ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Widentities
+  - -Wredundant-constraints
+  - -Werror
+dependencies:
+  - base
+  - graphviz
+  - modelling-tasks
+library:
+  source-dirs: src

@@ -1,0 +1,49 @@
+-- |
+
+module Modelling.PetriNet.PetriFindConcurrency.Config where
+
+import Modelling.PetriNet.Types (
+  AdvConfig (..),
+  AlloyConfig (..),
+  BasicConfig (..),
+  ChangeConfig (..),
+  GraphConfig (..),
+  FindConcurrencyConfig (..),
+  )
+import Data.GraphViz.Commands           (GraphvizCommand(..))
+
+task23 :: FindConcurrencyConfig
+task23 = FindConcurrencyConfig {
+  basicConfig = BasicConfig {
+    places = 6,
+    transitions = 6,
+    atLeastActive = 5,
+    flowOverall = (12, 14),
+    maxTokensPerPlace = 2,
+    maxFlowPerEdge = 2,
+    tokensOverall = (5, 5),
+    isConnected = Just True
+    },
+  advConfig = AdvConfig {
+    presenceOfSelfLoops = Just False,
+    presenceOfSinkTransitions = Just True,
+    presenceOfSourceTransitions = Just False
+    },
+  changeConfig = ChangeConfig {
+    tokenChangeOverall = 0,
+    maxTokenChangePerPlace = 0,
+    flowChangeOverall = 2,
+    maxFlowChangePerEdge = 1
+    },
+  graphConfig = GraphConfig {
+    graphLayouts = [Dot],
+    hidePlaceNames = True,
+    hideTransitionNames = False,
+    hideWeight1 = True
+    },
+  printSolution = True,
+  alloyConfig = AlloyConfig {
+    maxInstances = Just 2000,
+    timeout = Nothing
+    }
+  }
