@@ -756,7 +756,7 @@ generateAndRandomise NameCdErrorConfig {..} = do
     showSolution = printSolution,
     taskText = defaultNameCdErrorTaskText,
     withDirections = printNavigations,
-    withNames = printNames
+    withNames = printNames && useNames
     }
   where
     relevanceFor xs n x = Annotation {
