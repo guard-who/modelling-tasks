@@ -98,20 +98,37 @@ transformImproveCd
 transformImproveCd cd config properties = transformWith config (Left cd)
   $ changes Nothing [towardsValidProperties properties]
 
+{-|
+Generates Alloy code that
+
+ * provides a change that removes an illegal relationship
+ * makes sure, that no non-inheritance relationship exists twice within the
+   class diagram if they are not referenced by name
+-}
 transformGetNextFix
   :: Maybe Cd
   -> ClassConfig
   -> RelationshipProperties
+  -> Bool
   -> String
-transformGetNextFix maybeCd config properties = transformWith
+transformGetNextFix maybeCd config properties byName = transformWith
   config
   (maybe (Right properties) Left maybeCd)
-  (n, ps, part ++ restrictChanges)
+  (n, ps, part ++ restrictChanges ++ restrictRelationships)
   where
     (n, ps, part) = changes Nothing [towardsValidProperties properties]
     restrictChanges = [i|
 fact restrictChanges {
   no Change.add
+}
+|]
+    restrictRelationships =
+      if byName
+      then ""
+      else [i|
+fact preventSameAssocs {
+  no disj x, y : Assoc |
+    sameRelationship[x, y]
 }
 |]
 

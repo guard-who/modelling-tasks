@@ -731,6 +731,7 @@ generateAndRandomise NameCdErrorConfig {..} = do
     allowedProperties
     classConfig
     objectProperties
+    useNames
     maxInstances
     timeout
   reasons <- shuffleM possibleReasons
@@ -790,10 +791,11 @@ nameCdError
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
+  -> Bool
   -> Maybe Integer
   -> Maybe Int
   -> RandT g IO (Cd, Property, [Relationship String String])
-nameCdError allowed config objectProperties maxInsts to = do
+nameCdError allowed config objectProperties byName maxInsts to = do
   changes <- shuffleM $ (,)
     <$> illegalChanges allowed
     <*> legalChanges allowed
@@ -803,7 +805,7 @@ nameCdError allowed config objectProperties maxInsts to = do
       error "there seems to be no instance for the provided configuration"
     getInstanceWithChanges ((e0, l0) : chs) = do
       let p = toProperty $ e0 .&. l0
-          alloyCode = Changes.transformGetNextFix Nothing config p
+          alloyCode = Changes.transformGetNextFix Nothing config p byName
       instas  <- liftIO $ getInstances maxInsts to alloyCode
       rinstas <- shuffleM instas
       getInstanceWithODs chs p rinstas
@@ -817,7 +819,7 @@ nameCdError allowed config objectProperties maxInsts to = do
             hasReverseRelationships = Nothing,
             hasMultipleInheritances = Nothing
             }
-          alloyCode = Changes.transformGetNextFix (Just cd) config p'
+          alloyCode = Changes.transformGetNextFix (Just cd) config p' byName
       instas <- liftIO $ getInstances Nothing to alloyCode
       correctInstance <- liftIO $ mapM getChangesAndCds instas
       let allChs = concatMap instanceChangesAndCds correctInstance
