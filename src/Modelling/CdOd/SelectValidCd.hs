@@ -115,7 +115,7 @@ import System.Random.Shuffle            (shuffleM)
 
 data SelectValidCdConfig = SelectValidCdConfig {
     allowedProperties :: AllowedProperties,
-    -- | the article preference when referring to relationships
+    -- | the preferred article to use when referring to relationships
     articleToUse      :: ArticlePreference,
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
@@ -395,15 +395,7 @@ shuffleEach
   => SelectValidCdInstance
   -> m SelectValidCdInstance
 shuffleEach inst@SelectValidCdInstance {..} = do
-  names' <- shuffleM names
-  assocs' <- shuffleM assocs
-  let bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationships bmNames bmAssocs
-      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
-      renameEdge = renameClassesAndRelationships bmNames bmAssocs
-  cds <- mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd
-    `mapM` classDiagrams
+  cds <- shuffleCdChange inst `mapM` classDiagrams
   return $ SelectValidCdInstance {
     classDiagrams           = cds,
     showExtendedFeedback    = showExtendedFeedback,
@@ -411,6 +403,21 @@ shuffleEach inst@SelectValidCdInstance {..} = do
     withNames               = withNames,
     withNavigations         = withNavigations
     }
+
+shuffleCdChange
+  :: (MonadRandom m, MonadThrow m)
+  => SelectValidCdInstance
+  -> CdChange
+  -> m CdChange
+shuffleCdChange inst x = do
+  names' <- shuffleM names
+  assocs' <- shuffleM assocs
+  let bmNames  = BM.fromList $ zip names names'
+      bmAssocs = BM.fromList $ zip assocs assocs'
+      renameCd = renameClassesAndRelationships bmNames bmAssocs
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
+      renameEdge = renameClassesAndRelationships bmNames bmAssocs
+  mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd x
   where
     (names, assocs) = classAndAssocNames inst
 
