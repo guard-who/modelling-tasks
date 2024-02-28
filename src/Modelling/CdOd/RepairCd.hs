@@ -73,7 +73,7 @@ import Modelling.CdOd.CdAndChanges.Instance (
   AnnotatedChangeAndCd (..),
   ChangeAndCd (..),
   GenericClassDiagramInstance (..),
-  uniformlyAnnotateChangeAndCd,
+  annotateChangeAndCd,
   )
 import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
@@ -96,6 +96,7 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   RelationshipProperties (..),
+  articleForRelationship,
   associationNames,
   checkClassConfig,
   checkClassConfigWithProperties,
@@ -106,7 +107,6 @@ import Modelling.CdOd.Types (
   renameClassesAndRelationships,
   reverseAssociation,
   shuffleClassAndConnectionOrder,
-  toArticleToUse,
   )
 import Modelling.Types                  (Change (..))
 
@@ -749,7 +749,8 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
   rinstas <- shuffleM instas
   getInstanceWithODs cs rinstas
   where
-    article = toArticleToUse preference
+    articleForChange =
+      maybe DefiniteArticle (articleForRelationship preference) . remove
     drawCd' :: Cd -> Integer -> IO FilePath
     drawCd' cd' n =
       drawCd True True mempty cd' ("cd-" ++ show n ++ ".svg")
@@ -774,9 +775,9 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
               $ uncurry (either (const $ const $ return "") drawOd')
               `mapM_` zip odsAndCds [1 ..]
           let odsAndCdWithArticle = map (first addArticle) odsAndCds
-              chs' = map (uniformlyAnnotateChangeAndCd article) chs
+              chs' = map (annotateChangeAndCd articleForChange) chs
           return (cd, zipWith InValidOption odsAndCdWithArticle chs')
-    addArticle = (`Annotation` article)
+    addArticle x = x `Annotation` articleForChange x
     getOdOrImprovedCd propertyChange change
       | isValid propertyChange = fmap Right <$> getOD (changeClassDiagram change)
       | otherwise = fmap Left

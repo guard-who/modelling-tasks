@@ -52,7 +52,7 @@ module Modelling.CdOd.Types (
   ArticleToUse (..),
   ArticlePreference (..),
   NonInheritancePhrasing (..),
-  toArticleToUse,
+  articleForRelationship,
   toPhrasing,
   ) where
 
@@ -855,12 +855,17 @@ data ArticlePreference
   deriving (Eq, Generic, Read, Show)
 
 {-|
-Convert 'ArticlePreference' directly to 'ArticleToUse' (without conditions).
+Use 'IndefiniteArticle' when phrasing of relationships could become ambiguous.
 -}
-toArticleToUse :: ArticlePreference -> ArticleToUse
-toArticleToUse = \case
-  UseDefiniteArticleWherePossible -> DefiniteArticle
+articleForRelationship
+  :: ArticlePreference
+  -> Relationship className relationshipName
+  -> ArticleToUse
+articleForRelationship preference relationship = case preference of
   UseIndefiniteArticleEverywhere -> IndefiniteArticle
+  UseDefiniteArticleWherePossible -> case relationship of
+    Inheritance {} -> DefiniteArticle
+    _ -> IndefiniteArticle
 
 {-|
 When choosing the article(s) is possible

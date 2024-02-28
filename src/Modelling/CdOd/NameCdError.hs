@@ -105,6 +105,7 @@ import Modelling.CdOd.Types (
   Property (..),
   Relationship (..),
   RelationshipProperties (..),
+  articleForRelationship,
   associationNames,
   classNames,
   isIllegal,
@@ -765,26 +766,12 @@ generateAndRandomise NameCdErrorConfig {..} = do
       annotation = Relevant {
         contributingToProblem = x `elem` xs,
         listingPriority = n,
-        referenceUsing = articleForRelationship articleToUse useNames x
+        referenceUsing = articleForRelationship articleToUse x
         }
       }
     toTranslations x = case x of
       Custom y -> y
       PreDefined y -> translateProperty printNavigations y
-
-{-|
-Use 'IndefiniteArticle' when phrasing of relationships could become ambiguous.
--}
-articleForRelationship
-  :: ArticlePreference
-  -> Bool
-  -> Relationship className relationshipName
-  -> ArticleToUse
-articleForRelationship preference byName relationship = case preference of
-  UseIndefiniteArticleEverywhere -> IndefiniteArticle
-  UseDefiniteArticleWherePossible -> case relationship of
-    Inheritance {} -> DefiniteArticle
-    _ -> if byName then DefiniteArticle else IndefiniteArticle
 
 nameCdError
   :: RandomGen g
