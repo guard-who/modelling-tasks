@@ -105,7 +105,6 @@ import Modelling.CdOd.Types (
   Property (..),
   Relationship (..),
   RelationshipProperties (..),
-  articleForRelationship,
   associationNames,
   classNames,
   isIllegal,
@@ -113,6 +112,7 @@ import Modelling.CdOd.Types (
   renameClassesAndRelationships,
   reverseAssociation,
   shuffleAnnotatedClassAndConnectionOrder,
+  toArticleToUse,
   toPropertySet,
   towardsValidProperties,
   unannotateCd,
@@ -766,7 +766,7 @@ generateAndRandomise NameCdErrorConfig {..} = do
       annotation = Relevant {
         contributingToProblem = x `elem` xs,
         listingPriority = n,
-        referenceUsing = articleForRelationship articleToUse x
+        referenceUsing = toArticleToUse articleToUse
         }
       }
     toTranslations x = case x of

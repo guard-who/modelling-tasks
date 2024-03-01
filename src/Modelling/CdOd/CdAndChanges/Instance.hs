@@ -9,7 +9,7 @@ module Modelling.CdOd.CdAndChanges.Instance (
   GenericClassDiagramInstance (..),
   fromInstance,
   renameClassesAndRelationshipsInCdInstance,
-  annotateChangeAndCd,
+  uniformlyAnnotateChangeAndCd,
   ) where
 
 import qualified Data.Bimap                       as BM (lookup)
@@ -108,14 +108,14 @@ instance Bitraversable ChangeAndCd where
     <$> traverse (bitraverse f g) relationshipChange
     <*> bitraverse f g changeClassDiagram
 
-annotateChangeAndCd
-  :: (Change (Relationship className relationshipName) -> annotation)
+uniformlyAnnotateChangeAndCd
+  :: annotation
   -> ChangeAndCd className relationshipName
   -> AnnotatedChangeAndCd annotation className relationshipName
-annotateChangeAndCd annotation ChangeAndCd {..} = AnnotatedChangeAndCd {
+uniformlyAnnotateChangeAndCd annotation ChangeAndCd {..} = AnnotatedChangeAndCd {
   annotatedRelationshipChange = Annotation {
     annotated = relationshipChange,
-    annotation = annotation relationshipChange
+    annotation = annotation
     },
   annotatedChangeClassDiagram = changeClassDiagram
   }
