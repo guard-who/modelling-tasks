@@ -9,14 +9,14 @@
 *.o
 *.pdf
 *.ps1
+*.swp
 *.synctex.gz
 *.exe
+*.yaml.lock
 *.DS_Store
 .stack-work/
 artifacts/
 dist-newstyle/
-stack.yaml.lock
-stack-apps.yaml.lock
 legacy-app/Auxiliary/Lexer.hs
 legacy-app/Auxiliary/Lexer.info
 legacy-app/Auxiliary/Parser.hs

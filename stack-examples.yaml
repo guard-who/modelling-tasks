@@ -2,6 +2,7 @@
 resolver: lts-20.26
 packages:
   - .
+  - example
 flags:
   modelling-tasks:
     quick-testing: true

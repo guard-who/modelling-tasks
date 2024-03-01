@@ -18,8 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: stack.yaml has no additions to stack-apps.yaml
-        run: "! comm -23 stack.yaml stack-apps.yaml | grep ."
+      - name: stack.yaml has no additions to stack-examples.yaml
+        run: "! comm -23 stack.yaml stack-examples.yaml | grep ."
 
-      - name: stack-app.yaml has some additions to stack.yaml
-        run: "comm -13 stack.yaml stack-apps.yaml | grep ."
+      - name: stack-examples.yaml has no additions to stack-apps.yaml
+        run: "! comm -23 stack-examples.yaml stack-apps.yaml | grep ."
+
+      - name: stack-apps.yaml has some additions to stack-example.yaml
+        run: "comm -13 stack-examples.yaml stack-apps.yaml | grep ."
+
+      - name: stack-examples.yaml has some additions to stack.yaml
+        run: "comm -13 stack.yaml stack-examples.yaml | grep ."
