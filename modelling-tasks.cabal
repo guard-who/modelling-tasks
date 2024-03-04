@@ -83,6 +83,8 @@ library
       Modelling.Types
   other-modules:
       Capabilities.Alloy
+      Capabilities.Diagrams
+      Capabilities.Graphviz
       Modelling.Auxiliary.Diagrams
       Modelling.CdOd.Phrasing
       Modelling.CdOd.Phrasing.English

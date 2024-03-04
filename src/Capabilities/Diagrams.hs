@@ -1,6 +1,9 @@
 {-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, OverloadedLists #-}
+-- | Defines a Monad context for rendering diagrams graphics to file.
 
-module Modelling.PetriNet.Reach.Group (writeSVG) where
+module Capabilities.Diagrams (
+  MonadDiagrams (lin, writeSvg),
+  ) where
 
 import qualified Data.ByteString.Lazy             as LBS (ByteString, unpack)
 import qualified Data.Map                         as M (fromList)
@@ -13,6 +16,7 @@ import qualified Data.Text                        as T (
   )
 import qualified Data.Text.IO                     as T (writeFile)
 import qualified Data.Text.Lazy                   as LT (Text, toStrict)
+import qualified Graphics.SVGFonts.Fonts          (lin)
 
 import Modelling.Auxiliary.Diagrams               (renderSVG)
 
@@ -21,6 +25,7 @@ import Data.Data                                  (Typeable)
 import Diagrams.Backend.SVG                       (SVG)
 import Diagrams.Prelude                           (QDiagram)
 import Diagrams.TwoD                              (V2, dims2D)
+import Graphics.SVGFonts.ReadFont                 (PreparedFont)
 
 import Text.XML.HXT.Core
     ( returnA,
@@ -48,6 +53,20 @@ import qualified Text.XML as XML
 
 import Data.List (isPrefixOf)
 import Data.Maybe                       (maybeToList)
+
+class Monad m => MonadDiagrams m where
+  lin :: (Read n, RealFloat n) => m (PreparedFont n)
+  writeSvg
+    :: (Show n, Typeable n, RealFloat n, Monoid o)
+    => FilePath
+    -> QDiagram SVG V2 n o
+    -> m ()
+
+instance MonadDiagrams IO where
+  lin = Graphics.SVGFonts.Fonts.lin
+  writeSvg file g = do
+    svg <- groupSVG $ renderSVG (dims2D 400 400) g
+    T.writeFile file $ LT.toStrict svg
 
 data SVGOptions = SVGOptions
   { xmlns, height, iStrokeOpacity, viewBox, fontSize, width, xmlnsXlink, iStroke, version :: T.Text,
@@ -243,12 +262,3 @@ groupSVG s' = do
     (XML.Prologue [] Nothing [])
     (buildSVG x{groups = formatSVG (groups x)})
     []
-
-writeSVG
-  :: (Show n, Typeable n, RealFloat n, Monoid m)
-  => FilePath
-  -> QDiagram SVG V2 n m
-  -> IO ()
-writeSVG file g = do
-  svg <- groupSVG $ renderSVG (dims2D 400 400) g
-  T.writeFile file $ LT.toStrict svg

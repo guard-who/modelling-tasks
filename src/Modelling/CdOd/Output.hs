@@ -1,6 +1,4 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 module Modelling.CdOd.Output (
   cacheCd,
@@ -17,6 +15,10 @@ import qualified Data.Map                         as M (
   )
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 
+import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
+import Capabilities.Graphviz (
+  MonadGraphviz (errorWithoutGraphviz, layoutGraph'),
+  )
 import Modelling.Auxiliary.Common       (cacheIO, short)
 import Modelling.Auxiliary.Diagrams (
   arrowheadDiamond,
@@ -45,10 +47,10 @@ import Modelling.CdOd.Types (
   Relationship (..),
   calculateThickRelationships,
   )
-import Modelling.PetriNet.Reach.Group   (writeSVG)
 
 import Control.Lens                     ((.~))
 import Control.Monad                    (guard)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random (
   MonadRandom (getRandom),
   RandT,
@@ -71,7 +73,6 @@ import Data.GraphViz (
   noArrow,
   nonClusteredParams,
   oDiamond,
-  quitWithoutGraphviz,
   shape,
   toLabel,
   toLabelValue,
@@ -82,7 +83,6 @@ import Data.GraphViz.Attributes.Complete (Attribute (..), DPoint (..), Label)
 import Data.Function                    ((&))
 import Data.List                        (elemIndex)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
-import Data.String.Interpolate          (iii)
 import Data.Tuple.Extra                 (both)
 import Diagrams.Align                   (center)
 import Diagrams.Angle                   ((@@), deg)
@@ -111,9 +111,7 @@ import Diagrams.TwoD.Arrow (
   )
 import Diagrams.TwoD.Arrowheads         (lineTail)
 import Diagrams.TwoD.Attributes         (fc, lc)
-import Diagrams.TwoD.GraphViz           (layoutGraph')
 import Diagrams.Util                    ((#), with)
-import Graphics.SVGFonts.Fonts          (lin)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
 import System.IO.Unsafe                 (unsafePerformIO)
@@ -194,12 +192,13 @@ cacheCd printNavigations printNames marking syntax path =
       ++ ".svg"
 
 drawCd
-  :: Bool
+  :: (MonadDiagrams m, MonadGraphviz m)
+  => Bool
   -> Bool
   -> Style V2 Double
   -> Cd
   -> FilePath
-  -> IO FilePath
+  -> m FilePath
 drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
   let theNodes = classNames
   let toIndexed xs = [(
@@ -237,7 +236,7 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
         (\(s, t, (isThick, r), p) g -> g # drawRel sfont s t isThick r p)
         gnodes
         edges
-  writeSVG file gedges
+  writeSvg file gedges
   return file
   where
     getFromTo x = case x of
@@ -338,13 +337,6 @@ drawClass sfont l (P p) = translate p
   # lineWidth 0.6
   # svgClass "label"
 
-errorWithoutGraphviz :: IO ()
-errorWithoutGraphviz =
-  quitWithoutGraphviz [iii|
-    Please install GraphViz executables from http://graphviz.org/
-    and put them on your PATH
-    |]
-
 drawOdFromInstance
   :: RandomGen g
   => AlloyInstance
@@ -377,13 +369,13 @@ cacheOd od anonymous direction printNames path = do
       ++ ".svg"
 
 drawOd
-  :: RandomGen g
+  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
   => Od
   -> Int
   -> DirType
   -> Bool
   -> FilePath
-  -> RandT g IO FilePath
+  -> RandT g m FilePath
 drawOd ObjectDiagram {..} anonymous direction printNames file = do
   let numberedObjects = zip [0..] objects
       bmObjects = BM.fromList $ map (second objectName) numberedObjects
@@ -423,7 +415,7 @@ drawOd ObjectDiagram {..} anonymous direction printNames file = do
            g # drawLink sfont direction printNames s t l p)
         gnodes
         edges
-  lift $ writeSVG file gedges
+  lift $ writeSvg file gedges
   return file
   where
     arrowHeads = case direction of

@@ -1,6 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 {-|
 Provides the ability to render Petri nets.
@@ -14,9 +13,11 @@ module Modelling.PetriNet.Diagram (
   ) where
 
 import qualified Control.Monad.Output             as OM (translate)
-import qualified Diagrams.TwoD.GraphViz           as GV
+import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 import qualified Data.Map                         as M (foldlWithKey)
 
+import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
+import Capabilities.Graphviz            (MonadGraphviz (layoutGraph))
 import Modelling.Auxiliary.Common       (Object, cacheIO, short)
 import Modelling.Auxiliary.Diagrams (
   connectOutside'',
@@ -29,14 +30,12 @@ import Modelling.PetriNet.Parser (
   parseNet,
   simpleRenameWith,
   )
-import Modelling.PetriNet.Reach.Group   (writeSVG)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
   Net (mapNet, traverseNet),
   )
 
 import Control.Arrow                    (ArrowChoice(left), first)
-import Control.Monad                    (when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -50,19 +49,11 @@ import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
-import Data.FileEmbed                   (embedFile)
 import Data.List                        (foldl')
 import Diagrams.Backend.SVG             (B, svgClass)
 import Diagrams.Prelude
-import Graphics.SVGFonts.ReadFont       (PreparedFont, loadFont')
+import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
-
-lin :: IO (PreparedFont Double)
-lin = do
-  let s = $(embedFile "fonts/LinLibertine.svg")
-      (errors, font') = loadFont' "LinLibertine.svg" s
-  when (errors /= "") (putStrLn errors)
-  return font'
 
 cacheNet
   :: (Net p n)
@@ -77,7 +68,7 @@ cacheNet
 cacheNet path labelOf pl hidePNames hideTNames hide1 gc =
   cacheIO path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
     dia <- drawNet id pl' hidePNames hideTNames hide1 gc
-    liftIO $ writeSVG svg dia
+    liftIO $ writeSvg svg dia
   where
     ext = short hidePNames
       ++ short hideTNames
@@ -90,7 +81,7 @@ by distributing places and transitions using GraphViz.
 The provided 'GraphvizCommand' is used for this distribution.
 -}
 drawNet
-  :: (Net p n, Ord a)
+  :: (MonadDiagrams m, MonadGraphviz m, Net p n, Ord a)
   => (a -> String)
   -- ^ how to obtain labels of the nodes
   -> p n a
@@ -103,10 +94,10 @@ drawNet
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -- ^ how to distribute the nodes
-  -> ExceptT String IO (Diagram B)
+  -> ExceptT String m (Diagram B)
 drawNet labelOf pl hidePNames hideTNames hide1 gc = do
   gr    <- except $ left errorMessage $ netToGr pl
-  graph <- lift $ GV.layoutGraph gc gr
+  graph <- lift $ layoutGraph gc gr
   pfont <- lift lin
   return $ drawGraph labelOf hidePNames hideTNames hide1 pfont graph
   where
@@ -114,10 +105,10 @@ drawNet labelOf pl hidePNames hideTNames hide1 gc = do
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
 
 getNet
-  :: (Net p n, Traversable t)
+  :: (Monad m, Net p n, Traversable t)
   => (AlloyInstance -> Either String (t Object))
   -> AlloyInstance
-  -> ExceptT String IO (p n String, t String)
+  -> ExceptT String m (p n String, t String)
 getNet parseInst inst = do
   (net, rename) <-
     getNetWith "flow" "tokens" inst
@@ -139,14 +130,14 @@ All nodes are renamed using the 'simpleRenameWith' function.
 The renaming is also applied to the additionally parsed instance.
 -}
 getNetWith
-  :: Net p n
+  :: (Monad m, Net p n)
   => String
   -- ^ flow
   -> String
   -- ^ tokens
   -> AlloyInstance
   -- ^ the instance to parse
-  -> ExceptT String IO (p n String, Object -> Either String String)
+  -> ExceptT String m (p n String, Object -> Either String String)
 getNetWith f t inst = do
   pl <- except $ parseNet f t inst
   let rename = simpleRenameWith pl
