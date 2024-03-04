@@ -46,6 +46,7 @@ import qualified Data.ByteString                  as Debug
 import qualified Language.Alloy.Call              as Debug
 import qualified Language.Alloy.Debug             as Debug
 
+import Capabilities.Alloy               (MonadAlloy)
 import Modelling.Auxiliary.Common (
   Randomise (isRandomisable, randomise),
   RandomiseLayout (randomiseLayout),
@@ -632,8 +633,9 @@ getODsFor config (cd:cds) = do
       )
 
 getChangesAndCds
-  :: AlloyInstance
-  -> IO ClassDiagramInstance
+  :: (MonadAlloy m, MonadThrow m)
+  => AlloyInstance
+  -> m ClassDiagramInstance
 getChangesAndCds insta = do
   cdInstance <- either error return $ fromInstance insta
   let cd  = instanceClassDiagram cdInstance

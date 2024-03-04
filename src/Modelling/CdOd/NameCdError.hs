@@ -54,6 +54,7 @@ import qualified Data.Set                         as S (
   toList,
   )
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
@@ -65,7 +66,7 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   simplifiedInformation,
   )
-import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd, getInstances)
+import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
   combineParts,
   createRunCommand,
@@ -145,6 +146,7 @@ import Control.Monad.Output (
 import Control.Monad.Output.Generic     (($>>=))
 import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, evalRandT, mkStdGen)
+import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.State        (put)
 import Data.Aeson.TH                    (Options (..), defaultOptions, deriveJSON)
 import Data.Bifunctor                   (second)
@@ -724,9 +726,9 @@ nameCdErrorGenerate config segment seed = do
   flip evalRandT g $ generateAndRandomise config
 
 generateAndRandomise
-  :: RandomGen g
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => NameCdErrorConfig
-  -> RandT g IO NameCdErrorInstance
+  -> RandT g m NameCdErrorInstance
 generateAndRandomise NameCdErrorConfig {..} = do
   (cd, reason, rs) <- nameCdError
     allowedProperties
@@ -774,14 +776,14 @@ generateAndRandomise NameCdErrorConfig {..} = do
       PreDefined y -> translateProperty printNavigations y
 
 nameCdError
-  :: RandomGen g
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
   -> Bool
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g IO (Cd, Property, [Relationship String String])
+  -> RandT g m (Cd, Property, [Relationship String String])
 nameCdError allowed config objectProperties byName maxInsts to = do
   changes <- shuffleM $ (,)
     <$> illegalChanges allowed
@@ -793,12 +795,12 @@ nameCdError allowed config objectProperties byName maxInsts to = do
     getInstanceWithChanges ((e0, l0) : chs) = do
       let p = toProperty $ e0 .&. l0
           alloyCode = Changes.transformGetNextFix Nothing config p byName
-      instas  <- liftIO $ getInstances maxInsts to alloyCode
+      instas  <- lift $ getInstances maxInsts to alloyCode
       rinstas <- shuffleM instas
       getInstanceWithODs chs p rinstas
     getInstanceWithODs chs _ [] = getInstanceWithChanges chs
     getInstanceWithODs chs p (rinsta:rinstas) = do
-      cdInstance <- liftIO $ getChangesAndCds rinsta
+      cdInstance <- lift $ getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
           p' = p {
             hasCompositionsPreventingParts = Nothing,
@@ -807,12 +809,12 @@ nameCdError allowed config objectProperties byName maxInsts to = do
             hasMultipleInheritances = Nothing
             }
           alloyCode = Changes.transformGetNextFix (Just cd) config p' byName
-      instas <- liftIO $ getInstances Nothing to alloyCode
-      correctInstance <- liftIO $ mapM getChangesAndCds instas
+      instas <- lift $ getInstances Nothing to alloyCode
+      correctInstance <- lift $ mapM getChangesAndCds instas
       let allChs = concatMap instanceChangesAndCds correctInstance
           cd2 = instanceClassDiagram $ head correctInstance
       mremoves <- do
-        liftIO $ mapM (getOD . changeClassDiagram) allChs
+        lift $ mapM (getOD . changeClassDiagram) allChs
         return $ traverse (remove . relationshipChange) allChs
       case mremoves of
         Nothing -> getInstanceWithODs chs p rinstas
