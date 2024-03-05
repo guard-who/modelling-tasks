@@ -55,6 +55,9 @@ import qualified Data.Set                         as S (
   )
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
@@ -124,7 +127,6 @@ import Control.Applicative              (Alternative)
 import Control.Monad                    ((>=>), forM, join)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except             (runExceptT)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -332,7 +334,7 @@ data NameCdErrorTaskTextElement =
   deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
 
 toTaskText
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => NameCdErrorTaskText
   -> FilePath
   -> NameCdErrorInstance
@@ -341,7 +343,7 @@ toTaskText xs path task =
   for_ xs $ \x -> toTaskTextPart x path task
 
 toTaskTextPart
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => TaskTextPart NameCdErrorTaskTextElement
   -> FilePath
   -> NameCdErrorInstance
@@ -350,7 +352,7 @@ toTaskTextPart output path task = case output of
   Code c -> code c
   Paragraph xs -> paragraph $ for_ xs $ \x -> toTaskTextPart x path task
   TaskSpecific element -> case element of
-    IncorrectCd -> image $=<< liftIO $ cacheCd
+    IncorrectCd -> image $=<< cacheCd
       (withDirections task)
       (withNames task)
       mempty
@@ -541,7 +543,7 @@ defaultNameCdErrorTaskText = [
     answer = defaultNameCdErrorAnswer
 
 nameCdErrorTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => FilePath
   -> NameCdErrorInstance
   -> LangM m

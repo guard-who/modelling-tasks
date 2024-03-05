@@ -15,11 +15,11 @@ import qualified Data.Map                         as M (
   )
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 
+import Capabilities.Cache               (MonadCache, cache, cacheT, short)
 import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
 import Capabilities.Graphviz (
   MonadGraphviz (errorWithoutGraphviz, layoutGraph'),
   )
-import Modelling.Auxiliary.Common       (cacheIO, short)
 import Modelling.Auxiliary.Diagrams (
   arrowheadDiamond,
   arrowheadFilledDiamond,
@@ -176,14 +176,15 @@ mult (l, Just u) | l == u    = toLabelValue l
                  | otherwise = toLabelValue (show l ++ ".." ++ show u)
 
 cacheCd
-  :: Bool
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m)
+  => Bool
   -> Bool
   -> Style V2 Double
   -> Cd
   -> FilePath
-  -> IO FilePath
+  -> m FilePath
 cacheCd printNavigations printNames marking syntax path =
-  cacheIO path ext "cd" syntax $ flip $
+  cache path ext "cd" syntax $ flip $
     drawCd printNavigations printNames marking
   where
     ext = short printNavigations
@@ -350,16 +351,16 @@ drawOdFromInstance i anonymous =
   in drawOd g $ fromMaybe (length (objects g) `div` 3) anonymous
 
 cacheOd
-  :: RandomGen g
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
   => Od
   -> Int
   -> DirType
   -> Bool
   -> FilePath
-  -> RandT g IO FilePath
+  -> RandT g m FilePath
 cacheOd od anonymous direction printNames path = do
   x <- getRandom
-  cacheIO path (ext x) "od" od $ \file od' ->
+  cacheT path (ext x) "od" od $ \file od' ->
     drawOd od' anonymous direction printNames file
   where
     ext x = short anonymous

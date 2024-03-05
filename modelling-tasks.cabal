@@ -83,6 +83,7 @@ library
       Modelling.Types
   other-modules:
       Capabilities.Alloy
+      Capabilities.Cache
       Capabilities.Diagrams
       Capabilities.Graphviz
       Modelling.Auxiliary.Diagrams

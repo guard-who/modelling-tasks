@@ -16,9 +16,10 @@ import qualified Control.Monad.Output             as OM (translate)
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 import qualified Data.Map                         as M (foldlWithKey)
 
+import Capabilities.Cache               (MonadCache, cacheT, short)
 import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
 import Capabilities.Graphviz            (MonadGraphviz (layoutGraph))
-import Modelling.Auxiliary.Common       (Object, cacheIO, short)
+import Modelling.Auxiliary.Common       (Object)
 import Modelling.Auxiliary.Diagrams (
   connectOutside'',
   nonEmptyPathBetween,
@@ -56,7 +57,7 @@ import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
 
 cacheNet
-  :: (Net p n)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => String
   -> (a -> String)
   -> p n a
@@ -64,11 +65,11 @@ cacheNet
   -> Bool
   -> Bool
   -> GraphvizCommand
-  -> ExceptT String IO FilePath
+  -> ExceptT String m FilePath
 cacheNet path labelOf pl hidePNames hideTNames hide1 gc =
-  cacheIO path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
+  cacheT path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
     dia <- drawNet id pl' hidePNames hideTNames hide1 gc
-    liftIO $ writeSvg svg dia
+    lift $ writeSvg svg dia
   where
     ext = short hidePNames
       ++ short hideTNames
