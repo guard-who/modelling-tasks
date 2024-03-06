@@ -29,14 +29,14 @@ spec = do
     it "checks if the basic Input is in given boundaries" $
       checkBasicConfig defaultBasicConfig `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
-      it "it returns a String with nessecary changes" $
+      it "it returns a String with necessary changes" $
         checkBasicConfig defaultBasicConfig{places = 0}
           `shouldSatisfy` isJust
   describe "checkChangeConfig" $ do
     it "checks if the input for Changes is in given boundaries" $
       checkChangeConfig defaultBasicConfig defaultChangeConfig `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
-      it "it returns a String with nessecary changes" $
+      it "it returns a String with necessary changes" $
         checkChangeConfig defaultBasicConfig defaultChangeConfig{tokenChangeOverall = -1}
           `shouldSatisfy` isJust
   describe "a Net" $ do
@@ -86,8 +86,8 @@ instance (Arbitrary a, Net p n, Ord a) => Arbitrary (p n a) where
         <*> (abs <$> arbitrary)
         <*> elements names
       return
-        . flip (foldr (uncurry3 repsertFlow)) flows
-        . flip (foldr (uncurry repsertNode)) ns
+        . flip (foldr (uncurry3 alterFlow)) flows
+        . flip (foldr (uncurry alterNode)) ns
         $ emptyNet
   shrink x = map (`deleteNode` x) names
     where

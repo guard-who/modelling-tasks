@@ -29,7 +29,7 @@ import Modelling.Auxiliary.Diagrams (
   flipArrow,
   text',
   textU,
-  varrow,
+  veeArrow,
   )
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
@@ -440,7 +440,7 @@ drawLink sfont direction printNames fl tl Link {..} =
   where
     opts = with
       & arrowTail .~ lineTail
-      & arrowHead .~ varrow
+      & arrowHead .~ veeArrow
       & headLength .~ local 7
       & headGap .~ local 0
       & tailLength .~ local 7

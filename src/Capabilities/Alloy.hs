@@ -28,8 +28,9 @@ getInstances
   -> Maybe Int
   -> String
   -> m [AlloyInstance]
-getInstances mmaxInstances mtimeout = getInstancesWith $ defaultCallAlloyConfig {
-  maxInstances = mmaxInstances,
-  satSolver    = MiniSat,
-  timeout      = mtimeout
-  }
+getInstances maybeMaxInstances maybeTimeout = getInstancesWith
+  $ defaultCallAlloyConfig {
+    maxInstances = maybeMaxInstances,
+    satSolver    = MiniSat,
+    timeout      = maybeTimeout
+    }

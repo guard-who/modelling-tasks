@@ -32,6 +32,7 @@ jobs:
           post_comment: 0
           experimental_apply_changes_via_bot: 0
           extra_dictionaries:
+            cspell:css/dict/css.txt
             cspell:latex/dict/latex.txt
             cspell:software-terms/dict/softwareTerms.txt
             cspell:filetypes/filetypes.txt

@@ -10,7 +10,7 @@
 
 module Modelling.PetriNet.Find (
   FindInstance (..),
-  checkCConfig,
+  checkFindBasicConfig,
   checkConfigForFind,
   findInitial,
   findTaskInstance,
@@ -133,15 +133,15 @@ toFindEvaluation what withSol (ft, st) (fi, si) = do
   where
     assert = continueOrAbort withSol
 
-checkCConfig :: BasicConfig -> Maybe String
-checkCConfig BasicConfig { atLeastActive }
+checkFindBasicConfig :: BasicConfig -> Maybe String
+checkFindBasicConfig BasicConfig { atLeastActive }
  | atLeastActive < 2
   = Just "The parameter 'atLeastActive' must be at least 2 to create the task."
  | otherwise = Nothing
 
 checkConfigForFind :: BasicConfig -> ChangeConfig -> GraphConfig -> Maybe String
 checkConfigForFind basic change graph =
-  checkCConfig basic
+  checkFindBasicConfig basic
   <|> prohibitHideTransitionNames graph
   <|> checkBasicConfig basic
   <|> checkChangeConfig basic change

@@ -387,7 +387,7 @@ class (PetriNode n, Show (p n String)) => Net p n where
   no 'flow' is added to the 'Net'
   If 'flow' between source and target exists already it is replaced.
   -}
-  repsertFlow
+  alterFlow
     :: Ord a
     => a
     -- ^ source
@@ -408,7 +408,7 @@ class (PetriNode n, Show (p n String)) => Net p n where
   without affecting preexisting 'flow'.
   (use 'deleteNode' first if you desire to clear related flow)
   -}
-  repsertNode
+  alterNode
     :: Ord a
     => a
     -- ^ node key
@@ -480,14 +480,14 @@ instance Net PetriLike Node where
     where
       n = M.lookup x ns
 
-  repsertFlow x f y = PetriLike
+  alterFlow x f y = PetriLike
     . M.adjust (updateNode id (M.insert y f)) x
     . M.adjust (updateNode (M.insert x f) id) y
     . allNodes
 
-  repsertNode x mt = PetriLike . M.alter alterNode x . allNodes
+  alterNode x mt = PetriLike . M.alter alterNode' x . allNodes
     where
-      alterNode = Just . fromMaybe
+      alterNode' = Just . fromMaybe
         (maybe TransitionNode PlaceNode mt M.empty M.empty)
 
   outFlow x = maybe M.empty flowOutN . M.lookup x . allNodes
@@ -516,13 +516,13 @@ instance Net PetriLike SimpleNode where
     . allNodes
     $ ns
 
-  repsertFlow x f y = PetriLike
+  alterFlow x f y = PetriLike
     . M.adjust (updateSimpleNode (M.insert y f)) x
     . allNodes
 
-  repsertNode x mt = PetriLike . M.alter alterNode x . allNodes
+  alterNode x mt = PetriLike . M.alter alterNode' x . allNodes
     where
-      alterNode = Just . fromMaybe
+      alterNode' = Just . fromMaybe
         (maybe SimpleTransition SimplePlace mt M.empty)
 
   outFlow x = maybe M.empty flowOutSN . M.lookup x . allNodes
@@ -606,8 +606,8 @@ transformNet ns =
   $ M.foldrWithKey fromSimpleNode emptyNet ns'
   where
     ns' = nodes ns
-    insertFlows k xs = M.foldrWithKey (flip (repsertFlow k)) xs (outFlow k ns)
-    fromSimpleNode k n = repsertNode k (maybeInitial n)
+    insertFlows k xs = M.foldrWithKey (flip (alterFlow k)) xs (outFlow k ns)
+    fromSimpleNode k n = alterNode k (maybeInitial n)
 
 {-|
 Transform a 'PetriLike' graph into a 'Petri' net.
@@ -638,7 +638,7 @@ petriLikeToPetri p = do
       | not (M.null $ M.filter ((< 0) . initialTokens) ps)
       = Left "Invalid Petri net: place with negative token number"
       | any (`M.member` ts) (allRelatedNodes ts)
-      = Left "related nodes of TransitionNodes contain TranisitionNodes"
+      = Left "related nodes of TransitionNodes contain TransitionNodes"
       | any (`M.member` ps) (allRelatedNodes ps)
       = Left "related nodes of PlaceNodes contain PlaceNodes"
       | any (any (<= 0) . flowIn) ts

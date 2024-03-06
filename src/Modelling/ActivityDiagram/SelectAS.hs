@@ -127,7 +127,7 @@ checkSelectASConfig' SelectASConfig {
   | numberOfWrongAnswers < 1
     = Just "The parameter 'numberOfWrongAnswers' must be set to a positive value"
   | objectNodeOnEveryPath == Just True && minObjectNodes adConfig < 1
-    = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occuring"
+    = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occurring"
   | minAnswerLength < 0
     = Just "The parameter 'minAnswerLength' should be non-negative"
   | maxAnswerLength < minAnswerLength

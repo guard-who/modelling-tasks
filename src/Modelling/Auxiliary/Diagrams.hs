@@ -16,7 +16,7 @@ module Modelling.Auxiliary.Diagrams (
   text',
   textU,
   trailBetween,
-  varrow,
+  veeArrow,
   ) where
 
 import Control.Lens.Operators           ((.~), (^.))
@@ -137,8 +137,8 @@ import Graphics.SVGFonts (
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Graphics.Svg.Core                (renderBS)
 
-varrow :: ArrowHT Double
-varrow = arrowheadVee (150 @@ deg)
+veeArrow :: ArrowHT Double
+veeArrow = arrowheadVee (150 @@ deg)
 
 arrowheadV :: RealFloat n => Angle n -> ArrowHT n
 arrowheadV theta len shaftWidth =

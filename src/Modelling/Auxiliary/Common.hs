@@ -148,7 +148,7 @@ class Randomise a where
   randomise :: (MonadRandom m, MonadThrow m) => a -> m a
 
   -- | Checks the randomisability of the given value
-  --     * returns Nothing, if it is randomisible
+  --     * returns Nothing, if it is randomisable
   --     * returns Just the explanation why not, otherwise
   isRandomisable :: a -> Maybe String
   isRandomisable _ = Nothing
@@ -160,7 +160,7 @@ class RandomiseLayout a where
   but by (maybe) affecting its layout.
 
   For a graph, for example, by changing the order of edges and nodes which affects
-  the layouting performed by the used algorithm.
+  how the used algorithm is laying out the graph.
   -}
   randomiseLayout :: (MonadRandom m, MonadThrow m) => a -> m a
 

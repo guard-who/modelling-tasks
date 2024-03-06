@@ -5,7 +5,7 @@ abstract sig ActivityNodes {}
 
 //Represent the Control Flows and Object Flows of the activity diagram
 abstract sig ActivityEdges {
-        from: one (ActivityNodes - FinalNodes),        //No outgoing activty edges from FinalNodes
+        from: one (ActivityNodes - FinalNodes),        //No outgoing activity edges from FinalNodes
         to: one (ActivityNodes - InitialNodes),         //No incoming activity edges to InitialNodes
         guard : lone GuardNames
 }

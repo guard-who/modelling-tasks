@@ -886,7 +886,7 @@ translatePropertyWithDirections x = translations $ case x of
   ReverseInheritances -> do
     english "contains at least one pair of classes each inheriting from the other."
     german [iii|
-      enthält mindestens ein Paar von Klassen, die sich gegenseiting beerben.
+      enthält mindestens ein Paar von Klassen, die sich gegenseitig beerben.
       |]
   ReverseRelationships -> do
     english [iii|
@@ -1011,7 +1011,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
       ])),
     ('i', (False, M.fromAscList [
       (English, "contains at least one pair of classes each inheriting from the other."),
-      (German, "enthält mindestens ein Paar von Klassen, die sich gegenseiting beerben.")
+      (German, "enthält mindestens ein Paar von Klassen, die sich gegenseitig beerben.")
       ])),
     ('j', (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity at some relationship."),

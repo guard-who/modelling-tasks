@@ -39,7 +39,7 @@ pred decisionWithSameConditionNestedInRepeat {
 }
 
 
-//Option to have decision in parallel to repeat structure with repeat-condition as one of its condtions
+//Option to have decision in parallel to repeat structure with repeat-condition as one of its conditions
 //to check if student understands that conditions can switch
 pred decisionWithSameConditionInParallelToRepeat {
         some fb1 : PlantUMLForkBlocks | one rb1 : PlantUMLRepeatBlocks | one ie1: PlantUMLIfElseBlocks |

@@ -26,7 +26,7 @@ headWithErr err = failWith id . headEither err
 
 {-
   Shuffle a list of elements from type a based on given weights of type w,
-  where higher weight indicates a bigger probability of the element occuring
+  where higher weight indicates a bigger probability of the element occurring
   at a lower index of the list. The total weight of all elements must not be zero.
 -}
 weightedShuffle

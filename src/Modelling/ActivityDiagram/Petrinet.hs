@@ -110,9 +110,9 @@ addSupportST'
   -> p n PetriKey
 addSupportST' sourceKey targetKey targetNode petri =
   let supportKey = SupportST {label = (+ 1) $ maximum $ map label $ M.keys $ nodes petri}
-  in repsertFlow supportKey 1 targetKey
-     . repsertFlow sourceKey 1 supportKey
-     . repsertNode supportKey (if isPlaceNode targetNode then Nothing else Just 0)
+  in alterFlow supportKey 1 targetKey
+     . alterFlow sourceKey 1 supportKey
+     . alterNode supportKey (if isPlaceNode targetNode then Nothing else Just 0)
      . deleteFlow sourceKey targetKey
      $ petri
 
@@ -122,7 +122,7 @@ insertNode
   -> p n PetriKey
   -> p n PetriKey
 insertNode =
-  uncurry repsertNode . nodeToST
+  uncurry alterNode . nodeToST
 
 nodeToST :: AD.ADNode -> (PetriKey, Maybe Int)
 nodeToST node =
@@ -163,4 +163,4 @@ insertEdge
 insertEdge edge petri = fromMaybe petri $ do
   sourceKey <- find (\k -> label k == AD.from edge) $ M.keys $ nodes petri
   targetKey <- find (\k -> label k == AD.to edge) $ M.keys $ nodes petri
-  return $ repsertFlow sourceKey 1 targetKey petri
+  return $ alterFlow sourceKey 1 targetKey petri

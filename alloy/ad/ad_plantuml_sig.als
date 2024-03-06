@@ -2,7 +2,7 @@ module ad_plantuml_sig
 
 open uml_activity_diagram
 
-//For isolating nodes in order to translate them to "blocks", similiar to regions in state diagrams
+//For isolating nodes in order to translate them to "blocks", similar to regions in state diagrams
 abstract sig PlantUMLBlocks {
         nodes : disj some ActivityNodes,
         substructures : disj set PlantUMLBlocks
@@ -28,7 +28,7 @@ fun substructuresInThisAndDeeper [b1 : set PlantUMLBlocks] : set PlantUMLBlocks 
 fact {
         all c1 : PlantUMLBlocks | c1 not in substructuresInThisAndDeeper[c1]        //No cyclic substructures
         InitialNodes in (ActivityNodes - PlantUMLBlocks.nodes)                                //Prevent initial nodes in substructures
-        (ActivityNodes - InitialNodes) in PlantUMLBlocks.nodes                                //No seperate nodes
+        (ActivityNodes - InitialNodes) in PlantUMLBlocks.nodes                                //No separate nodes
 }
 
 fun incomingEdgeToThis [b1 : one PlantUMLBlocks] : one ActivityNodes {

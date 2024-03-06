@@ -19,7 +19,7 @@ spec = do
     it "checks if the basic Input is in given boundaries" $
       checkADConfig defaultADConfig `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
-      it "it returns a String with nessecary changes" $
+      it "it returns a String with necessary changes" $
         checkADConfig defaultADConfig{minActions=0, minObjectNodes=0}
           `shouldSatisfy` isJust
   describe "adConfigScope" $

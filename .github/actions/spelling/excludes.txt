@@ -7,12 +7,14 @@
 ignore$
 \.ai$
 \.avi$
+\.bat$
 \.bmp$
 \.bz2$
 \.cabal$
 \.crt$
 \.DS_Store$
 \.eot$
+\.ghci$
 \.gif$
 \.gitattributes$
 \.graffle$
@@ -46,3 +48,4 @@ ignore$
 ^legacy-app/
 ^\Qalloy-guidelines/alloy-style.sty\E$
 ^\Qtest/Spec.hs\E$
+^test/unit/

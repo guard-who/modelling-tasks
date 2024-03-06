@@ -97,10 +97,23 @@ convertNode' (current:queue) conf@(PlantUMLConvConf sn sb) diag seen =
     forkEnd = "forkend"
 
 
---Strategy: Find the corresponding merge/join to the decision/fork: That should be the first node reachable from all decision paths
---This should be the the head of the intersection of nodes traversed from the nodes that the decision/fork points to
---Then: Determine the subpaths between the decision and the merge and handle them via convertNode'
-handleDecisionOrFork :: ADNode -> PlantUMLConvConf -> UMLActivityDiagram -> [ADNode] -> String -> String -> String -> String
+{-|
+Strategy: Find the corresponding merge/join to the decision/fork:
+That should be the first node reachable from all decision paths
+This should be the head of the intersection of nodes traversed from the nodes
+that the decision/fork points to
+Then: Determine the subpaths between the decision and the merge
+and handle them via 'convertNode''
+-}
+handleDecisionOrFork
+  :: ADNode
+  -> PlantUMLConvConf
+  -> UMLActivityDiagram
+  -> [ADNode]
+  -> String
+  -> String
+  -> String
+  -> String
 handleDecisionOrFork startNode conf diag@(UMLActivityDiagram _ conns) seen startToken midToken endToken =
   let endNode = head $ foldr1 intersect $ filterDisjunctSublists $ map (\x -> traverseFromNode x diag seen) $ adjNodes startNode diag
       pathsToEnd =

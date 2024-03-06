@@ -123,7 +123,7 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
     Just g -> do
       translate $ do
         english "a transition sequence is sought which leads to the following marking:"
-        german "eine Transitionsfolge, durch die die folgende Markierung erreicht wird:"
+        german "eine Transitionsfolge, durch welche die folgende Markierung erreicht wird:"
       paragraph $ either image text g
       pure ()
   paragraph $ case noLonger of
