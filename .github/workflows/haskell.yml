@@ -30,11 +30,11 @@ jobs:
         uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
         with:
           apt-get: ${{ matrix.apt-get }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Cache Stack on unix
         id: cache-stack-unix
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         with:
           path: ~/.stack
           key: ${{ matrix.os }}-${{ matrix.plan.resolver }}-stack-home-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
@@ -42,14 +42,14 @@ jobs:
 
       - name: Cache Stack on windows
         id: cache-stack-windows
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         with:
           path: ~/AppData/Local/Programs/stack
           key: ${{ matrix.os }}-${{ matrix.plan.resolver }}-stack-home-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
         if: contains(matrix.os, 'windows')
 
       - name: Setup stack
-        uses: haskell/actions/setup@v1
+        uses: haskell-actions/setup@v2
         with:
           enable-stack: true
           stack-no-global: true
@@ -93,7 +93,7 @@ jobs:
         if: contains(matrix.os, 'windows')
 
       - name: Archive test artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: artifacts
