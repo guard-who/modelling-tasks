@@ -91,7 +91,6 @@ library
       Modelling.CdOd.Phrasing.English
       Modelling.CdOd.Phrasing.German
       Modelling.PetriNet.Reach.Draw
-      Modelling.PetriNet.Reach.Group
       Modelling.PetriNet.Reach.Roll
       Paths_modelling_tasks
   hs-source-dirs:
