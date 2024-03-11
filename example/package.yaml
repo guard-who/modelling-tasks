@@ -9,6 +9,7 @@ ghc-options:
   - -Werror
 dependencies:
   - base
+  - containers
   - graphviz
   - modelling-tasks
 library:

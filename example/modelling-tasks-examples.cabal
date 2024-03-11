@@ -29,6 +29,7 @@ library
       Modelling.PetriNet.PetriPickConcurrency.Config
       Modelling.PetriNet.PetriPickConflict.Config
       Modelling.PetriNet.PetriReach.Config
+      Modelling.PetriNet.PetriReach.Instance
   other-modules:
       Paths_modelling_tasks_examples
   hs-source-dirs:
@@ -36,6 +37,7 @@ library
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror
   build-depends:
       base
+    , containers
     , graphviz
     , modelling-tasks
   default-language: Haskell2010
