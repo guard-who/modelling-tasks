@@ -6,4 +6,4 @@ cradle:
       - path: "../src"
         component: "modelling-tasks:lib"
       - path: "src"
-        component: "modelling-tasks:lib"
+        component: "modelling-tasks-examples:lib"
