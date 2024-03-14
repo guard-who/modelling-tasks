@@ -16,6 +16,7 @@ module Modelling.Common (
 
 import qualified Control.Monad.Output.Generic     as Output (withLang)
 
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (forM_, unless)
 import Control.Monad.Output             (
   GenericLangM (unLangM),
@@ -26,7 +27,6 @@ import Control.Monad.Output             (
 import Control.Monad.Output.Generic (
   RunnableOutputMonad (..),
   )
-import Control.Monad.Trans              (MonadTrans(lift))
 import Data.List                        (isPrefixOf, sort)
 import Data.List.Extra                  (replace)
 import System.Directory                 (getDirectoryContents)

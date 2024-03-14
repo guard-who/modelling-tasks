@@ -13,9 +13,9 @@ import Modelling.PetriNet.Types (
   SimpleNode (SimplePlace, SimpleTransition),
   )
 
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output             (LangM')
-import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Control.Monad.Trans.Except       (runExceptT)
 import Data.GraphViz                    (GraphvizCommand)
 import Data.List                        (group, sort)
