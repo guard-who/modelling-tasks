@@ -94,6 +94,7 @@ similars
 skolem
 snd
 startuml
+subpaths
 subsubsection
 transitionen
 ulem
@@ -107,4 +108,5 @@ usetikzlibrary
 utf
 varepsilon
 vphantom
+xlink
 xss

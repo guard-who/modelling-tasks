@@ -39,7 +39,7 @@ import Modelling.Auxiliary.Common (
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
-  rerefuse,
+  reRefuse,
   simplifiedInformation,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
@@ -263,7 +263,7 @@ selectValidCdEvaluation path inst xs = addPretext $ do
       correctAnswer
         | showSolution inst = Just $ show $ selectValidCdSolution inst
         | otherwise = Nothing
-  rerefuse (multipleChoice cds correctAnswer solution xs)
+  reRefuse (multipleChoice cds correctAnswer solution xs)
     $ when (showExtendedFeedback inst)
     $ void $ M.traverseWithKey
       (selectValidCdFeedback path (withNavigations inst) (withNames inst) xs)

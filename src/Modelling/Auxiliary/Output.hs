@@ -5,7 +5,7 @@ module Modelling.Auxiliary.Output (
   addPretext,
   directionsAdvice,
   hoveringInformation,
-  rerefuse,
+  reRefuse,
   simplifiedInformation,
   ) where
 
@@ -82,12 +82,16 @@ addPretext = (*>) $
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
 
-rerefuse
+{-
+Append some remarks after some rating function.
+But re-reject afterwards (if it was rejected by the rating function).
+-}
+reRefuse
   :: (Monad m, Alternative m, OutputMonad m)
   => Rated m
   -> LangM m
   -> Rated m
-rerefuse xs ys =
+reRefuse xs ys =
   recoverWith (pure 0) xs
     $>>= \x -> ys
     $>> either (refuse (pure ()) *>) pure x

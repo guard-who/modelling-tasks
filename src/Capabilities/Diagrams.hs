@@ -1,4 +1,7 @@
-{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, OverloadedLists #-}
+{-# LANGUAGE Arrows #-}
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 -- | Defines a Monad context for rendering diagrams graphics to file.
 
 module Capabilities.Diagrams (
@@ -30,6 +33,7 @@ import Graphics.SVGFonts.ReadFont                 (PreparedFont)
 import Text.XML.HXT.Core
     ( returnA,
       (>>>),
+      (>>^),
       readString,
       runX,
       no,
@@ -102,27 +106,17 @@ atTag tag = deep (isElem >>> hasName tag)
 getGroup :: ArrowXml cat => cat (NTree XNode) SVGGroup
 getGroup = atTag "g" >>>
   proc g -> do
-    sljoin      <- getAttrValue "stroke-linejoin"   -< g
-    sopacity    <- getAttrValue "stroke-opacity"    -< g
-    fopacity    <- getAttrValue "fill-opacity"      -< g
-    stro        <- getAttrValue "stroke"            -< g
-    strowidth   <- getAttrValue "stroke-width"      -< g
-    fll         <- getAttrValue "fill"              -< g
-    slinecap    <- getAttrValue "stroke-linecap"    -< g
-    smiterlimit <- getAttrValue "stroke-miterlimit" -< g
-    gsvgClass   <- getAttrValue "class"             -< g
-    gpaths      <- listA getPath                    -< g
-    returnA -< SVGGroup
-      { strokeLinejoin = T.pack sljoin,
-        strokeOpacity  = T.pack sopacity,
-        fillOpacity  = T.pack fopacity,
-        stroke  = T.pack stro,
-        strokeWidth  = T.pack strowidth,
-        fill  = T.pack fll,
-        strokeLinecap  = T.pack slinecap,
-        strokeMiterlimit  = T.pack smiterlimit,
-        svgClass = T.pack gsvgClass,
-        paths = gpaths }
+    strokeLinejoin   <- getAttrValue "stroke-linejoin"   >>^ T.pack -< g
+    strokeOpacity    <- getAttrValue "stroke-opacity"    >>^ T.pack -< g
+    fillOpacity      <- getAttrValue "fill-opacity"      >>^ T.pack -< g
+    stroke           <- getAttrValue "stroke"            >>^ T.pack -< g
+    strokeWidth      <- getAttrValue "stroke-width"      >>^ T.pack -< g
+    fill             <- getAttrValue "fill"              >>^ T.pack -< g
+    strokeLinecap    <- getAttrValue "stroke-linecap"    >>^ T.pack -< g
+    strokeMiterlimit <- getAttrValue "stroke-miterlimit" >>^ T.pack -< g
+    svgClass         <- getAttrValue "class"             >>^ T.pack -< g
+    paths            <- listA getPath -< g
+    returnA -< SVGGroup {..}
 
 getPath :: ArrowXml cat => cat (NTree XNode) Path
 getPath = atTag "path" >>>
@@ -146,29 +140,17 @@ getPath = atTag "path" >>>
 getSVGAttributes :: ArrowXml cat => cat (NTree XNode) SVGOptions
 getSVGAttributes = atTag "svg" >>>
   proc s -> do
-    sxmlns         <- getAttrValue "xmlns"          -< s
-    sheight        <- getAttrValue "height"         -< s
-    sstrokeOpacity <- getAttrValue "stroke-opacity" -< s
-    sviewBox       <- getAttrValue "viewBox"        -< s
-    sfontSize      <- getAttrValue "font-size"      -< s
-    swidth         <- getAttrValue "width"          -< s
-    sxmlnsXlink    <- getAttrValue "xmlns:xlink"    -< s
-    sstroke        <- getAttrValue "stroke"         -< s
-    sversion       <- getAttrValue "version"        -< s
-    sgroups        <- listA getGroup -< s
-    returnA -< SVGOptions
-      {
-          xmlns = T.pack sxmlns,
-          height = T.pack sheight,
-          iStrokeOpacity = T.pack sstrokeOpacity,
-          viewBox = T.pack sviewBox,
-          fontSize = T.pack sfontSize,
-          width = T.pack swidth,
-          xmlnsXlink = T.pack sxmlnsXlink,
-          iStroke = T.pack sstroke,
-          version = T.pack sversion,
-          groups = sgroups
-      }
+    xmlns          <- getAttrValue "xmlns"          >>^ T.pack -< s
+    height         <- getAttrValue "height"         >>^ T.pack -< s
+    iStrokeOpacity <- getAttrValue "stroke-opacity" >>^ T.pack -< s
+    viewBox        <- getAttrValue "viewBox"        >>^ T.pack -< s
+    fontSize       <- getAttrValue "font-size"      >>^ T.pack -< s
+    width          <- getAttrValue "width"          >>^ T.pack -< s
+    xmlnsXlink     <- getAttrValue "xmlns:xlink"    >>^ T.pack -< s
+    iStroke        <- getAttrValue "stroke"         >>^ T.pack -< s
+    version        <- getAttrValue "version"        >>^ T.pack -< s
+    groups         <- listA getGroup -< s
+    returnA -< SVGOptions {..}
 
 applyClass :: SVGGroup -> [Path]
 applyClass x = [ modify p | p <- paths x]

@@ -60,7 +60,7 @@ import Modelling.Auxiliary.Common (
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
-  rerefuse,
+  reRefuse,
   simplifiedInformation,
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd, getInstances)
@@ -337,7 +337,7 @@ repairCdEvaluation path inst xs = addPretext $ do
       correctAnswer
         | showSolution inst = Just $ show $ repairCdSolution inst
         | otherwise = Nothing
-  rerefuse
+  reRefuse
     (multipleChoice chs correctAnswer solution xs)
     $ when (showExtendedFeedback inst)
     $ void $ M.traverseWithKey
