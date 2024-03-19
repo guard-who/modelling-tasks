@@ -95,7 +95,7 @@ library
       Paths_modelling_tasks
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=x-partial -Wwarn=incomplete-uni-patterns -Wwarn=unrecognised-warning-flags -Wwarn=orphans
   build-tools:
       alex
     , happy
@@ -182,7 +182,7 @@ test-suite modelling-tasks-test
       Paths_modelling_tasks
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=x-partial -Wwarn=incomplete-uni-patterns -Wwarn=unrecognised-warning-flags -Wwarn=orphans -threaded -rtsopts -with-rtsopts=-N
   build-tools:
       alex
     , happy

@@ -28,7 +28,9 @@ ghc-options:
   - -Widentities
   - -Wredundant-constraints
   - -Werror
+  - -Wwarn=x-partial
   - -Wwarn=incomplete-uni-patterns
+  - -Wwarn=unrecognised-warning-flags # remove when switching to lts-22 or later
   - -Wwarn=orphans
 dependencies:
   - MonadRandom
