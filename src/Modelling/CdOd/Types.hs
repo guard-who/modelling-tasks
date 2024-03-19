@@ -383,11 +383,11 @@ checkClassConfigWithProperties
   = Just [iii|
     'hasCompositionsPreventingParts' must not be set to 'Nothing'
     |]
-  | wrongAssocs > maxRelations - fst inheritanceLimits
-  || maybe False (wrongAssocs >) maxAssocs'
+  | wrongNonInheritances > maxRelations - fst inheritanceLimits
+  || maybe False (wrongNonInheritances >) maxNonInheritances'
   = Just [iii|
     The (maximum) number of non-inheritance relationships is too low for
-    the aimed at wrongAssocs!
+    the aimed at wrongNonInheritances!
     |]
   | wrongCompositions > maxCompositions
   || maybe False (wrongCompositions >) (snd compositionLimits)
@@ -407,8 +407,8 @@ checkClassConfigWithProperties
     The (maximum) number of possible compositions or inheritances is too low for
     creating composition cycles!
     |]
-  | minAssocs > maxRelations - fst inheritanceLimits
-  || maybe False (minAssocs >) maxAssocs'
+  | minNonInheritances > maxRelations - fst inheritanceLimits
+  || maybe False (minNonInheritances >) maxNonInheritances'
   = Just [iii|
     The (maximum) number of possible non-inheritance relationships is too low for
     the aimed at non-inheritance relationship properties!
@@ -443,7 +443,7 @@ checkClassConfigWithProperties
       | Just False == y = 0
       | otherwise = x
     plusOne x = if x /= 0 then x + 1 else x
-    minAssocs = (+ selfRelationships) . plusOne $ sum [
+    minNonInheritances = (+ selfRelationships) . plusOne $ sum [
       1 `forMaybe` hasDoubleRelationships,
       1 `forMaybe` hasReverseRelationships
       ]
@@ -466,7 +466,7 @@ checkClassConfigWithProperties
     maxCompositionsInheritances' = (+)
       <$> snd compositionLimits
       <*> snd inheritanceLimits
-    maxAssocs' = (\x y z -> x + y + z)
+    maxNonInheritances' = (\x y z -> x + y + z)
       <$> snd aggregationLimits
       <*> snd associationLimits
       <*> snd compositionLimits
@@ -602,7 +602,7 @@ maxObjects x = ObjectConfig {
   }
 
 data RelationshipProperties = RelationshipProperties {
-    wrongAssocs             :: Int,
+    wrongNonInheritances    :: Int,
     wrongCompositions       :: Int,
     selfRelationships       :: Int,
     selfInheritances        :: Int,
@@ -618,7 +618,7 @@ data RelationshipProperties = RelationshipProperties {
 
 defaultProperties :: RelationshipProperties
 defaultProperties = RelationshipProperties {
-    wrongAssocs             = 0,
+    wrongNonInheritances    = 0,
     wrongCompositions       = 0,
     selfRelationships       = 0,
     selfInheritances        = 0,
@@ -634,7 +634,7 @@ defaultProperties = RelationshipProperties {
 
 towardsValidProperties :: RelationshipProperties -> RelationshipProperties
 towardsValidProperties properties@RelationshipProperties {..} = properties {
-  wrongAssocs = snd betterWrongAssocs,
+  wrongNonInheritances = snd betterWrongNonInheritances,
   wrongCompositions = snd betterWrongCompositions,
   selfInheritances = snd betterSelfInheritances,
   hasReverseInheritances = snd fixedReverseInheritances,
@@ -642,9 +642,9 @@ towardsValidProperties properties@RelationshipProperties {..} = properties {
   hasCompositionCycles = snd fixedCompositionCycles
   }
   where
-    betterWrongAssocs = hasBetter False wrongAssocs
+    betterWrongNonInheritances = hasBetter False wrongNonInheritances
     betterWrongCompositions =
-      hasBetter (fst betterWrongAssocs) wrongCompositions
+      hasBetter (fst betterWrongNonInheritances) wrongCompositions
     betterSelfInheritances =
       hasBetter (fst betterWrongCompositions) selfInheritances
     fixedReverseInheritances =
@@ -698,7 +698,7 @@ toPropertySet RelationshipProperties {..} =
     ifJustTrue hasReverseRelationships ReverseRelationships,
     ifAny selfInheritances SelfInheritances,
     ifAny selfRelationships SelfRelationships,
-    ifAny wrongAssocs WrongAssociationLimits,
+    ifAny wrongNonInheritances WrongAssociationLimits,
     ifAny wrongCompositions WrongCompositionLimits
     ]
   where
@@ -790,7 +790,7 @@ anyThickEdge = any fst . calculateThickRelationships
 
 calculateThickRelationships :: Cd -> [(Bool, Relationship String String)]
 calculateThickRelationships ClassDiagram {..} =
-  map (first isAssocThick . dupe) relationships
+  map (first isNonInheritanceThick . dupe) relationships
   where
     classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
       where
@@ -802,32 +802,32 @@ calculateThickRelationships ClassDiagram {..} =
     inheritances = filter
       (\case Inheritance {} -> True; _ -> False)
       relationships
-    assocsBothWays = concatMap
-      (map (both linking) . assocBothWays)
+    nonInheritancesBothWays = concatMap
+      (map (both linking) . nonInheritanceBothWays)
       relationships
-    isAssocThick r = case r of
+    isNonInheritanceThick r = case r of
       Inheritance {} -> False
       Association {..} -> shouldBeThick
         (linking associationFrom)
         (linking associationTo)
         classesWithSubclasses
-        assocsBothWays
+        nonInheritancesBothWays
       Aggregation {..} -> shouldBeThick
         (linking aggregationWhole)
         (linking aggregationPart)
         classesWithSubclasses
-        assocsBothWays
+        nonInheritancesBothWays
       Composition {..} -> shouldBeThick
         (linking compositionWhole)
         (linking compositionPart)
         classesWithSubclasses
-        assocsBothWays
-    assocBothWays Inheritance {} = []
-    assocBothWays Association {..} =
+        nonInheritancesBothWays
+    nonInheritanceBothWays Inheritance {} = []
+    nonInheritanceBothWays Association {..} =
       [(associationFrom, associationTo), (associationTo, associationFrom)]
-    assocBothWays Aggregation {..} =
+    nonInheritanceBothWays Aggregation {..} =
       [(aggregationPart, aggregationWhole), (aggregationWhole, aggregationPart)]
-    assocBothWays Composition {..} =
+    nonInheritanceBothWays Composition {..} =
       [(compositionPart, compositionWhole), (compositionWhole, compositionPart)]
 
 shouldBeThick

@@ -24,7 +24,7 @@ pred smaller [l, l2 : Limit] {
   not l = l2 and smallerOrSame [l, l2]
 }
 
-abstract sig Assoc extends Relationship {
+abstract sig NonInheritance extends Relationship {
   fromLower : one Limit,
   fromUpper : one Limit,
   toLower : one Limit,
@@ -34,57 +34,57 @@ abstract sig Assoc extends Relationship {
   toLower != Star or toUpper != Star
 }
 
-pred validFromLimitsAssoc [a : Assoc] {
+pred validFromLimitsNonInheritance [a : NonInheritance] {
   smallerOrSame [a.fromLower, a.fromUpper]
   a.fromLower = Zero implies a.fromUpper != Zero
 }
 
-pred validToLimitsAssoc [a : Assoc] {
+pred validToLimitsNonInheritance [a : NonInheritance] {
   smallerOrSame [a.toLower, a.toUpper]
   a.toLower = Zero implies a.toUpper != Zero
 }
 
-pred validLimitsAssoc [a : Assoc] {
-  validFromLimitsAssoc [a]
-  validToLimitsAssoc [a]
+pred validLimitsNonInheritance [a : NonInheritance] {
+  validFromLimitsNonInheritance [a]
+  validToLimitsNonInheritance [a]
 }
 
-pred validLimitsComposition [a : Assoc] {
+pred validLimitsComposition [a : NonInheritance] {
   (a.toLower = Zero or a.toLower = One) and a.toUpper = One
 }
 
-pred sameFromLimits [a, a2 : Assoc] {
+pred sameFromLimits [a, a2 : NonInheritance] {
   a.fromLower = a2.fromLower
   a.fromUpper = a2.fromUpper
 }
 
-pred sameToLimits [a, a2 : Assoc] {
+pred sameToLimits [a, a2 : NonInheritance] {
   a.toLower = a2.toLower
   a.toUpper = a2.toUpper
 }
 
-pred sameLimits [a, a2 : Assoc] {
+pred sameLimits [a, a2 : NonInheritance] {
   sameFromLimits [a, a2]
   sameToLimits [a, a2]
 }
 
-pred increasedFromRange [a, a2 : Assoc] {
+pred increasedFromRange [a, a2 : NonInheritance] {
   smaller [a2.fromLower, a.fromLower] and a.fromUpper = a2.fromUpper
   or smaller [a.fromUpper, a2.fromUpper] and a.fromLower = a2.fromLower
   sameToLimits [a, a2]
 }
 
-pred increasedToRange [a, a2 : Assoc] {
+pred increasedToRange [a, a2 : NonInheritance] {
   smaller [a2.toLower, a.toLower] and a.toUpper = a2.toUpper
   or smaller [a.toUpper, a2.toUpper] and a.toLower = a2.toLower
   sameFromLimits [a, a2]
 }
 
-pred increasedRange [a, a2 : Assoc] {
+pred increasedRange [a, a2 : NonInheritance] {
   increasedFromRange [a, a2] iff not increasedToRange [a, a2]
 }
 
-pred changedRange [a, a2 : Assoc] {
+pred changedRange [a, a2 : NonInheritance] {
   increasedRange [a, a2] iff not increasedRange [a2, a]
 }
 
@@ -104,17 +104,17 @@ pred shiftLimits [l1, l1b, l2, l2b : Limit] {
   }
 }
 
-pred shiftedRangeUp [a, a2 : Assoc] {
+pred shiftedRangeUp [a, a2 : NonInheritance] {
   shiftLimits [a.fromLower, a.fromUpper, a2.fromLower, a2.fromUpper] and sameToLimits [a, a2]
   iff not (shiftLimits [a.toLower, a.toUpper, a2.toLower, a2.toUpper] and sameFromLimits [a, a2])
 }
 
-pred shiftedRange [a, a2 : Assoc] {
+pred shiftedRange [a, a2 : NonInheritance] {
   shiftedRangeUp [a, a2] iff not shiftedRangeUp [a2, a]
 }
 
 assert sameLimits {
-  all disj a, a2 : Assoc |
+  all disj a, a2 : NonInheritance |
     sameLimits [a, a2] iff sameFromLimits [a, a2] and sameToLimits [a, a2]
 }
 
@@ -132,11 +132,11 @@ assert shiftingEqually {
 }
 
 assert shiftedUpIsValid {
-  all disj a, a2 : Assoc |
-    shiftedRangeUp [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
+  all disj a, a2 : NonInheritance |
+    shiftedRangeUp [a, a2] and validLimitsNonInheritance [a] implies validLimitsNonInheritance [a2]
 }
 
 assert increasedRangeIsValid {
-  all disj a, a2 : Assoc |
-    increasedRange [a, a2] and validLimitsAssoc [a] implies validLimitsAssoc [a2]
+  all disj a, a2 : NonInheritance |
+    increasedRange [a, a2] and validLimitsNonInheritance [a] implies validLimitsNonInheritance [a2]
 }

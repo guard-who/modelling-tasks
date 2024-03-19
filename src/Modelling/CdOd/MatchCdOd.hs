@@ -510,19 +510,19 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
   showSolution = False
   }
 
-classAndAssocNames :: MatchCdOdInstance -> ([String], [String])
-classAndAssocNames inst =
+classAndNonInheritanceNames :: MatchCdOdInstance -> ([String], [String])
+classAndNonInheritanceNames inst =
   let names = nubOrd $ concatMap classNames (diagrams inst)
-      assocs = nubOrd $ concatMap associationNames (diagrams inst)
+      nonInheritances = nubOrd $ concatMap associationNames (diagrams inst)
         ++ concatMap (linkNames . snd) (instances inst)
-  in (names, assocs)
+  in (names, nonInheritances)
 
 instance Randomise MatchCdOdInstance where
   randomise inst = do
-    let (names, assocs) = classAndAssocNames inst
+    let (names, nonInheritances) = classAndNonInheritanceNames inst
     names'  <- shuffleM names
-    assocs' <- shuffleM assocs
-    renameInstance inst names' assocs'
+    nonInheritances' <- shuffleM nonInheritances
+    renameInstance inst names' nonInheritances'
       >>= shuffleInstance
       >>= changeGeneratorValue
   isRandomisable MatchCdOdInstance {..} = listToMaybe
@@ -580,14 +580,14 @@ renameInstance
   -> [String]
   -> [String]
   -> m MatchCdOdInstance
-renameInstance inst names' assocs' = do
+renameInstance inst names' nonInheritances' = do
   let cds = diagrams inst
       ods = instances inst
-      (names, assocs) = classAndAssocNames inst
+      (names, nonInheritances) = classAndNonInheritanceNames inst
       bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationships bmNames bmAssocs
-      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
+      bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
+      renameCd = renameClassesAndRelationships bmNames bmNonInheritances
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmNonInheritances
   cds' <- renameCd `mapM` cds
   ods' <- mapM renameOd `mapM` ods
   return $ MatchCdOdInstance {

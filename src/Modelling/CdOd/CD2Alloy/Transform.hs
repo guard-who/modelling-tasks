@@ -369,15 +369,15 @@ pred cd#{index} {
       (maybe [] (uncurry3 associationFromTo) . nameFromTo)
       relationships
     associationFromTo name from to = [
-      makeAssoc "Attrib" (linking from) name (linking to) (limits to),
-      makeAssoc "" (linking to) name (linking from) (limits from)
+      makeNonInheritance "Attrib" (linking from) name (linking to) (limits to),
+      makeNonInheritance "" (linking to) name (linking from) (limits from)
       ]
-    makeAssoc
+    makeNonInheritance
       :: Show a
       => String -> String -> String -> String -> (a, Maybe a) -> String
-    makeAssoc att from name to (low, Nothing) =
+    makeNonInheritance att from name to (low, Nothing) =
       [i|  ObjL#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}]|]
-    makeAssoc att from name to (low, Just up) =
+    makeNonInheritance att from name to (low, Just up) =
       [i|  ObjLU#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}, #{show up}]|]
     anyCompositions =
       any (\case Composition {} -> True; _ -> False) relationships

@@ -68,7 +68,7 @@ objectName (Object n x) = n ++ '$' : show x
 newtype NumberedClass = NumberedClass Int
   deriving (Eq, Ord)
 
-data NumberedAssoc = NumberedAssoc String Int
+data NumberedNonInheritance = NumberedNonInheritance String Int
   deriving (Eq, Ord)
 
 type ClassDiagramInstance = GenericClassDiagramInstance String String
@@ -165,7 +165,7 @@ fromInstance insta = do
   es <- instanceToEdges insta
   cs <- instanceToChanges insta
   namesOfClasses <- instanceToNamesOf insta "Class"
-  namesOfAssocs <- instanceToNamesOf insta "Assoc"
+  namesOfNonInheritances <- instanceToNamesOf insta "NonInheritance"
   let baseCd = ClassDiagram {
         classNames = namesOfClasses,
         relationships =
@@ -177,7 +177,7 @@ fromInstance insta = do
         }
   return ClassDiagramInstance {
     instanceClassDiagram = baseCd,
-    instanceRelationshipNames = namesOfAssocs,
+    instanceRelationshipNames = namesOfNonInheritances,
     instanceChangesAndCds = [
         ChangeAndCd {
           relationshipChange = Change a r,
@@ -230,7 +230,7 @@ instanceToEdges insta = do
   r'         <- lookupSig (scoped "this" "Relationship") insta
   rFrom      <- getRelation "from" r'
   rTo        <- getRelation "to" r'
-  a'         <- lookupSig (scoped "this" "Assoc") insta
+  a'         <- lookupSig (scoped "this" "NonInheritance") insta
   aFromLower <- getRelation "fromLower" a'
   aFromUpper <- getRelation "fromUpper" a'
   aToLower   <- getRelation "toLower" a'

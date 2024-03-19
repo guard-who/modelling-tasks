@@ -4,9 +4,9 @@ open uml/cd/assoclimits
 
 sig Inheritance extends Relationship {}
 
-sig Aggregation extends Assoc {}
-sig Association extends Assoc {}
-sig Composition extends Assoc {}
+sig Aggregation extends NonInheritance {}
+sig Association extends NonInheritance {}
+sig Composition extends NonInheritance {}
 
 pred selfRelationship [r : Relationship] {
   r.from = r.to
@@ -69,14 +69,14 @@ pred thickEdgeCriterion [xFrom, xTo, yFrom, yTo : Class, is : set Inheritance] {
           or second and xFrom in yFrom.subs)
 }
 
-pred thickEdge [a : Assoc, assocs : set Assoc, is : set Inheritance] {
-  some a2 : assocs |
+pred thickEdge [a : NonInheritance, nonInheritances : set NonInheritance, is : set Inheritance] {
+  some a2 : nonInheritances |
     thickEdgeCriterion [a.from, a.to, a2.from, a2.to, is]
     or thickEdgeCriterion [a.to, a.from, a2.from, a2.to, is]
 }
 
-pred noThickEdges [assocs : set Assoc, is : set Inheritance] {
-  no a : assocs | thickEdge [a, assocs, is]
+pred noThickEdges [nonInheritances : set NonInheritance, is : set Inheritance] {
+  no a : nonInheritances | thickEdge [a, nonInheritances, is]
 }
 
 pred noDoubleRelationships [rs : set Relationship] {
@@ -110,23 +110,23 @@ pred sameKind [r, r2 : Relationship] {
 pred flip [c : Change] {
   c.add.from = c.remove.to and c.add.to = c.remove.from
   sameKind [c.add, c.remove]
-  c.add in Assoc implies sameLimits [c.add, c.remove]
+  c.add in NonInheritance implies sameLimits [c.add, c.remove]
 }
 
 pred changedKind [c : Change] {
   sameDirection [c.add, c.remove]
   not sameKind [c.add, c.remove]
-  c.add in Assoc and c.remove in Assoc implies sameFromLimits [c.add, c.remove]
-  c.add in Assoc and c.remove in Assoc
+  c.add in NonInheritance and c.remove in NonInheritance implies sameFromLimits [c.add, c.remove]
+  c.add in NonInheritance and c.remove in NonInheritance
     and (validLimitsComposition [c.remove] or not c.add in Composition)
     implies sameLimits [c.add, c.remove]
 }
 
 pred changedLimit [c : Change] {
-  c.add in Assoc
+  c.add in NonInheritance
   sameDirection [c.add, c.remove]
   sameKind [c.add, c.remove]
-  validLimitsAssoc [c.add]
+  validLimitsNonInheritance [c.add]
   c.add in Composition implies validLimitsComposition [c.add]
   shiftedRange [c.add, c.remove] iff not changedRange [c.add, c.remove]
 }
@@ -135,7 +135,7 @@ pred sameRelationship [r, r2 : Relationship] {
   r.from = r2.from
   sameKind [r, r2]
   sameDirection [r, r2]
-  r in Assoc implies sameLimits [r, r2]
+  r in NonInheritance implies sameLimits [r, r2]
 }
 
 pred change [c : Change, rs : set Relationship] {
@@ -158,11 +158,11 @@ abstract sig Boolean {}
 one sig True, False extends Boolean {}
 
 pred classDiagram [
-  assocs : set Assoc,
+  nonInheritances : set NonInheritance,
   compositions : set Composition,
   inheritances : set Inheritance,
   relationships : set Relationship,
-  wrongAssocs : one Int,
+  wrongNonInheritances : one Int,
   wrongCompositions : one Int,
   selfRelationships : one Int,
   selfInheritances : one Int,
@@ -174,20 +174,20 @@ pred classDiagram [
   hasCompositionCycles : one Boolean,
   hasCompositionsPreventingParts : lone Boolean,
   hasThickEdges : lone Boolean] {
-  #{ a : assocs | not validLimitsAssoc [a]} = wrongAssocs
-  #{ a : assocs | not validFromLimitsAssoc [a] iff validToLimitsAssoc [a]} = wrongAssocs
+  #{ a : nonInheritances | not validLimitsNonInheritance [a]} = wrongNonInheritances
+  #{ a : nonInheritances | not validFromLimitsNonInheritance [a] iff validToLimitsNonInheritance [a]} = wrongNonInheritances
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
-  #{ r : assocs | selfRelationship [r]} = selfRelationships
+  #{ r : nonInheritances | selfRelationship [r]} = selfRelationships
   #{ i : inheritances | selfRelationship [i]} = selfInheritances
   no i : inheritances | not noDoubleRelationships [i]
-  no i : inheritances, a : assocs |
+  no i : inheritances, a : nonInheritances |
     sameDirection [i, a] or reverseRelationship [i, a]
   hasDoubleRelationships = True
-    implies not noDoubleRelationships [assocs]
-    else hasDoubleRelationships = False implies noDoubleRelationships [assocs]
+    implies not noDoubleRelationships [nonInheritances]
+    else hasDoubleRelationships = False implies noDoubleRelationships [nonInheritances]
   hasReverseRelationships = True
-    implies not noReverseRelationships [assocs]
-    else hasReverseRelationships = False implies noReverseRelationships [assocs]
+    implies not noReverseRelationships [nonInheritances]
+    else hasReverseRelationships = False implies noReverseRelationships [nonInheritances]
   hasReverseInheritances = True
     implies not noReverseRelationships [inheritances]
     else noReverseRelationships [inheritances]
@@ -205,13 +205,13 @@ pred classDiagram [
     else hasCompositionsPreventingParts = False
       implies noCompositionsPreventParts [inheritances, compositions]
   hasThickEdges = True
-    implies not noThickEdges[assocs, inheritances]
-    else hasThickEdges = False implies noThickEdges[assocs, inheritances]
+    implies not noThickEdges[nonInheritances, inheritances]
+    else hasThickEdges = False implies noThickEdges[nonInheritances, inheritances]
 }
 
 pred changeOfFirstCD [
   c : one Change,
-  wrongAssocs : one Int,
+  wrongNonInheritances : one Int,
   wrongCompositions : one Int,
   selfRelationships : one Int,
   selfInheritances : one Int,
@@ -223,13 +223,13 @@ pred changeOfFirstCD [
   hasCompositionCycles : one Boolean,
   hasCompositionsPreventingParts : lone Boolean,
   hasThickEdges : lone Boolean] {
-    let Assoc2 = Assoc - (Change.add - c.add) - c.remove,
+    let NonInheritance2 = NonInheritance - (Change.add - c.add) - c.remove,
         Composition2 = Composition - (Change.add - c.add) - c.remove,
         Relationship2 = Relationship - (Change.add - c.add) - c.remove,
         Inheritance2 = Inheritance - (Change.add - c.add) - c.remove {
       change[c, Relationship - Change.add]
-      classDiagram [Assoc2, Composition2, Inheritance2, Relationship2,
-        wrongAssocs, wrongCompositions, selfRelationships, selfInheritances,
+      classDiagram [NonInheritance2, Composition2, Inheritance2, Relationship2,
+        wrongNonInheritances, wrongCompositions, selfRelationships, selfInheritances,
         hasDoubleRelationships, hasReverseRelationships, hasReverseInheritances,
         hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,
         hasCompositionsPreventingParts, hasThickEdges]

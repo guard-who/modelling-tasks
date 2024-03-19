@@ -7,7 +7,7 @@ import Modelling.CdOd.NameCdError (
   NameCdErrorInstance (classDiagram, errorReasons),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
-  classAndAssocNames,
+  classAndNonInheritanceNames,
   defaultNameCdErrorConfig,
   defaultNameCdErrorInstance,
   isRelevant,
@@ -44,11 +44,11 @@ spec = do
   describe "renameInstance" $
     it "is reversable" $ do
       let inst = defaultNameCdErrorInstance
-          (names, assocs) = classAndAssocNames inst
+          (names, nonInheritances) = classAndNonInheritanceNames inst
       names' <- shuffleM names
-      assocs' <- shuffleM assocs
-      renamed <- renameInstance inst names' assocs'
-      renameInstance renamed names assocs `shouldReturn` inst
+      nonInheritances' <- shuffleM nonInheritances
+      renamed <- renameInstance inst names' nonInheritances'
+      renameInstance renamed names nonInheritances `shouldReturn` inst
   where
     cfg = defaultNameCdErrorConfig {
       timeout = Just 5000000

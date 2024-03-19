@@ -14,7 +14,7 @@ module Modelling.CdOd.RepairCd (
   checkClassConfigAndChanges,
   checkRepairCdConfig,
   checkRepairCdInstance,
-  classAndAssocNames,
+  classAndNonInheritanceNames,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
   allowEverything,
@@ -403,26 +403,26 @@ checkRepairCdInstance RepairCdInstance {..}
   | otherwise
   = Nothing
 
-classAndAssocNames :: RepairCdInstance -> ([String], [String])
-classAndAssocNames inst =
+classAndNonInheritanceNames :: RepairCdInstance -> ([String], [String])
+classAndNonInheritanceNames inst =
   let cd = classDiagram inst
       allChs = M.elems $ changes inst
       cds = map (either id id . hint) allChs
       chs = map option allChs
       names = nubOrd $ classNames cd
         ++ concatMap classNames cds
-      assocs = nubOrd $ associationNames cd
+      nonInheritances = nubOrd $ associationNames cd
         ++ mapMaybe (add . annotated >=> relationshipName) chs
         ++ mapMaybe (remove . annotated >=> relationshipName) chs
         ++ concatMap associationNames cds
-  in (names, assocs)
+  in (names, nonInheritances)
 
 instance Randomise RepairCdInstance where
   randomise inst = do
-    let (names, assocs) = classAndAssocNames inst
+    let (names, nonInheritances) = classAndNonInheritanceNames inst
     names' <- shuffleM names
-    assocs' <- shuffleM assocs
-    renameInstance inst names' assocs'
+    nonInheritances' <- shuffleM nonInheritances
+    renameInstance inst names' nonInheritances'
       >>= shuffleInstance
 
 instance RandomiseLayout RepairCdInstance where
@@ -460,12 +460,12 @@ renameInstance
   -> [String]
   -> [String]
   -> m RepairCdInstance
-renameInstance inst names' assocs' = do
-  let (names, assocs) = classAndAssocNames inst
+renameInstance inst names' nonInheritances' = do
+  let (names, nonInheritances) = classAndNonInheritanceNames inst
       bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationships bmNames bmAssocs
-      renameEdge = renameClassesAndRelationships bmNames bmAssocs
+      bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
+      renameCd = renameClassesAndRelationships bmNames bmNonInheritances
+      renameEdge = renameClassesAndRelationships bmNames bmNonInheritances
   cd <- renameCd $ classDiagram inst
   chs <- mapM (mapInValidOptionM (mapM $ mapM renameEdge) renameCd renameCd)
     $ changes inst
@@ -871,7 +871,7 @@ legalChanges allowed = noChange : [
 
 illegalChanges :: AllowedProperties -> [PropertyChange]
 illegalChanges allowed = map ($ const False) $ [
-    PropertyChange "add wrong association" addWrongAssocs
+    PropertyChange "add wrong association" addWrongNonInheritances
   | wrongAssociationLimits allowed] ++ [
     PropertyChange "add wrong composition" addWrongCompositions
   | wrongCompositionLimits allowed] ++ [
@@ -884,9 +884,9 @@ illegalChanges allowed = map ($ const False) $ [
     PropertyChange "force composition cycles" withCompositionCycles
   | compositionCycles allowed]
   where
-    addWrongAssocs :: RelationshipProperties -> RelationshipProperties
-    addWrongAssocs config@RelationshipProperties {..}
-      = config { wrongAssocs = wrongAssocs + 1 }
+    addWrongNonInheritances :: RelationshipProperties -> RelationshipProperties
+    addWrongNonInheritances config@RelationshipProperties {..}
+      = config { wrongNonInheritances = wrongNonInheritances + 1 }
     addWrongCompositions :: RelationshipProperties -> RelationshipProperties
     addWrongCompositions config@RelationshipProperties {..}
       = config { wrongCompositions = wrongCompositions + 1 }

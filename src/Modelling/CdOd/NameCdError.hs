@@ -19,7 +19,7 @@ module Modelling.CdOd.NameCdError (
   TaskTextPart (..),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
-  classAndAssocNames,
+  classAndNonInheritanceNames,
   defaultNameCdErrorAnswer,
   defaultNameCdErrorConfig,
   defaultNameCdErrorInstance,
@@ -640,19 +640,19 @@ nameCdErrorSolution x = NameCdErrorAnswer {
     $ relevantRelationships x
   }
 
-classAndAssocNames :: NameCdErrorInstance -> ([String], [String])
-classAndAssocNames inst =
+classAndNonInheritanceNames :: NameCdErrorInstance -> ([String], [String])
+classAndNonInheritanceNames inst =
   let cd = unannotateCd $ classDiagram inst
       names = nubOrd $ classNames cd
-      assocs = nubOrd $ associationNames cd
-  in (names, assocs)
+      nonInheritances = nubOrd $ associationNames cd
+  in (names, nonInheritances)
 
 instance Randomise NameCdErrorInstance where
   randomise inst = do
-    let (names, assocs) = classAndAssocNames inst
+    let (names, nonInheritances) = classAndNonInheritanceNames inst
     names' <- shuffleM names
-    assocs' <- shuffleM assocs
-    renameInstance inst names' assocs'
+    nonInheritances' <- shuffleM nonInheritances
+    renameInstance inst names' nonInheritances'
       >>= shuffleInstance
 
 instance RandomiseLayout NameCdErrorInstance where
@@ -703,11 +703,11 @@ renameInstance
   -> [String]
   -> [String]
   -> m NameCdErrorInstance
-renameInstance inst@NameCdErrorInstance {..} names' assocs' = do
-  let (names, assocs) = classAndAssocNames inst
+renameInstance inst@NameCdErrorInstance {..} names' nonInheritances' = do
+  let (names, nonInheritances) = classAndNonInheritanceNames inst
       bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationships bmNames bmAssocs
+      bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
+      renameCd = renameClassesAndRelationships bmNames bmNonInheritances
   cd <- renameCd classDiagram
   return $ NameCdErrorInstance {
     classDiagram = cd,

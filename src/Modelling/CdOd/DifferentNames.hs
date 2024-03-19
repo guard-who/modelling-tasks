@@ -600,28 +600,28 @@ getDifferentNamesTask fhead config cd' = do
 All names within a 'DifferentNamesInstance'
 including names reserved for shuffling.
 -}
-classAssocAndLinkNames
+classNonInheritanceAndLinkNames
   :: DifferentNamesInstance
   -> ([String], [String], [String])
-classAssocAndLinkNames DifferentNamesInstance {..} =
+classNonInheritanceAndLinkNames DifferentNamesInstance {..} =
   let names = classNames cDiagram
-      assocs = associationNames cDiagram
+      nonInheritances = associationNames cDiagram
       additional = case linkShuffling of
         ConsecutiveLetters -> []
         WithAdditionalNames xs -> xs
       links = linkNames oDiagram ++ additional
-  in (names, assocs, links)
+  in (names, nonInheritances, links)
 
 instance Randomise DifferentNamesInstance where
   randomise inst@DifferentNamesInstance {..} = do
-    let (names, assocs, lNames) = classAssocAndLinkNames inst
+    let (names, nonInheritances, lNames) = classNonInheritanceAndLinkNames inst
         links = case linkShuffling of
           ConsecutiveLetters -> take (length lNames) (map (:[]) ['z', 'y' ..])
           WithAdditionalNames _ -> lNames
     names'  <- shuffleM names
-    assocs' <- shuffleM assocs
+    nonInheritances' <- shuffleM nonInheritances
     links' <- shuffleM links
-    renameInstance inst names' assocs' links'
+    renameInstance inst names' nonInheritances' links'
       >>= changeGeneratorValue
   isRandomisable DifferentNamesInstance {..} =
     isObjectDiagramRandomisable oDiagram
@@ -656,21 +656,21 @@ renameInstance
   -> [String]
   -> [String]
   -> m DifferentNamesInstance
-renameInstance inst names' assocs' linkNs' = do
+renameInstance inst names' nonInheritances' linkNs' = do
   let cd = cDiagram inst
       od = oDiagram inst
-      (names, assocs, linkNs) = classAssocAndLinkNames inst
+      (names, nonInheritances, linkNs) = classNonInheritanceAndLinkNames inst
       bm = BM.toAscList $ fromNameMapping $ mapping inst
       bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
+      bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
       bmLinks  = BM.fromList $ zip linkNs linkNs'
       bm'      = BM.fromList
         [ (a', l')
         | (a, l) <- bm
-        , a' <- BM.lookup a bmAssocs
+        , a' <- BM.lookup a bmNonInheritances
         , l' <- BM.lookup l bmLinks
         ]
-  cd' <- renameClassesAndRelationships bmNames bmAssocs cd
+  cd' <- renameClassesAndRelationships bmNames bmNonInheritances cd
   od' <- renameObjectsWithClassesAndLinksInOd bmNames bmLinks od
   shuffling <- mapM (`BM.lookup` bmLinks) $ linkShuffling inst
   return $ DifferentNamesInstance {

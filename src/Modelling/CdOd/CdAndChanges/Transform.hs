@@ -56,14 +56,14 @@ transformNoChanges config properties withNonTrivialInheritance =
   where
     part = [__i|
       fact{
-      #{nonTrivialInheritanceConstraint "Inheritance" "Assoc" withNonTrivialInheritance}
+      #{nonTrivialInheritanceConstraint "Inheritance" "NonInheritance" withNonTrivialInheritance}
       }
       |]
 
 nonTrivialInheritanceConstraint :: String -> String -> Maybe Bool -> String
-nonTrivialInheritanceConstraint inheritances assocs withNonTrivialInheritance =
+nonTrivialInheritanceConstraint inheritances nonInheritances withNonTrivialInheritance =
   (`foldMap` trivialInh) $ \x -> [i|  #{withInheritance}
-  #{x} i : #{inheritances} | i.to in ((#{assocs} + #{inheritances}).from + #{assocs}.to)|]
+  #{x} i : #{inheritances} | i.to in ((#{nonInheritances} + #{inheritances}).from + #{nonInheritances}.to)|]
   where
     trivialInh = withNonTrivialInheritance
       <&> bool "no" "all"
@@ -126,8 +126,8 @@ fact restrictChanges {
       if byName
       then ""
       else [i|
-fact preventSameAssocs {
-  no disj x, y : Assoc |
+fact preventSameNonInheritances {
+  no disj x, y : NonInheritance |
     sameRelationship[x, y]
 }
 |]
@@ -150,8 +150,8 @@ givenClassDiagram cd@ClassDiagram {classNames} = [i|
 pred cd {
   Class = #{unionOf classNames}
 #{concatMap relationshipConstraints namedRelationships}
-  Assoc = Association + Aggregation + Composition
-  Relationship = Assoc + Inheritance
+  NonInheritance = Association + Aggregation + Composition
+  Relationship = NonInheritance + Inheritance
   Association - Change.add = #{unionOf $ concat associations}
   Aggregation - Change.add = #{unionOf $ concat aggregations}
   Composition - Change.add = #{unionOf $ concat compositions}
@@ -164,8 +164,8 @@ pred cd {
       | otherwise = intercalate " + " xs
     namedRelationships = nameRelationships cd
     (associations, aggregations, compositions, inheritances) =
-      unzip4 $ map assocName namedRelationships
-    assocName (name, x) = case x of
+      unzip4 $ map nonInheritanceName namedRelationships
+    nonInheritanceName (name, x) = case x of
       Association {} -> ([name], [], [], [])
       Aggregation {} -> ([], [name], [], [])
       Composition {} -> ([], [], [name], [])
@@ -206,14 +206,14 @@ classDiagram config props = [i|
 //////////////////////////////////////////////////
 
 pred cd {
-  let Assoc2 = Assoc - Change.add,
+  let NonInheritance2 = NonInheritance - Change.add,
       Association2 = Association - Change.add,
       Aggregation2 = Aggregation - Change.add,
       Composition2 = Composition - Change.add,
       Relationship2 = Relationship - Change.add,
       Inheritance2 = Inheritance - Change.add {
-    classDiagram [Assoc2, Composition2, Inheritance2, Relationship2,
-      #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
+    classDiagram [NonInheritance2, Composition2, Inheritance2, Relationship2,
+      #{wrongNonInheritances props}, #{wrongCompositions props}, #{selfRelationships props},
       #{selfInheritances props},
       #{maybeToAlloySet $ hasDoubleRelationships props},
       #{maybeToAlloySet $ hasReverseRelationships props},
@@ -266,7 +266,7 @@ sig C#{n} extends Change {}
 
 pred #{change} {
   changeOfFirstCD [C#{n},
-    #{wrongAssocs props}, #{wrongCompositions props}, #{selfRelationships props},
+    #{wrongNonInheritances props}, #{wrongCompositions props}, #{selfRelationships props},
     #{selfInheritances props},
     #{maybeToAlloySet $ hasDoubleRelationships props},
     #{maybeToAlloySet $ hasReverseRelationships props},
@@ -290,13 +290,13 @@ sig C1, C2, C3 extends Change {}
 pred changes {
   one m1, m2 : Boolean {
     m1 = False or m2 = False
-    let c1Assocs = Assoc - (Change.add - Assoc <: C1.add) - C1.remove,
-        c2Assocs = Assoc - (Change.add - Assoc <: C2.add) - C2.remove {
-      some c1Assocs or some c2Assocs
+    let c1NonInheritances = NonInheritance - (Change.add - NonInheritance <: C1.add) - C1.remove,
+        c2NonInheritances = NonInheritance - (Change.add - NonInheritance <: C2.add) - C2.remove {
+      some c1NonInheritances or some c2NonInheritances
       let c1Inheritances = Inheritance - (Change.add - Inheritance <: C1.add) - C1.remove,
           c2Inheritances = Inheritance - (Change.add - Inheritance <: C2.add) - C2.remove {
-        #{nonTrivialInheritanceConstraint "c1Inheritances" "c1Assocs" withNonTrivialInheritance}
-        #{nonTrivialInheritanceConstraint "c2Inheritances" "c2Assocs" withNonTrivialInheritance}
+        #{nonTrivialInheritanceConstraint "c1Inheritances" "c1NonInheritances" withNonTrivialInheritance}
+        #{nonTrivialInheritanceConstraint "c2Inheritances" "c2NonInheritances" withNonTrivialInheritance}
       }
     }
     changeOfFirstCD [C1, 0, 0, 0, 0, False, False, False, False, False, False, False, m1]

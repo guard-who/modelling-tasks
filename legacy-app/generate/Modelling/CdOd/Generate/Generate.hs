@@ -163,11 +163,11 @@ generateEdge (conf, cs) mt
     generateLimits (Just Composition') = do
       ll1 <- getRandomR (0, 1)
       l2  <- generateLimit
-      return $ Assoc Composition' "" (ll1, Just 1) l2 False
+      return $ NonInheritance Composition' "" (ll1, Just 1) l2 False
     generateLimits (Just t          ) = do
       l1 <- generateLimit
       l2 <- generateLimit
-      return $ Assoc t "" l1 l2 False
+      return $ NonInheritance t "" l1 l2 False
     generateLimit :: MonadRandom m => m (Int, Maybe Int)
     generateLimit = do
       l <- getRandomR (0, 2)

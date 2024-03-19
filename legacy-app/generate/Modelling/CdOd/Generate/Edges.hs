@@ -29,7 +29,7 @@ import GHC.Generics                     (Generic)
 
 data Connection
   = Inheritance'
-  | Assoc AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
+  | NonInheritance AssociationType String (Int, Maybe Int) (Int, Maybe Int) Bool
   deriving (Eq, Generic, Read, Show)
 
 data AssociationType = Association' | Aggregation' | Composition'
@@ -40,8 +40,8 @@ type DiagramEdge = (String, String, Connection)
 nameEdges :: [DiagramEdge] -> [DiagramEdge]
 nameEdges es =
      ihs
-  ++ [(s, e, Assoc k [n] m1 m2 b)
-     | (n, (s, e, Assoc k _ m1 m2 b)) <- zip ['z', 'y' ..] ass]
+  ++ [(s, e, NonInheritance k [n] m1 m2 b)
+     | (n, (s, e, NonInheritance k _ m1 m2 b)) <- zip ['z', 'y' ..] ass]
   where
     (ihs, ass) = partition isInheritanceEdge es
 
@@ -53,10 +53,10 @@ edgeToRelationship (from, to, connection) = case connection of
     subClass                  = from,
     superClass                = to
     }
-  Assoc t _ _ _ True -> error
+  NonInheritance t _ _ _ True -> error
     $ "This never happens: Got a thick edge of type "
     ++ show t
-  Assoc t n s e False -> case t of
+  NonInheritance t n s e False -> case t of
     Association' -> Association {
       associationName         = n,
       associationFrom         = LimitedLinking from s,
@@ -128,17 +128,17 @@ flattenInheritance :: String -> String -> DiagramEdge -> [DiagramEdge]
 flattenInheritance s e edge@(s', e', t) = case t of
   Inheritance' | e == s', s /= e' -> [(s, e', Inheritance')]
                | s == e', e /= s' -> [(s', e, Inheritance')]
-  Assoc {} | e == s' -> [(s, e', t), edge]
-  Assoc {} | e == e' -> [(s', e, t), edge]
+  NonInheritance {} | e == s' -> [(s, e', t), edge]
+  NonInheritance {} | e == e' -> [(s', e, t), edge]
   _ -> [edge]
 
 isComposition :: Connection -> Bool
-isComposition (Assoc Composition' _ _ _ _) = True
+isComposition (NonInheritance Composition' _ _ _ _) = True
 isComposition _                           = False
 
 wrongLimits :: [DiagramEdge] -> [DiagramEdge]
 wrongLimits es =
-  [c | c@(_, _, t@(Assoc _ _ s@(sl, sh) e _)) <- es
+  [c | c@(_, _, t@(NonInheritance _ _ s@(sl, sh) e _)) <- es
      , isComposition t && (sh /= Just 1 || sl < 0 || sl > 1)
        || not (inLimit s)
        || not (inLimit e)]

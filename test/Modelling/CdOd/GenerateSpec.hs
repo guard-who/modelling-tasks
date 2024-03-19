@@ -48,9 +48,9 @@ spec =
         c <- generateCd (Just False) classConfig defaultProperties (Just 1000) Nothing
         return $ c `shouldSatisfy` not . uncurry hasAssociationAtOneSuperclass
     generateProperty
-      "wrongLimits (Assoc)"
+      "wrongLimits (NonInheritance)"
       (const $ not . null . wrongLimits)
-      defaultProperties { wrongAssocs = 1 }
+      defaultProperties { wrongNonInheritances = 1 }
     generateProperty
       "wrongLimits (Composition)"
       (const $ not . null . wrongLimits)
@@ -59,11 +59,11 @@ spec =
       "no wrongLimits"
       (const $ null . wrongLimits)
       defaultProperties {
-        wrongAssocs = 0,
+        wrongNonInheritances = 0,
         wrongCompositions = 0
         }
     generateProperty
-      "selfEdges (Assoc)"
+      "selfEdges (NonInheritance)"
       (const $ not . null . selfEdges)
       defaultProperties { selfRelationships = 1 }
     generateProperty

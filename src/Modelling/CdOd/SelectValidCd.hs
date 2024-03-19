@@ -369,10 +369,10 @@ selectValidCd config segment seed = do
 
 instance Randomise SelectValidCdInstance where
   randomise inst = do
-    let (names, assocs) = classAndAssocNames inst
+    let (names, nonInheritances) = classAndNonInheritanceNames inst
     names' <- shuffleM names
-    assocs' <- shuffleM assocs
-    renameInstance inst names' assocs'
+    nonInheritances' <- shuffleM nonInheritances
+    renameInstance inst names' nonInheritances'
       >>= shuffleInstance
 
 instance RandomiseLayout SelectValidCdInstance where
@@ -411,15 +411,15 @@ shuffleCdChange
   -> m CdChange
 shuffleCdChange inst x = do
   names' <- shuffleM names
-  assocs' <- shuffleM assocs
+  nonInheritances' <- shuffleM nonInheritances
   let bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationships bmNames bmAssocs
-      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
-      renameEdge = renameClassesAndRelationships bmNames bmAssocs
+      bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
+      renameCd = renameClassesAndRelationships bmNames bmNonInheritances
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmNonInheritances
+      renameEdge = renameClassesAndRelationships bmNames bmNonInheritances
   mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd x
   where
-    (names, assocs) = classAndAssocNames inst
+    (names, nonInheritances) = classAndNonInheritanceNames inst
 
 shuffleInstance
   :: MonadRandom m
@@ -435,16 +435,16 @@ shuffleInstance inst =
   where
     replaceId x (_, cd) = (x, cd)
 
-classAndAssocNames :: SelectValidCdInstance -> ([String], [String])
-classAndAssocNames inst =
+classAndNonInheritanceNames :: SelectValidCdInstance -> ([String], [String])
+classAndNonInheritanceNames inst =
   let cds = classDiagrams inst
       (improves, evidences) = partitionEithers $ map hint $ M.elems cds
       names = nubOrd $ concatMap (classNames . option) cds
-      assocs = nubOrd $ concatMap (associationNames . option) cds
+      nonInheritances = nubOrd $ concatMap (associationNames . option) cds
         ++ mapMaybe (add . annotated >=> relationshipName) improves
         ++ mapMaybe (remove . annotated >=> relationshipName) improves
         ++ concatMap linkNames evidences
-  in (names, assocs)
+  in (names, nonInheritances)
 
 renameInstance
   :: MonadThrow m
@@ -452,13 +452,13 @@ renameInstance
   -> [String]
   -> [String]
   -> m SelectValidCdInstance
-renameInstance inst names' assocs' = do
-  let (names, assocs) = classAndAssocNames inst
+renameInstance inst names' nonInheritances' = do
+  let (names, nonInheritances) = classAndNonInheritanceNames inst
       bmNames  = BM.fromList $ zip names names'
-      bmAssocs = BM.fromList $ zip assocs assocs'
-      renameCd = renameClassesAndRelationships bmNames bmAssocs
-      renameEdge = renameClassesAndRelationships bmNames bmAssocs
-      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmAssocs
+      bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
+      renameCd = renameClassesAndRelationships bmNames bmNonInheritances
+      renameEdge = renameClassesAndRelationships bmNames bmNonInheritances
+      renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmNonInheritances
   cds <- mapM
     (mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd)
     $ classDiagrams inst

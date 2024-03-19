@@ -7,7 +7,7 @@ import Modelling.CdOd.RepairCd (
   RepairCdInstance (changes),
   checkRepairCdConfig,
   checkRepairCdInstance,
-  classAndAssocNames,
+  classAndNonInheritanceNames,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
   renameInstance,
@@ -38,11 +38,11 @@ spec = do
   describe "renameInstance" $
     it "is reversable" $ do
       let inst = defaultRepairCdInstance
-          (names, assocs) = classAndAssocNames inst
+          (names, nonInheritances) = classAndNonInheritanceNames inst
       names' <- shuffleM names
-      assocs' <- shuffleM assocs
-      renamed <- renameInstance inst names' assocs'
-      renameInstance renamed names assocs `shouldReturn` inst
+      nonInheritances' <- shuffleM nonInheritances
+      renamed <- renameInstance inst names' nonInheritances'
+      renameInstance renamed names nonInheritances `shouldReturn` inst
   where
     cfg = defaultRepairCdConfig {
       maxInstances = Just 27

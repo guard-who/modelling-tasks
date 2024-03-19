@@ -127,11 +127,11 @@ spec = do
         let cd = cDiagram inst
             od = oDiagram inst
             names = classNames cd
-            assocs = associationNames cd
+            nonInheritances = associationNames cd
             linkNs = linkNames od
         in (Just inst ==)
            $ mrinst
-           >>= (\x -> renameInstance x names assocs linkNs)
+           >>= (\x -> renameInstance x names nonInheritances linkNs)
     it "renames solution" $ renameProperty $ \inst mrinst as ls ->
       let rename xs ys = Name . fromJust . (`lookup` zip xs ys)
           origMap = bimap
