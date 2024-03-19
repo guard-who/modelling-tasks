@@ -4,9 +4,10 @@ import Modelling.ActivityDiagram.Config (
   ADConfig(..),
   checkADConfig,
   defaultADConfig,
+  adConfigBitWidth,
   adConfigToAlloy',
   adConfigScope,
-  adConfigBitwidth)
+  )
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
@@ -25,26 +26,26 @@ spec = do
   describe "adConfigScope" $
     context "given the default config" $ do
       let conf = defaultADConfig
-          bitwidth = adConfigBitwidth conf
+          bitWidth = adConfigBitWidth conf
       it "provides a scope large enough to generate instances" $ do
-        let spec' = adConfigToAlloy' (adConfigScope conf) bitwidth "" "" conf
+        let spec' = adConfigToAlloy' (adConfigScope conf) bitWidth "" "" conf
             depth = 10
         inst <- getInstances (Just depth) spec'
         length inst `shouldBe` fromIntegral depth
       it "provides a scope where half of it would not be sufficient to generate instances" $ do
-        let spec' = adConfigToAlloy' (adConfigScope conf `div` 2) bitwidth "" "" conf
+        let spec' = adConfigToAlloy' (adConfigScope conf `div` 2) bitWidth "" "" conf
         inst <- getInstances (Just 1) spec'
         length inst `shouldBe` (0 :: Int)
-  describe "adConfigBitwidth" $
+  describe "adConfigBitWidth" $
     context "given the default config" $ do
       let conf = defaultADConfig
           scope = adConfigScope conf
-      it "provides a bitwidth large enough to generate instances" $ do
-        let spec' = adConfigToAlloy' scope (adConfigBitwidth conf) "" "" conf
+      it "provides a bit width large enough to generate instances" $ do
+        let spec' = adConfigToAlloy' scope (adConfigBitWidth conf) "" "" conf
             depth = 10
         inst <- getInstances (Just depth) spec'
         length inst `shouldBe` fromIntegral depth
-      it "provides a bitwidth where half of it would not be sufficient to generate instances" $ do
-        let spec' = adConfigToAlloy' scope (adConfigBitwidth conf `div` 2) "" "" conf
+      it "provides a bit width where half of it would not be sufficient to generate instances" $ do
+        let spec' = adConfigToAlloy' scope (adConfigBitWidth conf `div` 2) "" "" conf
         inst <- getInstances (Just 1) spec'
         length inst `shouldBe` (0 :: Int)

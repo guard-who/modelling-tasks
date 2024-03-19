@@ -53,7 +53,7 @@ import Modelling.PetriNet.Alloy (
   modulePetriConcepts,
   modulePetriConstraints,
   modulePetriSignature,
-  petriScopeBitwidth,
+  petriScopeBitWidth,
   petriScopeMaxSeq,
   signatures,
   taskInstance,
@@ -575,7 +575,7 @@ pred showNets[#{activated} : set Transitions] {
   #{compBasicConstraints activated basicC}
   #{compAdvConstraints advConfig}
 }
-run showNets for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
+run showNets for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitWidth basicC} Int
 |]
   where
     activated = "activatedTrans"
@@ -604,7 +604,7 @@ pred showFalseNets[#{activated} : set Transitions]{
   #{compChange changeConfig}
 }
 
-run showFalseNets for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitwidth basicConfig} Int
+run showFalseNets for exactly #{petriScopeMaxSeq basicConfig} Nodes, #{petriScopeBitWidth basicConfig} Int
 |]
   where
     allNodes    = nodes net

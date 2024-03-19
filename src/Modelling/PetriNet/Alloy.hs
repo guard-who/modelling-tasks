@@ -17,7 +17,7 @@ module Modelling.PetriNet.Alloy (
   modulePetriConcepts,
   modulePetriConstraints,
   modulePetriSignature,
-  petriScopeBitwidth,
+  petriScopeBitWidth,
   petriScopeMaxSeq,
   signatures,
   skolemVariable,
@@ -59,8 +59,8 @@ import Language.Alloy.Call (
   unscoped,
   )
 
-petriScopeBitwidth :: BasicConfig -> Int
-petriScopeBitwidth BasicConfig
+petriScopeBitWidth :: BasicConfig -> Int
+petriScopeBitWidth BasicConfig
  { flowOverall, places, tokensOverall, transitions } =
   floor
      (2 + ((logBase :: Double -> Double -> Double) 2.0 . fromIntegral)

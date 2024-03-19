@@ -6,10 +6,10 @@ module Modelling.ActivityDiagram.Config (
   ADConfig(..),
   defaultADConfig,
   checkADConfig,
+  adConfigBitWidth,
   adConfigToAlloy,
   adConfigToAlloy',
   adConfigScope,
-  adConfigBitwidth
 ) where
 
 import Modelling.ActivityDiagram.Alloy (moduleComponentsSig, moduleInitialNodeRules, moduleNameRules, moduleReachabilityRules, modulePlantUMLSig, moduleExerciseRules)
@@ -88,10 +88,10 @@ checkADConfig ADConfig {
 
 adConfigToAlloy :: String -> String -> ADConfig -> String
 adConfigToAlloy modules preds adConf =
-  adConfigToAlloy' (adConfigScope adConf) (adConfigBitwidth adConf) modules preds adConf
+  adConfigToAlloy' (adConfigScope adConf) (adConfigBitWidth adConf) modules preds adConf
 
 adConfigToAlloy' :: Int -> Int -> String -> String -> ADConfig -> String
-adConfigToAlloy' scope bitwidth modules preds ADConfig {
+adConfigToAlloy' scope bitWidth modules preds ADConfig {
     minActions,
     maxActions,
     minObjectNodes,
@@ -119,7 +119,7 @@ adConfigToAlloy' scope bitwidth modules preds ADConfig {
       #{preds}
     }
 
-    run showAD for #{scope} but #{bitwidth} Int, #{maxActions} ActionNodes,
+    run showAD for #{scope} but #{bitWidth} Int, #{maxActions} ActionNodes,
       #{maxObjectNodes} ObjectNodes, #{maxNamedNodes} ActionObjectNodes, #{maxActions + maxObjectNodes} ComponentNames,
       exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
       #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
@@ -146,5 +146,5 @@ adConfigScope ADConfig {
  If this number is made configurable or the specification is changed to use more Ints,
  this should adapted.
 -}
-adConfigBitwidth :: ADConfig -> Int
-adConfigBitwidth = const 3
+adConfigBitWidth :: ADConfig -> Int
+adConfigBitWidth = const 3

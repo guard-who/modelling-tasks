@@ -56,7 +56,7 @@ import Modelling.PetriNet.Alloy (
   modulePetriConcepts,
   modulePetriConstraints,
   modulePetriSignature,
-  petriScopeBitwidth,
+  petriScopeBitWidth,
   petriScopeMaxSeq,
   signatures,
   skolemVariable,
@@ -404,7 +404,7 @@ pred #{concurrencyPredicateName}[#{defaultActivTrans}#{activated} : set Transiti
   #{compConstraints}
 }
 
-run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitwidth basicC} Int
+run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{petriScopeBitWidth basicC} Int
 |]
   where
     activated        = "activatedTrans"

@@ -9,11 +9,11 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "petriScopeBitwidth" $
-    context "computes the needed Bitwidth for generating Petrinets with Alloy" $
-      it "taking some values out of the User's input" $
-        petriScopeBitwidth defaultBasicConfig `shouldSatisfy` (< 7)
+  describe "petriScopeBitWidth" $
+    context "computes the needed bit width for generating Petri nets with Alloy" $
+      it "taking some values out of the user's input" $
+        petriScopeBitWidth defaultBasicConfig `shouldSatisfy` (< 7)
   describe "petriScopeMaxSeq" $
-    context "computes the maximal needed Space for generating Petrinets with Alloy" $
-      it "taking some values out of the User's input" $
+    context "computes the maximal needed space for generating Petri nets with Alloy" $
+      it "taking some values out of the user's input" $
         petriScopeMaxSeq defaultBasicConfig `shouldSatisfy` (< 10)
