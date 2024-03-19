@@ -31,6 +31,7 @@ Sfdp
 UML
 Verzweigungsknoten
 Vielfachheit
+WColor
 XNode
 apps
 automorphisms
@@ -98,6 +99,7 @@ subpaths
 subsubsection
 transitionen
 ulem
+uml
 unannotate
 uncurry
 undir

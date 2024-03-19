@@ -395,7 +395,11 @@ connectWithPath
   -> QDiagram SVG V2 Double Any
   -> QDiagram SVG V2 Double Any
 connectWithPath opts font dir l1 l2 ml fl tl path g =
-  foldr addLabel (connectPerim'' opts' l1 l2 ang1 ang2 g) lpoints # svgClass "."
+  foldr
+    addLabel
+    (connectPerim'' opts' l1 l2 angle1 angle2 g)
+    lpoints
+  # svgClass "."
   where
     lpoints = [(Middle, ml), (Begin, fl), (End, tl)]
     opts' = amendOptsByDirection opts dir
@@ -416,8 +420,8 @@ connectWithPath opts font dir l1 l2 ml fl tl path g =
               p = pointAtShiftedBy shaft param shift dist
           in atop (place txt p # svgClass "elabel")
       | otherwise     = id
-    shaft = trailBetweenWithAngle opts' path l1 l2 ang1 ang2 g
-    (ang1, ang2) = inAndOutAngle path l1 l2 g
+    shaft = trailBetweenWithAngle opts' path l1 l2 angle1 angle2 g
+    (angle1, angle2) = inAndOutAngle path l1 l2 g
 
 amendOptsByDirection
   :: (Floating n, Ord n)
@@ -448,11 +452,11 @@ inAndOutAngle
   -> n2
   -> QDiagram b V2 Double m
   -> (Angle Double, Angle Double)
-inAndOutAngle path l1 l2 g = (ang1, ang2)
+inAndOutAngle path l1 l2 g = (angle1, angle2)
   where
     trail = trailBetween path l1 l2 g
-    ang1 = signedAngleBetween (tangentAtStart trail) (-unit_X) ^+^ adjustAngle
-    ang2 = signedAngleBetween (tangentAtEnd trail) unit_X ^-^ adjustAngle
+    angle1 = signedAngleBetween (tangentAtStart trail) (-unit_X) ^+^ adjustAngle
+    angle2 = signedAngleBetween (tangentAtEnd trail) unit_X ^-^ adjustAngle
     adjustAngle
       | toName l1 == toName l2 = 20 @@ deg
       | otherwise              = 0 @@ deg

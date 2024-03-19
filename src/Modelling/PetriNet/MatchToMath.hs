@@ -211,11 +211,11 @@ renderFormula :: String -> ExceptT String IO SVG
 renderFormula = ExceptT . (bimap show alterForHTML <$>)
   . imageForFormula defaultEnv defaultFormulaOptions
 
-evalRandTWith
+evalWithStdGen
   :: Int
   -> RandT StdGen (ExceptT String IO) a
   -> ExceptT String IO a
-evalRandTWith = flip evalRandT . mkStdGen
+evalWithStdGen = flip evalRandT . mkStdGen
 
 writeDia
   :: (MonadIO m, Net p n, OutputMonad m)
@@ -267,7 +267,7 @@ graphToMath
   -> Int
   -> Int
   -> ExceptT String IO (MatchInstance (Drawable (p n String)) Math)
-graphToMath c segment seed = evalRandTWith seed $ do
+graphToMath c segment seed = evalWithStdGen seed $ do
   ds <- randomDrawSettings (graphConfig c)
   (d, m, ms) <-
     matchToMath ds (map toPetriMath) c segment
@@ -279,7 +279,7 @@ mathToGraph
   -> Int
   -> Int
   -> ExceptT String IO (MatchInstance Math (Drawable (p n String)))
-mathToGraph c segment seed = evalRandTWith seed $ do
+mathToGraph c segment seed = evalWithStdGen seed $ do
   (x, xs) <- second (flip zip) <$>
     if useDifferentGraphLayouts c
     then do
