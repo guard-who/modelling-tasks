@@ -22,3 +22,4 @@ allow-newer: true
 allow-newer-deps:
   - diagrams-graphviz
   - latex-svg-image
+hpack-force: true
