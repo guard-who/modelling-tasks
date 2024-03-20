@@ -7,6 +7,9 @@ module Capabilities.Graphviz (
   ) where
 
 import qualified Diagrams.TwoD.GraphViz           as GV
+
+import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output.Generic     (GenericReportT)
 import Data.GraphViz (
   AttributeEdge,
   AttributeNode,
@@ -39,3 +42,8 @@ instance MonadGraphviz IO where
       |]
   layoutGraph = GV.layoutGraph
   layoutGraph' = GV.layoutGraph'
+
+instance MonadIO m => MonadGraphviz (GenericReportT l o m)  where
+  errorWithoutGraphviz = liftIO errorWithoutGraphviz
+  layoutGraph command = liftIO . layoutGraph command
+  layoutGraph' params command = liftIO . layoutGraph' params command

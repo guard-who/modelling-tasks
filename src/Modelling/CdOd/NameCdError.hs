@@ -16,6 +16,7 @@ module Modelling.CdOd.NameCdError (
   NameCdErrorTaskTextElement (..),
   NumberOfReasons (..),
   Reason (..),
+  Relevance (..),
   TaskTextPart (..),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,

@@ -9,7 +9,9 @@ import qualified Language.Alloy.Call              as Alloy (
   getInstancesWith,
   )
 
-import Language.Alloy.Call              as Alloy (
+import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Output.Generic     (GenericReportT)
+import Language.Alloy.Call (
   AlloyInstance,
   CallAlloyConfig (..),
   SatSolver (..),
@@ -21,6 +23,9 @@ class Monad m => MonadAlloy m where
 
 instance MonadAlloy IO where
   getInstancesWith = Alloy.getInstancesWith
+
+instance MonadIO m => MonadAlloy (GenericReportT l o m)  where
+  getInstancesWith config = liftIO . getInstancesWith config
 
 getInstances
   :: MonadAlloy m

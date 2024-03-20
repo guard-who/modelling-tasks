@@ -23,6 +23,8 @@ import qualified Graphics.SVGFonts.Fonts          (lin)
 
 import Modelling.Auxiliary.Diagrams               (renderSVG)
 
+import Control.Monad.IO.Class                     (MonadIO (liftIO))
+import Control.Monad.Output.Generic               (GenericReportT)
 import Data.ByteString.Internal                   (w2c)
 import Data.Data                                  (Typeable)
 import Diagrams.Backend.SVG                       (SVG)
@@ -71,6 +73,10 @@ instance MonadDiagrams IO where
   writeSvg file g = do
     svg <- groupSVG $ renderSVG (dims2D 400 400) g
     T.writeFile file $ LT.toStrict svg
+
+instance MonadIO m => MonadDiagrams (GenericReportT l o m)  where
+  lin = liftIO lin
+  writeSvg file = liftIO . writeSvg file
 
 data SVGOptions = SVGOptions
   { xmlns, height, iStrokeOpacity, viewBox, fontSize, width, xmlnsXlink, iStroke, version :: T.Text,
