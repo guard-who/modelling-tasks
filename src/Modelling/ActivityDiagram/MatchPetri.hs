@@ -123,7 +123,7 @@ pickRandomLayout conf = oneOf (petriLayout conf)
 defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultADConfig,
-    maxInstances = Just 50,
+    maxInstances = Just 25,
     hideBranchConditions = False,
     petriLayout = [Dot],
     supportSTAbsent = Nothing,

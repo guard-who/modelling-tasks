@@ -18,6 +18,7 @@ module Modelling.CdOd.RepairCd (
   defaultRepairCdConfig,
   defaultRepairCdInstance,
   allowEverything,
+  allowNothing,
   mapInValidOption,
   mapInValidOptionM,
   renameInstance,
@@ -216,18 +217,18 @@ data RepairCdConfig = RepairCdConfig {
 
 defaultRepairCdConfig :: RepairCdConfig
 defaultRepairCdConfig = RepairCdConfig {
-    allowedProperties = allowEverything {
-        reverseInheritances    = False,
-        Modelling.CdOd.RepairCd.selfInheritances = False
+    allowedProperties = allowNothing {
+        compositionCycles = True,
+        Modelling.CdOd.RepairCd.selfRelationships = True
         },
     articleToUse = UseDefiniteArticleWherePossible,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
-        aggregationLimits  = (1, Just 1),
+        aggregationLimits  = (0, Just 0),
         associationLimits  = (0, Just 1),
         compositionLimits  = (2, Just 3),
         inheritanceLimits  = (0, Just 0),
-        relationshipLimits = (4, Just 5)
+        relationshipLimits = (3, Just 4)
       },
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
@@ -831,6 +832,19 @@ allowEverything = AllowedProperties {
   selfRelationships      = True,
   wrongAssociationLimits = True,
   wrongCompositionLimits = True
+  }
+
+allowNothing :: AllowedProperties
+allowNothing = AllowedProperties {
+  compositionCycles           = False,
+  doubleRelationships         = False,
+  inheritanceCycles           = False,
+  reverseInheritances         = False,
+  reverseRelationships        = False,
+  selfInheritances            = False,
+  selfRelationships           = False,
+  wrongAssociationLimits      = False,
+  wrongCompositionLimits      = False
   }
 
 allChanges :: AllowedProperties -> [PropertyChange]

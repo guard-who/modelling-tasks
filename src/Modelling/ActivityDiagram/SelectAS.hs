@@ -96,6 +96,7 @@ defaultSelectASConfig = SelectASConfig {
     maxActions = 8,
     minObjectNodes = 1,
     maxObjectNodes = 3,
+    maxNamedNodes = 7,
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },

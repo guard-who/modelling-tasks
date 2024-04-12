@@ -85,6 +85,7 @@ defaultEnterASConfig = EnterASConfig {
     maxActions = 8,
     minObjectNodes = 1,
     maxObjectNodes = 5,
+    maxNamedNodes = 7,
     activityFinalNodes = 0,
     flowFinalNodes = 2
   },

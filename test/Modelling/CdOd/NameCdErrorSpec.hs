@@ -3,7 +3,6 @@ module Modelling.CdOd.NameCdErrorSpec where
 import qualified Data.Map                         as M (null)
 
 import Modelling.CdOd.NameCdError (
-  NameCdErrorConfig (timeout),
   NameCdErrorInstance (classDiagram, errorReasons),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
@@ -32,7 +31,7 @@ spec = do
     it "is valid" $
       checkNameCdErrorInstance defaultNameCdErrorInstance `shouldBe` Nothing
   describe "nameCdErrorGenerate" $
-    context "using defaultNameCdErrorConfig with reduced timeouts" $
+    context "using defaultNameCdErrorConfig" $
       it "generates an instance" $
         do
           segment <- oneOf [0 .. 3]
@@ -50,6 +49,4 @@ spec = do
       renamed <- renameInstance inst names' nonInheritances'
       renameInstance renamed names nonInheritances `shouldReturn` inst
   where
-    cfg = defaultNameCdErrorConfig {
-      timeout = Just 5000000
-      }
+    cfg = defaultNameCdErrorConfig

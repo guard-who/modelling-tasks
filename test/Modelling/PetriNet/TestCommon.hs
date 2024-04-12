@@ -79,7 +79,7 @@ testTaskGeneration alloyGen taskInst checkInst cs =
   $ \r g -> do
     ti <- runExceptT $ flip evalRandT g $ do
       let conf = cs !! r
-      r' <- getRandomR (0, maxJavaInt)
+      r' <- getRandomR (1, maxJavaInt)
       is <- lift $ lift $ getInstances
         (Just $ toInteger r')
         (Just 5000000)

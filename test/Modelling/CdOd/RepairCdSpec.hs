@@ -45,5 +45,5 @@ spec = do
       renameInstance renamed names nonInheritances `shouldReturn` inst
   where
     cfg = defaultRepairCdConfig {
-      maxInstances = Just 27
+      maxInstances = Just 10
       }

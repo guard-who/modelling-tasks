@@ -28,16 +28,16 @@ data ADConfig = ADConfig {
   activityFinalNodes :: Int,
   flowFinalNodes :: Int,
   cycles :: Int
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 defaultADConfig :: ADConfig
 defaultADConfig = ADConfig
-  { minActions = 5,
-    maxActions = 5,
+  { minActions = 4,
+    maxActions = 4,
     minObjectNodes = 1,
     maxObjectNodes = 1,
-    maxNamedNodes = 7,
-    decisionMergePairs = 2,
+    maxNamedNodes = 5,
+    decisionMergePairs = 1,
     forkJoinPairs = 1,
     activityFinalNodes = 1,
     flowFinalNodes = 1,

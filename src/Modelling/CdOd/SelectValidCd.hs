@@ -54,7 +54,7 @@ import Modelling.CdOd.RepairCd (
   AllowedProperties (..),
   InValidOption (..),
   RelationshipChangeWithArticle,
-  allowEverything,
+  allowNothing,
   checkClassConfigAndChanges,
   mapInValidOption,
   mapInValidOptionM,
@@ -132,15 +132,10 @@ data SelectValidCdConfig = SelectValidCdConfig {
 
 defaultSelectValidCdConfig :: SelectValidCdConfig
 defaultSelectValidCdConfig = SelectValidCdConfig {
-    allowedProperties = allowEverything {
-        compositionCycles      = False,
-        doubleRelationships    = False,
-        reverseRelationships   = False,
-        selfInheritances       = False,
-        selfRelationships      = False,
-        wrongAssociationLimits = False,
-        wrongCompositionLimits = False
-        },
+    allowedProperties = allowNothing {
+      inheritanceCycles = True,
+      reverseInheritances = True
+      },
     articleToUse = UseDefiniteArticleWherePossible,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
