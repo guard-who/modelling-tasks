@@ -234,3 +234,5 @@ test-suite modelling-tasks-test
     , xml-conduit
     , yaml
   default-language: Haskell2010
+  if flag(quick-testing)
+    cpp-options: -DQUICK_TESTING

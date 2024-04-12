@@ -141,6 +141,9 @@ tests:
       - hspec
       - process
       - random
+    when:
+      - condition: flag(quick-testing)
+        cpp-options: -DQUICK_TESTING
 flags:
   quick-testing:
     description: Decreases the testing depth resulting in fewer test cases and thus faster testing
