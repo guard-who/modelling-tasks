@@ -77,6 +77,10 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
+    - Capabilities.Alloy
+    - Capabilities.Cache
+    - Capabilities.Diagrams
+    - Capabilities.Graphviz
     - Modelling.ActivityDiagram.ActionSequences
     - Modelling.ActivityDiagram.Alloy
     - Modelling.ActivityDiagram.Auxiliary.Util

@@ -33,6 +33,10 @@ flag quick-testing
 
 library
   exposed-modules:
+      Capabilities.Alloy
+      Capabilities.Cache
+      Capabilities.Diagrams
+      Capabilities.Graphviz
       Modelling.ActivityDiagram.ActionSequences
       Modelling.ActivityDiagram.Alloy
       Modelling.ActivityDiagram.Auxiliary.Util
@@ -82,10 +86,6 @@ library
       Modelling.PetriNet.Reach.Type
       Modelling.Types
   other-modules:
-      Capabilities.Alloy
-      Capabilities.Cache
-      Capabilities.Diagrams
-      Capabilities.Graphviz
       Modelling.Auxiliary.Diagrams
       Modelling.CdOd.Phrasing
       Modelling.CdOd.Phrasing.English
