@@ -11,7 +11,6 @@ module Modelling.CdOd.DifferentNames (
   ShufflingOption (..),
   checkDifferentNamesConfig,
   checkDifferentNamesInstance,
-  debug,
   defaultDifferentNamesConfig,
   defaultDifferentNamesInstance,
   differentNames,
@@ -58,7 +57,7 @@ import Modelling.CdOd.CD2Alloy.Transform (
   transform,
   )
 import Modelling.CdOd.Generate          (generateCds, instanceToCd)
-import Modelling.CdOd.Output            (cacheCd, cacheOd, drawCd)
+import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
   ClassConfig (..),
@@ -93,7 +92,6 @@ import Modelling.Types (
   toNameMapping,
   )
 
-import Control.Monad                    (void, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra              (whenJust)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
@@ -130,8 +128,6 @@ import Data.Maybe (
   )
 import Data.String.Interpolate          (i, iii)
 import Data.Tuple.Extra                 (snd3, swap)
-import Diagrams.Prelude                 ((#), red)
-import Diagrams.TwoD.Attributes         (lc)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
   AlloyInstance,
@@ -140,9 +136,6 @@ import Language.Alloy.Call (
   scoped,
   )
 import System.Random.Shuffle            (shuffleM)
-
-debug :: Bool
-debug = False
 
 data ShufflingOption a =
     ConsecutiveLetters
@@ -544,8 +537,6 @@ getDifferentNamesTask fhead config cd' = do
           (concatMap relationships cds)
           partss'
         partss' = foldr mergeParts parts0 partss
-    when debug . liftIO . void $ drawCd' cd0
-    when debug . liftIO . void $ drawCd' `mapM_` cds'
     instances  <- liftIO $ getInstances
       (maxInstances config)
       (timeout config)
@@ -581,12 +572,6 @@ getDifferentNamesTask fhead config cd' = do
       (objectProperties config)
       (show n)
       ""
-    drawCd' (n, cd) = drawCd
-      True
-      True
-      (mempty # lc red)
-      cd
-      ("debug-" ++ show n ++ ".svg")
     continueWithHead []    _ = fhead
     continueWithHead (x:_) f = f x
     usedLabels :: AlloyInstance -> [String]

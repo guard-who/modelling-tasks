@@ -11,7 +11,6 @@ module Modelling.CdOd.MatchCdOd (
   MatchCdOdInstance (..),
   checkMatchCdOdConfig,
   checkMatchCdOdInstance,
-  debug,
   defaultMatchCdOdConfig,
   defaultMatchCdOdInstance,
   getChangesAndCds,
@@ -40,11 +39,6 @@ import qualified Data.Map                         as M (
   toList,
   traverseWithKey,
   )
-
-import qualified Control.Monad                    as Debug
-import qualified Data.ByteString                  as Debug
-import qualified Language.Alloy.Call              as Debug
-import qualified Language.Alloy.Debug             as Debug
 
 import Capabilities.Alloy               (MonadAlloy)
 import Modelling.Auxiliary.Common (
@@ -109,7 +103,6 @@ import Modelling.Types (
   )
 
 import Control.Exception                (Exception)
-import Control.Monad                    (when)
 import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Except             (runExceptT)
 #if __GLASGOW_HASKELL__ < 808
@@ -146,9 +139,6 @@ import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
-
-debug :: Bool
-debug = False
 
 instance Exception MatchCdOdException
 
@@ -608,8 +598,6 @@ getRandomTask config = do
         (withNonTrivialInheritance config)
   instas <- liftIO
     $ getInstances (maxInstances config) (timeout config) alloyCode
-  when debug $ debugAls "raw" config alloyCode
-  when debug $ liftIO $ print $ length instas
   rinstas <- shuffleM instas
   ods <- getODsFor config { timeout = Nothing } rinstas
   maybe (error "could not find instance") return ods
@@ -687,14 +675,6 @@ getODInstances config cd1 cd2 cd3 numClasses = do
   instances1and2 <- getInstances maxIs to (combined1and2 ++ cd1and2)
   instancesNot1not2 <-
     getInstances maxIs to (combineParts parts1to3 ++ cdNot1not2)
-  when debug $ debugAls "1not2" config (combined1and2 ++ cd1not2)
-  when debug $ debugAls "2not1" config (combined1and2 ++ cd2not1)
-  when debug $ debugAls "1and2" config (combined1and2 ++ cd1and2)
-  when debug $ debugAls "not1not2" config (combineParts parts1to3 ++ cdNot1not2)
-  when debug . print $ length instances1not2
-  when debug . print $ length instances2not1
-  when debug . print $ length instances1and2
-  when debug . print $ length instancesNot1not2
   return $ M.fromList [([1]  , instances1not2),
                        ([2]  , instances2not1),
                        ([1,2], instances1and2),
@@ -713,16 +693,6 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       x
       numClasses
       (objectConfig config)
-
-debugAls :: MonadIO m => String -> MatchCdOdConfig -> String -> m ()
-debugAls filePrefix config alloyCode =
-  liftIO $ Debug.getRawInstancesWith Debug.defaultCallAlloyConfig {
-    Debug.maxInstances = maxInstances config,
-    Debug.timeout = timeout config
-    } alloyCode >>= Debug.zipWithM_
-    (Debug.writeFile . (\x -> "debug/debug-" ++ filePrefix
-                         ++ '-':show x ++ ".als"))
-    [1 :: Integer ..]
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])

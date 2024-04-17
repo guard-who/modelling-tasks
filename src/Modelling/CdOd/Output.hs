@@ -114,11 +114,7 @@ import Diagrams.TwoD.Attributes         (fc, lc)
 import Diagrams.Util                    ((#), with)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
-import System.IO.Unsafe                 (unsafePerformIO)
 import System.Random.Shuffle            (shuffleM)
-
-debug :: Bool
-debug = False
 
 relationshipArrow
   :: Bool
@@ -141,14 +137,7 @@ relationshipArrow printNavigations printNames marking isThick relationship =
            (1, Just 1)   -> []
            l@(0, Just 1) -> [TailLabel $ mult l]
            (0, Nothing)  -> [TailLabel $ toLabelValue "0..*"]
-           l@(_, _)      -> (
-             if debug
-             then \x -> unsafePerformIO $ do
-               putStrLn "invalid composition multiplicity"
-               return x
-             else id
-             )
-             [TailLabel $ mult l]
+           l@(_, _)      -> [TailLabel $ mult l]
     Aggregation {..} -> [
         arrowFrom oDiamond,
         edgeEnds Back,

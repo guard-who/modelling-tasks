@@ -79,8 +79,6 @@ import Modelling.CdOd.CdAndChanges.Instance (
 import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
   cacheCd,
-  drawCd,
-  drawOd,
   )
 import Modelling.CdOd.Phrasing (
   phraseChange,
@@ -130,23 +128,24 @@ import Control.Monad.Output (
   singleChoiceSyntax,
   translate,
   )
-import Control.Monad.Random
-  (MonadRandom, RandT, RandomGen, StdGen, evalRandT, getStdGen, mkStdGen)
+import Control.Monad.Random (
+  MonadRandom,
+  RandT,
+  RandomGen,
+  evalRandT,
+  mkStdGen,
+  )
 import Data.Bifunctor                   (bimap, first, second)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight)
 import Data.Either.Extra                (eitherToMaybe)
 import Data.Foldable                    (for_)
-import Data.GraphViz                    (DirType (..))
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
-
-debug :: Bool
-debug = False
 
 data PropertyChange = PropertyChange {
     changeName     :: String,
@@ -742,21 +741,12 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
   let alloyCode = Changes.transformChanges config (toProperty e0) (Just config)
         $ map toProperty cs
-  when debug $ liftIO $ do
-    putStrLn $ changeName e0
-    print $ map changeName cs
-    writeFile "repair.als" alloyCode
+  liftIO $ print $ map changeName cs
   instas  <- liftIO $ getInstances maxInsts to alloyCode
   rinstas <- shuffleM instas
   getInstanceWithODs cs rinstas
   where
     article = toArticleToUse preference
-    drawCd' :: Cd -> Integer -> IO FilePath
-    drawCd' cd' n =
-      drawCd True True mempty cd' ("cd-" ++ show n ++ ".svg")
-    drawOd' :: Od -> Integer -> RandT StdGen IO FilePath
-    drawOd' od x =
-      drawOd od 0 Back True ("od-" ++ show x)
     getInstanceWithODs _  [] =
       repairIncorrect allowed config objectProperties preference maxInsts to
     getInstanceWithODs propertyChanges (rinsta:rinstas) = do
@@ -767,13 +757,6 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
       case sequenceA hints of
         Nothing -> getInstanceWithODs propertyChanges rinstas
         Just odsAndCds -> do
-          when debug $ liftIO $ do
-            void $ drawCd' cd 0
-            uncurry drawCd' `mapM_` zip (map changeClassDiagram chs) [1 ..]
-            g <- getStdGen
-            flip evalRandT g
-              $ uncurry (either (const $ const $ return "") drawOd')
-              `mapM_` zip odsAndCds [1 ..]
           let odsAndCdWithArticle = map (first addArticle) odsAndCds
               chs' = map (uniformlyAnnotateChangeAndCd article) chs
           return (cd, zipWith InValidOption odsAndCdWithArticle chs')
