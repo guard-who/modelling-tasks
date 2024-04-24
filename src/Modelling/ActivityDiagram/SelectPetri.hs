@@ -23,6 +23,7 @@ module Modelling.ActivityDiagram.SelectPetri (
   defaultSelectPetriInstance
   ) where
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import qualified Data.Map as M (empty, size, fromList, toList, keys, map, filter)
 import qualified Modelling.ActivityDiagram.Datatype as AD (ADNode(label))
 import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
@@ -39,7 +40,6 @@ import Modelling.ActivityDiagram.Auxiliary.Util (failWith, weightedShuffle)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
@@ -49,6 +49,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra (loopM, firstJustM)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
@@ -372,15 +373,15 @@ selectPetri config segment seed = do
   evalRandT (getSelectPetriTask config) g
 
 getSelectPetriTask
-  :: (RandomGen g, MonadIO m)
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => SelectPetriConfig
   -> RandT g m SelectPetriInstance
 getSelectPetriTask config = do
-  instas <- liftIO $ getInstances
+  instas <- getInstances
     (maxInstances config)
     Nothing
     $ selectPetriAlloy config
-  rinstas <- shuffleM instas
+  rinstas <- shuffleM instas >>= mapM parseInstance
   layout <- pickRandomLayout config
   let plantUMLConf = PlantUMLConvConf {
         suppressNodeNames = hideNodeNames config,
@@ -392,7 +393,7 @@ getSelectPetriTask config = do
         with1Weights = False,
         withGraphvizCommand = layout
       }
-  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  ad <- mapM (fmap snd . shuffleADNames) rinstas
   validInsta <- firstJustM (\x -> do
     sol <- selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) x
     p <- fmap snd $ shufflePetri $ matchingNet sol

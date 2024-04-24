@@ -8,7 +8,6 @@ import Modelling.ActivityDiagram.Config (ADConfig(minActions, forkJoinPairs, dec
 
 import Modelling.ActivityDiagram.Instance(parseInstance)
 import Modelling.ActivityDiagram.Petrinet (convertToSimple)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 
 import Language.Alloy.Call (getInstances)
 
@@ -27,12 +26,12 @@ spec = do
       it "it returns an Alloy Specification from which only diagrams which contain support STs are generated" $ do
         let spec' = matchPetriAlloy defaultMatchPetriConfig {supportSTAbsent = Just False}
         inst <- getInstances (Just 50) spec'
-        let ad = map (failWith id . parseInstance) inst
+        ad <- mapM parseInstance inst
         all (hasSupportSTs . convertToSimple) ad `shouldBe` True
     context "when supportSTAbsent is set to Just True" $
       it "it returns an Alloy Specification from which only diagrams which contain no support STs are generated" $ do
         let spec' = matchPetriAlloy defaultMatchPetriConfig {adConfig=defaultADConfig{cycles=0, decisionMergePairs=1}, supportSTAbsent=Just True}
         inst <- getInstances (Just 50) spec'
-        let ad = map (failWith id .parseInstance) inst
+        ad <- mapM parseInstance inst
         any (hasSupportSTs . convertToSimple) ad `shouldBe` False
   where hasSupportSTs = not . null . extractSupportSTs

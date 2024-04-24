@@ -720,10 +720,11 @@ renameInstance inst@NameCdErrorInstance {..} names' nonInheritances' = do
     }
 
 nameCdErrorGenerate
-  :: NameCdErrorConfig
+  :: (MonadAlloy m, MonadThrow m)
+  => NameCdErrorConfig
   -> Int
   -> Int
-  -> IO NameCdErrorInstance
+  -> m NameCdErrorInstance
 nameCdErrorGenerate config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   flip evalRandT g $ generateAndRandomise config

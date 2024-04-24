@@ -7,6 +7,8 @@ module Modelling.CdOd.CdAndChanges.Instance (
   ChangeAndCd (..),
   ClassDiagramInstance,
   GenericClassDiagramInstance (..),
+  ReadObjectDiagramFromAlloyException (..),
+  UnexpectedRelation (..),
   fromInstance,
   renameClassesAndRelationshipsInCdInstance,
   uniformlyAnnotateChangeAndCd,
@@ -32,7 +34,7 @@ import Modelling.CdOd.Types (
 import Modelling.Types                  (Change (..))
 
 import Control.Monad                    (forM)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (Exception, MonadThrow (throwM))
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
@@ -45,9 +47,6 @@ import Data.Maybe (
   mapMaybe,
   maybeToList,
   )
-#if __GLASGOW_HASKELL__ >= 808
-import Data.String                      (IsString, fromString)
-#endif
 import Language.Alloy.Call (
   AlloyInstance,
   AlloySig,
@@ -56,11 +55,6 @@ import Language.Alloy.Call (
   lookupSig,
   scoped,
   )
-
-#if __GLASGOW_HASKELL__ >= 808
-instance IsString a => MonadFail (Either a) where
-  fail = Left . fromString
-#endif
 
 objectName :: Object -> String
 objectName (Object n x) = n ++ '$' : show x
@@ -159,8 +153,9 @@ renameClassesAndRelationshipsInCdInstance
 
 
 fromInstance
-  :: AlloyInstance
-  -> Either String ClassDiagramInstance
+  :: MonadThrow m
+  => AlloyInstance
+  -> m ClassDiagramInstance
 fromInstance insta = do
   es <- instanceToEdges insta
   cs <- instanceToChanges insta
@@ -194,16 +189,18 @@ fromInstance insta = do
     lookupM (Just k) ms = [v | let v = lookup k ms, isJust v]
 
 instanceToNamesOf
-  :: AlloyInstance
+  :: MonadThrow m
+  => AlloyInstance
   -> String
-  -> Either String [String]
+  -> m [String]
 instanceToNamesOf insta what = do
   x <- lookupSig (scoped "this" what) insta
   map objectName . S.toList <$> getSingleAs "" (return .: Object) x
 
 instanceToChanges
-  :: AlloyInstance
-  -> Either String [Change Object]
+  :: MonadThrow m
+  => AlloyInstance
+  -> m [Change Object]
 instanceToChanges insta = do
   c'      <- lookupSig (scoped "this" "Change") insta
   cs      <- S.toList <$> getSingleAs "" (return .: Object) c'
@@ -214,18 +211,31 @@ instanceToChanges insta = do
     change cAdd cRemove c =
       Change (M.lookup c cAdd) (M.lookup c cRemove)
 
-getRelation :: String -> AlloySig -> Either String (Map Object Object)
+newtype Relation = Relation {unRelation :: String}
+
+newtype UnexpectedRelation
+  = SingleMemberExpected Relation
+
+instance Show UnexpectedRelation where
+  show (SingleMemberExpected relation) = "SingleMemberExpected: "
+    ++ "Relation " ++ unRelation relation
+    ++ " matches at least one"
+    ++ "member of its domain to multiple values of the codomain."
+
+instance Exception UnexpectedRelation
+
+getRelation :: MonadThrow m => String -> AlloySig -> m (Map Object Object)
 getRelation n i = getDoubleAs n (return .: Object) (return .: Object) i
   >>= mapM single . toMap
   where
     single x
       | S.size x == 1 = return $ S.findMin x
-      | otherwise     = fail $ "Relation " ++ n ++ " matches at least one"
-        ++ "member of its domain to multiple values of the codomain."
+      | otherwise     = throwM $ SingleMemberExpected $ Relation n
 
 instanceToEdges
-  :: AlloyInstance
-  -> Either String [(Object, Relationship String String)]
+  :: MonadThrow m
+  => AlloyInstance
+  -> m [(Object, Relationship String String)]
 instanceToEdges insta = do
   r'         <- lookupSig (scoped "this" "Relationship") insta
   rFrom      <- getRelation "from" r'
@@ -238,14 +248,15 @@ instanceToEdges insta = do
   instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper
 
 instanceToEdges'
-  :: AlloyInstance
+  :: MonadThrow m
+  => AlloyInstance
   -> Map Object Object
   -> Map Object Object
   -> Map Object Object
   -> Map Object Object
   -> Map Object Object
   -> Map Object Object
-  -> Either String [(Object, Relationship String String)]
+  -> m [(Object, Relationship String String)]
 instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
   inheritances <- getInheritances
   compositions <- getRelationships toComposition "Composition"
@@ -291,18 +302,26 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
       compositionWhole = to
       }
 
-lookupObj :: Ord k => k -> Map k Object -> Either String String
+data ReadObjectDiagramFromAlloyException
+  = MissingObject
+  | MissingLimit
+  | UnknownLimit !String
+  deriving Show
+
+instance Exception ReadObjectDiagramFromAlloyException
+
+lookupObj :: (MonadThrow m, Ord k) => k -> Map k Object -> m String
 lookupObj k m = case M.lookup k m of
-  Nothing -> Left "Missing object "
-  Just v  -> Right $ objectName v
+  Nothing -> throwM MissingObject
+  Just v  -> pure $ objectName v
 
 getLinking
-  :: Ord k
+  :: (MonadThrow m, Ord k)
   => Map k Object
   -> Map k Object
   -> Map k Object
   -> k
-  -> Either String (LimitedLinking String)
+  -> m (LimitedLinking String)
 getLinking link low high x = do
   link' <- lookupObj x link
   low'  <- lookupLimit x low
@@ -313,10 +332,10 @@ getLinking link low high x = do
     }
   where
     lookupLimit k m = case M.lookup k m of
-      Nothing -> Left "Missing limit"
+      Nothing -> throwM MissingLimit
       Just o -> case oName o of
-        "Star" -> Right Nothing
-        "Zero" -> Right $ Just 0
-        "One"  -> Right $ Just 1
-        "Two"  -> Right $ Just 2
-        l      -> Left $ "Unknown limit " ++ l
+        "Star" -> pure Nothing
+        "Zero" -> pure $ Just 0
+        "One"  -> pure $ Just 1
+        "Two"  -> pure $ Just 2
+        l      -> throwM $ UnknownLimit l

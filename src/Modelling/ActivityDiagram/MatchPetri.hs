@@ -27,6 +27,7 @@ import qualified Data.Map as M (empty, fromList, keys, null)
 import qualified Modelling.ActivityDiagram.Petrinet as PK (label)
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   ADNode(..),
@@ -50,7 +51,6 @@ import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
@@ -61,6 +61,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
@@ -115,7 +116,7 @@ data MatchPetriConfig = MatchPetriConfig {
   -- | Avoid Activity Finals in concurrent flows to reduce confusion
   noActivityFinalInForkBlocks :: Maybe Bool,
   printSolution :: Bool
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 pickRandomLayout :: (MonadRandom m) => MatchPetriConfig -> m GraphvizCommand
 pickRandomLayout conf = oneOf (petriLayout conf)
@@ -380,21 +381,20 @@ matchPetri config segment seed = do
   evalRandT (getMatchPetriTask config) g
 
 getMatchPetriTask
-  :: (RandomGen g, MonadIO m)
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => MatchPetriConfig
   -> RandT g m MatchPetriInstance
 getMatchPetriTask config = do
-  instas <- liftIO $ getInstances
+  instas <- getInstances
     (maxInstances config)
     Nothing
     $ matchPetriAlloy config
-  rinstas <- shuffleM instas
-  activityDiagrams <- liftIO
-    $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  rinstas <- shuffleM instas >>= mapM parseInstance
+  activityDiagrams <- mapM (fmap snd . shuffleADNames) rinstas
   let (ad, petri) = headWithErr "Failed to find task instances"
         $ filter (not . petriHasMultipleAutomorphisms . snd)
         $ map (second convertToPetrinet . dupe) activityDiagrams
-  shuffledPetri <- liftIO $ snd <$> shufflePetri petri
+  shuffledPetri <- snd <$> shufflePetri petri
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
     activityDiagram=ad,

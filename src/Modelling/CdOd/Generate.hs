@@ -7,7 +7,7 @@ import qualified Data.Bimap                       as BM (
   fromList,
   )
 
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.CdOd.CdAndChanges.Instance (
   GenericClassDiagramInstance (..),
   fromInstance,
@@ -24,15 +24,14 @@ import Modelling.CdOd.Types (
   renameClassesAndRelationships,
   )
 
-import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom)
-import Data.Bifunctor                   (first)
 import Data.Maybe                       (mapMaybe)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
 generateCds
-  :: (MonadIO m, MonadRandom m)
+  :: (MonadAlloy m, MonadRandom m)
   => Maybe Bool
   -> ClassConfig
   -> RelationshipProperties
@@ -41,13 +40,13 @@ generateCds
   -> m [AlloyInstance]
 generateCds withNonTrivialInheritance config props maxInsts to = do
   let alloyCode = transformNoChanges config props withNonTrivialInheritance
-  instas  <- liftIO $ getInstances maxInsts to alloyCode
+  instas <- getInstances maxInsts to alloyCode
   shuffleM instas
 
-instanceToCd :: AlloyInstance -> Either String Cd
+instanceToCd :: MonadThrow m => AlloyInstance -> m Cd
 instanceToCd rinsta = do
   cd <- instanceClassDiagram <$> fromInstance rinsta
   let cns = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
       relationshipNames = mapMaybe relationshipName $ relationships cd
       rns = BM.fromList $ zip relationshipNames $ map pure ['z', 'y' ..]
-  first show $ renameClassesAndRelationships cns rns cd
+  renameClassesAndRelationships cns rns cd

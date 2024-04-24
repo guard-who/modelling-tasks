@@ -51,8 +51,9 @@ debug = False
 matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  inst <- evalRandT (getMatchCdOdTask getRandomTask config) g
-  randomise inst
+  (`evalRandT` g) $ do
+    inst <- getMatchCdOdTask getRandomTask config
+    randomise inst
 
 getRandomTask
   :: RandomGen g

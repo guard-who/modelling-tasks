@@ -37,6 +37,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Arrow                    (ArrowChoice(left), first)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -106,21 +107,21 @@ drawNet labelOf pl hidePNames hideTNames hide1 gc = do
       "drawNet: Could not find " ++ labelOf x ++ " within the graph"
 
 getNet
-  :: (Monad m, Net p n, Traversable t)
-  => (AlloyInstance -> Either String (t Object))
+  :: (MonadThrow m, Net p n, Traversable t)
+  => (AlloyInstance -> m (t Object))
   -> AlloyInstance
-  -> ExceptT String m (p n String, t String)
+  -> m (p n String, t String)
 getNet parseInst inst = do
   (net, rename) <-
     getNetWith "flow" "tokens" inst
-  conc <- except $ parseInst inst
-  rconc <- except $ traverse rename conc
+  conc <- parseInst inst
+  rconc <- traverse rename conc
   return (net, rconc)
 
 getDefaultNet
-  :: Net p n
+  :: (MonadThrow m, Net p n)
   => AlloyInstance
-  -> ExceptT String IO (p n String)
+  -> m (p n String)
 getDefaultNet inst= fst <$>
   getNetWith "defaultFlow" "defaultTokens" inst
 
@@ -131,18 +132,18 @@ All nodes are renamed using the 'simpleRenameWith' function.
 The renaming is also applied to the additionally parsed instance.
 -}
 getNetWith
-  :: (Monad m, Net p n)
+  :: (MonadThrow m, Net p n)
   => String
   -- ^ flow
   -> String
   -- ^ tokens
   -> AlloyInstance
   -- ^ the instance to parse
-  -> ExceptT String m (p n String, Object -> Either String String)
+  -> m (p n String, Object -> m String)
 getNetWith f t inst = do
-  pl <- except $ parseNet f t inst
+  pl <- parseNet f t inst
   let rename = simpleRenameWith pl
-  pl' <- except $ traverseNet rename pl
+  pl' <- traverseNet rename pl
   return (pl', rename)
 
 {-|

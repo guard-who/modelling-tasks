@@ -3,7 +3,6 @@ module Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   emptyArr,
   filterFirst,
-  getInstances,
   redColor, underlinedLabel,
   ) where
 
@@ -19,17 +18,13 @@ import Modelling.CdOd.Types (
 
 import Language.Alloy.Call              as Alloy (
   AlloyInstance,
-  CallAlloyConfig (..),
-  SatSolver (..),
-  defaultCallAlloyConfig,
-  getInstancesWith,
   getSingleAs,
   getTripleAs,
   lookupSig,
   scoped,
   )
 
-import Control.Monad.Trans.Except       (ExceptT, except)
+import Control.Monad.Catch              (MonadThrow)
 import Data.GraphViz                    (X11Color (..))
 import Data.GraphViz.Attributes.Complete (
   ArrowShape (..),
@@ -59,18 +54,11 @@ emptyArr = AType [(openMod, Normal)]
 redColor :: Attribute
 redColor = Color [toWColor Red]
 
-getInstances :: Maybe Integer -> Maybe Int -> String -> IO [AlloyInstance]
-getInstances mmaxInstances mtimeout = getInstancesWith $ defaultCallAlloyConfig {
-  maxInstances = mmaxInstances,
-  satSolver    = MiniSat,
-  timeout      = mtimeout
-  }
-
 alloyInstanceToOd
-  :: Monad m
+  :: MonadThrow m
   => AlloyInstance
-  -> ExceptT String m Od
-alloyInstanceToOd i = except $ do
+  -> m Od
+alloyInstanceToOd i = do
   os    <- lookupSig (scoped "this" "Obj") i
   objects <- S.toList <$> getSingleAs "" toObject os
   links <- fmap toLink . S.toList <$> getTripleAs "get" oName nameOnly oName os

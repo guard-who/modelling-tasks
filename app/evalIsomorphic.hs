@@ -26,8 +26,8 @@ main = do
   case xs of
     [pathToFolder] -> do
       inst <- getInstances (Just 1000) $ adConfigToAlloy "" "" defaultADConfig
-      let ad = map (failWith id . parseInstance) inst
-          plantumlstring = map convertToPlantUML ad
+      ad <- mapM parseInstance inst
+      let plantumlstring = map convertToPlantUML ad
       writeFile (pathToFolder </> "Stats.txt") $ isomorphismStats ad
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToSubfolder svg pathToFolder "Debug" "Instance" ".svg"

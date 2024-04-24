@@ -10,7 +10,6 @@ import Modelling.ActivityDiagram.Petrinet (
 
 import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 import Modelling.PetriNet.Types (PetriLike(allNodes), petriLikeToPetri)
 
 import Language.Alloy.Call (getInstances)
@@ -26,11 +25,13 @@ spec =
       let spec' = adConfigToAlloy "" "" defaultADConfig
       it "generates a petrinet with ascending labels" $ do
         inst <- getInstances (Just 50) spec'
-        let petri = map (convertToSimple . failWith id . parseInstance) inst
+        petri <- mapM (fmap convertToSimple . parseInstance) inst
         all checkLabels petri `shouldBe` (True::Bool)
       it "generates only valid petrinets" $ do
         inst <- getInstances (Just 50) spec'
-        let petri = map (petriLikeToPetri . convertToPetrinet . failWith id . parseInstance) inst
+        petri <- mapM
+          (fmap (petriLikeToPetri . convertToPetrinet) . parseInstance)
+          inst
         all isRight petri `shouldBe` (True::Bool)
 
 checkLabels :: PetriLike n PetriKey -> Bool

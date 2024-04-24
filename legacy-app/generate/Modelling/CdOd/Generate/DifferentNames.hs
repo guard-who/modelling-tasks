@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wwarn=deprecations #-}
 module Modelling.CdOd.Generate.DifferentNames where
 
+import Capabilities.Alloy               (MonadAlloy)
 import Modelling.Auxiliary.Common       (Randomise (randomise))
 import Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (..),
@@ -13,24 +14,22 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   )
 
-import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom, evalRandT, mkStdGen)
-import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT)
 import System.Random.Shuffle            (shuffleM)
 
 debug :: Bool
 debug = False
 
 differentNames
-  :: MonadIO m
+  :: (MonadAlloy m, MonadThrow m)
   => DifferentNamesConfig
   -> Int
   -> Int
-  -> ExceptT String m DifferentNamesInstance
+  -> m DifferentNamesInstance
 differentNames config segment seed = do
   let g = mkStdGen (segment + 4 * seed)
-  liftIO $ evalRandT fgen g
+  evalRandT fgen g
   where
     fgen = do
       configs <- withMinimalLabels 3 $ classConfig config
@@ -40,7 +39,7 @@ differentNames config segment seed = do
           config'
           (searchSpace config)
         getDifferentNamesTask fgen config $ fromEdges names edges
-      lift $ randomise inst
+      randomise inst
     continueWithHead []    _ = fgen
     continueWithHead (x:_) f = f x
 

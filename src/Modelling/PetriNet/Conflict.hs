@@ -46,6 +46,7 @@ import qualified Data.Set                         as Set (
   toList,
   )
 
+import Capabilities.Alloy               (MonadAlloy)
 import Modelling.Auxiliary.Common (
   Object,
   oneOf,
@@ -127,6 +128,7 @@ import Modelling.PetriNet.Types         (
 import Control.Applicative              (Alternative, (<|>))
 import Control.Lens                     ((.~), over)
 import Control.Monad                    (unless)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM',
@@ -382,12 +384,12 @@ pickConflictGenerate = pickGenerate pickConflict gc ud ws
     ws = Pick.printSolution
 
 findConflict
-  :: (Net p n, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
   => FindConflictConfig
   -> Int
   -> RandT
     g
-    (ExceptT String IO)
+    m
     (p n String, PetriConflict' String)
 findConflict = taskInstance
   findTaskInstance
@@ -411,12 +413,12 @@ petriNetFindConfl FindConflictConfig {
     $ Right advConfig
 
 pickConflict
-  :: (Net p n, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
   => PickConflictConfig
   -> Int
   -> RandT
     g
-    (ExceptT String IO)
+    m
     [(p n String, Maybe (PetriConflict' String))]
 pickConflict = taskInstance
   pickTaskInstance
@@ -562,7 +564,7 @@ Parses the conflict Skolem variables for singleton of transitions and returns
 both as tuple.
 It returns an error message instead if unexpected behaviour occurs.
 -}
-parseConflict :: AlloyInstance -> Either String (PetriConflict' Object)
+parseConflict :: MonadThrow m => AlloyInstance -> m (PetriConflict' Object)
 parseConflict inst = do
   tc1 <- unscopedSingleSig inst conflictTransition1 ""
   tc2 <- unscopedSingleSig inst conflictTransition2 ""

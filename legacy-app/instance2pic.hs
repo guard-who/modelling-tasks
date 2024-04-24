@@ -4,7 +4,6 @@ import qualified Data.ByteString.Char8            as BS (pack)
 import Modelling.CdOd.Output            (drawOdFromInstance)
 
 import Control.Monad (void)
-import Control.Monad.Except             (runExceptT)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Data.Char                        (toUpper)
@@ -32,8 +31,7 @@ drawOd :: FilePath -> String -> IO ()
 drawOd file contents = flip evalRandT (mkStdGen 0) $ do
   let [objLine, _] = filter ("this/Obj" `isPrefixOf`) (lines contents)
       theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
-  i <- liftIO $ fmap (either (error . show) id)
-    . runExceptT . parseInstance $ BS.pack contents
+  i <- liftIO $ parseInstance $ BS.pack contents
   output <- drawOdFromInstance
     i
     (Just $ length theNodes `div` 3)

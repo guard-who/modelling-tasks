@@ -23,6 +23,7 @@ module Modelling.ActivityDiagram.MatchAD (
 
 import qualified Data.Map as M (fromList, keys)
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
@@ -32,10 +33,10 @@ import Modelling.ActivityDiagram.Datatype (
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
+import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -247,16 +248,16 @@ matchAD config segment seed = do
   evalRandT (getMatchADTask config) g
 
 getMatchADTask
-  :: (RandomGen g, MonadIO m)
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => MatchADConfig
   -> RandT g m MatchADInstance
 getMatchADTask config = do
-  instas <- liftIO $ getInstances
+  instas <- getInstances
     (maxInstances config)
     Nothing
     $ matchADAlloy config
-  rinstas <- shuffleM instas
-  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  rinstas <- shuffleM instas >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleADNames) rinstas
   return $ MatchADInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
     plantUMLConf = defaultPlantUMLConvConf {

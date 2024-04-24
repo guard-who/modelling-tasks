@@ -48,6 +48,7 @@ import Modelling.PetriNet.Types         (
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (Arrow (second))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   LangM',
   LangM,
@@ -70,7 +71,6 @@ import Control.Monad.Random (
   )
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Map                         (Map)
@@ -96,20 +96,20 @@ wrong :: Int
 wrong = 1
 
 pickTaskInstance
-  :: (MonadTrans m, Net p n, Traversable t)
-  => (AlloyInstance -> Either String (t Object))
+  :: (MonadThrow m, Net p n, Traversable t)
+  => (AlloyInstance -> m (t Object))
   -> AlloyInstance
-  -> m (ExceptT String IO) [(p n String, Maybe (t String))]
-pickTaskInstance parseF inst = lift $ do
+  -> m [(p n String, Maybe (t String))]
+pickTaskInstance parseF inst = do
   confl <- second Just <$> getNet parseF inst
   net   <- (,Nothing) <$> getDefaultNet inst
   return [confl,net]
 
 pickGenerate
-  :: (Net p n, Ord b)
+  :: (MonadThrow m, Net p n, Ord b)
   => (c
     -> Int
-    -> RandT StdGen (ExceptT String IO) [(p n b, Maybe a)]
+    -> RandT StdGen m [(p n b, Maybe a)]
     )
   -> (c -> GraphConfig)
   -> (c -> Bool)
@@ -117,7 +117,7 @@ pickGenerate
   -> c
   -> Int
   -> Int
-  -> ExceptT String IO (PickInstance (p n b))
+  -> m (PickInstance (p n b))
 pickGenerate pick gc useDifferent withSol config segment seed
   = flip evalRandT (mkStdGen seed) $ do
   ns <- pick config segment

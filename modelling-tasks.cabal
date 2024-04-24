@@ -107,7 +107,7 @@ library
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.4.1 && <0.5
+    , call-alloy >=0.5.0.1 && <0.6
     , call-plantuml
     , composition
     , containers
@@ -127,7 +127,7 @@ library
     , latex-svg-image
     , lens
     , mtl
-    , output-monad >=0.1
+    , output-monad >=0.1.0.4
     , parsec
     , polysemy-plugin
     , random
@@ -196,7 +196,7 @@ test-suite modelling-tasks-test
     , base
     , bimap
     , bytestring
-    , call-alloy >=0.4.1 && <0.5
+    , call-alloy >=0.5.0.1 && <0.6
     , call-plantuml
     , composition
     , containers
@@ -218,7 +218,7 @@ test-suite modelling-tasks-test
     , lens
     , modelling-tasks
     , mtl
-    , output-monad >=0.1
+    , output-monad >=0.1.0.4
     , parsec
     , polysemy-plugin
     , process

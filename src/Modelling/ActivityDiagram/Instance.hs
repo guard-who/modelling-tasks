@@ -11,7 +11,7 @@ import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   )
 
-import Control.Monad.Error.Class        (MonadError (throwError))
+import Control.Monad.Catch              (Exception, MonadThrow (throwM))
 import Data.List.Extra                  (nubOrd)
 import Data.Map                         (Map)
 import Data.Maybe (
@@ -19,7 +19,6 @@ import Data.Maybe (
   fromJust,
   )
 import Data.Set                         (Set)
-import Data.String                      (IsString (fromString))
 import Data.Tuple.Extra                 (uncurry3)
 import Language.Alloy.Call (
   getDoubleAs,
@@ -102,7 +101,8 @@ toSet ns = S.unions [
   StNode `S.mapMonotonic` stNodes ns
   ]
 
-parseInstance :: (MonadError s m, IsString s)
+parseInstance
+  :: MonadThrow m
   => AlloyInstance
   -> m UMLActivityDiagram
 parseInstance insta = do
@@ -128,7 +128,7 @@ parseInstance insta = do
   return activityDiagram
   where
     getAs
-      :: (IsString s, MonadError s m, Ord a)
+      :: (MonadThrow m, Ord a)
       => String
       -> String
       -> (String -> a)
@@ -181,7 +181,7 @@ returnX :: Monad m => (String -> a) -> String -> Int -> m a
 returnX x y = return . toX x y
 
 getX
-  :: (MonadError s m, IsString s, Ord a)
+  :: (MonadThrow m, Ord a)
   => String
   -> AlloyInstance
   -> String
@@ -192,7 +192,7 @@ getX scope insta n f =
   >>= getSingleAs "" (returnX f)
 
 getNames
-  :: (MonadError s m, IsString s, Ord a)
+  :: (MonadThrow m, Ord a)
   => String
   -> AlloyInstance
   -> Nodes
@@ -204,7 +204,7 @@ getNames scope insta ns n f = do
   getDoubleAs "name" (toNode ns) (returnX f) named
 
 getConnections
-  :: (MonadError s m, IsString s)
+  :: MonadThrow m
   => String
   -> AlloyInstance
   -> Nodes
@@ -237,8 +237,14 @@ getConnections scope insta ns = do
       fromMaybe "" $ M.lookup x lbs >>= (`M.lookup` lm)
       )
 
+newtype ParsingActivityDiagramException
+  = NodeHasUnknownNodeType String
+  deriving Show
+
+instance Exception ParsingActivityDiagramException
+
 toNode
-  :: (MonadError s m, IsString s)
+  :: MonadThrow m
   => Nodes
   -> String
   -> Int
@@ -252,7 +258,7 @@ toNode ns x i = ifX ANode ActionNode aNodes
   $ ifX AeNode ActivityFinalNode aeNodes
   $ ifX FeNode FlowFinalNode feNodes
   $ ifX StNode InitialNode stNodes
-  $ throwError $ fromString $ "unknown node x$" ++ show i
+  $ throwM $ NodeHasUnknownNodeType $ "x$" ++ show i
   where
     ifX f g which h =
       let node = toX g x i

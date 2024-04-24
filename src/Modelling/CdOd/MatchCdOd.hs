@@ -40,7 +40,10 @@ import qualified Data.Map                         as M (
   traverseWithKey,
   )
 
-import Capabilities.Alloy               (MonadAlloy)
+import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (isRandomisable, randomise),
   RandomiseLayout (randomiseLayout),
@@ -67,7 +70,6 @@ import Modelling.CdOd.CdAndChanges.Instance (
   )
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
-  getInstances,
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
@@ -104,11 +106,9 @@ import Modelling.Types (
 
 import Control.Exception                (Exception)
 import Control.Monad.Catch              (MonadThrow, throwM)
-import Control.Monad.Except             (runExceptT)
 #if __GLASGOW_HASKELL__ < 808
 import Control.Monad.Fail               (MonadFail)
 #endif
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -123,10 +123,7 @@ import Control.Monad.Output (
   )
 import Control.Monad.Random (
   MonadRandom (getRandom),
-  RandT,
-  RandomGen,
   evalRandT,
-  mapRandT,
   mkStdGen,
   )
 import Data.Bifunctor                   (Bifunctor (second))
@@ -210,7 +207,7 @@ checkMatchCdOdInstance MatchCdOdInstance {..} =
   foldr ((<>) . checkObjectDiagram . snd) Nothing $ M.elems instances
 
 matchCdOdTask
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
   => FilePath
   -> MatchCdOdInstance
   -> LangM m
@@ -219,8 +216,8 @@ matchCdOdTask path task = do
   paragraph $ translate $ do
     english "Consider the following two class diagrams:"
     german "Betrachten Sie die folgenden zwei Klassendiagramme:"
-  images show id $=<< liftIO
-    $ (\_ c -> cacheCd True True mempty c path)
+  images show id
+    $=<< (\_ c -> cacheCd True True mempty c path)
     `M.traverseWithKey` diagrams task
   paragraph $ translate $ do
     english [iii|
@@ -235,8 +232,8 @@ matchCdOdTask path task = do
       Ein Objektdiagramm kann zu keinem,
       einem oder beiden Klassendiagrammen passen.
       |]
-  images (:[]) snd $=<< liftIO
-    $ flip evalRandT (mkStdGen $ generatorValue task)
+  images (:[]) snd
+    $=<< flip evalRandT (mkStdGen $ generatorValue task)
     $ (\_ (is,o) -> (is,) <$> cacheOd o (anonymous o) Back True path)
     `M.traverseWithKey` instances task
   paragraph $ do
@@ -338,22 +335,25 @@ matchCdOdSolution = M.toList . reverseMapping . fmap fst . instances
       (\x ys xs -> foldr (M.adjust (x:)) xs ys)
       $ M.fromList [(1, []), (2, [])]
 
-matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
+matchCdOd
+  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m) => MatchCdOdConfig
+  -> Int
+  -> Int
+  -> m MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   inst <- evalRandT (getMatchCdOdTask getRandomTask config) g
   shuffleEverything inst
 
 getMatchCdOdTask
-  :: (MonadIO m, MonadFail m)
+  :: MonadThrow m
   => (MatchCdOdConfig
-    -> RandT g IO (Map Int Cd, Map Char ([Int], AlloyInstance)))
+    -> m (Map Int Cd, Map Char ([Int], AlloyInstance)))
   -> MatchCdOdConfig
-  -> RandT g m MatchCdOdInstance
+  -> m MatchCdOdInstance
 getMatchCdOdTask f config = do
-  (cds, ods) <- mapRandT liftIO $ f config
-  ods' <- runExceptT (mapM (mapM alloyInstanceToOd) ods)
-    >>= either fail return
+  (cds, ods) <- f config
+  ods' <- mapM (mapM alloyInstanceToOd) ods
   return $ MatchCdOdInstance {
         diagrams       = cds,
         generatorValue = 0,
@@ -588,30 +588,28 @@ renameInstance inst names' nonInheritances' = do
     }
 
 getRandomTask
-  :: RandomGen g
-  => MatchCdOdConfig
-  -> RandT g IO (Map Int Cd, Map Char ([Int], AlloyInstance))
+  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m) => MatchCdOdConfig
+  -> m (Map Int Cd, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
   let alloyCode = Changes.transform
         (classConfig config)
         defaultProperties
         (withNonTrivialInheritance config)
-  instas <- liftIO
-    $ getInstances (maxInstances config) (timeout config) alloyCode
+  instas <- getInstances (maxInstances config) (timeout config) alloyCode
   rinstas <- shuffleM instas
   ods <- getODsFor config { timeout = Nothing } rinstas
   maybe (error "could not find instance") return ods
 
 getODsFor
-  :: RandomGen g
+  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m)
   => MatchCdOdConfig
   -> [AlloyInstance]
-  -> RandT g IO (Maybe (Map Int Cd, Map Char ([Int], AlloyInstance)))
+  -> m (Maybe (Map Int Cd, Map Char ([Int], AlloyInstance)))
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
   [cd1, cd2, cd3] <- map changeClassDiagram . instanceChangesAndCds
-    <$> liftIO (getChangesAndCds cd)
-  instas <- liftIO $ getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
+    <$> getChangesAndCds cd
+  instas <- getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
   mrinstas <- takeRandomInstances instas
   case mrinstas of
     Nothing      -> getODsFor config cds
@@ -625,7 +623,7 @@ getChangesAndCds
   => AlloyInstance
   -> m ClassDiagramInstance
 getChangesAndCds insta = do
-  cdInstance <- either error return $ fromInstance insta
+  cdInstance <- fromInstance insta
   let cd  = instanceClassDiagram cdInstance
       cs  = classNames cd
       es  = instanceRelationshipNames cdInstance
@@ -648,12 +646,13 @@ getChangesAndCds insta = do
         _ -> change
 
 getODInstances
-  :: MatchCdOdConfig
+  :: MonadAlloy m
+  => MatchCdOdConfig
   -> Cd
   -> Cd
   -> Cd
   -> Int
-  -> IO (Map [Int] [AlloyInstance])
+  -> m (Map [Int] [AlloyInstance])
 getODInstances config cd1 cd2 cd3 numClasses = do
   let parts1 = alloyFor cd1 "1"
       parts2 = alloyFor cd2 "2"

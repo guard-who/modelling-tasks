@@ -33,6 +33,7 @@ import qualified Data.Map as M (
   size,
   )
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..))
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
@@ -40,10 +41,9 @@ import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADC
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
+import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Modelling.Auxiliary.Output (addPretext)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Types (
   Net (..),
   PetriLike (..),
@@ -54,6 +54,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -258,16 +259,16 @@ findSupportST config segment seed = do
   evalRandT (getFindSupportSTTask config) g
 
 getFindSupportSTTask
-  :: (RandomGen g, MonadIO m)
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => FindSupportSTConfig
   -> RandT g m FindSupportSTInstance
 getFindSupportSTTask config = do
-  instas <- liftIO $ getInstances
+  instas <- getInstances
     (maxInstances config)
     Nothing
     $ findSupportSTAlloy config
-  rinstas <- shuffleM instas
-  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  rinstas <- shuffleM instas >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleADNames) rinstas
   return $ FindSupportSTInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
     plantUMLConf =

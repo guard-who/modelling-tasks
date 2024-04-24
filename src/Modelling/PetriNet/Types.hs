@@ -32,6 +32,7 @@ module Modelling.PetriNet.Types (
   FindConcurrencyConfig (..),
   FindConflictConfig (..),
   GraphConfig (..),
+  InvalidPetriNetException (..),
   Net (..),
   Node (..),
   Petri (..),
@@ -119,7 +120,7 @@ import Modelling.PetriNet.Reach.Type    (Place, ShowTransition (ShowTransition))
 
 import Control.Lens                     (makeLensesWith)
 import Control.Monad                    ((<=<))
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (Exception, MonadThrow (throwM))
 import Control.Monad.Random             (MonadRandom, RandT, RandomGen)
 import Control.Monad.Trans              (MonadTrans(lift))
 import Data.Bimap                       (Bimap)
@@ -609,6 +610,16 @@ transformNet ns =
     insertFlows k xs = M.foldrWithKey (flip (alterFlow k)) xs (outFlow k ns)
     fromSimpleNode k n = alterNode k (maybeInitial n)
 
+data InvalidPetriNetException
+  = FlowFromATransitionIsZeroOrLess
+  | FlowToATransitionIsZeroOrLess
+  | PlaceWithNegativeTokenNumber
+  | RelatedNodesOfPlacesContainPlaces
+  | RelatedNodesOfTransitionsContainTransitions
+  deriving Show
+
+instance Exception InvalidPetriNetException
+
 {-|
 Transform a 'PetriLike' graph into a 'Petri' net.
 It first checks if the given Petri net like graph is indeed a valid Petri net
@@ -620,10 +631,10 @@ It first checks if the given Petri net like graph is indeed a valid Petri net
   different places) and transitions ('trans') are given by a lists of token
   change (where, again, each position represents a different place, but the same
   index within 'initialMarking' and 'trans' represents the same place).
-* if it is not, a message is returned indicating the reason why the given
+* if it is not, an exception is thrown indicating the reason why the given
   Petri net like graph is not a valid Petri net.
 -}
-petriLikeToPetri :: Ord a => PetriLike Node a -> Either String Petri
+petriLikeToPetri :: (MonadThrow m, Ord a) => PetriLike Node a -> m Petri
 petriLikeToPetri p = do
   isValid
   return $ Petri {
@@ -636,17 +647,17 @@ petriLikeToPetri p = do
     ts = M.filter isTransitionNode $ allNodes p
     isValid
       | not (M.null $ M.filter ((< 0) . initialTokens) ps)
-      = Left "Invalid Petri net: place with negative token number"
+      = throwM PlaceWithNegativeTokenNumber
       | any (`M.member` ts) (allRelatedNodes ts)
-      = Left "related nodes of TransitionNodes contain TransitionNodes"
+      = throwM RelatedNodesOfTransitionsContainTransitions
       | any (`M.member` ps) (allRelatedNodes ps)
-      = Left "related nodes of PlaceNodes contain PlaceNodes"
+      = throwM RelatedNodesOfPlacesContainPlaces
       | any (any (<= 0) . flowIn) ts
-      = Left "flow to a transition is zero or less"
+      = throwM FlowToATransitionIsZeroOrLess
       | any (any (<= 0) . flowOutN) ts
-      = Left "flow from a transition is zero or less"
+      = throwM FlowFromATransitionIsZeroOrLess
       | otherwise
-      = return ()
+      = pure ()
     toChangeTuple n = (toFlowList flowIn n, toFlowList flowOutN n)
     toFlowList f n = M.foldrWithKey
       (\k _ xs -> fromMaybe 0 (M.lookup k $ f n) : xs)

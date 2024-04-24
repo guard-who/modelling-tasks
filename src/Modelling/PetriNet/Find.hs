@@ -46,6 +46,7 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Lens                     (makeLensesFor)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   LangM',
   Language (English, German),
@@ -61,7 +62,6 @@ import Control.Monad.Random (
   RandomGen,
   )
 import Control.Monad.Trans.Class        (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT)
 import Data.Map                         (Map)
 import Language.Alloy.Call (
   AlloyInstance,
@@ -102,10 +102,10 @@ toFindSyntax withSol n (fi, si) = addPretext $ do
     isValidTransition (Transition x) = x >= 1 && x <= n
 
 findTaskInstance
-  :: (Net p n, RandomGen g, Traversable t)
-  => (AlloyInstance -> Either String (t Object))
+  :: (MonadThrow m, Net p n, RandomGen g, Traversable t)
+  => (AlloyInstance -> m (t Object))
   -> AlloyInstance
-  -> RandT g (ExceptT String IO) (p n String, t String)
+  -> RandT g m (p n String, t String)
 findTaskInstance f inst = do
   (pl, t) <- lift $ getNet f inst
   (pl', mapping) <- shuffleNames pl

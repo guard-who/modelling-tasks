@@ -22,6 +22,7 @@ module Modelling.ActivityDiagram.EnterAS (
   defaultEnterASInstance
 ) where
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
@@ -33,10 +34,10 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawADToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
+import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -246,16 +247,16 @@ enterAS config segment seed = do
   evalRandT (getEnterASTask config) g
 
 getEnterASTask
-  :: (RandomGen g, MonadIO m)
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => EnterASConfig
   -> RandT g m EnterASInstance
 getEnterASTask config = do
-  instas <- liftIO $ getInstances
+  instas <- getInstances
     (maxInstances config)
     Nothing
     $ enterASAlloy config
-  rinstas <- shuffleM instas
-  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  rinstas <- shuffleM instas >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleADNames) rinstas
   let validInsta =
         headWithErr "Failed to find task instances"
         $ filter (isNothing . (`checkEnterASInstanceForConfig` config))

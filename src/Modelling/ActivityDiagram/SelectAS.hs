@@ -25,6 +25,7 @@ module Modelling.ActivityDiagram.SelectAS (
 import qualified Data.Map as M (fromList, toList, keys, filter, map)
 import qualified Data.Vector as V (fromList)
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
@@ -36,10 +37,9 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawADToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra (firstJustM)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
@@ -87,7 +87,7 @@ data SelectASConfig = SelectASConfig {
   minAnswerLength :: Int,
   maxAnswerLength :: Int,
   printSolution :: Bool
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 defaultSelectASConfig :: SelectASConfig
 defaultSelectASConfig = SelectASConfig {
@@ -298,16 +298,16 @@ selectAS config segment seed = do
   evalRandT (getSelectASTask config) g
 
 getSelectASTask
-  :: (RandomGen g, MonadIO m)
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => SelectASConfig
   -> RandT g m SelectASInstance
 getSelectASTask config = do
-  instas <- liftIO $ getInstances
+  instas <- getInstances
     (maxInstances config)
     Nothing
     $ selectASAlloy config
-  rinstas <- shuffleM instas
-  ad <- liftIO $ mapM (fmap snd . shuffleADNames . failWith id . parseInstance) rinstas
+  rinstas <- shuffleM instas >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleADNames) rinstas
   validInsta <- firstJustM (\x -> do
     actionSequences <- selectASSolutionToMap $ selectActionSequence (numberOfWrongAnswers config) x
     let selectASInst = SelectASInstance {

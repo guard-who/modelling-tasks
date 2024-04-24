@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {- |
 This module provides common functions for testing Petri net modules.
 -}
@@ -13,7 +14,8 @@ module Modelling.PetriNet.TestCommon (
   validGraphConfig,
   ) where
 
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
+import Capabilities.Alloy               (getInstances)
+import Modelling.PetriNet.Alloy         (TaskGenerationException (..))
 import Modelling.PetriNet.Types (
   AlloyConfig (..),
   AdvConfig (AdvConfig), BasicConfig (..), ChangeConfig (ChangeConfig),
@@ -21,9 +23,8 @@ import Modelling.PetriNet.Types (
   defaultAlloyConfig,
   )
 
+import Control.Monad.Catch              (MonadThrow (throwM), MonadCatch (catch))
 import Control.Monad.Random             (RandT, evalRandT, getRandomR)
-import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, runExceptT, throwE)
 import Data.GraphViz                    (GraphvizCommand (Neato))
 import GHC.Base                         (maxInt, minInt)
 import Language.Alloy.Call (
@@ -69,42 +70,40 @@ ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
 
 testTaskGeneration
   :: (config -> String)
-  -> (AlloyInstance -> RandT StdGen (ExceptT String IO) inst)
+  -> (AlloyInstance -> RandT StdGen IO inst)
   -> (inst -> Bool)
   -> [config]
   -> Spec
 testTaskGeneration alloyGen taskInst checkInst cs =
   context "using randomly chosen configs"
   $ ioPropertyWith (length cs)
-  $ \r g -> do
-    ti <- runExceptT $ flip evalRandT g $ do
+  $ \r g -> isResult checkInst
+    $ flip evalRandT g $ do
       let conf = cs !! r
       r' <- getRandomR (1, maxJavaInt)
-      is <- lift $ lift $ getInstances
+      is <- getInstances
         (Just $ toInteger r')
         (Just 5000000)
         $ alloyGen conf
       if null is
-        then lift $ throwE "no instance available"
+        then throwM NoInstanceAvailable
         else do
         let instances = length is
         r'' <- if r' >= instances
           then getRandomR (0, instances - 1)
           else return r'
         taskInst (is !! r'')
-    return $ isResult checkInst ti
 
 defaultConfigTaskGeneration
-  :: (Show e, Eq e)
-  => RandT StdGen (ExceptT e IO) a
+  :: RandT StdGen IO a
   -> Int
   -> (a -> Bool)
   -> Spec
 defaultConfigTaskGeneration generateInst seed checkInst =
   context "using its default config" $
-    it "generates everything required to create the task" $ do
-      result <- runExceptT $ evalRandT generateInst $ mkStdGen seed
-      return (checkInst <$> result) `shouldReturn` Right True
+    it "generates everything required to create the task" $
+      checkInst <$> evalRandT generateInst (mkStdGen seed)
+      `shouldReturn` True
 
 checkConfigs :: (Eq b, Show b) => (a -> Maybe b) -> [a] -> Spec
 checkConfigs check cs =
@@ -112,10 +111,10 @@ checkConfigs check cs =
     take 1 (filter (/= Nothing) $ check <$> cs)
     `shouldBe` []
 
-isResult :: (a -> Bool) -> Either String a -> Property
-isResult p (Right c)                      = True ==> p c
-isResult _ (Left "no instance available") = False ==> False
-isResult _ (Left x)                       = error x
+isResult :: MonadCatch m => (a -> Bool) -> m a -> m Property
+isResult p m = catch
+  ((True ==>) . p <$> m)
+  (\(_ :: TaskGenerationException) -> pure $ False ==> False)
 
 validConfigsForPick :: Int -> Int -> [(BasicConfig, ChangeConfig)]
 validConfigsForPick = validBasicAndChangeConfigs 0

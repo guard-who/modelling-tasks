@@ -38,6 +38,7 @@ import qualified Data.Map                         as M (
   fromList,
   )
 
+import Capabilities.Alloy               (MonadAlloy)
 import Modelling.Auxiliary.Common (
   Object,
   oneOf,
@@ -106,6 +107,7 @@ import Modelling.PetriNet.Types         (
   transitionPairShow,
   )
 
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM',
@@ -317,10 +319,10 @@ findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ d
     gc = Find.graphConfig config
 
 findConcurrency
-  :: (Net p n, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
   => FindConcurrencyConfig
   -> Int
-  -> RandT g (ExceptT String IO) (p n String, Concurrent String)
+  -> RandT g m (p n String, Concurrent String)
 findConcurrency = taskInstance
   findTaskInstance
   petriNetFindConcur
@@ -341,12 +343,12 @@ pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws
 
 
 pickConcurrency
-  :: (Net p n, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
   => PickConcurrencyConfig
   -> Int
   -> RandT
     g
-    (ExceptT String IO)
+    m
     [(p n String, Maybe (Concurrent String))]
 pickConcurrency = taskInstance
   pickTaskInstance
@@ -443,9 +445,9 @@ transition2 = "transition2"
 {-|
 Parses the concurrency Skolem variables for singleton of transitions and returns
 both as tuple.
-It returns an error message instead if unexpected behaviour occurs.
+It throws an error instead if unexpected behaviour occurs.
 -}
-parseConcurrency :: AlloyInstance -> Either String (Concurrent Object)
+parseConcurrency :: MonadThrow m => AlloyInstance -> m (Concurrent Object)
 parseConcurrency inst = do
   t1 <- unscopedSingleSig inst concurrencyTransition1 ""
   t2 <- unscopedSingleSig inst concurrencyTransition2 ""

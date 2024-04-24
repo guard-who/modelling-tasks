@@ -38,6 +38,10 @@ import qualified Data.Map                         as M (
   )
 import qualified Data.Set                         as S (toList)
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (isRandomisable, randomise),
   RandomiseLayout (randomiseLayout),
@@ -94,7 +98,6 @@ import Modelling.Types (
 
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra              (whenJust)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -108,10 +111,12 @@ import Control.Monad.Output (
   translate,
   yesNo,
   )
-import Control.Monad.Random
-  (MonadRandom (getRandom), RandT, RandomGen, evalRandT, mkStdGen)
-import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, runExceptT)
+import Control.Monad.Random (
+  MonadRandom (getRandom),
+  evalRandT,
+  mkStdGen,
+  )
+import Control.Monad.Trans.Except       (runExceptT)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bitraverse)
@@ -266,7 +271,7 @@ mappingShow :: [(Name, Name)] -> [(ShowName, ShowName)]
 mappingShow = fmap (bimap ShowName ShowName)
 
 differentNamesTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
   => FilePath
   -> DifferentNamesInstance
   -> LangM m
@@ -278,12 +283,12 @@ differentNamesTask path task = do
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie folgendes Klassendiagramm:"
-  paragraph $ image $=<< liftIO $ cacheCd True True mempty cd path
+  paragraph $ image $=<< cacheCd True True mempty cd path
   paragraph $ translate $ do
     english "and the following object diagram (which conforms to it):"
     german "und das folgende (dazu passende) Objektdiagramm:"
-  paragraph $ image $=<< liftIO
-    $ flip evalRandT (mkStdGen $ generatorValue task)
+  paragraph $ image $=<<
+    flip evalRandT (mkStdGen $ generatorValue task)
     $ cacheOd od anonymous Back True path
   paragraph $ do
     translate $ do
@@ -422,14 +427,14 @@ differentNamesSolution :: DifferentNamesInstance -> [(Name, Name)]
 differentNamesSolution = BM.toAscList . nameMapping . mapping
 
 differentNames
-  :: MonadIO m
+  :: (MonadAlloy m, MonadThrow m)
   => DifferentNamesConfig
   -> Int
   -> Int
-  -> ExceptT String m DifferentNamesInstance
+  -> m DifferentNamesInstance
 differentNames config segment seed = do
   let g = mkStdGen (segment + 4 * seed)
-  liftIO $ flip evalRandT g $ do
+  flip evalRandT g $ do
     is <- generateCds
       (withNonTrivialInheritance config)
       (classConfig config)
@@ -442,9 +447,9 @@ differentNames config segment seed = do
       "it seems to be impossible to generate such a model"
       ++ "; check your configuration"
     fgen (insta:instas) = do
-      let cd = either error id $ instanceToCd insta
+      cd <- instanceToCd insta
       inst <- getDifferentNamesTask (fgen instas) config cd
-      lift $ shuffleEverything inst
+      shuffleEverything inst
 
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
@@ -512,11 +517,11 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   }
 
 getDifferentNamesTask
-  :: (RandomGen g, MonadIO m)
-  => RandT g m DifferentNamesInstance
+  :: (MonadAlloy m, MonadRandom m, MonadThrow m)
+  => m DifferentNamesInstance
   -> DifferentNamesConfig
   -> Cd
-  -> RandT g m DifferentNamesInstance
+  -> m DifferentNamesInstance
 getDifferentNamesTask fhead config cd' = do
     let cd     = cd' {
           relationships = map reverseAssociation $ relationships cd'
@@ -537,17 +542,18 @@ getDifferentNamesTask fhead config cd' = do
           (concatMap relationships cds)
           partss'
         partss' = foldr mergeParts parts0 partss
-    instances  <- liftIO $ getInstances
+    instances  <- getInstances
       (maxInstances config)
       (timeout config)
       (combineParts partss' ++ onlyCd0)
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
+      used <- usedLabels od1
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = renameEdges (BM.twist bm) cd'
-          bm' = BM.filter (const (`elem` usedLabels od1)) bm
-          isCompleteMapping = BM.keysR bm == sort (usedLabels od1)
+          bm' = BM.filter (const (`elem` used)) bm
+          isCompleteMapping = BM.keysR bm == sort used
       if maybe (const True) (bool id not) (ignoreOneRelationship config)
          isCompleteMapping
         then do
@@ -574,8 +580,8 @@ getDifferentNamesTask fhead config cd' = do
       ""
     continueWithHead []    _ = fhead
     continueWithHead (x:_) f = f x
-    usedLabels :: AlloyInstance -> [String]
-    usedLabels inst = either error id $ do
+    usedLabels :: MonadThrow m => AlloyInstance -> m [String]
+    usedLabels inst = do
       let ignore = const $ const $ return ()
           name = const . return
       os    <- lookupSig (scoped "this" "Obj") inst

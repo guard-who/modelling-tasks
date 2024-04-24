@@ -23,6 +23,7 @@ import Modelling.CdOd.Types (
 
 import Test.Hspec
 import Test.QuickCheck                  (ioProperty)
+import Control.Monad.Random             (evalRandTIO)
 
 generateCd
   :: Maybe Bool
@@ -31,8 +32,9 @@ generateCd
   -> Maybe Integer
   -> Maybe Int
   -> IO ([String], [DiagramEdge])
-generateCd wi c p mis to = toEdges' . either error id . instanceToCd . head
-  <$> generateCds wi c p mis to
+generateCd wi c p mis to = do
+  i <- head <$> evalRandTIO (generateCds wi c p mis to)
+  toEdges' <$> instanceToCd i
   where
     toEdges' x = (classNames x, toEdges x)
 

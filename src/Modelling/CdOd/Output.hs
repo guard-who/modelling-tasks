@@ -57,7 +57,6 @@ import Control.Monad.Random (
   RandomGen,
   )
 import Control.Monad.Trans              (MonadTrans(lift))
-import Control.Monad.Trans.Except       (runExcept)
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Digest.Pure.SHA             (sha1, showDigest)
 import Data.Graph.Inductive             (Gr, mkGraph)
@@ -328,16 +327,21 @@ drawClass sfont l (P p) = translate p
   # svgClass "label"
 
 drawOdFromInstance
-  :: RandomGen g
+  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
   => AlloyInstance
   -> Maybe Int
   -> DirType
   -> Bool
   -> FilePath
-  -> RandT g IO FilePath
-drawOdFromInstance i anonymous =
-  let g = either error id $ runExcept $ alloyInstanceToOd i
-  in drawOd g $ fromMaybe (length (objects g) `div` 3) anonymous
+  -> RandT g m FilePath
+drawOdFromInstance i anonymous direction printNames path = do
+  g <- alloyInstanceToOd i
+  drawOd
+    g
+    (fromMaybe (length (objects g) `div` 3) anonymous)
+    direction
+    printNames
+    path
 
 cacheOd
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)

@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeApplications #-}
 -- |
 
 module Modelling.CdOd.DifferentNamesSpec where
@@ -92,7 +93,7 @@ spec = do
   describe "differentNames" $
     context "using defaultDifferentNamesConfig with limited instances" $
       it "generates an instance" $ do
-        inst <- runExceptT $ do
+        inst <- runExceptT @String $ do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
           differentNames cfg segment seed

@@ -6,6 +6,7 @@ into types as 'Net' which allow representing some invalid representations
 of graphs which are similar to Petri nets.
 -}
 module Modelling.PetriNet.Parser (
+  NoSingletonException (..),
   asSingleton,
   convertPetri,
   netToGr,
@@ -42,7 +43,8 @@ import Modelling.PetriNet.Types (
   petriLikeToPetri,
   )
 
-import Control.Arrow                    (left, second)
+import Control.Arrow                    (second)
+import Control.Monad.Catch              (Exception, MonadThrow (throwM))
 import Data.Bimap                       (Bimap)
 import Data.Graph.Inductive.Graph       (mkGraph)
 import Data.Graph.Inductive.PatriciaTree
@@ -65,10 +67,11 @@ to a 'Net' graph and a 'Petri' is returned if the instance is indeed a
 valid Petri net (after applying 'petriLikeToPetri').
 -}
 convertPetri
-  :: String              -- ^ the name of the flow set
+  :: MonadThrow m
+  => String              -- ^ the name of the flow set
   -> String              -- ^ the name of the token set
   -> AlloyInstance       -- ^ the Petri net 'AlloyInstance'
-  -> Either String Petri
+  -> m Petri
 convertPetri f t inst = do
   p <- parseNet f t inst
   petriLikeToPetri p
@@ -79,11 +82,11 @@ token set names.
 And return an already renamed Petri net.
 -}
 parseRenamedNet
-  :: Net p n
+  :: (MonadThrow m, Net p n)
   => String
   -> String
   -> AlloyInstance
-  -> Either String (p n String)
+  -> m (p n String)
 parseRenamedNet flowSetName tokenSetName inst = do
   petriLike <- parseNet flowSetName tokenSetName inst
   let rename = simpleRenameWith petriLike
@@ -93,21 +96,21 @@ parseRenamedNet flowSetName tokenSetName inst = do
 Transform a given value into a 'String' by replacing it according to the
 'simpleNameMap' retrieved by the given 'Net'.
 -}
-simpleRenameWith :: (Net p n, Ord a) => p n a -> a -> Either String String
+simpleRenameWith :: (MonadThrow m, Net p n, Ord a) => p n a -> a -> m String
 simpleRenameWith petriLike x = do
   let nameMap = simpleNameMap petriLike
-  left show $ BM.lookup x nameMap
+  BM.lookup x nameMap
 
 {-|
 Parse a `Net' graph from an 'AlloyInstance' given the instances flow and
 token set names.
 -}
 parseNet
-  :: Net p n
+  :: (MonadThrow m, Net p n)
   => String                           -- ^ the name of the flow set
   -> String                           -- ^ the name of the token set
   -> AlloyInstance                    -- ^ the Petri net 'AlloyInstance'
-  -> Either String (p n Object)
+  -> m (p n Object)
 parseNet flowSetName tokenSetName inst = do
   nodes  <- singleSig inst "this" "Nodes" ""
   tkns   <- doubleSig inst "this" "Places" tokenSetName
@@ -147,7 +150,7 @@ simpleRename x = case oName x of
 Parses a 'PetriChange' given an 'AlloyInstance'.
 On error a 'Left' error message will be returned.
 -}
-parseChange :: AlloyInstance -> Either String (PetriChange Object)
+parseChange :: MonadThrow m => AlloyInstance -> m (PetriChange Object)
 parseChange inst = do
   flow <- tripleSig inst "this" "Nodes" "flowChange"
   tkn  <- doubleSig inst "this" "Places" "tokenChange"
@@ -163,33 +166,57 @@ parseChange inst = do
   where
     tripleToOut (x, y, z) = (x, (y, oIndex z))
 
+data NoSingletonException
+  = UnexpectedEmptySet
+  | UnexpectedMultipleElements
+  deriving Show
+
+instance Exception NoSingletonException
+
 {-|
 Convert a singleton 'Set' into its single value.
 Returns a 'Left' error message if the 'Set' is empty or contains more than one
 single element.
 -}
-asSingleton :: Set b -> Either String b
+asSingleton :: MonadThrow m => Set b -> m b
 asSingleton s
   | Set.null s
-  = Left "Expected a singleton element but got an empty set"
+  = throwM UnexpectedEmptySet
   | Set.size s /= 1
-  = Left "Expected a singleton element but got multiple elements"
+  = throwM UnexpectedMultipleElements
   | otherwise
-  = Right $ Set.findMin s
+  = pure $ Set.findMin s
 
-singleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set Object)
+singleSig
+  :: MonadThrow m
+  => AlloyInstance
+  -> String
+  -> String
+  -> String
+  -> m (Set.Set Object)
 singleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   getSingleAs rd (return .: Object) sig
 
-doubleSig :: AlloyInstance -> String -> String -> String -> Either String (Set.Set (Object,Object))
+doubleSig
+  :: MonadThrow m
+  => AlloyInstance
+  -> String
+  -> String
+  -> String
+  -> m (Set.Set (Object,Object))
 doubleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   let obj = return .: Object
   getDoubleAs rd obj obj sig
 
-tripleSig :: AlloyInstance -> String -> String -> String
-               -> Either String (Set.Set (Object,Object,Object))
+tripleSig
+  :: MonadThrow m
+  => AlloyInstance
+  -> String
+  -> String
+  -> String
+  -> m (Set.Set (Object,Object,Object))
 tripleSig inst st nd rd = do
   sig <- lookupSig (scoped st nd) inst
   let obj = return .: Object

@@ -6,6 +6,7 @@
 {-# Language QuasiQuotes #-}
 
 module Modelling.PetriNet.Alloy (
+  TaskGenerationException (..),
   compAdvConstraints,
   compBasicConstraints,
   compChange,
@@ -25,8 +26,8 @@ module Modelling.PetriNet.Alloy (
   unscopedSingleSig,
   ) where
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.Auxiliary.Common       (Object (Object), upperFirst)
-import Modelling.CdOd.Auxiliary.Util    (getInstances)
 import Modelling.PetriNet.Types (
   AdvConfig (..),
   AlloyConfig,
@@ -39,14 +40,13 @@ import qualified Modelling.PetriNet.Types         as T (
   )
 
 import Control.Monad                    (when)
+import Control.Monad.Catch              (Exception, MonadThrow (throwM))
 import Control.Monad.Random (
   RandT,
   Random (randomR),
   RandomGen,
   liftRandT,
   )
-import Control.Monad.Trans.Class        (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Composition                 ((.:))
 import Data.FileEmbed                   (embedStringFile)
 import Data.List                        (intercalate)
@@ -201,23 +201,28 @@ signatures what places transitions = intercalate "\n"
   ++ [ [i|one sig T#{x} extends #{what}Transitions {}|]
      | x <- [1 .. transitions]]
 
+data TaskGenerationException =
+  NoInstanceAvailable
+  deriving Show
+
+instance Exception TaskGenerationException
+
 taskInstance
-  :: RandomGen g
+  :: (MonadThrow m, RandomGen g, MonadAlloy m)
   => (f
     -> AlloyInstance
-    -> RandT g (ExceptT String IO) a)
+    -> RandT g m a)
   -> (config -> String)
   -> f
   -> (config -> AlloyConfig)
   -> config
   -> Int
-  -> RandT g (ExceptT String IO) a
+  -> RandT g m a
 taskInstance taskF alloyF parseF alloyC config segment = do
   let is = T.maxInstances (alloyC config)
-  list <- lift $ lift
-    $ getInstances is (T.timeout $ alloyC config) (alloyF config)
+  list <- getInstances is (T.timeout $ alloyC config) (alloyF config)
   when (null $ drop segment list)
-    $ lift $ except $ Left "instance not available"
+    $ throwM NoInstanceAvailable
   inst <- case fromIntegral <$> is of
     Nothing -> randomInstance list
     Just n -> do
@@ -237,10 +242,11 @@ randomInSegment segment segLength = do
   return $ segment + 4 * x
 
 unscopedSingleSig
-  :: AlloyInstance
+  :: MonadThrow m
+  => AlloyInstance
   -> String
   -> String
-  -> Either String (Set Object)
+  -> m (Set Object)
 unscopedSingleSig inst st nd = do
   sig <- lookupSig (unscoped st) inst
   getSingleAs nd (return .: Object) sig

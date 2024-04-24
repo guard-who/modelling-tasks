@@ -31,6 +31,10 @@ import qualified Data.Map                         as M (
   traverseWithKey,
   )
 
+import Capabilities.Alloy               (MonadAlloy)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
@@ -87,7 +91,6 @@ import Modelling.Types                  (Change (..))
 import Control.Applicative              (Alternative)
 import Control.Monad                    ((>=>), void, when)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -206,7 +209,7 @@ selectValidCdSyntax inst xs =
   for_ xs $ singleChoiceSyntax False (M.keys $ classDiagrams inst)
 
 selectValidCdTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => FilePath
   -> SelectValidCdInstance
   -> LangM m
@@ -214,7 +217,7 @@ selectValidCdTask path task = do
   paragraph $ translate $ do
     english [i|Consider the following class diagram candidates:|]
     german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten:|]
-  images show snd $=<< liftIO $ sequence $
+  images show snd $=<< sequence $
     M.foldrWithKey drawCd mempty $ classDiagrams task
   paragraph $ translate $ do
     english [i|Which of these class diagram candidates are valid class diagrams?
@@ -244,7 +247,14 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
       in M.insert x ((isRight $ hint theChange,) <$> f) cds
 
 selectValidCdEvaluation
-  :: (Alternative m, MonadIO m, OutputMonad m)
+  :: (
+    Alternative m,
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> SelectValidCdInstance
   -> [Int]
@@ -265,7 +275,7 @@ selectValidCdEvaluation path inst xs = addPretext $ do
       (classDiagrams inst)
 
 selectValidCdFeedback
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
   => FilePath
   -> Bool
   -> Bool
@@ -321,8 +331,7 @@ selectValidCdFeedback path withDir byName xs x cdChange =
           Betrachten Sie zum Beispiel das folgende Objektdiagramm,
           das Instanz dieses Klassendiagramms ist:
           |]
-      paragraph $ image $=<< liftIO
-        $ flip evalRandT (mkStdGen 0)
+      paragraph $ image $=<< flip evalRandT (mkStdGen 0)
         $ cacheOd od 0 Back True path
       pure ()
     _ -> pure ()
@@ -336,10 +345,11 @@ selectValidCdSolution =
   M.keys . M.filter id . fmap (isRight . hint) . classDiagrams
 
 selectValidCd
-  :: SelectValidCdConfig
+  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m)
+  => SelectValidCdConfig
   -> Int
   -> Int
-  -> IO SelectValidCdInstance
+  -> m SelectValidCdInstance
 selectValidCd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (_, chs)  <- flip evalRandT g $ repairIncorrect

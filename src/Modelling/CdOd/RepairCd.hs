@@ -53,6 +53,10 @@ import qualified Data.Map                         as M (
   traverseWithKey,
   )
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
@@ -64,7 +68,7 @@ import Modelling.Auxiliary.Output (
   reRefuse,
   simplifiedInformation,
   )
-import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd, getInstances)
+import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
   combineParts,
   createRunCommand,
@@ -110,10 +114,8 @@ import Modelling.CdOd.Types (
 import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    ((>=>), forM, join, void, when, zipWithM)
+import Control.Monad                    ((>=>), forM, void, when, zipWithM)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Except             (runExceptT)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -139,7 +141,6 @@ import Data.Bifunctor                   (bimap, first, second)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight)
-import Data.Either.Extra                (eitherToMaybe)
 import Data.Foldable                    (for_)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
@@ -279,7 +280,7 @@ checkClassConfigAndChanges classConfig allowedProperties =
       <$> checkProp (toProperty c)
 
 repairCdTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => FilePath
   -> RepairCdInstance
   -> LangM m
@@ -287,7 +288,7 @@ repairCdTask path task = do
   paragraph $ translate $ do
     english "Consider the following class diagram, which unfortunately is invalid:"
     german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:"
-  image $=<< liftIO $ cacheCd
+  image $=<< cacheCd
     (withDirections task)
     (withNames task)
     mempty
@@ -323,7 +324,7 @@ repairCdSyntax inst xs =
   for_ xs $ singleChoiceSyntax False (M.keys $ changes inst)
 
 repairCdEvaluation
-  :: (Alternative m, MonadIO m, OutputMonad m)
+  :: (Alternative m, MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => FilePath
   -> RepairCdInstance
   -> [Int]
@@ -345,7 +346,7 @@ repairCdEvaluation path inst xs = addPretext $ do
       (changes inst)
 
 repairCdFeedback
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => FilePath
   -> Bool
   -> Bool
@@ -379,7 +380,7 @@ repairCdFeedback path withDir byName xs x cdChange =
         Die Änderung repariert das Klassendiagramm nicht, da es dann so aussieht:
         |]
     showCd cd = paragraph $
-      image $=<< liftIO $ cacheCd withDir byName mempty cd path
+      image $=<< cacheCd withDir byName mempty cd path
 
 repairCdSolution :: RepairCdInstance -> [Int]
 repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
@@ -479,13 +480,13 @@ renameInstance inst names' nonInheritances' = do
     }
 
 repairCd
-  :: RepairCdConfig
+  :: (MonadAlloy m, MonadFail m, MonadThrow m)
+  => RepairCdConfig
   -> Int
   -> Int
-  -> IO RepairCdInstance
-repairCd config segment seed = do
-  let g = mkStdGen $ (segment +) $ 4 * seed
-  (cd, chs) <- flip evalRandT g $ repairIncorrect
+  -> m RepairCdInstance
+repairCd config segment seed = flip evalRandT g $ do
+  (cd, chs) <- repairIncorrect
     (allowedProperties config)
     (classConfig config)
     (objectProperties config)
@@ -501,6 +502,7 @@ repairCd config segment seed = do
     (printNavigations config)
     (printNames config && useNames config)
   where
+    g = mkStdGen $ (segment +) $ 4 * seed
     cdAsHint x =
       let cd _ = annotatedChangeClassDiagram $ option x
       in mapInValidOption annotatedRelationshipChange cd cd x
@@ -722,14 +724,14 @@ defaultRepairCdInstance = RepairCdInstance {
   }
 
 repairIncorrect
-  :: RandomGen g
+  :: (MonadAlloy m, MonadFail m, MonadThrow m, RandomGen g)
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
   -> ArticlePreference
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g IO (Cd, [CdChangeAndCd])
+  -> RandT g m (Cd, [CdChangeAndCd])
 repairIncorrect allowed config objectProperties preference maxInsts to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
@@ -741,8 +743,7 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
   cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
   let alloyCode = Changes.transformChanges config (toProperty e0) (Just config)
         $ map toProperty cs
-  liftIO $ print $ map changeName cs
-  instas  <- liftIO $ getInstances maxInsts to alloyCode
+  instas  <- getInstances maxInsts to alloyCode
   rinstas <- shuffleM instas
   getInstanceWithODs cs rinstas
   where
@@ -750,10 +751,10 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
     getInstanceWithODs _  [] =
       repairIncorrect allowed config objectProperties preference maxInsts to
     getInstanceWithODs propertyChanges (rinsta:rinstas) = do
-      cdInstance <- liftIO $ getChangesAndCds rinsta
+      cdInstance <- getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
           chs = instanceChangesAndCds cdInstance
-      hints <- liftIO $ zipWithM getOdOrImprovedCd propertyChanges chs
+      hints <- zipWithM getOdOrImprovedCd propertyChanges chs
       case sequenceA hints of
         Nothing -> getInstanceWithODs propertyChanges rinstas
         Just odsAndCds -> do
@@ -770,7 +771,7 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
       changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
       fmap (relationshipChange . head . instanceChangesAndCds)
         <$> traverse getChangesAndCds changes
-    getOD :: Cd -> IO (Maybe Od)
+    getOD :: (MonadAlloy m, MonadThrow m) => Cd -> m (Maybe Od)
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
           maxNObjects = maxObjects $ snd $ classLimits config
@@ -789,8 +790,7 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
             parts
       od <- listToMaybe
         <$> getInstances (Just 1) to (combineParts parts ++ command)
-      fmap join $ forM od
-        $ runExceptT . alloyInstanceToOd >=> return . eitherToMaybe
+      forM od alloyInstanceToOd
 
 data AllowedProperties = AllowedProperties {
   compositionCycles      :: Bool,

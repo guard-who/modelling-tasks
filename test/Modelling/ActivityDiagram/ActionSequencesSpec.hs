@@ -11,7 +11,6 @@ import Modelling.ActivityDiagram.Datatype (
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith)
 import Language.Alloy.Call (getInstances)
 
 import Test.Hspec(Spec, context, describe, it, shouldBe)
@@ -52,7 +51,7 @@ spec =
         let spec' = adConfigToAlloy modules preds defaultADConfig
             depth = 10
         inst <- getInstances (Just $ fromIntegral depth) spec'
-        let ad = map (failWith id .parseInstance) inst
+        ad <- mapM parseInstance inst
         (length inst, all p ad) `shouldBe` (depth, True)
       where
         modules = moduleActionSequencesRules

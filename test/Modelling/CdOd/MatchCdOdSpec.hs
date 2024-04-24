@@ -75,9 +75,7 @@ spec = do
   where
     does = "generates expected class diagrams"
     dir = "test/unit/Modelling/CdOd/MatchCdOd"
-    getResult = fmap (either (error . show) id)
-      . runExceptT
-      . parseInstance
+    getResult = parseInstance
       . BS.pack
       >=> fmap show . getChangesAndCds
     opposingOd = both (:[]) (

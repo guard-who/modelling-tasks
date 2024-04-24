@@ -40,6 +40,7 @@ import qualified Data.Map                         as M (
   partition,
   )
 
+import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.Auxiliary.Common       (Object (oName), oneOf)
 import Modelling.Auxiliary.Output       (
   hoveringInformation,
@@ -97,6 +98,7 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (first)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output       (
   GenericOutputMonad (..),
@@ -121,8 +123,7 @@ import Control.Monad.Random             (
   evalRandT,
   mkStdGen,
   )
-import Control.Monad.Trans.Class        (lift)
-import Control.Monad.Trans.Except       (ExceptT (ExceptT), except, runExceptT)
+import Control.Monad.Trans.Except       (ExceptT (ExceptT), runExceptT)
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
@@ -132,7 +133,7 @@ import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
 import Image.LaTeX.Render               (alterForHTML, imageForFormula, defaultFormulaOptions, defaultEnv, SVG, Formula)
 import Language.Alloy.Call (
-  AlloyInstance, getInstances,
+  AlloyInstance,
   )
 import System.Random.Shuffle            (shuffleM)
 
@@ -308,35 +309,37 @@ matchMathInstance c x y ys = do
     }
 
 matchToMath
-  :: (Net p n, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
   => DrawSettings
   -> ([p n String] -> [a])
   -> MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (Drawable (p n String), Math, [(a, Change)])
+  -> RandT g m (Drawable (p n String), Math, [(a, Change)])
 matchToMath ds toOutput config segment = do
   (f, net, math) <- netMathInstance config segment
-  fList <- lift $ lift $ getInstances (Just $ toInteger $ generatedWrongInstances config) f
+  fList <- getInstances
+    (Just $ toInteger $ generatedWrongInstances config)
+    Nothing
+    f
   fList' <- take (wrongInstances config) <$> shuffleM fList
   if wrongInstances config == length fList'
     then do
-    alloyChanges <- lift $ except $ mapM addChange fList'
+    alloyChanges <- mapM addChange fList'
     changes <- firstM parse `mapM` alloyChanges
     let changes' = uncurry zip $ first toOutput (unzip changes)
     return ((net, ds), math, changes')
     else matchToMath ds toOutput config segment
   where
-    parse x =
-      lift $ except $ parseRenamedNet "flow" "tokens" x
+    parse = parseRenamedNet "flow" "tokens"
 
 firstM :: Monad m => (a -> m b) -> (a, c) -> m (b, c)
 firstM f (p, c) = (,c) <$> f p
 
 netMathInstance
-  :: (Net p n, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
   => MathConfig
   -> Int
-  -> RandT g (ExceptT String IO) (String, p n String, Math)
+  -> RandT g m (String, p n String, Math)
 netMathInstance config = taskInstance
   mathInstance
   (\c -> petriNetRnd (basicConfig c) (advConfig c))
@@ -345,12 +348,12 @@ netMathInstance config = taskInstance
   config
 
 mathInstance
-  :: (Net p n, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
   => MathConfig
   -> AlloyInstance
-  -> RandT g (ExceptT String IO) (String, p n String, Math)
+  -> RandT g m (String, p n String, Math)
 mathInstance config inst = do
-  petriLike <- lift $ except $ parseRenamedNet "flow" "tokens" inst
+  petriLike <- parseRenamedNet "flow" "tokens" inst
   petriLike' <- fst <$> shuffleNames petriLike
   let math = toPetriMath petriLike'
   let f = renderFalse petriLike' config
@@ -549,7 +552,7 @@ checkConfig MathConfig {
   | otherwise
   = Nothing
 
-addChange :: AlloyInstance -> Either String (AlloyInstance, Change)
+addChange :: MonadThrow m => AlloyInstance -> m (AlloyInstance, Change)
 addChange alloy = do
   change <- parseChange alloy
   return (alloy, mapChange oName change)
