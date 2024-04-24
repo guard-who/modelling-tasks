@@ -14,10 +14,9 @@ Graphviz
 HUnit
 HXT
 Hspec
-LangM
 Leftrightarrow
 Lexer
-MReport
+Linkname
 Modellierung
 NTree
 Nachbereich
@@ -71,6 +70,7 @@ hspec
 https
 includegraphics
 ispell
+konfliktauslösenden
 lastline
 ldots
 lstinline
@@ -79,6 +79,7 @@ lstlisting
 lstset
 mappend
 mathrm
+mempty
 multicolumn
 oneof
 pagebreak

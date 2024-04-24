@@ -31,3 +31,8 @@ Nothing\sNothing
 String\sString
 True\sTrue
 obj\sobj\ssig
+
+# ignore specific
+ExceptT(?![a-z])
+LangM(?![a-z])
+ReportT(?![a-z])

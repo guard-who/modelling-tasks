@@ -333,7 +333,7 @@ differentNamesTask path task = do
       exactly once in your mapping.
       |]
     german [iii|
-      Deshalb sollte jeder Linkname and jeder Beziehungsname
+      Deshalb sollte jeder Linkname und jeder Beziehungsname
       genau einmal in Ihrer Zuordnung auftauchen.
       |]
     else do

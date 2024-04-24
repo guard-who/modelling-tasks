@@ -420,7 +420,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
       There needs to be exactly one error defined within errorReasons
       (i.e., set to 'True')
       |]
-  | x:_ <- linstingPriorities \\ nubOrd linstingPriorities
+  | x:_ <- listingPriorities \\ nubOrd listingPriorities
   = Just [iii|
       'listingPriority' has to be unique for the class diagram,
       but '#{x}' appears twice which is not allowed.
@@ -441,7 +441,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   where
     letters = ['a' .. 'z'] ++ ['A' .. 'Z']
     reasons = map snd $ M.elems errorReasons
-    linstingPriorities = map (listingPriority . annotation)
+    listingPriorities = map (listingPriority . annotation)
       . filter isRelevant
       $ annotatedRelationships classDiagram
 
@@ -799,12 +799,12 @@ nameCdError allowed config objectProperties byName maxInsts to = do
     getInstanceWithChanges ((e0, l0) : chs) = do
       let p = toProperty $ e0 .&. l0
           alloyCode = Changes.transformGetNextFix Nothing config p byName
-      instas  <- lift $ getInstances maxInsts to alloyCode
-      rinstas <- shuffleM instas
-      getInstanceWithODs chs p rinstas
+      instances <- lift $ getInstances maxInsts to alloyCode
+      randomInstances <- shuffleM instances
+      getInstanceWithODs chs p randomInstances
     getInstanceWithODs chs _ [] = getInstanceWithChanges chs
-    getInstanceWithODs chs p (rinsta:rinstas) = do
-      cdInstance <- lift $ getChangesAndCds rinsta
+    getInstanceWithODs chs p (randomInstance:randomInstances) = do
+      cdInstance <- lift $ getChangesAndCds randomInstance
       let cd = instanceClassDiagram cdInstance
           p' = p {
             hasCompositionsPreventingParts = Nothing,
@@ -813,15 +813,15 @@ nameCdError allowed config objectProperties byName maxInsts to = do
             hasMultipleInheritances = Nothing
             }
           alloyCode = Changes.transformGetNextFix (Just cd) config p' byName
-      instas <- lift $ getInstances Nothing to alloyCode
-      correctInstance <- lift $ mapM getChangesAndCds instas
+      instances <- lift $ getInstances Nothing to alloyCode
+      correctInstance <- lift $ mapM getChangesAndCds instances
       let allChs = concatMap instanceChangesAndCds correctInstance
           cd2 = instanceClassDiagram $ head correctInstance
-      mremoves <- do
+      possibleRemoves <- do
         lift $ mapM (getOD . changeClassDiagram) allChs
         return $ traverse (remove . relationshipChange) allChs
-      case mremoves of
-        Nothing -> getInstanceWithODs chs p rinstas
+      case possibleRemoves of
+        Nothing -> getInstanceWithODs chs p randomInstances
         Just removes ->
           let fixes = toPropertySet p
                 S.\\ toPropertySet (towardsValidProperties p)
@@ -830,18 +830,18 @@ nameCdError allowed config objectProperties byName maxInsts to = do
             _ -> error "error in task type: property fix is not unique"
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
-          maxNObjects = maxObjects $ snd $ classLimits config
+          maxNumberOfObjects = maxObjects $ snd $ classLimits config
           parts = transform
             (cd {relationships = reversedRelationships})
             []
-            maxNObjects
+            maxNumberOfObjects
             objectProperties
             ""
             ""
           command = createRunCommand
             "cd"
             (length $ classNames cd)
-            maxNObjects
+            maxNumberOfObjects
             reversedRelationships
             parts
       od <- listToMaybe
@@ -861,7 +861,7 @@ translateProperty False x = case x of
         between the same two classes.
         |]
       german [iii|
-        enthält mindestens zwei Nicht-Vererbungs-Beziehungen
+        enthält mindestens zwei Nicht-Vererbungsbeziehungen
         zwischen denselben beiden Klassen.
         |]
 
@@ -876,7 +876,7 @@ translatePropertyWithDirections x = translations $ case x of
       between the same two classes each pointing in the same direction.
       |]
     german [iii|
-      enthält mindestens zwei Nicht-Vererbungs-Beziehungen
+      enthält mindestens zwei Nicht-Vererbungsbeziehungen
       zwischen denselben beiden Klassen, die in dieselbe Richtung zeigen.
       |]
   InheritanceCycles -> do
@@ -896,7 +896,7 @@ translatePropertyWithDirections x = translations $ case x of
       between the same two classes pointing in opposite directions.
       |]
     german [iii|
-      enthält mindestens zwei Nicht-Vererbungs-Beziehungen
+      enthält mindestens zwei Nicht-Vererbungsbeziehungen
       zwischen denselben beiden Klassen,
       die in entgegengesetzte Richtungen zeigen.
       |]
@@ -988,13 +988,13 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
     ('d', (False, M.fromAscList [
       (English, "contains at least two non-inheritance relationships "
         ++ "between the same two classes pointing in opposite directions."),
-      (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
+      (German, "enthält mindestens zwei Nicht-Vererbungsbeziehungen "
         ++ "zwischen denselben beiden Klassen, die in entgegengesetzte Richtungen zeigen.")
       ])),
     ('e', (False, M.fromAscList [
       (English, "contains at least two non-inheritance relationships "
         ++ "between the same two classes each pointing in the same direction."),
-      (German, "enthält mindestens zwei Nicht-Vererbungs-Beziehungen "
+      (German, "enthält mindestens zwei Nicht-Vererbungsbeziehungen "
         ++ "zwischen denselben beiden Klassen, die in dieselbe Richtung zeigen.")
       ])),
     ('f', (True, M.fromAscList [
