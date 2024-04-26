@@ -202,7 +202,7 @@ lensRulesL = lensRules & lensField .~ mappingNamer (pure . ('l':) . upperFirst)
 parseWith :: MonadThrow m => (Int -> Parser a) -> String -> m a
 parseWith f = either (throwM . ParsingException . show) pure . parse (f 0) ""
 
-data ParsingException
+newtype ParsingException
   = ParsingException String
   deriving Show
 
