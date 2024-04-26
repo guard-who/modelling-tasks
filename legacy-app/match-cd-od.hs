@@ -2,6 +2,8 @@
 module Main (main) where
 
 import Common                           (withLang)
+
+import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.Types (
   ClassConfig (..),
   ObjectConfig (..),

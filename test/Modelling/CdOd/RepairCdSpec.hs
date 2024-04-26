@@ -2,6 +2,7 @@ module Modelling.CdOd.RepairCdSpec where
 
 import qualified Data.Map                         as M (null)
 
+import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.RepairCd (
   RepairCdConfig (maxInstances),
   RepairCdInstance (changes),

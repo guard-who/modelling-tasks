@@ -32,7 +32,6 @@ import qualified Data.Set                         as S (
   union,
   )
 
-import Control.Arrow                    (ArrowChoice (left))
 import Control.Exception                (Exception, SomeException)
 import Control.Monad                    ((>=>))
 import Control.Monad.Catch              (MonadThrow (throwM))
@@ -200,5 +199,11 @@ upperFirst (x:xs) = toUpper x : xs
 lensRulesL :: LensRules
 lensRulesL = lensRules & lensField .~ mappingNamer (pure . ('l':) . upperFirst)
 
-parseWith :: (Int -> Parser a) -> String -> Either String a
-parseWith f = left show . parse (f 0) ""
+parseWith :: MonadThrow m => (Int -> Parser a) -> String -> m a
+parseWith f = either (throwM . ParsingException . show) pure . parse (f 0) ""
+
+data ParsingException
+  = ParsingException String
+  deriving Show
+
+instance Exception ParsingException

@@ -2,6 +2,7 @@
 
 module Main (main) where
 
+import Capabilities.Alloy.IO            ()
 import qualified Modelling.PetriNet.Types         as Find (
   FindConcurrencyConfig (..),
   )

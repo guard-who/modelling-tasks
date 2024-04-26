@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.MatchToMathSpec where
 
+import Capabilities.Alloy.IO            ()
 import Modelling.PetriNet.MatchToMath
 import Modelling.PetriNet.Types (
   ChangeConfig(..),
@@ -11,7 +12,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Monad.Random             (Random (random, randomR))
-import Control.Monad.Trans.Except       (runExceptT)
+import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Either                      (isRight)
 import System.Random                    (getStdGen)
 import Test.Hspec
@@ -20,9 +21,9 @@ spec :: Spec
 spec = do
   describe "matchToMath" $ do
     describe "as mathToGraph" $
-      defaultMathTask (mathToGraph @PetriLike @SimpleNode)
+      defaultMathTask (mathToGraph @(ExceptT String IO) @PetriLike @SimpleNode)
     describe "as graphToMath" $
-      defaultMathTask (graphToMath @PetriLike @SimpleNode)
+      defaultMathTask (graphToMath @(ExceptT String IO) @PetriLike @SimpleNode)
   describe "checkConfig" $
     it "checks if the input is in given boundaries for the task" $
       checkMathConfig defaultMathConfig `shouldBe` Nothing

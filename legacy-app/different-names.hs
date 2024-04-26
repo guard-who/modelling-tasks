@@ -2,6 +2,7 @@ module Main (main) where
 
 import Common                           (withLang)
 
+import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.DifferentNames
   (defaultDifferentNamesConfig, differentNamesTask)
 import Modelling.CdOd.Generate.DifferentNames (differentNames)

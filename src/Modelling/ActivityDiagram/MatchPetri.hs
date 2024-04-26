@@ -372,10 +372,11 @@ matchPetriSolutionMap sol =
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
 matchPetri
-  :: MatchPetriConfig
+  :: (MonadAlloy m, MonadThrow m)
+  => MatchPetriConfig
   -> Int
   -> Int
-  -> IO MatchPetriInstance
+  -> m MatchPetriInstance
 matchPetri config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   evalRandT (getMatchPetriTask config) g

@@ -250,10 +250,11 @@ findSupportSTSolutionMap sol =
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
 findSupportST
-  :: FindSupportSTConfig
+  :: (MonadAlloy m, MonadThrow m)
+  => FindSupportSTConfig
   -> Int
   -> Int
-  -> IO FindSupportSTInstance
+  -> m FindSupportSTInstance
 findSupportST config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   evalRandT (getFindSupportSTTask config) g

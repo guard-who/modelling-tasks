@@ -10,6 +10,7 @@ import qualified Modelling.PetriNet.Types         as Pick (
   PickConflictConfig (..),
   )
 
+import Capabilities.Alloy.IO            ()
 import Common (
   forceErrors,
   instanceInput,

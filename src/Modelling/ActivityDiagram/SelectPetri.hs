@@ -364,10 +364,11 @@ selectPetriSolution
 selectPetriSolution = head . M.keys . M.filter fst . petrinets
 
 selectPetri
-  :: SelectPetriConfig
+  :: (MonadAlloy m, MonadThrow m)
+  => SelectPetriConfig
   -> Int
   -> Int
-  -> IO SelectPetriInstance
+  -> m SelectPetriInstance
 selectPetri config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   evalRandT (getSelectPetriTask config) g

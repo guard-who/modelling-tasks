@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Capabilities.Alloy.IO            ()
 import Modelling.ActivityDiagram.MatchAD (
   defaultMatchADConfig,
   matchAD,

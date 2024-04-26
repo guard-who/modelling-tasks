@@ -8,6 +8,7 @@ import qualified Data.Map                         as M (
   fromList,
   )
 
+import Capabilities.Alloy.IO            ()
 import Modelling.Auxiliary.Common       (randomise)
 import Modelling.CdOd.Generate.Edges (
   DiagramEdge,

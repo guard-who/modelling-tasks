@@ -34,6 +34,7 @@ flag quick-testing
 library
   exposed-modules:
       Capabilities.Alloy
+      Capabilities.Alloy.IO
       Capabilities.Cache
       Capabilities.Diagrams
       Capabilities.Graphviz

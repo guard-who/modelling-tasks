@@ -238,10 +238,11 @@ enterASSolution
 enterASSolution = sampleSequence
 
 enterAS
-  :: EnterASConfig
+  :: (MonadAlloy m, MonadThrow m)
+  => EnterASConfig
   -> Int
   -> Int
-  -> IO EnterASInstance
+  -> m EnterASInstance
 enterAS config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   evalRandT (getEnterASTask config) g

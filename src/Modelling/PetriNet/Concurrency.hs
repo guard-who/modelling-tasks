@@ -130,7 +130,6 @@ import Control.Monad.Random (
   )
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Either                      (isLeft)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
@@ -290,15 +289,15 @@ pickConcurrencyTask path task = do
   pure ()
 
 findConcurrencyGenerate
-  :: Net p n
+  :: (MonadAlloy m, MonadThrow m, Net p n)
   => FindConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO (FindInstance (p n String) (Concurrent Transition))
+  -> m (FindInstance (p n String) (Concurrent Transition))
 findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConcurrency config segment
   gl <- oneOf $ graphLayouts gc
-  c' <- lift $ except $ traverse
+  c' <- lift $ traverse
      (parseWith parseTransitionPrec)
      c
   return $ FindInstance {
@@ -330,11 +329,11 @@ findConcurrency = taskInstance
   Find.alloyConfig
 
 pickConcurrencyGenerate
-  :: Net p n
+  :: (MonadAlloy m, MonadThrow m, Net p n)
   => PickConcurrencyConfig
   -> Int
   -> Int
-  -> ExceptT String IO (PickInstance (p n String))
+  -> m (PickInstance (p n String))
 pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws
   where
     gc = Pick.graphConfig

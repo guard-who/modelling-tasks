@@ -156,7 +156,6 @@ import Control.Monad.Random (
   )
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, except)
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Bool                        (bool)
@@ -342,15 +341,15 @@ pickConflictTask path task = do
   pure ()
 
 findConflictGenerate
-  :: Net p n
+  :: (MonadAlloy m, MonadThrow m, Net p n)
   => FindConflictConfig
   -> Int
   -> Int
-  -> ExceptT String IO (FindInstance (p n String) Conflict)
+  -> m (FindInstance (p n String) Conflict)
 findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
   (d, c) <- findConflict config segment
   gl <- oneOf $ graphLayouts gc
-  c' <- lift $ except $ bitraverse
+  c' <- lift $ bitraverse
     (parseWith parsePlacePrec)
     (parseWith parseTransitionPrec)
     $ toPetriConflict c
@@ -372,11 +371,11 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     gc = Find.graphConfig config
 
 pickConflictGenerate
-  :: Net p n
+  :: (MonadAlloy m, MonadThrow m, Net p n)
   => PickConflictConfig
   -> Int
   -> Int
-  -> ExceptT String IO (PickInstance (p n String))
+  -> m (PickInstance (p n String))
 pickConflictGenerate = pickGenerate pickConflict gc ud ws
   where
     gc = Pick.graphConfig

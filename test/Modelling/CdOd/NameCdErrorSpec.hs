@@ -2,6 +2,7 @@ module Modelling.CdOd.NameCdErrorSpec where
 
 import qualified Data.Map                         as M (null)
 
+import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.NameCdError (
   NameCdErrorInstance (classDiagram, errorReasons),
   checkNameCdErrorConfig,

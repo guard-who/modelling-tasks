@@ -2,6 +2,7 @@ module Modelling.CdOd.SelectValidCdSpec where
 
 import qualified Data.Map                         as M (null)
 
+import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (timeout),
   SelectValidCdInstance (classDiagrams),

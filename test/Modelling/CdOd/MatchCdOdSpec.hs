@@ -3,6 +3,7 @@ module Modelling.CdOd.MatchCdOdSpec where
 import qualified Data.ByteString.Char8            as BS (pack)
 import qualified Data.Map                         as M (lookup, null)
 
+import Capabilities.Alloy.IO            ()
 import Modelling.Common                 (withUnitTests)
 import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (maxInstances, objectConfig),

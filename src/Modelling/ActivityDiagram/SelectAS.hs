@@ -289,10 +289,11 @@ selectASSolution
 selectASSolution = head . M.keys . M.filter fst . actionSequences
 
 selectAS
-  :: SelectASConfig
+  :: (MonadAlloy m, MonadThrow m)
+  => SelectASConfig
   -> Int
   -> Int
-  -> IO SelectASInstance
+  -> m SelectASInstance
 selectAS config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   evalRandT (getSelectASTask config) g

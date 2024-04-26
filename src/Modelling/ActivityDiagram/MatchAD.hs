@@ -239,10 +239,11 @@ matchADSolutionMap sol =
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
 matchAD
-  :: MatchADConfig
+  :: (MonadAlloy m, MonadThrow m)
+  => MatchADConfig
   -> Int
   -> Int
-  -> IO MatchADInstance
+  -> m MatchADInstance
 matchAD config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   evalRandT (getMatchADTask config) g

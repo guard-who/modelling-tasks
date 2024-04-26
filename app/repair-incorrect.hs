@@ -1,5 +1,6 @@
 module Main where
 
+import Capabilities.Alloy.IO            ()
 import Common                           (withLang)
 import Modelling.CdOd.RepairCd (
   defaultRepairCdConfig,

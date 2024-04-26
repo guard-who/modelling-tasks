@@ -3,14 +3,8 @@
 module Capabilities.Alloy (
   MonadAlloy (..),
   getInstances,
-  )where
+  ) where
 
-import qualified Language.Alloy.Call              as Alloy (
-  getInstancesWith,
-  )
-
-import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Output.Generic     (GenericReportT)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Language.Alloy.Call (
   AlloyInstance,
@@ -23,12 +17,6 @@ import Control.Monad.Trans.Random       (RandT)
 
 class Monad m => MonadAlloy m where
   getInstancesWith :: CallAlloyConfig -> String -> m [AlloyInstance]
-
-instance MonadAlloy IO where
-  getInstancesWith = Alloy.getInstancesWith
-
-instance MonadIO m => MonadAlloy (GenericReportT l o m)  where
-  getInstancesWith config = liftIO . getInstancesWith config
 
 instance MonadAlloy m => MonadAlloy (RandT g m) where
   getInstancesWith config = lift . getInstancesWith config
