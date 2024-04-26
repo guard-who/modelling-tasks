@@ -107,8 +107,8 @@ validFindConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> AdvConfig
   -> [FindConcurrencyConfig]
-validFindConcurrencyConfigs cs aconfig =
-  uncurry (`FindConcurrencyConfig` aconfig)
+validFindConcurrencyConfigs cs advancedConfig =
+  uncurry (`FindConcurrencyConfig` advancedConfig)
     <$> cs
     ?? validGraphConfig
     ?? False

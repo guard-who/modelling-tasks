@@ -30,8 +30,8 @@ import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
-  ADNode(..),
-  ADConnection(..),
+  AdNode (..),
+  AdConnection (..),
   isActionNode,
   isObjectNode,
   isDecisionNode,
@@ -42,11 +42,20 @@ import Modelling.ActivityDiagram.Datatype (
   )
 import Modelling.ActivityDiagram.Isomorphism (petriHasMultipleAutomorphisms)
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
-import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleADNames)
-import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleAdNames)
+import Modelling.ActivityDiagram.Config (
+  AdConfig (..),
+  adConfigToAlloy,
+  checkAdConfig,
+  defaultAdConfig,
+  )
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
+import Modelling.ActivityDiagram.PlantUMLConverter (
+  PlantUMLConvConf (..),
+  defaultPlantUMLConvConf,
+  drawAdToFile,
+  )
 import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
 
 import Modelling.Auxiliary.Common (oneOf)
@@ -103,7 +112,7 @@ data MatchPetriInstance = MatchPetriInstance {
 } deriving (Generic, Read, Show)
 
 data MatchPetriConfig = MatchPetriConfig {
-  adConfig :: ADConfig,
+  adConfig :: AdConfig,
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
   petriLayout :: [GraphvizCommand],
@@ -123,7 +132,7 @@ pickRandomLayout conf = oneOf (petriLayout conf)
 
 defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
-  { adConfig = defaultADConfig,
+  { adConfig = defaultAdConfig,
     maxInstances = Just 25,
     hideBranchConditions = False,
     petriLayout = [Dot],
@@ -136,7 +145,7 @@ defaultMatchPetriConfig = MatchPetriConfig
 
 checkMatchPetriConfig :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig conf =
-  checkADConfig (adConfig conf)
+  checkAdConfig (adConfig conf)
   <|> checkMatchPetriConfig' conf
 
 
@@ -262,7 +271,7 @@ matchPetriTask path task = do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
-    $ drawADToFile path (plantUMLConf task) $ activityDiagram task
+    $ drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following Petri net as translation of this activity diagram:"
     german "Betrachten Sie folgendes Petrinetz als Übersetzung dieses Aktivitätsdiagramms:"
@@ -391,7 +400,7 @@ getMatchPetriTask config = do
     Nothing
     $ matchPetriAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
-  activityDiagrams <- mapM (fmap snd . shuffleADNames) rinstas
+  activityDiagrams <- mapM (fmap snd . shuffleAdNames) rinstas
   let (ad, petri) = headWithErr "Failed to find task instances"
         $ filter (not . petriHasMultipleAutomorphisms . snd)
         $ map (second convertToPetrinet . dupe) activityDiagrams
@@ -419,121 +428,121 @@ defaultMatchPetriInstance :: MatchPetriInstance
 defaultMatchPetriInstance = MatchPetriInstance
   { activityDiagram = UMLActivityDiagram
     { nodes =
-      [ ADActionNode
+      [ AdActionNode
         { label = 1 , name = "C" }
-      , ADActionNode
+      , AdActionNode
         { label = 2
         , name = "H" }
-      , ADActionNode
+      , AdActionNode
         { label = 3
         , name = "A" }
-      , ADActionNode
+      , AdActionNode
         { label = 4
         , name = "E" }
-      , ADObjectNode
+      , AdObjectNode
         { label = 5
         , name = "F" }
-      , ADObjectNode
+      , AdObjectNode
         { label = 6
         , name = "D" }
-      , ADObjectNode
+      , AdObjectNode
         { label = 7
         , name = "G" }
-      , ADObjectNode
+      , AdObjectNode
         { label = 8
         , name = "B" }
-      , ADDecisionNode
+      , AdDecisionNode
         { label = 9 }
-      , ADDecisionNode
+      , AdDecisionNode
         { label = 10 }
-      , ADMergeNode
+      , AdMergeNode
         { label = 11 }
-      , ADMergeNode
+      , AdMergeNode
         { label = 12 }
-      , ADForkNode
+      , AdForkNode
         { label = 13 }
-      , ADJoinNode
+      , AdJoinNode
         { label = 14 }
-      , ADActivityFinalNode
+      , AdActivityFinalNode
         { label = 15 }
-      , ADFlowFinalNode
+      , AdFlowFinalNode
         { label = 16 }
-      , ADInitialNode
+      , AdInitialNode
         { label = 17 } ]
     , connections =
-      [ ADConnection
+      [ AdConnection
         { from = 1
         , to = 12
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 2
         , to = 6
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 3
         , to = 4
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 4
         , to = 13
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 5
         , to = 12
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 6
         , to = 14
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 7
         , to = 15
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 8
         , to = 7
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 9
         , to = 11
         , guard = "a" }
-      , ADConnection
+      , AdConnection
         { from = 9
         , to = 14
         , guard = "b" }
-      , ADConnection
+      , AdConnection
         { from = 10
         , to = 1
         , guard = "b" }
-      , ADConnection
+      , AdConnection
         { from = 10
         , to = 5
         , guard = "c" }
-      , ADConnection
+      , AdConnection
         { from = 11
         , to = 10
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 12
         , to = 9
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 13
         , to = 2
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 13
         , to = 8
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 13
         , to = 11
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 14
         , to = 16
         , guard = "" }
-      , ADConnection
+      , AdConnection
         { from = 17
         , to = 3
         , guard = "" } ] }
@@ -542,7 +551,7 @@ defaultMatchPetriInstance = MatchPetriInstance
       [
         ( NormalST
           { label = 1
-          , sourceNode = ADDecisionNode
+          , sourceNode = AdDecisionNode
             { label = 10 } }
         , SimplePlace
           { initial = 0
@@ -550,7 +559,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 7
-                , sourceNode = ADActionNode
+                , sourceNode = AdActionNode
                   { label = 1
                   , name = "C" } }
               , 1 )
@@ -561,14 +570,14 @@ defaultMatchPetriInstance = MatchPetriInstance
       ,
         ( NormalST
           { label = 2
-          , sourceNode = ADJoinNode
+          , sourceNode = AdJoinNode
             { label = 14 } }
         , SimpleTransition
           { flowOut = M.empty } )
       ,
         ( NormalST
           { label = 3
-          , sourceNode = ADInitialNode
+          , sourceNode = AdInitialNode
             { label = 17 } }
         , SimplePlace
           { initial = 1
@@ -576,7 +585,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 19
-                , sourceNode = ADActionNode
+                , sourceNode = AdActionNode
                   { label = 3
                   , name = "A" } }
               , 1 ) ] } )
@@ -588,7 +597,7 @@ defaultMatchPetriInstance = MatchPetriInstance
       ,
         ( NormalST
           { label = 5
-          , sourceNode = ADMergeNode
+          , sourceNode = AdMergeNode
             { label = 11 } }
         , SimplePlace
           { initial = 0
@@ -600,7 +609,7 @@ defaultMatchPetriInstance = MatchPetriInstance
       ,
         ( NormalST
           { label = 6
-          , sourceNode = ADObjectNode
+          , sourceNode = AdObjectNode
             { label = 6
             , name = "D" } }
         , SimplePlace
@@ -609,13 +618,13 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 2
-                , sourceNode = ADJoinNode
+                , sourceNode = AdJoinNode
                   { label = 14 } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 7
-          , sourceNode = ADActionNode
+          , sourceNode = AdActionNode
             { label = 1
             , name = "C" } }
         , SimpleTransition
@@ -623,7 +632,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 13
-                , sourceNode = ADMergeNode
+                , sourceNode = AdMergeNode
                   { label = 12 } }
               , 1 ) ] } )
       ,
@@ -634,13 +643,13 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 13
-                , sourceNode = ADMergeNode
+                , sourceNode = AdMergeNode
                   { label = 12 } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 9
-          , sourceNode = ADObjectNode
+          , sourceNode = AdObjectNode
             { label = 7
             , name = "G" } }
         , SimplePlace
@@ -653,7 +662,7 @@ defaultMatchPetriInstance = MatchPetriInstance
       ,
         ( NormalST
           { label = 10
-          , sourceNode = ADActionNode
+          , sourceNode = AdActionNode
             { label = 2
             , name = "H" } }
         , SimpleTransition
@@ -661,7 +670,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 6
-                , sourceNode = ADObjectNode
+                , sourceNode = AdObjectNode
                   { label = 6
                   , name = "D" } }
               , 1 ) ] } )
@@ -674,20 +683,20 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 12
-                , sourceNode = ADForkNode
+                , sourceNode = AdForkNode
                   { label = 13 } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 12
-          , sourceNode = ADForkNode
+          , sourceNode = AdForkNode
             { label = 13 } }
         , SimpleTransition
           { flowOut = M.fromList
             [
               ( NormalST
                 { label = 5
-                , sourceNode = ADMergeNode
+                , sourceNode = AdMergeNode
                   { label = 11 } }
               , 1 )
             ,
@@ -697,14 +706,14 @@ defaultMatchPetriInstance = MatchPetriInstance
             ,
               ( NormalST
                 { label = 22
-                , sourceNode = ADObjectNode
+                , sourceNode = AdObjectNode
                   { label = 8
                   , name = "B" } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 13
-          , sourceNode = ADMergeNode
+          , sourceNode = AdMergeNode
             { label = 12 } }
         , SimplePlace
           { initial = 0
@@ -721,7 +730,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 25
-                , sourceNode = ADObjectNode
+                , sourceNode = AdObjectNode
                   { label = 5
                   , name = "F" } }
               , 1 ) ] } )
@@ -734,14 +743,14 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 10
-                , sourceNode = ADActionNode
+                , sourceNode = AdActionNode
                   { label = 2
                   , name = "H" } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 16
-          , sourceNode = ADActionNode
+          , sourceNode = AdActionNode
             { label = 4
             , name = "E" } }
         , SimpleTransition
@@ -758,7 +767,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 9
-                , sourceNode = ADObjectNode
+                , sourceNode = AdObjectNode
                   { label = 7
                   , name = "G" } }
               , 1 ) ] } )
@@ -770,13 +779,13 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 5
-                , sourceNode = ADMergeNode
+                , sourceNode = AdMergeNode
                   { label = 11 } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 19
-          , sourceNode = ADActionNode
+          , sourceNode = AdActionNode
             { label = 3
             , name = "A" } }
         , SimpleTransition
@@ -794,7 +803,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 16
-                , sourceNode = ADActionNode
+                , sourceNode = AdActionNode
                   { label = 4
                   , name = "E" } }
               , 1 ) ] } )
@@ -806,13 +815,13 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 1
-                , sourceNode = ADDecisionNode
+                , sourceNode = AdDecisionNode
                   { label = 10 } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 22
-          , sourceNode = ADObjectNode
+          , sourceNode = AdObjectNode
             { label = 8
             , name = "B" } }
         , SimplePlace
@@ -830,13 +839,13 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 24
-                , sourceNode = ADDecisionNode
+                , sourceNode = AdDecisionNode
                   { label = 9 } }
               , 1 ) ] } )
       ,
         ( NormalST
           { label = 24
-          , sourceNode = ADDecisionNode
+          , sourceNode = AdDecisionNode
             { label = 9 } }
         , SimplePlace
           { initial = 0
@@ -844,7 +853,7 @@ defaultMatchPetriInstance = MatchPetriInstance
             [
               ( NormalST
                 { label = 2
-                , sourceNode = ADJoinNode
+                , sourceNode = AdJoinNode
                   { label = 14 } }
               , 1 )
             ,
@@ -854,7 +863,7 @@ defaultMatchPetriInstance = MatchPetriInstance
       ,
         ( NormalST
           { label = 25
-          , sourceNode = ADObjectNode
+          , sourceNode = AdObjectNode
             { label = 5
             , name = "F" } }
         , SimplePlace

@@ -111,9 +111,9 @@ validFindConflictConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> AdvConfig
   -> [FindConflictConfig]
-validFindConflictConfigs cs aconfig = do
+validFindConflictConfigs cs advancedConfig = do
   (bc, ch) <- cs
-  FindConflictConfig bc aconfig ch
+  FindConflictConfig bc advancedConfig ch
     <$> validConflictConfigs bc
     <*> pure validGraphConfig
     <*> pure False

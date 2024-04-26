@@ -2,12 +2,12 @@
 
 module Modelling.ActivityDiagram.EnterAs.Config where
 
-import Modelling.ActivityDiagram.Config (ADConfig(..))
+import Modelling.ActivityDiagram.Config (AdConfig(..))
 import Modelling.ActivityDiagram.EnterAS (EnterASConfig(..))
 
 task35 :: EnterASConfig
 task35 = EnterASConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 12,
     maxActions = 12,
     minObjectNodes = 5,
@@ -29,7 +29,7 @@ task35 = EnterASConfig {
 
 task36 :: EnterASConfig
 task36 = EnterASConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 14,
     maxActions = 14,
     minObjectNodes = 6,

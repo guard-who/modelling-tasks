@@ -19,10 +19,10 @@ import qualified Data.Map as M (
   mapMaybeWithKey,
   )
 
-import qualified Modelling.ActivityDiagram.Datatype as AD (
+import qualified Modelling.ActivityDiagram.Datatype as Ad (
   UMLActivityDiagram(..),
-  ADNode(..),
-  ADConnection(..)
+  AdNode (..),
+  AdConnection (..)
   )
 
 import Modelling.PetriNet.Types (
@@ -40,19 +40,21 @@ import Modelling.ActivityDiagram.Datatype (
   )
 
 
-data PetriKey = SupportST {label :: Int} | NormalST {label :: Int, sourceNode :: AD.ADNode}
+data PetriKey
+  = SupportST {label :: Int}
+  | NormalST {label :: Int, sourceNode :: Ad.AdNode}
   deriving (Generic, Eq, Read, Show)
 
 instance Ord PetriKey where
   pk1 `compare` pk2 = label pk1 `compare` label pk2
 
-convertToSimple :: AD.UMLActivityDiagram -> SimplePetriLike PetriKey
+convertToSimple :: Ad.UMLActivityDiagram -> SimplePetriLike PetriKey
 convertToSimple = convertToPetrinet
 
-convertToPetrinet :: Net p n => AD.UMLActivityDiagram -> p n PetriKey
+convertToPetrinet :: Net p n => Ad.UMLActivityDiagram -> p n PetriKey
 convertToPetrinet diag =
-  let st_petri = foldr insertNode emptyNet (AD.nodes diag)
-      st_edges_petri = foldr insertEdge st_petri (AD.connections diag)
+  let st_petri = foldr insertNode emptyNet (Ad.nodes diag)
+      st_edges_petri = foldr insertEdge st_petri (Ad.connections diag)
       st_support_petri = foldr addSupportST st_edges_petri (M.keys $ nodes st_edges_petri)
   in relabelPetri $ removeFinalPlaces st_support_petri
 
@@ -118,49 +120,49 @@ addSupportST' sourceKey targetKey targetNode petri =
 
 insertNode
   :: Net p n
-  => AD.ADNode
+  => Ad.AdNode
   -> p n PetriKey
   -> p n PetriKey
 insertNode =
   uncurry alterNode . nodeToST
 
-nodeToST :: AD.ADNode -> (PetriKey, Maybe Int)
+nodeToST :: Ad.AdNode -> (PetriKey, Maybe Int)
 nodeToST node =
   case node of
-    AD.ADInitialNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdInitialNode {label} -> (NormalST{label=label, sourceNode=node},
       Just 1
       )
-    AD.ADActionNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdActionNode {label} -> (NormalST{label=label, sourceNode=node},
       Nothing
       )
-    AD.ADObjectNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdObjectNode {label} -> (NormalST{label=label, sourceNode=node},
       Just 0
       )
-    AD.ADDecisionNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdDecisionNode {label} -> (NormalST{label=label, sourceNode=node},
       Just 0
       )
-    AD.ADMergeNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdMergeNode {label} -> (NormalST{label=label, sourceNode=node},
       Just 0
       )
-    AD.ADForkNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdForkNode {label} -> (NormalST{label=label, sourceNode=node},
       Nothing
       )
-    AD.ADJoinNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdJoinNode {label} -> (NormalST{label=label, sourceNode=node},
       Nothing
       )
-    AD.ADActivityFinalNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdActivityFinalNode {label} -> (NormalST{label=label, sourceNode=node},
       Just 0
       )
-    AD.ADFlowFinalNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdFlowFinalNode {label} -> (NormalST{label=label, sourceNode=node},
       Just 0
       )
 
 insertEdge
   :: Net p n
-  => AD.ADConnection
+  => Ad.AdConnection
   -> p n PetriKey
   -> p n PetriKey
 insertEdge edge petri = fromMaybe petri $ do
-  sourceKey <- find (\k -> label k == AD.from edge) $ M.keys $ nodes petri
-  targetKey <- find (\k -> label k == AD.to edge) $ M.keys $ nodes petri
+  sourceKey <- find (\k -> label k == Ad.from edge) $ M.keys $ nodes petri
+  targetKey <- find (\k -> label k == Ad.to edge) $ M.keys $ nodes petri
   return $ alterFlow sourceKey 1 targetKey petri

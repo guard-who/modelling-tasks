@@ -4,7 +4,10 @@ import Modelling.ActivityDiagram.MatchPetri (MatchPetriConfig(..), checkMatchPet
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
-import Modelling.ActivityDiagram.Config (ADConfig(minActions, forkJoinPairs, decisionMergePairs, cycles), defaultADConfig)
+import Modelling.ActivityDiagram.Config (
+  AdConfig (decisionMergePairs, forkJoinPairs, minActions, cycles),
+  defaultAdConfig,
+  )
 
 import Modelling.ActivityDiagram.Instance(parseInstance)
 import Modelling.ActivityDiagram.Petrinet (convertToSimple)
@@ -13,13 +16,15 @@ import Language.Alloy.Call (getInstances)
 
 spec :: Spec
 spec = do
-  describe "checkADConfig" $ do
+  describe "checkAdConfig" $ do
     it "checks if the basic Input is in given boundaries" $
       checkMatchPetriConfig defaultMatchPetriConfig  `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with necessary changes" $
-        checkMatchPetriConfig defaultMatchPetriConfig
-          {adConfig=defaultADConfig{minActions=0, forkJoinPairs=0}, avoidAddingSinksForFinals=Just True}
+        checkMatchPetriConfig defaultMatchPetriConfig {
+          adConfig = defaultAdConfig {minActions = 0, forkJoinPairs = 0},
+          avoidAddingSinksForFinals = Just True
+          }
             `shouldSatisfy` isJust
   describe "matchPetriAlloy" $ do
     context "when supportSTAbsent is set to Just False" $
@@ -30,7 +35,10 @@ spec = do
         all (hasSupportSTs . convertToSimple) ad `shouldBe` True
     context "when supportSTAbsent is set to Just True" $
       it "it returns an Alloy Specification from which only diagrams which contain no support STs are generated" $ do
-        let spec' = matchPetriAlloy defaultMatchPetriConfig {adConfig=defaultADConfig{cycles=0, decisionMergePairs=1}, supportSTAbsent=Just True}
+        let spec' = matchPetriAlloy defaultMatchPetriConfig {
+              adConfig = defaultAdConfig {cycles = 0, decisionMergePairs = 1},
+              supportSTAbsent = Just True
+              }
         inst <- getInstances (Just 50) spec'
         ad <- mapM parseInstance inst
         any (hasSupportSTs . convertToSimple) ad `shouldBe` False

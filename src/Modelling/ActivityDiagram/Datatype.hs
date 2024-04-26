@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Modelling.ActivityDiagram.Datatype (
-  ADConnection(..),
-  ADNode(..),
+  AdConnection (..),
+  AdNode (..),
   UMLActivityDiagram(..),
   getInitialNodes,
   getFinalNodes,
@@ -19,116 +19,116 @@ module Modelling.ActivityDiagram.Datatype (
 
 import GHC.Generics (Generic)
 
-data ADConnection =
-  ADConnection {
+data AdConnection =
+  AdConnection {
     from :: Int,
     to :: Int,
     guard :: String
   } deriving (Generic, Read, Show, Eq, Ord)
 
-data ADNode =
-  ADActionNode {
+data AdNode =
+  AdActionNode {
     label :: Int,
     name :: String
   }
-  | ADObjectNode {
+  | AdObjectNode {
       label :: Int,
       name :: String
   }
-  | ADDecisionNode {
+  | AdDecisionNode {
       label :: Int
   }
-  | ADMergeNode {
+  | AdMergeNode {
       label :: Int
   }
-  | ADForkNode {
+  | AdForkNode {
       label :: Int
   }
-  | ADJoinNode {
+  | AdJoinNode {
       label :: Int
   }
-  | ADActivityFinalNode {
+  | AdActivityFinalNode {
       label :: Int
   }
-  | ADFlowFinalNode {
+  | AdFlowFinalNode {
       label :: Int
   }
-  | ADInitialNode {
+  | AdInitialNode {
       label :: Int
   } deriving (Generic, Read, Show, Eq)
 
 
 data UMLActivityDiagram =
   UMLActivityDiagram {
-    nodes :: [ADNode],
-    connections :: [ADConnection]
+    nodes :: [AdNode],
+    connections :: [AdConnection]
   } deriving (Generic, Read, Show, Eq)
 
 
-adjNodes :: ADNode -> UMLActivityDiagram -> [ADNode]
+adjNodes :: AdNode -> UMLActivityDiagram -> [AdNode]
 adjNodes node (UMLActivityDiagram ns conns) =
   let adjLabel = map to $ filter (\c -> from c == label node) conns
   in filter (\node' -> label node' `elem` adjLabel) ns
 
-isActionNode :: ADNode -> Bool
+isActionNode :: AdNode -> Bool
 isActionNode node =
   case node of
-    ADActionNode {} -> True
+    AdActionNode {} -> True
     _ -> False
 
-isObjectNode :: ADNode -> Bool
+isObjectNode :: AdNode -> Bool
 isObjectNode node =
   case node of
-    ADObjectNode {} -> True
+    AdObjectNode {} -> True
     _ -> False
 
-isDecisionNode :: ADNode -> Bool
+isDecisionNode :: AdNode -> Bool
 isDecisionNode node =
   case node of
-    ADDecisionNode {} -> True
+    AdDecisionNode {} -> True
     _ -> False
 
-isMergeNode :: ADNode -> Bool
+isMergeNode :: AdNode -> Bool
 isMergeNode node =
   case node of
-    ADMergeNode {} -> True
+    AdMergeNode {} -> True
     _ -> False
 
-isForkNode :: ADNode -> Bool
+isForkNode :: AdNode -> Bool
 isForkNode node =
   case node of
-    ADForkNode {} -> True
+    AdForkNode {} -> True
     _ -> False
 
-isJoinNode :: ADNode -> Bool
+isJoinNode :: AdNode -> Bool
 isJoinNode node =
   case node of
-    ADJoinNode {} -> True
+    AdJoinNode {} -> True
     _ -> False
 
-isInitialNode :: ADNode -> Bool
+isInitialNode :: AdNode -> Bool
 isInitialNode node =
   case node of
-    ADInitialNode {} -> True
+    AdInitialNode {} -> True
     _ -> False
 
-isActivityFinalNode :: ADNode -> Bool
+isActivityFinalNode :: AdNode -> Bool
 isActivityFinalNode node =
   case node of
-    ADActivityFinalNode {} -> True
+    AdActivityFinalNode {} -> True
     _ -> False
 
-isFlowFinalNode :: ADNode -> Bool
+isFlowFinalNode :: AdNode -> Bool
 isFlowFinalNode node =
   case node of
-    ADFlowFinalNode {} -> True
+    AdFlowFinalNode {} -> True
     _ -> False
 
 
-getInitialNodes :: UMLActivityDiagram -> [ADNode]
+getInitialNodes :: UMLActivityDiagram -> [AdNode]
 getInitialNodes (UMLActivityDiagram ns _) =
   filter isInitialNode ns
 
-getFinalNodes :: UMLActivityDiagram -> [ADNode]
+getFinalNodes :: UMLActivityDiagram -> [AdNode]
 getFinalNodes (UMLActivityDiagram ns _) =
   filter (\x -> isActivityFinalNode x || isFlowFinalNode x) ns

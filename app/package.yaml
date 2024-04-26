@@ -110,8 +110,8 @@ executables:
       - output-monad
     other-modules:
       - Common
-  matchADTaskDemo:
-    main: matchADTaskDemo.hs
+  matchAdTaskDemo:
+    main: matchAdTaskDemo.hs
     source-dirs:
       - .
       - common

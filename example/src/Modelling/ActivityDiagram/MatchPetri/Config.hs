@@ -2,14 +2,14 @@
 
 module Modelling.ActivityDiagram.MatchPetri.Config where
 
-import Modelling.ActivityDiagram.Config (ADConfig(..))
+import Modelling.ActivityDiagram.Config (AdConfig(..))
 import Modelling.ActivityDiagram.MatchPetri (MatchPetriConfig(..))
 
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
 task39 :: MatchPetriConfig
 task39 = MatchPetriConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 8,
     maxActions = 8,
     minObjectNodes = 4,
@@ -33,7 +33,7 @@ task39 = MatchPetriConfig {
 
 task40 :: MatchPetriConfig
 task40 = MatchPetriConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 8,
     maxActions = 8,
     minObjectNodes = 5,

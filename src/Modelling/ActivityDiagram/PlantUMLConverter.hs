@@ -7,7 +7,7 @@ module Modelling.ActivityDiagram.PlantUMLConverter (
   defaultPlantUMLConvConf,
   convertToPlantUML,
   convertToPlantUML',
-  drawADToFile
+  drawAdToFile
 ) where
 
 import qualified Data.ByteString as B (writeFile)
@@ -19,7 +19,7 @@ import GHC.Generics (Generic)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
 import Modelling.ActivityDiagram.Datatype (
-  ADNode(..),
+  AdNode (..),
   UMLActivityDiagram(..),
   getInitialNodes,
   adjNodes,
@@ -36,8 +36,8 @@ defaultPlantUMLConvConf = PlantUMLConvConf {
   suppressBranchConditions = True
 }
 
-drawADToFile :: FilePath -> PlantUMLConvConf -> UMLActivityDiagram -> IO FilePath
-drawADToFile path conf ad = do
+drawAdToFile :: FilePath -> PlantUMLConvConf -> UMLActivityDiagram -> IO FilePath
+drawAdToFile path conf ad = do
   svg <- drawPlantUMLDiagram SVG $ convertToPlantUML' conf ad
   B.writeFile adFilename svg
   return adFilename
@@ -55,34 +55,34 @@ convertToPlantUML' conf diag =
         document = "@startuml\n" ++ body ++ "@enduml"
     in [__i|#{document}|]
 
-convertNode :: [ADNode] -> PlantUMLConvConf -> UMLActivityDiagram -> String
+convertNode :: [AdNode] -> PlantUMLConvConf -> UMLActivityDiagram -> String
 convertNode queue conf diag = convertNode' queue conf diag []
 
 --Traverse the graph and serialize the nodes along the way to a PlantUML-String
-convertNode' :: [ADNode] -> PlantUMLConvConf -> UMLActivityDiagram -> [ADNode] -> String
+convertNode' :: [AdNode] -> PlantUMLConvConf -> UMLActivityDiagram -> [AdNode] -> String
 convertNode' [] _ _ _ = [__i||]
 convertNode' (current:queue) conf@(PlantUMLConvConf sn sb) diag seen =
   let newQueue = filter (`notElem` seen) (queue ++ adjNodes current diag)
       newSeen = seen ++ [current]
   in case current of
-        ADActionNode {name} ->
+        AdActionNode {name} ->
           [__i|:#{f sn name};
           #{convertNode' newQueue conf diag newSeen}|]
-        ADObjectNode {name} ->
+        AdObjectNode {name} ->
           [__i|:#{f sn name}]
           #{convertNode' newQueue conf diag newSeen}|]
-        ADInitialNode {} ->
+        AdInitialNode {} ->
           [__i|start
           #{convertNode' newQueue conf diag newSeen}|]
-        ADActivityFinalNode {} ->
+        AdActivityFinalNode {} ->
           [__i|stop\n|]
-        ADFlowFinalNode {} ->
+        AdFlowFinalNode {} ->
           [__i|end\n|]
-        ADMergeNode {} ->
+        AdMergeNode {} ->
           [__i|#{handleRepeat current conf diag newSeen repeatStart repeatEnd}|]
-        ADDecisionNode {} ->
+        AdDecisionNode {} ->
           [__i|#{handleDecisionOrFork current conf diag newSeen ifElseStart ifElseMid ifElseEnd}|]
-        ADForkNode {} ->
+        AdForkNode {} ->
           [__i|#{handleDecisionOrFork current conf diag newSeen forkStart forkMid forkEnd}|]
         _ -> [__i||]
   where
@@ -106,10 +106,10 @@ Then: Determine the subpaths between the decision and the merge
 and handle them via 'convertNode''
 -}
 handleDecisionOrFork
-  :: ADNode
+  :: AdNode
   -> PlantUMLConvConf
   -> UMLActivityDiagram
-  -> [ADNode]
+  -> [AdNode]
   -> String
   -> String
   -> String
@@ -141,9 +141,23 @@ filterDisjunctSublists ws = filterDisjunctSublists' ws ws
         allDisjunctWith xs ys = all (disjunct xs) (delete xs ys)
         disjunct xs = null . intersect xs
 
---Strategy: Find the corresponding decision to the merge: That should be the node reachable from the merge (but not traversed yet) that has an edge towards it
---Then: Determine the subpath between the merge and the decision and handle them via convertNode'
-handleRepeat :: ADNode -> PlantUMLConvConf -> UMLActivityDiagram -> [ADNode] -> String -> String -> String
+{-|
+Strategy:
+
+* Find the corresponding decision to the merge:
+  That should be the node reachable from the merge (but not traversed yet)
+  that has an edge towards it
+* Then: Determine the subpath between the merge and the decision
+  and handle them via convertNode'
+-}
+handleRepeat
+  :: AdNode
+  -> PlantUMLConvConf
+  -> UMLActivityDiagram
+  -> [AdNode]
+  -> String
+  -> String
+  -> String
 handleRepeat merge conf diag@(UMLActivityDiagram _ conns) seen startToken endToken =
   let repeatEnd =  head $ dropWhile (\x -> merge `notElem` adjNodes x diag) $ traverseFromNode merge diag seen
       pathToRepeatEnd = tail $ filter (\x -> x `notElem` traverseFromNode repeatEnd diag seen) $ traverseFromNode merge diag seen
@@ -158,12 +172,19 @@ handleRepeat merge conf diag@(UMLActivityDiagram _ conns) seen startToken endTok
     |]
 
 
---Get reachable (yet unhandled) nodes from passed node
-traverseFromNode :: ADNode -> UMLActivityDiagram -> [ADNode] -> [ADNode]
+-- | Get reachable (yet unhandled) nodes from passed node
+traverseFromNode :: AdNode -> UMLActivityDiagram -> [AdNode] -> [AdNode]
 traverseFromNode node = traverseFromNode' [node] [node]
 
---Implementation of BFS taking already previously handled (seen) nodes in account
-traverseFromNode' :: [ADNode] -> [ADNode] -> UMLActivityDiagram -> [ADNode] -> [ADNode]
+{-|
+Implementation of BFS taking already previously handled (seen) nodes in account
+-}
+traverseFromNode'
+  :: [AdNode]
+  -> [AdNode]
+  -> UMLActivityDiagram
+  -> [AdNode]
+  -> [AdNode]
 traverseFromNode' [] traversed _ _ = traversed
 traverseFromNode' (current:queue) traversed diag seen =
   let nextNodes = filter (`notElem` (traversed ++ seen)) (adjNodes current diag)

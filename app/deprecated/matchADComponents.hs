@@ -8,7 +8,7 @@ import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.MatchAD (MatchADInstance(..), defaultMatchADConfig, matchADAlloy, matchADComponentsText, matchADTaskDescription)
+import Modelling.ActivityDiagram.MatchAd (MatchAdInstance(..), defaultMatchAdConfig, matchAdAlloy, matchAdComponentsText, matchAdTaskDescription)
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
@@ -18,13 +18,13 @@ main = do
   xs <- getArgs
   case xs of
     pathToFolder:xs' -> do
-      inst <- getInstances (Just 50) $ matchADAlloy defaultMatchADConfig
+      inst <- getInstances (Just 50) $ matchAdAlloy defaultMatchAdConfig
       folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance) inst
-          matchAD = map (\x -> matchADComponentsText $ MatchADInstance{activityDiagram = x, seed=123}) ad
-          plantumlstring = map (convertToPlantUML . fst) matchAD
-          taskDescription = replicate (length folders) matchADTaskDescription
-          taskSolution = map snd matchAD
+          matchAd = map (\x -> matchAdComponentsText $ MatchAdInstance{activityDiagram = x, seed=123}) ad
+          plantumlstring = map (convertToPlantUML . fst) matchAd
+          taskDescription = replicate (length folders) matchAdTaskDescription
+          taskSolution = map snd matchAd
       svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"

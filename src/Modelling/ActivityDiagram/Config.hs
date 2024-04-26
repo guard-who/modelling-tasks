@@ -3,9 +3,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Modelling.ActivityDiagram.Config (
-  ADConfig(..),
-  defaultADConfig,
-  checkADConfig,
+  AdConfig (..),
+  defaultAdConfig,
+  checkAdConfig,
   adConfigBitWidth,
   adConfigToAlloy,
   adConfigToAlloy',
@@ -17,7 +17,7 @@ import Modelling.ActivityDiagram.Alloy (moduleComponentsSig, moduleInitialNodeRu
 import Data.String.Interpolate ( i )
 import GHC.Generics (Generic)
 
-data ADConfig = ADConfig {
+data AdConfig = AdConfig {
   minActions :: Int,
   maxActions :: Int,
   minObjectNodes :: Int,
@@ -30,8 +30,8 @@ data ADConfig = ADConfig {
   cycles :: Int
 } deriving (Generic, Read, Show)
 
-defaultADConfig :: ADConfig
-defaultADConfig = ADConfig
+defaultAdConfig :: AdConfig
+defaultAdConfig = AdConfig
   { minActions = 4,
     maxActions = 4,
     minObjectNodes = 1,
@@ -44,8 +44,8 @@ defaultADConfig = ADConfig
     cycles = 1
   }
 
-checkADConfig :: ADConfig -> Maybe String
-checkADConfig ADConfig {
+checkAdConfig :: AdConfig -> Maybe String
+checkAdConfig AdConfig {
     minActions,
     maxActions,
     minObjectNodes,
@@ -86,12 +86,12 @@ checkADConfig ADConfig {
   | otherwise
     = Nothing
 
-adConfigToAlloy :: String -> String -> ADConfig -> String
+adConfigToAlloy :: String -> String -> AdConfig -> String
 adConfigToAlloy modules preds adConf =
   adConfigToAlloy' (adConfigScope adConf) (adConfigBitWidth adConf) modules preds adConf
 
-adConfigToAlloy' :: Int -> Int -> String -> String -> ADConfig -> String
-adConfigToAlloy' scope bitWidth modules preds ADConfig {
+adConfigToAlloy' :: Int -> Int -> String -> String -> AdConfig -> String
+adConfigToAlloy' scope bitWidth modules preds AdConfig {
     minActions,
     maxActions,
     minObjectNodes,
@@ -115,11 +115,11 @@ adConfigToAlloy' scope bitWidth modules preds ADConfig {
     #{singletonActions}
     #{singletonObjectNodes}
 
-    pred showAD {
+    pred showAd {
       #{preds}
     }
 
-    run showAD for #{scope} but #{bitWidth} Int, #{maxActions} ActionNodes,
+    run showAd for #{scope} but #{bitWidth} Int, #{maxActions} ActionNodes,
       #{maxObjectNodes} ObjectNodes, #{maxNamedNodes} ActionObjectNodes, #{maxActions + maxObjectNodes} ComponentNames,
       exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
       #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
@@ -133,8 +133,8 @@ adConfigToAlloy' scope bitWidth modules preds ADConfig {
     singletonObjectNodes =
       unlines $ map (\x -> [i| one sig O#{x} extends ObjectNodes {}|]) [1..minObjectNodes]
 
-adConfigScope :: ADConfig -> Int
-adConfigScope ADConfig {
+adConfigScope :: AdConfig -> Int
+adConfigScope AdConfig {
     maxNamedNodes,
     decisionMergePairs,
     forkJoinPairs
@@ -146,5 +146,5 @@ adConfigScope ADConfig {
  If this number is made configurable or the specification is changed to use more Ints,
  this should adapted.
 -}
-adConfigBitWidth :: ADConfig -> Int
+adConfigBitWidth :: AdConfig -> Int
 adConfigBitWidth = const 3

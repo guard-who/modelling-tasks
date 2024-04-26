@@ -2,11 +2,13 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Modelling.ActivityDiagram.Shuffle (
-  shuffleADLabels, shuffleADNames, shufflePetri
+  shuffleAdLabels,
+  shuffleAdNames,
+  shufflePetri,
 ) where
 
 import qualified Data.Map as M ((!), fromList, keys)
-import qualified Modelling.ActivityDiagram.Datatype as AD (ADNode(label))
+import qualified Modelling.ActivityDiagram.Datatype as Ad (AdNode (label))
 import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
 import qualified Modelling.PetriNet.Types as PN (
   Net (..)
@@ -14,8 +16,8 @@ import qualified Modelling.PetriNet.Types as PN (
 
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
-  ADNode (..),
-  ADConnection (..),
+  AdNode (..),
+  AdConnection (..),
   isActionNode, isObjectNode)
 
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..))
@@ -28,53 +30,59 @@ import Data.Map (Map)
 import System.Random.Shuffle (shuffleM)
 
 
-shuffleADLabels
+shuffleAdLabels
   :: (MonadRandom m)
   => UMLActivityDiagram
   -> m (Map Int Int, UMLActivityDiagram)
-shuffleADLabels diag = do
-  let labels = map AD.label $ nodes diag
+shuffleAdLabels diag = do
+  let labels = map Ad.label $ nodes diag
   relabeling <- M.fromList . zip labels <$> shuffleM labels
   let newNodes = map (updateNodeLabel relabeling) $ nodes diag
       newConnections = map (updateConnection relabeling) $ connections diag
   return (relabeling, UMLActivityDiagram {nodes=newNodes, connections=newConnections})
 
-updateNodeLabel :: Map Int Int -> ADNode -> ADNode
+updateNodeLabel :: Map Int Int -> AdNode -> AdNode
 updateNodeLabel relabeling node =
   case node of
-    ADActionNode {label, name} -> ADActionNode {label=relabel label, name=name}
-    ADObjectNode {label, name} -> ADObjectNode {label=relabel label, name=name}
-    ADDecisionNode {label} -> ADDecisionNode {label=relabel label}
-    ADMergeNode {label} -> ADMergeNode {label=relabel label}
-    ADForkNode {label} -> ADForkNode {label=relabel label}
-    ADJoinNode {label} -> ADJoinNode {label=relabel label}
-    ADInitialNode {label} -> ADInitialNode {label=relabel label}
-    ADActivityFinalNode {label} -> ADActivityFinalNode {label=relabel label}
-    ADFlowFinalNode {label} -> ADFlowFinalNode {label=relabel label}
+    AdActionNode {label, name} -> AdActionNode {
+      label = relabel label,
+      name = name
+      }
+    AdObjectNode {label, name} -> AdObjectNode {
+      label = relabel label,
+      name = name
+      }
+    AdDecisionNode {label} -> AdDecisionNode {label = relabel label}
+    AdMergeNode {label} -> AdMergeNode {label = relabel label}
+    AdForkNode {label} -> AdForkNode {label = relabel label}
+    AdJoinNode {label} -> AdJoinNode {label = relabel label}
+    AdInitialNode {label} -> AdInitialNode {label = relabel label}
+    AdActivityFinalNode {label} -> AdActivityFinalNode {label = relabel label}
+    AdFlowFinalNode {label} -> AdFlowFinalNode {label = relabel label}
   where relabel n = relabeling M.! n
 
-updateConnection :: Map Int Int -> ADConnection -> ADConnection
-updateConnection relabeling ADConnection {from, to, guard} =
+updateConnection :: Map Int Int -> AdConnection -> AdConnection
+updateConnection relabeling AdConnection {from, to, guard} =
   let newFrom = relabeling M.! from
       newTo = relabeling M.! to
-  in ADConnection {from=newFrom, to=newTo, guard=guard}
+  in AdConnection {from=newFrom, to=newTo, guard=guard}
 
 
-shuffleADNames
+shuffleAdNames
   :: (MonadRandom m)
   => UMLActivityDiagram
   -> m (Map String String, UMLActivityDiagram)
-shuffleADNames UMLActivityDiagram{nodes, connections} = do
+shuffleAdNames UMLActivityDiagram{nodes, connections} = do
   let names = map name $ filter (\n -> isActionNode n || isObjectNode n) nodes
   renaming <- M.fromList . zip names <$> shuffleM names
   let newNodes = map (updateName renaming) nodes
   return (renaming, UMLActivityDiagram {nodes=newNodes, connections=connections})
 
-updateName :: Map String String -> ADNode -> ADNode
+updateName :: Map String String -> AdNode -> AdNode
 updateName renaming node =
   case node of
-    ADActionNode {label, name} -> ADActionNode {label=label, name=rename name}
-    ADObjectNode {label, name} -> ADObjectNode {label=label, name=rename name}
+    AdActionNode {label, name} -> AdActionNode {label=label, name=rename name}
+    AdObjectNode {label, name} -> AdObjectNode {label=label, name=rename name}
     _ -> node
   where rename s = renaming M.! s
 

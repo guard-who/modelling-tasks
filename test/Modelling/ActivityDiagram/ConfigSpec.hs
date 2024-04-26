@@ -1,9 +1,9 @@
 module Modelling.ActivityDiagram.ConfigSpec where
 
 import Modelling.ActivityDiagram.Config (
-  ADConfig(..),
-  checkADConfig,
-  defaultADConfig,
+  AdConfig (..),
+  checkAdConfig,
+  defaultAdConfig,
   adConfigBitWidth,
   adConfigToAlloy',
   adConfigScope,
@@ -16,16 +16,16 @@ import Language.Alloy.Call (getInstances)
 
 spec :: Spec
 spec = do
-  describe "checkADConfig" $ do
+  describe "checkAdConfig" $ do
     it "checks if the basic Input is in given boundaries" $
-      checkADConfig defaultADConfig `shouldBe` Nothing
+      checkAdConfig defaultAdConfig `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with necessary changes" $
-        checkADConfig defaultADConfig{minActions=0, minObjectNodes=0}
+        checkAdConfig defaultAdConfig{minActions = 0, minObjectNodes = 0}
           `shouldSatisfy` isJust
   describe "adConfigScope" $
     context "given the default config" $ do
-      let conf = defaultADConfig
+      let conf = defaultAdConfig
           bitWidth = adConfigBitWidth conf
       it "provides a scope large enough to generate instances" $ do
         let spec' = adConfigToAlloy' (adConfigScope conf) bitWidth "" "" conf
@@ -38,7 +38,7 @@ spec = do
         length inst `shouldBe` (0 :: Int)
   describe "adConfigBitWidth" $
     context "given the default config" $ do
-      let conf = defaultADConfig
+      let conf = defaultAdConfig
           scope = adConfigScope conf
       it "provides a bit width large enough to generate instances" $ do
         let spec' = adConfigToAlloy' scope (adConfigBitWidth conf) "" "" conf

@@ -4,12 +4,12 @@ import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validA
 
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
-  ADNode(..),
-  ADConnection(..)
+  AdNode (..),
+  AdConnection (..)
   )
 
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
-import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig)
+import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultAdConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Language.Alloy.Call (getInstances)
 
@@ -48,7 +48,7 @@ spec =
         validActionSequence (generateActionSequence testDiagram) testDiagram `shouldBe` (True::Bool)
     context "on a list of generated diagrams" $
       it "is consistent with the function generateActionSequence" $ do
-        let spec' = adConfigToAlloy modules preds defaultADConfig
+        let spec' = adConfigToAlloy modules preds defaultAdConfig
             depth = 10
         inst <- getInstances (Just $ fromIntegral depth) spec'
         ad <- mapM parseInstance inst
@@ -61,122 +61,122 @@ spec =
 testDiagram :: UMLActivityDiagram
 testDiagram = UMLActivityDiagram
       { nodes =
-        [ ADActionNode
+        [ AdActionNode
             { label = 1
             , name = "A"
             }
-        , ADActionNode
+        , AdActionNode
             { label = 2
             , name = "B"
             }
-        , ADActionNode
+        , AdActionNode
             { label = 3
             , name = "C"
             }
-        , ADActionNode
+        , AdActionNode
             { label = 4
             , name = "D"
             }
-        , ADActionNode
+        , AdActionNode
             { label = 5
             , name = "E"
             }
-        , ADObjectNode
+        , AdObjectNode
             { label = 6
             , name = "F"
             }
-        , ADDecisionNode { label = 7 }
-        , ADDecisionNode { label = 8 }
-        , ADMergeNode { label = 9 }
-        , ADMergeNode { label = 10 }
-        , ADForkNode { label = 11 }
-        , ADJoinNode { label = 12 }
-        , ADFlowFinalNode { label = 13 }
-        , ADFlowFinalNode { label = 14 }
-        , ADInitialNode { label = 15 }
+        , AdDecisionNode { label = 7 }
+        , AdDecisionNode { label = 8 }
+        , AdMergeNode { label = 9 }
+        , AdMergeNode { label = 10 }
+        , AdForkNode { label = 11 }
+        , AdJoinNode { label = 12 }
+        , AdFlowFinalNode { label = 13 }
+        , AdFlowFinalNode { label = 14 }
+        , AdInitialNode { label = 15 }
         ]
     , connections =
-        [ ADConnection
+        [ AdConnection
             { from = 1
             , to = 10
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 2
             , to = 14
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 3
             , to = 9
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 4
             , to = 9
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 5
             , to = 12
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 6
             , to = 1
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 7
             , to = 10
             , guard = "b"
             }
-        , ADConnection
+        , AdConnection
             { from = 7
             , to = 13
             , guard = "a"
             }
-        , ADConnection
+        , AdConnection
             { from = 8
             , to = 3
             , guard = "b"
             }
-        , ADConnection
+        , AdConnection
             { from = 8
             , to = 4
             , guard = "a"
             }
-        , ADConnection
+        , AdConnection
             { from = 9
             , to = 12
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 10
             , to = 11
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 11
             , to = 2
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 11
             , to = 5
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 11
             , to = 8
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 12
             , to = 7
             , guard = ""
             }
-        , ADConnection
+        , AdConnection
             { from = 15
             , to = 6
             , guard = ""

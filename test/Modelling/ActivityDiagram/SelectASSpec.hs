@@ -2,7 +2,10 @@ module Modelling.ActivityDiagram.SelectASSpec where
 
 import Modelling.ActivityDiagram.SelectAS (SelectASConfig(..), checkSelectASConfig, defaultSelectASConfig)
 
-import Modelling.ActivityDiagram.Config (ADConfig(maxObjectNodes), defaultADConfig)
+import Modelling.ActivityDiagram.Config (
+  AdConfig (maxObjectNodes),
+  defaultAdConfig,
+  )
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
 
@@ -13,6 +16,6 @@ spec = describe "checkSelectASConfig" $ do
   context "when provided with Input out of the constraints" $
     it "it returns a String with necessary changes" $
       checkSelectASConfig defaultSelectASConfig {
-        adConfig=defaultADConfig{maxObjectNodes = 0},
+        adConfig = defaultAdConfig {maxObjectNodes = 0},
         objectNodeOnEveryPath = Just True
       } `shouldSatisfy` isJust

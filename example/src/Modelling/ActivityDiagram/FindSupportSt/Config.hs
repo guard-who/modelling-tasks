@@ -3,11 +3,11 @@
 module Modelling.ActivityDiagram.FindSupportSt.Config where
 
 import Modelling.ActivityDiagram.FindSupportST (FindSupportSTConfig(..))
-import Modelling.ActivityDiagram.Config (ADConfig(..))
+import Modelling.ActivityDiagram.Config (AdConfig(..))
 
 task41 :: FindSupportSTConfig
 task41 = FindSupportSTConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 6,
     maxActions = 6,
     minObjectNodes = 4,
@@ -29,7 +29,7 @@ task41 = FindSupportSTConfig {
 
 task42 :: FindSupportSTConfig
 task42 = FindSupportSTConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 8,
     maxActions = 8,
     minObjectNodes = 4,

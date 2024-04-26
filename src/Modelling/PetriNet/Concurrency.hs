@@ -392,7 +392,7 @@ petriNetConcurrencyAlloy basicC changeC specific
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{concurrencyPredicateName}[#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
+pred #{concurrencyPredicateName}[#{defaultActiveTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
   \#Places = #{places basicC}
   \#Transitions = #{transitions basicC}
   #{compBasicConstraints activated basicC}
@@ -409,7 +409,7 @@ run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{
 |]
   where
     activated        = "activatedTrans"
-    activatedDefault = "defaultActivTrans"
+    activatedDefault = "defaultActiveTrans"
     compConstraints = either
       (const $ defaultConstraints activatedDefault basicC)
       compAdvConstraints
@@ -419,7 +419,7 @@ run #{concurrencyPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{
   no t : givenTransitions | no givenPlaces.flow[t]
   no t : Transitions | sourceTransitions[t]|]
       | otherwise = ""
-    defaultActivTrans
+    defaultActiveTrans
       | isLeft specific    = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""
     sigs = signatures "given" (places basicC) (transitions basicC)

@@ -2,14 +2,14 @@
 
 module Modelling.ActivityDiagram.SelectPetri.Config where
 
-import Modelling.ActivityDiagram.Config (ADConfig(..))
+import Modelling.ActivityDiagram.Config (AdConfig(..))
 import Modelling.ActivityDiagram.SelectPetri (SelectPetriConfig(..))
 
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
 task37 :: SelectPetriConfig
 task37 = SelectPetriConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 7,
     maxActions = 7,
     minObjectNodes = 3,
@@ -38,7 +38,7 @@ task37 = SelectPetriConfig {
 
 task38 :: SelectPetriConfig
 task38 = SelectPetriConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 4,
     maxActions = 4,
     minObjectNodes = 3,

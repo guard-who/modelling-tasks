@@ -8,7 +8,7 @@ import Modelling.ActivityDiagram.Petrinet (
   convertToSimple,
   )
 
-import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultADConfig)
+import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultAdConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.PetriNet.Types (PetriLike(allNodes), petriLikeToPetri)
 
@@ -22,7 +22,7 @@ spec :: Spec
 spec =
   describe "convertToPetrinet" $
     context "on a list of generated diagrams" $ do
-      let spec' = adConfigToAlloy "" "" defaultADConfig
+      let spec' = adConfigToAlloy "" "" defaultAdConfig
       it "generates a petrinet with ascending labels" $ do
         inst <- getInstances (Just 50) spec'
         petri <- mapM (fmap convertToSimple . parseInstance) inst

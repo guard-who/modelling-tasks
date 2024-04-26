@@ -35,4 +35,5 @@ obj\sobj\ssig
 # ignore specific
 ExceptT(?![a-z])
 LangM(?![a-z])
+RandT(?![a-z])
 ReportT(?![a-z])

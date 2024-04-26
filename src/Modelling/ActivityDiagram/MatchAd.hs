@@ -5,34 +5,43 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
 
-module Modelling.ActivityDiagram.MatchAD (
-  MatchADInstance(..),
-  MatchADConfig(..),
-  MatchADSolution(..),
-  defaultMatchADConfig,
-  checkMatchADConfig,
-  matchADAlloy,
-  matchADSolution,
-  matchADTask,
-  matchADInitial,
-  matchADSyntax,
-  matchADEvaluation,
-  matchAD,
-  defaultMatchADInstance
+module Modelling.ActivityDiagram.MatchAd (
+  MatchAdConfig (..),
+  MatchAdInstance (..),
+  MatchAdSolution (..),
+  checkMatchAdConfig,
+  defaultMatchAdConfig,
+  defaultMatchAdInstance,
+  matchAd,
+  matchAdAlloy,
+  matchAdEvaluation,
+  matchAdInitial,
+  matchAdSolution,
+  matchAdSyntax,
+  matchAdTask,
  ) where
 
 import qualified Data.Map as M (fromList, keys)
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
-import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Config (
+  AdConfig (..),
+  adConfigToAlloy,
+  checkAdConfig,
+  defaultAdConfig,
+  )
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
-  ADNode(..),
-  ADConnection(..),
+  AdNode (..),
+  AdConnection (..),
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
-import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.PlantUMLConverter (
+  PlantUMLConvConf (..),
+  defaultPlantUMLConvConf,
+  drawAdToFile,
+  )
+import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
@@ -64,36 +73,36 @@ import GHC.Generics (Generic)
 import Modelling.Auxiliary.Output (addPretext)
 import System.Random.Shuffle (shuffleM)
 
-data MatchADInstance = MatchADInstance {
+data MatchAdInstance = MatchAdInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUMLConvConf,
   showSolution :: Bool
 } deriving (Generic, Show)
 
-data MatchADConfig = MatchADConfig {
-  adConfig :: ADConfig,
+data MatchAdConfig = MatchAdConfig {
+  adConfig :: AdConfig,
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
   noActivityFinalInForkBlocks :: Maybe Bool,
   printSolution :: Bool
 } deriving (Generic, Show)
 
-defaultMatchADConfig :: MatchADConfig
-defaultMatchADConfig = MatchADConfig {
-  adConfig = defaultADConfig,
+defaultMatchAdConfig :: MatchAdConfig
+defaultMatchAdConfig = MatchAdConfig {
+  adConfig = defaultAdConfig,
   maxInstances = Just 50,
   hideBranchConditions = False,
   noActivityFinalInForkBlocks = Just False,
   printSolution = False
 }
 
-checkMatchADConfig :: MatchADConfig -> Maybe String
-checkMatchADConfig conf =
-  checkADConfig (adConfig conf)
-  <|> checkMatchADConfig' conf
+checkMatchAdConfig :: MatchAdConfig -> Maybe String
+checkMatchAdConfig conf =
+  checkAdConfig (adConfig conf)
+  <|> checkMatchAdConfig' conf
 
-checkMatchADConfig' :: MatchADConfig -> Maybe String
-checkMatchADConfig' MatchADConfig {
+checkMatchAdConfig' :: MatchAdConfig -> Maybe String
+checkMatchAdConfig' MatchAdConfig {
     adConfig,
     maxInstances,
     noActivityFinalInForkBlocks
@@ -105,8 +114,8 @@ checkMatchADConfig' MatchADConfig {
   | otherwise
     = Nothing
 
-matchADAlloy :: MatchADConfig -> String
-matchADAlloy MatchADConfig {
+matchAdAlloy :: MatchAdConfig -> String
+matchAdAlloy MatchAdConfig {
     adConfig,
     noActivityFinalInForkBlocks
   }
@@ -122,7 +131,7 @@ matchADAlloy MatchADConfig {
         Just False -> [i| not #{s}|]
         _ -> ""
 
-data MatchADSolution = MatchADSolution {
+data MatchAdSolution = MatchAdSolution {
   actionNames :: [String],
   objectNodeNames :: [String],
   numberOfDecisionNodes :: Int,
@@ -134,10 +143,10 @@ data MatchADSolution = MatchADSolution {
   numberOfFlowFinalNodes :: Int
 } deriving (Generic, Eq, Show, Read)
 
-matchADSolution :: MatchADInstance -> MatchADSolution
-matchADSolution task =
+matchAdSolution :: MatchAdInstance -> MatchAdSolution
+matchAdSolution task =
   let ad = activityDiagram task
-  in MatchADSolution {
+  in MatchAdSolution {
         actionNames = sort $ map name $ filter isActionNode $ nodes ad,
         objectNodeNames = sort $ map name $ filter isObjectNode $ nodes ad,
         numberOfDecisionNodes = length $ filter isDecisionNode  $ nodes ad,
@@ -149,17 +158,17 @@ matchADSolution task =
         numberOfFlowFinalNodes = length $ filter isFlowFinalNode $ nodes ad
     }
 
-matchADTask
+matchAdTask
   :: (OutputMonad m, MonadIO m)
   => FilePath
-  -> MatchADInstance
+  -> MatchAdInstance
   -> LangM m
-matchADTask path task = do
+matchAdTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
-    $ drawADToFile path (plantUMLConf task) $ activityDiagram task
+    $ drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english [iii|
       State the names of all action nodes, the names of all object nodes,
@@ -174,12 +183,12 @@ matchADTask path task = do
     translate $ do
       english [i|To do this, enter your answer as in the following example:|]
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
-    code $ show matchADInitial
+    code $ show matchAdInitial
     pure ()
   pure ()
 
-matchADInitial :: MatchADSolution
-matchADInitial = MatchADSolution {
+matchAdInitial :: MatchAdSolution
+matchAdInitial = MatchAdSolution {
   actionNames = ["A", "B"],
   objectNodeNames = ["C", "D"],
   numberOfDecisionNodes = 2,
@@ -191,40 +200,40 @@ matchADInitial = MatchADSolution {
   numberOfFlowFinalNodes = 0
 }
 
-matchADSyntax
+matchAdSyntax
   :: (OutputMonad m)
-  => MatchADInstance
-  -> MatchADSolution
+  => MatchAdInstance
+  -> MatchAdSolution
   -> LangM m
-matchADSyntax task sub = addPretext $ do
+matchAdSyntax task sub = addPretext $ do
   let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
       subNames = actionNames sub ++ objectNodeNames sub
   assertion (all (`elem` adNames) subNames) $ translate $ do
     english "Referenced node names were provided within task?"
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
 
-matchADEvaluation
+matchAdEvaluation
   :: OutputMonad m
-  => MatchADInstance
-  -> MatchADSolution
+  => MatchAdInstance
+  -> MatchAdSolution
   -> Rated m
-matchADEvaluation task sub = addPretext $ do
+matchAdEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "answer parts"
         german "Teilantworten"
-      sol = matchADSolution task
+      sol = matchAdSolution task
       solutionString =
         if showSolution task
         then Just $ show sol
         else Nothing
-      solution = matchADSolutionMap sol
-      sub' = M.keys $ matchADSolutionMap sub
+      solution = matchAdSolutionMap sol
+      sub' = M.keys $ matchAdSolutionMap sub
   multipleChoice as solutionString solution sub'
 
-matchADSolutionMap
-  :: MatchADSolution
+matchAdSolutionMap
+  :: MatchAdSolution
   -> Map (Int, Either [String] Int) Bool
-matchADSolutionMap sol =
+matchAdSolutionMap sol =
   let xs = [
         Left $ sort $ actionNames sol,
         Left $ sort $ objectNodeNames sol,
@@ -238,28 +247,28 @@ matchADSolutionMap sol =
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
-matchAD
+matchAd
   :: (MonadAlloy m, MonadThrow m)
-  => MatchADConfig
+  => MatchAdConfig
   -> Int
   -> Int
-  -> m MatchADInstance
-matchAD config segment seed = do
+  -> m MatchAdInstance
+matchAd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  evalRandT (getMatchADTask config) g
+  evalRandT (getMatchAdTask config) g
 
-getMatchADTask
+getMatchAdTask
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
-  => MatchADConfig
-  -> RandT g m MatchADInstance
-getMatchADTask config = do
+  => MatchAdConfig
+  -> RandT g m MatchAdInstance
+getMatchAdTask config = do
   instas <- getInstances
     (maxInstances config)
     Nothing
-    $ matchADAlloy config
+    $ matchAdAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleADNames) rinstas
-  return $ MatchADInstance {
+  ad <- mapM (fmap snd . shuffleAdNames) rinstas
+  return $ MatchAdInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
     plantUMLConf = defaultPlantUMLConvConf {
       suppressBranchConditions = hideBranchConditions config
@@ -267,48 +276,48 @@ getMatchADTask config = do
     showSolution = printSolution config
   }
 
-defaultMatchADInstance :: MatchADInstance
-defaultMatchADInstance = MatchADInstance {
+defaultMatchAdInstance :: MatchAdInstance
+defaultMatchAdInstance = MatchAdInstance {
   activityDiagram = UMLActivityDiagram {
     nodes = [
-      ADActionNode {label = 1, name = "A"},
-      ADActionNode {label = 2, name = "B"},
-      ADActionNode {label = 3, name = "C"},
-      ADActionNode {label = 4, name = "D"},
-      ADObjectNode {label = 5, name = "E"},
-      ADObjectNode {label = 6, name = "F"},
-      ADObjectNode {label = 7, name = "G"},
-      ADObjectNode {label = 8, name = "H"},
-      ADDecisionNode {label = 9},
-      ADDecisionNode {label = 10},
-      ADMergeNode {label = 11},
-      ADMergeNode {label = 12},
-      ADForkNode {label = 13},
-      ADJoinNode {label = 14},
-      ADActivityFinalNode {label = 15},
-      ADFlowFinalNode {label = 16},
-      ADInitialNode {label = 17}
+      AdActionNode {label = 1, name = "A"},
+      AdActionNode {label = 2, name = "B"},
+      AdActionNode {label = 3, name = "C"},
+      AdActionNode {label = 4, name = "D"},
+      AdObjectNode {label = 5, name = "E"},
+      AdObjectNode {label = 6, name = "F"},
+      AdObjectNode {label = 7, name = "G"},
+      AdObjectNode {label = 8, name = "H"},
+      AdDecisionNode {label = 9},
+      AdDecisionNode {label = 10},
+      AdMergeNode {label = 11},
+      AdMergeNode {label = 12},
+      AdForkNode {label = 13},
+      AdJoinNode {label = 14},
+      AdActivityFinalNode {label = 15},
+      AdFlowFinalNode {label = 16},
+      AdInitialNode {label = 17}
     ],
     connections = [
-      ADConnection {from = 1, to = 14, guard = ""},
-      ADConnection {from = 2, to = 11, guard = ""},
-      ADConnection {from = 3, to = 14, guard = ""},
-      ADConnection {from = 4, to = 8, guard = ""},
-      ADConnection {from = 5, to = 11, guard = ""},
-      ADConnection {from = 6, to = 9, guard = ""},
-      ADConnection {from = 7, to = 16, guard = ""},
-      ADConnection {from = 8, to = 12, guard = ""},
-      ADConnection {from = 9, to = 10, guard = "a"},
-      ADConnection {from = 9, to = 12, guard = "b"},
-      ADConnection {from = 10, to = 2, guard = "b"},
-      ADConnection {from = 10, to = 5, guard = "a"},
-      ADConnection {from = 11, to = 13, guard = ""},
-      ADConnection {from = 12, to = 6, guard = ""},
-      ADConnection {from = 13, to = 1, guard = ""},
-      ADConnection {from = 13, to = 3, guard = ""},
-      ADConnection {from = 13, to = 7, guard = ""},
-      ADConnection {from = 14, to = 15, guard = ""},
-      ADConnection {from = 17, to = 4, guard = ""}
+      AdConnection {from = 1, to = 14, guard = ""},
+      AdConnection {from = 2, to = 11, guard = ""},
+      AdConnection {from = 3, to = 14, guard = ""},
+      AdConnection {from = 4, to = 8, guard = ""},
+      AdConnection {from = 5, to = 11, guard = ""},
+      AdConnection {from = 6, to = 9, guard = ""},
+      AdConnection {from = 7, to = 16, guard = ""},
+      AdConnection {from = 8, to = 12, guard = ""},
+      AdConnection {from = 9, to = 10, guard = "a"},
+      AdConnection {from = 9, to = 12, guard = "b"},
+      AdConnection {from = 10, to = 2, guard = "b"},
+      AdConnection {from = 10, to = 5, guard = "a"},
+      AdConnection {from = 11, to = 13, guard = ""},
+      AdConnection {from = 12, to = 6, guard = ""},
+      AdConnection {from = 13, to = 1, guard = ""},
+      AdConnection {from = 13, to = 3, guard = ""},
+      AdConnection {from = 13, to = 7, guard = ""},
+      AdConnection {from = 14, to = 15, guard = ""},
+      AdConnection {from = 17, to = 4, guard = ""}
     ]
   },
   plantUMLConf = defaultPlantUMLConvConf,

@@ -92,7 +92,7 @@ library:
     - Modelling.ActivityDiagram.FindSupportST
     - Modelling.ActivityDiagram.Instance
     - Modelling.ActivityDiagram.Isomorphism
-    - Modelling.ActivityDiagram.MatchAD
+    - Modelling.ActivityDiagram.MatchAd
     - Modelling.ActivityDiagram.MatchPetri
     - Modelling.ActivityDiagram.Petrinet
     - Modelling.ActivityDiagram.PlantUMLConverter

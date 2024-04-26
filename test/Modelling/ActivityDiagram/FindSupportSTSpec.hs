@@ -4,7 +4,10 @@ import Modelling.ActivityDiagram.FindSupportST (FindSupportSTConfig(..), checkFi
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
-import Modelling.ActivityDiagram.Config (ADConfig(minActions, forkJoinPairs), defaultADConfig)
+import Modelling.ActivityDiagram.Config (
+  AdConfig (minActions, forkJoinPairs),
+  defaultAdConfig,
+  )
 
 
 spec :: Spec
@@ -14,6 +17,8 @@ spec =
       checkFindSupportSTConfig defaultFindSupportSTConfig  `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with necessary changes" $
-        checkFindSupportSTConfig defaultFindSupportSTConfig
-          {adConfig=defaultADConfig{minActions=0, forkJoinPairs=0}, avoidAddingSinksForFinals=Just True}
+        checkFindSupportSTConfig defaultFindSupportSTConfig {
+          adConfig = defaultAdConfig {minActions = 0, forkJoinPairs = 0},
+          avoidAddingSinksForFinals = Just True
+          }
             `shouldSatisfy` isJust

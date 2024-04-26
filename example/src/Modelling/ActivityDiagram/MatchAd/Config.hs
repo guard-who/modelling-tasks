@@ -2,12 +2,12 @@
 
 module Modelling.ActivityDiagram.MatchAd.Config where
 
-import Modelling.ActivityDiagram.Config (ADConfig(..))
-import Modelling.ActivityDiagram.MatchAD (MatchADConfig(..))
+import Modelling.ActivityDiagram.Config (AdConfig(..))
+import Modelling.ActivityDiagram.MatchAd (MatchAdConfig(..))
 
-task31 :: MatchADConfig
-task31 = MatchADConfig {
-  adConfig = ADConfig {
+task31 :: MatchAdConfig
+task31 = MatchAdConfig {
+  adConfig = AdConfig {
     minActions = 5,
     maxActions = 6,
     minObjectNodes = 5,
@@ -25,9 +25,9 @@ task31 = MatchADConfig {
   printSolution = True
   }
 
-task32 :: MatchADConfig
-task32 = MatchADConfig {
-  adConfig = ADConfig {
+task32 :: MatchAdConfig
+task32 = MatchAdConfig {
+  adConfig = AdConfig {
     minActions = 5,
     maxActions = 6,
     minObjectNodes = 5,

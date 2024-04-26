@@ -6,8 +6,8 @@ import qualified Data.Map               as M (fromAscList, elems, lookup, fromLi
 import qualified Data.Set               as S (unions, mapMonotonic, fromAscList, toAscList, map, filter, member)
 
 import Modelling.ActivityDiagram.Datatype (
-  ADConnection(ADConnection),
-  ADNode(..),
+  AdConnection (AdConnection),
+  AdNode (..),
   UMLActivityDiagram(..),
   )
 
@@ -148,27 +148,27 @@ setToActivityDiagram
   -> Set (Int, Int, String)
   -> UMLActivityDiagram
 setToActivityDiagram getName components conns = UMLActivityDiagram {
-  nodes = map (convertToADNode getName) (S.toAscList components),
-  connections = uncurry3 ADConnection <$> S.toAscList conns
+  nodes = map (convertToAdNode getName) (S.toAscList components),
+  connections = uncurry3 AdConnection <$> S.toAscList conns
 }
 
-convertToADNode :: (Node -> String) -> (Node, Int) -> ADNode
-convertToADNode getName tuple = case node of
-  ANode {} -> ADActionNode {
+convertToAdNode :: (Node -> String) -> (Node, Int) -> AdNode
+convertToAdNode getName tuple = case node of
+  ANode {} -> AdActionNode {
     label = l,
     name = getName node
     }
-  ONode {} -> ADObjectNode {
+  ONode {} -> AdObjectNode {
     label = l,
     name = getName node
     }
-  DNode {} -> ADDecisionNode { label = l }
-  MNode {} -> ADMergeNode { label = l }
-  FNode {} -> ADForkNode { label = l }
-  JNode {} -> ADJoinNode { label = l }
-  AeNode {} -> ADActivityFinalNode { label = l }
-  FeNode {} -> ADFlowFinalNode { label = l }
-  StNode {} -> ADInitialNode { label = l }
+  DNode {} -> AdDecisionNode {label = l}
+  MNode {} -> AdMergeNode {label = l}
+  FNode {} -> AdForkNode {label = l}
+  JNode {} -> AdJoinNode {label = l}
+  AeNode {} -> AdActivityFinalNode {label = l}
+  FeNode {} -> AdFlowFinalNode {label = l}
+  StNode {} -> AdInitialNode {label = l}
   where
     node = fst tuple
     l = snd tuple

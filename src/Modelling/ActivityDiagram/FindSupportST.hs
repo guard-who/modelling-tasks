@@ -34,13 +34,26 @@ import qualified Data.Map as M (
   )
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..))
+import Modelling.ActivityDiagram.Datatype (
+  AdConnection (..),
+  AdNode (..),
+  UMLActivityDiagram (..),
+  )
 import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
-import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
-import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
+import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
+import Modelling.ActivityDiagram.Config (
+  AdConfig (..),
+  adConfigToAlloy,
+  checkAdConfig,
+  defaultAdConfig,
+  )
 import Modelling.ActivityDiagram.Alloy (modulePetrinet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.PlantUMLConverter (PlantUMLConvConf(..), defaultPlantUMLConvConf, drawADToFile)
+import Modelling.ActivityDiagram.PlantUMLConverter (
+  PlantUMLConvConf (..),
+  defaultPlantUMLConvConf,
+  drawAdToFile,
+  )
 import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Modelling.Auxiliary.Output (addPretext)
@@ -87,7 +100,7 @@ data FindSupportSTInstance = FindSupportSTInstance {
 } deriving (Generic, Show)
 
 data FindSupportSTConfig = FindSupportSTConfig {
-  adConfig :: ADConfig,
+  adConfig :: AdConfig,
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
   hideBranchConditions :: Bool,
@@ -100,7 +113,7 @@ data FindSupportSTConfig = FindSupportSTConfig {
 
 defaultFindSupportSTConfig :: FindSupportSTConfig
 defaultFindSupportSTConfig = FindSupportSTConfig
-  { adConfig = defaultADConfig,
+  { adConfig = defaultAdConfig,
     maxInstances = Just 50,
     hideNodeNames = False,
     hideBranchConditions = False,
@@ -111,7 +124,7 @@ defaultFindSupportSTConfig = FindSupportSTConfig
 
 checkFindSupportSTConfig :: FindSupportSTConfig -> Maybe String
 checkFindSupportSTConfig conf =
-  checkADConfig (adConfig conf)
+  checkAdConfig (adConfig conf)
   <|> findSupportSTConfig' conf
 
 findSupportSTConfig' :: FindSupportSTConfig -> Maybe String
@@ -196,7 +209,7 @@ findSupportSTTask path task = do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
-    $ drawADToFile path (plantUMLConf task) $ activityDiagram task
+    $ drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english [i|Translate the given activity diagram into a Petri net (on paper or in your head) and then state the total count of nodes (places and transitions),
 the count of auxiliary places and the count of auxiliary transitions in the net.|]
@@ -269,7 +282,7 @@ getFindSupportSTTask config = do
     Nothing
     $ findSupportSTAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleADNames) rinstas
+  ad <- mapM (fmap snd . shuffleAdNames) rinstas
   return $ FindSupportSTInstance {
     activityDiagram=headWithErr "Failed to find task instances" ad,
     plantUMLConf =
@@ -284,44 +297,44 @@ defaultFindSupportSTInstance :: FindSupportSTInstance
 defaultFindSupportSTInstance = FindSupportSTInstance {
   activityDiagram = UMLActivityDiagram {
     nodes = [
-      ADActionNode {label = 1, name = "A"},
-      ADActionNode {label = 2, name = "B"},
-      ADActionNode {label = 3, name = "C"},
-      ADActionNode {label = 4, name = "D"},
-      ADObjectNode {label = 5, name = "E"},
-      ADObjectNode {label = 6, name = "F"},
-      ADObjectNode {label = 7, name = "G"},
-      ADObjectNode {label = 8, name = "H"},
-      ADDecisionNode {label = 9},
-      ADDecisionNode {label = 10},
-      ADMergeNode {label = 11},
-      ADMergeNode {label = 12},
-      ADForkNode {label = 13},
-      ADJoinNode {label = 14},
-      ADActivityFinalNode {label = 15},
-      ADFlowFinalNode {label = 16},
-      ADInitialNode {label = 17}
+      AdActionNode {label = 1, name = "A"},
+      AdActionNode {label = 2, name = "B"},
+      AdActionNode {label = 3, name = "C"},
+      AdActionNode {label = 4, name = "D"},
+      AdObjectNode {label = 5, name = "E"},
+      AdObjectNode {label = 6, name = "F"},
+      AdObjectNode {label = 7, name = "G"},
+      AdObjectNode {label = 8, name = "H"},
+      AdDecisionNode {label = 9},
+      AdDecisionNode {label = 10},
+      AdMergeNode {label = 11},
+      AdMergeNode {label = 12},
+      AdForkNode {label = 13},
+      AdJoinNode {label = 14},
+      AdActivityFinalNode {label = 15},
+      AdFlowFinalNode {label = 16},
+      AdInitialNode {label = 17}
     ],
     connections = [
-      ADConnection {from = 1, to = 14, guard = ""},
-      ADConnection {from = 2, to = 11, guard = ""},
-      ADConnection {from = 3, to = 14, guard = ""},
-      ADConnection {from = 4, to = 9, guard = ""},
-      ADConnection {from = 5, to = 11, guard = ""},
-      ADConnection {from = 6, to = 10, guard = ""},
-      ADConnection {from = 7, to = 16, guard = ""},
-      ADConnection {from = 8, to = 4, guard = ""},
-      ADConnection {from = 9, to = 2, guard = "a"},
-      ADConnection {from = 9, to = 5, guard = "b"},
-      ADConnection {from = 10, to = 8, guard = "b"},
-      ADConnection {from = 10, to = 12, guard = "a"},
-      ADConnection {from = 11, to = 15, guard = ""},
-      ADConnection {from = 12, to = 6, guard = ""},
-      ADConnection {from = 13, to = 1, guard = ""},
-      ADConnection {from = 13, to = 3, guard = ""},
-      ADConnection {from = 13, to = 7, guard = ""},
-      ADConnection {from = 14, to = 12, guard = ""},
-      ADConnection {from = 17, to = 13, guard = ""}
+      AdConnection {from = 1, to = 14, guard = ""},
+      AdConnection {from = 2, to = 11, guard = ""},
+      AdConnection {from = 3, to = 14, guard = ""},
+      AdConnection {from = 4, to = 9, guard = ""},
+      AdConnection {from = 5, to = 11, guard = ""},
+      AdConnection {from = 6, to = 10, guard = ""},
+      AdConnection {from = 7, to = 16, guard = ""},
+      AdConnection {from = 8, to = 4, guard = ""},
+      AdConnection {from = 9, to = 2, guard = "a"},
+      AdConnection {from = 9, to = 5, guard = "b"},
+      AdConnection {from = 10, to = 8, guard = "b"},
+      AdConnection {from = 10, to = 12, guard = "a"},
+      AdConnection {from = 11, to = 15, guard = ""},
+      AdConnection {from = 12, to = 6, guard = ""},
+      AdConnection {from = 13, to = 1, guard = ""},
+      AdConnection {from = 13, to = 3, guard = ""},
+      AdConnection {from = 13, to = 7, guard = ""},
+      AdConnection {from = 14, to = 12, guard = ""},
+      AdConnection {from = 17, to = 13, guard = ""}
     ]
   },
   plantUMLConf = defaultPlantUMLConvConf,

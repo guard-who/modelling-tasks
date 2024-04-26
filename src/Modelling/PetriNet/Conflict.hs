@@ -460,7 +460,7 @@ petriNetConflictAlloy basicC changeC conflictC uniqueConflictP specific
 #{modulePetriConcepts}
 #{modulePetriConstraints}
 
-pred #{conflictPredicateName}[#{p} : some Places,#{defaultActivTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
+pred #{conflictPredicateName}[#{p} : some Places,#{defaultActiveTrans}#{activated} : set Transitions, #{t1}, #{t2} : Transitions] {
   \#Places = #{places basicC}
   \#Transitions = #{transitions basicC}
   #{compBasicConstraints activated basicC}
@@ -483,7 +483,7 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{pet
 |]
   where
     activated        = "activatedTrans"
-    activatedDefault = "defaultActivTrans"
+    activatedDefault = "defaultActiveTrans"
     compConstraints = either
       (const $ defaultConstraints activatedDefault basicC)
       compAdvConstraints
@@ -522,7 +522,7 @@ run #{conflictPredicateName} for exactly #{petriScopeMaxSeq basicC} Nodes, #{pet
         else [i|no t1, t2 : ts |
       let ps = common#{upperFirst which}Preconditions[t1, t2] |
         \#ps > 1 and all p : ps | p.#{tokens} >= p.#{flow}[t1] and p.#{tokens} >= p.#{flow}[t2]|]
-    defaultActivTrans
+    defaultActiveTrans
       | isLeft specific    = [i|#{activatedDefault} : set givenTransitions,|]
       | otherwise          = ""
     multiplePlaces unique

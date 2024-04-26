@@ -48,7 +48,7 @@ library
       Modelling.ActivityDiagram.FindSupportST
       Modelling.ActivityDiagram.Instance
       Modelling.ActivityDiagram.Isomorphism
-      Modelling.ActivityDiagram.MatchAD
+      Modelling.ActivityDiagram.MatchAd
       Modelling.ActivityDiagram.MatchPetri
       Modelling.ActivityDiagram.Petrinet
       Modelling.ActivityDiagram.PlantUMLConverter
@@ -153,7 +153,7 @@ test-suite modelling-tasks-test
       Modelling.ActivityDiagram.ConfigSpec
       Modelling.ActivityDiagram.EnterASSpec
       Modelling.ActivityDiagram.FindSupportSTSpec
-      Modelling.ActivityDiagram.MatchADSpec
+      Modelling.ActivityDiagram.MatchAdSpec
       Modelling.ActivityDiagram.MatchPetriSpec
       Modelling.ActivityDiagram.PetrinetSpec
       Modelling.ActivityDiagram.SelectASSpec

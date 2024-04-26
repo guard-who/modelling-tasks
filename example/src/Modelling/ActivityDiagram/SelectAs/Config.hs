@@ -1,12 +1,12 @@
 -- |
 
 module Modelling.ActivityDiagram.SelectAs.Config where
-import Modelling.ActivityDiagram.Config (ADConfig(..))
+import Modelling.ActivityDiagram.Config (AdConfig(..))
 import Modelling.ActivityDiagram.SelectAS (SelectASConfig(..))
 
 task33 :: SelectASConfig
 task33 = SelectASConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 10,
     maxActions = 10,
     minObjectNodes = 2,
@@ -29,7 +29,7 @@ task33 = SelectASConfig {
 
 task34 :: SelectASConfig
 task34 = SelectASConfig {
-  adConfig = ADConfig {
+  adConfig = AdConfig {
     minActions = 10,
     maxActions = 10,
     minObjectNodes = 5,

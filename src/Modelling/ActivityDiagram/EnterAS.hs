@@ -25,15 +25,26 @@ module Modelling.ActivityDiagram.EnterAS (
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
-import Modelling.ActivityDiagram.Config (ADConfig(..), defaultADConfig, checkADConfig, adConfigToAlloy)
-import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram(..), ADNode(..), ADConnection(..), isActionNode, isObjectNode)
+import Modelling.ActivityDiagram.Config (
+  AdConfig (..),
+  adConfigToAlloy,
+  checkAdConfig,
+  defaultAdConfig,
+  )
+import Modelling.ActivityDiagram.Datatype (
+  AdConnection (..),
+  AdNode (..),
+  UMLActivityDiagram (..),
+  isActionNode,
+  isObjectNode,
+  )
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
   PlantUMLConvConf (..),
   defaultPlantUMLConvConf,
-  drawADToFile,
+  drawAdToFile,
   )
-import Modelling.ActivityDiagram.Shuffle (shuffleADNames)
+import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
 import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
@@ -70,7 +81,7 @@ data EnterASInstance = EnterASInstance {
 } deriving (Generic, Show, Eq)
 
 data EnterASConfig = EnterASConfig {
-  adConfig :: ADConfig,
+  adConfig :: AdConfig,
   hideBranchConditions :: Bool,
   maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
@@ -81,7 +92,7 @@ data EnterASConfig = EnterASConfig {
 
 defaultEnterASConfig :: EnterASConfig
 defaultEnterASConfig = EnterASConfig {
-  adConfig = defaultADConfig {
+  adConfig = defaultAdConfig {
     minActions = 6,
     maxActions = 8,
     minObjectNodes = 1,
@@ -100,7 +111,7 @@ defaultEnterASConfig = EnterASConfig {
 
 checkEnterASConfig :: EnterASConfig -> Maybe String
 checkEnterASConfig conf =
-  checkADConfig (adConfig conf)
+  checkAdConfig (adConfig conf)
   <|> checkEnterASConfig' conf
 
 checkEnterASConfig' :: EnterASConfig -> Maybe String
@@ -179,7 +190,7 @@ enterASTask path task = do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< liftIO
-    $ drawADToFile path (drawSettings task) $ activityDiagram task
+    $ drawAdToFile path (drawSettings task) $ activityDiagram task
   paragraph $ do
     translate $ do
       english [iii|
@@ -257,7 +268,7 @@ getEnterASTask config = do
     Nothing
     $ enterASAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleADNames) rinstas
+  ad <- mapM (fmap snd . shuffleAdNames) rinstas
   let validInsta =
         headWithErr "Failed to find task instances"
         $ filter (isNothing . (`checkEnterASInstanceForConfig` config))
@@ -275,42 +286,42 @@ defaultEnterASInstance :: EnterASInstance
 defaultEnterASInstance = EnterASInstance {
   activityDiagram = UMLActivityDiagram {
     nodes = [
-      ADActionNode {label = 1, name = "A"},
-      ADActionNode {label = 2, name = "E"},
-      ADActionNode {label = 3, name = "F"},
-      ADActionNode {label = 4, name = "G"},
-      ADActionNode {label = 5, name = "D"},
-      ADActionNode {label = 6, name = "B"},
-      ADObjectNode {label = 7, name = "C"},
-      ADDecisionNode {label = 8},
-      ADDecisionNode {label = 9},
-      ADMergeNode {label = 10},
-      ADMergeNode {label = 11},
-      ADForkNode {label = 12},
-      ADJoinNode {label = 13},
-      ADFlowFinalNode {label = 14},
-      ADFlowFinalNode {label = 15},
-      ADInitialNode {label = 16}
+      AdActionNode {label = 1, name = "A"},
+      AdActionNode {label = 2, name = "E"},
+      AdActionNode {label = 3, name = "F"},
+      AdActionNode {label = 4, name = "G"},
+      AdActionNode {label = 5, name = "D"},
+      AdActionNode {label = 6, name = "B"},
+      AdObjectNode {label = 7, name = "C"},
+      AdDecisionNode {label = 8},
+      AdDecisionNode {label = 9},
+      AdMergeNode {label = 10},
+      AdMergeNode {label = 11},
+      AdForkNode {label = 12},
+      AdJoinNode {label = 13},
+      AdFlowFinalNode {label = 14},
+      AdFlowFinalNode {label = 15},
+      AdInitialNode {label = 16}
     ],
     connections = [
-      ADConnection {from = 1, to = 10, guard = ""},
-      ADConnection {from = 2, to = 13, guard = ""},
-      ADConnection {from = 3, to = 10, guard = ""},
-      ADConnection {from = 4, to = 8, guard = ""},
-      ADConnection {from = 5, to = 12, guard = ""},
-      ADConnection {from = 6, to = 9, guard = ""},
-      ADConnection {from = 7, to = 5, guard = ""},
-      ADConnection {from = 8, to = 11, guard = "a"},
-      ADConnection {from = 8, to = 13, guard = "b"},
-      ADConnection {from = 9, to = 1, guard = "a"},
-      ADConnection {from = 9, to = 3, guard = "b"},
-      ADConnection {from = 10, to = 15, guard = ""},
-      ADConnection {from = 11, to = 4, guard = ""},
-      ADConnection {from = 12, to = 2, guard = ""},
-      ADConnection {from = 12, to = 6, guard = ""},
-      ADConnection {from = 12, to = 11, guard = ""},
-      ADConnection {from = 13, to = 14, guard = ""},
-      ADConnection {from = 16, to = 7, guard = ""}
+      AdConnection {from = 1, to = 10, guard = ""},
+      AdConnection {from = 2, to = 13, guard = ""},
+      AdConnection {from = 3, to = 10, guard = ""},
+      AdConnection {from = 4, to = 8, guard = ""},
+      AdConnection {from = 5, to = 12, guard = ""},
+      AdConnection {from = 6, to = 9, guard = ""},
+      AdConnection {from = 7, to = 5, guard = ""},
+      AdConnection {from = 8, to = 11, guard = "a"},
+      AdConnection {from = 8, to = 13, guard = "b"},
+      AdConnection {from = 9, to = 1, guard = "a"},
+      AdConnection {from = 9, to = 3, guard = "b"},
+      AdConnection {from = 10, to = 15, guard = ""},
+      AdConnection {from = 11, to = 4, guard = ""},
+      AdConnection {from = 12, to = 2, guard = ""},
+      AdConnection {from = 12, to = 6, guard = ""},
+      AdConnection {from = 12, to = 11, guard = ""},
+      AdConnection {from = 13, to = 14, guard = ""},
+      AdConnection {from = 16, to = 7, guard = ""}
     ]
   },
   drawSettings = defaultPlantUMLConvConf,
