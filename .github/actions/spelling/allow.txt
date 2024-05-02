@@ -1,3 +1,4 @@
+ATransition
 Aeson
 Aggregationen
 Autotool
@@ -5,7 +6,9 @@ Bifoldable
 Bifunctor
 Bitraversable
 Circo
+DPoint
 DSL
+DVal
 Eithers
 Fdp
 GHC
@@ -51,6 +54,7 @@ concat
 disj
 distractor
 distractors
+elabel
 elementige
 elems
 enduml
@@ -81,6 +85,7 @@ mappend
 mathrm
 mempty
 multicolumn
+nlabel
 oneof
 pagebreak
 parenthesise

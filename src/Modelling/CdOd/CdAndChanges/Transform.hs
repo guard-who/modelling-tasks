@@ -19,7 +19,7 @@ import Modelling.CdOd.Types (
   LimitedLinking (..),
   Relationship (..),
   RelationshipProperties (..),
-  maxRels,
+  maxRelationships,
   towardsValidProperties,
   )
 
@@ -238,7 +238,7 @@ pred cd {
 }
 |]
   where
-    upper = fromMaybe (maxRels config) . snd
+    upper = fromMaybe (maxRelationships config) . snd
 
 maybeToAlloySet :: Show a => Maybe a -> String
 maybeToAlloySet = maybe "none" show
@@ -327,7 +327,7 @@ pred changeLimits {
 }
 |]
   where
-    upper = fromMaybe (maxRels config) . snd
+    upper = fromMaybe (maxRelationships config) . snd
 
 createRunCommand :: ClassConfig -> [String] -> Int ->  String
 createRunCommand config@ClassConfig {..} predicates cs = [i|
@@ -338,7 +338,7 @@ run { #{command} } for #{rels} Relationship, #{bitSize} Int,
     exactClass
       | uncurry (==) classLimits = "exactly "
       | otherwise            = ""
-    relMax = fromMaybe (maxRels config) . snd $ relationshipLimits
+    relMax = fromMaybe (maxRelationships config) . snd $ relationshipLimits
     rels = relMax + cs
     bitSize :: Int
     bitSize = (+ 1) . ceiling @Double . logBase 2 . fromIntegral

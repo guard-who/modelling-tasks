@@ -37,7 +37,7 @@ module Modelling.CdOd.Types (
   linkNames,
   maxFiveObjects,
   maxObjects,
-  maxRels,
+  maxRelationships,
   relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
@@ -419,7 +419,9 @@ checkClassConfigWithProperties
     The (maximum) number of possible inheritance relationships is too low for
     the aimed at inheritance relationship properties!
     |]
-  | Just x <- snd relationshipLimits, Just rels <- relationshipsSum c, x > rels
+  | Just x <- snd relationshipLimits,
+    Just relationships <- relationshipsSum c,
+    x > relationships
   = Just [iii|
     The maximum number of relationships is too high
     according to individual relationship maxima!
@@ -457,7 +459,7 @@ checkClassConfigWithProperties
       (2 `forMaybe` hasCompositionsPreventingParts)
     minCompositionsInheritances =
       3 `for` hasCompositionCycles
-    maxRelations = fromMaybe (maxRels c) $ snd relationshipLimits
+    maxRelations = fromMaybe (maxRelationships c) $ snd relationshipLimits
     maxCompositionsInheritances = maxRelations
       - fst aggregationLimits
       - fst associationLimits
@@ -478,7 +480,7 @@ checkClassConfig c@ClassConfig {..} = checkRange Just "classLimits" classLimits
   <|> checkRange id "compositionLimits" compositionLimits
   <|> checkRange id "inheritanceLimits" inheritanceLimits
   <|> checkRange id "relationshipLimits" relationshipLimits
-  <|> toMaybe (fst relationshipLimits < minRels c) [iii|
+  <|> toMaybe (fst relationshipLimits < minRelationships c) [iii|
       The sum of the minimum number of aggregations, associations, compositions
       and inheritances
       must not be higher than the minimum number of relationships!
@@ -534,8 +536,8 @@ checkObjectDiagram ObjectDiagram {..}
   where
     objectNames = objectName <$> objects
 
-minRels :: ClassConfig -> Int
-minRels ClassConfig {..} =
+minRelationships :: ClassConfig -> Int
+minRelationships ClassConfig {..} =
   fst aggregationLimits
   + fst associationLimits
   + fst compositionLimits
@@ -550,8 +552,8 @@ relationshipsSum ClassConfig {..} = sumOf4
   where
     sumOf4 w x y z = w + x + y + z
 
-maxRels :: ClassConfig -> Int
-maxRels config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2)
+maxRelationships :: ClassConfig -> Int
+maxRelationships config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2)
   $ relationshipsSum config
   where
     maxClasses = snd $ classLimits config

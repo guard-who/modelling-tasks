@@ -47,5 +47,6 @@ ignore$
 ^app/
 ^legacy-app/
 ^\Qalloy-guidelines/alloy-style.sty\E$
+^\Qtest/Modelling/CdOd/MatchCdOdSpec.hs\E$
 ^\Qtest/Spec.hs\E$
 ^test/unit/

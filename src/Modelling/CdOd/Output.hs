@@ -215,17 +215,17 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
         }
   errorWithoutGraphviz
   graph' <- layoutGraph' params dirCommand graph
-  sfont  <- lin
+  font <- lin
   let (nodes, edges) = GV.getGraph graph'
-      gnodes = M.foldrWithKey
-        (\l p g -> drawClass sfont l p `atop` g)
+      graphNodes = M.foldrWithKey
+        (\l p g -> drawClass font l p `atop` g)
         mempty
         nodes
-      gedges = foldr
-        (\(s, t, (isThick, r), p) g -> g # drawRel sfont s t isThick r p)
-        gnodes
+      graphEdges = foldr
+        (\(s, t, (isThick, r), p) g -> g # drawEdge font s t isThick r p)
+        graphNodes
         edges
-  writeSvg file gedges
+  writeSvg file graphEdges
   return file
   where
     getFromTo x = case x of
@@ -233,7 +233,7 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
       Association {..} -> both linking (associationFrom, associationTo)
       Aggregation {..} -> both linking (aggregationWhole, aggregationPart)
       Composition {..} -> both linking (compositionWhole, compositionPart)
-    drawRel f = drawRelationship f printNavigations printNames marking
+    drawEdge f = drawRelationship f printNavigations printNames marking
 
 drawRelationship
   :: IsName n
@@ -248,20 +248,20 @@ drawRelationship
   -> Path V2 Double
   -> Diagram B
   -> Diagram B
-drawRelationship sfont printNavigations printNames marking fl tl isThick l path =
-  connectWithPath opts sfont dir from to ml mfl mtl path'
+drawRelationship font printNavigations printNames marking fl tl isThick l path =
+  connectWithPath opts font dir from to ml fromLimits toLimits path'
   # applyStyle (if isThick then marking else mempty)
   # lwL 0.5
   where
     angle :: Double
     angle = 150
     opts = with
-      & arrowTail .~ atail (angle @@ deg)
-      & arrowHead .~ ahead (angle @@ deg)
+      & arrowTail .~ theTail (angle @@ deg)
+      & arrowHead .~ theHead (angle @@ deg)
       & headLength .~ local 7
       & headGap .~ local 0
       & tailLength .~ local 7
-    mfl' = case l of
+    startLimits = case l of
       Inheritance {} -> Nothing
       Composition {..} ->
         rangeWithDefault (1, Just 1) $ limits compositionWhole
@@ -269,7 +269,7 @@ drawRelationship sfont printNavigations printNames marking fl tl isThick l path 
         rangeWithDefault (0, Nothing) $ limits aggregationWhole
       Association {..} ->
         rangeWithDefault (0, Nothing) $ limits associationFrom
-    mtl' = case  l of
+    endLimits = case  l of
       Inheritance {} -> Nothing
       Composition {..} ->
         rangeWithDefault (0, Nothing) $ limits compositionPart
@@ -277,11 +277,11 @@ drawRelationship sfont printNavigations printNames marking fl tl isThick l path 
         rangeWithDefault (0, Nothing) $ limits aggregationPart
       Association {..} ->
         rangeWithDefault (0, Nothing) $ limits associationTo
-    (from, to, mfl, mtl, path')
-      | flipEdge  = (tl, fl, mtl', mfl', reversePath path)
-      | otherwise = (fl, tl, mfl', mtl', path)
-    atail = const lineTail
-    (flipEdge, ahead) = case l of
+    (from, to, fromLimits, toLimits, path')
+      | flipEdge  = (tl, fl, endLimits, startLimits, reversePath path)
+      | otherwise = (fl, tl, startLimits, endLimits, path)
+    theTail = const lineTail
+    (flipEdge, theHead) = case l of
       Inheritance {} -> (False, arrowheadTriangle)
       Association {} -> (
           False,
@@ -319,9 +319,9 @@ drawClass
   -> String
   -> Point V2 Double
   -> Diagram B
-drawClass sfont l (P p) = translate p
+drawClass font l (P p) = translate p
   $ center $ blackFrame l $ center
-  $ text' sfont 16 l
+  $ text' font 16 l
   # snugCenterXY
   # lineWidth 0.6
   # svgClass "label"
@@ -398,18 +398,18 @@ drawOd ObjectDiagram {..} anonymous direction printNames file = do
           ++ [toLabel linkName | printNames] }
   lift errorWithoutGraphviz
   graph' <- lift $ layoutGraph' params undirCommand graph
-  sfont  <- lift lin
+  font <- lift lin
   let (nodes, edges) = GV.getGraph graph'
-      gnodes = M.foldrWithKey
-        (\l p g -> drawObject sfont objectNames l p `atop` g)
+      graphNodes = M.foldrWithKey
+        (\l p g -> drawObject font objectNames l p `atop` g)
         mempty
         nodes
-      gedges = foldr
+      graphEdges = foldr
         (\(Object {objectName = s}, Object {objectName = t}, l, p) g ->
-           g # drawLink sfont direction printNames s t l p)
-        gnodes
+           g # drawLink font direction printNames s t l p)
+        graphNodes
         edges
-  lift $ writeSvg file gedges
+  lift $ writeSvg file graphEdges
   return file
   where
     arrowHeads = case direction of
@@ -427,8 +427,8 @@ drawLink
   -> Path V2 Double
   -> Diagram B
   -> Diagram B
-drawLink sfont direction printNames fl tl Link {..} =
-  connectWithPath opts sfont direction fl tl ml Nothing Nothing
+drawLink font direction printNames fl tl Link {..} =
+  connectWithPath opts font direction fl tl ml Nothing Nothing
   # lwL 0.5
   where
     opts = with
@@ -447,9 +447,9 @@ drawObject
   -> Object String String
   -> Point V2 Double
   -> Diagram B
-drawObject sfont objectNames Object {..} (P p) = translate p
+drawObject font objectNames Object {..} (P p) = translate p
   $ center $ blackFrame objectName $ center
-  $ textU sfont 16
+  $ textU font 16
       (fromMaybe "" (lookup objectName objectNames) ++ ": " ++ objectClass)
   # snugCenterXY
   # lineWidth 0.6
