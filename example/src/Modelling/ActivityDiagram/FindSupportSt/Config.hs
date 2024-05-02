@@ -8,10 +8,8 @@ import Modelling.ActivityDiagram.Config (AdConfig(..))
 task41 :: FindSupportSTConfig
 task41 = FindSupportSTConfig {
   adConfig = AdConfig {
-    minActions = 6,
-    maxActions = 6,
-    minObjectNodes = 4,
-    maxObjectNodes = 4,
+    actionLimits = (6, 6),
+    objectNodeLimits = (4, 4),
     maxNamedNodes = 10,
     decisionMergePairs = 2,
     forkJoinPairs = 1,
@@ -30,10 +28,8 @@ task41 = FindSupportSTConfig {
 task42 :: FindSupportSTConfig
 task42 = FindSupportSTConfig {
   adConfig = AdConfig {
-    minActions = 8,
-    maxActions = 8,
-    minObjectNodes = 4,
-    maxObjectNodes = 4,
+    actionLimits = (8, 8),
+    objectNodeLimits = (4, 4),
     maxNamedNodes = 12,
     decisionMergePairs = 3,
     forkJoinPairs = 1,

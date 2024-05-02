@@ -21,7 +21,10 @@ spec = do
       checkAdConfig defaultAdConfig `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with necessary changes" $
-        checkAdConfig defaultAdConfig{minActions = 0, minObjectNodes = 0}
+        checkAdConfig defaultAdConfig {
+          actionLimits = (0, 4),
+          objectNodeLimits = (0, 1)
+          }
           `shouldSatisfy` isJust
   describe "adConfigScope" $
     context "given the default config" $ do

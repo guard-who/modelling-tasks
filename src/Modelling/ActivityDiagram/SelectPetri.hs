@@ -178,7 +178,8 @@ checkSelectPetriConfig' SelectPetriConfig {
     = Just "Setting the parameter 'activityFinalsExist' to True implies having at least 1 Activity Final Node"
   | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
     = Just "Setting the parameter 'activityFinalsExist' to False prohibits having more than 0 Activity Final Node"
-  | avoidAddingSinksForFinals == Just True && minActions adConfig + forkJoinPairs adConfig < 1
+  | Just True <- avoidAddingSinksForFinals,
+    fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"

@@ -3,7 +3,7 @@ module Modelling.ActivityDiagram.EnterASSpec where
 import Modelling.ActivityDiagram.EnterAS (EnterASConfig(..), checkEnterASConfig, defaultEnterASConfig)
 
 import Modelling.ActivityDiagram.Config (
-  AdConfig (maxObjectNodes),
+  AdConfig (objectNodeLimits),
   defaultAdConfig,
   )
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
@@ -16,6 +16,6 @@ spec = describe "checkEnterASConfig" $ do
   context "when provided with Input out of the constraints" $
     it "it returns a String with necessary changes" $
       checkEnterASConfig defaultEnterASConfig {
-        adConfig = defaultAdConfig {maxObjectNodes = 0},
+        adConfig = defaultAdConfig {objectNodeLimits = (0, 1)},
         objectNodeOnEveryPath = Just True
       } `shouldSatisfy` isJust

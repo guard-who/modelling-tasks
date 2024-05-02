@@ -72,9 +72,8 @@ import Control.Monad.Random (
   )
 import Data.List (permutations, sortBy)
 import Data.Map (Map)
-import Data.Maybe (isJust, fromJust)
 import Data.Monoid (Sum(..), getSum)
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate          (i, iii)
 import Data.Vector.Distance (Params(..), leastChanges)
 import GHC.Generics (Generic)
 import Modelling.Auxiliary.Output (addPretext)
@@ -93,18 +92,15 @@ data SelectASConfig = SelectASConfig {
   maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
   numberOfWrongAnswers :: Int,
-  minAnswerLength :: Int,
-  maxAnswerLength :: Int,
+  answerLength :: !(Int, Int),
   printSolution :: Bool
 } deriving (Generic, Read, Show)
 
 defaultSelectASConfig :: SelectASConfig
 defaultSelectASConfig = SelectASConfig {
   adConfig = defaultAdConfig {
-    minActions = 6,
-    maxActions = 8,
-    minObjectNodes = 1,
-    maxObjectNodes = 3,
+    actionLimits = (6, 8),
+    objectNodeLimits = (1, 3),
     maxNamedNodes = 7,
     activityFinalNodes = 0,
     flowFinalNodes = 2
@@ -113,8 +109,7 @@ defaultSelectASConfig = SelectASConfig {
   maxInstances = Just 50,
   objectNodeOnEveryPath = Just True,
   numberOfWrongAnswers = 2,
-  minAnswerLength = 5,
-  maxAnswerLength = 8,
+  answerLength = (5, 8),
   printSolution = False
 }
 
@@ -129,19 +124,21 @@ checkSelectASConfig' SelectASConfig {
     maxInstances,
     objectNodeOnEveryPath,
     numberOfWrongAnswers,
-    minAnswerLength,
-    maxAnswerLength
+    answerLength
   }
-  | isJust maxInstances && fromJust maxInstances < 1
+  | Just instances <- maxInstances, instances < 1
     = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
   | numberOfWrongAnswers < 1
     = Just "The parameter 'numberOfWrongAnswers' must be set to a positive value"
-  | objectNodeOnEveryPath == Just True && minObjectNodes adConfig < 1
+  | objectNodeOnEveryPath == Just True && fst (objectNodeLimits adConfig) < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occurring"
-  | minAnswerLength < 0
-    = Just "The parameter 'minAnswerLength' should be non-negative"
-  | maxAnswerLength < minAnswerLength
-    = Just "The parameter 'maxAnswerLength' should be greater or equal to 'minAnswerLength'"
+  | fst answerLength < 0
+    = Just "The parameter 'answerLength' should not contain non-negative values"
+  | uncurry (>) answerLength
+  = Just [iii|
+    The second value of parameter 'answerLength' should be greater or equal to
+    its first value.
+    |]
   | otherwise
     = Nothing
 
@@ -162,7 +159,7 @@ selectASAlloy SelectASConfig {
           case opt of
             Just True -> s
             Just False -> [i| not #{s}|]
-            _ -> ""
+            Nothing -> ""
 
 checkSelectASInstance :: SelectASInstance -> Maybe String
 checkSelectASInstance inst
@@ -176,13 +173,12 @@ checkSelectASInstanceForConfig
   -> SelectASConfig
   -> Maybe String
 checkSelectASInstanceForConfig inst SelectASConfig {
-    minAnswerLength,
-    maxAnswerLength
+  answerLength
   }
-  | length solution < minAnswerLength
-    = Just "Solution should not be shorter than parameter 'minAnswerLength'"
-  | length solution > maxAnswerLength
-    = Just "Solution should not be longer than parameter 'maxAnswerLength'"
+  | length solution < fst answerLength
+  = Just "Solution should not be shorter than the minimal 'answerLength'"
+  | length solution > snd answerLength
+  = Just "Solution should not be longer than the maximal 'answerLength'"
   | otherwise
     = Nothing
   where (_, solution) = head $ M.toList $ M.map snd $ M.filter fst $ actionSequences inst

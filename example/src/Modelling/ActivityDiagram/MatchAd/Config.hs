@@ -8,10 +8,8 @@ import Modelling.ActivityDiagram.MatchAd (MatchAdConfig(..))
 task31 :: MatchAdConfig
 task31 = MatchAdConfig {
   adConfig = AdConfig {
-    minActions = 5,
-    maxActions = 6,
-    minObjectNodes = 5,
-    maxObjectNodes = 6,
+    actionLimits = (5, 6),
+    objectNodeLimits = (5, 6),
     maxNamedNodes = 11,
     decisionMergePairs = 2,
     forkJoinPairs = 1,
@@ -28,10 +26,8 @@ task31 = MatchAdConfig {
 task32 :: MatchAdConfig
 task32 = MatchAdConfig {
   adConfig = AdConfig {
-    minActions = 5,
-    maxActions = 6,
-    minObjectNodes = 5,
-    maxObjectNodes = 6,
+    actionLimits = (5, 6),
+    objectNodeLimits = (5, 6),
     maxNamedNodes = 11,
     decisionMergePairs = 1,
     forkJoinPairs = 2,

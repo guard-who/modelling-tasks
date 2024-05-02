@@ -67,7 +67,7 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen,
   )
-import Data.Maybe (isNothing, isJust, fromJust)
+import Data.Maybe                       (isNothing)
 import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
 import Modelling.Auxiliary.Output (addPretext)
@@ -85,18 +85,15 @@ data EnterASConfig = EnterASConfig {
   hideBranchConditions :: Bool,
   maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
-  minAnswerLength :: Int,
-  maxAnswerLength :: Int,
+  answerLength :: !(Int, Int),
   printSolution :: Bool
 } deriving (Generic, Show)
 
 defaultEnterASConfig :: EnterASConfig
 defaultEnterASConfig = EnterASConfig {
   adConfig = defaultAdConfig {
-    minActions = 6,
-    maxActions = 8,
-    minObjectNodes = 1,
-    maxObjectNodes = 5,
+    actionLimits = (6, 8),
+    objectNodeLimits = (1, 5),
     maxNamedNodes = 7,
     activityFinalNodes = 0,
     flowFinalNodes = 2
@@ -104,8 +101,7 @@ defaultEnterASConfig = EnterASConfig {
   hideBranchConditions = True,
   maxInstances = Just 50,
   objectNodeOnEveryPath = Just True,
-  minAnswerLength = 5,
-  maxAnswerLength = 8,
+  answerLength = (5, 8),
   printSolution = False
 }
 
@@ -119,17 +115,19 @@ checkEnterASConfig' EnterASConfig {
     adConfig,
     maxInstances,
     objectNodeOnEveryPath,
-    minAnswerLength,
-    maxAnswerLength
+    answerLength
   }
-  | isJust maxInstances && fromJust maxInstances < 1
+  | Just instances <- maxInstances, instances < 1
     = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
-  | objectNodeOnEveryPath == Just True && minObjectNodes adConfig < 1
+  | objectNodeOnEveryPath == Just True && fst (objectNodeLimits adConfig) < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occurring"
-  | minAnswerLength < 0
-    = Just "The parameter 'minAnswerLength' should be non-negative"
-  | maxAnswerLength < minAnswerLength
-    = Just "The parameter 'maxAnswerLength' should be greater or equal to 'minAnswerLength'"
+  | fst answerLength < 0
+  = Just "The parameter 'answerLength' should not contain non-negative values"
+  | uncurry (>) answerLength
+  = Just [iii|
+    The second value of parameter 'answerLength'
+    should be greater than or equal to its first value.
+    |]
   | otherwise
     = Nothing
 
@@ -161,13 +159,18 @@ checkEnterASInstance inst
 
 checkEnterASInstanceForConfig :: EnterASInstance -> EnterASConfig -> Maybe String
 checkEnterASInstanceForConfig inst EnterASConfig {
-    minAnswerLength,
-    maxAnswerLength
+  answerLength
   }
-  | length solution < minAnswerLength
-    = Just "Solution should not be shorter than parameter 'minAnswerLength'"
-  | length solution > maxAnswerLength
-    = Just "Solution should not be longer than parameter 'maxAnswerLength'"
+  | length solution < fst answerLength
+  = Just [iii|
+    Solution should not be shorter than
+    the first value of parameter 'answerLength'.
+    |]
+  | length solution > snd answerLength
+  = Just [iii|
+    Solution should not be longer than
+    the second value of parameter 'answerLength'.
+    |]
   | otherwise
     = Nothing
   where solution = sampleSequence inst

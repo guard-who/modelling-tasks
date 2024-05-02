@@ -38,26 +38,21 @@ calcTimeForOneInst conf = do
 
 smallConfig :: AdConfig
 smallConfig = defaultAdConfig {
-  maxActions = 4,
-  maxObjectNodes = 4,
+  objectNodeLimits = (1, 4),
   maxNamedNodes = 6,
   decisionMergePairs = 1
   }
 
 largeConfig :: AdConfig
 largeConfig = defaultAdConfig {
-  minActions = 5,
-  maxActions = 7,
-  minObjectNodes = 5,
-  maxObjectNodes = 7,
+  actionLimits = (5, 7),
+  objectNodeLimits = (5, 7),
   maxNamedNodes = 12}
 
 extraLargeConfig :: AdConfig
 extraLargeConfig = defaultAdConfig {
-  minActions = 6,
-  maxActions = 8,
-  minObjectNodes = 6,
-  maxObjectNodes = 8,
+  actionLimits = (6, 8),
+  objectNodeLimits = (6, 8),
   maxNamedNodes = 14,
   forkJoinPairs = 2
   }

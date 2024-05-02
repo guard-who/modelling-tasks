@@ -919,9 +919,8 @@ manyRandomDrawSettings
   -- ^ how many entries to return
   -> m [DrawSettings]
 manyRandomDrawSettings config n = map (drawSettingsWithCommand config) <$> do
-  let gls = graphLayouts config
-  gls' <- shuffleM gls
-  shuffleM $ take n $ cycle gls'
+  layouts <- shuffleM $ graphLayouts config
+  shuffleM $ take n $ cycle layouts
 
 transitionPairShow
   :: (Petri.Transition, Petri.Transition)

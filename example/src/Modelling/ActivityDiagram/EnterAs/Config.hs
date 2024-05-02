@@ -8,10 +8,8 @@ import Modelling.ActivityDiagram.EnterAS (EnterASConfig(..))
 task35 :: EnterASConfig
 task35 = EnterASConfig {
   adConfig = AdConfig {
-    minActions = 12,
-    maxActions = 12,
-    minObjectNodes = 5,
-    maxObjectNodes = 5,
+    actionLimits = (12, 12),
+    objectNodeLimits = (5, 5),
     maxNamedNodes = 17,
     decisionMergePairs = 3,
     forkJoinPairs = 1,
@@ -22,18 +20,15 @@ task35 = EnterASConfig {
   hideBranchConditions = True,
   maxInstances = Just 2000,
   objectNodeOnEveryPath = Just True,
-  minAnswerLength = 10,
-  maxAnswerLength = 10,
+  answerLength = (10, 10),
   printSolution = True
   }
 
 task36 :: EnterASConfig
 task36 = EnterASConfig {
   adConfig = AdConfig {
-    minActions = 14,
-    maxActions = 14,
-    minObjectNodes = 6,
-    maxObjectNodes = 6,
+    actionLimits = (14, 14),
+    objectNodeLimits = (6, 6),
     maxNamedNodes = 20,
     decisionMergePairs = 2,
     forkJoinPairs = 2,
@@ -44,7 +39,6 @@ task36 = EnterASConfig {
   hideBranchConditions = True,
   maxInstances = Just 2000,
   objectNodeOnEveryPath = Just False,
-  minAnswerLength = 11,
-  maxAnswerLength = 11,
+  answerLength = (11, 11),
   printSolution = True
   }

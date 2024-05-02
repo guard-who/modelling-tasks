@@ -5,7 +5,7 @@ import Modelling.ActivityDiagram.MatchPetri (MatchPetriConfig(..), checkMatchPet
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
 import Modelling.ActivityDiagram.Config (
-  AdConfig (decisionMergePairs, forkJoinPairs, minActions, cycles),
+  AdConfig (actionLimits, cycles, decisionMergePairs, forkJoinPairs),
   defaultAdConfig,
   )
 
@@ -22,7 +22,7 @@ spec = do
     context "when provided with Input out of the constraints" $
       it "it returns a String with necessary changes" $
         checkMatchPetriConfig defaultMatchPetriConfig {
-          adConfig = defaultAdConfig {minActions = 0, forkJoinPairs = 0},
+          adConfig = defaultAdConfig {actionLimits = (0, 4), forkJoinPairs = 0},
           avoidAddingSinksForFinals = Just True
           }
             `shouldSatisfy` isJust

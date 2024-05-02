@@ -88,7 +88,6 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Data.Map (Map)
-import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate ( i )
 import GHC.Generics (Generic)
 import System.Random.Shuffle (shuffleM)
@@ -134,13 +133,14 @@ findSupportSTConfig' FindSupportSTConfig {
     activityFinalsExist,
     avoidAddingSinksForFinals
   }
-  | isJust maxInstances && fromJust maxInstances < 1
+  | Just instances <- maxInstances, instances < 1
     = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
     = Just "Setting the parameter 'activityFinalsExist' to True implies having at least 1 Activity Final Node"
   | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
     = Just "Setting the parameter 'activityFinalsExist' to False prohibits having more than 0 Activity Final Node"
-  | avoidAddingSinksForFinals == Just True && minActions adConfig + forkJoinPairs adConfig < 1
+  | Just True <- avoidAddingSinksForFinals,
+    fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | otherwise
     = Nothing
@@ -163,7 +163,7 @@ findSupportSTAlloy FindSupportSTConfig {
           case opt of
             Just True -> s
             Just False -> [i| not #{s}|]
-            _ -> ""
+            Nothing -> ""
 
 data FindSupportSTSolution = FindSupportSTSolution {
   numberOfPetriNodes :: Int,

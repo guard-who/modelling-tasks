@@ -10,10 +10,8 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 task39 :: MatchPetriConfig
 task39 = MatchPetriConfig {
   adConfig = AdConfig {
-    minActions = 8,
-    maxActions = 8,
-    minObjectNodes = 4,
-    maxObjectNodes = 4,
+    actionLimits = (8, 8),
+    objectNodeLimits = (4, 4),
     maxNamedNodes = 12,
     decisionMergePairs = 2,
     forkJoinPairs = 1,
@@ -34,10 +32,8 @@ task39 = MatchPetriConfig {
 task40 :: MatchPetriConfig
 task40 = MatchPetriConfig {
   adConfig = AdConfig {
-    minActions = 8,
-    maxActions = 8,
-    minObjectNodes = 5,
-    maxObjectNodes = 5,
+    actionLimits = (8, 8),
+    objectNodeLimits = (5, 5),
     maxNamedNodes = 13,
     decisionMergePairs = 3,
     forkJoinPairs = 2,
