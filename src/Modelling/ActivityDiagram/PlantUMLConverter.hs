@@ -10,14 +10,12 @@ module Modelling.ActivityDiagram.PlantUMLConverter (
   drawAdToFile
 ) where
 
-import qualified Data.ByteString as B (writeFile)
-
 import Data.ByteString (ByteString)
 import Data.List ( delete, intercalate, intersect, union )
 import Data.String.Interpolate ( i, __i )
 import GHC.Generics (Generic)
-import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
 
+import Capabilities.PlantUml            (MonadPlantUml (drawPlantUmlSvg))
 import Modelling.ActivityDiagram.Datatype (
   AdNode (..),
   UMLActivityDiagram(..),
@@ -36,10 +34,14 @@ defaultPlantUMLConvConf = PlantUMLConvConf {
   suppressBranchConditions = True
 }
 
-drawAdToFile :: FilePath -> PlantUMLConvConf -> UMLActivityDiagram -> IO FilePath
+drawAdToFile
+  :: MonadPlantUml m
+  => FilePath
+  -> PlantUMLConvConf
+  -> UMLActivityDiagram
+  -> m FilePath
 drawAdToFile path conf ad = do
-  svg <- drawPlantUMLDiagram SVG $ convertToPlantUML' conf ad
-  B.writeFile adFilename svg
+  drawPlantUmlSvg adFilename $ convertToPlantUML' conf ad
   return adFilename
   where
     adFilename :: FilePath

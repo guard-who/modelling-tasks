@@ -82,6 +82,7 @@ library:
     - Capabilities.Cache
     - Capabilities.Diagrams
     - Capabilities.Graphviz
+    - Capabilities.PlantUml
     - Modelling.ActivityDiagram.ActionSequences
     - Modelling.ActivityDiagram.Alloy
     - Modelling.ActivityDiagram.Auxiliary.Util
