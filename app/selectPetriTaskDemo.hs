@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Capabilities.Alloy.IO            ()
+import Capabilities.Diagrams.IO         ()
 import Modelling.ActivityDiagram.SelectPetri (
   defaultSelectPetriConfig,
   selectPetri,

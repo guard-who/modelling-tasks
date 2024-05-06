@@ -16,6 +16,9 @@ module Modelling.PetriNet.Reach.Deadlock where
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList, toList)
 
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Property (
@@ -58,8 +61,9 @@ import Control.Monad.Output.Generic (
   ($>>=),
   )
 import Data.Bifunctor                   (Bifunctor (second))
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (guard, replicateM, when)
-import Control.Monad.IO.Class           (MonadIO)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
 import Data.Either                      (isRight)
 import Data.Either.Extra                (fromRight')
@@ -77,12 +81,22 @@ verifyDeadlock
 verifyDeadlock = validate Default . petriNet
 
 deadlockTask
-  :: (OutputMonad m, MonadIO m, Ord s, Ord t, Show s, Show t)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Ord s,
+    Ord t,
+    OutputMonad m,
+    Show s,
+    Show t
+    )
   => FilePath
   -> DeadlockInstance s t
   -> LangM m
 deadlockTask path inst = do
-  drawToFile True path (drawUsing inst) 0 (petriNet inst)
+  lift (drawToFile True path (drawUsing inst) 0 (petriNet inst))
   $>>= \img -> reportReachFor
     img
     (noLongerThan inst)
@@ -101,7 +115,18 @@ deadlockSyntax
 deadlockSyntax = transitionsValid . petriNet
 
 deadlockEvaluation
-  :: (Alternative m, OutputMonad m, MonadIO m, Show t, Show s, Ord t, Ord s)
+  :: (
+    Alternative m,
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Ord s,
+    Ord t,
+    OutputMonad m,
+    Show s,
+    Show t
+    )
   => FilePath
   -> DeadlockInstance s t
   -> [t]

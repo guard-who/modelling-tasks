@@ -95,6 +95,7 @@ executables:
       - diagrams-lib
       - diagrams-svg
       - digest
+      - exceptions
       - extra
       - graphviz
       - modelling-tasks

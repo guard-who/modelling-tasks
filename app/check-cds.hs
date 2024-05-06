@@ -3,6 +3,7 @@ module Main where
 
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
+import Capabilities.Diagrams.IO         ()
 import Modelling.CdOd.CD2Alloy.Transform (combineParts, createRunCommand, mergeParts, transform)
 import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
 import Modelling.CdOd.Types (

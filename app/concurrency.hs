@@ -2,7 +2,6 @@
 
 module Main (main) where
 
-import Capabilities.Alloy.IO            ()
 import qualified Modelling.PetriNet.Types         as Find (
   FindConcurrencyConfig (..),
   )
@@ -10,6 +9,8 @@ import qualified Modelling.PetriNet.Types         as Pick (
   PickConcurrencyConfig (..),
   )
 
+import Capabilities.Alloy.IO            ()
+import Capabilities.Diagrams.IO         ()
 import Common (
   forceErrors,
   instanceInput,

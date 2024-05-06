@@ -37,6 +37,7 @@ library
       Capabilities.Alloy.IO
       Capabilities.Cache
       Capabilities.Diagrams
+      Capabilities.Diagrams.IO
       Capabilities.Graphviz
       Capabilities.PlantUml
       Modelling.ActivityDiagram.ActionSequences

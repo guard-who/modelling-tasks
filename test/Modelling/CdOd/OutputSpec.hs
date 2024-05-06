@@ -4,6 +4,8 @@ import Modelling.CdOd.CdAndChanges.Instance (
   GenericClassDiagramInstance (..),
   fromInstance,
   )
+
+import Capabilities.Diagrams.IO         ()
 import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
 import Modelling.Common                 (withUnitTestsUsingPath)
 

@@ -24,6 +24,10 @@ module Modelling.ActivityDiagram.SelectPetri (
   ) where
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
+import Capabilities.PlantUml            (MonadPlantUml)
 import qualified Data.Map as M (empty, size, fromList, toList, keys, map, filter)
 import qualified Modelling.ActivityDiagram.Datatype as Ad (AdNode(label))
 import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
@@ -52,7 +56,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames, shufflePetri)
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, weightedShuffle)
+import Modelling.ActivityDiagram.Auxiliary.Util (weightedShuffle)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
@@ -67,7 +71,6 @@ import Modelling.PetriNet.Types (
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra (loopM, firstJustM)
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -87,7 +90,6 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen
   )
-import Control.Monad.Except (runExceptT)
 import Data.Bifunctor (second)
 import Data.List (genericLength)
 import Data.Map (Map)
@@ -213,7 +215,7 @@ selectPetriAlloy SelectPetriConfig {
           case opt of
             Just True -> s
             Just False -> [i| not #{s}|]
-            _ -> ""
+            Nothing -> ""
 
 checkPetriInstance :: SelectPetriInstance -> SelectPetriConfig -> Maybe String
 checkPetriInstance inst SelectPetriConfig {
@@ -302,7 +304,14 @@ weightBySquaredDev xs w = square (realToFrac w - avg) + epsilon
     avg = realToFrac (sum (map snd xs)) / genericLength xs
 
 selectPetriTask
-  :: (OutputMonad m, MonadIO m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadPlantUml m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> SelectPetriInstance
   -> LangM m
@@ -311,15 +320,13 @@ selectPetriTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
-  image $=<< liftIO
-    $ drawAdToFile path (plantUMLConf task) $ activityDiagram task
+  image $=<< drawAdToFile path (plantUMLConf task) $ activityDiagram task
   let drawSetting = petriDrawConf task
   paragraph $ translate $ do
     english "Consider the following Petri nets:"
     german "Betrachten Sie die folgenden Petrinetze:"
-  images show id $=<< fmap (M.map (failWith id)) $ liftIO $
-    traverse (\c -> runExceptT
-      $ cacheNet path (show . PK.label) c
+  images show id
+    $=<< traverse (\c -> cacheNet path (show . PK.label) c
       (not $ withPlaceNames drawSetting)
       (not $ withTransitionNames drawSetting)
       (not $ with1Weights drawSetting)

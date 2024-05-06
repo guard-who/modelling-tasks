@@ -41,6 +41,9 @@ import qualified Data.Map                         as M (
   )
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common       (Object (oName), oneOf)
 import Modelling.Auxiliary.Output       (
   hoveringInformation,
@@ -99,11 +102,9 @@ import Modelling.PetriNet.Types (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (first)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Output       (
   GenericOutputMonad (..),
   LangM,
-  LangM',
   Language,
   OutputMonad,
   Rated,
@@ -113,7 +114,6 @@ import Control.Monad.Output       (
   singleChoice,
   translate,
   translations,
-  unLangM,
   )
 import Control.Monad.Random             (
   MonadRandom,
@@ -123,7 +123,7 @@ import Control.Monad.Random             (
   evalRandT,
   mkStdGen,
   )
-import Control.Monad.Trans.Except       (ExceptT (ExceptT), runExceptT)
+import Control.Monad.Trans.Except       (ExceptT (ExceptT))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
@@ -220,17 +220,17 @@ evalWithStdGen
 evalWithStdGen = flip evalRandT . mkStdGen
 
 writeDia
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => FilePath
   -> MatchInstance (Drawable (p n String)) b
-  -> LangM' m (MatchInstance FilePath b)
+  -> m (MatchInstance FilePath b)
 writeDia path = bimapM (\(n, ds) -> writeGraph ds path "" n) pure
 
 writeDias
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => FilePath
   -> MatchInstance a (Drawable (p n String))
-  -> LangM' m (MatchInstance a FilePath)
+  -> m (MatchInstance a FilePath)
 writeDias path inst =
   let inst' = inst {
         from = from inst,
@@ -239,29 +239,21 @@ writeDias path inst =
   in bimapM pure (\(l, (n, d)) -> writeGraph d path l n) inst'
 
 writeGraph
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => DrawSettings
   -> FilePath
   -> String
   -> p n String
-  -> LangM' m FilePath
+  -> m FilePath
 writeGraph s path index pl =
-  either
-    (const $ (*> pure "") $ refuse $ translate $ do
-      english "Drawing diagram failed!"
-      german "Diagrammzeichnen fehlgeschlagen!"
-    )
-    pure
-    $=<< liftIO $ runExceptT $ draw $ path ++ "graph" ++ index
-  where
-    draw p = cacheNet
-      p
-      id
-      pl
-      (not $ withPlaceNames s)
-      (not $ withTransitionNames s)
-      (not $ with1Weights s)
-      (withGraphvizCommand s)
+  cacheNet
+    (path ++ "graph" ++ index)
+    id
+    pl
+    (not $ withPlaceNames s)
+    (not $ withTransitionNames s)
+    (not $ with1Weights s)
+    (withGraphvizCommand s)
 
 graphToMath
   :: (MonadAlloy m, MonadThrow m, Net p n)
@@ -361,7 +353,7 @@ mathInstance config inst = do
   return (f, petriLike', math)
 
 graphToMathTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
   => FilePath
   -> GraphToMathInstance
   -> LangM m
@@ -369,7 +361,7 @@ graphToMathTask path task = do
   paragraph $ translate $ do
     english "Consider the following graphical representation of a Petri net:"
     german "Betrachten Sie folgende grafische Darstellung eines Petrinetzes:"
-  image $=<< unLangM $ from <$> writeDia path task
+  image $=<< from <$> writeDia path task
   paragraph $ translate $ do
     english "Which of the following mathematical representations denotes this Petri net?"
     german "Welche der folgenden mathematischen Repräsentationen formalisiert dieses Petrinetz?"
@@ -423,7 +415,7 @@ mathToOutput f pm = paragraph $ do
   pure ()
 
 mathToGraphTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
   => FilePath
   -> MathToGraphInstance
   -> LangM m
@@ -435,7 +427,7 @@ mathToGraphTask path task = do
   paragraph $ translate $ do
     english "Which of the following diagrams represents this Petri net?"
     german "Welches der folgenden Diagramme stellt dieses Petrinetz dar?"
-  images show snd $=<< unLangM $ to <$> writeDias path task
+  images show snd $=<< to <$> writeDias path task
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching diagram only.|]
     german [i|Geben Sie Ihre Antwort durch Angabe der Nummer des passenden Diagramms an.|]

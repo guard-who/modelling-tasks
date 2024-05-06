@@ -16,6 +16,9 @@ module Modelling.PetriNet.Reach.Reach where
 
 import qualified Data.Set                         as S (toList)
 
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   hoveringInformation,
@@ -43,8 +46,9 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Applicative              (Alternative)
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (forM, unless, when)
-import Control.Monad.IO.Class           (MonadIO)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   GenericOutputMonad (assertion, code, image, indent, paragraph, refuse, text),
   LangM,
@@ -84,16 +88,27 @@ verifyReach inst = do
   pure ()
 
 reachTask
-  :: (MonadIO m, OutputMonad m, Ord s, Ord t, Show s, Show t)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Ord s,
+    Ord t,
+    OutputMonad m,
+    Show s,
+    Show t
+    )
   => FilePath
   -> ReachInstance s t
   -> LangM m
 reachTask path inst = do
   if showGoalNet inst
     then (,True) . Left
-         <$> drawToFile True path (drawUsing inst) 0 (n { start = goal inst })
+    <$> lift (drawToFile True path (drawUsing inst) 0 (n { start = goal inst }))
     else pure (Right $ show $ goal inst, False)
-  $>>= \(g, withoutPlaceNames) -> drawToFile withoutPlaceNames path (drawUsing inst) (-1) n
+  $>>= \(g, withoutPlaceNames) ->
+    lift (drawToFile withoutPlaceNames path (drawUsing inst) (-1) n)
   $>>= \img -> reportReachFor
     img
     (noLongerThan inst)
@@ -182,7 +197,18 @@ transitionsValid n =
     isValidTransition =  (`elem` transitions n)
 
 reachEvaluation
-  :: (Alternative m, MonadIO m, OutputMonad m, Show s, Show t, Ord s, Ord t)
+  :: (
+    Alternative m,
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Ord s,
+    Ord t,
+    OutputMonad m,
+    Show s,
+    Show t
+    )
   => FilePath
   -> ReachInstance s t
   -> [t]

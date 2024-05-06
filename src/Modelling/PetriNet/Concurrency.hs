@@ -39,6 +39,9 @@ import qualified Data.Map                         as M (
   )
 
 import Capabilities.Alloy               (MonadAlloy)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
   oneOf,
@@ -128,7 +131,6 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen,
   )
-import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Either                      (isLeft)
@@ -139,14 +141,27 @@ import Language.Alloy.Call (
   )
 
 simpleFindConcurrencyTask
-  :: (MonadIO m, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> FindInstance SimplePetriNet (Concurrent Transition)
   -> LangM m
 simpleFindConcurrencyTask = findConcurrencyTask
 
 findConcurrencyTask
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    OutputMonad m
+    )
   => FilePath
   -> FindInstance (p n String) (Concurrent Transition)
   -> LangM m
@@ -155,7 +170,7 @@ findConcurrencyTask path task = do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
   image
-    $=<< unLangM $ renderWith path "concurrent" (net task) (drawFindWith task)
+    $=<< renderWith path "concurrent" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english [iii|
       Which pair of transitions are concurrently activated
@@ -230,14 +245,26 @@ findConcurrencySolution task = concur
     Concurrent concur = toFind task
 
 simplePickConcurrencyTask
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> PickInstance SimplePetriNet
   -> LangM m
 simplePickConcurrencyTask = pickConcurrencyTask
 
 pickConcurrencyTask
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    OutputMonad m
+    )
   => FilePath
   -> PickInstance (p n String)
   -> LangM m
@@ -252,7 +279,7 @@ pickConcurrencyTask path task = do
       die nebenläufig aktiviert sind?
       |]
   images show snd
-    $=<< unLangM $ renderPick path "concurrent" task
+    $=<< renderPick path "concurrent" task
   paragraph $ translate $ do
     english [iii|
       Please state your answer by giving only the number of the Petri net

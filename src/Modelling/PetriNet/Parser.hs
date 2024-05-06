@@ -249,9 +249,9 @@ simpleNameMap pl = BM.fromList . fst <$>
 Convert a 'Net' into a 'Gr' enabling to draw it using graphviz.
 -}
 netToGr
-  :: (Net p n, Ord a)
+  :: (Monad m, Net p n, Ord a)
   => p n a
-  -> Either a (Gr (a, Maybe Int) Int)
+  -> m (Gr (a, Maybe Int) Int)
 netToGr plike = do
   nodes <- Map.foldrWithKey convertNode (return []) $ PN.nodes plike
   let edges = Map.foldrWithKey convertTransition [] $ PN.nodes plike

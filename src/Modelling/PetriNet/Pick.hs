@@ -27,6 +27,9 @@ import qualified Data.Map                         as M (
   insert,
   )
 
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
   )
@@ -50,7 +53,6 @@ import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
-  LangM',
   LangM,
   OutputMonad,
   Rated,
@@ -60,16 +62,12 @@ import Control.Monad.Output (
   singleChoiceSyntax,
   translations,
   )
-import Control.Monad.Output.Generic (
-  ($>>=),
-  )
 import Control.Monad.Random (
   RandT,
   StdGen,
   evalRandT,
   mkStdGen
   )
-import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
@@ -172,17 +170,17 @@ pickSolution :: PickInstance n -> Int
 pickSolution = head . M.keys . M.filter fst . nets
 
 renderPick
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => String
   -> String
   -> PickInstance (p n String)
-  -> LangM' m (Map Int (Bool, String))
+  -> m (Map Int (Bool, String))
 renderPick path task config =
   M.foldrWithKey render' (pure mempty) $ nets config
   where
     render' x (b, (net, ds)) ns =
       renderWith path (task ++ '-' : show x) net ds
-      $>>= \file -> M.insert x (b, file) <$> ns
+      >>= \file -> M.insert x (b, file) <$> ns
 
 checkConfigForPick
   :: Bool

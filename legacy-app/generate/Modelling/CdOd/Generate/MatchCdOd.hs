@@ -8,7 +8,7 @@ import qualified Data.Map                         as M (
   fromList,
   )
 
-import Capabilities.Alloy.IO            ()
+import Capabilities.Alloy               (MonadAlloy)
 import Modelling.Auxiliary.Common       (randomise)
 import Modelling.CdOd.Generate.Edges (
   DiagramEdge,
@@ -25,14 +25,12 @@ import Modelling.CdOd.MatchCdOd (
   )
 import Modelling.CdOd.Generate.Mutation
   (Target (..), getAllMutationResults, nonTargets)
-import Modelling.CdOd.Output            (drawCd)
 import Modelling.CdOd.Types (
   Cd,
   anyThickEdge,
   )
 
-import Control.Monad                    (void, when)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random (
   RandT,
   RandomGen,
@@ -41,15 +39,15 @@ import Control.Monad.Random (
   )
 import Data.Map                         (Map)
 import Data.Set                         (singleton)
-import Diagrams.Prelude                 ((#), red)
-import Diagrams.TwoD.Attributes         (lc)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
-debug :: Bool
-debug = False
-
-matchCdOd :: MatchCdOdConfig -> Int -> Int -> IO MatchCdOdInstance
+matchCdOd
+  :: (MonadAlloy m, MonadFail m, MonadThrow m)
+  => MatchCdOdConfig
+  -> Int
+  -> Int
+  -> m MatchCdOdInstance
 matchCdOd config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (`evalRandT` g) $ do
@@ -57,27 +55,28 @@ matchCdOd config segment seed = do
     randomise inst
 
 getRandomTask
-  :: RandomGen g
+  :: (MonadAlloy m, MonadFail m, RandomGen g)
   => MatchCdOdConfig
-  -> RandT g IO (Map Int Cd, Map Char ([Int], AlloyInstance))
+  -> RandT g m (Map Int Cd, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
   (cd1, cd2, cd3, numClasses) <- getRandomCDs config
-  instas <- liftIO $ getODInstances config cd1 cd2 cd3 numClasses
+  instas <- getODInstances config cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
     Nothing      -> getRandomTask config
     Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
 
-getRandomCDs :: RandomGen g => MatchCdOdConfig -> RandT g IO (Cd, Cd, Cd, Int)
+getRandomCDs
+  :: (MonadFail m, RandomGen g)
+  => MatchCdOdConfig
+  -> RandT g m (Cd, Cd, Cd, Int)
 getRandomCDs config = do
   (names, edges) <- generate
     Nothing
     (classConfig config)
     (searchSpace config)
-  let cd0 = fromEdges names edges
+  --let cd0 = fromEdges names edges
   -- continueIf (not (anyThickEdge cd0)) $ do
-  when debug . liftIO . void
-    $ drawCd False True (mempty # lc red) cd0 "debug-0.svg"
   mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
   let medges1 = getFirstValidSatisfying (not . anyThickEdge) names mutations
   continueWithJust medges1 (const True) $ \edges1 -> do
@@ -91,8 +90,6 @@ getRandomCDs config = do
             getFirstValidSatisfying (not . anyThickEdge) names mutations''
       continueWithJust medges3 (const True) $ \edges3 -> do
         let cd3         = fromEdges names edges3
-        when debug . void . liftIO
-          $ drawCd False True (mempty # lc red) cd3 "debug-3.svg"
         return (cd1, cd2, cd3, length names)
   where
     continueWithJust mx p m

@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Capabilities.Diagrams.IO         ()
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.Output

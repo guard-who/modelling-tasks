@@ -131,6 +131,7 @@ executable match-cd-od-legacy
     , diagrams-lib
     , diagrams-svg
     , digest
+    , exceptions
     , extra
     , graphviz
     , modelling-tasks

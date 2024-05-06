@@ -28,6 +28,10 @@ import qualified Modelling.ActivityDiagram.Petrinet as PK (label)
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
+import Capabilities.PlantUml            (MonadPlantUml)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   AdNode (..),
@@ -56,7 +60,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   defaultPlantUMLConvConf,
   drawAdToFile,
   )
-import Modelling.ActivityDiagram.Auxiliary.Util (failWith, headWithErr)
+import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Modelling.Auxiliary.Common (oneOf)
 import Modelling.Auxiliary.Output (addPretext)
@@ -71,8 +75,6 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Except (runExceptT)
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -263,7 +265,14 @@ isSupportST key =
     _ -> False
 
 matchPetriTask
-  :: (OutputMonad m, MonadIO m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadPlantUml m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> MatchPetriInstance
   -> LangM m
@@ -271,15 +280,12 @@ matchPetriTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
-  image $=<< liftIO
-    $ drawAdToFile path (plantUMLConf task) $ activityDiagram task
+  image $=<< drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following Petri net as translation of this activity diagram:"
     german "Betrachten Sie folgendes Petrinetz als Übersetzung dieses Aktivitätsdiagramms:"
   let drawSetting = petriDrawConf task
-  image $=<< fmap (failWith id) $ liftIO
-    $ runExceptT
-    $ cacheNet path (show . PK.label) (petrinet task)
+  image $=<< cacheNet path (show . PK.label) (petrinet task)
       (not $ withPlaceNames drawSetting)
       (not $ withTransitionNames drawSetting)
       (not $ with1Weights drawSetting)

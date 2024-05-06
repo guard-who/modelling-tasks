@@ -22,6 +22,9 @@ import qualified Data.Set                         as S (
   union,
   )
 
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.PetriNet.Reach.Draw    (drawToFile)
 import Modelling.PetriNet.Reach.Type (
   Net (capacity, connections, start),
@@ -31,8 +34,9 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Applicative              (Alternative)
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (guard, unless)
-import Control.Monad.IO.Class           (MonadIO)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   GenericOutputMonad (image, indent, paragraph, refuse, text),
   LangM',
@@ -111,7 +115,18 @@ equalling f x y = f x == f y
 --executesPlain n ts = result $ executes n ts
 
 executes
-  :: (Alternative m, MonadIO m, OutputMonad m, Show t, Ord s, Show s, Ord t)
+  :: (
+    Alternative m,
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Ord s,
+    Ord t,
+    OutputMonad m,
+    Show s,
+    Show t
+    )
   => FilePath
   -> GraphvizCommand
   -> Net s t
@@ -130,7 +145,17 @@ executes path cmd n ts = foldl'
       pure next
 
 executeIO
-  :: (MonadIO m, OutputMonad m, Show a, Show k, Ord a, Ord k)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Ord a,
+    Ord k,
+    OutputMonad m,
+    Show a,
+    Show k
+    )
   => FilePath
   -> GraphvizCommand
   -> Int
@@ -139,7 +164,7 @@ executeIO
   -> State k
   -> LangM' m (State k)
 executeIO path cmd i n t z0 = execute n t z0
-  $>>= \z2 -> drawToFile False path cmd i (n {start = z2})
+  $>>= \z2 -> lift (drawToFile False path cmd i (n {start = z2}))
   $>>= \g -> image g
   $>>= pure (pure z2)
 

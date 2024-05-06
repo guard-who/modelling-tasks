@@ -18,6 +18,9 @@ module Modelling.PetriNet.ConflictPlaces (
 
 import qualified Data.Map                         as M (empty, fromList)
 
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Output (
   hoveringInformation,
   )
@@ -61,7 +64,7 @@ import Modelling.PetriNet.Types (
 import Control.Applicative              ((<|>))
 import Control.Lens                     ((.~))
 import Control.Monad                    (void)
-import Control.Monad.IO.Class           (MonadIO)
+import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM',
@@ -72,7 +75,6 @@ import Control.Monad.Output (
   english,
   german,
   translate,
-  unLangM,
   )
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Function                    ((&))
@@ -89,14 +91,27 @@ import Text.Parsec (
 import Text.Parsec.String               (Parser)
 
 simpleFindConflictPlacesTask
-  :: (MonadIO m, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> FindInstance SimplePetriNet Conflict
   -> LangM m
 simpleFindConflictPlacesTask = findConflictPlacesTask
 
 findConflictPlacesTask
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    OutputMonad m
+    )
   => FilePath
   -> FindInstance (p n String) Conflict
   -> LangM m
@@ -104,8 +119,7 @@ findConflictPlacesTask path task = do
   paragraph $ translate $ do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
-  image
-    $=<< unLangM $ renderWith path "conflict" (net task) (drawFindWith task)
+  image $=<< renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions is in conflict, and because of which conflict-causing place(s), under the initial marking?"
     german "Welches Paar von Transitionen steht in Konflikt, und wegen welcher konfliktauslösenden Stelle(n), unter der Startmarkierung?"

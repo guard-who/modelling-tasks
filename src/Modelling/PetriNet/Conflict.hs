@@ -47,6 +47,9 @@ import qualified Data.Set                         as Set (
   )
 
 import Capabilities.Alloy               (MonadAlloy)
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
   oneOf,
@@ -143,7 +146,6 @@ import Control.Monad.Output (
   recoverFrom,
   translate,
   translations,
-  unLangM,
   )
 import Control.Monad.Output.Generic (
   ($>>=),
@@ -154,7 +156,6 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen
   )
-import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bitraversable               (Bitraversable (bitraverse))
@@ -172,14 +173,27 @@ import Language.Alloy.Call (
   )
 
 simpleFindConflictTask
-  :: (MonadIO m, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> FindInstance SimplePetriNet Conflict
   -> LangM m
 simpleFindConflictTask = findConflictTask
 
 findConflictTask
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    OutputMonad m
+    )
   => FilePath
   -> FindInstance (p n String) Conflict
   -> LangM m
@@ -187,8 +201,7 @@ findConflictTask path task = do
   paragraph $ translate $ do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
-  image $=<< unLangM
-    $ renderWith path "conflict" (net task) (drawFindWith task)
+  image $=<< renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions are in conflict under the initial marking?"
     german "Welches Paar von Transitionen steht unter der Startmarkierung in Konflikt?"
@@ -282,14 +295,27 @@ findConflictPlacesSolution task =
   (findConflictSolution task, conflictPlaces $ toFind task)
 
 simplePickConflictTask
-  :: (MonadIO m, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputMonad m
+    )
   => FilePath
   -> PickInstance SimplePetriNet
   -> LangM m
 simplePickConflictTask = pickConflictTask
 
 pickConflictTask
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    OutputMonad m
+    )
   => FilePath
   -> PickInstance (p n String)
   -> LangM m
@@ -303,8 +329,7 @@ pickConflictTask path task = do
       Welches dieser Petrinetze hat genau ein Paar von Transitionen,
       die in Konflikt stehen?
       |]
-  images show snd $=<<
-    unLangM $ renderPick path "conflict" task
+  images show snd $=<< renderPick path "conflict" task
   paragraph $ translate $ do
     english [iii|
       Please state your answer by giving only the number of the Petri net

@@ -12,11 +12,10 @@ module Modelling.PetriNet.Diagram (
   renderWith,
   ) where
 
-import qualified Control.Monad.Output             as OM (translate)
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 import qualified Data.Map                         as M (foldlWithKey)
 
-import Capabilities.Cache               (MonadCache, cacheT, short)
+import Capabilities.Cache               (MonadCache, cache, short)
 import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
 import Capabilities.Graphviz            (MonadGraphviz (layoutGraph))
 import Modelling.Auxiliary.Common       (Object)
@@ -36,19 +35,8 @@ import Modelling.PetriNet.Types (
   Net (mapNet, traverseNet),
   )
 
-import Control.Arrow                    (ArrowChoice(left), first)
-import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Output (
-  GenericOutputMonad (..),
-  LangM',
-  OutputMonad,
-  ($=<<),
-  english,
-  german,
-  )
-import Control.Monad.Trans.Class        (MonadTrans (lift))
-import Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
+import Control.Arrow                    (first)
+import Control.Monad.Catch              (MonadThrow (throwM), Exception)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    hiding (Path)
 import Data.List                        (foldl')
@@ -58,7 +46,7 @@ import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
 
 cacheNet
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, Net p n)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => String
   -> (a -> String)
   -> p n a
@@ -66,11 +54,11 @@ cacheNet
   -> Bool
   -> Bool
   -> GraphvizCommand
-  -> ExceptT String m FilePath
+  -> m FilePath
 cacheNet path labelOf pl hidePNames hideTNames hide1 gc =
-  cacheT path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
+  cache path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
     dia <- drawNet id pl' hidePNames hideTNames hide1 gc
-    lift $ writeSvg svg dia
+    writeSvg svg dia
   where
     ext = short hidePNames
       ++ short hideTNames
@@ -78,12 +66,18 @@ cacheNet path labelOf pl hidePNames hideTNames hide1 gc =
       ++ short gc
       ++ ".svg"
 
+newtype UnknownPetriNetNodeException
+  = CouldNotFindNodeWithinGraph String
+  deriving Show
+
+instance Exception UnknownPetriNetNodeException
+
 {-| Create a 'Diagram's graph of a Petri net like graph definition ('Net')
 by distributing places and transitions using GraphViz.
 The provided 'GraphvizCommand' is used for this distribution.
 -}
 drawNet
-  :: (MonadDiagrams m, MonadGraphviz m, Net p n, Ord a)
+  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n, Ord a)
   => (a -> String)
   -- ^ how to obtain labels of the nodes
   -> p n a
@@ -96,15 +90,13 @@ drawNet
   -- ^ whether to hide weight of 1
   -> GraphvizCommand
   -- ^ how to distribute the nodes
-  -> ExceptT String m (Diagram B)
+  -> m (Diagram B)
 drawNet labelOf pl hidePNames hideTNames hide1 gc = do
-  gr    <- except $ left errorMessage $ netToGr pl
-  graph <- lift $ layoutGraph gc gr
-  pfont <- lift lin
+  gr    <- either (throwM . CouldNotFindNodeWithinGraph . labelOf) return
+    $ netToGr pl
+  graph <- layoutGraph gc gr
+  pfont <- lin
   return $ drawGraph labelOf hidePNames hideTNames hide1 pfont graph
-  where
-    errorMessage x =
-      "drawNet: Could not find " ++ labelOf x ++ " within the graph"
 
 getNet
   :: (MonadThrow m, Net p n, Traversable t)
@@ -273,21 +265,15 @@ drawEdge hide1 f l l1 l2 path d =
     trail = trailBetween path l1 l2 d
 
 renderWith
-  :: (MonadIO m, Net p n, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => String
   -> String
   -> p n String
   -> DrawSettings
-  -> LangM' m FilePath
-renderWith path task net config = do
-  either
-    (const $ (*> pure "") $ refuse $ OM.translate $ do
-      english "Drawing diagram failed!"
-      german "Diagrammzeichnen fehlgeschlagen!"
-    )
-    pure
-    $=<< liftIO $ runExceptT $ cacheNet (path ++ task) id net
-      (not $ withPlaceNames config)
-      (not $ withTransitionNames config)
-      (not $ with1Weights config)
-      (withGraphvizCommand config)
+  -> m FilePath
+renderWith path task net config =
+  cacheNet (path ++ task) id net
+    (not $ withPlaceNames config)
+    (not $ withTransitionNames config)
+    (not $ with1Weights config)
+    (withGraphvizCommand config)

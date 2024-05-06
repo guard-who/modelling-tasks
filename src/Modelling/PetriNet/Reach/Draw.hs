@@ -3,6 +3,9 @@ module Modelling.PetriNet.Reach.Draw (drawToFile) where
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (toList)
 
+import Capabilities.Cache               (MonadCache)
+import Capabilities.Diagrams            (MonadDiagrams)
+import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.PetriNet.Diagram       (cacheNet)
 import Modelling.PetriNet.Reach.Type (
   Net (connections, places, start, transitions),
@@ -13,23 +16,28 @@ import Modelling.PetriNet.Types (
   SimpleNode (SimplePlace, SimpleTransition),
   )
 
-import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Output             (LangM')
-import Control.Monad.Trans.Except       (runExceptT)
+import Control.Monad.Catch              (MonadThrow)
 import Data.GraphViz                    (GraphvizCommand)
 import Data.List                        (group, sort)
 
 drawToFile
-  :: (MonadIO m, Ord s, Ord t, Show s, Show t)
+  :: (
+    Ord s,
+    Ord t,
+    Show s,
+    Show t,
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m
+    )
   => Bool
   -> FilePath
   -> GraphvizCommand
   -> Int
   -> Net s t
-  -> LangM' m FilePath
-drawToFile hidePNames path cmd x net = fmap (either error id) $
-  lift $ liftIO $ runExceptT $ cacheNet
+  -> m FilePath
+drawToFile hidePNames path cmd x net = cacheNet
     (path ++ "graph" ++ show x)
     id
     (toPetriLike show show net)

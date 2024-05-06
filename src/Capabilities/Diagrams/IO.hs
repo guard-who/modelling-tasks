@@ -2,11 +2,10 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 -- | Defines a Monad context for rendering diagrams graphics to file.
 
-module Capabilities.Diagrams (
-  MonadDiagrams (lin, writeSvg),
-  ) where
+module Capabilities.Diagrams.IO () where
 
 import qualified Data.ByteString.Lazy             as LBS (ByteString, unpack)
 import qualified Data.Map                         as M (fromList)
@@ -21,16 +20,11 @@ import qualified Data.Text.IO                     as T (writeFile)
 import qualified Data.Text.Lazy                   as LT (Text, toStrict)
 import qualified Graphics.SVGFonts.Fonts          (lin)
 
+import Capabilities.Diagrams                      (MonadDiagrams (lin, writeSvg))
 import Modelling.Auxiliary.Diagrams               (renderSVG)
 
-import Control.Monad.IO.Class                     (MonadIO (liftIO))
-import Control.Monad.Output.Generic               (GenericReportT)
 import Data.ByteString.Internal                   (w2c)
-import Data.Data                                  (Typeable)
-import Diagrams.Backend.SVG                       (SVG)
-import Diagrams.Prelude                           (QDiagram)
-import Diagrams.TwoD                              (V2, dims2D)
-import Graphics.SVGFonts.ReadFont                 (PreparedFont)
+import Diagrams.TwoD                              (dims2D)
 
 import Text.XML.HXT.Core
     ( returnA,
@@ -60,23 +54,11 @@ import qualified Text.XML as XML
 import Data.List (isPrefixOf)
 import Data.Maybe                       (maybeToList)
 
-class Monad m => MonadDiagrams m where
-  lin :: (Read n, RealFloat n) => m (PreparedFont n)
-  writeSvg
-    :: (Show n, Typeable n, RealFloat n, Monoid o)
-    => FilePath
-    -> QDiagram SVG V2 n o
-    -> m ()
-
 instance MonadDiagrams IO where
   lin = Graphics.SVGFonts.Fonts.lin
   writeSvg file g = do
     svg <- groupSVG $ renderSVG (dims2D 400 400) g
     T.writeFile file $ LT.toStrict svg
-
-instance MonadIO m => MonadDiagrams (GenericReportT l o m)  where
-  lin = liftIO lin
-  writeSvg file = liftIO . writeSvg file
 
 data SVGOptions = SVGOptions
   { xmlns, height, iStrokeOpacity, viewBox, fontSize, width, xmlnsXlink, iStroke, version :: T.Text,
