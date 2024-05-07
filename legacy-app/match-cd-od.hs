@@ -6,6 +6,7 @@ import Common                           (withLang)
 import Capabilities.Alloy.IO            ()
 import Capabilities.Cache.IO            ()
 import Capabilities.Diagrams.IO         ()
+import Capabilities.Graphviz.IO         ()
 import Modelling.CdOd.Types (
   ClassConfig (..),
   ObjectConfig (..),

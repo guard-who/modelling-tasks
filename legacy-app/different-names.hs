@@ -5,6 +5,7 @@ import Common                           (withLang)
 import Capabilities.Alloy.IO            ()
 import Capabilities.Cache.IO            ()
 import Capabilities.Diagrams.IO         ()
+import Capabilities.Graphviz.IO         ()
 import Modelling.CdOd.DifferentNames
   (defaultDifferentNamesConfig, differentNamesTask)
 import Modelling.CdOd.Generate.DifferentNames (differentNames)

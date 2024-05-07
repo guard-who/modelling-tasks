@@ -6,6 +6,7 @@ import Modelling.CdOd.CdAndChanges.Instance (
   )
 
 import Capabilities.Diagrams.IO         ()
+import Capabilities.Graphviz.IO         ()
 import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
 import Modelling.Common                 (withUnitTestsUsingPath)
 
