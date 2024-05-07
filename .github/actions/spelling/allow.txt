@@ -1,4 +1,5 @@
 ATransition
+AType
 Aeson
 Aggregationen
 Autotool
@@ -26,6 +27,8 @@ Nachbereich
 Neato
 Perim
 Petrinetz
+Petrinetze
+Petrinetzes
 Programmierparadigmen
 QDiagram
 Rightarrow

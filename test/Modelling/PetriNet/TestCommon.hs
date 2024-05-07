@@ -132,40 +132,43 @@ validGraphConfig = GraphConfig {
   }
 
 validBasicAndChangeConfigs :: Int -> Int -> Int -> [(BasicConfig, ChangeConfig)]
-validBasicAndChangeConfigs minala low high =
+validBasicAndChangeConfigs minActive low high =
   [ (BasicConfig {
        places = p,
        transitions = t,
-       atLeastActive = ala,
-       flowOverall = (minfoa, maxfoa),
-       isConnected = iso,
-       maxTokensPerPlace = maxtpp,
-       maxFlowPerEdge = maxfpe,
-       tokensOverall = (mintoa, maxtoa)
+       atLeastActive = active,
+       flowOverall = (minFlow, maxFlow),
+       isConnected = connected,
+       maxTokensPerPlace = maxPerPlace,
+       maxFlowPerEdge = maxPerEdge,
+       tokensOverall = (minToken, maxToken)
        },
-     ChangeConfig tcoa mtcpp fcoa mfcpe
+     ChangeConfig tokenChange maxPlaceChange flowChange maxEdgeChange
     )
-  | p      <- [mlow1 .. min 8 high]
-  , t      <- [mlow1 .. min 8 high]
-  , minfoa <- [t + p - 1 .. high]
-  , maxfpe <- [mlow1 .. high]
-  , maxfoa <- [max minfoa maxfpe .. min high (2 * p * t * maxfpe)]
-  , mfcpe  <- [mlow .. min high maxfpe]
-  , fcoa   <- [max mfcpe low .. minimum [high, maxfoa - minfoa, 2 * p * t * mfcpe]]
-  , mintoa <- [mlow .. high]
-  , maxtpp <- [mlow .. high]
-  , maxtoa <- [max mintoa maxtpp .. min high (p * maxtpp)]
-  , mtcpp  <- [mlow .. min high maxtpp]
-  , tcoa   <- [max mtcpp low .. minimum [high, maxtoa - mintoa, mtcpp * p]]
-  , ala    <- [max minala low .. min t high]
-  , iso    <- [Nothing, Just True, Just False]
+  | p <- [low1 .. min 8 high]
+  , t <- [low1 .. min 8 high]
+  , minFlow <- [t + p - 1 .. high]
+  , maxPerEdge <- [low1 .. high]
+  , maxFlow <- [max minFlow maxPerEdge .. min high (2 * p * t * maxPerEdge)]
+  , maxEdgeChange <- [low0 .. min high maxPerEdge]
+  , let maxFlowChange = minimum [high, maxFlow - minFlow, 2 * p * t * maxEdgeChange]
+  , flowChange <- [max maxEdgeChange low .. maxFlowChange]
+  , minToken <- [low0 .. high]
+  , maxPerPlace <- [low0 .. high]
+  , maxToken <- [max minToken maxPerPlace .. min high (p * maxPerPlace)]
+  , maxPlaceChange <- [low0 .. min high maxPerPlace]
+  , let maxTokenChange = minimum [high, maxToken - minToken, maxPlaceChange * p]
+  , tokenChange <- [max maxPlaceChange low .. maxTokenChange]
+  , active <- [max minActive low .. min t high]
+  , connected <- maybeBool
   ]
   where
-    mlow  = max 0 low
-    mlow1 = max 1 low
+    low0 = max 0 low
+    low1 = max 1 low
 
 validAdvConfigs :: [AdvConfig]
 validAdvConfigs =
-  AdvConfig <$> mbool <*> mbool <*> mbool
-  where
-    mbool = [Nothing, Just False, Just True]
+  AdvConfig <$> maybeBool <*> maybeBool <*> maybeBool
+
+maybeBool :: [Maybe Bool]
+maybeBool = [Nothing, Just False, Just True]

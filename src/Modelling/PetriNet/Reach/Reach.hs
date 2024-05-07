@@ -49,6 +49,7 @@ import Control.Applicative              (Alternative)
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (forM, unless, when)
 import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Extra              (whenJust)
 import Control.Monad.Output (
   GenericOutputMonad (assertion, code, image, indent, paragraph, refuse, text),
   LangM,
@@ -67,7 +68,7 @@ import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Either                      (isRight)
-import Data.Foldable                    (for_, traverse_)
+import Data.Foldable                    (traverse_)
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (minimumBy)
 import Data.List.Extra                  (nubSort)
@@ -167,10 +168,10 @@ reportReachFor img noLonger lengthHint minLengthHint mgoal = do
       st1, ", danach ", st2, ", und schließlich ", st3,
       " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
       ]
-  for_ lengthHint $ \len -> paragraph $ translate $ do
+  whenJust lengthHint $ \len -> paragraph $ translate $ do
     english [i|Hint: There is a solution with not more than #{len} transitions.|]
     german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{len} Transitionen.|]
-  for_ minLengthHint $ \len -> paragraph $ translate $ do
+  whenJust minLengthHint $ \len -> paragraph $ translate $ do
     english [i|Hint: There is no solution with less than #{len} transitions.|]
     german [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
   hoveringInformation
@@ -258,11 +259,19 @@ assertReachPoints p len inst ts eout = do
       else toInteger x % toInteger y
 
 isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
-isNoLonger mmaxL ts =
-  for_ mmaxL $ \maxL ->
-    assertion (length ts <= maxL) $ translate $ do
-      english $ unwords ["Not more than ", show maxL, "transitions provided?"]
-      german $ unwords ["Nicht mehr als", show maxL, "Transitionen angegeben?"]
+isNoLonger maybeMaxLength ts =
+  whenJust maybeMaxLength $ \maxLength ->
+    assertion (length ts <= maxLength) $ translate $ do
+      english $ unwords [
+        "Not more than",
+        show maxLength,
+        "transitions provided?"
+        ]
+      german $ unwords [
+        "Nicht mehr als",
+        show maxLength,
+        "Transitionen angegeben?"
+        ]
 
 data ReachInstance s t = ReachInstance {
   drawUsing         :: GraphvizCommand,

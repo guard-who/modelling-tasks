@@ -106,21 +106,21 @@ fact SizeConstraints {
 #{unlines ps}
 }
 |]) [
-      ("  #Obj >= " ++) . show <$> mlower 1 (objectLimits objectConfig),
-      ("  #get >= " ++) . show <$> mlower 0 (linkLimits objectConfig),
+      ("  #Obj >= " ++) . show <$> maybeLower 1 (objectLimits objectConfig),
+      ("  #get >= " ++) . show <$> maybeLower 0 (linkLimits objectConfig),
       ("  #get <= " ++) . show <$> snd (linkLimits objectConfig),
       uncurry linksPerObjects
-        $ first (mlow 0)
+        $ first (maybeLow 0)
         $ linksPerObjectLimits objectConfig
       ]
     linksPerObjects Nothing Nothing = Nothing
-    linksPerObjects mmin mmax = Just $
+    linksPerObjects maybeMin maybeMax = Just $
       "  all o : Obj | let x = plus[#o.get,minus[#get.o,#o.get.o]] |"
-      ++ maybe "" ((" x >= " ++) . show) mmin
-      ++ maybe "" (const " &&") (mmin >> mmax)
-      ++ maybe "" ((" x <= " ++) . show) mmax
-    mlower l = mlow l . fst
-    mlow l x = if x <= l then Nothing else Just x
+      ++ maybe "" ((" x >= " ++) . show) maybeMin
+      ++ maybe "" (const " &&") (maybeMin >> maybeMax)
+      ++ maybe "" ((" x <= " ++) . show) maybeMax
+    maybeLower l = maybeLow l . fst
+    maybeLow l x = if x <= l then Nothing else Just x
     part2 = [i|
 // Concrete names of fields
 #{unlines (associationSigs relationships)}
