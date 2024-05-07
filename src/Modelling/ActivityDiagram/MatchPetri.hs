@@ -60,9 +60,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   defaultPlantUMLConvConf,
   drawAdToFile,
   )
-import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
-
-import Modelling.Auxiliary.Common (oneOf)
+import Modelling.Auxiliary.Common (getFirstInstance, oneOf)
 import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
@@ -408,7 +406,7 @@ getMatchPetriTask config = do
     $ matchPetriAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
   activityDiagrams <- mapM (fmap snd . shuffleAdNames) rinstas
-  let (ad, petri) = headWithErr "Failed to find task instances"
+  (ad, petri) <- getFirstInstance
         $ filter (not . petriHasMultipleAutomorphisms . snd)
         $ map (second convertToPetrinet . dupe) activityDiagrams
   shuffledPetri <- snd <$> shufflePetri petri

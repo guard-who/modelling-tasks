@@ -18,8 +18,8 @@ import Modelling.CdOd.Types (
   reverseAssociation,
   )
 
-import Control.Monad.IO.Class           (MonadIO(liftIO))
 import Control.Monad.Random             (evalRandT, getStdGen)
+import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.GraphViz                    (DirType (..))
 
 v :: Relationship String String
@@ -207,7 +207,7 @@ drawCdAndOdsFor is c cds cmd = do
   ods <- Alloy.getInstances is parts'
   g <- getStdGen
   flip evalRandT g $
-    mapM_ (\(od, i) -> drawOd od i >>= liftIO . putStrLn)
+    mapM_ (\(od, i) -> drawOd od i >>= lift . putStrLn)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
     drawOd od i = drawOdFromInstance

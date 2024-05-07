@@ -103,6 +103,7 @@ executable instance2pic
     , modelling-tasks
     , mtl
     , split
+    , transformers
   default-language: Haskell2010
 
 executable match-cd-od-legacy

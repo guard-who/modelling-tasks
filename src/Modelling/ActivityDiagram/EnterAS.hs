@@ -46,7 +46,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
-import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
+import Modelling.Auxiliary.Common       (getFirstInstance)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
@@ -271,8 +271,7 @@ getEnterASTask config = do
     $ enterASAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
   ad <- mapM (fmap snd . shuffleAdNames) rinstas
-  let validInsta =
-        headWithErr "Failed to find task instances"
+  getFirstInstance
         $ filter (isNothing . (`checkEnterASInstanceForConfig` config))
         $ map (\x -> EnterASInstance {
           activityDiagram=x,
@@ -282,7 +281,6 @@ getEnterASTask config = do
           sampleSequence = sampleSolution $ enterActionSequence x,
           showSolution = printSolution config
         }) ad
-  return validInsta
 
 defaultEnterASInstance :: EnterASInstance
 defaultEnterASInstance = EnterASInstance {

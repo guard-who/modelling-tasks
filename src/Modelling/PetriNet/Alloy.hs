@@ -27,7 +27,11 @@ module Modelling.PetriNet.Alloy (
   ) where
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
-import Modelling.Auxiliary.Common       (Object (Object), upperFirst)
+import Modelling.Auxiliary.Common (
+  TaskGenerationException (NoInstanceAvailable),
+  Object (Object),
+  upperFirst,
+  )
 import Modelling.PetriNet.Types (
   AdvConfig (..),
   AlloyConfig,
@@ -40,7 +44,7 @@ import qualified Modelling.PetriNet.Types         as T (
   )
 
 import Control.Monad                    (when)
-import Control.Monad.Catch              (Exception, MonadThrow (throwM))
+import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.Random (
   RandT,
   Random (randomR),
@@ -200,12 +204,6 @@ signatures what places transitions = intercalate "\n"
      | x <- [1 .. places]]
   ++ [ [i|one sig T#{x} extends #{what}Transitions {}|]
      | x <- [1 .. transitions]]
-
-data TaskGenerationException =
-  NoInstanceAvailable
-  deriving Show
-
-instance Exception TaskGenerationException
 
 taskInstance
   :: (MonadThrow m, RandomGen g, MonadAlloy m)

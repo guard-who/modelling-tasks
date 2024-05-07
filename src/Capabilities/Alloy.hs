@@ -12,6 +12,7 @@ import Language.Alloy.Call (
   SatSolver (..),
   defaultCallAlloyConfig,
   )
+import Control.Monad.Output.Generic     (GenericReportT)
 import Control.Monad.Trans.Except       (ExceptT)
 import Control.Monad.Trans.Random       (RandT)
 
@@ -22,6 +23,9 @@ instance MonadAlloy m => MonadAlloy (RandT g m) where
   getInstancesWith config = lift . getInstancesWith config
 
 instance MonadAlloy m => MonadAlloy (ExceptT e m) where
+  getInstancesWith config = lift . getInstancesWith config
+
+instance MonadAlloy m => MonadAlloy (GenericReportT l o m)  where
   getInstancesWith config = lift . getInstancesWith config
 
 getInstances

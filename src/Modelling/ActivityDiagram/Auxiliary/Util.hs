@@ -1,7 +1,4 @@
 module Modelling.ActivityDiagram.Auxiliary.Util (
-  failWith,
-  headEither,
-  headWithErr,
   weightedShuffle
   ) where
 
@@ -10,19 +7,6 @@ import Control.Monad.Random (
   fromList,
   )
 import Data.List (delete)
-import Data.Maybe (listToMaybe)
-
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
-
-headEither :: a -> [c] -> Either a c
-headEither err xs =
-  case listToMaybe xs of
-    Nothing -> Left err
-    Just x -> Right x
-
-headWithErr :: String -> [a] -> a
-headWithErr err = failWith id . headEither err
 
 {-
   Shuffle a list of elements from type a based on given weights of type w,

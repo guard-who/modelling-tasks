@@ -43,7 +43,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
-import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
+import Modelling.Auxiliary.Common       (getFirstInstance)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
@@ -266,9 +266,9 @@ getMatchAdTask config = do
     Nothing
     $ matchAdAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleAdNames) rinstas
+  ad <- mapM (fmap snd . shuffleAdNames) rinstas >>= getFirstInstance
   return $ MatchAdInstance {
-    activityDiagram=headWithErr "Failed to find task instances" ad,
+    activityDiagram = ad,
     plantUMLConf = defaultPlantUMLConvConf {
       suppressBranchConditions = hideBranchConditions config
       },

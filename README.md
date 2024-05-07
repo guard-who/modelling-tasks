@@ -33,7 +33,7 @@ For running all steps using ghci, this approach is also possible:
 ``` haskell
 :m +Control.Monad.Output.Debug System.Random Text.Parsec
 let getLines = init <$> getLines' where getLines' = do { x <- getLine; if null x then pure [] else (\l -> x ++ '\n' : l) <$> getLines' }
-testTask English (randomRIO (0,1000) >>= nameCdErrorGenerate defaultNameCdErrorConfig 0) (nameCdErrorTask "/tmp/") nameCdErrorSyntax nameCdErrorEvaluation (failWith (error . show) . parse parseNameCdErrorAnswer "" <$> getLines)
+testTask English (randomRIO (0,1000) >>= nameCdErrorGenerate defaultNameCdErrorConfig 0) (nameCdErrorTask "/tmp/") nameCdErrorSyntax nameCdErrorEvaluation (either (error . show) id . parse parseNameCdErrorAnswer "" <$> getLines)
 ```
 
 Please also note, that the `..Task`, `..Syntax`, and `..Evaluation` functions sometimes require arguments for a directory (above `"/tmp/"`) and sometimes don't.

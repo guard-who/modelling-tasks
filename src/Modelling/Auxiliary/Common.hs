@@ -7,6 +7,8 @@ module Modelling.Auxiliary.Common (
   Randomise (..),
   RandomiseLayout (..),
   ShuffleInstance (..),
+  TaskGenerationException (..),
+  getFirstInstance,
   lensRulesL,
   lowerFirst,
   mapIndicesTo,
@@ -207,3 +209,13 @@ newtype ParsingException
   deriving Show
 
 instance Exception ParsingException
+
+data TaskGenerationException =
+  NoInstanceAvailable
+  deriving Show
+
+instance Exception TaskGenerationException
+
+getFirstInstance :: MonadThrow m => [a] -> m a
+getFirstInstance [] = throwM NoInstanceAvailable
+getFirstInstance (x:_) = pure x

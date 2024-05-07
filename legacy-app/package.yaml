@@ -81,6 +81,7 @@ executables:
       - modelling-tasks
       - mtl
       - split
+      - transformers
   match-cd-od-legacy:
     main: match-cd-od.hs
     source-dirs:

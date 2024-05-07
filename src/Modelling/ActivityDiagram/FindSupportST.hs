@@ -55,8 +55,7 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   defaultPlantUMLConvConf,
   drawAdToFile,
   )
-import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
-
+import Modelling.Auxiliary.Common       (getFirstInstance)
 import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Types (
   Net (..),
@@ -281,9 +280,9 @@ getFindSupportSTTask config = do
     Nothing
     $ findSupportSTAlloy config
   rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleAdNames) rinstas
+  ad <- mapM (fmap snd . shuffleAdNames) rinstas >>= getFirstInstance
   return $ FindSupportSTInstance {
-    activityDiagram=headWithErr "Failed to find task instances" ad,
+    activityDiagram = ad,
     plantUMLConf =
       PlantUMLConvConf {
         suppressNodeNames = hideNodeNames config,

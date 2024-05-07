@@ -73,9 +73,6 @@ isomorphismStats xs =
 percentage :: (Integral a) => a -> a -> Double
 percentage x y = fromIntegral x / fromIntegral y * 100.0
 
-failWith :: (a -> String) -> Either a c -> c
-failWith f = either (error . f) id
-
 writeFilesToSubfolder :: [ByteString] -> FilePath -> FilePath -> String -> String -> IO ()
 writeFilesToSubfolder files path subfolder prefix extension = do
   let pathToFolder = path </> subfolder
