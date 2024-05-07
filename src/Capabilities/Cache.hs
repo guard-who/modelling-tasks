@@ -1,13 +1,12 @@
 -- | Defines a monad context for caching.
 
 module Capabilities.Cache (
-  MonadCache,
+  MonadCache (..),
   cache,
   cacheT,
   short,
   ) where
 
-import qualified Data.ByteString                  as BS (readFile, writeFile)
 import qualified Data.ByteString.Lazy             as LBS (fromStrict)
 import qualified Data.ByteString.UTF8             as BS (fromString)
 
@@ -18,19 +17,12 @@ import Control.Monad.Output.Generic     (GenericReportT)
 import Data.ByteString                  (ByteString)
 import Data.Digest.Pure.SHA             (sha256, showDigest)
 import Data.Maybe                       (fromJust)
-import System.Directory                 (doesFileExist)
 
 class Monad m => MonadCache m where
   appendCollisionFile :: FilePath -> String -> m ()
   doesCacheExist :: FilePath -> m Bool
   readShowFile :: FilePath -> m ByteString
   writeShowFile :: FilePath -> ByteString -> m ()
-
-instance MonadCache IO where
-  appendCollisionFile = appendFile
-  doesCacheExist = doesFileExist
-  readShowFile = BS.readFile
-  writeShowFile = BS.writeFile
 
 instance MonadCache m => MonadCache (GenericReportT l o m)  where
   appendCollisionFile f = lift . appendCollisionFile f

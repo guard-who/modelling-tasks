@@ -3,6 +3,7 @@ module Main (main) where
 import Common                           (withLang)
 
 import Capabilities.Alloy.IO            ()
+import Capabilities.Cache.IO            ()
 import Capabilities.Diagrams.IO         ()
 import Modelling.CdOd.DifferentNames
   (defaultDifferentNamesConfig, differentNamesTask)

@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
--- | Defines a Monad context for rendering diagrams graphics to file.
+-- | Defines the IO instance for capability Diagrams.
 
 module Capabilities.Diagrams.IO () where
 

@@ -80,6 +80,7 @@ library:
     - Capabilities.Alloy
     - Capabilities.Alloy.IO
     - Capabilities.Cache
+    - Capabilities.Cache.IO
     - Capabilities.Diagrams
     - Capabilities.Diagrams.IO
     - Capabilities.Graphviz

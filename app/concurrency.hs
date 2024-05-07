@@ -10,6 +10,7 @@ import qualified Modelling.PetriNet.Types         as Pick (
   )
 
 import Capabilities.Alloy.IO            ()
+import Capabilities.Cache.IO            ()
 import Capabilities.Diagrams.IO         ()
 import Common (
   forceErrors,
