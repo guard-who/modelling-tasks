@@ -86,6 +86,7 @@ library:
     - Capabilities.Graphviz
     - Capabilities.Graphviz.IO
     - Capabilities.PlantUml
+    - Capabilities.PlantUml.IO
     - Modelling.ActivityDiagram.ActionSequences
     - Modelling.ActivityDiagram.Alloy
     - Modelling.ActivityDiagram.Auxiliary.Util

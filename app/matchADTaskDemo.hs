@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Capabilities.Alloy.IO            ()
+import Capabilities.PlantUml.IO         ()
 import Modelling.ActivityDiagram.MatchAd (
   defaultMatchAdConfig,
   matchAd,

@@ -26,6 +26,7 @@ import qualified Data.Map as M (fromList, toList, keys, filter, map)
 import qualified Data.Vector as V (fromList)
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.PlantUml            (MonadPlantUml)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (
@@ -50,7 +51,6 @@ import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra (firstJustM)
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -218,7 +218,7 @@ compareDistToCorrect correctSequence xs ys =
       $ leastChanges (asEditDistParams correctSequence) (V.fromList correctSequence) (V.fromList zs)
 
 selectASTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadPlantUml m, OutputMonad m)
   => FilePath
   -> SelectASInstance
   -> LangM m
@@ -227,8 +227,7 @@ selectASTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
-  image $=<< liftIO
-    $ drawAdToFile path (drawSettings task) $ activityDiagram task
+  image $=<< drawAdToFile path (drawSettings task) $ activityDiagram task
   paragraph $ translate $ do
     english "Consider the following sequences:"
     german "Betrachten Sie die folgenden Folgen:"

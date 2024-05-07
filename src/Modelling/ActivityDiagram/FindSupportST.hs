@@ -34,6 +34,7 @@ import qualified Data.Map as M (
   )
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.PlantUml            (MonadPlantUml)
 import Modelling.ActivityDiagram.Datatype (
   AdConnection (..),
   AdNode (..),
@@ -68,7 +69,6 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -200,7 +200,7 @@ isSupportST key =
     _ -> False
 
 findSupportSTTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadPlantUml m, OutputMonad m)
   => FilePath
   -> FindSupportSTInstance
   -> LangM m
@@ -208,8 +208,7 @@ findSupportSTTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
-  image $=<< liftIO
-    $ drawAdToFile path (plantUMLConf task) $ activityDiagram task
+  image $=<< drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english [i|Translate the given activity diagram into a Petri net (on paper or in your head) and then state the total count of nodes (places and transitions),
 the count of auxiliary places and the count of auxiliary transitions in the net.|]

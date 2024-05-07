@@ -23,6 +23,7 @@ module Modelling.ActivityDiagram.EnterAS (
 ) where
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.PlantUml            (MonadPlantUml)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
 import Modelling.ActivityDiagram.Config (
@@ -49,7 +50,6 @@ import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -148,7 +148,7 @@ enterASAlloy EnterASConfig {
           case opt of
             Just True -> s
             Just False -> [i| not #{s}|]
-            _ -> ""
+            Nothing -> ""
 
 checkEnterASInstance :: EnterASInstance -> Maybe String
 checkEnterASInstance inst
@@ -184,7 +184,7 @@ enterActionSequence ad =
   EnterASSolution {sampleSolution=generateActionSequence ad}
 
 enterASTask
-  :: (MonadIO m, OutputMonad m)
+  :: (MonadPlantUml m, OutputMonad m)
   => FilePath
   -> EnterASInstance
   -> LangM m
@@ -192,8 +192,7 @@ enterASTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
-  image $=<< liftIO
-    $ drawAdToFile path (drawSettings task) $ activityDiagram task
+  image $=<< drawAdToFile path (drawSettings task) $ activityDiagram task
   paragraph $ do
     translate $ do
       english [iii|

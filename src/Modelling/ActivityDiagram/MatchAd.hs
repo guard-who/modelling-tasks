@@ -24,6 +24,7 @@ module Modelling.ActivityDiagram.MatchAd (
 import qualified Data.Map as M (fromList, keys)
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
+import Capabilities.PlantUml            (MonadPlantUml)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
   adConfigToAlloy,
@@ -46,7 +47,6 @@ import Modelling.ActivityDiagram.Auxiliary.Util (headWithErr)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -129,7 +129,7 @@ matchAdAlloy MatchAdConfig {
       case opt of
         Just True -> s
         Just False -> [i| not #{s}|]
-        _ -> ""
+        Nothing -> ""
 
 data MatchAdSolution = MatchAdSolution {
   actionNames :: [String],
@@ -159,7 +159,7 @@ matchAdSolution task =
     }
 
 matchAdTask
-  :: (OutputMonad m, MonadIO m)
+  :: (MonadPlantUml m, OutputMonad m)
   => FilePath
   -> MatchAdInstance
   -> LangM m
@@ -167,8 +167,7 @@ matchAdTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
-  image $=<< liftIO
-    $ drawAdToFile path (plantUMLConf task) $ activityDiagram task
+  image $=<< drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
     english [iii|
       State the names of all action nodes, the names of all object nodes,
