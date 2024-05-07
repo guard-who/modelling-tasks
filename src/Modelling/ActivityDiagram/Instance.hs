@@ -65,40 +65,40 @@ newtype Trigger = Trigger String
   deriving (Eq, Ord, Read, Show)
 
 data Node =
-  ANode ActionNode
-  | ONode ObjectNode
-  | DNode DecisionNode
-  | MNode MergeNode
-  | FNode ForkNode
-  | JNode JoinNode
-  | AeNode ActivityFinalNode
-  | FeNode FlowFinalNode
-  | StNode InitialNode
+  Action ActionNode
+  | Object ObjectNode
+  | Decision DecisionNode
+  | Merge MergeNode
+  | Fork ForkNode
+  | Join JoinNode
+  | ActivityFinal ActivityFinalNode
+  | FlowFinal FlowFinalNode
+  | Initial InitialNode
   deriving (Eq, Ord, Show)
 
 data Nodes = Nodes {
-  aNodes  :: Set ActionNode,
-  oNodes  :: Set ObjectNode,
-  dNodes  :: Set DecisionNode,
-  mNodes  :: Set MergeNode,
-  fNodes  :: Set ForkNode,
-  jNodes  :: Set JoinNode,
-  aeNodes :: Set ActivityFinalNode,
-  feNodes :: Set FlowFinalNode,
-  stNodes :: Set InitialNode
+  actionNodes  :: Set ActionNode,
+  objecNodes  :: Set ObjectNode,
+  decisionNodes  :: Set DecisionNode,
+  mergeNodes  :: Set MergeNode,
+  forkNodes  :: Set ForkNode,
+  joinNodes  :: Set JoinNode,
+  activityFinalNodes :: Set ActivityFinalNode,
+  flowFinalNodes :: Set FlowFinalNode,
+  initialNodes :: Set InitialNode
 } deriving Show
 
 toSet :: Nodes -> Set Node
 toSet ns = S.unions [
-  ANode `S.mapMonotonic` aNodes ns,
-  ONode `S.mapMonotonic` oNodes ns,
-  DNode `S.mapMonotonic` dNodes ns,
-  MNode `S.mapMonotonic` mNodes ns,
-  FNode `S.mapMonotonic` fNodes ns,
-  JNode `S.mapMonotonic` jNodes ns,
-  AeNode `S.mapMonotonic` aeNodes ns,
-  FeNode `S.mapMonotonic` feNodes ns,
-  StNode `S.mapMonotonic` stNodes ns
+  Action `S.mapMonotonic` actionNodes ns,
+  Object `S.mapMonotonic` objecNodes ns,
+  Decision `S.mapMonotonic` decisionNodes ns,
+  Merge `S.mapMonotonic` mergeNodes ns,
+  Fork `S.mapMonotonic` forkNodes ns,
+  Join `S.mapMonotonic` joinNodes ns,
+  ActivityFinal `S.mapMonotonic` activityFinalNodes ns,
+  FlowFinal `S.mapMonotonic` flowFinalNodes ns,
+  Initial `S.mapMonotonic` initialNodes ns
   ]
 
 parseInstance
@@ -154,21 +154,21 @@ setToActivityDiagram getName components conns = UMLActivityDiagram {
 
 convertToAdNode :: (Node -> String) -> (Node, Int) -> AdNode
 convertToAdNode getName tuple = case node of
-  ANode {} -> AdActionNode {
+  Action {} -> AdActionNode {
     label = l,
     name = getName node
     }
-  ONode {} -> AdObjectNode {
+  Object {} -> AdObjectNode {
     label = l,
     name = getName node
     }
-  DNode {} -> AdDecisionNode {label = l}
-  MNode {} -> AdMergeNode {label = l}
-  FNode {} -> AdForkNode {label = l}
-  JNode {} -> AdJoinNode {label = l}
-  AeNode {} -> AdActivityFinalNode {label = l}
-  FeNode {} -> AdFlowFinalNode {label = l}
-  StNode {} -> AdInitialNode {label = l}
+  Decision {} -> AdDecisionNode {label = l}
+  Merge {} -> AdMergeNode {label = l}
+  Fork {} -> AdForkNode {label = l}
+  Join {} -> AdJoinNode {label = l}
+  ActivityFinal {} -> AdActivityFinalNode {label = l}
+  FlowFinal {} -> AdFlowFinalNode {label = l}
+  Initial {} -> AdInitialNode {label = l}
   where
     node = fst tuple
     l = snd tuple
@@ -249,15 +249,15 @@ toNode
   -> String
   -> Int
   -> m Node
-toNode ns x i = ifX ANode ActionNode aNodes
-  $ ifX ONode ObjectNode oNodes
-  $ ifX DNode DecisionNode dNodes
-  $ ifX MNode MergeNode mNodes
-  $ ifX FNode ForkNode fNodes
-  $ ifX JNode JoinNode jNodes
-  $ ifX AeNode ActivityFinalNode aeNodes
-  $ ifX FeNode FlowFinalNode feNodes
-  $ ifX StNode InitialNode stNodes
+toNode ns x i = ifX Action ActionNode actionNodes
+  $ ifX Object ObjectNode objecNodes
+  $ ifX Decision DecisionNode decisionNodes
+  $ ifX Merge MergeNode mergeNodes
+  $ ifX Fork ForkNode forkNodes
+  $ ifX Join JoinNode joinNodes
+  $ ifX ActivityFinal ActivityFinalNode activityFinalNodes
+  $ ifX FlowFinal FlowFinalNode flowFinalNodes
+  $ ifX Initial InitialNode initialNodes
   $ throwM $ NodeHasUnknownNodeType $ "x$" ++ show i
   where
     ifX f g which h =

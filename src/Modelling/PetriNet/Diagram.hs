@@ -55,13 +55,13 @@ cacheNet
   -> Bool
   -> GraphvizCommand
   -> m FilePath
-cacheNet path labelOf pl hidePNames hideTNames hide1 gc =
+cacheNet path labelOf pl hidePlaceNames hideTransitionNames hide1 gc =
   cache path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
-    dia <- drawNet id pl' hidePNames hideTNames hide1 gc
+    dia <- drawNet id pl' hidePlaceNames hideTransitionNames hide1 gc
     writeSvg svg dia
   where
-    ext = short hidePNames
-      ++ short hideTNames
+    ext = short hidePlaceNames
+      ++ short hideTransitionNames
       ++ short hide1
       ++ short gc
       ++ ".svg"
@@ -91,12 +91,12 @@ drawNet
   -> GraphvizCommand
   -- ^ how to distribute the nodes
   -> m (Diagram B)
-drawNet labelOf pl hidePNames hideTNames hide1 gc = do
+drawNet labelOf pl hidePlaceNames hideTransitionNames hide1 gc = do
   gr    <- either (throwM . CouldNotFindNodeWithinGraph . labelOf) return
     $ netToGr pl
   graph <- layoutGraph gc gr
-  pfont <- lin
-  return $ drawGraph labelOf hidePNames hideTNames hide1 pfont graph
+  preparedFont <- lin
+  return $ drawGraph labelOf hidePlaceNames hideTransitionNames hide1 preparedFont graph
 
 getNet
   :: (MonadThrow m, Net p n, Traversable t)
@@ -157,20 +157,23 @@ drawGraph
   -> Gr (AttributeNode (a, Maybe Int)) (AttributeEdge Int)
   -- ^ the graph consisting of nodes and edges
   -> Diagram B
-drawGraph labelOf hidePNames hideTNames hide1 pfont graph = gedges # frame 1
+drawGraph labelOf hidePlaceNames hideTransitionNames hide1 preparedFont graph =
+  gedges # frame 1
   where
     (nodes, edges) = GV.getGraph graph
     gnodes = M.foldlWithKey
-      (\g l p -> g `atop` drawNode hidePNames hideTNames pfont (withLabel l) p)
+      (\g l p -> g
+        `atop`
+        drawNode hidePlaceNames hideTransitionNames preparedFont (withLabel l) p)
       mempty
       nodes
-    gedges = foldl
+    graphEdges' = foldl
       (\g (s, t, l, p) ->
         let ls = labelOnly s
             lt = labelOnly t
-        in g # drawEdge hide1 pfont l ls lt (nonEmptyPathBetween p ls lt g)
+        in g # drawEdge hide1 preparedFont l ls lt (nonEmptyPathBetween p ls lt g)
       )
-      gnodes
+      graphNodes'
       edges
     withLabel = first labelOf
     labelOnly = labelOf . fst
@@ -196,21 +199,21 @@ drawNode
   -> Point V2 Double
   -- ^ where to place the node
   -> Diagram B
-drawNode _ hideTName pfont (l, Nothing) p  = place
+drawNode _ hideTransitionName preparedFont (l, Nothing) p  = place
   (addTName $ rect 20 20 # lwL 0.5 # named l # svgClass "rect")
   p
   where
     addTName
-      | hideTName = id
-      | otherwise = (center (text' pfont 18 l) `atop`)
-drawNode hidePName _ pfont (l, Just i) p
+      | hideTransitionName = id
+      | otherwise = (center (text' preparedFont 18 l) `atop`)
+drawNode hidePlaceName _ preparedFont (l, Just i) p
   | i < 5
   = place (foldl' atop label $ [placeToken j | j <- [1..i]] ++ [emptyPlace]) p
   | otherwise
   = place
     (foldl' atop label [
         token # translate (r2 (spacer,0)),
-        text' pfont 20 (show i) # translate (r2 (-spacer,-4)),
+        text' preparedFont 20 (show i) # translate (r2 (-spacer,-4)),
         emptyPlace
         ])
     p
@@ -218,8 +221,8 @@ drawNode hidePName _ pfont (l, Just i) p
     spacer = 9
     emptyPlace = circle 20 # lwL 0.5 # named l # svgClass "node"
     label
-      | hidePName = mempty
-      | otherwise = center (text' pfont 18 l)
+      | hidePlaceName = mempty
+      | otherwise = center (text' preparedFont 18 l)
         # translate (r2 (0, - (3 * spacer)))
         # svgClass "nlabel"
     tokenGrey = sRGB24 136 136 136

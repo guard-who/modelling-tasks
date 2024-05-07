@@ -36,12 +36,12 @@ toPetriMath pl = PetriMath {
   placesMath         = placesLaTeX places,
   transitionsMath    = transitionsLaTeX transitions,
   tokenChangeMath    = tokenChangeLaTeX places transitions net,
-  initialMarkingMath = initialMarkingLaTeX pnodes,
+  initialMarkingMath = initialMarkingLaTeX placeNodes,
   placeOrderMath     = Just $ placeOrderLaTeX places
   }
   where
     (ps, ts)         = M.partition isPlaceNode $ nodes net
-    (places, pnodes) = unzip $ M.toList ps
+    (places, placeNodes) = unzip $ M.toList ps
     transitions      = M.keys ts
     net              = toLowerIndexes `mapNet` pl
 

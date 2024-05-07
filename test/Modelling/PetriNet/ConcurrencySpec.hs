@@ -56,7 +56,7 @@ import Test.Hspec
 spec :: Spec
 spec = do
   describe "validFindConcurrencyConfigs" $
-    checkConfigs checkFindConcurrencyConfig fccs'
+    checkConfigs checkFindConcurrencyConfig findConfigs'
   describe "findConcurrency" $ do
     defaultConfigTaskGeneration
       (findConcurrency defaultFindConcurrencyConfig {
@@ -64,9 +64,9 @@ spec = do
           } 0)
       0
       $ checkFindConcurrencyInstance @(SimplePetriLike _)
-    testFindConcurrencyConfig fccs
+    testFindConcurrencyConfig findConfigs
   describe "validPickConcurrencyConfigs" $
-    checkConfigs checkPickConcurrencyConfig pccs
+    checkConfigs checkPickConcurrencyConfig pickConfigs
   describe "pickConcurrency" $ do
     defaultConfigTaskGeneration
       (pickConcurrency defaultPickConcurrencyConfig {
@@ -74,13 +74,15 @@ spec = do
           } 0)
       0
       $ checkPickConcurrencyInstance @(SimplePetriLike _)
-    testPickConcurrencyConfig pccs
+    testPickConcurrencyConfig pickConfigs
   where
-    fccs' = validFindConcurrencyConfigs vcfs (AdvConfig Nothing Nothing Nothing)
-    fccs  = validAdvConfigs >>= validFindConcurrencyConfigs vcfs
-    pccs  = validPickConcurrencyConfigs vcps
-    vcfs  = validConfigsForFind 0 configDepth
-    vcps  = validConfigsForPick 0 configDepth
+    findConfigs' = validFindConcurrencyConfigs
+      validFinds
+      (AdvConfig Nothing Nothing Nothing)
+    findConfigs = validAdvConfigs >>= validFindConcurrencyConfigs validFinds
+    pickConfigs = validPickConcurrencyConfigs validPicks
+    validFinds = validConfigsForFind 0 configDepth
+    validPicks = validConfigsForPick 0 configDepth
 
 checkFindConcurrencyInstance :: (a, Concurrent String) -> Bool
 checkFindConcurrencyInstance = isValidConcurrency . snd

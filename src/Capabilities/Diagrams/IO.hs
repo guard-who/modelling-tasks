@@ -155,9 +155,9 @@ applyClass x = [ modify p | p <- paths x]
 
 formatSVG :: [SVGGroup] -> [SVGGroup]
 formatSVG []     = []
-formatSVG (x:xs) = x{ paths = gpaths } : formatSVG rest
+formatSVG (x:xs) = x{ paths = groupPaths } : formatSVG rest
                 where
-                  gpaths
+                  groupPaths
                     | isLabelOrEdge x = concatMap applyClass (filter (equalGroup (svgClass x) . svgClass) (x:xs))
                     | otherwise = applyClass x ++ concatMap applyClass (takeWhile (equalGroup (svgClass x) . svgClass) xs)
                   rest

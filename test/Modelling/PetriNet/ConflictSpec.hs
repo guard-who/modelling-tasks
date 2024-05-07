@@ -15,8 +15,8 @@ import Modelling.PetriNet.Conflict (
   checkPickConflictConfig,
   findConflict,
   parseConflict,
-  petriNetFindConfl,
-  petriNetPickConfl,
+  petriNetFindConflict,
+  petriNetPickConflict,
   pickConflict,
   )
 
@@ -60,7 +60,7 @@ import Test.Hspec
 spec :: Spec
 spec = do
   describe "validFindConflictConfigs" $
-    checkConfigs checkFindConflictConfig fcfs'
+    checkConfigs checkFindConflictConfig findConfigs'
   describe "findConflicts" $ do
     defaultConfigTaskGeneration
       (findConflict defaultFindConflictConfig {
@@ -68,9 +68,9 @@ spec = do
           } 0)
       0
       $ checkFindConflictInstance @(SimplePetriLike _)
-    testFindConflictConfig fcfs
+    testFindConflictConfig findConfigs
   describe "validPickConflictConfigs" $
-    checkConfigs checkPickConflictConfig pcfs
+    checkConfigs checkPickConflictConfig pickConfigs
   describe "pickConflicts" $ do
     defaultConfigTaskGeneration
       (pickConflict defaultPickConflictConfig {
@@ -78,13 +78,15 @@ spec = do
           } 0)
       0
       $ checkPickConflictInstance @(SimplePetriLike _)
-    testPickConflictConfig pcfs
+    testPickConflictConfig pickConfigs
   where
-    fcfs' = validFindConflictConfigs vcfs (AdvConfig Nothing Nothing Nothing)
-    fcfs  = validAdvConfigs >>= validFindConflictConfigs vcfs
-    pcfs  = validPickConflictConfigs vcps
-    vcfs  = validConfigsForFind 0 configDepth
-    vcps  = validConfigsForPick 0 configDepth
+    findConfigs' = validFindConflictConfigs
+      validFinds
+      (AdvConfig Nothing Nothing Nothing)
+    findConfigs = validAdvConfigs >>= validFindConflictConfigs validFinds
+    pickConfigs = validPickConflictConfigs validPicks
+    validFinds = validConfigsForFind 0 configDepth
+    validPicks = validConfigsForPick 0 configDepth
 
 checkFindConflictInstance :: (a, PetriConflict' String) -> Bool
 checkFindConflictInstance = isValidConflict . snd
@@ -97,13 +99,13 @@ checkPickConflictInstance = f . fmap snd
 
 testFindConflictConfig :: [FindConflictConfig] -> Spec
 testFindConflictConfig = testTaskGeneration
-  petriNetFindConfl
+  petriNetFindConflict
   (findTaskInstance parseConflict)
   $ checkFindConflictInstance @(SimplePetriLike _)
 
 testPickConflictConfig :: [PickConflictConfig] -> Spec
 testPickConflictConfig = testTaskGeneration
-  petriNetPickConfl
+  petriNetPickConflict
   (pickTaskInstance parseConflict)
   $ checkPickConflictInstance @(SimplePetriLike _)
 

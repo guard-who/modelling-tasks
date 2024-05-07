@@ -21,8 +21,8 @@ module Modelling.PetriNet.Conflict (
   findConflictSyntax,
   findConflictTask,
   parseConflict,
-  petriNetFindConfl,
-  petriNetPickConfl,
+  petriNetFindConflict,
+  petriNetPickConflict,
   pickConflict,
   pickConflictGenerate,
   pickConflictTask,
@@ -417,12 +417,12 @@ findConflict
     (p n String, PetriConflict' String)
 findConflict = taskInstance
   findTaskInstance
-  petriNetFindConfl
+  petriNetFindConflict
   parseConflict
   Find.alloyConfig
 
-petriNetFindConfl :: FindConflictConfig -> String
-petriNetFindConfl FindConflictConfig {
+petriNetFindConflict :: FindConflictConfig -> String
+petriNetFindConflict FindConflictConfig {
   basicConfig,
   advConfig,
   changeConfig,
@@ -446,12 +446,12 @@ pickConflict
     [(p n String, Maybe (PetriConflict' String))]
 pickConflict = taskInstance
   pickTaskInstance
-  petriNetPickConfl
+  petriNetPickConflict
   parseConflict
   Pick.alloyConfig
 
-petriNetPickConfl :: PickConflictConfig -> String
-petriNetPickConfl PickConflictConfig {
+petriNetPickConflict :: PickConflictConfig -> String
+petriNetPickConflict PickConflictConfig {
   basicConfig,
   changeConfig,
   conflictConfig,

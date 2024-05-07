@@ -62,10 +62,10 @@ transformNoChanges config properties withNonTrivialInheritance =
 
 nonTrivialInheritanceConstraint :: String -> String -> Maybe Bool -> String
 nonTrivialInheritanceConstraint inheritances nonInheritances withNonTrivialInheritance =
-  (`foldMap` trivialInh) $ \x -> [i|  #{withInheritance}
+  (`foldMap` trivialInheritance) $ \x -> [i|  #{withInheritance}
   #{x} i : #{inheritances} | i.to in ((#{nonInheritances} + #{inheritances}).from + #{nonInheritances}.to)|]
   where
-    trivialInh = withNonTrivialInheritance
+    trivialInheritance = withNonTrivialInheritance
       <&> bool "no" "all"
     withInheritance = maybe
       ""
@@ -84,8 +84,8 @@ transformChanges
   -> Maybe ClassConfig
   -> [RelationshipProperties]
   -> String
-transformChanges config props mconfig propss =
-  transformWith config (Right props) $ changes mconfig propss
+transformChanges config props maybeConfig propsList =
+  transformWith config (Right props) $ changes maybeConfig propsList
 
 transformImproveCd
   :: ClassDiagram String relationship
@@ -244,8 +244,8 @@ maybeToAlloySet :: Show a => Maybe a -> String
 maybeToAlloySet = maybe "none" show
 
 changes :: Maybe ClassConfig -> [RelationshipProperties] -> (Int, [String], String)
-changes config propss = uncurry (length propss,,)
-  $ snd $ foldl change (1, limits) propss
+changes config propsList = uncurry (length propsList,,)
+  $ snd $ foldl change (1, limits) propsList
   where
     change (n, (cs, code)) p =
       let (c, code') = changeWithProperties p n
@@ -331,7 +331,7 @@ pred changeLimits {
 
 createRunCommand :: ClassConfig -> [String] -> Int ->  String
 createRunCommand config@ClassConfig {..} predicates cs = [i|
-run { #{command} } for #{rels} Relationship, #{bitSize} Int,
+run { #{command} } for #{relationships} Relationship, #{bitSize} Int,
   #{exactClass}#{snd classLimits} Class, exactly #{cs} Change
 |]
   where
@@ -339,10 +339,10 @@ run { #{command} } for #{rels} Relationship, #{bitSize} Int,
       | uncurry (==) classLimits = "exactly "
       | otherwise            = ""
     relMax = fromMaybe (maxRelationships config) . snd $ relationshipLimits
-    rels = relMax + cs
+    relationships = relMax + cs
     bitSize :: Int
     bitSize = (+ 1) . ceiling @Double . logBase 2 . fromIntegral
-      $ max rels (snd classLimits) + 1
+      $ max relationships (snd classLimits) + 1
     command :: String
     command = foldl ((++) . (++ " and ")) "cd" predicates
 

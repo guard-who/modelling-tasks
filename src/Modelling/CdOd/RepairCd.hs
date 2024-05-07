@@ -732,24 +732,24 @@ repairIncorrect
   -> Maybe Integer
   -> Maybe Int
   -> RandT g m (Cd, [CdChangeAndCd])
-repairIncorrect allowed config objectProperties preference maxInsts to = do
+repairIncorrect allowed config objectProperties preference maxInstances to = do
   e0:_    <- shuffleM $ illegalChanges allowed
   l0:ls   <- shuffleM $ legalChanges allowed
   let addLegals
         | l1:_ <- ls = (l1 .&. noChange :) . (l1 :)
         | otherwise  = id
   c0:_    <- shuffleM $ allChanges allowed
-  csm     <- shuffleM $ c0 : noChange : addLegals [e0]
-  cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 csm
+  changes <- shuffleM $ c0 : noChange : addLegals [e0]
+  cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 changes
   let alloyCode = Changes.transformChanges config (toProperty e0) (Just config)
         $ map toProperty cs
-  instas  <- getInstances maxInsts to alloyCode
-  rinstas <- shuffleM instas
-  getInstanceWithODs cs rinstas
+  instances <- getInstances maxInstances to alloyCode
+  randomInstances <- shuffleM instances
+  getInstanceWithODs cs randomInstances
   where
     article = toArticleToUse preference
     getInstanceWithODs _  [] =
-      repairIncorrect allowed config objectProperties preference maxInsts to
+      repairIncorrect allowed config objectProperties preference maxInstances to
     getInstanceWithODs propertyChanges (rinsta:rinstas) = do
       cdInstance <- getChangesAndCds rinsta
       let cd = instanceClassDiagram cdInstance
@@ -774,18 +774,18 @@ repairIncorrect allowed config objectProperties preference maxInsts to = do
     getOD :: (MonadAlloy m, MonadThrow m) => Cd -> m (Maybe Od)
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
-          maxNObjects = maxObjects $ snd $ classLimits config
+          maxNumberOfObjects = maxObjects $ snd $ classLimits config
           parts = transform
             (cd {relationships = reversedRelationships})
             []
-            maxNObjects
+            maxNumberOfObjects
             objectProperties
             ""
             ""
           command = createRunCommand
             "cd"
             (length $ classNames cd)
-            maxNObjects
+            maxNumberOfObjects
             reversedRelationships
             parts
       od <- listToMaybe

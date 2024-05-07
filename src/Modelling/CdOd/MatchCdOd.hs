@@ -608,12 +608,12 @@ getODsFor config (cd:cds) = do
   [cd1, cd2, cd3] <- map changeClassDiagram . instanceChangesAndCds
     <$> getChangesAndCds cd
   instas <- getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
-  mrinstas <- takeRandomInstances instas
-  case mrinstas of
+  maybeRandomInstances <- takeRandomInstances instas
+  case maybeRandomInstances of
     Nothing      -> getODsFor config cds
-    Just rinstas -> return $ Just (
+    Just randomInstances -> return $ Just (
       M.fromList [(1, cd1), (2, cd2)],
-      M.fromList $ zip ['a' ..] rinstas
+      M.fromList $ zip ['a' ..] randomInstances
       )
 
 getChangesAndCds
@@ -625,9 +625,12 @@ getChangesAndCds insta = do
   let cd  = instanceClassDiagram cdInstance
       cs  = classNames cd
       es  = instanceRelationshipNames cdInstance
-      bme = BM.fromList $ zip es $ map (:[]) ['z', 'y' ..]
-      bmc = BM.fromList $ zip cs $ map (:[]) ['A' ..]
-  cdInstance' <- renameClassesAndRelationshipsInCdInstance bmc bme cdInstance
+      bimapEdges = BM.fromList $ zip es $ map (:[]) ['z', 'y' ..]
+      bimapClasses = BM.fromList $ zip cs $ map (:[]) ['A' ..]
+  cdInstance' <- renameClassesAndRelationshipsInCdInstance
+    bimapClasses
+    bimapEdges
+    cdInstance
   return $ cdInstance' {
     instanceChangesAndCds = map deliberatelyNameReplacedEdgesSameInCdOnly
       $ instanceChangesAndCds cdInstance'

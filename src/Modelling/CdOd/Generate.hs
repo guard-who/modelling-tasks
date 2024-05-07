@@ -46,7 +46,8 @@ generateCds withNonTrivialInheritance config props maxInsts to = do
 instanceToCd :: MonadThrow m => AlloyInstance -> m Cd
 instanceToCd rinsta = do
   cd <- instanceClassDiagram <$> fromInstance rinsta
-  let cns = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
+  let classRenamings = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
       relationshipNames = mapMaybe relationshipName $ relationships cd
-      rns = BM.fromList $ zip relationshipNames $ map pure ['z', 'y' ..]
-  renameClassesAndRelationships cns rns cd
+      relationshipRenamings =
+        BM.fromList $ zip relationshipNames $ map pure ['z', 'y' ..]
+  renameClassesAndRelationships classRenamings relationshipRenamings cd
