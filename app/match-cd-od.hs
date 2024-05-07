@@ -46,7 +46,6 @@ main = do
             usesEveryRelationshipName = Nothing
             },
           printSolution    = False,
-          searchSpace      = 10,
           timeout          = Nothing,
           withNonTrivialInheritance = Nothing
         }

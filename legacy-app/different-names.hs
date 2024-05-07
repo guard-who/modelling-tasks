@@ -19,6 +19,6 @@ main = do
   (s, seed) <- getArgs >>= evaluateArgs
   putStrLn $ "Seed: " ++ show seed
   putStrLn $ "Segment: " ++ show s
-  i <- differentNames defaultDifferentNamesConfig s seed
+  i <- differentNames 10 defaultDifferentNamesConfig s seed
   print i
   differentNamesTask "output" i `withLang` English

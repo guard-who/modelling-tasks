@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wwarn=deprecations #-}
 module Modelling.CdOd.Generate.MatchCdOd (
   matchCdOd,
   ) where
@@ -44,37 +43,40 @@ import System.Random.Shuffle            (shuffleM)
 
 matchCdOd
   :: (MonadAlloy m, MonadFail m, MonadThrow m)
-  => MatchCdOdConfig
+  => Int
+  -> MatchCdOdConfig
   -> Int
   -> Int
   -> m MatchCdOdInstance
-matchCdOd config segment seed = do
+matchCdOd searchSpace config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
   (`evalRandT` g) $ do
-    inst <- getMatchCdOdTask getRandomTask config
+    inst <- getMatchCdOdTask (getRandomTask searchSpace) config
     randomise inst
 
 getRandomTask
   :: (MonadAlloy m, MonadFail m, RandomGen g)
-  => MatchCdOdConfig
+  => Int
+  -> MatchCdOdConfig
   -> RandT g m (Map Int Cd, Map Char ([Int], AlloyInstance))
-getRandomTask config = do
-  (cd1, cd2, cd3, numClasses) <- getRandomCDs config
+getRandomTask searchSpace config = do
+  (cd1, cd2, cd3, numClasses) <- getRandomCDs searchSpace config
   instas <- getODInstances config cd1 cd2 cd3 numClasses
   mrinstas <- takeRandomInstances instas
   case mrinstas of
-    Nothing      -> getRandomTask config
+    Nothing      -> getRandomTask searchSpace config
     Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
 
 getRandomCDs
   :: (MonadFail m, RandomGen g)
-  => MatchCdOdConfig
+  => Int
+  -> MatchCdOdConfig
   -> RandT g m (Cd, Cd, Cd, Int)
-getRandomCDs config = do
+getRandomCDs searchSpace config = do
   (names, edges) <- generate
     Nothing
     (classConfig config)
-    (searchSpace config)
+    searchSpace
   --let cd0 = fromEdges names edges
   -- continueIf (not (anyThickEdge cd0)) $ do
   mutations <- shuffleM $ getAllMutationResults (classConfig config) names edges
@@ -94,7 +96,7 @@ getRandomCDs config = do
   where
     continueWithJust mx p m
       | Just x <- mx, p x = m x
-      | otherwise         = getRandomCDs config
+      | otherwise         = getRandomCDs searchSpace config
 
 getFirstValidSatisfying
   :: (Cd -> Bool) -> [String] -> [[DiagramEdge]] -> Maybe [DiagramEdge]

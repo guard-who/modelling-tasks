@@ -155,12 +155,9 @@ data MatchCdOdConfig = MatchCdOdConfig {
     objectConfig     :: ObjectConfig,
     objectProperties :: ObjectProperties,
     printSolution    :: Bool,
-    searchSpace      :: Int,
     timeout          :: Maybe Int,
     withNonTrivialInheritance :: Maybe Bool
   } deriving (Generic, Read, Show)
-
-{-# DEPRECATED searchSpace "because Modelling.Cd.generate' is not used anymore and will be removed soon" #-}
 
 defaultMatchCdOdConfig :: MatchCdOdConfig
 defaultMatchCdOdConfig = MatchCdOdConfig {
@@ -185,7 +182,6 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       usesEveryRelationshipName = Nothing
       },
     printSolution    = False,
-    searchSpace      = 10,
     timeout          = Nothing,
     withNonTrivialInheritance = Just True
   }
@@ -336,7 +332,8 @@ matchCdOdSolution = M.toList . reverseMapping . fmap fst . instances
       $ M.fromList [(1, []), (2, [])]
 
 matchCdOd
-  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m) => MatchCdOdConfig
+  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m)
+  => MatchCdOdConfig
   -> Int
   -> Int
   -> m MatchCdOdInstance
@@ -588,7 +585,8 @@ renameInstance inst names' nonInheritances' = do
     }
 
 getRandomTask
-  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m) => MatchCdOdConfig
+  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m)
+  => MatchCdOdConfig
   -> m (Map Int Cd, Map Char ([Int], AlloyInstance))
 getRandomTask config = do
   let alloyCode = Changes.transform

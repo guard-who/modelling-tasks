@@ -35,7 +35,6 @@ task14 = MatchCdOdConfig {
     usesEveryRelationshipName = Nothing
     },
   printSolution = True,
-  searchSpace = 10,
   timeout = Nothing,
   withNonTrivialInheritance = Just True
   }
@@ -63,7 +62,6 @@ task15 = MatchCdOdConfig {
     usesEveryRelationshipName = Just False
     },
   printSolution = True,
-  searchSpace = 10,
   timeout = Nothing,
   withNonTrivialInheritance = Just True
   }

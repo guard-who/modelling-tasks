@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wwarn=deprecations #-}
 module Modelling.CdOd.Generate.DifferentNames where
 
 import Capabilities.Alloy               (MonadAlloy)
@@ -23,11 +22,12 @@ debug = False
 
 differentNames
   :: (MonadAlloy m, MonadThrow m)
-  => DifferentNamesConfig
+  => Int
+  -> DifferentNamesConfig
   -> Int
   -> Int
   -> m DifferentNamesInstance
-differentNames config segment seed = do
+differentNames searchSpace config segment seed = do
   let g = mkStdGen (segment + 4 * seed)
   evalRandT fgen g
   where
@@ -37,7 +37,7 @@ differentNames config segment seed = do
         (names, edges) <- generate
           (withNonTrivialInheritance config)
           config'
-          (searchSpace config)
+          searchSpace
         getDifferentNamesTask fgen config $ fromEdges names edges
       randomise inst
     continueWithHead []    _ = fgen

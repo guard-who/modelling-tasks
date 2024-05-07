@@ -191,7 +191,6 @@ data DifferentNamesConfig = DifferentNamesConfig {
     -- any link in the object diagram
     ignoreOneRelationship :: Maybe Bool,
     printSolution    :: Bool,
-    searchSpace      :: Int,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
 
@@ -230,8 +229,6 @@ checkDifferentNamesConfig DifferentNamesConfig {..}
     different (_, Nothing) = True
     different (x, Just y)  = x /= y
 
-{-# DEPRECATED searchSpace "because Modelling.Cd.generate' is not used anymore and will be removed soon" #-}
-
 defaultDifferentNamesConfig :: DifferentNamesConfig
 defaultDifferentNamesConfig = DifferentNamesConfig {
     classConfig  = ClassConfig {
@@ -258,7 +255,6 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     printSolution    = False,
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
-    searchSpace      = 10,
     timeout          = Nothing
   }
 

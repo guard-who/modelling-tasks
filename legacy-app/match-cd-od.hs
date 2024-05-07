@@ -49,12 +49,11 @@ main = do
             usesEveryRelationshipName = Nothing
             },
           printSolution    = False,
-          searchSpace      = 10,
           timeout          = Nothing,
           withNonTrivialInheritance = Nothing
         }
   putStrLn $ "Seed: " ++ show seed
   putStrLn $ "Segment: " ++ show s
-  task <- matchCdOd config s seed
+  task <- matchCdOd 10 config s seed
   print task
   matchCdOdTask "" task `withLang` English
