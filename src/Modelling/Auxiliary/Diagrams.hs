@@ -141,67 +141,94 @@ veeArrow :: ArrowHT Double
 veeArrow = arrowheadVee (150 @@ deg)
 
 arrowheadV :: RealFloat n => Angle n -> ArrowHT n
-arrowheadV theta len shaftWidth =
+arrowheadV theta arrowHeadLength shaftWidth =
+  --(jt, mempty)
   (jt # alignR, line # alignR)
   where
-    shift right = translate (unP $ (factor * sinA theta * len / 2) *. unitY)
-                . translate (unP $ (cosA theta * len / 2) *. unitX)
+    shift right =
+      translate (unP $ (factor * sinA theta * arrowHeadLength / 2) *. unitY)
+      . translate (unP $ (cosA theta * arrowHeadLength / 2) *. unitX)
       where factor = if right then -1 else 1
-    mtheta = - theta ^. deg @@ deg
-    jt = shift True (rotate mtheta line) <> shift False (rotate theta line)
+    opposingTheta = - theta ^. deg @@ deg
+    jt = shift True (rotate opposingTheta line)
+      <> shift False (rotate theta line)
       -- <> translate (unP $ (shaftWidth * sinA theta / 2) *. unitX) tip
     -- tip = rotate (-90 @@ deg) (scaleY (sinA theta) (triangle shaftWidth))
-    line = rect len shaftWidth
+    line = rect arrowHeadLength shaftWidth
 
 arrowheadVee :: RealFloat n => Angle n -> ArrowHT n
-arrowheadVee theta len shaftWidth = (
+arrowheadVee theta arrowHeadLength shaftWidth = (
   rotate (negated quarterTurn) (
     polygon $ with
-      & polyType .~ PolySides
-      [a1, quarterTurn, quarterTurn, a2, quarterTurn, quarterTurn, a1, quarterTurn, quarterTurn]
-        [start, len', w, len, len, w, len', start, w]
+      & polyType .~ polySides
       & polyOrient .~ NoOrient
     ) # alignL,
   mempty
   )
   where
-    start = len
-    len' = len - w / tanA theta' - w / 2 / sinA theta'
+    start = arrowHeadLength
+    arrowHeadLength' = arrowHeadLength - w / tanA theta' - w / 2 / sinA theta'
     theta' = halfTurn ^-^ theta
     a1 = halfTurn ^+^ theta'
     a2 = theta ^-^ theta'
     w = shaftWidth
+    polySides = uncurry PolySides $ unzip [
+      (a1, start),
+      (quarterTurn, arrowHeadLength'),
+      (quarterTurn, w),
+      (a2, arrowHeadLength),
+      (quarterTurn, arrowHeadLength),
+      (quarterTurn, w),
+      (a1, arrowHeadLength'),
+      (quarterTurn, start),
+      (quarterTurn, w)
+      ]
 
 arrowheadTriangle :: RealFloat n => Angle n -> ArrowHT n
-arrowheadTriangle theta len shaftWidth = (
+arrowheadTriangle theta arrowHeadLength shaftWidth = (
   rotate (negated quarterTurn) (
     polygon $ with
-      & polyType .~ PolySides
-        [negated quarterTurn, a1, a2, a1, negated quarterTurn, quarterTurn, quarterTurn, quarterTurn, a1', a2', a1', quarterTurn, negated quarterTurn, quarterTurn]
-        [start, len', len, len, len', start, w / 2, w + start, lenI', lenI, lenI, lenI', w + start, w / 2]
+      & polyType .~ polySides
       & polyOrient .~ NoOrient
     ) # alignL,
   mempty
   )
   where
     start = 0
-    len' = len * sinA theta' - w / 2
-    lenI' = lenI * sinA theta'
-    lenI = len - w / cosA theta' - w / tanA theta' - w * tanA theta'
+    arrowHeadLength' = arrowHeadLength * sinA theta' - w / 2
+    arrowHeadLengthI' = arrowHeadLengthI * sinA theta'
+    arrowHeadLengthI = arrowHeadLength
+      - w / cosA theta'
+      - w / tanA theta'
+      - w * tanA theta'
     theta' = halfTurn ^-^ theta
     a1 = quarterTurn ^+^ theta'
     a2 = theta ^-^ theta'
     a2' = negated a2
     a1' = negated a1
     w = shaftWidth
+    polySides = uncurry PolySides $ unzip [
+      (negated quarterTurn, start),
+      (a1, arrowHeadLength'),
+      (a2, arrowHeadLength),
+      (a1, arrowHeadLength),
+      (negated quarterTurn, arrowHeadLength'),
+      (quarterTurn, start),
+      (quarterTurn, w / 2),
+      (quarterTurn, w + start),
+      (a1', arrowHeadLengthI'),
+      (a2', arrowHeadLengthI),
+      (a1', arrowHeadLengthI),
+      (quarterTurn, arrowHeadLengthI'),
+      (negated quarterTurn, w + start),
+      (quarterTurn, w / 2)
+      ]
 
 arrowheadDiamond :: RealFloat n => Angle n -> ArrowHT n
-arrowheadDiamond theta len shaftWidth = (
+arrowheadDiamond theta arrowHeadLength shaftWidth = (
   rotate (negated quarterTurn) (
     polygon $ with
-      & polyType .~ PolySides
-        [a3, a1, a2, a1, a3, quarterTurn, quarterTurn, a3', a1', a2', a1', a3', quarterTurn, quarterTurn]
-        [w, len', len, len, len', w, w / 2, dw, lenI', lenI', lenI', lenI', dw, w / 2]
+      & polyType .~  polySides
       & polyOrient .~ NoOrient
     ) # alignL,
   mempty
@@ -209,8 +236,8 @@ arrowheadDiamond theta len shaftWidth = (
   where
     dw = w + w / sinA theta' / 2
     w' = shaftWidth / sinA theta / 2
-    len' = len - w'
-    lenI' = len - 2 * w / sinA a1
+    arrowHeadLength' = arrowHeadLength - w'
+    lenI' = arrowHeadLength - 2 * w / sinA a1
     theta' = halfTurn ^-^ theta
     a1 = 2 *^ theta'
     a2 = halfTurn ^-^ a1
@@ -219,26 +246,50 @@ arrowheadDiamond theta len shaftWidth = (
     a2' = negated a2
     a1' = negated a1
     w = shaftWidth
+    polySides = uncurry PolySides $ unzip [
+      (a3, w),
+      (a1, arrowHeadLength'),
+      (a2, arrowHeadLength),
+      (a1, arrowHeadLength),
+      (a3, arrowHeadLength'),
+      (quarterTurn, w),
+      (quarterTurn, w / 2),
+      (a3', dw),
+      (a1', lenI'),
+      (a2', lenI'),
+      (a1', lenI'),
+      (a3', lenI'),
+      (quarterTurn, dw),
+      (quarterTurn, w / 2)
+      ]
 
 arrowheadFilledDiamond :: RealFloat n => Angle n -> ArrowHT n
-arrowheadFilledDiamond theta len shaftWidth = (
+arrowheadFilledDiamond theta arrowHeadLength shaftWidth = (
   reflectX $
     polygon (
       with
-      & polyType .~ PolySides
-        [quarterTurn, a3, a1, a2, a1, a3, quarterTurn, quarterTurn]
-        [w, w, len', len, len, len', w, w]
+      & polyType .~ polySides
       & polyOrient .~ NoOrient
     ) # alignR,
   mempty
   )
   where
-    len' = len - shaftWidth / sinA theta / 2
+    arrowHeadLength' = arrowHeadLength - shaftWidth / sinA theta / 2
     theta' = halfTurn ^-^ theta
     a1 = 2 *^ theta'
     a2 = halfTurn ^-^ a1
     a3 = halfTurn ^+^ theta
     w = shaftWidth
+    polySides = uncurry PolySides $ unzip [
+      (quarterTurn, w),
+      (a3, w),
+      (a1, arrowHeadLength'),
+      (a2, arrowHeadLength),
+      (a1, arrowHeadLength),
+      (a3, arrowHeadLength'),
+      (quarterTurn, w),
+      (quarterTurn, w)
+      ]
 
 nonEmptyPathBetween
   :: (IsName p1, IsName p2, Metric v, RealFloat n, Semigroup m)
@@ -398,10 +449,10 @@ connectWithPath opts font dir l1 l2 ml fl tl path g =
   foldr
     addLabel
     (connectPerim'' opts' l1 l2 angle1 angle2 g)
-    lpoints
+    points
   # svgClass "."
   where
-    lpoints = [(Middle, ml), (Begin, fl), (End, tl)]
+    points = [(Middle, ml), (Begin, fl), (End, tl)]
     opts' = amendOptsByDirection opts dir
       & arrowShaft .~ unLoc shaft
     addLabel (loc, ml')
@@ -516,14 +567,14 @@ renderText
   -> String
   -- ^ what to write
   -> Diagram B
-renderText u pfont s x = x
+renderText u preparedFont s x = x
 #if MIN_VERSION_SVGFonts(1,8,0)
-  # svgText (def :: TextOpts Double) { textFont = pfont, underline = u }
+  # svgText (def :: TextOpts Double) {textFont = preparedFont, underline = u}
   # fit_height s
   # set_envelope
   # lw none
 #else
-  # textSVG_ (TextOpts pfont INSIDE_H KERN u s s)
+  # textSVG_ (TextOpts preparedFont INSIDE_H KERN u s s)
 #endif
   # fc black
   # lc black
