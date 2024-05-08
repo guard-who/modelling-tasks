@@ -168,12 +168,12 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
       st1, ", danach ", st2, ", und schließlich ", st3,
       " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
       ]
-  whenJust lengthHint $ \len -> paragraph $ translate $ do
-    english [i|Hint: There is a solution with not more than #{len} transitions.|]
-    german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{len} Transitionen.|]
-  whenJust minLengthHint $ \len -> paragraph $ translate $ do
-    english [i|Hint: There is no solution with less than #{len} transitions.|]
-    german [i|Hinweis: Es gibt keine Lösung mit weniger als #{len} Transitionen.|]
+  whenJust lengthHint $ \count -> paragraph $ translate $ do
+    english [i|Hint: There is a solution with not more than #{count} transitions.|]
+    german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{count} Transitionen.|]
+  whenJust minLengthHint $ \count -> paragraph $ translate $ do
+    english [i|Hint: There is no solution with less than #{count} transitions.|]
+    german [i|Hinweis: Es gibt keine Lösung mit weniger als #{count} Transitionen.|]
   hoveringInformation
   pure ()
 

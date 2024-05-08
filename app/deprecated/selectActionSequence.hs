@@ -26,11 +26,11 @@ main = do
           validInst = filter (isNothing . (`checkSelectASInstance` defaultSelectASConfig))
                       $ map (\x -> SelectASInstance{activityDiagram = x, seed=123, numberOfWrongSequences=2}) ad
           selectAS = map selectActionSequenceText validInst
-          plantumlstring = map (convertToPlantUML . fst) selectAS
+          plantUmlString = map (convertToPlantUML . fst) selectAS
           taskDescription = map selectASTaskDescription  validInst
           taskSolution =  map snd selectAS
       folders <- createExerciseFolders pathToFolder (length selectAS)
-      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantUmlString
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"

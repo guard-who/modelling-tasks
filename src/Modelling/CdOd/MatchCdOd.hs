@@ -594,8 +594,8 @@ getRandomTask config = do
         defaultProperties
         (withNonTrivialInheritance config)
   instas <- getInstances (maxInstances config) (timeout config) alloyCode
-  rinstas <- shuffleM instas
-  ods <- getODsFor config { timeout = Nothing } rinstas
+  randomInstances <- shuffleM instas
+  ods <- getODsFor config { timeout = Nothing } randomInstances
   maybe (error "could not find instance") return ods
 
 getODsFor
@@ -707,6 +707,6 @@ takeRandomInstances instas = do
   case takes of
     []  -> return Nothing
     _:_ -> Just <$> do
-      rinstas <- mapM shuffleM instas
+      randomInstances <- mapM shuffleM instas
       ts:_    <- shuffleM takes
-      shuffleM $ concatMap ($ rinstas) ts
+      shuffleM $ concatMap ($ randomInstances) ts

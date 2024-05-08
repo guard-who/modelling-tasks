@@ -24,11 +24,11 @@ main = do
           enterAS = map enterActionSequenceText
                     $ filter (isNothing . (`checkEnterASInstance` defaultEnterASConfig))
                     $ map (\x -> EnterASInstance{activityDiagram = x, seed=123}) ad
-          plantumlstring = map (convertToPlantUML . fst) enterAS
+          plantUmlString = map (convertToPlantUML . fst) enterAS
           taskDescription = replicate (length enterAS) enterASTaskDescription
           taskSolution = map snd enterAS
       folders <- createExerciseFolders pathToFolder (length enterAS)
-      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantUmlString
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"

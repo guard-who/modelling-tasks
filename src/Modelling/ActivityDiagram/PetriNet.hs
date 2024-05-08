@@ -3,9 +3,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Modelling.ActivityDiagram.Petrinet (
+module Modelling.ActivityDiagram.PetriNet (
   PetriKey (..),
-  convertToPetrinet,
+  convertToPetriNet,
   convertToSimple,
 ) where
 
@@ -49,10 +49,10 @@ instance Ord PetriKey where
   pk1 `compare` pk2 = label pk1 `compare` label pk2
 
 convertToSimple :: Ad.UMLActivityDiagram -> SimplePetriLike PetriKey
-convertToSimple = convertToPetrinet
+convertToSimple = convertToPetriNet
 
-convertToPetrinet :: Net p n => Ad.UMLActivityDiagram -> p n PetriKey
-convertToPetrinet diag =
+convertToPetriNet :: Net p n => Ad.UMLActivityDiagram -> p n PetriKey
+convertToPetriNet diag =
   let st_petri = foldr insertNode emptyNet (Ad.nodes diag)
       st_edges_petri = foldr insertEdge st_petri (Ad.connections diag)
       st_support_petri = foldr addSupportST st_edges_petri (M.keys $ nodes st_edges_petri)

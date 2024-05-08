@@ -12,7 +12,7 @@ abstract sig ActivityEdges {
 
 fact {
         no disj ae1, ae2 : ActivityEdges | ae1.from = ae2.from and ae1.to = ae2.to  //No duplicate activity edges
-        no ae1 : ActivityEdges | ae1.from = ae1.to                                                 //No reflexive edges (due to petrinet-representation)
+        no ae1 : ActivityEdges | ae1.from = ae1.to               // No reflexive edges (due to Petri net-representation)
 }
 
 //Namespace of all Guards

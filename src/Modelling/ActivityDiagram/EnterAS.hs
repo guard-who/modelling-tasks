@@ -118,7 +118,7 @@ checkEnterASConfig' EnterASConfig {
     answerLength
   }
   | Just instances <- maxInstances, instances < 1
-    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | objectNodeOnEveryPath == Just True && fst (objectNodeLimits adConfig) < 1
     = Just "Setting the parameter 'objectNodeOnEveryPath' to True implies at least 1 Object Node occurring"
   | fst answerLength < 0
@@ -136,9 +136,9 @@ enterASAlloy EnterASConfig {
     adConfig,
     objectNodeOnEveryPath
   }
-  = adConfigToAlloy modules preds adConfig
+  = adConfigToAlloy modules predicates adConfig
   where modules = moduleActionSequencesRules
-        preds =
+        predicates =
           [i|
             noActivityFinalNodes
             someActionNodesExistInEachBlock
@@ -239,11 +239,11 @@ enterASEvaluation
 enterASEvaluation task sub = do
   let correct = validActionSequence sub $ activityDiagram task
       points = if correct then 1 else 0
-      msolutionString =
+      maybeSolutionString =
         if showSolution task
         then Just $ show $ sampleSequence task
         else Nothing
-  printSolutionAndAssert msolutionString points
+  printSolutionAndAssert maybeSolutionString points
 
 enterASSolution
   :: EnterASInstance
@@ -269,8 +269,8 @@ getEnterASTask config = do
     (maxInstances config)
     Nothing
     $ enterASAlloy config
-  rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleAdNames) rinstas
+  randomInstances <- shuffleM instas >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleAdNames) randomInstances
   getFirstInstance
         $ filter (isNothing . (`checkEnterASInstanceForConfig` config))
         $ map (\x -> EnterASInstance {

@@ -24,7 +24,7 @@ module Modelling.ActivityDiagram.MatchPetri (
 ) where
 
 import qualified Data.Map as M (empty, fromList, keys, null)
-import qualified Modelling.ActivityDiagram.Petrinet as PK (label)
+import qualified Modelling.ActivityDiagram.PetriNet as PK (label)
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
@@ -45,7 +45,7 @@ import Modelling.ActivityDiagram.Datatype (
   isForkNode
   )
 import Modelling.ActivityDiagram.Isomorphism (petriHasMultipleAutomorphisms)
-import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
+import Modelling.ActivityDiagram.PetriNet (PetriKey (..), convertToPetriNet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
@@ -53,7 +53,7 @@ import Modelling.ActivityDiagram.Config (
   checkAdConfig,
   defaultAdConfig,
   )
-import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
   PlantUMLConvConf (..),
@@ -105,7 +105,7 @@ import System.Random.Shuffle (shuffleM)
 
 data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: UMLActivityDiagram,
-  petrinet :: SimplePetriLike PetriKey,
+  petriNet :: SimplePetriLike PetriKey,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings,
   showSolution :: Bool
@@ -160,7 +160,7 @@ checkMatchPetriConfig' MatchPetriConfig {
     noActivityFinalInForkBlocks
   }
   | isJust maxInstances && fromJust maxInstances < 1
-    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | supportSTAbsent == Just True && cycles adConfig > 0
     = Just "Setting the parameter 'supportSTAbsent' to True prohibits having more than 0 cycles"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
@@ -191,7 +191,7 @@ matchPetriAlloy MatchPetriConfig {
   noActivityFinalInForkBlocks
 }
   = adConfigToAlloy modules preds adConfig
-  where modules = modulePetrinet
+  where modules = modulePetriNet
         preds =
           [i|
             #{f supportSTAbsent "supportSTAbsent"}
@@ -246,7 +246,7 @@ data MatchPetriSolution = MatchPetriSolution {
 } deriving (Generic, Show, Eq, Read)
 
 matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
-matchPetriSolution task = mapTypesToLabels $ petrinet task
+matchPetriSolution task = mapTypesToLabels $ petriNet task
 
 extractSupportSTs :: Net p n => p n PetriKey -> [PetriKey]
 extractSupportSTs petri = filter
@@ -283,7 +283,7 @@ matchPetriTask path task = do
     english "Consider the following Petri net as translation of this activity diagram:"
     german "Betrachten Sie folgendes Petrinetz als Übersetzung dieses Aktivitätsdiagramms:"
   let drawSetting = petriDrawConf task
-  image $=<< cacheNet path (show . PK.label) (petrinet task)
+  image $=<< cacheNet path (show . PK.label) (petriNet task)
       (not $ withPlaceNames drawSetting)
       (not $ withTransitionNames drawSetting)
       (not $ with1Weights drawSetting)
@@ -333,7 +333,7 @@ matchPetriSyntax
 matchPetriSyntax task sub = addPretext $ do
   let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
       subNames = map fst (actionNodes sub) ++ map fst (objectNodes sub)
-      petriLabels = map PK.label $ M.keys $ allNodes $ petrinet task
+      petriLabels = map PK.label $ M.keys $ allNodes $ petriNet task
       subLabels =
         map snd (actionNodes sub)
         ++ map snd (objectNodes sub)
@@ -361,13 +361,13 @@ matchPetriEvaluation task sub = addPretext $ do
         english "answer parts"
         german "Teilantworten"
       sol = matchPetriSolution task
-      msolutionString =
+      maybeSolutionString =
         if showSolution task
         then Just $ show sol
         else Nothing
       solution = matchPetriSolutionMap sol
       sub' = M.keys $ matchPetriSolutionMap sub
-  multipleChoice as msolutionString solution sub'
+  multipleChoice as maybeSolutionString solution sub'
 
 matchPetriSolutionMap
   :: MatchPetriSolution
@@ -404,16 +404,16 @@ getMatchPetriTask config = do
     (maxInstances config)
     Nothing
     $ matchPetriAlloy config
-  rinstas <- shuffleM instas >>= mapM parseInstance
-  activityDiagrams <- mapM (fmap snd . shuffleAdNames) rinstas
+  randomInstances <- shuffleM instas >>= mapM parseInstance
+  activityDiagrams <- mapM (fmap snd . shuffleAdNames) randomInstances
   (ad, petri) <- getFirstInstance
         $ filter (not . petriHasMultipleAutomorphisms . snd)
-        $ map (second convertToPetrinet . dupe) activityDiagrams
+        $ map (second convertToPetriNet . dupe) activityDiagrams
   shuffledPetri <- snd <$> shufflePetri petri
   layout <- pickRandomLayout config
   return $ MatchPetriInstance {
     activityDiagram=ad,
-    petrinet = shuffledPetri,
+    petriNet = shuffledPetri,
     plantUMLConf =
       PlantUMLConvConf {
         suppressNodeNames = False,
@@ -551,7 +551,7 @@ defaultMatchPetriInstance = MatchPetriInstance
         { from = 17
         , to = 3
         , guard = "" } ] }
-  , petrinet = PetriLike
+  , petriNet = PetriLike
     { allNodes = M.fromList
       [
         ( NormalST

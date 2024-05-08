@@ -62,10 +62,11 @@ getRandomTask
 getRandomTask searchSpace config = do
   (cd1, cd2, cd3, numClasses) <- getRandomCDs searchSpace config
   instas <- getODInstances config cd1 cd2 cd3 numClasses
-  mrinstas <- takeRandomInstances instas
-  case mrinstas of
+  maybeRandomInstances <- takeRandomInstances instas
+  case maybeRandomInstances of
     Nothing      -> getRandomTask searchSpace config
-    Just rinstas -> return (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] rinstas)
+    Just randomInstances -> pure
+      (M.fromList [(1, cd1), (2, cd2)], M.fromList $ zip ['a' ..] randomInstances)
 
 getRandomCDs
   :: (MonadFail m, RandomGen g)

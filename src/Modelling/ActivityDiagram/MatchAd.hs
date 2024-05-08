@@ -108,7 +108,7 @@ checkMatchAdConfig' MatchAdConfig {
     noActivityFinalInForkBlocks
   }
   | isJust maxInstances && fromJust maxInstances < 1
-    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
   | otherwise
@@ -261,12 +261,12 @@ getMatchAdTask
   => MatchAdConfig
   -> RandT g m MatchAdInstance
 getMatchAdTask config = do
-  instas <- getInstances
+  alloyInstances <- getInstances
     (maxInstances config)
     Nothing
     $ matchAdAlloy config
-  rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleAdNames) rinstas >>= getFirstInstance
+  randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleAdNames) randomInstances >>= getFirstInstance
   return $ MatchAdInstance {
     activityDiagram = ad,
     plantUMLConf = defaultPlantUMLConvConf {

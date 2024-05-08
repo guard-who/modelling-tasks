@@ -106,7 +106,7 @@ parseInstance
   :: MonadThrow m
   => AlloyInstance
   -> m UMLActivityDiagram
-parseInstance insta = do
+parseInstance alloyInstance = do
   let scope = "this"
   actionNodes <- getAs scope "ActionNodes" ActionNode
   objectNodes <- getAs scope"ObjectNodes" ObjectNode
@@ -119,12 +119,12 @@ parseInstance insta = do
   initialNodes <- getAs scope "InitialNodes" InitialNode
   let nodes' = Nodes {..}
   componentNames <- M.fromAscList . S.toAscList
-    <$> getNames scope insta nodes' "ActionObjectNodes" ComponentName
+    <$> getNames scope alloyInstance nodes' "ActionObjectNodes" ComponentName
   let components = enumerateComponents $ toSet nodes'
       names = M.fromList
         $ zip (nubOrd $ M.elems componentNames) $ pure <$> ['A'..]
       getName x = fromMaybe "" $ M.lookup x componentNames >>= (`M.lookup` names)
-  conns <- getConnections scope insta nodes'
+  conns <- getConnections scope alloyInstance nodes'
   let labelOf = getLabelOf components
       conns' = S.map (\(x, y, z) -> (labelOf x, labelOf y, z)) conns
       activityDiagram = setToActivityDiagram getName components conns'
@@ -136,7 +136,7 @@ parseInstance insta = do
       -> String
       -> (String -> a)
       -> m (Set a)
-    getAs scope = getX scope insta
+    getAs scope = getX scope alloyInstance
 
 
 enumerateComponents :: Set Node -> Set (Node, Int)
@@ -190,8 +190,8 @@ getX
   -> String
   -> (String -> a)
   -> m (Set a)
-getX scope insta n f =
-  lookupSig (scoped scope n) insta
+getX scope alloyInstance n f =
+  lookupSig (scoped scope n) alloyInstance
   >>= getSingleAs "" (returnX f)
 
 getNames
@@ -202,8 +202,8 @@ getNames
   -> String
   -> (String -> a)
   -> m (Set (Node, a))
-getNames scope insta ns n f = do
-  named <- lookupSig (scoped scope n) insta
+getNames scope alloyInstance ns n f = do
+  named <- lookupSig (scoped scope n) alloyInstance
   getDoubleAs "name" (toNode ns) (returnX f) named
 
 getConnections
@@ -212,10 +212,10 @@ getConnections
   -> AlloyInstance
   -> Nodes
   -> m (Set (Node, Node, String))
-getConnections scope insta ns = do
-  guardNames  <- lookupSig (scoped scope "GuardNames") insta
+getConnections scope alloyInstance ns = do
+  guardNames  <- lookupSig (scoped scope "GuardNames") alloyInstance
   triggers <-  getSingleAs "" (returnX GuardName) guardNames
-  activityEdges  <- lookupSig (scoped scope "ActivityEdges") insta
+  activityEdges  <- lookupSig (scoped scope "ActivityEdges") alloyInstance
   from <- getDoubleAs
     "from"
     (returnX Trigger)
@@ -223,7 +223,7 @@ getConnections scope insta ns = do
     activityEdges
   to <- M.fromAscList . S.toAscList
     <$> getDoubleAs "to" (returnX Trigger) (toNode ns) activityEdges
-  tlabel <- M.fromAscList . S.toAscList . only snd triggers
+  label <- M.fromAscList . S.toAscList . only snd triggers
     <$> getDoubleAs
       "guard"
       (returnX Trigger)
@@ -231,7 +231,7 @@ getConnections scope insta ns = do
       activityEdges
   let labelMap :: Map GuardName String
       labelMap = M.fromAscList . zip (S.toAscList triggers) $ pure <$> ['a'..]
-  return $ link to tlabel labelMap from
+  return $ link to label labelMap from
   where
     only f xs = S.filter $ (`S.member` xs) . f
     link to lbs lm = S.map $ \(x, f) -> (

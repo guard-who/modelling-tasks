@@ -17,9 +17,9 @@ import Modelling.ActivityDiagram.Datatype (
   isActionNode
   )
 
-import Modelling.ActivityDiagram.Petrinet (
+import Modelling.ActivityDiagram.PetriNet (
   PetriKey(..),
-  convertToPetrinet
+  convertToPetriNet
   )
 
 import Modelling.PetriNet.Types (
@@ -70,7 +70,7 @@ isNormalST pk =
 --Generate at one sequence of transitions to each final node
 generateActionSequence' :: UMLActivityDiagram -> [PetriKey]
 generateActionSequence' diag =
-  let petri =  fromPetriLike $ convertToPetrinet diag
+  let petri = fromPetriLike $ convertToPetriNet diag
       zeroState = State $ M.map (const 0) $ unState $ start petri
       sequences = fromJust $ find (isJust . lookup zeroState) $ levels' petri
   in reverse $ fromJust $ lookup zeroState sequences
@@ -82,7 +82,7 @@ validActionSequence input diag =
         (\n -> (name n, Ad.label n))
         $ filter isActionNode $ nodes diag
       labels = mapMaybe (`lookup` nameMap) input
-      petri = convertToPetrinet diag
+      petri = convertToPetriNet diag
       petriKeyMap = map
         (\k -> (Ad.label $ sourceNode k, k))
         $ filter isNormalST $ M.keys $ allNodes petri

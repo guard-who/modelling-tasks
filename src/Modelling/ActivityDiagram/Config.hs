@@ -81,11 +81,15 @@ checkAdConfig AdConfig {
     = Nothing
 
 adConfigToAlloy :: String -> String -> AdConfig -> String
-adConfigToAlloy modules preds adConf =
-  adConfigToAlloy' (adConfigScope adConf) (adConfigBitWidth adConf) modules preds adConf
+adConfigToAlloy modules predicates adConf = adConfigToAlloy'
+  (adConfigScope adConf)
+  (adConfigBitWidth adConf)
+  modules
+  predicates
+  adConf
 
 adConfigToAlloy' :: Int -> Int -> String -> String -> AdConfig -> String
-adConfigToAlloy' scope bitWidth modules preds AdConfig {
+adConfigToAlloy' scope bitWidth modules predicates AdConfig {
     actionLimits,
     objectNodeLimits,
     maxNamedNodes,
@@ -108,7 +112,7 @@ adConfigToAlloy' scope bitWidth modules preds AdConfig {
     #{singletonObjectNodes}
 
     pred showAd {
-      #{preds}
+      #{predicates}
     }
 
     run showAd for #{scope} but #{bitWidth} Int, #{snd actionLimits} ActionNodes,
@@ -117,7 +121,7 @@ adConfigToAlloy' scope bitWidth modules preds AdConfig {
       exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
       #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
       exactly 1 InitialNodes, exactly #{activityFinalNodes} ActivityFinalNodes, exactly #{flowFinalNodes} FlowFinalNodes,
-      exactly #{cycles} PlantUMLRepeatBlocks, exactly #{decisionMergePairs - cycles} PlantUMLIfElseBlocks,
+      exactly #{cycles} PlantUMLRepeatBlocks, exactly #{decisionMergePairs - cycles} PlantUmlIfElseBlocks,
       exactly #{forkJoinPairs} PlantUMLForkBlocks
   |]
   where
@@ -138,8 +142,8 @@ adConfigScope AdConfig {
 {-
  As of now, the highest Int-Value used in the Alloy Specification is 3 (#bodies in ForkBlocks),
  therefore 3 Bit (Two's Complement) should be enough.
- If this number is made configurable or the specification is changed to use more Ints,
- this should adapted.
+ If this number is made configurable or the specification is changed to use lartger Int values,
+ this should be adapted.
 -}
 adConfigBitWidth :: AdConfig -> Int
 adConfigBitWidth = const 3

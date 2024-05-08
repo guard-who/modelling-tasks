@@ -23,10 +23,10 @@ main = do
       folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance) inst
           findSupportSTPetri = map (\x -> findSupportSTText $ FindSupportSTInstance {activityDiagram = x, seed=123}) ad
-          plantumlstring = map (convertToPlantUML . fst) findSupportSTPetri
+          plantUmlString = map (convertToPlantUML . fst) findSupportSTPetri
           taskDescription = replicate (length folders) findSupportSTTaskDescription
           taskSolution = map snd findSupportSTPetri
-      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantUmlString
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"
       writeFilesToFolders folders writeFile taskSolution "TaskSolution.txt"

@@ -10,7 +10,7 @@ import Modelling.ActivityDiagram.Config (
   )
 
 import Modelling.ActivityDiagram.Instance(parseInstance)
-import Modelling.ActivityDiagram.Petrinet (convertToSimple)
+import Modelling.ActivityDiagram.PetriNet (convertToSimple)
 
 import Language.Alloy.Call (getInstances)
 

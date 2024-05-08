@@ -14,7 +14,7 @@ module Modelling.ActivityDiagram.SelectPetri (
   checkSelectPetriConfig,
   checkPetriInstance,
   selectPetriAlloy,
-  selectPetrinet,
+  selectPetriNet,
   selectPetriTask,
   selectPetriSyntax,
   selectPetriEvaluation,
@@ -30,9 +30,9 @@ import Capabilities.Graphviz            (MonadGraphviz)
 import Capabilities.PlantUml            (MonadPlantUml)
 import qualified Data.Map as M (empty, size, fromList, toList, keys, map, filter)
 import qualified Modelling.ActivityDiagram.Datatype as Ad (AdNode(label))
-import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
+import qualified Modelling.ActivityDiagram.PetriNet as PK (PetriKey (label))
 
-import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
   adConfigToAlloy,
@@ -49,7 +49,7 @@ import Modelling.ActivityDiagram.Datatype (
   )
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
-import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
+import Modelling.ActivityDiagram.PetriNet (PetriKey (..), convertToPetriNet)
 import Modelling.ActivityDiagram.PlantUMLConverter (
   PlantUMLConvConf (..),
   defaultPlantUMLConvConf,
@@ -58,7 +58,10 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames, shufflePetri)
 import Modelling.ActivityDiagram.Auxiliary.Util (weightedShuffle)
 
-import Modelling.Auxiliary.Common (oneOf)
+import Modelling.Auxiliary.Common (
+  TaskGenerationException (NoInstanceAvailable),
+  oneOf,
+  )
 import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
@@ -69,7 +72,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Applicative (Alternative ((<|>)))
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Extra (loopM, firstJustM)
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -105,7 +108,7 @@ data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUMLConvConf,
   petriDrawConf :: DrawSettings,
-  petrinets :: Map Int (Bool, SimplePetriLike PetriKey),
+  petriNets :: Map Int (Bool, SimplePetriLike PetriKey),
   showSolution :: Bool
 } deriving (Generic, Show)
 
@@ -203,7 +206,7 @@ selectPetriAlloy SelectPetriConfig {
   noActivityFinalInForkBlocks
 }
   = adConfigToAlloy modules preds adConfig
-  where modules = modulePetrinet
+  where modules = modulePetriNet
         preds =
           [i|
             #{f supportSTAbsent "supportSTAbsent"}
@@ -221,7 +224,7 @@ checkPetriInstance :: SelectPetriInstance -> SelectPetriConfig -> Maybe String
 checkPetriInstance inst SelectPetriConfig {
     numberOfWrongAnswers
   }
-  | M.size (M.filter (not . fst) $ petrinets inst) /= numberOfWrongAnswers
+  | M.size (M.filter (not . fst) $ petriNets inst) /= numberOfWrongAnswers
     = Just "Number of wrong nets found for given instance is unequal to numberOfWrongAnswers"
   | otherwise
     = Nothing
@@ -231,18 +234,18 @@ data SelectPetriSolution = SelectPetriSolution {
   wrongNets :: [SimplePetriLike PetriKey]
 } deriving (Show)
 
-selectPetrinet
+selectPetriNet
   :: (MonadRandom m)
   => Int
   -> Int
   -> Bool
   -> UMLActivityDiagram
   -> m SelectPetriSolution
-selectPetrinet numberOfWrongNets numberOfModifications modifyAtMid ad = do
-  let matchingNet = convertToPetrinet ad
+selectPetriNet numberOfWrongNets numberOfModifications modifyAtMid ad = do
+  let matchingNet = convertToPetriNet ad
   wrongNets <- loopM (\xs -> do
       modAd <- modifyAd ad numberOfModifications modifyAtMid
-      let petri = convertToPetrinet modAd
+      let petri = convertToPetriNet modAd
       if any (isPetriIsomorphic petri) (matchingNet:xs)
         then return $ Left xs
       else
@@ -316,7 +319,7 @@ selectPetriTask
   -> SelectPetriInstance
   -> LangM m
 selectPetriTask path task = do
-  let mapping = M.map snd $ petrinets task
+  let mapping = M.map snd $ petriNets task
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
@@ -362,7 +365,7 @@ selectPetriSyntax
   -> Int
   -> LangM m
 selectPetriSyntax task sub = addPretext $ do
-  let options = M.keys $ petrinets task
+  let options = M.keys $ petriNets task
   singleChoiceSyntax False options sub
 
 selectPetriEvaluation
@@ -374,7 +377,7 @@ selectPetriEvaluation task n = addPretext $ do
   let as = translations $ do
         english "Petri net"
         german "Petrinetz"
-      solMap = petrinets task
+      solMap = petriNets task
       (solution, _) = head $ M.toList $ M.map snd $ M.filter fst solMap
       msolutionString =
         if showSolution task
@@ -385,7 +388,7 @@ selectPetriEvaluation task n = addPretext $ do
 selectPetriSolution
   :: SelectPetriInstance
   -> Int
-selectPetriSolution = head . M.keys . M.filter fst . petrinets
+selectPetriSolution = head . M.keys . M.filter fst . petriNets
 
 selectPetri
   :: (MonadAlloy m, MonadThrow m)
@@ -402,11 +405,11 @@ getSelectPetriTask
   => SelectPetriConfig
   -> RandT g m SelectPetriInstance
 getSelectPetriTask config = do
-  instas <- getInstances
+  instances <- getInstances
     (maxInstances config)
     Nothing
     $ selectPetriAlloy config
-  rinstas <- shuffleM instas >>= mapM parseInstance
+  randomInstances <- shuffleM instances >>= mapM parseInstance
   layout <- pickRandomLayout config
   let plantUMLConf = PlantUMLConvConf {
         suppressNodeNames = hideNodeNames config,
@@ -418,26 +421,26 @@ getSelectPetriTask config = do
         with1Weights = False,
         withGraphvizCommand = layout
       }
-  ad <- mapM (fmap snd . shuffleAdNames) rinstas
-  validInsta <- firstJustM (\x -> do
-    sol <- selectPetrinet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) x
+  ad <- mapM (fmap snd . shuffleAdNames) randomInstances
+  validInstances <- firstJustM (\x -> do
+    sol <- selectPetriNet (numberOfWrongAnswers config) (numberOfModifications config) (modifyAtMid config) x
     p <- fmap snd $ shufflePetri $ matchingNet sol
     ps <- mapM (fmap snd . shufflePetri) $ wrongNets sol
-    petrinets <- selectPetriSolutionToMap $ SelectPetriSolution {matchingNet=p, wrongNets=ps}
+    petriNets <- selectPetriSolutionToMap $ SelectPetriSolution {matchingNet=p, wrongNets=ps}
     let petriInst = SelectPetriInstance {
           activityDiagram=x,
           plantUMLConf=plantUMLConf,
           petriDrawConf=petriDrawConf,
-          petrinets = petrinets,
+          petriNets = petriNets,
           showSolution = printSolution config
         }
     case checkPetriInstance petriInst config of
       Just _ -> return Nothing
       Nothing -> return $ Just petriInst
     ) ad
-  case validInsta of
+  case validInstances of
     Just x -> return x
-    Nothing -> error "Failed to find task instances"
+    Nothing -> throwM NoInstanceAvailable
 
 defaultSelectPetriInstance :: SelectPetriInstance
 defaultSelectPetriInstance =  SelectPetriInstance {
@@ -490,7 +493,7 @@ defaultSelectPetriInstance =  SelectPetriInstance {
     with1Weights = False,
     withGraphvizCommand = Dot
   },
-  petrinets = M.fromList [
+  petriNets = M.fromList [
     (1,(False, PetriLike {
       allNodes = M.fromList [
         (NormalST {label = 1, sourceNode = AdActionNode {label = 2, name = "B"}},

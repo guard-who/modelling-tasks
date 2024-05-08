@@ -55,7 +55,7 @@ library
       Modelling.ActivityDiagram.Isomorphism
       Modelling.ActivityDiagram.MatchAd
       Modelling.ActivityDiagram.MatchPetri
-      Modelling.ActivityDiagram.Petrinet
+      Modelling.ActivityDiagram.PetriNet
       Modelling.ActivityDiagram.PlantUMLConverter
       Modelling.ActivityDiagram.SelectAS
       Modelling.ActivityDiagram.SelectPetri
@@ -161,7 +161,7 @@ test-suite modelling-tasks-test
       Modelling.ActivityDiagram.FindSupportSTSpec
       Modelling.ActivityDiagram.MatchAdSpec
       Modelling.ActivityDiagram.MatchPetriSpec
-      Modelling.ActivityDiagram.PetrinetSpec
+      Modelling.ActivityDiagram.PetriNetSpec
       Modelling.ActivityDiagram.SelectASSpec
       Modelling.ActivityDiagram.SelectPetriSpec
       Modelling.CdOd.CD2Alloy.TransformSpec

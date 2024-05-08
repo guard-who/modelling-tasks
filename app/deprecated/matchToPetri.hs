@@ -12,7 +12,7 @@ import Modelling.ActivityDiagram.MatchPetri(
   MatchPetriConfig(..),
   MatchPetriInstance (..),
   pickRandomLayout, matchPetriComponentsText, matchPetriTaskDescription, defaultMatchPetriConfig, matchPetriAlloy)
-import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
+import Modelling.ActivityDiagram.PetriNet (PetriKey (label))
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
@@ -33,11 +33,11 @@ main = do
       folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance) inst
           matchPetri = map (\x -> matchPetriComponentsText $ MatchPetriInstance{activityDiagram = x, seed=123, graphvizCmd=Dot}) ad
-          plantumlstring = map (convertToPlantUML . fst3) matchPetri
+          plantUmlString = map (convertToPlantUML . fst3) matchPetri
           petri = map snd3 matchPetri
           taskDescription = replicate (length folders) matchPetriTaskDescription
           taskSolution = map thd3 matchPetri
-      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantUmlString
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       layout <- pickRandomLayout conf
       mapM_ (\(x,y) -> runExceptT $ cacheNet x (show . label) y False False True layout) $ zip folders petri

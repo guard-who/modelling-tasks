@@ -1,10 +1,10 @@
-module Modelling.ActivityDiagram.PetrinetSpec where
+module Modelling.ActivityDiagram.PetriNetSpec where
 
 import qualified Data.Map as M (keys)
 
-import Modelling.ActivityDiagram.Petrinet (
+import Modelling.ActivityDiagram.PetriNet (
   PetriKey (..),
-  convertToPetrinet,
+  convertToPetriNet,
   convertToSimple,
   )
 
@@ -20,17 +20,17 @@ import Test.Hspec(Spec, context, describe, it, shouldBe)
 
 spec :: Spec
 spec =
-  describe "convertToPetrinet" $
+  describe "convertToPetriNet" $
     context "on a list of generated diagrams" $ do
       let spec' = adConfigToAlloy "" "" defaultAdConfig
-      it "generates a petrinet with ascending labels" $ do
+      it "generates a Petri net with ascending labels" $ do
         inst <- getInstances (Just 50) spec'
         petri <- mapM (fmap convertToSimple . parseInstance) inst
         all checkLabels petri `shouldBe` (True::Bool)
-      it "generates only valid petrinets" $ do
+      it "generates only valid Petri nets" $ do
         inst <- getInstances (Just 50) spec'
         petri <- mapM
-          (fmap (petriLikeToPetri . convertToPetrinet) . parseInstance)
+          (fmap (petriLikeToPetri . convertToPetriNet) . parseInstance)
           inst
         all isRight petri `shouldBe` (True::Bool)
 

@@ -271,7 +271,9 @@ findConflictPlacesEvaluation task (conflict, ps) =
       english "The given solution is correct and complete?"
       german "Die angegebene Lösung ist korrekt und vollständig?"
     pure ()
-  let result = min res $ (base - len inducing + len correct - len wrong') % base
+  let result = min
+        res
+        $ (base - size inducing + size correct - size wrong') % base
   points <- printSolutionAndAssert (fixSolution <$> ms) result
   pure points
   where
@@ -285,7 +287,7 @@ findConflictPlacesEvaluation task (conflict, ps) =
     ps' = nubSort ps
     (correct, wrong') = partition (`elem` inducing) ps
     base = fromIntegral $ 2 + numberOfPlaces task
-    len = fromIntegral . length
+    size = fromIntegral . length
     what = translations $ do
         english "have a conflict"
         german "haben einen Konflikt"

@@ -8,7 +8,7 @@ module Modelling.ActivityDiagram.Alloy(
   moduleReachabilityRules,
   modulePlantUMLSig,
   moduleExerciseRules,
-  modulePetrinet,
+  modulePetriNet,
   moduleActionSequencesRules
 ) where
 
@@ -35,8 +35,8 @@ moduleExerciseRules :: String
 moduleExerciseRules =
   removeLines 3 $(embedStringFile "alloy/ad/exerciseRules.als")
 
-modulePetrinet :: String
-modulePetrinet = removeLines 3 $(embedStringFile "alloy/ad/petriNet.als")
+modulePetriNet :: String
+modulePetriNet = removeLines 3 $(embedStringFile "alloy/ad/petriNet.als")
 
 moduleActionSequencesRules :: String
 moduleActionSequencesRules =

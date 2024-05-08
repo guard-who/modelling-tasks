@@ -47,9 +47,12 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
+import Modelling.Auxiliary.Common (
+  TaskGenerationException (NoInstanceAvailable),
+  )
 
 import Control.Applicative (Alternative ((<|>)))
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Extra (firstJustM)
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -127,7 +130,7 @@ checkSelectASConfig' SelectASConfig {
     answerLength
   }
   | Just instances <- maxInstances, instances < 1
-    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | numberOfWrongAnswers < 1
     = Just "The parameter 'numberOfWrongAnswers' must be set to a positive value"
   | objectNodeOnEveryPath == Just True && fst (objectNodeLimits adConfig) < 1
@@ -307,13 +310,13 @@ getSelectASTask
   => SelectASConfig
   -> RandT g m SelectASInstance
 getSelectASTask config = do
-  instas <- getInstances
+  instances <- getInstances
     (maxInstances config)
     Nothing
     $ selectASAlloy config
-  rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleAdNames) rinstas
-  validInsta <- firstJustM (\x -> do
+  randomInstances <- shuffleM instances >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleAdNames) randomInstances
+  validInstances <- firstJustM (\x -> do
     actionSequences <- selectASSolutionToMap $ selectActionSequence (numberOfWrongAnswers config) x
     let selectASInst = SelectASInstance {
           activityDiagram=x,
@@ -327,9 +330,9 @@ getSelectASTask config = do
       Just _ -> return Nothing
       Nothing -> return $ Just selectASInst
     ) ad
-  case validInsta of
+  case validInstances of
     Just x -> return x
-    Nothing -> error "Failed to find task instances"
+    Nothing -> throwM NoInstanceAvailable
 
 defaultSelectASInstance :: SelectASInstance
 defaultSelectASInstance = SelectASInstance {

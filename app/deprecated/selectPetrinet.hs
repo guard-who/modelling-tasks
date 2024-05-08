@@ -11,12 +11,18 @@ import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.Petrinet (PetriKey(label))
+import Modelling.ActivityDiagram.PetriNet (PetriKey (label))
 import Modelling.ActivityDiagram.SelectPetri (
   SelectPetriConfig(..),
   SelectPetriInstance(..),
   SelectPetriSolution(..),
-  pickRandomLayout, defaultSelectPetriConfig, selectPetriAlloy, checkPetriInstance, selectPetrinet, selectPetriTaskDescription)
+  checkPetriInstance,
+  defaultSelectPetriConfig,
+  pickRandomLayout,
+  selectPetriAlloy,
+  selectPetriNet,
+  selectPetriTaskDescription,
+  )
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
@@ -35,14 +41,14 @@ main = do
       inst <- getInstances (Just 50) $ selectPetriAlloy conf
       let ad = map (failWith id . parseInstance) inst
           selectPetri =
-            map selectPetrinet
+            map selectPetriNet
             $ filter (isNothing . checkPetriInstance)
             $ map (\x -> SelectPetriInstance{activityDiagram = x, seed=123, graphvizCmd=Dot, numberOfWrongNets=2}) ad
-          plantumlstring = map (convertToPlantUML . fst) selectPetri
+          plantUmlString = map (convertToPlantUML . fst) selectPetri
           taskDescription = replicate (length selectPetri) selectPetriTaskDescription
           taskSolution = map snd selectPetri
       folders <- createExerciseFolders pathToFolder (length selectPetri)
-      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantUmlString
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       layout <- pickRandomLayout conf
       mapM_ (uncurry (writeSolutionToFolder layout)) $ zip folders taskSolution

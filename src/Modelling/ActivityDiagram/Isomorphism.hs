@@ -9,7 +9,7 @@ module Modelling.ActivityDiagram.Isomorphism (
 import qualified Data.Map as M (keys)
 
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)
-import Modelling.ActivityDiagram.Petrinet (convertToSimple)
+import Modelling.ActivityDiagram.PetriNet (convertToSimple)
 import Modelling.PetriNet.Types (Net (..))
 import Data.Graph (Graph, graphFromEdges')
 import Data.Graph.Automorphism          (automorphisms, isIsomorphic)

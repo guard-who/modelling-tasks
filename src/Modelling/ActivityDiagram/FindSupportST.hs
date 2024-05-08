@@ -40,7 +40,7 @@ import Modelling.ActivityDiagram.Datatype (
   AdNode (..),
   UMLActivityDiagram (..),
   )
-import Modelling.ActivityDiagram.Petrinet (PetriKey(..), convertToPetrinet)
+import Modelling.ActivityDiagram.PetriNet (PetriKey(..), convertToPetriNet)
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
@@ -48,7 +48,7 @@ import Modelling.ActivityDiagram.Config (
   checkAdConfig,
   defaultAdConfig,
   )
-import Modelling.ActivityDiagram.Alloy (modulePetrinet)
+import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
   PlantUMLConvConf (..),
@@ -133,7 +133,7 @@ findSupportSTConfig' FindSupportSTConfig {
     avoidAddingSinksForFinals
   }
   | Just instances <- maxInstances, instances < 1
-    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
     = Just "Setting the parameter 'activityFinalsExist' to True implies having at least 1 Activity Final Node"
   | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
@@ -151,7 +151,7 @@ findSupportSTAlloy FindSupportSTConfig {
   avoidAddingSinksForFinals
 }
   = adConfigToAlloy modules preds adConfig
-  where modules = modulePetrinet
+  where modules = modulePetriNet
         preds =
           [i|
             not supportSTAbsent
@@ -173,7 +173,7 @@ data FindSupportSTSolution = FindSupportSTSolution {
 findSupportSTSolution :: FindSupportSTInstance -> FindSupportSTSolution
 findSupportSTSolution task =
   findSupportSTSolution' @PetriLike @SimpleNode
-  $ convertToPetrinet $ activityDiagram task
+  $ convertToPetriNet $ activityDiagram task
 
 findSupportSTSolution'
   :: Net p n
@@ -243,11 +243,11 @@ findSupportSTEvaluation task sub = addPretext $ do
       sol = findSupportSTSolution task
       solution = findSupportSTSolutionMap sol
       sub' = M.keys $ findSupportSTSolutionMap sub
-      msolutionString =
+      maybeSolutionString =
         if showSolution task
         then Just $ show sol
         else Nothing
-  multipleChoice as msolutionString solution sub'
+  multipleChoice as maybeSolutionString solution sub'
 
 findSupportSTSolutionMap
   :: FindSupportSTSolution
@@ -275,12 +275,12 @@ getFindSupportSTTask
   => FindSupportSTConfig
   -> RandT g m FindSupportSTInstance
 getFindSupportSTTask config = do
-  instas <- getInstances
+  alloyInstances <- getInstances
     (maxInstances config)
     Nothing
     $ findSupportSTAlloy config
-  rinstas <- shuffleM instas >>= mapM parseInstance
-  ad <- mapM (fmap snd . shuffleAdNames) rinstas >>= getFirstInstance
+  randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
+  ad <- mapM (fmap snd . shuffleAdNames) randomInstances >>= getFirstInstance
   return $ FindSupportSTInstance {
     activityDiagram = ad,
     plantUMLConf =

@@ -31,9 +31,9 @@ main = do
     [pathToFolder] -> do
       inst <- getInstances (Just 1000) $ adConfigToAlloy "" "" defaultAdConfig
       ad <- mapM parseInstance inst
-      let plantumlstring = map convertToPlantUML ad
+      let plantUmlString = map convertToPlantUML ad
       writeFile (pathToFolder </> "Stats.txt") $ isomorphismStats ad
-      svg <- mapM (drawPlantUMLDiagram SVG) plantumlstring
+      svg <- mapM (drawPlantUMLDiagram SVG) plantUmlString
       writeFilesToSubfolder svg pathToFolder "Debug" "Instance" ".svg"
     _ -> error "usage: one parameter required: FilePath (Output Folder)"
 

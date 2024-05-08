@@ -52,9 +52,10 @@ parseValue = value <* skipSpaceChars
 
 parseString :: Parser String
 parseString =
-  between (char '"') (char '"') parseAlphaNums <|>
-  parseAlphaNums
-  where parseAlphaNums = many1 (letter <|> digit)
+  between (char '"') (char '"') parseAlphaNum <|>
+  parseAlphaNum
+  where
+    parseAlphaNum = many1 (letter <|> digit)
 
 parseTuple :: Parser (ParseValue, ParseValue)
 parseTuple = between (char '(' <* skipSpaceChars) (char ')')

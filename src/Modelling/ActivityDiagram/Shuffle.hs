@@ -9,7 +9,7 @@ module Modelling.ActivityDiagram.Shuffle (
 
 import qualified Data.Map as M ((!), fromList, keys)
 import qualified Modelling.ActivityDiagram.Datatype as Ad (AdNode (label))
-import qualified Modelling.ActivityDiagram.Petrinet as PK (PetriKey(label))
+import qualified Modelling.ActivityDiagram.PetriNet as PK (PetriKey(label))
 import qualified Modelling.PetriNet.Types as PN (
   Net (..)
   )
@@ -20,7 +20,7 @@ import Modelling.ActivityDiagram.Datatype (
   AdConnection (..),
   isActionNode, isObjectNode)
 
-import Modelling.ActivityDiagram.Petrinet (PetriKey(..))
+import Modelling.ActivityDiagram.PetriNet (PetriKey(..))
 import Modelling.PetriNet.Types (
   Net,
   )

@@ -47,7 +47,7 @@ abstract sig PlantUMLSequenceBlocks extends PlantUMLBlocks {}        {
         nodes in (ActionObjectNodes + FinalNodes)
 }
 
-//Represents a plantuml repeat block
+// Represents a plantUml repeat block
 abstract sig PlantUMLRepeatBlocks extends PlantUMLBlocks {
         repeatStart : one MergeNodes,
         body : one PlantUMLBlocks,
@@ -62,8 +62,8 @@ abstract sig PlantUMLRepeatBlocks extends PlantUMLBlocks {
         repeatEnd in outgoingEdgeFromThis[body]                                                 //Edge from repeat body to decision node
 }
 
-//Represents a plantuml if/else block
-abstract sig PlantUMLIfElseBlocks extends PlantUMLBlocks {
+// Represents a plantUml if/else block
+abstract sig PlantUmlIfElseBlocks extends PlantUMLBlocks {
         ifElseStart : one DecisionNodes,
         ifBody : one PlantUMLBlocks,
         elseBody : one PlantUMLBlocks,
@@ -81,7 +81,7 @@ abstract sig PlantUMLIfElseBlocks extends PlantUMLBlocks {
 }
 
 
-//Represents a plantuml fork block
+// Represents a plantUml fork block
 abstract sig PlantUMLForkBlocks extends PlantUMLBlocks {
         forkStart : one ForkNodes,
         bodies : disj set PlantUMLBlocks,
@@ -103,8 +103,8 @@ abstract sig PlantUMLForkBlocks extends PlantUMLBlocks {
 //TODO: Check assumptions with asserts
 
 //pred generate {
-//        some ie1 : PlantUMLIfElseBlocks | ie1 in PlantUMLForkBlocks.bodies
+//        some ie1 : PlantUmlIfElseBlocks | ie1 in PlantUMLForkBlocks.bodies
 //        some fb1: PlantUMLForkBlocks | fb1 in PlantUMLRepeatBlocks.body
 //}
 //
-//run generate for 15 but 6 Int, exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUMLIfElseBlocks, exactly 1 PlantUMLForkBlocks
+//run generate for 15 but 6 Int, exactly 1 PlantUMLRepeatBlocks, exactly 1 PlantUmlIfElseBlocks, exactly 1 PlantUMLForkBlocks
