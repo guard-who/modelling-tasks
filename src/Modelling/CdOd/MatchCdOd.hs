@@ -593,8 +593,8 @@ getRandomTask config = do
         (classConfig config)
         defaultProperties
         (withNonTrivialInheritance config)
-  instas <- getInstances (maxInstances config) (timeout config) alloyCode
-  randomInstances <- shuffleM instas
+  alloyInstances <- getInstances (maxInstances config) (timeout config) alloyCode
+  randomInstances <- shuffleM alloyInstances
   ods <- getODsFor config { timeout = Nothing } randomInstances
   maybe (error "could not find instance") return ods
 
@@ -607,8 +607,8 @@ getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
   [cd1, cd2, cd3] <- map changeClassDiagram . instanceChangesAndCds
     <$> getChangesAndCds cd
-  instas <- getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
-  maybeRandomInstances <- takeRandomInstances instas
+  alloyInstances <- getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
+  maybeRandomInstances <- takeRandomInstances alloyInstances
   case maybeRandomInstances of
     Nothing      -> getODsFor config cds
     Just randomInstances -> return $ Just (
@@ -620,8 +620,8 @@ getChangesAndCds
   :: (MonadAlloy m, MonadThrow m)
   => AlloyInstance
   -> m ClassDiagramInstance
-getChangesAndCds insta = do
-  cdInstance <- fromInstance insta
+getChangesAndCds alloyInstance = do
+  cdInstance <- fromInstance alloyInstance
   let cd  = instanceClassDiagram cdInstance
       cs  = classNames cd
       es  = instanceRelationshipNames cdInstance
@@ -696,17 +696,20 @@ getODInstances config cd1 cd2 cd3 numClasses = do
 
 takeRandomInstances
   :: (MonadRandom m, MonadFail m) => Map [Int] [a] -> m (Maybe [([Int], a)])
-takeRandomInstances instas = do
-  let takes = [ [takeL [1] x, takeL [2] y, takeL [1,2] z, takeL [] u]
-              | x <- [0 .. min 2 (length $ fromJust $ M.lookup [1]   instas)]
-              , y <- [0 .. min 2 (length $ fromJust $ M.lookup [2]   instas)]
-              , z <- [0 .. min 2 (length $ fromJust $ M.lookup [1,2] instas)]
-              , u <- [0 .. min 2 (length $ fromJust $ M.lookup []    instas)]
-              , 5 == x + y + z + u ]
-      takeL k n = take n . fmap (k,) . fromJust . M.lookup k
+takeRandomInstances alloyInstances =
   case takes of
     []  -> return Nothing
     _:_ -> Just <$> do
-      randomInstances <- mapM shuffleM instas
+      randomInstances <- mapM shuffleM alloyInstances
       ts:_    <- shuffleM takes
       shuffleM $ concatMap ($ randomInstances) ts
+  where
+    takes =
+      [ [takeL [1] x, takeL [2] y, takeL [1,2] z, takeL [] u]
+      | x <- [0 .. min 2 (length $ fromJust $ M.lookup [1]   alloyInstances)]
+      , y <- [0 .. min 2 (length $ fromJust $ M.lookup [2]   alloyInstances)]
+      , z <- [0 .. min 2 (length $ fromJust $ M.lookup [1,2] alloyInstances)]
+      , u <- [0 .. min 2 (length $ fromJust $ M.lookup []    alloyInstances)]
+      , 5 == x + y + z + u
+      ]
+    takeL k n = take n . fmap (k,) . fromJust . M.lookup k

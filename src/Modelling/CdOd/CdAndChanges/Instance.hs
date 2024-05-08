@@ -156,11 +156,11 @@ fromInstance
   :: MonadThrow m
   => AlloyInstance
   -> m ClassDiagramInstance
-fromInstance insta = do
-  es <- instanceToEdges insta
-  cs <- instanceToChanges insta
-  namesOfClasses <- instanceToNamesOf insta "Class"
-  namesOfNonInheritances <- instanceToNamesOf insta "NonInheritance"
+fromInstance alloyInstance = do
+  es <- instanceToEdges alloyInstance
+  cs <- instanceToChanges alloyInstance
+  namesOfClasses <- instanceToNamesOf alloyInstance "Class"
+  namesOfNonInheritances <- instanceToNamesOf alloyInstance "NonInheritance"
   let baseCd = ClassDiagram {
         classNames = namesOfClasses,
         relationships =
@@ -193,16 +193,16 @@ instanceToNamesOf
   => AlloyInstance
   -> String
   -> m [String]
-instanceToNamesOf insta what = do
-  x <- lookupSig (scoped "this" what) insta
+instanceToNamesOf alloyInstance what = do
+  x <- lookupSig (scoped "this" what) alloyInstance
   map objectName . S.toList <$> getSingleAs "" (return .: Object) x
 
 instanceToChanges
   :: MonadThrow m
   => AlloyInstance
   -> m [Change Object]
-instanceToChanges insta = do
-  c'      <- lookupSig (scoped "this" "Change") insta
+instanceToChanges alloyInstance = do
+  c'      <- lookupSig (scoped "this" "Change") alloyInstance
   cs      <- S.toList <$> getSingleAs "" (return .: Object) c'
   cAdd    <- getRelation "add" c'
   cRemove <- getRelation "remove" c'
@@ -257,7 +257,7 @@ instanceToEdges'
   -> Map Object Object
   -> Map Object Object
   -> m [(Object, Relationship String String)]
-instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
+instanceToEdges' alloyInstance rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
   inheritances <- getInheritances
   compositions <- getRelationships toComposition "Composition"
   aggregations <- getRelationships toAggregation "Aggregation"
@@ -265,7 +265,7 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
   return $ inheritances ++ compositions ++ aggregations ++ associations
   where
     getInheritances = do
-      inheritance' <- lookupSig (scoped "this" "Inheritance") insta
+      inheritance' <- lookupSig (scoped "this" "Inheritance") alloyInstance
       inheritances <-
         S.toList <$> getSingleAs "" (return .: Object) inheritance'
       forM inheritances $ \inheritance -> (inheritance,) <$> do
@@ -276,7 +276,7 @@ instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
           superClass = to
           }
     getRelationships f relationshipKind = do
-      relationship' <- lookupSig (scoped "this" relationshipKind) insta
+      relationship' <- lookupSig (scoped "this" relationshipKind) alloyInstance
       relationships' <-
         S.toList <$> getSingleAs "" (return .: Object) relationship'
       forM relationships' $ \relationship -> (relationship,) <$> do

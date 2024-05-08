@@ -61,8 +61,8 @@ getRandomTask
   -> RandT g m (Map Int Cd, Map Char ([Int], AlloyInstance))
 getRandomTask searchSpace config = do
   (cd1, cd2, cd3, numClasses) <- getRandomCDs searchSpace config
-  instas <- getODInstances config cd1 cd2 cd3 numClasses
-  maybeRandomInstances <- takeRandomInstances instas
+  alloyInstances <- getODInstances config cd1 cd2 cd3 numClasses
+  maybeRandomInstances <- takeRandomInstances alloyInstances
   case maybeRandomInstances of
     Nothing      -> getRandomTask searchSpace config
     Just randomInstances -> pure

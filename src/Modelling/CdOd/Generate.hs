@@ -40,8 +40,8 @@ generateCds
   -> m [AlloyInstance]
 generateCds withNonTrivialInheritance config props maxInstances to = do
   let alloyCode = transformNoChanges config props withNonTrivialInheritance
-  instas <- getInstances maxInstances to alloyCode
-  shuffleM instas
+  alloyInstances <- getInstances maxInstances to alloyCode
+  shuffleM alloyInstances
 
 instanceToCd :: MonadThrow m => AlloyInstance -> m Cd
 instanceToCd alloyInstance = do

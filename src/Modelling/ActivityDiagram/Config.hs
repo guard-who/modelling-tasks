@@ -142,7 +142,7 @@ adConfigScope AdConfig {
 {-
  As of now, the highest Int-Value used in the Alloy Specification is 3 (#bodies in ForkBlocks),
  therefore 3 Bit (Two's Complement) should be enough.
- If this number is made configurable or the specification is changed to use lartger Int values,
+ If this number is made configurable or the specification is changed to use larger Int values,
  this should be adapted.
 -}
 adConfigBitWidth :: AdConfig -> Int

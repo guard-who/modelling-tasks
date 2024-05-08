@@ -150,9 +150,9 @@ selectASAlloy SelectASConfig {
     adConfig,
     objectNodeOnEveryPath
   }
-  = adConfigToAlloy modules preds adConfig
+  = adConfigToAlloy modules predicates adConfig
   where modules = moduleActionSequencesRules
-        preds =
+        predicates =
           [i|
             noActivityFinalNodes
             someActionNodesExistInEachBlock

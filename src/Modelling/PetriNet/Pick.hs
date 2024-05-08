@@ -157,9 +157,9 @@ pickEvaluation task = do
   let what = translations $ do
         english "petri net"
         german "Petrinetz"
-  singleChoice what msolutionString solution
+  singleChoice what maybeSolutionString solution
   where
-    msolutionString =
+    maybeSolutionString =
       if withSol
       then Just $ show solution
       else Nothing

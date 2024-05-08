@@ -48,14 +48,14 @@ spec =
         validActionSequence (generateActionSequence testDiagram) testDiagram `shouldBe` (True::Bool)
     context "on a list of generated diagrams" $
       it "is consistent with the function generateActionSequence" $ do
-        let spec' = adConfigToAlloy modules preds defaultAdConfig
+        let spec' = adConfigToAlloy modules predicates defaultAdConfig
             depth = 10
         inst <- getInstances (Just $ fromIntegral depth) spec'
         ad <- mapM parseInstance inst
         (length inst, all p ad) `shouldBe` (depth, True)
       where
         modules = moduleActionSequencesRules
-        preds = "someActionNodesExistInEachBlock"
+        predicates = "someActionNodesExistInEachBlock"
         p x = validActionSequence (generateActionSequence x) x
 
 testDiagram :: UMLActivityDiagram

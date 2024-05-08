@@ -244,7 +244,7 @@ assertReachPoints
   -> [b]
   -> Either Int a
   -> Rated m
-assertReachPoints p len inst ts eitherOutcome = do
+assertReachPoints p size inst ts eitherOutcome = do
   let points = either
         partly
         (\x -> if p inst x then 1 else partly $ length ts)
@@ -252,7 +252,7 @@ assertReachPoints p len inst ts eitherOutcome = do
   unless (points >= 1 % 3) $ refuse $ pure ()
   pure points
   where
-    partly x = partiallyCorrect x $ len inst
+    partly x = partiallyCorrect x $ size inst
     partiallyCorrect x y = min 0.6 $
       if y == 0
       then 0

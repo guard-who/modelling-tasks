@@ -172,7 +172,7 @@ checkSelectPetriConfig' SelectPetriConfig {
     noActivityFinalInForkBlocks
   }
   | isJust maxInstances && fromJust maxInstances < 1
-    = Just "The parameter 'maxInstances' must either be set to a postive value or to Nothing"
+    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | numberOfWrongAnswers < 1
     = Just "The parameter 'numberOfWrongAnswers' must be set to a positive value"
   | numberOfModifications < 1
@@ -205,9 +205,9 @@ selectPetriAlloy SelectPetriConfig {
   avoidAddingSinksForFinals,
   noActivityFinalInForkBlocks
 }
-  = adConfigToAlloy modules preds adConfig
+  = adConfigToAlloy modules predicates adConfig
   where modules = modulePetriNet
-        preds =
+        predicates =
           [i|
             #{f supportSTAbsent "supportSTAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
@@ -379,11 +379,11 @@ selectPetriEvaluation task n = addPretext $ do
         german "Petrinetz"
       solMap = petriNets task
       (solution, _) = head $ M.toList $ M.map snd $ M.filter fst solMap
-      msolutionString =
+      maybeSolutionString =
         if showSolution task
         then Just $ show solution
         else Nothing
-  singleChoice as msolutionString solution n
+  singleChoice as maybeSolutionString solution n
 
 selectPetriSolution
   :: SelectPetriInstance

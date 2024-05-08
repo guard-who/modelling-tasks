@@ -190,9 +190,9 @@ matchPetriAlloy MatchPetriConfig {
   avoidAddingSinksForFinals,
   noActivityFinalInForkBlocks
 }
-  = adConfigToAlloy modules preds adConfig
+  = adConfigToAlloy modules predicates adConfig
   where modules = modulePetriNet
-        preds =
+        predicates =
           [i|
             #{f supportSTAbsent "supportSTAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
@@ -400,11 +400,11 @@ getMatchPetriTask
   => MatchPetriConfig
   -> RandT g m MatchPetriInstance
 getMatchPetriTask config = do
-  instas <- getInstances
+  alloyInstances <- getInstances
     (maxInstances config)
     Nothing
     $ matchPetriAlloy config
-  randomInstances <- shuffleM instas >>= mapM parseInstance
+  randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
   activityDiagrams <- mapM (fmap snd . shuffleAdNames) randomInstances
   (ad, petri) <- getFirstInstance
         $ filter (not . petriHasMultipleAutomorphisms . snd)

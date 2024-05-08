@@ -150,13 +150,13 @@ assertSimilar debugFile context deviation expected actual = do
         (esDiff, asDiff) = (preE ++) `both` diffWithContext context (tail xs)
     debugWriteFile debugFile expected actual
     assertEqual "" esDiff asDiff
-  let lenEs = length es
-      lenAs = length as
-  unless (lenEs == lenAs) $ do
+  let lengthEs = length es
+      lengthAs = length as
+  unless (lengthEs == lengthAs) $ do
     let (expectedEnd, actualEnd) =
-          if lenEs < lenAs
-          then ("..", ".." ++ showOriginal (drop lenEs as))
-          else (".." ++ showOriginal (drop lenAs es), "..")
+          if lengthEs < lengthAs
+          then ("..", ".." ++ showOriginal (drop lengthEs as))
+          else (".." ++ showOriginal (drop lengthAs es), "..")
     debugWriteFile debugFile expected actual
     assertEqual "" expectedEnd actualEnd
   where
@@ -170,12 +170,12 @@ assertSimilar debugFile context deviation expected actual = do
     diffWithContext c ([] : xss) = diffWithContext c xss
     diffWithContext c (((e, a) : xs) : xss) =
       let same = showOriginal $ map fst xs
-          lenSame = length same
-          (es, as) = diffWithContext (c - lenSame) xss
+          lengthSame = length same
+          (es, as) = diffWithContext (c - lengthSame) xss
           sameWithDots = take context same ++ ".."
           originalE = showOriginal [e]
           originalA = showOriginal [a]
-      in if lenSame > context
+      in if lengthSame > context
          then (originalE ++ sameWithDots, originalA ++ sameWithDots)
          else (originalE ++ same ++ es, originalA ++ same ++ as)
 

@@ -265,11 +265,11 @@ getEnterASTask
   => EnterASConfig
   -> RandT g m EnterASInstance
 getEnterASTask config = do
-  instas <- getInstances
+  alloyInstances <- getInstances
     (maxInstances config)
     Nothing
     $ enterASAlloy config
-  randomInstances <- shuffleM instas >>= mapM parseInstance
+  randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
   ad <- mapM (fmap snd . shuffleAdNames) randomInstances
   getFirstInstance
         $ filter (isNothing . (`checkEnterASInstanceForConfig` config))

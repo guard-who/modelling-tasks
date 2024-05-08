@@ -122,14 +122,14 @@ toFindEvaluation
 toFindEvaluation what withSol (ft, st) (fi, si) = do
   let correct = ft == fi && st == si || ft == si && st == fi
       points = if correct then 1 else 0
-      msolutionString =
+      maybeSolutionString =
         if withSol
         then Just $ show $ transitionPairShow (ft, st)
         else Nothing
   assert correct $ translate $ do
     english $ "Given transitions " ++ localise English what ++ "?"
     german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
-  return (msolutionString, points)
+  pure (maybeSolutionString, points)
   where
     assert = continueOrAbort withSol
 

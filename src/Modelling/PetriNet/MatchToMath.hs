@@ -496,11 +496,11 @@ evaluation
   -> Rated m
 evaluation what task = do
   let solution = matchSolution task
-      msolution =
+      maybeSolution =
         if showSolution task
         then Just $ show solution
         else Nothing
-  singleChoice what msolution solution
+  singleChoice what maybeSolution solution
 
 checkGraphToMathConfig :: MathConfig -> Maybe String
 checkGraphToMathConfig c@MathConfig {

@@ -150,9 +150,9 @@ findSupportSTAlloy FindSupportSTConfig {
   activityFinalsExist,
   avoidAddingSinksForFinals
 }
-  = adConfigToAlloy modules preds adConfig
+  = adConfigToAlloy modules predicates adConfig
   where modules = modulePetriNet
-        preds =
+        predicates =
           [i|
             not supportSTAbsent
             #{f activityFinalsExist "activityFinalsExist"}

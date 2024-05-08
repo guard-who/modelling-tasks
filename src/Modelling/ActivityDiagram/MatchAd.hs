@@ -119,9 +119,9 @@ matchAdAlloy MatchAdConfig {
     adConfig,
     noActivityFinalInForkBlocks
   }
-  = adConfigToAlloy "" preds adConfig
+  = adConfigToAlloy "" predicates adConfig
   where
-    preds =
+    predicates =
       [i|
         #{f noActivityFinalInForkBlocks "noActivityFinalInForkBlocks"}
       |]
