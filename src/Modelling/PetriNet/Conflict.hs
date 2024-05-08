@@ -477,7 +477,7 @@ petriNetConflictAlloy
   -- ^ Right for find task; Left for pick task
   -> String
 petriNetConflictAlloy basicC changeC conflictC uniqueConflictP specific
-  = [i|module PetriNetConfl
+  = [i|module PetriNetConflict
 
 #{modulePetriSignature}
 #{either (const sigs) (const modulePetriAdditions) specific}

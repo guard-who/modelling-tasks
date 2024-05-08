@@ -1,4 +1,4 @@
-module uml/cd/assoclimits
+module uml/cd/relationshipLimits
 
 abstract sig Class {}
 

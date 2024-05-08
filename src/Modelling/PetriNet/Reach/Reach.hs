@@ -47,7 +47,7 @@ import Modelling.PetriNet.Reach.Type (
 
 import Control.Applicative              (Alternative)
 import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad                    (forM, unless, when)
+import Control.Monad                    (forM, unless)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra              (whenJust)
 import Control.Monad.Output (
@@ -67,7 +67,7 @@ import Control.Monad.Output.Generic (
 import Control.Monad.Random             (mkStdGen)
 import Control.Monad.Trans.Random       (evalRand)
 import Data.Bifunctor                   (Bifunctor (second))
-import Data.Either                      (isRight)
+import Data.Either.Combinators          (whenRight)
 import Data.Foldable                    (traverse_)
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (minimumBy)
@@ -127,12 +127,12 @@ reportReachFor
   -> Maybe Int
   -> Maybe (Either FilePath String)
   -> LangM m
-reportReachFor img noLonger lengthHint minLengthHint mgoal = do
+reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
   paragraph $ translate $ do
     english "For the Petri net"
     german "Gesucht ist für das Petrinetz"
   image img
-  paragraph $ case mgoal of
+  paragraph $ case maybeGoal of
     Nothing -> translate $ do
       english "a transition sequence is sought which leads to a marking without successors (i.e., to a deadlock)."
       german "eine Transitionsfolge, die zu einer Markierung ohne Nachfolger (also zu einem Deadlock) führt."
@@ -222,12 +222,12 @@ reachEvaluation path inst ts =
      indent $ text $ show (start n)
      pure ()
   $>> executes path (drawUsing inst) n ts
-  $>>= \eout -> when (isRight eout) (
-    yesNo (eout == Right (goal inst)) $ translate $ do
+  $>>= \eitherOutcome -> whenRight eitherOutcome (\outcome ->
+    yesNo (outcome == goal inst) $ translate $ do
       english "Reached target marking?"
       german "Zielmarkierung erreicht?"
     )
-  $>> assertReachPoints ((==) . goal) minLength inst ts eout
+  $>> assertReachPoints ((==) . goal) minLength inst ts eitherOutcome
   where
     n = petriNet inst
 
@@ -244,11 +244,11 @@ assertReachPoints
   -> [b]
   -> Either Int a
   -> Rated m
-assertReachPoints p len inst ts eout = do
+assertReachPoints p len inst ts eitherOutcome = do
   let points = either
         partly
         (\x -> if p inst x then 1 else partly $ length ts)
-        eout
+        eitherOutcome
   unless (points >= 1 % 3) $ refuse $ pure ()
   pure points
   where

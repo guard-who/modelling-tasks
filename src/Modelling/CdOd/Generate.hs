@@ -38,16 +38,16 @@ generateCds
   -> Maybe Integer
   -> Maybe Int
   -> m [AlloyInstance]
-generateCds withNonTrivialInheritance config props maxInsts to = do
+generateCds withNonTrivialInheritance config props maxInstances to = do
   let alloyCode = transformNoChanges config props withNonTrivialInheritance
-  instas <- getInstances maxInsts to alloyCode
+  instas <- getInstances maxInstances to alloyCode
   shuffleM instas
 
 instanceToCd :: MonadThrow m => AlloyInstance -> m Cd
-instanceToCd rinsta = do
-  cd <- instanceClassDiagram <$> fromInstance rinsta
-  let classRenamings = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
+instanceToCd alloyIntance = do
+  cd <- instanceClassDiagram <$> fromInstance alloyIntance
+  let classRenamingMap = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
       relationshipNames = mapMaybe relationshipName $ relationships cd
-      relationshipRenamings =
+      relationshipRenamingMap =
         BM.fromList $ zip relationshipNames $ map pure ['z', 'y' ..]
-  renameClassesAndRelationships classRenamings relationshipRenamings cd
+  renameClassesAndRelationships classRenamingMap relationshipRenamingMap cd

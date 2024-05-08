@@ -1,6 +1,6 @@
-module uml/cd/CDand3Changes
+module uml/cd/generate
 
-open uml/cd/assoclimits
+open uml/cd/relationshipLimits
 
 sig Inheritance extends Relationship {}
 

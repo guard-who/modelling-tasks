@@ -139,7 +139,7 @@ tokenChangeLaTeX
   -> [(Formula, Formula)]
 tokenChangeLaTeX ps ts net = (inT &&& outT) <$> ts
   where
-    inT  t = "^{\\bullet}" ++ t ++ tkns (`flow` t)
-    outT t = t ++ "^{\\bullet}" ++ tkns (flow t)
-    tkns f  = " = " ++ parenthesise (intercalate "," $ show <$> flowList f)
+    inT  t = "^{\\bullet}" ++ t ++ tokens (`flow` t)
+    outT t = t ++ "^{\\bullet}" ++ tokens (flow t)
+    tokens f  = " = " ++ parenthesise (intercalate "," $ show <$> flowList f)
     flowList f = (\p -> fromMaybe 0 $ f p net) <$> ps

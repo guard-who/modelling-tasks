@@ -63,14 +63,14 @@ netProperties transform =
     prop "deleteNode" $ \x n -> transform (deleteNode x n) == deleteNode x (transform n)
     prop "outFlow" $ \x n -> outFlow x n == outFlow x (transform n)
     prop "mapNet" $ \n ->
-      let f = fromMaybe "" . mreverseNames n
+      let f = fromMaybe "" . maybeReverseNames n
       in transform (mapNet f n) == mapNet f (transform n)
     prop "traverseNet" $ \n ->
-      let f = mreverseNames n
+      let f = maybeReverseNames n
       in fmap transform (traverseNet f n) == traverseNet f (transform n)
 
-mreverseNames :: (Net p n, Ord b) => p n b -> b -> Maybe b
-mreverseNames n x =
+maybeReverseNames :: (Net p n, Ord b) => p n b -> b -> Maybe b
+maybeReverseNames n x =
   let xs = M.keys (nodes n)
   in lookup x (zip xs $ reverse xs)
 

@@ -136,8 +136,8 @@ enforceConstraints underDefault activated BasicConfig {
     t >= #{fst tokensOverall} and t <= #{snd tokensOverall}
   all p : #{places} | p.#{tokens} =< #{maxTokensPerPlace}
   all weight : #{nodes}.#{flow}[#{nodes}] | weight =< #{maxFlowPerEdge}
-  let theflow = (sum f, t : #{nodes} | f.#{flow}[t]) |
-    theflow >= #{fst flowOverall} and #{snd flowOverall} >= theflow
+  let theFlow = (sum f, t : #{nodes} | f.#{flow}[t]) |
+    theFlow >= #{fst flowOverall} and #{snd flowOverall} >= theFlow
   \##{activated} >= #{atLeastActive}
   theActivated#{upperFirst which}Transitions[#{activated}]
   #{connected (prepend "graphIsConnected") isConnected}

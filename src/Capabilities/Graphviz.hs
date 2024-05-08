@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE Rank2Types #-}
 -- | Defines a Monad context for calling graphviz.
 
 module Capabilities.Graphviz (

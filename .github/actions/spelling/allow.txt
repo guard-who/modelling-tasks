@@ -33,6 +33,7 @@ Programmierparadigmen
 QDiagram
 Rightarrow
 Sfdp
+Transitionsfolge
 UML
 Verzweigungsknoten
 Vielfachheit
@@ -78,6 +79,7 @@ https
 includegraphics
 ispell
 konfliktauslösenden
+labelbgnode
 lastline
 ldots
 lstinline

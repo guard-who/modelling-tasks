@@ -37,11 +37,11 @@ drawToFile
   -> Int
   -> Net s t
   -> m FilePath
-drawToFile hidePNames path cmd x net = cacheNet
+drawToFile hidePlaceNames path cmd x net = cacheNet
     (path ++ "graph" ++ show x)
     id
     (toPetriLike show show net)
-    hidePNames
+    hidePlaceNames
     False
     True
     cmd
@@ -63,15 +63,17 @@ toPetriLike fp ft n = PetriLike $ M.fromList $ ps ++ ts
       let i = mark (start n) p
           filterC f = filter f $ connections n
           countP = length . filter (p ==)
-          fout = [ (ft t, countP xs)
-                 | (xs,t,_) <- filterC (\(from,_,_) -> p `elem` from)]
-      return (fp p, SimplePlace i (M.fromList fout))
+          outcome =
+            [ (ft t, countP xs)
+            | (xs,t,_) <- filterC (\(from,_,_) -> p `elem` from)
+            ]
+      return (fp p, SimplePlace i (M.fromList outcome))
     ts = do
       t <- S.toList $ transitions n
       let filterC = filter (\(_,x,_) -> x == t) $ connections n
-          fout =
+          outcome =
             [ (fp $ head xs', length xs')
             | (_,_,xs) <- filterC,
               xs' <- group $ sort xs
             ]
-      return (ft t, SimpleTransition (M.fromList fout))
+      return (ft t, SimpleTransition (M.fromList outcome))

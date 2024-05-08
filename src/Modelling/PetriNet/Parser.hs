@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-|
 A module for parsing Petri Alloy instances into Haskell representations defined
 by the 'Modelling.PetriNet.Types' module.
@@ -113,8 +114,8 @@ parseNet
   -> m (p n Object)
 parseNet flowSetName tokenSetName inst = do
   nodes  <- singleSig inst "this" "Nodes" ""
-  tkns   <- doubleSig inst "this" "Places" tokenSetName
-  let tokens = relToMap (second oIndex) tkns
+  rawTokens <- doubleSig inst "this" "Places" tokenSetName
+  let tokens = relToMap (second oIndex) rawTokens
   flow   <- tripleSig inst "this" "Nodes" flowSetName
   return
     . foldrFlip (\(x, y, z) -> alterFlow x (oIndex z) y) flow
@@ -153,16 +154,13 @@ On error a 'Left' error message will be returned.
 parseChange :: MonadThrow m => AlloyInstance -> m (PetriChange Object)
 parseChange inst = do
   flow <- tripleSig inst "this" "Nodes" "flowChange"
-  tkn  <- doubleSig inst "this" "Places" "tokenChange"
-  let tknM = relToMap (second oIndex) tkn
-  tknC   <- asSingleton `mapM` tknM
-  let flowM = relToMap tripleToOut flow
-  let flowM' = relToMap id <$> flowM
-  flowC  <- mapM asSingleton `mapM` flowM'
-  return $ Change {
-    tokenChange = tknC,
-    flowChange  = flowC
-    }
+  token <- doubleSig inst "this" "Places" "tokenChange"
+  let tokenMap = relToMap (second oIndex) token
+  tokenChange <- asSingleton `mapM` tokenMap
+  let flowMap = relToMap tripleToOut flow
+  let flowMap' = relToMap id <$> flowMap
+  flowChange  <- mapM asSingleton `mapM` flowMap'
+  return $ Change {..}
   where
     tripleToOut (x, y, z) = (x, (y, oIndex z))
 
@@ -252,16 +250,16 @@ netToGr
   :: (Monad m, Net p n, Ord a)
   => p n a
   -> m (Gr (a, Maybe Int) Int)
-netToGr plike = do
-  nodes <- Map.foldrWithKey convertNode (return []) $ PN.nodes plike
-  let edges = Map.foldrWithKey convertTransition [] $ PN.nodes plike
+netToGr petriLike = do
+  nodes <- Map.foldrWithKey convertNode (return []) $ PN.nodes petriLike
+  let edges = Map.foldrWithKey convertTransition [] $ PN.nodes petriLike
   return $ mkGraph nodes edges
   where
     convertNode k x ns = do
       ns' <- ns
       return $ (indexOf k, (k, maybeInitial x)):ns'
     convertTransition k _ ns =
-      Map.foldrWithKey (convertEdge k) ns $ outFlow k plike
-    indexOf x = Map.findIndex x $ PN.nodes plike
+      Map.foldrWithKey (convertEdge k) ns $ outFlow k petriLike
+    indexOf x = Map.findIndex x $ PN.nodes petriLike
     convertEdge source target flow rs =
       (indexOf source, indexOf target, flow) : rs

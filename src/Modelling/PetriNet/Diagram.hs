@@ -103,12 +103,12 @@ getNet
   => (AlloyInstance -> m (t Object))
   -> AlloyInstance
   -> m (p n String, t String)
-getNet parseInst inst = do
+getNet parseSpecial inst = do
   (net, rename) <-
     getNetWith "flow" "tokens" inst
-  conc <- parseInst inst
-  rconc <- traverse rename conc
-  return (net, rconc)
+  special <- parseSpecial inst
+  renamedSpecial <- traverse rename special
+  return (net, renamedSpecial)
 
 getDefaultNet
   :: (MonadThrow m, Net p n)
@@ -158,10 +158,10 @@ drawGraph
   -- ^ the graph consisting of nodes and edges
   -> Diagram B
 drawGraph labelOf hidePlaceNames hideTransitionNames hide1 preparedFont graph =
-  gedges # frame 1
+  graphEdges' # frame 1
   where
     (nodes, edges) = GV.getGraph graph
-    gnodes = M.foldlWithKey
+    graphNodes' = M.foldlWithKey
       (\g l p -> g
         `atop`
         drawNode hidePlaceNames hideTransitionNames preparedFont (withLabel l) p)
@@ -200,10 +200,10 @@ drawNode
   -- ^ where to place the node
   -> Diagram B
 drawNode _ hideTransitionName preparedFont (l, Nothing) p  = place
-  (addTName $ rect 20 20 # lwL 0.5 # named l # svgClass "rect")
+  (addTransitionName $ rect 20 20 # lwL 0.5 # named l # svgClass "rect")
   p
   where
-    addTName
+    addTransitionName
       | hideTransitionName = id
       | otherwise = (center (text' preparedFont 18 l) `atop`)
 drawNode hidePlaceName _ preparedFont (l, Just i) p

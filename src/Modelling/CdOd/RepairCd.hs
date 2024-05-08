@@ -750,13 +750,13 @@ repairIncorrect allowed config objectProperties preference maxInstances to = do
     article = toArticleToUse preference
     getInstanceWithODs _  [] =
       repairIncorrect allowed config objectProperties preference maxInstances to
-    getInstanceWithODs propertyChanges (rinsta:rinstas) = do
-      cdInstance <- getChangesAndCds rinsta
+    getInstanceWithODs propertyChanges (alloyInstance : alloyInstances) = do
+      cdInstance <- getChangesAndCds alloyInstance
       let cd = instanceClassDiagram cdInstance
           chs = instanceChangesAndCds cdInstance
       hints <- zipWithM getOdOrImprovedCd propertyChanges chs
       case sequenceA hints of
-        Nothing -> getInstanceWithODs propertyChanges rinstas
+        Nothing -> getInstanceWithODs propertyChanges alloyInstances
         Just odsAndCds -> do
           let odsAndCdWithArticle = map (first addArticle) odsAndCds
               chs' = map (uniformlyAnnotateChangeAndCd article) chs

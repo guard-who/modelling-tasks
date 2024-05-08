@@ -45,9 +45,9 @@ hasMinTransitionLength
   -> Net s Transition
   -> Bool
 hasMinTransitionLength p ts minL n =
-  not (any (satisfiesAtAnyState p n) tvs)
+  not (any (satisfiesAtAnyState p n) variants)
   where
-    tvs = transitionVariants $ minL - 1
+    variants = transitionVariants $ minL - 1
     transitionVariants x
       | x < 1     = [[]]
       | otherwise = (:) <$> S.toList ts <*> transitionVariants (x - 1)

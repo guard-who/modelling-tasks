@@ -36,7 +36,7 @@ transformWith
   -> (Int, [String], String)
   -> String
 transformWith config cdOrProperties (cs, predicates, part) =
-  removeLine $(embedStringFile "alloy/cd/assoclimits.als")
+  removeLine $(embedStringFile "alloy/cd/relationshipLimits.als")
   ++ removeLines 3 $(embedStringFile "alloy/cd/generate.als")
   ++ either givenClassDiagram (classDiagram config) cdOrProperties
   ++ part

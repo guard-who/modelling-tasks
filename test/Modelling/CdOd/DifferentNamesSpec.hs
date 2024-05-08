@@ -125,24 +125,25 @@ spec = do
         in not (null w) && not (null bs) && isValidMapping cs
            ==> isLeft $ evaluateDifferentNames bs cs cs'
   describe "renameInstance" $ do
-    it "is reversable" $ renameProperty $ \inst mrinst _ _ ->
+    it "is reversable" $ renameProperty $ \inst renamedInstance _ _ ->
         let cd = cDiagram inst
             od = oDiagram inst
             names = classNames cd
             nonInheritances = associationNames cd
             linkNs = linkNames od
         in (Just inst ==)
-           $ mrinst
+           $ renamedInstance
            >>= (\x -> renameInstance x names nonInheritances linkNs)
-    it "renames solution" $ renameProperty $ \inst mrinst as ls ->
+    it "renames solution" $ renameProperty $ \inst renamedInstance as ls ->
       let rename xs ys = Name . fromJust . (`lookup` zip xs ys)
           origMap = bimap
             (rename (associationNames $ cDiagram inst) as)
             (rename (linkNames $ oDiagram inst) ls)
             <$> BM.toList (fromNameMapping $ mapping inst)
       in (Right 1 ==)
-         $ maybe (Left "instance could not be renamed") return mrinst
-         >>= \rinst -> differentNamesEvaluation rinst origMap `withLang` English
+         $ maybe (Left "instance could not be renamed") return renamedInstance
+         >>= \renamed ->
+           differentNamesEvaluation renamed origMap `withLang` English
            :: Either String Rational
   describe "getDifferentNamesTask" $ do
     it "generates matching OD for association circle" $
@@ -292,9 +293,9 @@ renameProperty p = property $ \n1 n2 n3 n4 a1 a2 a3 l1 l2 l3 ->
       as = map unName [a1, a2, a3]
       ls = map unName [l1, l2, l3]
       distinct xs = length (nubOrd xs) == length xs
-      mrinst = renameInstance inst ns as ls
+      renamedInstance = renameInstance inst ns as ls
   in distinct (map lowerFirst ns) && distinct as && distinct ls
-     ==> p inst mrinst as ls
+     ==> p inst renamedInstance as ls
 
 instance Arbitrary Name where
   arbitrary = sized $ \s -> Name <$> (

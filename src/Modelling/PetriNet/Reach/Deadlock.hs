@@ -61,12 +61,11 @@ import Control.Monad.Output.Generic (
   ($>>=),
   )
 import Data.Bifunctor                   (Bifunctor (second))
+import Data.Either.Combinators          (whenRight)
 import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad                    (guard, replicateM, when)
+import Control.Monad                    (guard, replicateM)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
-import Data.Either                      (isRight)
-import Data.Either.Extra                (fromRight')
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (maximumBy)
 import Data.Maybe                       (fromMaybe)
@@ -131,19 +130,24 @@ deadlockEvaluation
   -> DeadlockInstance s t
   -> [t]
   -> Rated m
-deadlockEvaluation path inst ts =
-  isNoLonger (noLongerThan inst) ts
-  $>> executes path (drawUsing inst) n ts
-  $>>= \eout ->
-    when (isRight eout) (
-      yesNo (null $ successors n $ fromRight' eout)
+deadlockEvaluation path deadlockInstance ts =
+  isNoLonger (noLongerThan deadlockInstance) ts
+  $>> executes path (drawUsing deadlockInstance) n ts
+  $>>= \eitherOutcome ->
+    whenRight eitherOutcome (\outcome ->
+      yesNo (null $ successors n outcome)
       $ translate $ do
           english "Reached marking has no successors?"
           german "Zielmarkierung hat keine Nachfolger?"
       )
-  $>> assertReachPoints (const $ null . successors n) minLength inst ts eout
+  $>> assertReachPoints
+    (const $ null . successors n)
+    minLength
+    deadlockInstance
+    ts
+    eitherOutcome
   where
-    n = petriNet inst
+    n = petriNet deadlockInstance
 
 deadlockSolution :: Ord s => DeadlockInstance s t -> [t]
 deadlockSolution = reverse . snd . head . concat . deadlocks' . petriNet
@@ -263,8 +267,8 @@ try conf = do
     (vLow, vHigh) = fixMaximum $ preconditionsRange conf
     (nLow, nHigh) = fixMaximum $ postconditionsRange conf
 
-expl :: Net Int Int
-expl =
+exampleInstance :: Net Int Int
+exampleInstance =
   Net {
   places = S.fromList [1, 2, 3, 4, 5],
   transitions = S.fromList [1, 2, 3, 4, 5],

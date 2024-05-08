@@ -237,7 +237,7 @@ arrowheadDiamond theta arrowHeadLength shaftWidth = (
     dw = w + w / sinA theta' / 2
     w' = shaftWidth / sinA theta / 2
     arrowHeadLength' = arrowHeadLength - w'
-    lenI' = arrowHeadLength - 2 * w / sinA a1
+    arrowHeadLengthI' = arrowHeadLength - 2 * w / sinA a1
     theta' = halfTurn ^-^ theta
     a1 = 2 *^ theta'
     a2 = halfTurn ^-^ a1
@@ -255,10 +255,10 @@ arrowheadDiamond theta arrowHeadLength shaftWidth = (
       (quarterTurn, w),
       (quarterTurn, w / 2),
       (a3', dw),
-      (a1', lenI'),
-      (a2', lenI'),
-      (a1', lenI'),
-      (a3', lenI'),
+      (a1', arrowHeadLengthI'),
+      (a2', arrowHeadLengthI'),
+      (a1', arrowHeadLengthI'),
+      (a3', arrowHeadLengthI'),
       (quarterTurn, dw),
       (quarterTurn, w / 2)
       ]

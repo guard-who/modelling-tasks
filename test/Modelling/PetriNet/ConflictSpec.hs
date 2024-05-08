@@ -124,13 +124,18 @@ validFindConflictConfigs cs advancedConfig = do
 
 validConflictConfigs :: BasicConfig -> [ConflictConfig]
 validConflictConfigs bc = filter (isNothing . checkConflictConfig bc) $ do
-  precon <- [Nothing, Just False, Just True]
-  [ ConflictConfig precon distr Nothing False False
-    | distr <- [Nothing, Just False]]
-    ++ [ ConflictConfig precon (Just True) distrPrecon distrConfl distrConcur
-       | distrPrecon <- [Nothing, Just False, Just True]
-       , distrConfl  <- [False, True]
-       , let distrConcur = not distrConfl]
+  precondition <- [Nothing, Just False, Just True]
+  [ ConflictConfig precondition distractors Nothing False False
+    | distractors <- [Nothing, Just False]]
+    ++ [ ConflictConfig
+           precondition
+           (Just True)
+           distractorsPrecondition
+           distractorsConflict
+           distractorsConcurrent
+       | distractorsPrecondition <- [Nothing, Just False, Just True]
+       , distractorsConflict <- [False, True]
+       , let distractorsConcurrent = not distractorsConflict]
 
 validPickConflictConfigs
   :: [(BasicConfig, ChangeConfig)]

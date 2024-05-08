@@ -45,6 +45,7 @@ import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (isRandomisable, randomise),
   RandomiseLayout (randomiseLayout),
+  TaskGenerationException (NoInstanceAvailable),
   shuffleEverything,
   )
 import Modelling.Auxiliary.Output (
@@ -96,7 +97,7 @@ import Modelling.Types (
   toNameMapping,
   )
 
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Extra              (whenJust)
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -437,14 +438,12 @@ differentNames config segment seed = do
       defaultProperties
       (maxInstances config)
       (timeout config)
-    fgen is
+    tryGettingValidInstanceFor is
   where
-    fgen []             = error $
-      "it seems to be impossible to generate such a model"
-      ++ "; check your configuration"
-    fgen (insta:instas) = do
+    tryGettingValidInstanceFor []             = throwM NoInstanceAvailable
+    tryGettingValidInstanceFor (insta:instas) = do
       cd <- instanceToCd insta
-      inst <- getDifferentNamesTask (fgen instas) config cd
+      inst <- getDifferentNamesTask (tryGettingValidInstanceFor instas) config cd
       shuffleEverything inst
 
 defaultDifferentNamesInstance :: DifferentNamesInstance
@@ -518,7 +517,7 @@ getDifferentNamesTask
   -> DifferentNamesConfig
   -> Cd
   -> m DifferentNamesInstance
-getDifferentNamesTask fhead config cd' = do
+getDifferentNamesTask tryNext config cd' = do
     let cd     = cd' {
           relationships = map reverseAssociation $ relationships cd'
           }
@@ -529,19 +528,19 @@ getDifferentNamesTask fhead config cd' = do
           (flip renameEdges cd . BM.fromList . zip labels)
           $ drop 1 (permutations labels)
         cds'   = zip [1 :: Integer ..] cds
-        partss = map (uncurry alloyFor) cds'
+        parsList = map (uncurry alloyFor) cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand
           runCmd
           (length $ classNames cd)
           (objectConfig config)
           (concatMap relationships cds)
-          partss'
-        partss' = foldr mergeParts parts0 partss
+          parsList'
+        parsList' = foldr mergeParts parts0 parsList
     instances  <- getInstances
       (maxInstances config)
       (timeout config)
-      (combineParts partss' ++ onlyCd0)
+      (combineParts parsList' ++ onlyCd0)
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
@@ -564,7 +563,7 @@ getDifferentNamesTask fhead config cd' = do
               linkShuffling = ConsecutiveLetters,
               usesAllRelationships = isCompleteMapping
               }
-        else fhead
+        else tryNext
   where
     renameEdges bm = either (error . show) id . bitraverse pure (`BM.lookup` bm)
     alloyFor n cd = transform
@@ -574,7 +573,7 @@ getDifferentNamesTask fhead config cd' = do
       (objectProperties config)
       (show n)
       ""
-    continueWithHead []    _ = fhead
+    continueWithHead []    _ = tryNext
     continueWithHead (x:_) f = f x
     usedLabels :: MonadThrow m => AlloyInstance -> m [String]
     usedLabels inst = do

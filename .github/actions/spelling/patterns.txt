@@ -32,6 +32,9 @@ String\sString
 True\sTrue
 obj\sobj\ssig
 
+# ignore complete commit hashes
+[0-9a-f]{40}\s
+
 # ignore specific
 ExceptT(?![a-z])
 LangM(?![a-z])

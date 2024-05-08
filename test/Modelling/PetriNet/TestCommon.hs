@@ -64,9 +64,9 @@ maxJavaInt :: Int
 maxJavaInt = 2 ^ (31 :: Int) - 1
 
 ioPropertyWith :: Int -> (Int -> StdGen -> IO Property) -> Spec
-ioPropertyWith ints f = modifyMaxSuccess (`div` 20) $
+ioPropertyWith range f = modifyMaxSuccess (`div` 20) $
   it "generates everything required to create the task" $ property $ \g g' ->
-    let r  = fst $ randomR (0, ints - 1) $ getGen g'
+    let r = fst $ randomR (0, range - 1) $ getGen g'
     in ioProperty $ f r $ getGen g
 
 testTaskGeneration

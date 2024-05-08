@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Modelling.ActivityDiagram.Instance (
   parseInstance
 ) where
@@ -78,7 +79,7 @@ data Node =
 
 data Nodes = Nodes {
   actionNodes  :: Set ActionNode,
-  objecNodes  :: Set ObjectNode,
+  objectNodes  :: Set ObjectNode,
   decisionNodes  :: Set DecisionNode,
   mergeNodes  :: Set MergeNode,
   forkNodes  :: Set ForkNode,
@@ -91,7 +92,7 @@ data Nodes = Nodes {
 toSet :: Nodes -> Set Node
 toSet ns = S.unions [
   Action `S.mapMonotonic` actionNodes ns,
-  Object `S.mapMonotonic` objecNodes ns,
+  Object `S.mapMonotonic` objectNodes ns,
   Decision `S.mapMonotonic` decisionNodes ns,
   Merge `S.mapMonotonic` mergeNodes ns,
   Fork `S.mapMonotonic` forkNodes ns,
@@ -116,11 +117,13 @@ parseInstance insta = do
   activityFinalNodes <- getAs scope "ActivityFinalNodes" ActivityFinalNode
   flowFinalNodes <- getAs scope"FlowFinalNodes" FlowFinalNode
   initialNodes <- getAs scope "InitialNodes" InitialNode
-  let nodes' = Nodes actionNodes objectNodes decisionNodes mergeNodes forkNodes joinNodes activityFinalNodes flowFinalNodes initialNodes
-  cnames <- M.fromAscList . S.toAscList <$> getNames scope insta nodes' "ActionObjectNodes" ComponentName
+  let nodes' = Nodes {..}
+  componentNames <- M.fromAscList . S.toAscList
+    <$> getNames scope insta nodes' "ActionObjectNodes" ComponentName
   let components = enumerateComponents $ toSet nodes'
-      names = M.fromList $ zip (nubOrd $ M.elems cnames) $ pure <$> ['A'..]
-      getName x = fromMaybe "" $ M.lookup x cnames >>= (`M.lookup` names)
+      names = M.fromList
+        $ zip (nubOrd $ M.elems componentNames) $ pure <$> ['A'..]
+      getName x = fromMaybe "" $ M.lookup x componentNames >>= (`M.lookup` names)
   conns <- getConnections scope insta nodes'
   let labelOf = getLabelOf components
       conns' = S.map (\(x, y, z) -> (labelOf x, labelOf y, z)) conns
@@ -250,7 +253,7 @@ toNode
   -> Int
   -> m Node
 toNode ns x i = ifX Action ActionNode actionNodes
-  $ ifX Object ObjectNode objecNodes
+  $ ifX Object ObjectNode objectNodes
   $ ifX Decision DecisionNode decisionNodes
   $ ifX Merge MergeNode mergeNodes
   $ ifX Fork ForkNode forkNodes

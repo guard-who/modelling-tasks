@@ -788,7 +788,7 @@ nameCdError
   -> Maybe Integer
   -> Maybe Int
   -> RandT g m (Cd, Property, [Relationship String String])
-nameCdError allowed config objectProperties byName maxInsts to = do
+nameCdError allowed config objectProperties byName maxInstances to = do
   changes <- shuffleM $ (,)
     <$> illegalChanges allowed
     <*> legalChanges allowed
@@ -799,7 +799,7 @@ nameCdError allowed config objectProperties byName maxInsts to = do
     getInstanceWithChanges ((e0, l0) : chs) = do
       let p = toProperty $ e0 .&. l0
           alloyCode = Changes.transformGetNextFix Nothing config p byName
-      instances <- lift $ getInstances maxInsts to alloyCode
+      instances <- lift $ getInstances maxInstances to alloyCode
       randomInstances <- shuffleM instances
       getInstanceWithODs chs p randomInstances
     getInstanceWithODs chs _ [] = getInstanceWithChanges chs

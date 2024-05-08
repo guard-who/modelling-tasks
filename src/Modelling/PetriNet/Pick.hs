@@ -98,10 +98,10 @@ pickTaskInstance
   => (AlloyInstance -> m (t Object))
   -> AlloyInstance
   -> m [(p n String, Maybe (t String))]
-pickTaskInstance parseF inst = do
-  confl <- second Just <$> getNet parseF inst
+pickTaskInstance parseSpecial inst = do
+  special <- second Just <$> getNet parseSpecial inst
   net   <- (,Nothing) <$> getDefaultNet inst
-  return [confl,net]
+  return [special, net]
 
 pickGenerate
   :: (MonadThrow m, Net p n, Ord b)
