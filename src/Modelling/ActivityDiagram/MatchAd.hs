@@ -38,8 +38,8 @@ import Modelling.ActivityDiagram.Datatype (
   isActionNode, isObjectNode, isDecisionNode, isMergeNode, isForkNode, isJoinNode, isInitialNode, isActivityFinalNode, isFlowFinalNode)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
-  PlantUMLConvConf (..),
-  defaultPlantUMLConvConf,
+  PlantUmlConfig (..),
+  defaultPlantUmlConfig,
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
@@ -75,7 +75,7 @@ import System.Random.Shuffle (shuffleM)
 
 data MatchAdInstance = MatchAdInstance {
   activityDiagram :: UMLActivityDiagram,
-  plantUMLConf :: PlantUMLConvConf,
+  plantUMLConf :: PlantUmlConfig,
   showSolution :: Bool
 } deriving (Generic, Show)
 
@@ -269,7 +269,7 @@ getMatchAdTask config = do
   ad <- mapM (fmap snd . shuffleAdNames) randomInstances >>= getFirstInstance
   return $ MatchAdInstance {
     activityDiagram = ad,
-    plantUMLConf = defaultPlantUMLConvConf {
+    plantUMLConf = defaultPlantUmlConfig {
       suppressBranchConditions = hideBranchConditions config
       },
     showSolution = printSolution config
@@ -319,6 +319,6 @@ defaultMatchAdInstance = MatchAdInstance {
       AdConnection {from = 17, to = 4, guard = ""}
     ]
   },
-  plantUMLConf = defaultPlantUMLConvConf,
+  plantUMLConf = defaultPlantUmlConfig,
   showSolution = False
 }

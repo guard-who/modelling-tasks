@@ -41,8 +41,8 @@ import Modelling.ActivityDiagram.Datatype (
   )
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
-  PlantUMLConvConf (..),
-  defaultPlantUMLConvConf,
+  PlantUmlConfig (..),
+  defaultPlantUmlConfig,
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
@@ -75,7 +75,7 @@ import System.Random.Shuffle (shuffleM)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
-  drawSettings :: PlantUMLConvConf,
+  drawSettings :: PlantUmlConfig,
   sampleSequence :: [String],
   showSolution :: Bool
 } deriving (Generic, Show, Eq)
@@ -275,7 +275,7 @@ getEnterASTask config = do
         $ filter (isNothing . (`checkEnterASInstanceForConfig` config))
         $ map (\x -> EnterASInstance {
           activityDiagram=x,
-          drawSettings = defaultPlantUMLConvConf {
+          drawSettings = defaultPlantUmlConfig {
             suppressBranchConditions = hideBranchConditions config
             },
           sampleSequence = sampleSolution $ enterActionSequence x,
@@ -324,7 +324,7 @@ defaultEnterASInstance = EnterASInstance {
       AdConnection {from = 16, to = 7, guard = ""}
     ]
   },
-  drawSettings = defaultPlantUMLConvConf,
+  drawSettings = defaultPlantUmlConfig,
   sampleSequence = ["D","E","G","B","F"],
   showSolution = False
 }

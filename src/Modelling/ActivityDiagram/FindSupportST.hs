@@ -51,8 +51,8 @@ import Modelling.ActivityDiagram.Config (
 import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
-  PlantUMLConvConf (..),
-  defaultPlantUMLConvConf,
+  PlantUmlConfig (..),
+  defaultPlantUmlConfig,
   drawAdToFile,
   )
 import Modelling.Auxiliary.Common       (getFirstInstance)
@@ -93,7 +93,7 @@ import System.Random.Shuffle (shuffleM)
 
 data FindSupportSTInstance = FindSupportSTInstance {
   activityDiagram :: UMLActivityDiagram,
-  plantUMLConf :: PlantUMLConvConf,
+  plantUMLConf :: PlantUmlConfig,
   showSolution :: Bool
 } deriving (Generic, Show)
 
@@ -284,7 +284,7 @@ getFindSupportSTTask config = do
   return $ FindSupportSTInstance {
     activityDiagram = ad,
     plantUMLConf =
-      PlantUMLConvConf {
+      PlantUmlConfig {
         suppressNodeNames = hideNodeNames config,
         suppressBranchConditions = hideBranchConditions config
       },
@@ -335,6 +335,6 @@ defaultFindSupportSTInstance = FindSupportSTInstance {
       AdConnection {from = 17, to = 13, guard = ""}
     ]
   },
-  plantUMLConf = defaultPlantUMLConvConf,
+  plantUMLConf = defaultPlantUmlConfig,
   showSolution = False
 }

@@ -3,8 +3,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Modelling.ActivityDiagram.PlantUMLConverter (
-  PlantUMLConvConf(..),
-  defaultPlantUMLConvConf,
+  PlantUmlConfig(..),
+  defaultPlantUmlConfig,
   convertToPlantUML,
   convertToPlantUML',
   drawAdToFile
@@ -23,13 +23,13 @@ import Modelling.ActivityDiagram.Datatype (
   adjNodes,
   )
 
-data PlantUMLConvConf = PlantUMLConvConf {
+data PlantUmlConfig = PlantUmlConfig {
   suppressNodeNames :: Bool,
   suppressBranchConditions :: Bool
 } deriving (Generic, Read, Show, Eq)
 
-defaultPlantUMLConvConf :: PlantUMLConvConf
-defaultPlantUMLConvConf = PlantUMLConvConf {
+defaultPlantUmlConfig :: PlantUmlConfig
+defaultPlantUmlConfig = PlantUmlConfig {
   suppressNodeNames = False,
   suppressBranchConditions = True
 }
@@ -37,7 +37,7 @@ defaultPlantUMLConvConf = PlantUMLConvConf {
 drawAdToFile
   :: MonadPlantUml m
   => FilePath
-  -> PlantUMLConvConf
+  -> PlantUmlConfig
   -> UMLActivityDiagram
   -> m FilePath
 drawAdToFile path conf ad = do
@@ -48,22 +48,27 @@ drawAdToFile path conf ad = do
     adFilename = [i|#{path}Diagram.svg|]
 
 convertToPlantUML :: UMLActivityDiagram -> ByteString
-convertToPlantUML = convertToPlantUML' defaultPlantUMLConvConf
+convertToPlantUML = convertToPlantUML' defaultPlantUmlConfig
 
-convertToPlantUML' :: PlantUMLConvConf -> UMLActivityDiagram -> ByteString
+convertToPlantUML' :: PlantUmlConfig -> UMLActivityDiagram -> ByteString
 convertToPlantUML' conf diag =
     let start = getInitialNodes diag
         body = convertNode start conf diag
         document = "@startuml\n" ++ body ++ "@enduml"
     in [__i|#{document}|]
 
-convertNode :: [AdNode] -> PlantUMLConvConf -> UMLActivityDiagram -> String
+convertNode :: [AdNode] -> PlantUmlConfig -> UMLActivityDiagram -> String
 convertNode queue conf diag = convertNode' queue conf diag []
 
 --Traverse the graph and serialize the nodes along the way to a PlantUML-String
-convertNode' :: [AdNode] -> PlantUMLConvConf -> UMLActivityDiagram -> [AdNode] -> String
+convertNode'
+  :: [AdNode]
+  -> PlantUmlConfig
+  -> UMLActivityDiagram
+  -> [AdNode]
+  -> String
 convertNode' [] _ _ _ = [__i||]
-convertNode' (current:queue) conf@(PlantUMLConvConf sn sb) diag seen =
+convertNode' (current:queue) conf@(PlantUmlConfig sn sb) diag seen =
   let newQueue = filter (`notElem` seen) (queue ++ adjNodes current diag)
       newSeen = seen ++ [current]
   in case current of
@@ -109,7 +114,7 @@ and handle them via 'convertNode''
 -}
 handleDecisionOrFork
   :: AdNode
-  -> PlantUMLConvConf
+  -> PlantUmlConfig
   -> UMLActivityDiagram
   -> [AdNode]
   -> String
@@ -154,7 +159,7 @@ Strategy:
 -}
 handleRepeat
   :: AdNode
-  -> PlantUMLConvConf
+  -> PlantUmlConfig
   -> UMLActivityDiagram
   -> [AdNode]
   -> String

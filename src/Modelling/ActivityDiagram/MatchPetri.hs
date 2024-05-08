@@ -56,8 +56,8 @@ import Modelling.ActivityDiagram.Config (
 import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
-  PlantUMLConvConf (..),
-  defaultPlantUMLConvConf,
+  PlantUmlConfig (..),
+  defaultPlantUmlConfig,
   drawAdToFile,
   )
 import Modelling.Auxiliary.Common (getFirstInstance, oneOf)
@@ -106,7 +106,7 @@ import System.Random.Shuffle (shuffleM)
 data MatchPetriInstance = MatchPetriInstance {
   activityDiagram :: UMLActivityDiagram,
   petriNet :: SimplePetriLike PetriKey,
-  plantUMLConf :: PlantUMLConvConf,
+  plantUMLConf :: PlantUmlConfig,
   petriDrawConf :: DrawSettings,
   showSolution :: Bool
 } deriving (Generic, Read, Show)
@@ -415,7 +415,7 @@ getMatchPetriTask config = do
     activityDiagram=ad,
     petriNet = shuffledPetri,
     plantUMLConf =
-      PlantUMLConvConf {
+      PlantUmlConfig {
         suppressNodeNames = False,
         suppressBranchConditions = hideBranchConditions config
       },
@@ -878,7 +878,7 @@ defaultMatchPetriInstance = MatchPetriInstance
               ( SupportST
                 { label = 8 }
               , 1 ) ] } ) ] }
-  , plantUMLConf = defaultPlantUMLConvConf
+  , plantUMLConf = defaultPlantUmlConfig
   , petriDrawConf =
     DrawSettings {
       withPlaceNames = True,

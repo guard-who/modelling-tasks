@@ -51,8 +51,8 @@ import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.Isomorphism (isPetriIsomorphic)
 import Modelling.ActivityDiagram.PetriNet (PetriKey (..), convertToPetriNet)
 import Modelling.ActivityDiagram.PlantUMLConverter (
-  PlantUMLConvConf (..),
-  defaultPlantUMLConvConf,
+  PlantUmlConfig (..),
+  defaultPlantUmlConfig,
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames, shufflePetri)
@@ -106,7 +106,7 @@ import System.Random.Shuffle (shuffleM)
 
 data SelectPetriInstance = SelectPetriInstance {
   activityDiagram :: UMLActivityDiagram,
-  plantUMLConf :: PlantUMLConvConf,
+  plantUMLConf :: PlantUmlConfig,
   petriDrawConf :: DrawSettings,
   petriNets :: Map Int (Bool, SimplePetriLike PetriKey),
   showSolution :: Bool
@@ -411,7 +411,7 @@ getSelectPetriTask config = do
     $ selectPetriAlloy config
   randomInstances <- shuffleM instances >>= mapM parseInstance
   layout <- pickRandomLayout config
-  let plantUMLConf = PlantUMLConvConf {
+  let plantUMLConf = PlantUmlConfig {
         suppressNodeNames = hideNodeNames config,
         suppressBranchConditions = hideBranchConditions config
       }
@@ -486,7 +486,7 @@ defaultSelectPetriInstance =  SelectPetriInstance {
       AdConnection {from = 17, to = 7, guard = ""}
     ]
   },
-  plantUMLConf = defaultPlantUMLConvConf,
+  plantUMLConf = defaultPlantUmlConfig,
   petriDrawConf = DrawSettings {
     withPlaceNames = True,
     withTransitionNames = True,

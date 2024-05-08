@@ -42,8 +42,8 @@ import Modelling.ActivityDiagram.Datatype (
   )
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
-  PlantUMLConvConf (..),
-  defaultPlantUMLConvConf,
+  PlantUmlConfig (..),
+  defaultPlantUmlConfig,
   drawAdToFile,
   )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
@@ -85,7 +85,7 @@ import System.Random.Shuffle (shuffleM)
 data SelectASInstance = SelectASInstance {
   activityDiagram :: UMLActivityDiagram,
   actionSequences :: Map Int (Bool, [String]),
-  drawSettings :: PlantUMLConvConf,
+  drawSettings :: PlantUmlConfig,
   showSolution :: Bool
 } deriving (Generic, Show, Eq)
 
@@ -321,7 +321,7 @@ getSelectASTask config = do
     let selectASInst = SelectASInstance {
           activityDiagram=x,
           actionSequences = actionSequences,
-          drawSettings = defaultPlantUMLConvConf {
+          drawSettings = defaultPlantUmlConfig {
             suppressBranchConditions = hideBranchConditions config
             },
           showSolution = printSolution config
@@ -379,6 +379,6 @@ defaultSelectASInstance = SelectASInstance {
     (2, (True,["F","A","B","C","D"])),
     (3, (False,["A","F","B","C","D"]))
     ],
-  drawSettings = defaultPlantUMLConvConf,
+  drawSettings = defaultPlantUmlConfig,
   showSolution = False
 }
