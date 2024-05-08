@@ -1,6 +1,6 @@
-module ad_actionsequences_rules
+module actionSequencesRules
 
-open ad_exercise_rules
+open exerciseRules
 
 //Have action nodes in each sequence block to avoid useless subblocks and empty sequences
 pred someActionNodesExistInEachBlock {

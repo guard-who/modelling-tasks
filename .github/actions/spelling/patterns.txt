@@ -33,7 +33,7 @@ True\sTrue
 obj\sobj\ssig
 
 # ignore complete commit hashes
-[0-9a-f]{40}\s
+[0-9a-f]{40}
 
 # ignore specific
 ExceptT(?![a-z])

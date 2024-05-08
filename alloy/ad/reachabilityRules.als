@@ -1,6 +1,6 @@
-module ad_reachability_rules
+module reachabilityRules
 
-open ad_components_sig as components
+open components
 
 //Ensure that all activity nodes are reachable from a initial node, in order to avoid unreachable components
 pred reachabilityFromInitialNodes {

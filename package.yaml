@@ -1,14 +1,14 @@
 ---
 name: modelling-tasks
 extra-source-files:
-  - alloy/ad/ad_actionsequences_rules.als
-  - alloy/ad/ad_components_sig.als
-  - alloy/ad/ad_exercise_rules.als
-  - alloy/ad/ad_initialnode_rules.als
-  - alloy/ad/ad_name_rules.als
-  - alloy/ad/ad_petrinet.als
-  - alloy/ad/ad_plantuml_sig.als
-  - alloy/ad/ad_reachability_rules.als
+  - alloy/ad/actionSequencesRules.als
+  - alloy/ad/components.als
+  - alloy/ad/exerciseRules.als
+  - alloy/ad/initialNodeRules.als
+  - alloy/ad/nameRules.als
+  - alloy/ad/petriNet.als
+  - alloy/ad/plantUml.als
+  - alloy/ad/reachabilityRules.als
   - alloy/cd/relationshipLimits.als
   - alloy/cd/generate.als
   - alloy/od/template.als

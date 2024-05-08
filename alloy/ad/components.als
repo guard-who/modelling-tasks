@@ -1,4 +1,4 @@
-module ad_components_sig
+module components
 
 //Superclass for all components of the activity diagram
 abstract sig ActivityNodes {}

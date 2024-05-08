@@ -15,28 +15,32 @@ module Modelling.ActivityDiagram.Alloy(
 import Data.FileEmbed                   (embedStringFile)
 
 moduleComponentsSig :: String
-moduleComponentsSig = removeLines 1 $(embedStringFile "alloy/ad/ad_components_sig.als")
+moduleComponentsSig = removeLines 1 $(embedStringFile "alloy/ad/components.als")
 
 moduleInitialNodeRules :: String
-moduleInitialNodeRules = removeLines 3 $(embedStringFile "alloy/ad/ad_initialnode_rules.als")
+moduleInitialNodeRules =
+  removeLines 3 $(embedStringFile "alloy/ad/initialNodeRules.als")
 
 moduleNameRules :: String
-moduleNameRules = removeLines 3 $(embedStringFile "alloy/ad/ad_name_rules.als")
+moduleNameRules = removeLines 3 $(embedStringFile "alloy/ad/nameRules.als")
 
 moduleReachabilityRules :: String
-moduleReachabilityRules = removeLines 3 $(embedStringFile "alloy/ad/ad_reachability_rules.als")
+moduleReachabilityRules =
+  removeLines 3 $(embedStringFile "alloy/ad/reachabilityRules.als")
 
 modulePlantUMLSig :: String
-modulePlantUMLSig = removeLines 3 $(embedStringFile "alloy/ad/ad_plantuml_sig.als")
+modulePlantUMLSig = removeLines 3 $(embedStringFile "alloy/ad/plantUml.als")
 
 moduleExerciseRules :: String
-moduleExerciseRules = removeLines 3 $(embedStringFile "alloy/ad/ad_exercise_rules.als")
+moduleExerciseRules =
+  removeLines 3 $(embedStringFile "alloy/ad/exerciseRules.als")
 
 modulePetrinet :: String
-modulePetrinet = removeLines 3 $(embedStringFile "alloy/ad/ad_petrinet.als")
+modulePetrinet = removeLines 3 $(embedStringFile "alloy/ad/petriNet.als")
 
 moduleActionSequencesRules :: String
-moduleActionSequencesRules = removeLines 3 $(embedStringFile "alloy/ad/ad_actionsequences_rules.als")
+moduleActionSequencesRules =
+  removeLines 3 $(embedStringFile "alloy/ad/actionSequencesRules.als")
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines

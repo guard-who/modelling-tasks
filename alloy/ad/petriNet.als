@@ -1,6 +1,6 @@
-module ad_petrinet
+module petriNet
 
-open ad_exercise_rules
+open exerciseRules
 
 pred supportSTAbsent {
   let places = ObjectNodes + InitialNodes + DecisionNodes + MergeNodes |

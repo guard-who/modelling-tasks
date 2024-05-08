@@ -1,6 +1,6 @@
-module ad_exercise_rules
+module exerciseRules
 
-open ad_plantuml_sig as components
+open plantUml as components
 
 //Keep activity finals out of parallel sections in order to avoid confusion of students
 pred noActivityFinalInForkBlocks {

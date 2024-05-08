@@ -1,6 +1,6 @@
-module ad_name_rules
+module nameRules
 
-open  ad_components_sig as components
+open components
 
 //Action or Object Nodes should have distinct names
 pred actionObjectNodesHaveDistinctNames {

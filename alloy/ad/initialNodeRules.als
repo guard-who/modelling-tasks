@@ -1,6 +1,6 @@
-module ad_initialnode_rules
+module initialNodeRules
 
-open ad_components_sig as components
+open components
 
 //Restrict diagrams to one initial node per diagram, due to simplicity and plantuml-constraints
 pred exactlyOneInitialNodePerDiagram {

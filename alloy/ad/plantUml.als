@@ -1,6 +1,6 @@
-module ad_plantuml_sig
+module plantUml
 
-open uml_activity_diagram
+open umlActivityDiagram
 
 //For isolating nodes in order to translate them to "blocks", similar to regions in state diagrams
 abstract sig PlantUMLBlocks {
