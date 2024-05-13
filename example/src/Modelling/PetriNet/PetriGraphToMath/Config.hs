@@ -57,19 +57,19 @@ task17 = MathConfig {
 task18 :: MathConfig
 task18 = MathConfig {
   basicConfig = BasicConfig {
-    places = 5,
-    transitions = 7,
-    atLeastActive = 3,
-    flowOverall = (13, 15),
-    maxTokensPerPlace = 2,
+    places = 6,
+    transitions = 5,
+    atLeastActive = 2,
+    flowOverall = (14, 16),
+    maxTokensPerPlace = 1,
     maxFlowPerEdge = 1,
-    tokensOverall = (10, 10),
+    tokensOverall = (5, 5),
     isConnected = Just True
     },
   advConfig = AdvConfig {
     presenceOfSelfLoops = Just False,
     presenceOfSinkTransitions = Just False,
-    presenceOfSourceTransitions = Just True
+    presenceOfSourceTransitions = Just False
     },
   changeConfig = ChangeConfig {
     tokenChangeOverall = 0,

@@ -16,12 +16,12 @@ task07 :: RepairCdConfig
 task07 = RepairCdConfig {
   allowedProperties = AllowedProperties {
     compositionCycles = False,
-    doubleRelationships = False,
+    doubleRelationships = True,
     inheritanceCycles = False,
     reverseInheritances = False,
     reverseRelationships = False,
     selfInheritances = False,
-    selfRelationships = True,
+    selfRelationships = False,
     wrongAssociationLimits = False,
     wrongCompositionLimits = True
     },
@@ -38,7 +38,7 @@ task07 = RepairCdConfig {
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
-    hasSelfLoops = Nothing,
+    hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,
@@ -56,9 +56,9 @@ task08 = RepairCdConfig {
     doubleRelationships = False,
     inheritanceCycles = False,
     reverseInheritances = False,
-    reverseRelationships = False,
+    reverseRelationships = True,
     selfInheritances = False,
-    selfRelationships = True,
+    selfRelationships = False,
     wrongAssociationLimits = False,
     wrongCompositionLimits = False
     },
@@ -75,7 +75,7 @@ task08 = RepairCdConfig {
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
-    hasSelfLoops = Nothing,
+    hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,

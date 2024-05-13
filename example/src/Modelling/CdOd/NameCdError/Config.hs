@@ -43,7 +43,7 @@ task09 = NameCdErrorConfig {
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
-    hasSelfLoops = Nothing,
+    hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
   possibleReasons = [
@@ -96,7 +96,7 @@ task10 = NameCdErrorConfig {
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
-    hasSelfLoops = Nothing,
+    hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
   possibleReasons = [

@@ -40,7 +40,7 @@ task05 = SelectValidCdConfig {
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
-    hasSelfLoops = Nothing,
+    hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,
@@ -77,7 +77,7 @@ task06 = SelectValidCdConfig {
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
-    hasSelfLoops = Nothing,
+    hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,
