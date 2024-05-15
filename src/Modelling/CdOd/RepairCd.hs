@@ -731,16 +731,16 @@ possibleChanges
   :: AllowedProperties
   -> [(PropertyChange, [PropertyChange])]
 possibleChanges allowed = nubOrdOn
-  (\(x, xs) -> (changeName x, map changeName xs))
+  (bimap changeName (map changeName))
   [ (e0, cs)
   | e0 <- illegalChanges allowed
   , l0 <- legalChanges allowed
-  , c0 <- allChanges allowed
   , let ls = delete l0 $ legalChanges allowed
+  , c0 <- allChanges allowed
   , l1 <- if null ls then [[]] else map (\x -> [x .&. noChange, x]) ls
   , let changes = [c0, noChange, e0] ++ l1
   , c1 <- changes
-  , c2 <- delete c1 $ changes
+  , c2 <- delete c1 changes
   , let cs = [l0 .&. e0, noChange, c1, c2]
   ]
   where

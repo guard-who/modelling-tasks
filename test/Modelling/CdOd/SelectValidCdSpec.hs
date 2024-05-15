@@ -26,5 +26,5 @@ spec = do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
           not . M.null . classDiagrams
-            <$> selectValidCd defaultSelecValidCdConfig segment seed
+            <$> selectValidCd defaultSelectValidCdConfig segment seed
         `shouldReturn` True
