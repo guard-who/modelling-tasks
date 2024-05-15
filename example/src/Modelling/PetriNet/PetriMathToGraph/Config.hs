@@ -29,7 +29,7 @@ task19 = MathConfig {
     },
   advConfig = AdvConfig {
     presenceOfSelfLoops = Just False,
-    presenceOfSinkTransitions = Just False,
+    presenceOfSinkTransitions = Just True,
     presenceOfSourceTransitions = Just False
     },
   changeConfig = ChangeConfig {
@@ -60,14 +60,14 @@ task20 = MathConfig {
     places = 5,
     transitions = 7,
     atLeastActive = 3,
-    flowOverall = (13, 15),
+    flowOverall = (14, 16),
     maxTokensPerPlace = 2,
     maxFlowPerEdge = 1,
     tokensOverall = (10, 10),
     isConnected = Just True
     },
   advConfig = AdvConfig {
-    presenceOfSelfLoops = Just False,
+    presenceOfSelfLoops = Just True,
     presenceOfSinkTransitions = Just False,
     presenceOfSourceTransitions = Just True
     },

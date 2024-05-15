@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wwarn=deprecations #-}
 -- |
 
 module Modelling.CdOd.DifferentNames.Config where

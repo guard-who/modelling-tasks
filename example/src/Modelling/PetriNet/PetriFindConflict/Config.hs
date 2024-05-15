@@ -27,7 +27,7 @@ task24 = FindConflictConfig {
     },
   advConfig = AdvConfig {
     presenceOfSelfLoops = Nothing,
-    presenceOfSinkTransitions = Just True,
+    presenceOfSinkTransitions = Just False,
     presenceOfSourceTransitions = Nothing
     },
   changeConfig = ChangeConfig {

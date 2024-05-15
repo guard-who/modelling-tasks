@@ -2,6 +2,48 @@
 
 module ExamplesSpec where
 
+import Modelling.ActivityDiagram.EnterAS (
+  checkEnterASConfig,
+  )
+import Modelling.ActivityDiagram.EnterAs.Config (
+  task35,
+  task36,
+  )
+import Modelling.ActivityDiagram.FindSupportST (
+  checkFindSupportSTConfig,
+  )
+import Modelling.ActivityDiagram.FindSupportSt.Config (
+  task41,
+  task42,
+  )
+import Modelling.ActivityDiagram.MatchAd (
+  checkMatchAdConfig,
+  )
+import Modelling.ActivityDiagram.MatchAd.Config (
+  task31,
+  task32,
+  )
+import Modelling.ActivityDiagram.MatchPetri (
+  checkMatchPetriConfig,
+  )
+import Modelling.ActivityDiagram.MatchPetri.Config (
+  task39,
+  task40,
+  )
+import Modelling.ActivityDiagram.SelectAS (
+  checkSelectASConfig,
+  )
+import Modelling.ActivityDiagram.SelectAs.Config (
+  task33,
+  task34,
+  )
+import Modelling.ActivityDiagram.SelectPetri (
+  checkSelectPetriConfig,
+  )
+import Modelling.ActivityDiagram.SelectPetri.Config (
+  task37,
+  task38,
+  )
 import Modelling.CdOd.DifferentNames (
   checkDifferentNamesConfig,
   )
@@ -69,48 +111,7 @@ import Modelling.PetriNet.PetriPickConcurrency.Config (
   )
 import Modelling.PetriNet.PetriPickConflict.Config (
   task22,
-  )
-import Modelling.ActivityDiagram.EnterAS (
-  checkEnterASConfig,
-  )
-import Modelling.ActivityDiagram.EnterAs.Config (
-  task35,
-  task36,
-  )
-import Modelling.ActivityDiagram.FindSupportST (
-  checkFindSupportSTConfig,
-  )
-import Modelling.ActivityDiagram.FindSupportSt.Config (
-  task41,
-  task42,
-  )
-import Modelling.ActivityDiagram.MatchAd (
-  checkMatchAdConfig,
-  )
-import Modelling.ActivityDiagram.MatchAd.Config (
-  task31,
-  task32,
-  )
-import Modelling.ActivityDiagram.MatchPetri (
-  checkMatchPetriConfig,
-  )
-import Modelling.ActivityDiagram.MatchPetri.Config (
-  task39,
-  task40,
-  )
-import Modelling.ActivityDiagram.SelectAS (
-  checkSelectASConfig,
-  )
-import Modelling.ActivityDiagram.SelectAs.Config (
-  task33,
-  task34,
-  )
-import Modelling.ActivityDiagram.SelectPetri (
-  checkSelectPetriConfig,
-  )
-import Modelling.ActivityDiagram.SelectPetri.Config (
-  task37,
-  task38,
+  task16,
   )
 
 import Test.Hspec
@@ -138,6 +139,8 @@ spec =
       checkMatchCdOdConfig task14 `shouldBe` Nothing
     it "task15" $
       checkMatchCdOdConfig task15 `shouldBe` Nothing
+    it "task16" $
+      checkPickConflictConfig task16 `shouldBe` Nothing
     it "task17" $
       checkMathConfig task17 `shouldBe` Nothing
     it "task18" $

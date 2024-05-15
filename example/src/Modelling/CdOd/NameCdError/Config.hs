@@ -60,7 +60,7 @@ task09 = NameCdErrorConfig {
     ],
   printNames = True,
   printNavigations = True,
-  printSolution = False,
+  printSolution = True,
   reasonsPerInstance = NumberOfReasons {
     customReasons = 0,
     preDefinedInvalid = 6,

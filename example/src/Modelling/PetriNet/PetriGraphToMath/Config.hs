@@ -60,14 +60,14 @@ task18 = MathConfig {
     places = 6,
     transitions = 5,
     atLeastActive = 2,
-    flowOverall = (14, 16),
+    flowOverall = (15, 17),
     maxTokensPerPlace = 1,
     maxFlowPerEdge = 1,
     tokensOverall = (5, 5),
     isConnected = Just True
     },
   advConfig = AdvConfig {
-    presenceOfSelfLoops = Just False,
+    presenceOfSelfLoops = Just True,
     presenceOfSinkTransitions = Just False,
     presenceOfSourceTransitions = Just False
     },

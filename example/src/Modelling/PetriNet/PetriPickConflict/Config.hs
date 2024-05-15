@@ -52,3 +52,44 @@ task22 = PickConflictConfig {
     timeout = Nothing
     }
   }
+
+task16 :: PickConflictConfig
+task16 = PickConflictConfig {
+  basicConfig = BasicConfig {
+    places = 6,
+    transitions = 6,
+    atLeastActive = 2,
+    flowOverall = (16, 16) ,
+    maxTokensPerPlace = 2,
+    maxFlowPerEdge = 1,
+    tokensOverall = (5, 5),
+    isConnected = Just True
+    },
+  changeConfig = ChangeConfig {
+    tokenChangeOverall = 0,
+    maxTokenChangePerPlace = 0,
+    flowChangeOverall = 2,
+    maxFlowChangePerEdge = 1
+    },
+  conflictConfig = ConflictConfig {
+    addConflictCommonPreconditions = Just True,
+    withConflictDistractors = Just True,
+    conflictDistractorAddExtraPreconditions = Just True,
+    conflictDistractorOnlyConflictLike = True,
+    conflictDistractorOnlyConcurrentLike = False
+    },
+  graphConfig = GraphConfig {
+    graphLayouts = [Dot, Sfdp],
+    hidePlaceNames = True,
+    hideTransitionNames = True,
+    hideWeight1 = True
+    },
+  printSolution = True,
+  prohibitSourceTransitions = False,
+  uniqueConflictPlace = Just True,
+  useDifferentGraphLayouts = True,
+  alloyConfig = AlloyConfig {
+    maxInstances = Just 1000,
+    timeout = Nothing
+    }
+  }
