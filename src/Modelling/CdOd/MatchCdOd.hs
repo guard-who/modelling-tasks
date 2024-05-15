@@ -332,15 +332,16 @@ matchCdOdSolution = M.toList . reverseMapping . fmap fst . instances
       $ M.fromList [(1, []), (2, [])]
 
 matchCdOd
-  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m)
+  :: (MonadAlloy m, MonadFail m, MonadThrow m)
   => MatchCdOdConfig
   -> Int
   -> Int
   -> m MatchCdOdInstance
-matchCdOd config segment seed = do
-  let g = mkStdGen $ (segment +) $ 4 * seed
-  inst <- evalRandT (getMatchCdOdTask getRandomTask config) g
+matchCdOd config segment seed = flip evalRandT g $ do
+  inst <- getMatchCdOdTask getRandomTask config
   shuffleEverything inst
+  where
+    g = mkStdGen $ (segment +) $ 4 * seed
 
 getMatchCdOdTask
   :: MonadThrow m

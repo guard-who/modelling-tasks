@@ -345,14 +345,13 @@ selectValidCdSolution =
   M.keys . M.filter id . fmap (isRight . hint) . classDiagrams
 
 selectValidCd
-  :: (MonadAlloy m, MonadFail m, MonadRandom m, MonadThrow m)
+  :: (MonadAlloy m, MonadThrow m)
   => SelectValidCdConfig
   -> Int
   -> Int
   -> m SelectValidCdInstance
-selectValidCd config segment seed = do
-  let g = mkStdGen $ (segment +) $ 4 * seed
-  (_, chs)  <- flip evalRandT g $ repairIncorrect
+selectValidCd config segment seed = flip evalRandT g $ do
+  (_, chs)  <- repairIncorrect
     (allowedProperties config)
     (classConfig config)
     (objectProperties config)
@@ -368,6 +367,7 @@ selectValidCd config segment seed = do
     withNavigations = printNavigations config
     }
   where
+    g = mkStdGen $ (segment +) $ 4 * seed
     shuffleCds
       | shuffleEachCd config = shuffleEach
       | otherwise            = return

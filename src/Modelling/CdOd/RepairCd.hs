@@ -45,9 +45,11 @@ import qualified Modelling.CdOd.Types             as T (
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
+  delete,
   elems,
   filter,
   fromAscList,
+  fromList,
   keys,
   toList,
   traverseWithKey,
@@ -60,6 +62,7 @@ import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
+  TaskGenerationException (NoInstanceAvailable),
   shuffleEverything,
   )
 import Modelling.Auxiliary.Output (
@@ -115,7 +118,7 @@ import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, void, when, zipWithM)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -137,9 +140,10 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen,
   )
+import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (bimap, first, second)
 import Data.Bitraversable               (bimapM)
-import Data.Containers.ListUtils        (nubOrd)
+import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.Either                      (isRight)
 import Data.Foldable                    (for_)
 import Data.Map                         (Map)
@@ -480,7 +484,7 @@ renameInstance inst names' nonInheritances' = do
     }
 
 repairCd
-  :: (MonadAlloy m, MonadFail m, MonadThrow m)
+  :: (MonadAlloy m, MonadThrow m)
   => RepairCdConfig
   -> Int
   -> Int
@@ -723,8 +727,28 @@ defaultRepairCdInstance = RepairCdInstance {
   withNames = True
   }
 
+possibleChanges
+  :: AllowedProperties
+  -> [(PropertyChange, [PropertyChange])]
+possibleChanges allowed = nubOrdOn
+  (\(x, xs) -> (changeName x, map changeName xs))
+  [ (e0, cs)
+  | e0 <- illegalChanges allowed
+  , l0 <- legalChanges allowed
+  , c0 <- allChanges allowed
+  , let ls = delete l0 $ legalChanges allowed
+  , l1 <- if null ls then [[]] else map (\x -> [x .&. noChange, x]) ls
+  , let changes = [c0, noChange, e0] ++ l1
+  , c1 <- changes
+  , c2 <- delete c1 $ changes
+  , let cs = [l0 .&. e0, noChange, c1, c2]
+  ]
+  where
+    delete x xs = M.elems . M.delete (changeName x) . M.fromList
+      $ zip (map changeName xs) xs
+
 repairIncorrect
-  :: (MonadAlloy m, MonadFail m, MonadThrow m, RandomGen g)
+  :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => AllowedProperties
   -> ClassConfig
   -> ObjectProperties
@@ -733,30 +757,30 @@ repairIncorrect
   -> Maybe Int
   -> RandT g m (Cd, [CdChangeAndCd])
 repairIncorrect allowed config objectProperties preference maxInstances to = do
-  e0:_    <- shuffleM $ illegalChanges allowed
-  l0:ls   <- shuffleM $ legalChanges allowed
-  let addLegals
-        | l1:_ <- ls = (l1 .&. noChange :) . (l1 :)
-        | otherwise  = id
-  c0:_    <- shuffleM $ allChanges allowed
-  changes <- shuffleM $ c0 : noChange : addLegals [e0]
-  cs      <- shuffleM $ l0 .&. e0 : noChange : take 2 changes
-  let alloyCode = Changes.transformChanges config (toProperty e0) (Just config)
-        $ map toProperty cs
-  instances <- getInstances maxInstances to alloyCode
-  randomInstances <- shuffleM instances
-  getInstanceWithODs cs randomInstances
+  changeSets <- shuffleM $ possibleChanges allowed
+  tryNextChangeSet changeSets
   where
+    tryNextChangeSet [] = lift $ throwM NoInstanceAvailable
+    tryNextChangeSet ((e0, cs) : changeSets) = do
+      propertyChanges <- shuffleM cs
+      let alloyCode = Changes.transformChanges
+            config
+            (toProperty e0)
+            (Just config)
+            $ map toProperty propertyChanges
+      instances <- getInstances maxInstances to alloyCode
+      randomInstances <- shuffleM instances
+      getInstanceWithODs changeSets propertyChanges randomInstances
     article = toArticleToUse preference
-    getInstanceWithODs _  [] =
-      repairIncorrect allowed config objectProperties preference maxInstances to
-    getInstanceWithODs propertyChanges (alloyInstance : alloyInstances) = do
+    getInstanceWithODs changeSets _  [] =
+      tryNextChangeSet changeSets
+    getInstanceWithODs cs propertyChanges (alloyInstance : alloyInstances) = do
       cdInstance <- getChangesAndCds alloyInstance
       let cd = instanceClassDiagram cdInstance
           chs = instanceChangesAndCds cdInstance
       hints <- zipWithM getOdOrImprovedCd propertyChanges chs
       case sequenceA hints of
-        Nothing -> getInstanceWithODs propertyChanges alloyInstances
+        Nothing -> getInstanceWithODs cs propertyChanges alloyInstances
         Just odsAndCds -> do
           let odsAndCdWithArticle = map (first addArticle) odsAndCds
               chs' = map (uniformlyAnnotateChangeAndCd article) chs
