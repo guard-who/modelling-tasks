@@ -23,7 +23,7 @@ library
       Modelling.CdOd.SelectValidCd.Config
       Modelling.PetriNet.PetriDeadlock.Config
       Modelling.PetriNet.PetriFindConcurrency.Config
-      Modelling.PetriNet.PetriFindConflict.Config
+      Modelling.PetriNet.PetriFindConflictPlaces.Config
       Modelling.PetriNet.PetriGraphToMath.Config
       Modelling.PetriNet.PetriMathToGraph.Config
       Modelling.PetriNet.PetriPickConcurrency.Config

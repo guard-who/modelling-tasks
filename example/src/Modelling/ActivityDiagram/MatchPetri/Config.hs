@@ -7,6 +7,11 @@ import Modelling.ActivityDiagram.MatchPetri (MatchPetriConfig(..))
 
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
+{-|
+points: 0.15
+generation time: 40:00min
+CPU usage: 100%
+-}
 task39 :: MatchPetriConfig
 task39 = MatchPetriConfig {
   adConfig = AdConfig {
@@ -15,20 +20,25 @@ task39 = MatchPetriConfig {
     maxNamedNodes = 12,
     decisionMergePairs = 2,
     forkJoinPairs = 1,
-    activityFinalNodes = 1,
-    flowFinalNodes = 1,
+    activityFinalNodes = 0,
+    flowFinalNodes = 2,
     cycles = 1
     },
   maxInstances = Just 10000,
   hideBranchConditions = True,
   petriLayout = [Fdp],
   supportSTAbsent = Nothing,
-  activityFinalsExist = Just True,
+  activityFinalsExist = Just False,
   avoidAddingSinksForFinals = Nothing,
-  noActivityFinalInForkBlocks = Just True,
+  noActivityFinalInForkBlocks = Nothing,
   printSolution = True
   }
 
+{-|
+points: 0.15
+generation time: 40:00min
+CPU usage: 100%
+-}
 task40 :: MatchPetriConfig
 task40 = MatchPetriConfig {
   adConfig = AdConfig {
@@ -41,12 +51,12 @@ task40 = MatchPetriConfig {
     flowFinalNodes = 3,
     cycles = 3
     },
-  maxInstances = Just 10000,
+  maxInstances = Just 2000,
   hideBranchConditions = True,
   petriLayout = [Fdp],
   supportSTAbsent = Nothing,
   activityFinalsExist = Just False,
   avoidAddingSinksForFinals = Nothing,
-  noActivityFinalInForkBlocks = Just True,
+  noActivityFinalInForkBlocks = Nothing,
   printSolution = True
   }

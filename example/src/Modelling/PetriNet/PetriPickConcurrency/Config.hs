@@ -11,6 +11,11 @@ import Modelling.PetriNet.Types (
   )
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
+{-|
+points: 0.1
+generation time: 14:00min
+CPU usage: 100%
+-}
 task21 :: PickConcurrencyConfig
 task21 = PickConcurrencyConfig {
   basicConfig = BasicConfig {

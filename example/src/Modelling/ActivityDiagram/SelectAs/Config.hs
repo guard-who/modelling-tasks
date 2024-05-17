@@ -4,6 +4,11 @@ module Modelling.ActivityDiagram.SelectAs.Config where
 import Modelling.ActivityDiagram.Config (AdConfig(..))
 import Modelling.ActivityDiagram.SelectAS (SelectASConfig(..))
 
+{-|
+points: 0.15
+generation time: 22:00min
+CPU usage: 100%
+-}
 task33 :: SelectASConfig
 task33 = SelectASConfig {
   adConfig = AdConfig {
@@ -24,6 +29,11 @@ task33 = SelectASConfig {
   printSolution = True
   }
 
+{-|
+points: 0.15
+generation time: 22:00min
+CPU usage: 100%
+-}
 task34 :: SelectASConfig
 task34 = SelectASConfig {
   adConfig = AdConfig {
@@ -33,7 +43,7 @@ task34 = SelectASConfig {
     decisionMergePairs = 2,
     forkJoinPairs = 2,
     activityFinalNodes = 0,
-    flowFinalNodes = 3,
+    flowFinalNodes = 2,
     cycles = 1
     },
   hideBranchConditions = True,

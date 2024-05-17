@@ -7,6 +7,11 @@ import Modelling.ActivityDiagram.SelectPetri (SelectPetriConfig(..))
 
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
+{-|
+points: 0.15
+generation time: 2:30min
+CPU usage: 100%
+-}
 task37 :: SelectPetriConfig
 task37 = SelectPetriConfig {
   adConfig = AdConfig {
@@ -15,8 +20,8 @@ task37 = SelectPetriConfig {
     maxNamedNodes = 10,
     decisionMergePairs = 3,
     forkJoinPairs = 1,
-    activityFinalNodes = 1,
-    flowFinalNodes = 1,
+    activityFinalNodes = 0,
+    flowFinalNodes = 2,
     cycles = 1
     },
   maxInstances = Just 2000,
@@ -28,12 +33,15 @@ task37 = SelectPetriConfig {
   numberOfModifications = 3,
   modifyAtMid = True,
   supportSTAbsent = Nothing,
-  activityFinalsExist = Just True,
+  activityFinalsExist = Just False,
   avoidAddingSinksForFinals = Nothing,
   noActivityFinalInForkBlocks = Just True,
   printSolution = True
   }
 
+{-|
+points: 0.15
+-}
 task38 :: SelectPetriConfig
 task38 = SelectPetriConfig {
   adConfig = AdConfig {
@@ -42,8 +50,8 @@ task38 = SelectPetriConfig {
     maxNamedNodes = 7,
     decisionMergePairs = 2,
     forkJoinPairs = 1,
-    activityFinalNodes = 1,
-    flowFinalNodes = 1,
+    activityFinalNodes = 0,
+    flowFinalNodes = 2,
     cycles = 1
     },
   maxInstances = Just 1,
@@ -55,7 +63,7 @@ task38 = SelectPetriConfig {
   numberOfModifications = 3,
   modifyAtMid = True,
   supportSTAbsent = Nothing,
-  activityFinalsExist = Just True,
+  activityFinalsExist = Just False,
   avoidAddingSinksForFinals = Nothing,
   noActivityFinalInForkBlocks = Just True,
   printSolution = True

@@ -5,6 +5,11 @@ module Modelling.ActivityDiagram.EnterAs.Config where
 import Modelling.ActivityDiagram.Config (AdConfig(..))
 import Modelling.ActivityDiagram.EnterAS (EnterASConfig(..))
 
+{-|
+points: 0.15
+generation time: 3:30min
+CPU usage: 100%
+-}
 task35 :: EnterASConfig
 task35 = EnterASConfig {
   adConfig = AdConfig {
@@ -24,13 +29,18 @@ task35 = EnterASConfig {
   printSolution = True
   }
 
+{-|
+points: 0.15
+generation time: 5:00min
+CPU usage: 100%
+-}
 task36 :: EnterASConfig
 task36 = EnterASConfig {
   adConfig = AdConfig {
     actionLimits = (14, 14),
     objectNodeLimits = (6, 6),
     maxNamedNodes = 20,
-    decisionMergePairs = 2,
+    decisionMergePairs = 1,
     forkJoinPairs = 2,
     activityFinalNodes = 0,
     flowFinalNodes = 2,
@@ -39,6 +49,6 @@ task36 = EnterASConfig {
   hideBranchConditions = True,
   maxInstances = Just 2000,
   objectNodeOnEveryPath = Just False,
-  answerLength = (11, 11),
+  answerLength = (14, 14),
   printSolution = True
   }

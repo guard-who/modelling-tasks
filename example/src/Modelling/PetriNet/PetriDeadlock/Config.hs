@@ -6,6 +6,9 @@ import Modelling.PetriNet.Reach.Deadlock (DeadlockConfig(..))
 import Modelling.PetriNet.Reach.Type    (Capacity(..))
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
+{-|
+points: 0.2
+-}
 task29 :: DeadlockConfig
 task29 = DeadlockConfig {
   numPlaces = 4,
@@ -21,6 +24,9 @@ task29 = DeadlockConfig {
   showMinLengthHint = True
   }
 
+{-|
+points: 0.25
+-}
 task30 :: DeadlockConfig
 task30 = DeadlockConfig {
   numPlaces = 6,

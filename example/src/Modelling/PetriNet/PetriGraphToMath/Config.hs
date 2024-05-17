@@ -15,6 +15,11 @@ import Modelling.PetriNet.Types (
   )
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
+{-|
+points: 0.15
+generation time: 4:00min
+CPU usage: 110%
+-}
 task17 :: MathConfig
 task17 = MathConfig {
   basicConfig = BasicConfig {
@@ -54,6 +59,11 @@ task17 = MathConfig {
     }
   }
 
+{-|
+points: 0.15
+generation time: 6:00min
+CPU usage: 110%
+-}
 task18 :: MathConfig
 task18 = MathConfig {
   basicConfig = BasicConfig {
@@ -79,7 +89,7 @@ task18 = MathConfig {
     },
   generatedWrongInstances = 300,
   graphConfig = GraphConfig {
-    graphLayouts = [Sfdp],
+    graphLayouts = [Fdp],
     hidePlaceNames = False,
     hideTransitionNames = False,
     hideWeight1 = True

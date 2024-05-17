@@ -12,6 +12,11 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   )
 
+{-|
+points: 0.15
+generation time: 5:00h
+CPU usage: 600%
+-}
 task07 :: RepairCdConfig
 task07 = RepairCdConfig {
   allowedProperties = AllowedProperties {
@@ -37,7 +42,7 @@ task07 = RepairCdConfig {
   maxInstances = Just 1000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
-    hasLimitedIsolatedObjects = True,
+    hasLimitedIsolatedObjects = False,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
@@ -49,6 +54,11 @@ task07 = RepairCdConfig {
   useNames = True
   }
 
+{-|
+points: 0.15
+generation time: 5:00h
+CPU usage: 550%
+-}
 task08 :: RepairCdConfig
 task08 = RepairCdConfig {
   allowedProperties = AllowedProperties {
@@ -71,10 +81,10 @@ task08 = RepairCdConfig {
     inheritanceLimits = (2, Just 2),
     relationshipLimits = (7, Just 7)
     },
-  maxInstances = Just 4000,
+  maxInstances = Just 1000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
-    hasLimitedIsolatedObjects = True,
+    hasLimitedIsolatedObjects = False,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },

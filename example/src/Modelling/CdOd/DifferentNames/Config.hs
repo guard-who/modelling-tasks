@@ -11,6 +11,11 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   )
 
+{-|
+points: 0.15
+generation time: 0:27min
+CPU usage: 350%
+-}
 task12 :: DifferentNamesConfig
 task12 = DifferentNamesConfig {
   classConfig = ClassConfig {
@@ -40,6 +45,11 @@ task12 = DifferentNamesConfig {
   timeout = Nothing
   }
 
+{-|
+points: 0.15
+generation time: 1:40min
+CPU usage: 350%
+-}
 task13 :: DifferentNamesConfig
 task13 = DifferentNamesConfig {
   classConfig = ClassConfig {
@@ -69,6 +79,11 @@ task13 = DifferentNamesConfig {
   timeout = Nothing
   }
 
+{-|
+points: 0.25
+generation time: 3:00min
+CPU usage: 150%
+-}
 task25 :: DifferentNamesConfig
 task25 = DifferentNamesConfig {
   classConfig = ClassConfig {

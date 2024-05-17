@@ -1,6 +1,6 @@
 -- |
 
-module Modelling.PetriNet.PetriFindConflict.Config where
+module Modelling.PetriNet.PetriFindConflictPlaces.Config where
 
 import Modelling.PetriNet.Types (
   AdvConfig (..),
@@ -13,6 +13,11 @@ import Modelling.PetriNet.Types (
   )
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
+{-|
+points: 0.2
+generation time: 20:00min
+CPU usage: 100%
+-}
 task24 :: FindConflictConfig
 task24 = FindConflictConfig {
   basicConfig = BasicConfig {
@@ -57,6 +62,11 @@ task24 = FindConflictConfig {
     }
   }
 
+{-|
+points: 0.2
+generation time: 20:00min
+CPU usage: 100%
+-}
 task26 :: FindConflictConfig
 task26 = FindConflictConfig {
   basicConfig = BasicConfig {

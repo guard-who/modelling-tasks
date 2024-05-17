@@ -85,8 +85,10 @@ import Modelling.PetriNet.Concurrency (
   checkPickConcurrencyConfig,
   )
 import Modelling.PetriNet.Conflict (
-  checkFindConflictConfig,
   checkPickConflictConfig,
+  )
+import Modelling.PetriNet.ConflictPlaces (
+  checkFindConflictPlacesConfig,
   )
 import Modelling.PetriNet.MatchToMath (
   checkMathConfig,
@@ -94,7 +96,7 @@ import Modelling.PetriNet.MatchToMath (
 import Modelling.PetriNet.PetriFindConcurrency.Config (
   task23,
   )
-import Modelling.PetriNet.PetriFindConflict.Config (
+import Modelling.PetriNet.PetriFindConflictPlaces.Config (
   task24,
   task26,
   )
@@ -156,11 +158,11 @@ spec =
     it "task23" $
       checkFindConcurrencyConfig task23 `shouldBe` Nothing
     it "task24" $
-      checkFindConflictConfig task24 `shouldBe` Nothing
+      checkFindConflictPlacesConfig task24 `shouldBe` Nothing
     it "task25" $
       checkDifferentNamesConfig task25 `shouldBe` Nothing
     it "task26" $
-      checkFindConflictConfig task26 `shouldBe` Nothing
+      checkFindConflictPlacesConfig task26 `shouldBe` Nothing
     it "task31" $
       checkMatchAdConfig task31 `shouldBe` Nothing
     it "task32" $

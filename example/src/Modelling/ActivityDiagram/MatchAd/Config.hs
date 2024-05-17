@@ -5,6 +5,9 @@ module Modelling.ActivityDiagram.MatchAd.Config where
 import Modelling.ActivityDiagram.Config (AdConfig(..))
 import Modelling.ActivityDiagram.MatchAd (MatchAdConfig(..))
 
+{-|
+points: 0.15
+-}
 task31 :: MatchAdConfig
 task31 = MatchAdConfig {
   adConfig = AdConfig {
@@ -23,6 +26,9 @@ task31 = MatchAdConfig {
   printSolution = True
   }
 
+{-|
+points: 0.15
+-}
 task32 :: MatchAdConfig
 task32 = MatchAdConfig {
   adConfig = AdConfig {

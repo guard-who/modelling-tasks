@@ -11,6 +11,11 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   )
 
+{-|
+points: 0.15
+generation time: 2:00min
+CPU usage: 150%
+-}
 task14 :: MatchCdOdConfig
 task14 = MatchCdOdConfig {
   classConfig = ClassConfig {
@@ -38,6 +43,11 @@ task14 = MatchCdOdConfig {
   withNonTrivialInheritance = Just True
   }
 
+{-|
+points: 0.15
+generation time: 1:10min
+CPU usage: 150%
+-}
 task15 :: MatchCdOdConfig
 task15 = MatchCdOdConfig {
   classConfig = ClassConfig {

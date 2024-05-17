@@ -12,6 +12,11 @@ import Modelling.PetriNet.Types (
   )
 import Data.GraphViz.Commands           (GraphvizCommand(..))
 
+{-|
+points: 0.1
+generation time: 3:30min
+CPU usage: 110%
+-}
 task22 :: PickConflictConfig
 task22 = PickConflictConfig {
   basicConfig = BasicConfig {
@@ -53,6 +58,11 @@ task22 = PickConflictConfig {
     }
   }
 
+{-|
+points: 0.1
+generation time: 6:00min
+CPU usage: 100%
+-}
 task16 :: PickConflictConfig
 task16 = PickConflictConfig {
   basicConfig = BasicConfig {

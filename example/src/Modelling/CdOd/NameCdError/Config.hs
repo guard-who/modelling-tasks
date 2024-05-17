@@ -17,6 +17,11 @@ import Modelling.CdOd.Types (
   Property (..),
   )
 
+{-|
+points: 0.15
+generation time: 0:20min
+CPU usage: 200%
+-}
 task09 :: NameCdErrorConfig
 task09 = NameCdErrorConfig {
   allowedProperties = AllowedProperties {
@@ -70,6 +75,11 @@ task09 = NameCdErrorConfig {
   useNames = True
   }
 
+{-|
+points: 0.15
+generation time: 0:20min
+CPU usage: 200%
+-}
 task10 :: NameCdErrorConfig
 task10 = NameCdErrorConfig {
   allowedProperties = AllowedProperties {

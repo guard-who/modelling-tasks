@@ -14,6 +14,11 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   )
 
+{-|
+points: 0.15
+generation time: ?:??h
+CPU usage: ???%
+-}
 task05 :: SelectValidCdConfig
 task05 = SelectValidCdConfig {
   allowedProperties = AllowedProperties {
@@ -39,7 +44,7 @@ task05 = SelectValidCdConfig {
   maxInstances = Just 4000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
-    hasLimitedIsolatedObjects = True,
+    hasLimitedIsolatedObjects = False,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
@@ -51,6 +56,11 @@ task05 = SelectValidCdConfig {
   timeout = Nothing
   }
 
+{-|
+points: 0.15
+generation time: 1:30h
+CPU usage: 400%
+-}
 task06 :: SelectValidCdConfig
 task06 = SelectValidCdConfig {
   allowedProperties = AllowedProperties {
@@ -73,10 +83,10 @@ task06 = SelectValidCdConfig {
     inheritanceLimits = (1, Just 1),
     relationshipLimits = (7, Just 8)
     },
-  maxInstances = Just 1000,
+  maxInstances = Just 4000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
-    hasLimitedIsolatedObjects = True,
+    hasLimitedIsolatedObjects = False,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
