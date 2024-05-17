@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -150,7 +151,7 @@ import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
-import System.Random.Shuffle            (shuffleM)
+import System.Random.Shuffle            (shuffle', shuffleM)
 
 data PropertyChange = PropertyChange {
     changeName     :: String,
@@ -727,12 +728,19 @@ defaultRepairCdInstance = RepairCdInstance {
   withNames = True
   }
 
+type PropertyChangeSet = ChangeSet PropertyChange
+
+data ChangeSet a = ChangeSet {
+  illegalChange :: a,
+  otherChanges :: (a, a, a, a)
+  } deriving (Eq, Functor, Ord)
+
 possibleChanges
   :: AllowedProperties
-  -> [(PropertyChange, [PropertyChange])]
+  -> [PropertyChangeSet]
 possibleChanges allowed = nubOrdOn
-  (bimap changeName (map changeName))
-  [ (e0, cs)
+  (fmap changeName)
+  [ ChangeSet e0 cs
   | e0 <- illegalChanges allowed
   , l0 <- legalChanges allowed
   , let ls = delete l0 $ legalChanges allowed
@@ -741,11 +749,22 @@ possibleChanges allowed = nubOrdOn
   , let changes = [c0, noChange, e0] ++ l1
   , c1 <- changes
   , c2 <- delete c1 changes
-  , let cs = [l0 .&. e0, noChange, c1, c2]
+  , let cs = (l0 .&. e0, noChange, c1, c2)
   ]
   where
     delete x xs = M.elems . M.delete (changeName x) . M.fromList
       $ zip (map changeName xs) xs
+
+{-|
+Introduces deterministic permutations on a a list of 'PropertyChangeSet's.
+The key point is to maintain reproducibility but achieving diversity nontheless.
+-}
+diversify :: [PropertyChangeSet] -> [(PropertyChange, [PropertyChange])]
+diversify = zipWith permutate [0..]
+  where
+    permutate g c =
+      let (w, x, y, z) = otherChanges c
+      in (illegalChange c, shuffle' [w, x, y, z] 4 $ mkStdGen g)
 
 repairIncorrect
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
@@ -757,12 +776,11 @@ repairIncorrect
   -> Maybe Int
   -> RandT g m (Cd, [CdChangeAndCd])
 repairIncorrect allowed config objectProperties preference maxInstances to = do
-  changeSets <- shuffleM $ possibleChanges allowed
+  changeSets <- shuffleM $ diversify $ possibleChanges allowed
   tryNextChangeSet changeSets
   where
     tryNextChangeSet [] = lift $ throwM NoInstanceAvailable
-    tryNextChangeSet ((e0, cs) : changeSets) = do
-      propertyChanges <- shuffleM cs
+    tryNextChangeSet ((e0, propertyChanges) : changeSets) = do
       let alloyCode = Changes.transformChanges
             config
             (toProperty e0)
@@ -776,9 +794,14 @@ repairIncorrect allowed config objectProperties preference maxInstances to = do
       tryNextChangeSet changeSets
     getInstanceWithODs cs propertyChanges (alloyInstance : alloyInstances) = do
       cdInstance <- getChangesAndCds alloyInstance
-      let cd = instanceClassDiagram cdInstance
-          chs = instanceChangesAndCds cdInstance
-      hints <- zipWithM getOdOrImprovedCd propertyChanges chs
+      (shuffledPropertyChanges, shuffledChangesAndCds) <-
+        unzip <$> shuffleM (zip propertyChanges $ instanceChangesAndCds cdInstance)
+      let shuffledCdInstance = cdInstance {
+            instanceChangesAndCds = shuffledChangesAndCds
+            }
+      let cd = instanceClassDiagram shuffledCdInstance
+          chs = instanceChangesAndCds shuffledCdInstance
+      hints <- zipWithM getOdOrImprovedCd shuffledPropertyChanges chs
       case sequenceA hints of
         Nothing -> getInstanceWithODs cs propertyChanges alloyInstances
         Just odsAndCds -> do
