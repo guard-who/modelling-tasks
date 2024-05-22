@@ -56,8 +56,7 @@ task07 = RepairCdConfig {
 
 {-|
 points: 0.15
-generation time: 5:00h
-CPU usage: 550%
+attention: invalid configuration! (increase maxInstances!)
 -}
 task08 :: RepairCdConfig
 task08 = RepairCdConfig {

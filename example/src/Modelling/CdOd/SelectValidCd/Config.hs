@@ -16,8 +16,8 @@ import Modelling.CdOd.Types (
 
 {-|
 points: 0.15
-generation time: ?:??h
-CPU usage: ???%
+generation time: 24:00h
+CPU usage: 400%
 -}
 task05 :: SelectValidCdConfig
 task05 = SelectValidCdConfig {
