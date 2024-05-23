@@ -52,8 +52,8 @@ auxiliaryPlacesAdvice withFinalTransitionAdvice = do
       |]
     german [iii|
       Bitte beachten Sie:
-      Auf den Folien 217 und 219 wird noch immer gesagt,
-      dass Verzweigung- und Verbinundungsknoten bei der Übersetzung als
+      Auf den Folien 217 und 219 wird noch gesagt,
+      dass Verzweigungs- und Verbindungsknoten bei der Übersetzung als
       Hilfsstellen realisiert werden.
       Das ist jedoch nicht so beabsichtigt.
       Die für Verzweigungs- und Verbindungsknoten eingeführten Stellen
@@ -77,14 +77,14 @@ auxiliaryPlacesAdvice withFinalTransitionAdvice = do
       Hinweis zur Übersetzung in ein Petrinetz:
       Für Endknoten  werden keine zusätzlichen Stellen eingeführt.
       Sie werden so realisiert, dass ein Token verbraucht wird,
-      also an dieser Stelle aus dem Netz verschwindet.
+      also an dieser Position aus dem Netz verschwindet.
       |]
       `appendExtendedAdvice`
       [iii|
       Falls eine zusätzliche Transition erforderlich ist,
       um dieses Verhalten an einer Position im Diagramm zu realisieren,
       an der sich ein Endknoten befindet,
-      zählt diese Transition nicht als Hilfsstelle.
+      zählt diese Transition nicht als Hilfsknoten.
       |]
   pure ()
   where
