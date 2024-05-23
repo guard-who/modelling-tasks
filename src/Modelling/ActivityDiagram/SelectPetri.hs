@@ -34,7 +34,7 @@ import qualified Modelling.ActivityDiagram.PetriNet as PK (PetriKey (label))
 
 import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (
-  auxiliaryPlacesAdvice,
+  auxiliaryNodesAdvice,
   weightedShuffle,
   )
 import Modelling.ActivityDiagram.Config (
@@ -141,7 +141,7 @@ pickRandomLayout conf = oneOf (petriLayout conf)
 
 defaultSelectPetriConfig :: SelectPetriConfig
 defaultSelectPetriConfig = SelectPetriConfig {
-  adConfig = defaultAdConfig,
+  adConfig = defaultAdConfig {activityFinalNodes = 0, flowFinalNodes = 2},
   maxInstances = Just 50,
   hideNodeNames = False,
   hideBranchConditions = False,
@@ -151,9 +151,9 @@ defaultSelectPetriConfig = SelectPetriConfig {
   numberOfModifications = 3,
   modifyAtMid = True,
   supportSTAbsent = Nothing,
-  activityFinalsExist = Just True,
+  activityFinalsExist = Just False,
   avoidAddingSinksForFinals = Nothing,
-  noActivityFinalInForkBlocks = Just False,
+  noActivityFinalInForkBlocks = Just True,
   printSolution = False
 }
 
@@ -174,6 +174,10 @@ checkSelectPetriConfig' SelectPetriConfig {
     avoidAddingSinksForFinals,
     noActivityFinalInForkBlocks
   }
+  | activityFinalNodes adConfig > 1
+  = Just "There is at most one 'activityFinalNode' allowed."
+  | activityFinalNodes adConfig >= 1 && flowFinalNodes adConfig >= 1
+  = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | numberOfWrongAnswers < 1
@@ -351,7 +355,7 @@ Bitte geben Sie Ihre Antwort als Zahl an, welche das passende Petrinetz repräse
       english [i|would indicate that Petri net 2 is the matching Petri net.|]
       german  [i|bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
     pure ()
-  auxiliaryPlacesAdvice False
+  auxiliaryNodesAdvice False
   pure ()
 
 selectPetriSolutionToMap

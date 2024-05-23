@@ -35,7 +35,7 @@ import qualified Data.Map as M (
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.PlantUml            (MonadPlantUml)
-import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryPlacesAdvice)
+import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
   AdConnection (..),
   AdNode (..),
@@ -112,11 +112,11 @@ data FindSupportSTConfig = FindSupportSTConfig {
 
 defaultFindSupportSTConfig :: FindSupportSTConfig
 defaultFindSupportSTConfig = FindSupportSTConfig
-  { adConfig = defaultAdConfig,
+  { adConfig = defaultAdConfig {activityFinalNodes = 0, flowFinalNodes = 2},
     maxInstances = Just 50,
     hideNodeNames = False,
     hideBranchConditions = False,
-    activityFinalsExist = Nothing,
+    activityFinalsExist = Just False,
     avoidAddingSinksForFinals = Nothing,
     printSolution = False
   }
@@ -133,6 +133,10 @@ findSupportSTConfig' FindSupportSTConfig {
     activityFinalsExist,
     avoidAddingSinksForFinals
   }
+  | activityFinalNodes adConfig > 1
+  = Just "There is at most one 'activityFinalNode' allowed."
+  | activityFinalNodes adConfig >= 1 && flowFinalNodes adConfig >= 1
+  = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | Just instances <- maxInstances, instances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
@@ -223,7 +227,7 @@ an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl
       english [i|In this example, the resulting net contains 10 nodes in total, of which 2 are auxiliary places and 3 are auxiliary transitions.|]
       german [i|In diesem Beispiel etwa enthält das entstehende Netz insgesamt 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransitionen.|]
     pure ()
-  auxiliaryPlacesAdvice True
+  auxiliaryNodesAdvice True
   pure ()
 
 findSupportSTInitial :: FindSupportSTSolution

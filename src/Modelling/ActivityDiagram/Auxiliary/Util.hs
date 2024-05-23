@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 module Modelling.ActivityDiagram.Auxiliary.Util (
-  auxiliaryPlacesAdvice,
+  auxiliaryNodesAdvice,
   weightedShuffle
   ) where
 
@@ -37,8 +37,8 @@ weightedShuffle xs = do
   ys <- weightedShuffle (delete a xs)
   return (fst a : ys)
 
-auxiliaryPlacesAdvice :: OutputMonad m => Bool -> LangM m
-auxiliaryPlacesAdvice withFinalTransitionAdvice = do
+auxiliaryNodesAdvice :: OutputMonad m => Bool -> LangM m
+auxiliaryNodesAdvice withFinalTransitionAdvice = do
   paragraph $ translate $ do
     english [iii|
       Please note:

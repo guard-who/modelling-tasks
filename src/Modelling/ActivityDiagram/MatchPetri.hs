@@ -32,7 +32,7 @@ import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Capabilities.PlantUml            (MonadPlantUml)
-import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryPlacesAdvice)
+import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   AdNode (..),
@@ -133,14 +133,14 @@ pickRandomLayout conf = oneOf (petriLayout conf)
 
 defaultMatchPetriConfig :: MatchPetriConfig
 defaultMatchPetriConfig = MatchPetriConfig
-  { adConfig = defaultAdConfig,
+  { adConfig = defaultAdConfig {activityFinalNodes = 0, flowFinalNodes = 2},
     maxInstances = Just 25,
     hideBranchConditions = False,
     petriLayout = [Dot],
     supportSTAbsent = Nothing,
-    activityFinalsExist = Just True,
+    activityFinalsExist = Just False,
     avoidAddingSinksForFinals = Nothing,
-    noActivityFinalInForkBlocks = Just False,
+    noActivityFinalInForkBlocks = Just True,
     printSolution = False
   }
 
@@ -160,6 +160,10 @@ checkMatchPetriConfig' MatchPetriConfig {
     avoidAddingSinksForFinals,
     noActivityFinalInForkBlocks
   }
+  | activityFinalNodes adConfig > 1
+  = Just "There is at most one 'activityFinalNode' allowed."
+  | activityFinalNodes adConfig >= 1 && flowFinalNodes adConfig >= 1
+  = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | supportSTAbsent == Just True && cycles adConfig > 0
@@ -312,7 +316,7 @@ the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes
       german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
 die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsstellen oder -transitionen.|]
     pure ()
-  auxiliaryPlacesAdvice True
+  auxiliaryNodesAdvice True
   pure ()
 
 matchPetriInitial :: MatchPetriSolution
