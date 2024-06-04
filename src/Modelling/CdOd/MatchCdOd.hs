@@ -645,7 +645,7 @@ getChangesAndCds alloyInstance = do
             changeClassDiagram = second (\x' -> if x' == x then y else x')
               $ changeClassDiagram change
             }
-        _ -> change
+        Change {} -> change
 
 getODInstances
   :: MonadAlloy m

@@ -20,6 +20,7 @@ import Modelling.CdOd.Types (
   Relationship (..),
   RelationshipProperties (..),
   maxRelationships,
+  relationshipName,
   towardsValidProperties,
   )
 
@@ -32,7 +33,7 @@ import Data.String.Interpolate          (__i, i)
 
 transformWith
   :: ClassConfig
-  -> Either (ClassDiagram String relationship) RelationshipProperties
+  -> Either (ClassDiagram String String) RelationshipProperties
   -> (Int, [String], String)
   -> String
 transformWith config cdOrProperties (cs, predicates, part) =
@@ -88,7 +89,7 @@ transformChanges config props maybeConfig propsList =
   transformWith config (Right props) $ changes maybeConfig propsList
 
 transformImproveCd
-  :: ClassDiagram String relationship
+  :: ClassDiagram String String
   -- ^ the generated CD
   -> ClassConfig
   -- ^ the configuration used for generating the CD
@@ -133,13 +134,16 @@ fact preventSameNonInheritances {
 |]
 
 nameRelationships
-  :: ClassDiagram className relationshipName
-  -> [(String, Relationship className relationshipName)]
-nameRelationships ClassDiagram {relationships} = zip
+  :: ClassDiagram className String
+  -> [(String, Relationship className String)]
+nameRelationships ClassDiagram {relationships} = zipWith
+  addName
   (map (("Relationship" ++) . show) [0 :: Int ..])
   relationships
+  where
+    addName defaultName r = (fromMaybe defaultName $ relationshipName r, r)
 
-givenClassDiagram :: ClassDiagram String relationship -> String
+givenClassDiagram :: ClassDiagram String String -> String
 givenClassDiagram cd@ClassDiagram {classNames} = [i|
 //////////////////////////////////////////////////
 // Given CD
