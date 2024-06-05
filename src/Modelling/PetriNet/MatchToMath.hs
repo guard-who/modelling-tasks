@@ -29,7 +29,6 @@ module Modelling.PetriNet.MatchToMath (
   mathToGraphSyntax,
   mathToGraphTask,
   petriNetRnd,
-  renderFormula,
   )  where
 
 import qualified Data.Map                         as M (
@@ -123,7 +122,6 @@ import Control.Monad.Random             (
   evalRandT,
   mkStdGen,
   )
-import Control.Monad.Trans.Except       (ExceptT (ExceptT))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
@@ -131,7 +129,7 @@ import Data.GraphViz                    (GraphvizCommand (Circo, Dot, Fdp, Sfdp)
 import Data.Map                         (Map, fromList, mapWithKey, toList)
 import Data.String.Interpolate          (i)
 import GHC.Generics                     (Generic)
-import Image.LaTeX.Render               (alterForHTML, imageForFormula, defaultFormulaOptions, defaultEnv, SVG, Formula)
+import Image.LaTeX.Render               (Formula)
 import Language.Alloy.Call (
   AlloyInstance,
   )
@@ -207,10 +205,6 @@ instance Bitraversable MatchInstance where
     <$> f (from m)
     <*> pure (showSolution m)
     <*> traverse (traverse g) (to m)
-
-renderFormula :: String -> ExceptT String IO SVG
-renderFormula = ExceptT . (bimap show alterForHTML <$>)
-  . imageForFormula defaultEnv defaultFormulaOptions
 
 evalWithStdGen
   :: Monad m
