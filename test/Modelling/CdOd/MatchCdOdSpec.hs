@@ -1,16 +1,13 @@
 module Modelling.CdOd.MatchCdOdSpec where
 
-import qualified Data.ByteString.Char8            as BS (pack)
 import qualified Data.Map                         as M (lookup, null)
 
 import Capabilities.Alloy.IO            ()
-import Modelling.Common                 (withUnitTests)
 import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (maxInstances, objectConfig),
   checkMatchCdOdConfig,
   defaultMatchCdOdConfig,
   diagrams,
-  getChangesAndCds,
   getODInstances,
   matchCdOd,
   )
@@ -28,12 +25,10 @@ import Modelling.CdOd.Types (
   )
 import Modelling.Auxiliary.Common       (oneOf)
 
-import Control.Monad                    ((>=>))
 import Control.Monad.Random             (randomIO)
 import Control.Monad.Except             (runExceptT)
 import Data.Maybe                       (fromMaybe)
 import Data.Tuple.Extra                 (both)
-import Language.Alloy.Debug             (parseInstance)
 import Test.Hspec
 import Test.QuickCheck                  (ioProperty)
 
@@ -72,13 +67,7 @@ spec = do
     it "generates correct ODs for inheritance and composition" $
       getOdsFor cdAInheritsBandAtoB cdComposeBofAs
       `shouldReturn` inheritOd
-  withUnitTests "getChangesAndCds" does dir "hs" $ shouldReturn . getResult
   where
-    does = "generates expected class diagrams"
-    dir = "test/unit/Modelling/CdOd/MatchCdOd"
-    getResult = parseInstance
-      . BS.pack
-      >=> fmap show . getChangesAndCds
     opposingOd = both (:[]) (
       ObjectDiagram {
         objects = [

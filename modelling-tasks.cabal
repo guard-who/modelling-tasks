@@ -165,6 +165,7 @@ test-suite modelling-tasks-test
       Modelling.ActivityDiagram.SelectASSpec
       Modelling.ActivityDiagram.SelectPetriSpec
       Modelling.CdOd.CD2Alloy.TransformSpec
+      Modelling.CdOd.CdAndChanges.InstanceSpec
       Modelling.CdOd.DifferentNamesSpec
       Modelling.CdOd.Edges
       Modelling.CdOd.GenerateSpec

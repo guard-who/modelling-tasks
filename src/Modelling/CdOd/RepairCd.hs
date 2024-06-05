@@ -82,9 +82,11 @@ import Modelling.CdOd.CdAndChanges.Instance (
   AnnotatedChangeAndCd (..),
   ChangeAndCd (..),
   GenericClassDiagramInstance (..),
+  fromInstance,
+  fromInstanceWithPredefinedNames,
+  nameClassDiagramInstance,
   uniformlyAnnotateChangeAndCd,
   )
-import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
   cacheCd,
   )
@@ -793,7 +795,7 @@ repairIncorrect allowed config objectProperties preference maxInstances to = do
     getInstanceWithODs changeSets _  [] =
       tryNextChangeSet changeSets
     getInstanceWithODs cs propertyChanges (alloyInstance : alloyInstances) = do
-      cdInstance <- getChangesAndCds alloyInstance
+      cdInstance <- fromInstance alloyInstance >>= nameClassDiagramInstance
       (shuffledPropertyChanges, shuffledChangesAndCds) <-
         unzip <$> shuffleM (zip propertyChanges $ instanceChangesAndCds cdInstance)
       let shuffledCdInstance = cdInstance {
@@ -817,7 +819,7 @@ repairIncorrect allowed config objectProperties preference maxInstances to = do
       let alloyCode = Changes.transformImproveCd cd config properties
       changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
       fmap (relationshipChange . head . instanceChangesAndCds)
-        <$> traverse getChangesAndCds changes
+        <$> traverse fromInstanceWithPredefinedNames changes
     getOD :: (MonadAlloy m, MonadThrow m) => Cd -> m (Maybe Od)
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd

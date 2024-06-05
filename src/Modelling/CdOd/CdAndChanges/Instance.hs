@@ -10,11 +10,13 @@ module Modelling.CdOd.CdAndChanges.Instance (
   ReadObjectDiagramFromAlloyException (..),
   UnexpectedRelation (..),
   fromInstance,
-  renameClassesAndRelationshipsInCdInstance,
+  fromInstanceWithNameOverlapp,
+  fromInstanceWithPredefinedNames,
+  nameClassDiagramInstance,
   uniformlyAnnotateChangeAndCd,
   ) where
 
-import qualified Data.Bimap                       as BM (lookup)
+import qualified Data.Bimap                       as BM (fromList, lookup)
 import qualified Data.Map                         as M (
   lookup,
   )
@@ -30,12 +32,13 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   LimitedLinking (..),
   Relationship (..),
+  relationshipName,
   )
 import Modelling.Types                  (Change (..))
 
-import Control.Monad                    (forM)
+import Control.Monad                    ((<=<), forM)
 import Control.Monad.Catch              (Exception, MonadThrow (throwM))
-import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
@@ -151,6 +154,51 @@ renameClassesAndRelationshipsInCdInstance
   bmRelationshipNames
   = bitraverse (`BM.lookup` bmClassNames) (`BM.lookup` bmRelationshipNames)
 
+{-|
+This version deliberately reuses names when changes to class diagrams
+have been applied,
+i.e. in the resulting class diagram the added relationship is named exactly
+as the removed one.
+This is especially required for the MatchCdOd task type where the overlap on
+resulting ODs is intended.
+Beware that this overlap is reflected in the class diagram only,
+but NOT in the change itself.
+-}
+fromInstanceWithNameOverlapp
+  :: MonadThrow m
+  => AlloyInstance
+  -> m ClassDiagramInstance
+fromInstanceWithNameOverlapp alloyInstance = do
+  cdInstance <- fromInstance alloyInstance
+  return $ cdInstance {
+    instanceChangesAndCds = map deliberatelyNameReplacedEdgesSameInCdOnly
+      $ instanceChangesAndCds cdInstance
+    }
+  where
+    deliberatelyNameReplacedEdgesSameInCdOnly change =
+      case relationshipChange change of
+        Change {add = Just rx, remove = Just ry}
+          | Just x <- relationshipName rx
+          , Just y <- relationshipName ry -> change {
+            changeClassDiagram = second (\x' -> if x' == x then y else x')
+              $ changeClassDiagram change
+            }
+        Change {} -> change
+
+{-|
+Retrieve the instance with predefined class diagram component names.
+This only makes sense if a class diagram with names was already provided to
+Alloy beforehand.
+
+This is achieved by relying on 'usePredefinedClassDiagramInstanceNames';
+be sure to check its restrictions!
+-}
+fromInstanceWithPredefinedNames
+  :: MonadThrow m
+  => AlloyInstance
+  -> m (GenericClassDiagramInstance String String)
+fromInstanceWithPredefinedNames =
+  usePredefinedClassDiagramInstanceNames <=< fromInstanceWithNameOverlapp
 
 fromInstance
   :: MonadThrow m
@@ -339,3 +387,48 @@ getLinking link low high x = do
         "One"  -> pure $ Just 1
         "Two"  -> pure $ Just 2
         l      -> throwM $ UnknownLimit l
+
+{-|
+Define fresh names for each class diagram component.
+Capital letters beginning from 'A' are used for class names.
+Small letters beginning from 'z' backwards are used for relationship names.
+-}
+nameClassDiagramInstance
+  :: (MonadThrow m, Ord className, Ord relationshipName)
+  => GenericClassDiagramInstance className relationshipName
+  -> m (GenericClassDiagramInstance String String)
+nameClassDiagramInstance cdInstance =
+  let cd = instanceClassDiagram cdInstance
+      cs = classNames cd
+      es = instanceRelationshipNames cdInstance
+      bimapEdges = BM.fromList $ zip es $ map (:[]) ['z', 'y' ..]
+      bimapClasses = BM.fromList $ zip cs $ map (:[]) ['A' ..]
+  in renameClassesAndRelationshipsInCdInstance
+    bimapClasses
+    bimapEdges
+    cdInstance
+
+{-|
+Use predefined class diagram component names.
+This only makes sense if a class diagram with names was already provided to
+Alloy beforehand.
+
+All names are gained by stripping everything after the dollar sign.
+Attention! This is unsafe if new class diagram components are introduced,
+e.g. as part of `add`.
+-}
+usePredefinedClassDiagramInstanceNames
+  :: MonadThrow m
+  => GenericClassDiagramInstance String String
+  -> m (GenericClassDiagramInstance String String)
+usePredefinedClassDiagramInstanceNames cdInstance =
+  let cd = instanceClassDiagram cdInstance
+      cs = classNames cd
+      es = instanceRelationshipNames cdInstance
+      prefixOnly = takeWhile (/= '$')
+      bimapEdges = BM.fromList $ zip es $ map prefixOnly es
+      bimapClasses = BM.fromList $ zip cs $ map prefixOnly cs
+  in renameClassesAndRelationshipsInCdInstance
+    bimapClasses
+    bimapEdges
+    cdInstance

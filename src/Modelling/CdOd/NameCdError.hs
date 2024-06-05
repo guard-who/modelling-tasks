@@ -79,8 +79,10 @@ import Modelling.CdOd.CD2Alloy.Transform (
 import Modelling.CdOd.CdAndChanges.Instance (
   ChangeAndCd (..),
   GenericClassDiagramInstance (..),
+  fromInstance,
+  fromInstanceWithPredefinedNames,
+  nameClassDiagramInstance,
   )
-import Modelling.CdOd.MatchCdOd         (getChangesAndCds)
 import Modelling.CdOd.Output (
   cacheCd,
   )
@@ -804,7 +806,9 @@ nameCdError allowed config objectProperties byName maxInstances to = do
       getInstanceWithODs chs p randomInstances
     getInstanceWithODs chs _ [] = getInstanceWithChanges chs
     getInstanceWithODs chs p (randomInstance:randomInstances) = do
-      cdInstance <- lift $ getChangesAndCds randomInstance
+      cdInstance <- lift
+        $ fromInstance randomInstance
+        >>= nameClassDiagramInstance
       let cd = instanceClassDiagram cdInstance
           p' = p {
             hasCompositionsPreventingParts = Nothing,
@@ -814,7 +818,7 @@ nameCdError allowed config objectProperties byName maxInstances to = do
             }
           alloyCode = Changes.transformGetNextFix (Just cd) config p' byName
       instances <- lift $ getInstances Nothing to alloyCode
-      correctInstance <- lift $ mapM getChangesAndCds instances
+      correctInstance <- lift $ mapM fromInstanceWithPredefinedNames instances
       let allChs = concatMap instanceChangesAndCds correctInstance
           cd2 = instanceClassDiagram $ head correctInstance
       possibleRemoves <- do

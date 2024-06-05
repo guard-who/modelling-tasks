@@ -13,7 +13,6 @@ module Modelling.CdOd.MatchCdOd (
   checkMatchCdOdInstance,
   defaultMatchCdOdConfig,
   defaultMatchCdOdInstance,
-  getChangesAndCds,
   getMatchCdOdTask,
   getODInstances,
   matchCdOd,
@@ -63,10 +62,9 @@ import Modelling.CdOd.CD2Alloy.Transform (
   )
 import Modelling.CdOd.CdAndChanges.Instance (
   ChangeAndCd (..),
-  ClassDiagramInstance,
   GenericClassDiagramInstance (..),
-  fromInstance,
-  renameClassesAndRelationshipsInCdInstance,
+  fromInstanceWithNameOverlapp,
+  nameClassDiagramInstance,
   )
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
@@ -91,7 +89,6 @@ import Modelling.CdOd.Types (
   defaultProperties,
   isObjectDiagramRandomisable,
   linkNames,
-  relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
@@ -99,12 +96,12 @@ import Modelling.CdOd.Types (
   shuffleObjectAndLinkOrder,
   )
 import Modelling.Types (
-  Change (..),
   Letters (Letters, lettersList),
   showLetters,
   )
 
 import Control.Exception                (Exception)
+import Control.Monad                    ((<=<))
 import Control.Monad.Catch              (MonadThrow, throwM)
 #if __GLASGOW_HASKELL__ < 808
 import Control.Monad.Fail               (MonadFail)
@@ -607,7 +604,7 @@ getODsFor
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
   [cd1, cd2, cd3] <- map changeClassDiagram . instanceChangesAndCds
-    <$> getChangesAndCds cd
+    <$> (nameClassDiagramInstance <=< fromInstanceWithNameOverlapp) cd
   alloyInstances <- getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
   maybeRandomInstances <- takeRandomInstances alloyInstances
   case maybeRandomInstances of
@@ -616,36 +613,6 @@ getODsFor config (cd:cds) = do
       M.fromList [(1, cd1), (2, cd2)],
       M.fromList $ zip ['a' ..] randomInstances
       )
-
-getChangesAndCds
-  :: (MonadAlloy m, MonadThrow m)
-  => AlloyInstance
-  -> m ClassDiagramInstance
-getChangesAndCds alloyInstance = do
-  cdInstance <- fromInstance alloyInstance
-  let cd  = instanceClassDiagram cdInstance
-      cs  = classNames cd
-      es  = instanceRelationshipNames cdInstance
-      bimapEdges = BM.fromList $ zip es $ map (:[]) ['z', 'y' ..]
-      bimapClasses = BM.fromList $ zip cs $ map (:[]) ['A' ..]
-  cdInstance' <- renameClassesAndRelationshipsInCdInstance
-    bimapClasses
-    bimapEdges
-    cdInstance
-  return $ cdInstance' {
-    instanceChangesAndCds = map deliberatelyNameReplacedEdgesSameInCdOnly
-      $ instanceChangesAndCds cdInstance'
-    }
-  where
-    deliberatelyNameReplacedEdgesSameInCdOnly change =
-      case relationshipChange change of
-        Change {add = Just rx, remove = Just ry}
-          | Just x <- relationshipName rx
-          , Just y <- relationshipName ry -> change {
-            changeClassDiagram = second (\x' -> if x' == x then y else x')
-              $ changeClassDiagram change
-            }
-        Change {} -> change
 
 getODInstances
   :: MonadAlloy m
