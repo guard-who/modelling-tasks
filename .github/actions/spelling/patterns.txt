@@ -17,6 +17,9 @@ https?://[-+0-9a-zA-Z?&=_\/%.]*
 # ignore GHC compiler instructions
 ^\{-# OPTIONS_GHC .* #-}$
 
+# ignore renaming advices
+^Original: [a-zA-Z0-9]+ ––– Here: [a-zA-Z0-9]+$
+
 # ignore (bi)map followed by the same word twice
 ([Bb]i)?[mM]ap\s([A-Z]{3,}|[A-Z][a-z]{2,}|[a-z]{3,})\s\g{-1}\s
 

@@ -3,41 +3,41 @@
 ///////////////////////////////////////////////////
 
 //Names of fields/associations in classes of the model
-abstract sig FName {}
+abstract sig FieldName {}
 
 //Parent of all classes relating fields and values
-abstract sig Obj {
-  get : FName -> set Obj
+abstract sig Object {
+  get : FieldName -> set Object
 }
 
-pred ObjFNames[objs : set Obj, fNames : set FName] {
-  no objs.get[FName - fNames]
+pred ObjectFieldNames[objects : set Object, fieldNames : set FieldName] {
+  no objects.get[FieldName - fieldNames]
 }
 
-pred ObjLUAttrib[objs : set Obj, fName : FName, fType : set Obj, low, up : Int] {
-  ObjLAttrib[objs, fName, fType, low]
-  all o : objs | #o.get[fName] =< up
+pred ObjectLowerUpperAttribute[objects : set Object, fieldName : FieldName, fType : set Object, low, up : Int] {
+  ObjectLowerAttribute[objects, fieldName, fType, low]
+  all o : objects | #o.get[fieldName] =< up
 }
 
-pred ObjLAttrib[objs : set Obj, fName : FName, fType : set Obj, low : Int] {
-  objs.get[fName] in fType
-  all o : objs | #o.get[fName] >= low
+pred ObjectLowerAttribute[objects : set Object, fieldName : FieldName, fType : set Object, low : Int] {
+  objects.get[fieldName] in fType
+  all o : objects | #o.get[fieldName] >= low
 }
 
-pred ObjLU[objs : set Obj, fName : FName, fType : set Obj, low, up : Int] {
-  ObjL[objs, fName, fType, low]
-  ObjU[objs, fName, fType, up]
+pred ObjectLowerUpper[objects : set Object, fieldName : FieldName, fType : set Object, low, up : Int] {
+  ObjectLower[objects, fieldName, fType, low]
+  ObjectUpper[objects, fieldName, fType, up]
 }
 
-pred ObjL[objs : set Obj, fName : FName, fType : set Obj, low : Int] {
-  all r : objs | #{l : fType | r in l.get[fName]} >= low
+pred ObjectLower[objects : set Object, fieldName : FieldName, fType : set Object, low : Int] {
+  all r : objects | #{l : fType | r in l.get[fieldName]} >= low
 }
 
-pred ObjU[objs : set Obj, fName : FName, fType : set Obj, up : Int] {
-  all r : objs | #{l : fType | r in l.get[fName]} =< up
+pred ObjectUpper[objects : set Object, fieldName : FieldName, fType : set Object, up : Int] {
+  all r : objects | #{l : fType | r in l.get[fieldName]} =< up
 }
 
-pred Composition[left : set Obj, lFName : set FName, right : set Obj] {
-  // all l1, l2 : left | (#{l1.get[lFName] & l2.get[lFName]} > 0) => l1 = l2
-  all r : right | #{l : left, lF : lFName | r in l.get[lF]} =< 1
+pred Composition[left : set Object, lFieldName : set FieldName, right : set Object] {
+  // all l1, l2 : left | (#{l1.get[lFieldName] & l2.get[lFieldName]} > 0) => l1 = l2
+  all r : right | #{l : left, lF : lFieldName | r in l.get[lF]} =< 1
 }

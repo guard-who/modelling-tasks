@@ -441,10 +441,13 @@ differentNames config segment seed = do
     tryGettingValidInstanceFor is
   where
     tryGettingValidInstanceFor []             = throwM NoInstanceAvailable
-    tryGettingValidInstanceFor (insta:instas) = do
-      cd <- instanceToCd insta
-      inst <- getDifferentNamesTask (tryGettingValidInstanceFor instas) config cd
-      shuffleEverything inst
+    tryGettingValidInstanceFor (inst:instances) = do
+      cd <- instanceToCd inst
+      taskInstance <- getDifferentNamesTask
+        (tryGettingValidInstanceFor instances)
+        config
+        cd
+      shuffleEverything taskInstance
 
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
@@ -528,19 +531,19 @@ getDifferentNamesTask tryNext config cd' = do
           (flip renameEdges cd . BM.fromList . zip labels)
           $ drop 1 (permutations labels)
         cds'   = zip [1 :: Integer ..] cds
-        parsList = map (uncurry alloyFor) cds'
+        partsList = map (uncurry alloyFor) cds'
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand
           runCmd
           (length $ classNames cd)
           (objectConfig config)
           (concatMap relationships cds)
-          parsList'
-        parsList' = foldr mergeParts parts0 parsList
+          partsList'
+        partsList' = foldr mergeParts parts0 partsList
     instances  <- getInstances
       (maxInstances config)
       (timeout config)
-      (combineParts parsList' ++ onlyCd0)
+      (combineParts partsList' ++ onlyCd0)
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
@@ -579,7 +582,7 @@ getDifferentNamesTask tryNext config cd' = do
     usedLabels inst = do
       let ignore = const $ const $ return ()
           name = const . return
-      os    <- lookupSig (scoped "this" "Obj") inst
+      os    <- lookupSig (scoped "this" "Object") inst
       map snd3 . S.toList <$> getTripleAs "get" ignore name ignore os
 
 {-|

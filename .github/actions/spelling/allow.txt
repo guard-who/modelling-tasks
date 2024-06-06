@@ -12,6 +12,7 @@ DSL
 DVal
 Eithers
 Fdp
+Fundep
 GHC
 GHCi
 Graphviz
@@ -29,6 +30,7 @@ Perim
 Petrinetz
 Petrinetze
 Petrinetzes
+Petrinetzknoten
 Programmierparadigmen
 QDiagram
 Rightarrow
@@ -89,6 +91,7 @@ lstset
 mappend
 mathrm
 mempty
+mul
 multicolumn
 nlabel
 oneof

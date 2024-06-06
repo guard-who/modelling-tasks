@@ -31,8 +31,8 @@ main = do
 
 drawOd :: FilePath -> String -> IO ()
 drawOd file contents = flip evalRandT (mkStdGen 0) $ do
-  let [objLine, _] = filter ("this/Obj" `isPrefixOf`) (lines contents)
-      theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Obj=" objLine))))
+  let [objLine, _] = filter ("this/Object" `isPrefixOf`) (lines contents)
+      theNodes = splitOn ", " (init (tail (fromJust (stripPrefix "this/Object=" objLine))))
   i <- parseInstance $ BS.pack contents
   output <- drawOdFromInstance
     i

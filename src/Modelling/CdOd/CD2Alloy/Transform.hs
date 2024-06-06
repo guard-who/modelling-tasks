@@ -17,6 +17,17 @@ https://www.se-rwth.de/publications/CD2Alloy-A-Translation-of-Class-Diagrams-to-
 Throughout this module there are references to figures of the former paper,
 indicating which part of the original work
 the previous value definition is representing.
+
+Also to increase readability, some identifiers, predicates, etc.
+have been renamed opposed to the original work, these are:
+
+Original: umlp2alloy ––– Here: cd2alloy
+Original: FName ––– Here: FieldName
+Original: fName ––– Here: fieldName
+Original: Obj ––– Here: Object
+Original: ObjUAttrib ––– Here: ObjectUpperAttribute
+Original: ObjLAttrib ––– Here: ObjectLowerAttribute
+Original: ObjLUAttrib ––– Here: ObjectLowerUpperAttribute
 -}
 module Modelling.CdOd.CD2Alloy.Transform (
   Parts {- only for legacy-apps: -} (..),
@@ -84,7 +95,7 @@ transform
 // Produced by Haskell reimplementation of Eclipse plugin transformation
 // Generated: #{time}
 
-module umlp2alloy/CD#{index}Module
+module cd2alloy/CD#{index}Module
 
 #{template}
 #{objectsFact}
@@ -104,12 +115,12 @@ module umlp2alloy/CD#{index}Module
       = noEmptyInstances
     limitIsolatedObjects = [i|
 fact LimitIsolatedObjects {
-  \#Obj > mul[2, \#{o : Obj | no o.get and no get.o}]
+  \#Object > mul[2, \#{o : Object | no o.get and no get.o}]
 }
 |]
     noEmptyInstances = [i|
 fact NonEmptyInstancesOnly {
-  some Obj
+  some Object
 }
 |]
     withJusts f xs
@@ -120,7 +131,7 @@ fact SizeConstraints {
 #{unlines ps}
 }
 |]) [
-      ("  #Obj >= " ++) . show <$> maybeLower 1 (objectLimits objectConfig),
+      ("  #Object >= " ++) . show <$> maybeLower 1 (objectLimits objectConfig),
       ("  #get >= " ++) . show <$> maybeLower 0 (linkLimits objectConfig),
       ("  #get <= " ++) . show <$> snd (linkLimits objectConfig),
       uncurry linksPerObjects
@@ -129,7 +140,7 @@ fact SizeConstraints {
       ]
     linksPerObjects Nothing Nothing = Nothing
     linksPerObjects maybeMin maybeMax = Just $
-      "  all o : Obj | let x = plus[#o.get,minus[#get.o,#o.get.o]] |"
+      "  all o : Object | let x = plus[#o.get,minus[#get.o,#o.get.o]] |"
       ++ maybe "" ((" x >= " ++) . show) maybeMin
       ++ maybe "" (const " &&") (maybeMin >> maybeMax)
       ++ maybe "" ((" x <= " ++) . show) maybeMax
@@ -189,17 +200,17 @@ fact UsesEveryRelationshipName {
 #{unlines $ map ("  some " ++) namesLinkingTo}
 }|]
     namesLinkingTo = mapMaybe
-      (fmap (\name -> "Obj.get[" ++ name ++ "]") . relationshipName)
+      (fmap (\name -> "Object.get[" ++ name ++ "]") . relationshipName)
       relationships
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just True  -> [i|
 fact SomeSelfLoops {
-  some o : Obj | o in o.get[FName]
+  some o : Object | o in o.get[FieldName]
 }|]
       Just False -> [i|
 fact NoSelfLoops {
-  no o : Obj | o in o.get[FName]
+  no o : Object | o in o.get[FieldName]
 }|]
 
 hasLinkNames :: Parts -> Bool
@@ -218,7 +229,7 @@ createRunCommand command numClasses objectConfig relationships ps = [i|
 // Run commands
 ///////////////////////////////////////////////////
 
-run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
+run { #{command} } for #{fieldNamesLimit}#{maxObjects} Object, #{intSize} Int
 |]
   where
     maxLimit = maximum $ map maximumLimitOf relationships
@@ -227,9 +238,9 @@ run { #{command} } for #{fnames}#{maxObjects} Obj, #{intSize} Int
     intSize = ceiling intSize'
     intSize' :: Double
     intSize' = logBase 2 $ fromIntegral $ 2 * maxInt + 1
-    fnames
+    fieldNamesLimit
       | hasLinkNames ps = "" :: String
-      | otherwise       = "0 FName, "
+      | otherwise       = "0 FieldName, "
     maxInt = maximum [
       numClasses * maxObjects,
       maxLimit,
@@ -254,11 +265,11 @@ oneSig = "one sig "
 
 associationSigs :: [Relationship c String] -> [String]
 associationSigs = mapMaybe
-  $ fmap (\name -> oneSig ++ name ++ " extends FName {}") . relationshipName
+  $ fmap (\name -> oneSig ++ name ++ " extends FieldName {}") . relationshipName
 
 
 classSigs :: [String] -> [String]
-classSigs = map (\name -> "sig " ++ name ++ " extends Obj {}")
+classSigs = map (\name -> "sig " ++ name ++ " extends Object {}")
 
 subTypes
   :: String
@@ -267,7 +278,7 @@ subTypes
   -> [String]
   -> [String]
 subTypes index rs abstractClassNames = concatMap $ \name ->
-  [ "fun " ++ name ++ subsCD ++ " : set Obj {"
+  [ "fun " ++ name ++ subsCD ++ " : set Object {"
   , "  " ++ intercalate " + " ((if name `elem` abstractClassNames then "none" else name)
                                : map (++ subsCD) (directSubclassesOf name))
   , "}"
@@ -285,7 +296,7 @@ fieldNames
   -> [String]
 fieldNames index relationships = concatMap $ \this ->
   let (superClasses, associationNames) = relationshipsFrom this
-  in [ "fun " ++ this ++ fieldNamesCD ++" : set FName {"
+  in [ "fun " ++ this ++ fieldNamesCD ++" : set FieldName {"
      , "  " ++ intercalate
          " + "
          (maybe "none" (++ fieldNamesCD) (singleListToJust superClasses)
@@ -337,11 +348,11 @@ compositesAndFieldNames
 compositesAndFieldNames index relationships = concatMap $ \this ->
   let (superClasses, compositions) = supersAndCompositionsOf this
       super = singleListToJust superClasses
-  in [ "fun " ++ this ++ compositesCD ++ " : set Obj {"
+  in [ "fun " ++ this ++ compositesCD ++ " : set Object {"
      , "  " ++ intercalate " + " (maybe "none" (++ compositesCD) super
                                   : map (\c -> whole c ++ subsCD) compositions)
      , "}"
-     , "fun " ++ this ++ compFieldNamesCD ++ " : set FName {"
+     , "fun " ++ this ++ compFieldNamesCD ++ " : set FieldName {"
      , "  " ++ intercalate " + " (maybe "none" (++ compFieldNamesCD) super
                                   : map compositionName compositions)
      , "}"
@@ -368,18 +379,20 @@ pred cd#{index} {
   #{objects}
 
   // Contents
-#{unlines objFNames}
+#{unlines objectFieldNames}
   // Associations
-#{unlines objAttribs}
+#{unlines objectAttributes}
   // Compositions
 #{if anyCompositions then unlines compositions else ""}
 }
 |]
   where
     objects =
-      "Obj = " ++ intercalate " + " ("none" : nonAbstractClassNames)
+      "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
-    objFNames = map (\name -> [i|  ObjFNames[#{name}, #{name}#{fieldNamesCD}]|]) nonAbstractClassNames
+    objectFieldNames = map
+      (\name -> [i|  ObjectFieldNames[#{name}, #{name}#{fieldNamesCD}]|])
+      nonAbstractClassNames
       -- Figure 2.3, Rule A3
     nameFromTo = \case
       Association {..} ->
@@ -390,20 +403,20 @@ pred cd#{index} {
         Just (compositionName, compositionWhole, compositionPart)
       Inheritance {} ->
         Nothing
-    objAttribs = concatMap
+    objectAttributes = concatMap
       (maybe [] (uncurry3 associationFromTo) . nameFromTo)
       relationships
     associationFromTo name from to = [
-      makeNonInheritance "Attrib" (linking from) name (linking to) (limits to),
+      makeNonInheritance "Attribute" (linking from) name (linking to) (limits to),
       makeNonInheritance "" (linking to) name (linking from) (limits from)
       ]
     makeNonInheritance
       :: Show a
       => String -> String -> String -> String -> (a, Maybe a) -> String
     makeNonInheritance att from name to (low, Nothing) =
-      [i|  ObjL#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}]|]
+      [i|  ObjectLower#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}]|]
     makeNonInheritance att from name to (low, Just up) =
-      [i|  ObjLU#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}, #{show up}]|]
+      [i|  ObjectLowerUpper#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}, #{show up}]|]
     anyCompositions =
       any (\case Composition {} -> True; _ -> False) relationships
     compositions = map

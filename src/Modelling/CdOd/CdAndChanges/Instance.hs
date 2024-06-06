@@ -284,16 +284,16 @@ instanceToEdges
   :: MonadThrow m
   => AlloyInstance
   -> m [(Object, Relationship String String)]
-instanceToEdges insta = do
-  r'         <- lookupSig (scoped "this" "Relationship") insta
+instanceToEdges inst = do
+  r'         <- lookupSig (scoped "this" "Relationship") inst
   rFrom      <- getRelation "from" r'
   rTo        <- getRelation "to" r'
-  a'         <- lookupSig (scoped "this" "NonInheritance") insta
+  a'         <- lookupSig (scoped "this" "NonInheritance") inst
   aFromLower <- getRelation "fromLower" a'
   aFromUpper <- getRelation "fromUpper" a'
   aToLower   <- getRelation "toLower" a'
   aToUpper   <- getRelation "toUpper" a'
-  instanceToEdges' insta rFrom rTo aFromLower aFromUpper aToLower aToUpper
+  instanceToEdges' inst rFrom rTo aFromLower aFromUpper aToLower aToUpper
 
 instanceToEdges'
   :: MonadThrow m

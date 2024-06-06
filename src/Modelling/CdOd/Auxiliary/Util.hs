@@ -59,7 +59,7 @@ alloyInstanceToOd
   => AlloyInstance
   -> m Od
 alloyInstanceToOd i = do
-  os    <- lookupSig (scoped "this" "Obj") i
+  os    <- lookupSig (scoped "this" "Object") i
   objects <- S.toList <$> getSingleAs "" toObject os
   links <- fmap toLink . S.toList <$> getTripleAs "get" oName nameOnly oName os
   return ObjectDiagram {..}
