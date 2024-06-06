@@ -63,7 +63,7 @@ import Modelling.CdOd.CD2Alloy.Transform (
 import Modelling.CdOd.CdAndChanges.Instance (
   ChangeAndCd (..),
   GenericClassDiagramInstance (..),
-  fromInstanceWithNameOverlapp,
+  fromInstanceWithNameOverlap,
   nameClassDiagramInstance,
   )
 import Modelling.CdOd.Auxiliary.Util (
@@ -604,7 +604,7 @@ getODsFor
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
   [cd1, cd2, cd3] <- map changeClassDiagram . instanceChangesAndCds
-    <$> (nameClassDiagramInstance <=< fromInstanceWithNameOverlapp) cd
+    <$> (nameClassDiagramInstance <=< fromInstanceWithNameOverlap) cd
   alloyInstances <- getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
   maybeRandomInstances <- takeRandomInstances alloyInstances
   case maybeRandomInstances of

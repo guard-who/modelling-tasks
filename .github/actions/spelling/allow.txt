@@ -37,6 +37,7 @@ Rightarrow
 Sfdp
 Transitionsfolge
 UML
+Verzweigungs
 Verzweigungsknoten
 Vielfachheit
 WColor

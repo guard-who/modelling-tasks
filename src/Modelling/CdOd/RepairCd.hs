@@ -759,7 +759,7 @@ possibleChanges allowed = nubOrdOn
 
 {-|
 Introduces deterministic permutations on a a list of 'PropertyChangeSet's.
-The key point is to maintain reproducibility but achieving diversity nontheless.
+The key point is to maintain reproducibility but achieving diversity nonetheless.
 -}
 diversify :: [PropertyChangeSet] -> [(PropertyChange, [PropertyChange])]
 diversify = zipWith permutate [0..]

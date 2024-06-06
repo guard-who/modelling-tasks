@@ -10,7 +10,7 @@ module Modelling.CdOd.CdAndChanges.Instance (
   ReadObjectDiagramFromAlloyException (..),
   UnexpectedRelation (..),
   fromInstance,
-  fromInstanceWithNameOverlapp,
+  fromInstanceWithNameOverlap,
   fromInstanceWithPredefinedNames,
   nameClassDiagramInstance,
   uniformlyAnnotateChangeAndCd,
@@ -164,11 +164,11 @@ resulting ODs is intended.
 Beware that this overlap is reflected in the class diagram only,
 but NOT in the change itself.
 -}
-fromInstanceWithNameOverlapp
+fromInstanceWithNameOverlap
   :: MonadThrow m
   => AlloyInstance
   -> m ClassDiagramInstance
-fromInstanceWithNameOverlapp alloyInstance = do
+fromInstanceWithNameOverlap alloyInstance = do
   cdInstance <- fromInstance alloyInstance
   return $ cdInstance {
     instanceChangesAndCds = map deliberatelyNameReplacedEdgesSameInCdOnly
@@ -198,7 +198,7 @@ fromInstanceWithPredefinedNames
   => AlloyInstance
   -> m (GenericClassDiagramInstance String String)
 fromInstanceWithPredefinedNames =
-  usePredefinedClassDiagramInstanceNames <=< fromInstanceWithNameOverlapp
+  usePredefinedClassDiagramInstanceNames <=< fromInstanceWithNameOverlap
 
 fromInstance
   :: MonadThrow m

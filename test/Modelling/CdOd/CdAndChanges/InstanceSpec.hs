@@ -4,7 +4,7 @@ import qualified Data.ByteString.Char8            as BS (pack)
 
 import Modelling.Common                 (withUnitTests)
 import Modelling.CdOd.CdAndChanges.Instance (
-  fromInstanceWithNameOverlapp,
+  fromInstanceWithNameOverlap,
   nameClassDiagramInstance,
   )
 import Control.Monad                    ((>=>))
@@ -19,4 +19,4 @@ spec =
     dir = "test/unit/Modelling/CdOd/CdAndChanges/Instance"
     getResult = parseInstance
       . BS.pack
-      >=> fmap show . (fromInstanceWithNameOverlapp >=> nameClassDiagramInstance)
+      >=> fmap show . (fromInstanceWithNameOverlap >=> nameClassDiagramInstance)
