@@ -4,6 +4,20 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-|
+This modules performs a Alloy code generation based on CD2Alloy
+in order to generate object diagrams
+based on (at least) one given class diagram using Alloy.
+
+The whole transformation is based on the following paper
+https://git.rwth-aachen.de/monticore/publications-additional-material/blob/master/cd2alloy/CD2AlloyTranslationTR.pdf
+although a newer version of this document exists
+https://www.se-rwth.de/publications/CD2Alloy-A-Translation-of-Class-Diagrams-to-Alloy.pdf
+
+Throughout this module there are references to figures of the former paper,
+indicating which part of the original work
+the previous value definition is representing.
+-}
 module Modelling.CdOd.CD2Alloy.Transform (
   Parts {- only for legacy-apps: -} (..),
   combineParts,
@@ -124,20 +138,20 @@ fact SizeConstraints {
     part2 = [i|
 // Concrete names of fields
 #{unlines (associationSigs relationships)}
-|]
+|] -- Figure 2.1, Rule 3, part 2
     part3 = [i|
 // Classes (non-abstract)
 #{unlines (classSigs nonAbstractClassNames)}
-|]
+|] -- Figure 2.1, Rule 1, part 1
     part4 = [i|
 ///////////////////////////////////////////////////
 // CD#{index}
 ///////////////////////////////////////////////////
 
 // Types wrapping subtypes
-#{unlines (subTypes index relationships abstractClassNames classNames)}
+#{typeHierarchy}
 // Types wrapping field names
-#{unlines (fieldNames index relationships classNames)}
+#{fields}
 // Types wrapping composite structures and field names
 #{if noCompositions then "" else compositeStructures}
 // Properties
@@ -145,8 +159,15 @@ fact SizeConstraints {
 |]
     nonAbstractClassNames = classNames \\ abstractClassNames
     noCompositions = all (\case Composition {} -> False; _ -> True) relationships
+    typeHierarchy =
+      unlines (subTypes index relationships abstractClassNames classNames)
+      -- Figure 2.1, Rule 1, part 2, alternative implementation
+    fields =
+      unlines (fieldNames index relationships classNames)
+      -- Figure 2.2, Rule 2, relevant portion, alternative implementation
     compositeStructures =
       unlines (compositesAndFieldNames index relationships classNames)
+      -- Figure 2.1, Rule 6, corrected
     inhabitance = case completelyInhabited of
       Nothing   -> ""
       Just False -> [i|
@@ -344,7 +365,7 @@ predicate :: String -> [Relationship String String] -> [String] -> String
 predicate index relationships nonAbstractClassNames = [i|
 pred cd#{index} {
 
-  Obj = #{intercalate " + " ("none" : nonAbstractClassNames)}
+  #{objects}
 
   // Contents
 #{unlines objFNames}
@@ -355,7 +376,11 @@ pred cd#{index} {
 }
 |]
   where
+    objects =
+      "Obj = " ++ intercalate " + " ("none" : nonAbstractClassNames)
+      -- Figure 2.2, Rule 5
     objFNames = map (\name -> [i|  ObjFNames[#{name}, #{name}#{fieldNamesCD}]|]) nonAbstractClassNames
+      -- Figure 2.3, Rule A3
     nameFromTo = \case
       Association {..} ->
         Just (associationName, associationFrom, associationTo)
@@ -384,6 +409,7 @@ pred cd#{index} {
     compositions = map
       (\name -> [i|  Composition[#{name}#{compositesCD}, #{name}#{compFieldNamesCD}, #{name}]|])
       nonAbstractClassNames
+      -- Figure 2.2, Rule 4, corrected
     fieldNamesCD     = "FieldNamesCD" ++ index
     compositesCD     = "CompositesCD" ++ index
     compFieldNamesCD = "CompFieldNamesCD" ++ index
