@@ -8,8 +8,11 @@ import Modelling.ActivityDiagram.Datatype (
   AdConnection (..)
   )
 
-import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
-import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultAdConfig)
+import Modelling.ActivityDiagram.Alloy (
+  adConfigToAlloy,
+  moduleActionSequencesRules,
+  )
+import Modelling.ActivityDiagram.Config (defaultAdConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Language.Alloy.Call (getInstances)
 

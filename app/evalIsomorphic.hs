@@ -12,9 +12,9 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs)
 import System.FilePath ((</>))
 
+import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
-  adConfigToAlloy,
   defaultAdConfig,
   )
 import Modelling.ActivityDiagram.Datatype (UMLActivityDiagram)

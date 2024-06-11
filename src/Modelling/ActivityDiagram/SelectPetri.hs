@@ -32,14 +32,13 @@ import qualified Data.Map as M (empty, size, fromList, toList, keys, map, filter
 import qualified Modelling.ActivityDiagram.Datatype as Ad (AdNode(label))
 import qualified Modelling.ActivityDiagram.PetriNet as PK (PetriKey (label))
 
-import Modelling.ActivityDiagram.Alloy (modulePetriNet)
+import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (
   auxiliaryNodesAdvice,
   weightedShuffle,
   )
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
-  adConfigToAlloy,
   checkAdConfig,
   defaultAdConfig,
   )

@@ -5,9 +5,9 @@ module Main where
 import System.Environment (getArgs)
 import System.FilePath ((</>))
 
+import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
-  adConfigToAlloy,
   defaultAdConfig,
   )
 import Data.String.Interpolate ( i )

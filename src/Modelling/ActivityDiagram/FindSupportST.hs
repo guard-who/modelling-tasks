@@ -35,6 +35,10 @@ import qualified Data.Map as M (
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.PlantUml            (MonadPlantUml)
+import Modelling.ActivityDiagram.Alloy (
+  adConfigToAlloy,
+  modulePetriNet,
+  )
 import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
   AdConnection (..),
@@ -45,11 +49,9 @@ import Modelling.ActivityDiagram.PetriNet (PetriKey(..), convertToPetriNet)
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
-  adConfigToAlloy,
   checkAdConfig,
   defaultAdConfig,
   )
-import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
   PlantUmlConfig (..),

@@ -32,6 +32,7 @@ import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Capabilities.PlantUml            (MonadPlantUml)
+import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
@@ -50,11 +51,9 @@ import Modelling.ActivityDiagram.PetriNet (PetriKey (..), convertToPetriNet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
-  adConfigToAlloy,
   checkAdConfig,
   defaultAdConfig,
   )
-import Modelling.ActivityDiagram.Alloy (modulePetriNet)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.ActivityDiagram.PlantUMLConverter (
   PlantUmlConfig (..),

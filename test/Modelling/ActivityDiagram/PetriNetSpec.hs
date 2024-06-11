@@ -8,7 +8,8 @@ import Modelling.ActivityDiagram.PetriNet (
   convertToSimple,
   )
 
-import Modelling.ActivityDiagram.Config (adConfigToAlloy, defaultAdConfig)
+import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy)
+import Modelling.ActivityDiagram.Config (defaultAdConfig)
 import Modelling.ActivityDiagram.Instance (parseInstance)
 import Modelling.PetriNet.Types (PetriLike(allNodes), petriLikeToPetri)
 

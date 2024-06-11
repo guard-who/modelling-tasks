@@ -28,10 +28,12 @@ import qualified Data.Vector as V (fromList)
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.PlantUml            (MonadPlantUml)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
-import Modelling.ActivityDiagram.Alloy (moduleActionSequencesRules)
+import Modelling.ActivityDiagram.Alloy (
+  adConfigToAlloy,
+  moduleActionSequencesRules,
+  )
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
-  adConfigToAlloy,
   checkAdConfig,
   defaultAdConfig,
   )

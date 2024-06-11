@@ -1,18 +1,20 @@
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Modelling.ActivityDiagram.Alloy(
-  moduleComponentsSig,
-  moduleInitialNodeRules,
-  moduleNameRules,
-  moduleReachabilityRules,
-  modulePlantUMLSig,
-  moduleExerciseRules,
+  adConfigBitWidth,
+  adConfigScope,
+  adConfigToAlloy,
+  adConfigToAlloy', -- only for test cases
   modulePetriNet,
   moduleActionSequencesRules
 ) where
 
+import Modelling.ActivityDiagram.Config (AdConfig (..))
+
 import Data.FileEmbed                   (embedStringFile)
+import Data.String.Interpolate          (i)
 
 moduleComponentsSig :: String
 moduleComponentsSig = removeLines 1 $(embedStringFile "alloy/ad/components.als")
@@ -44,3 +46,71 @@ moduleActionSequencesRules =
 
 removeLines :: Int -> String -> String
 removeLines n = unlines . drop n . lines
+
+adConfigToAlloy :: String -> String -> AdConfig -> String
+adConfigToAlloy modules predicates adConf = adConfigToAlloy'
+  (adConfigScope adConf)
+  (adConfigBitWidth adConf)
+  modules
+  predicates
+  adConf
+
+adConfigToAlloy' :: Int -> Int -> String -> String -> AdConfig -> String
+adConfigToAlloy' scope bitWidth modules predicates AdConfig {
+    actionLimits,
+    objectNodeLimits,
+    maxNamedNodes,
+    decisionMergePairs,
+    forkJoinPairs,
+    activityFinalNodes,
+    flowFinalNodes,
+    cycles
+  } =
+  [i|module MatchPetri
+    #{moduleComponentsSig}
+    #{moduleInitialNodeRules}
+    #{moduleNameRules}
+    #{moduleReachabilityRules}
+    #{modulePlantUMLSig}
+    #{moduleExerciseRules}
+    #{modules}
+
+    #{singletonActions}
+    #{singletonObjectNodes}
+
+    pred showAd {
+      #{predicates}
+    }
+
+    run showAd for #{scope} but #{bitWidth} Int, #{snd actionLimits} ActionNodes,
+      #{snd objectNodeLimits} ObjectNodes, #{maxNamedNodes} ActionObjectNodes,
+      #{snd actionLimits + snd objectNodeLimits} ComponentNames,
+      exactly #{decisionMergePairs} DecisionNodes, exactly #{decisionMergePairs} MergeNodes,
+      #{2 * decisionMergePairs} GuardNames, exactly #{forkJoinPairs} ForkNodes, exactly #{forkJoinPairs} JoinNodes,
+      exactly 1 InitialNodes, exactly #{activityFinalNodes} ActivityFinalNodes, exactly #{flowFinalNodes} FlowFinalNodes,
+      exactly #{cycles} PlantUMLRepeatBlocks, exactly #{decisionMergePairs - cycles} PlantUmlIfElseBlocks,
+      exactly #{forkJoinPairs} PlantUMLForkBlocks
+  |]
+  where
+    singletonActions = unlines $ map
+      (\x -> [i| one sig A#{x} extends ActionNodes {}|])
+      [1 .. fst actionLimits]
+    singletonObjectNodes = unlines $ map
+      (\x -> [i| one sig O#{x} extends ObjectNodes {}|])
+      [1 .. fst objectNodeLimits]
+
+adConfigScope :: AdConfig -> Int
+adConfigScope AdConfig {
+    maxNamedNodes,
+    decisionMergePairs,
+    forkJoinPairs
+  } = 1 + maxNamedNodes + 3 * decisionMergePairs + 4 * forkJoinPairs
+
+{-
+ As of now, the highest Int-Value used in the Alloy Specification is 3 (#bodies in ForkBlocks),
+ therefore 3 Bit (Two's Complement) should be enough.
+ If this number is made configurable or the specification is changed to use larger Int values,
+ this should be adapted.
+-}
+adConfigBitWidth :: AdConfig -> Int
+adConfigBitWidth = const 3
