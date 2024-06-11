@@ -79,3 +79,7 @@ sig ObjectNodes extends ActionObjectNodes {}
 abstract sig ComponentNames {} {
   this in ActionObjectNodes.name
 }
+
+fact NoObjectNodeAfterInitialNode {
+  no e : from.InitialNodes | e.to in ObjectNodes
+}
