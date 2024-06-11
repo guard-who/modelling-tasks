@@ -203,7 +203,7 @@ enterASTask path task = do
         For example, |]
       german [iii|
         Geben Sie eine Aktionsfolge für das Diagramm an, d.h., eine Folge
-        von Aktionsknoten, welche in das Terminieren aller Abläufe des Diagramms
+        von Aktionsknoten, welche in das Terminieren aller Flüsse des Diagramms
         resultiert, indem Sie eine Liste von Aktionsnamen angeben.
         \n
         Zum Beispiel drückt |]
