@@ -198,21 +198,21 @@ enterASTask path task = do
   paragraph $ do
     translate $ do
       english [iii|
-        State an action sequence for the diagram, i.e., a sequence of
-        action nodes resulting in the termination of all flows of the diagram,
+        State an action sequence (i.e., a sequence of action nodes)
+        which lets all flows terminate in an execution of this diagram,
         by entering a list of action names.
         \n
         For example, |]
       german [iii|
-        Geben Sie eine Aktionsfolge für das Diagramm an, d.h., eine Folge
-        von Aktionsknoten, welche in das Terminieren aller Flüsse des Diagramms
-        resultiert, indem Sie eine Liste von Aktionsnamen angeben.
+        Geben Sie eine Aktionsfolge (d.h., eine Folge von Aktionsknoten) an,
+        welche in einem Ablauf dieses Diagramms all Flüsse terminieren lässt,
+        indem Sie eine Liste von Aktionsnamen angeben.
         \n
         Zum Beispiel drückt |]
     code $ show enterASInitial
     translate $ do
-      english [i|expresses the execution of A followed by B (under the assumption that both are action nodes).|]
-      german [i|die Ausführung von A gefolgt von B aus (unter der Annahme, dass beides Aktionsknoten sind).|]
+      english [i|expresses the execution of A followed by B (under the assumption that both are action nodes of the diagram).|]
+      german [i|die Ausführung von A gefolgt von B aus (unter der Annahme, dass beides Aktionsknoten des Diagramms sind).|]
     pure ()
   pure ()
 
