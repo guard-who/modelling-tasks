@@ -89,7 +89,7 @@ import Modelling.CdOd.Types (
 import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative)
-import Control.Monad                    ((>=>), void, when)
+import Control.Monad                    ((>=>), unless, void, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Output (
   GenericOutputMonad (..),
@@ -109,7 +109,7 @@ import Control.Monad.Random.Class       (MonadRandom)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight, partitionEithers)
 import Data.Foldable                    (for_)
-import Data.GraphViz                    (DirType (Back))
+import Data.GraphViz                    (DirType (Back, NoDir))
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe)
 import Data.String.Interpolate          (i, iii)
@@ -323,19 +323,38 @@ selectValidCdFeedback path withDir byName xs x cdChange =
       paragraph $ translate $ do
         english [iii|
           Class diagram #{x} is in fact valid.
+          |]
+        german [iii|
+          Klassendiagramm #{x} ist gültig.
+          |]
+      unless byName $ do
+        paragraph $ translate $ do
+          english [iii|
+            The class diagram could be named the following way:
+            |]
+          german [iii|
+            Das Klassendiagramm kann auf folgende Weise
+            mit Bezeichnern versehen werden:
+            |]
+        paragraph $ image $=<< cacheCd withDir True mempty (option cdChange) path
+        pure ()
+      paragraph $ translate $ do
+        english [iii|
           Consider the following object diagram, which is an instance of this
           class diagram:
           |]
         german [iii|
-          Klassendiagramm #{x} ist gültig.
           Betrachten Sie zum Beispiel das folgende Objektdiagramm,
           das Instanz dieses Klassendiagramms ist:
           |]
       paragraph $ image $=<< flip evalRandT (mkStdGen 0)
-        $ cacheOd od 0 Back True path
+        $ cacheOd od 0 dir True path
       pure ()
     _ -> pure ()
   where
+    dir
+      | withDir = Back
+      | otherwise = NoDir
     notCorrect = paragraph $ translate $ do
       english [iii|Your answer to class diagram #{x} is not correct.|]
       german [iii|Ihre Antwort zu Klassendiagramm #{x} ist nicht richtig.|]
