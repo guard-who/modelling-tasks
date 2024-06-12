@@ -330,11 +330,11 @@ selectValidCdFeedback path withDir byName xs x cdChange =
       unless byName $ do
         paragraph $ translate $ do
           english [iii|
-            The class diagram could be named the following way:
+            The relationships in the class diagram could be named in the following way:
             |]
           german [iii|
-            Das Klassendiagramm kann auf folgende Weise
-            mit Bezeichnern versehen werden:
+            Die Beziehungen in dem Klassendiagramm könnten auf folgende Weise
+            mit Namen versehen werden:
             |]
         paragraph $ image $=<< cacheCd withDir True mempty (option cdChange) path
         pure ()
@@ -344,7 +344,7 @@ selectValidCdFeedback path withDir byName xs x cdChange =
           class diagram:
           |]
         german [iii|
-          Betrachten Sie zum Beispiel das folgende Objektdiagramm,
+          Betrachten Sie das folgende Objektdiagramm,
           das Instanz dieses Klassendiagramms ist:
           |]
       paragraph $ image $=<< flip evalRandT (mkStdGen 0)
