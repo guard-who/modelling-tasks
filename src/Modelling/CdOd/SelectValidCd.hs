@@ -289,30 +289,34 @@ selectValidCdFeedback path withDir byName xs x cdChange =
       let change = annotated articleAndChange
           article = annotation articleAndChange
       notCorrect
+      paragraph $ translate $ do
+        english [iii|
+          Class diagram #{x} is in fact invalid.
+          |]
+        german [iii|
+          Klassendiagramm #{x} ist ungültig.
+          |]
+      showNamedCd (byName || maybe True isInheritance (remove change))
       paragraph $ translate $ case remove change of
         Nothing -> do
           english [iii|
-            Class diagram #{x} is in fact invalid.
             Consider the following change, which aims at fixing a
             problematic situation within the given class diagram:
-            #{phraseChange English article byName withDir change}.
+            #{phraseChange English article True withDir change}.
             |]
           german [iii|
-            Klassendiagramm #{x} ist ungültig.
             Sehen Sie sich die folgende Änderung an, die darauf abzielt, eine
             problematische Stelle im Klassendiagramm zu beheben:
-            #{phraseChange German article byName withDir change}.
+            #{phraseChange German article True withDir change}.
             |]
         Just relation -> do
           let phrase l =
-                phraseRelationship l article byName withDir relation
+                phraseRelationship l article True withDir relation
           english [iii|
-            Class diagram #{x} is in fact invalid.
             If #{phrase English} would not be there,
             it would be valid.
             |]
           german [iii|
-            Klassendiagramm #{x} ist ungültig.
             Wenn es
             #{trailingCommaGerman $ phrase German}
             nicht gäbe, wäre es gültig.
@@ -327,17 +331,7 @@ selectValidCdFeedback path withDir byName xs x cdChange =
         german [iii|
           Klassendiagramm #{x} ist gültig.
           |]
-      unless byName $ do
-        paragraph $ translate $ do
-          english [iii|
-            The relationships in the class diagram could be named in the following way:
-            |]
-          german [iii|
-            Die Beziehungen in dem Klassendiagramm könnten auf folgende Weise
-            mit Namen versehen werden:
-            |]
-        paragraph $ image $=<< cacheCd withDir True mempty (option cdChange) path
-        pure ()
+      showNamedCd (byName || onlyInheritances (option cdChange))
       paragraph $ translate $ do
         english [iii|
           Consider the following object diagram, which is an instance of this
@@ -358,6 +352,21 @@ selectValidCdFeedback path withDir byName xs x cdChange =
     notCorrect = paragraph $ translate $ do
       english [iii|Your answer to class diagram #{x} is not correct.|]
       german [iii|Ihre Antwort zu Klassendiagramm #{x} ist nicht richtig.|]
+    isInheritance Inheritance {} = True
+    isInheritance _ = False
+    onlyInheritances = all isInheritance . relationships
+    showNamedCd sufficient =
+      unless sufficient $ do
+        paragraph $ translate $ do
+          english [iii|
+            The relationships in the class diagram could be named in the following way:
+            |]
+          german [iii|
+            Die Beziehungen in dem Klassendiagramm könnten auf folgende Weise
+            mit Namen versehen werden:
+            |]
+        paragraph $ image $=<< cacheCd withDir True mempty (option cdChange) path
+        pure ()
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
 selectValidCdSolution =
