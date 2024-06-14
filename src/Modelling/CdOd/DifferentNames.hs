@@ -24,6 +24,8 @@ module Modelling.CdOd.DifferentNames (
   renameInstance,
   ) where
 
+import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
+
 import qualified Data.Bimap                       as BM (
   filter,
   fromList,
@@ -65,6 +67,7 @@ import Modelling.CdOd.Generate          (generateCds, instanceToCd)
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
+  CdDrawSettings,
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -76,9 +79,11 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   associationNames,
+  checkCdDrawSettings,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   classNames,
+  defaultDrawSettings,
   defaultProperties,
   isObjectDiagramRandomisable,
   linkNames,
@@ -97,6 +102,7 @@ import Modelling.Types (
   toNameMapping,
   )
 
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Extra              (whenJust)
 import Control.Monad.Output (
@@ -160,8 +166,15 @@ data DifferentNamesInstance = DifferentNamesInstance {
     usesAllRelationships :: Bool
   } deriving (Eq, Generic, Read, Show)
 
+cdDrawSettings :: DifferentNamesInstance -> CdDrawSettings
+cdDrawSettings _ = defaultDrawSettings
+
 checkDifferentNamesInstance :: DifferentNamesInstance -> Maybe String
-checkDifferentNamesInstance DifferentNamesInstance {..}
+checkDifferentNamesInstance inst@DifferentNamesInstance {..}
+  | not $ T.printNames $ cdDrawSettings inst
+  = Just [iii|printNames has to be set to True for this task type.|]
+  | not $ T.printNavigations $ cdDrawSettings inst
+  = Just [iii|printNavigations has to be set to True for this task type.|]
   | WithAdditionalNames xs <- linkShuffling
   , length associations > length links + length xs
   = Just [iii|
@@ -177,6 +190,7 @@ checkDifferentNamesInstance DifferentNamesInstance {..}
       |]
   | otherwise
   = checkObjectDiagram oDiagram
+  <|> checkCdDrawSettings (cdDrawSettings inst)
   where
     associations = associationNames cDiagram
     links = linkNames oDiagram
@@ -280,7 +294,7 @@ differentNamesTask path task = do
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie folgendes Klassendiagramm:"
-  paragraph $ image $=<< cacheCd True True mempty cd path
+  paragraph $ image $=<< cacheCd (cdDrawSettings task) mempty cd path
   paragraph $ translate $ do
     english "and the following object diagram (which conforms to it):"
     german "und das folgende (dazu passende) Objektdiagramm:"

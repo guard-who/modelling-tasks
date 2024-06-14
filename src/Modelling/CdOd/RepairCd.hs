@@ -41,6 +41,7 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
   transformImproveCd,
   )
 import qualified Modelling.CdOd.Types             as T (
+  CdDrawSettings (..),
   RelationshipProperties (selfInheritances, selfRelationships),
   )
 
@@ -98,6 +99,7 @@ import Modelling.CdOd.Types (
   ArticlePreference (..),
   ArticleToUse (DefiniteArticle),
   Cd,
+  CdDrawSettings (CdDrawSettings),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -106,9 +108,11 @@ import Modelling.CdOd.Types (
   Relationship (..),
   RelationshipProperties (..),
   associationNames,
+  checkCdDrawSettings,
   checkClassConfig,
   checkClassConfigWithProperties,
   classNames,
+  defaultOmittedDefaultMultiplicites,
   defaultProperties,
   maxObjects,
   relationshipName,
@@ -296,8 +300,7 @@ repairCdTask path task = do
     english "Consider the following class diagram, which unfortunately is invalid:"
     german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:"
   image $=<< cacheCd
-    (withDirections task)
-    (withNames task)
+    (cdDrawSettings task)
     mempty
     (classDiagram task)
     path
@@ -349,19 +352,18 @@ repairCdEvaluation path inst xs = addPretext $ do
     (multipleChoice chs correctAnswer solution xs)
     $ when (showExtendedFeedback inst)
     $ void $ M.traverseWithKey
-      (repairCdFeedback path (withDirections inst) (withNames inst) xs)
+      (repairCdFeedback path (cdDrawSettings inst) xs)
       (changes inst)
 
 repairCdFeedback
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
   => FilePath
-  -> Bool
-  -> Bool
+  -> CdDrawSettings
   -> [Int]
   -> Int
   -> RelationshipChange
   -> LangM m
-repairCdFeedback path withDir byName xs x cdChange =
+repairCdFeedback path drawSettings xs x cdChange =
   case hint cdChange of
     Left cd
       | x `elem` xs -> notCorrect *> makesIncorrect *> showCd cd
@@ -387,7 +389,7 @@ repairCdFeedback path withDir byName xs x cdChange =
         Die Änderung repariert das Klassendiagramm nicht, da es dann so aussieht:
         |]
     showCd cd = paragraph $
-      image $=<< cacheCd withDir byName mempty cd path
+      image $=<< cacheCd drawSettings mempty cd path
 
 repairCdSolution :: RepairCdInstance -> [Int]
 repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
@@ -401,15 +403,24 @@ data RepairCdInstance = RepairCdInstance {
     withNames      :: Bool
   } deriving (Eq, Generic, Read, Show)
 
+cdDrawSettings
+  :: RepairCdInstance
+  -> CdDrawSettings
+cdDrawSettings RepairCdInstance {..} = CdDrawSettings {
+  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  T.printNames = withNames,
+  T.printNavigations = withDirections
+  }
+
 checkRepairCdInstance :: RepairCdInstance -> Maybe String
-checkRepairCdInstance RepairCdInstance {..}
+checkRepairCdInstance task@RepairCdInstance {..}
   | showExtendedFeedback && not showSolution
   = Just [iii|
       showExtendedFeedback leaks the correct solution
       and thus can only be enabled when showSolution is set to True
       |]
   | otherwise
-  = Nothing
+  = checkCdDrawSettings (cdDrawSettings task)
 
 classAndNonInheritanceNames :: RepairCdInstance -> ([String], [String])
 classAndNonInheritanceNames inst =

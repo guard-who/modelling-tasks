@@ -12,6 +12,7 @@ module Modelling.CdOd.Types (
   AnnotatedClassDiagram (..),
   Annotation (..),
   Cd,
+  CdDrawSettings (..),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -21,16 +22,20 @@ module Modelling.CdOd.Types (
   ObjectDiagram (..),
   ObjectProperties (..),
   Od,
+  OmittedDefaultMultiplicities (..),
   Property (..),
   Relationship (..),
   RelationshipProperties (..),
   anyThickEdge,
   associationNames,
   calculateThickRelationships,
+  checkCdDrawSettings,
   checkClassConfig,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   classNamesOd,
+  defaultDrawSettings,
+  defaultOmittedDefaultMultiplicites,
   defaultProperties,
   isIllegal,
   isObjectDiagramRandomisable,
@@ -557,6 +562,73 @@ maxRelationships config = fromMaybe (maxClasses * (maxClasses - 1) `div` 2)
   $ relationshipsSum config
   where
     maxClasses = snd $ classLimits config
+
+{-|
+These parameters influence the appearance of the class diagram when drawn.
+-}
+data CdDrawSettings
+  = CdDrawSettings {
+    -- | These defaults will be omitted
+    omittedDefaults :: !OmittedDefaultMultiplicities,
+    -- | When set to 'False' relationship names will be omitted
+    printNames :: !Bool,
+    -- | When set to 'False' associaiton arrows will be omitted
+    printNavigations :: !Bool
+    }
+  deriving (Eq, Generic, Read, Show)
+
+defaultDrawSettings :: CdDrawSettings
+defaultDrawSettings = CdDrawSettings {
+  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  printNames = True,
+  printNavigations = True
+  }
+
+checkCdDrawSettings :: CdDrawSettings -> Maybe String
+checkCdDrawSettings CdDrawSettings {..} =
+  checkOmittedDefaultMultiplicities omittedDefaults
+
+{-|
+Defines default multiplicities which should be omitted
+when drawing the class diagram.
+-}
+data OmittedDefaultMultiplicities
+  = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity :: !(Maybe (Int, Maybe Int)),
+    associationOmittedDefaultMultiplicity :: !(Maybe (Int, Maybe Int)),
+    compositionWholeOmittedDefaultMultiplicity :: !(Maybe (Int, Maybe Int))
+    }
+  deriving (Eq, Generic, Read, Show)
+
+defaultOmittedDefaultMultiplicites :: OmittedDefaultMultiplicities
+defaultOmittedDefaultMultiplicites = OmittedDefaultMultiplicities {
+  aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+  associationOmittedDefaultMultiplicity = Just (0, Nothing),
+  compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
+  }
+
+checkOmittedDefaultMultiplicities :: OmittedDefaultMultiplicities -> Maybe String
+checkOmittedDefaultMultiplicities OmittedDefaultMultiplicities {..} =
+  checkValidity aggregationWholeOmittedDefaultMultiplicity
+  <|> checkValidity associationOmittedDefaultMultiplicity
+  <|> checkCompositionValidity compositionWholeOmittedDefaultMultiplicity
+  where
+    checkCompositionValidity limit@(Just (_, Just upper))
+      | upper > 1
+      = Just "The upper composition default multiplicity must not be higher than 1"
+      | otherwise
+      = checkValidity limit
+    checkCompositionValidity limit = checkValidity limit
+    checkValidity Nothing = Nothing
+    checkValidity (Just (lower, maybeUpper))
+      | lower < 0
+      = Just "The lower default multiplicity limit must not be negative."
+      | Just upper <- maybeUpper, upper < 1
+      = Just "The upper default multiplicity limit most not be lower than 1."
+      | Just upper <- maybeUpper, upper < lower
+      = Just "The upper default multiplicity limit most not be lower than the lower limit."
+      | otherwise
+      = Nothing
 
 {-|
 Defines the size restrictions of an object diagram.

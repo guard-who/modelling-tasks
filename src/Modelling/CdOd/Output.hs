@@ -38,12 +38,14 @@ import Modelling.CdOd.Auxiliary.Util (
   )
 import Modelling.CdOd.Types (
   Cd,
+  CdDrawSettings (..),
   ClassDiagram (..),
   LimitedLinking (..),
   Link (..),
   Object (..),
   ObjectDiagram (..),
   Od,
+  OmittedDefaultMultiplicities (..),
   Relationship (..),
   calculateThickRelationships,
   )
@@ -116,38 +118,45 @@ import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
 relationshipArrow
-  :: Bool
-  -> Bool
+  :: CdDrawSettings
   -> Maybe Attribute
   -> Bool
   -> Relationship String String
   -> [Attribute]
-relationshipArrow printNavigations printNames marking isThick relationship =
+relationshipArrow CdDrawSettings {..} marking isThick relationship =
   case relationship of
     Inheritance {} -> [arrowTo emptyArr]
     Composition {..} -> [
         arrowFrom diamond,
         edgeEnds Back,
-        HeadLabel $ mult $ limits compositionPart
+        TailLabel $ multiplicity
+          (compositionWholeOmittedDefaultMultiplicity omittedDefaults)
+          $ limits compositionWhole,
+        HeadLabel $ multiplicity
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits compositionPart
         ]
       ++ concat [maybeToList marking | isThick]
       ++ [toLabel compositionName | printNames]
-      ++ case limits compositionWhole of
-           (1, Just 1)   -> []
-           l@(0, Just 1) -> [TailLabel $ mult l]
-           (0, Nothing)  -> [TailLabel $ toLabelValue "0..*"]
-           l@(_, _)      -> [TailLabel $ mult l]
     Aggregation {..} -> [
         arrowFrom oDiamond,
         edgeEnds Back,
-        TailLabel $ mult $ limits aggregationWhole,
-        HeadLabel $ mult $ limits aggregationPart
+        TailLabel $ multiplicity
+          (aggregationWholeOmittedDefaultMultiplicity omittedDefaults)
+          $ limits aggregationWhole,
+        HeadLabel $ multiplicity
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits aggregationPart
         ]
       ++ concat [maybeToList marking | isThick]
       ++ [toLabel aggregationName | printNames]
     Association {..} -> associationArrow ++ [
-        TailLabel $ mult $ limits associationFrom,
-        HeadLabel $ mult $ limits associationTo
+        TailLabel $ multiplicity
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits associationFrom,
+        HeadLabel $ multiplicity
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits associationTo
         ]
       ++ concat [maybeToList marking | isThick]
       ++ [toLabel associationName | printNames]
@@ -156,24 +165,19 @@ relationshipArrow printNavigations printNames marking isThick relationship =
       | printNavigations = [arrowTo vee, ArrowSize 0.4]
       | otherwise        = [ArrowHead noArrow]
 
-mult :: (Int, Maybe Int) -> Label
-mult (-1, Just u) = toLabelValue $ "*.." ++ show u
-mult (0, Nothing) = toLabelValue ""
-mult (l, Nothing) = toLabelValue (show l ++ "..*")
-mult (l, Just u) | l == u    = toLabelValue l
-                 | otherwise = toLabelValue (show l ++ ".." ++ show u)
+multiplicity :: Maybe (Int, Maybe Int) -> (Int, Maybe Int) -> Label
+multiplicity def = toLabelValue . fromMaybe "" . rangeWithDefault def
 
 cacheCd
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m)
-  => Bool
-  -> Bool
+  => CdDrawSettings
   -> Style V2 Double
   -> Cd
   -> FilePath
   -> m FilePath
-cacheCd printNavigations printNames marking syntax path =
+cacheCd config@CdDrawSettings{..} marking syntax path =
   cache path ext "cd" syntax $ flip $
-    drawCd printNavigations printNames marking
+    drawCd config marking
   where
     ext = short printNavigations
       ++ short printNames
@@ -182,13 +186,12 @@ cacheCd printNavigations printNames marking syntax path =
 
 drawCd
   :: (MonadDiagrams m, MonadGraphviz m)
-  => Bool
-  -> Bool
+  => CdDrawSettings
   -> Style V2 Double
   -> Cd
   -> FilePath
   -> m FilePath
-drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
+drawCd config marking cd@ClassDiagram {..} file = do
   let theNodes = classNames
   let toIndexed xs = [(
           fromJust (elemIndex from theNodes),
@@ -211,7 +214,7 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
           FontSize 16
           ],
         fmtEdge = \(_,_,(isThick, r)) -> FontSize 16
-          : relationshipArrow printNavigations printNames Nothing isThick r
+          : relationshipArrow config Nothing isThick r
         }
   errorWithoutGraphviz
   graph' <- layoutGraph' params dirCommand graph
@@ -233,13 +236,12 @@ drawCd printNavigations printNames marking cd@ClassDiagram {..} file = do
       Association {..} -> both linking (associationFrom, associationTo)
       Aggregation {..} -> both linking (aggregationWhole, aggregationPart)
       Composition {..} -> both linking (compositionWhole, compositionPart)
-    drawEdge f = drawRelationship f printNavigations printNames marking
+    drawEdge f = drawRelationship f config marking
 
 drawRelationship
   :: IsName n
   => PreparedFont Double
-  -> Bool
-  -> Bool
+  -> CdDrawSettings
   -> Style V2 Double
   -> n
   -> n
@@ -248,7 +250,7 @@ drawRelationship
   -> Path V2 Double
   -> Diagram B
   -> Diagram B
-drawRelationship font printNavigations printNames marking fl tl isThick l path =
+drawRelationship font CdDrawSettings {..} marking fl tl isThick l path =
   connectWithPath opts font dir from to ml fromLimits toLimits path'
   # applyStyle (if isThick then marking else mempty)
   # lwL 0.5
@@ -264,19 +266,31 @@ drawRelationship font printNavigations printNames marking fl tl isThick l path =
     startLimits = case l of
       Inheritance {} -> Nothing
       Composition {..} ->
-        rangeWithDefault (1, Just 1) $ limits compositionWhole
+        rangeWithDefault
+          (compositionWholeOmittedDefaultMultiplicity omittedDefaults)
+          $ limits compositionWhole
       Aggregation {..} ->
-        rangeWithDefault (0, Nothing) $ limits aggregationWhole
+        rangeWithDefault
+          (aggregationWholeOmittedDefaultMultiplicity omittedDefaults)
+          $ limits aggregationWhole
       Association {..} ->
-        rangeWithDefault (0, Nothing) $ limits associationFrom
+        rangeWithDefault
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits associationFrom
     endLimits = case  l of
       Inheritance {} -> Nothing
       Composition {..} ->
-        rangeWithDefault (0, Nothing) $ limits compositionPart
+        rangeWithDefault
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits compositionPart
       Aggregation {..} ->
-        rangeWithDefault (0, Nothing) $ limits aggregationPart
+        rangeWithDefault
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits aggregationPart
       Association {..} ->
-        rangeWithDefault (0, Nothing) $ limits associationTo
+        rangeWithDefault
+          (associationOmittedDefaultMultiplicity omittedDefaults)
+          $ limits associationTo
     (from, to, fromLimits, toLimits, path')
       | flipEdge  = (tl, fl, endLimits, startLimits, reversePath path)
       | otherwise = (fl, tl, startLimits, endLimits, path)
@@ -303,9 +317,9 @@ drawRelationship font printNavigations printNames marking fl tl isThick l path =
         Aggregation {..} -> Just aggregationName
         Composition {..} -> Just compositionName
 
-rangeWithDefault :: (Int, Maybe Int) -> (Int, Maybe Int) -> Maybe String
+rangeWithDefault :: Maybe (Int, Maybe Int) -> (Int, Maybe Int) -> Maybe String
 rangeWithDefault def fromTo
-  | def == fromTo = Nothing
+  | def == Just fromTo = Nothing
   | otherwise     = Just $ range fromTo
   where
     range (l, Nothing) = show l ++ "..*"

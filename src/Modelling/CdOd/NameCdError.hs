@@ -38,6 +38,7 @@ module Modelling.CdOd.NameCdError (
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
   transformGetNextFix,
   )
+import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
@@ -105,6 +106,7 @@ import Modelling.CdOd.Types (
   ArticlePreference (..),
   ArticleToUse (..),
   Cd,
+  CdDrawSettings (CdDrawSettings),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -113,7 +115,9 @@ import Modelling.CdOd.Types (
   Relationship (..),
   RelationshipProperties (..),
   associationNames,
+  checkCdDrawSettings,
   classNames,
+  defaultOmittedDefaultMultiplicites,
   isIllegal,
   maxObjects,
   renameClassesAndRelationships,
@@ -126,7 +130,7 @@ import Modelling.CdOd.Types (
   )
 import Modelling.Types                  (Change (..))
 
-import Control.Applicative              (Alternative)
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, join)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except             (runExceptT)
@@ -356,8 +360,7 @@ toTaskTextPart output path task = case output of
   Paragraph xs -> paragraph $ for_ xs $ \x -> toTaskTextPart x path task
   TaskSpecific element -> case element of
     IncorrectCd -> image $=<< cacheCd
-      (withDirections task)
-      (withNames task)
+      (cdDrawSettings task)
       mempty
       (unannotateCd $ classDiagram task)
       path
@@ -386,6 +389,15 @@ data NameCdErrorInstance = NameCdErrorInstance {
   withDirections              :: Bool,
   withNames                   :: Bool
   } deriving (Eq, Generic, Read, Show)
+
+cdDrawSettings
+  :: NameCdErrorInstance
+  -> CdDrawSettings
+cdDrawSettings NameCdErrorInstance {..} = CdDrawSettings {
+  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  T.printNames = withNames,
+  T.printNavigations = withDirections
+  }
 
 relevantRelationships
   :: NameCdErrorInstance
@@ -416,7 +428,7 @@ isRelevant =
   . annotation
 
 checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
-checkNameCdErrorInstance NameCdErrorInstance {..}
+checkNameCdErrorInstance inst@NameCdErrorInstance {..}
   | 1 /= length (filter fst $ M.elems errorReasons)
   = Just [iii|
       There needs to be exactly one error defined within errorReasons
@@ -440,6 +452,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   = Just $ [i|Problem within 'errorReasons': |] ++ x
   | otherwise
   = checkNameCdErrorTaskText taskText
+  <|> checkCdDrawSettings (cdDrawSettings inst)
   where
     letters = ['a' .. 'z'] ++ ['A' .. 'Z']
     reasons = map snd $ M.elems errorReasons

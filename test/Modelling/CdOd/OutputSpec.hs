@@ -8,6 +8,7 @@ import Modelling.CdOd.CdAndChanges.Instance (
 import Capabilities.Diagrams.IO         ()
 import Capabilities.Graphviz.IO         ()
 import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
+import Modelling.CdOd.Types             (defaultDrawSettings)
 import Modelling.Common                 (withUnitTestsUsingPath)
 
 import Control.Monad                    (void)
@@ -37,7 +38,7 @@ spec = do
     drawCdInstance alloy = withTempFile $ \file -> do
       Right alloyInstance <- runExceptT $ parseInstance (pack alloy)
       Right cd <- return $ instanceClassDiagram <$> fromInstance alloyInstance
-      void $ drawCd True True mempty cd file
+      void $ drawCd defaultDrawSettings mempty cd file
       readFile file
     drawOdInstance alloy = withTempFile $ \file -> do
       Right alloyInstance <- runExceptT $ parseInstance (pack alloy)

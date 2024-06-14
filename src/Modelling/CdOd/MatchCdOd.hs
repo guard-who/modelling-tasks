@@ -25,6 +25,7 @@ module Modelling.CdOd.MatchCdOd (
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
+import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
@@ -72,6 +73,7 @@ import Modelling.CdOd.Auxiliary.Util (
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
+  CdDrawSettings,
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -83,9 +85,11 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   associationNames,
+  checkCdDrawSettings,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   classNames,
+  defaultDrawSettings,
   defaultProperties,
   isObjectDiagramRandomisable,
   linkNames,
@@ -100,6 +104,7 @@ import Modelling.Types (
   showLetters,
   )
 
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Exception                (Exception)
 import Control.Monad                    ((<=<))
 import Control.Monad.Catch              (MonadThrow, throwM)
@@ -145,6 +150,9 @@ data MatchCdOdInstance = MatchCdOdInstance {
     instances      :: Map Char ([Int], Od),
     showSolution   :: Bool
   } deriving (Generic, Read, Show)
+
+cdDrawSettings :: MatchCdOdInstance -> CdDrawSettings
+cdDrawSettings _ = defaultDrawSettings
 
 data MatchCdOdConfig = MatchCdOdConfig {
     classConfig      :: ClassConfig,
@@ -196,8 +204,14 @@ checkMatchCdOdConfig config = checkClassConfigWithProperties
   defaultProperties
 
 checkMatchCdOdInstance :: MatchCdOdInstance -> Maybe String
-checkMatchCdOdInstance MatchCdOdInstance {..} =
-  foldr ((<>) . checkObjectDiagram . snd) Nothing $ M.elems instances
+checkMatchCdOdInstance inst@MatchCdOdInstance {..}
+  | not $ T.printNames $ cdDrawSettings inst
+  = Just [iii|printNames has to be set to True for this task type.|]
+  | not $ T.printNavigations $ cdDrawSettings inst
+  = Just [iii|printNavigations has to be set to True for this task type.|]
+  | otherwise
+  = foldr ((<>) . checkObjectDiagram . snd) Nothing (M.elems instances)
+  <|> checkCdDrawSettings (cdDrawSettings inst)
 
 matchCdOdTask
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
@@ -210,7 +224,7 @@ matchCdOdTask path task = do
     english "Consider the following two class diagrams:"
     german "Betrachten Sie die folgenden zwei Klassendiagramme:"
   images show id
-    $=<< (\_ c -> cacheCd True True mempty c path)
+    $=<< (\_ c -> cacheCd (cdDrawSettings task) mempty c path)
     `M.traverseWithKey` diagrams task
   paragraph $ translate $ do
     english [iii|

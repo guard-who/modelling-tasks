@@ -14,6 +14,7 @@ import Modelling.CdOd.Types (
   ObjectConfig (objectLimits),
   ObjectProperties (..),
   Relationship (..),
+  defaultDrawSettings,
   maxFiveObjects,
   reverseAssociation,
   )
@@ -217,7 +218,7 @@ drawCdAndOdsFor is c cds cmd = do
       True
       (c ++ '-' : shorten cmd ++ "-od" ++ show i ++ ".svg")
     drawCd' cd i =
-      drawCd True True mempty cd (c ++ "-cd" ++ show i ++ ".svg")
+      drawCd defaultDrawSettings mempty cd (c ++ "-cd" ++ show i ++ ".svg")
     maxThreeObjects = maxFiveObjects { objectLimits = (1, 3) }
     parts = zipWith cdToAlloy cds [0..]
     cdToAlloy cd i = transform

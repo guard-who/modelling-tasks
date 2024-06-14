@@ -5,7 +5,12 @@ import Capabilities.Graphviz.IO         ()
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
 import Modelling.CdOd.Output
-import Modelling.CdOd.Types             (ClassDiagram (..), Relationship (..))
+import Modelling.CdOd.Types (
+  CdDrawSettings (..),
+  ClassDiagram (..),
+  Relationship (..),
+  defaultOmittedDefaultMultiplicites,
+  )
 
 import Data.Char                        (toUpper)
 import Data.GraphViz ()
@@ -23,10 +28,10 @@ run
   -> String
   -> FilePath
   -> IO ()
-run printNames howToMark input file = do
+run withNames howToMark input file = do
   let tokens = lexer input
   let parsed = parser tokens
-  output <- drawCd False printNames howToMark (uncurry toCd parsed) file
+  output <- drawCd drawSettings howToMark (uncurry toCd parsed) file
   putStrLn $ "Output written to " ++ output
   where
     toCd cs es = ClassDiagram {
@@ -34,23 +39,28 @@ run printNames howToMark input file = do
       relationships = mapMaybe (uncurry toInheritance) cs ++ es
       }
     toInheritance sub super = Inheritance sub <$> super
+    drawSettings = CdDrawSettings {
+      omittedDefaults = defaultOmittedDefaultMultiplicites,
+      printNames = withNames,
+      printNavigations = False
+      }
 
 main :: IO ()
 main = do
   args <- getArgs
-  let (printNames, args') = stripPrintNamesArg args
+  let (withNames, args') = stripPrintNamesArg args
   case args' of
-    [] -> getContents >>= \contents -> run printNames redColor contents "output"
-    [file] -> readFile file >>= \contents -> run printNames redColor contents file
+    [] -> getContents >>= \contents -> run withNames redColor contents "output"
+    [file] -> readFile file >>= \contents -> run withNames redColor contents file
     [file, format]
       | fmap toUpper format == "SVG" ->
-          readFile file >>= \contents -> run printNames redColor contents file
+          readFile file >>= \contents -> run withNames redColor contents file
       | otherwise -> error $ "format " ++ format
           ++ "is not supported, only SVG is supported"
     [file, format, x]
       | fmap toUpper format == "SVG" ->
         readFile file >>= \contents ->
-          run printNames (specialStyle !! read x) contents file
+          run withNames (specialStyle !! read x) contents file
       | otherwise -> error $ "format " ++ format
           ++ "is not supported, only SVG is supported"
     _ -> error "zu viele Parameter"

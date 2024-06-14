@@ -18,6 +18,8 @@ module Modelling.CdOd.SelectValidCd (
   selectValidCdTask,
   ) where
 
+import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
+
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   elems,
@@ -70,6 +72,7 @@ import Modelling.CdOd.Types (
   ArticlePreference (..),
   ArticleToUse (DefiniteArticle),
   Cd,
+  CdDrawSettings (CdDrawSettings),
   ClassConfig (..),
   ClassDiagram (..),
   Object (..),
@@ -78,7 +81,9 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   associationNames,
+  checkCdDrawSettings,
   classNames,
+  defaultOmittedDefaultMultiplicites,
   linkNames,
   shuffleClassAndConnectionOrder,
   relationshipName,
@@ -194,15 +199,24 @@ data SelectValidCdInstance = SelectValidCdInstance {
     withNavigations :: Bool
   } deriving (Generic, Read, Show)
 
+cdDrawSettings
+  :: SelectValidCdInstance
+  -> CdDrawSettings
+cdDrawSettings SelectValidCdInstance {..} = CdDrawSettings {
+  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  T.printNames = withNames,
+  T.printNavigations = withNavigations
+  }
+
 checkSelectValidCdInstance :: SelectValidCdInstance -> Maybe String
-checkSelectValidCdInstance SelectValidCdInstance {..}
+checkSelectValidCdInstance task@SelectValidCdInstance {..}
   | showExtendedFeedback && not showSolution
   = Just [iii|
       showExtendedFeedback leaks the correct solution
       and thus can only be enabled when showSolution is set to True
       |]
   | otherwise
-  = Nothing
+  = checkCdDrawSettings (cdDrawSettings task)
 
 selectValidCdSyntax :: OutputMonad m => SelectValidCdInstance -> [Int] -> LangM m
 selectValidCdSyntax inst xs =
@@ -213,12 +227,12 @@ selectValidCdTask
   => FilePath
   -> SelectValidCdInstance
   -> LangM m
-selectValidCdTask path task = do
+selectValidCdTask path inst@SelectValidCdInstance {..} = do
   paragraph $ translate $ do
     english [i|Consider the following class diagram candidates:|]
     german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten:|]
   images show snd $=<< sequence $
-    M.foldrWithKey drawCd mempty $ classDiagrams task
+    M.foldrWithKey drawCd mempty classDiagrams
   paragraph $ translate $ do
     english [i|Which of these class diagram candidates are valid class diagrams?
 Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
@@ -239,8 +253,7 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
   where
     drawCd x theChange cds =
       let f = cacheCd
-            (withNavigations task)
-            (withNames task)
+            (cdDrawSettings inst)
             mempty
             (option theChange)
             path
@@ -259,31 +272,30 @@ selectValidCdEvaluation
   -> SelectValidCdInstance
   -> [Int]
   -> Rated m
-selectValidCdEvaluation path inst xs = addPretext $ do
+selectValidCdEvaluation path inst@SelectValidCdInstance{..} xs = addPretext $ do
   let cds = M.fromList [
         (English, "class diagrams"),
         (German, "Klassendiagramme")
         ]
-      solution = isRight . hint <$> classDiagrams inst
+      solution = isRight . hint <$> classDiagrams
       correctAnswer
-        | showSolution inst = Just $ show $ selectValidCdSolution inst
+        | showSolution = Just $ show $ selectValidCdSolution inst
         | otherwise = Nothing
   reRefuse (multipleChoice cds correctAnswer solution xs)
-    $ when (showExtendedFeedback inst)
+    $ when showExtendedFeedback
     $ void $ M.traverseWithKey
-      (selectValidCdFeedback path (withNavigations inst) (withNames inst) xs)
-      (classDiagrams inst)
+      (selectValidCdFeedback path (cdDrawSettings inst) xs)
+      classDiagrams
 
 selectValidCdFeedback
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
   => FilePath
-  -> Bool
-  -> Bool
+  -> CdDrawSettings
   -> [Int]
   -> Int
   -> CdChange
   -> LangM m
-selectValidCdFeedback path withDir byName xs x cdChange =
+selectValidCdFeedback path drawSettings xs x cdChange =
   case hint cdChange of
     Left articleAndChange | x `elem` xs -> do
       let change = annotated articleAndChange
@@ -346,6 +358,8 @@ selectValidCdFeedback path withDir byName xs x cdChange =
       pure ()
     _ -> pure ()
   where
+    byName = T.printNames drawSettings
+    withDir = T.printNavigations drawSettings
     dir
       | withDir = Back
       | otherwise = NoDir
@@ -355,6 +369,9 @@ selectValidCdFeedback path withDir byName xs x cdChange =
     isInheritance Inheritance {} = True
     isInheritance _ = False
     onlyInheritances = all isInheritance . relationships
+    useDirections = drawSettings {
+      T.printNavigations = True
+      }
     showNamedCd sufficient =
       unless sufficient $ do
         paragraph $ translate $ do
@@ -365,7 +382,7 @@ selectValidCdFeedback path withDir byName xs x cdChange =
             Die Beziehungen in dem Klassendiagramm könnten auf folgende Weise
             mit Namen versehen werden:
             |]
-        paragraph $ image $=<< cacheCd withDir True mempty (option cdChange) path
+        paragraph $ image $=<< cacheCd useDirections mempty (option cdChange) path
         pure ()
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
