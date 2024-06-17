@@ -3,6 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Modelling.Auxiliary.Common (
+  ModellingTasksException (..),
   Object (..),
   Randomise (..),
   RandomiseLayout (..),
@@ -78,6 +79,12 @@ data MatchListsException =
   deriving Show
 
 instance Exception MatchListsException
+
+data ModellingTasksException
+  = NeverHappens
+  deriving Show
+
+instance Exception ModellingTasksException
 
 instance MonadThrow m => MonadThrow (RandT g m) where
   throwM = lift . throwM

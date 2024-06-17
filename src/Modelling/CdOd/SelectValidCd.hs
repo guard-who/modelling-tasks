@@ -38,6 +38,7 @@ import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
+  ModellingTasksException (NeverHappens),
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
   shuffleEverything,
@@ -52,7 +53,6 @@ import Modelling.CdOd.CdAndChanges.Instance (
   AnnotatedChangeAndCd (..),
   )
 import Modelling.CdOd.Phrasing (
-  phraseChange,
   phraseRelationship,
   trailingCommaGerman,
   )
@@ -94,8 +94,9 @@ import Modelling.CdOd.Types (
 import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative)
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    ((>=>), unless, void, when)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.Output (
   GenericOutputMonad (..),
   LangM,
@@ -309,19 +310,9 @@ selectValidCdFeedback path drawSettings xs x cdChange =
           Klassendiagramm #{x} ist ungültig.
           |]
       showNamedCd (byName || maybe True isInheritance (remove change))
-      paragraph $ translate $ case remove change of
-        Nothing -> do
-          english [iii|
-            Consider the following change, which aims at fixing a
-            problematic situation within the given class diagram:
-            #{phraseChange English article True withDir change}.
-            |]
-          german [iii|
-            Sehen Sie sich die folgende Änderung an, die darauf abzielt, eine
-            problematische Stelle im Klassendiagramm zu beheben:
-            #{phraseChange German article True withDir change}.
-            |]
-        Just relation -> do
+      paragraph $ case remove change of
+        Nothing -> lift $ throwM NeverHappens
+        Just relation -> translate $ do
           let phrase l =
                 phraseRelationship l article True withDir relation
           english [iii|
@@ -369,8 +360,8 @@ selectValidCdFeedback path drawSettings xs x cdChange =
     isInheritance Inheritance {} = True
     isInheritance _ = False
     onlyInheritances = all isInheritance . relationships
-    useDirections = drawSettings {
-      T.printNavigations = True
+    useNames = drawSettings {
+      T.printNames = True
       }
     showNamedCd sufficient =
       unless sufficient $ do
@@ -382,7 +373,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
             Die Beziehungen in dem Klassendiagramm könnten auf folgende Weise
             mit Namen versehen werden:
             |]
-        paragraph $ image $=<< cacheCd useDirections mempty (option cdChange) path
+        paragraph $ image $=<< cacheCd useNames mempty (option cdChange) path
         pure ()
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
