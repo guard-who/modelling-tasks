@@ -112,7 +112,7 @@ import Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   classNames,
-  defaultOmittedDefaultMultiplicites,
+  defaultOmittedDefaultMultiplicities,
   defaultProperties,
   maxObjects,
   relationshipName,
@@ -407,7 +407,7 @@ cdDrawSettings
   :: RepairCdInstance
   -> CdDrawSettings
 cdDrawSettings RepairCdInstance {..} = CdDrawSettings {
-  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  omittedDefaults = defaultOmittedDefaultMultiplicities,
   T.printNames = withNames,
   T.printNavigations = withDirections
   }

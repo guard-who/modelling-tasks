@@ -83,7 +83,7 @@ import Modelling.CdOd.Types (
   associationNames,
   checkCdDrawSettings,
   classNames,
-  defaultOmittedDefaultMultiplicites,
+  defaultOmittedDefaultMultiplicities,
   linkNames,
   shuffleClassAndConnectionOrder,
   relationshipName,
@@ -204,7 +204,7 @@ cdDrawSettings
   :: SelectValidCdInstance
   -> CdDrawSettings
 cdDrawSettings SelectValidCdInstance {..} = CdDrawSettings {
-  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  omittedDefaults = defaultOmittedDefaultMultiplicities,
   T.printNames = withNames,
   T.printNavigations = withNavigations
   }

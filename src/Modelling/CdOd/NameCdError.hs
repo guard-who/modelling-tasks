@@ -117,7 +117,7 @@ import Modelling.CdOd.Types (
   associationNames,
   checkCdDrawSettings,
   classNames,
-  defaultOmittedDefaultMultiplicites,
+  defaultOmittedDefaultMultiplicities,
   isIllegal,
   maxObjects,
   renameClassesAndRelationships,
@@ -394,7 +394,7 @@ cdDrawSettings
   :: NameCdErrorInstance
   -> CdDrawSettings
 cdDrawSettings NameCdErrorInstance {..} = CdDrawSettings {
-  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  omittedDefaults = defaultOmittedDefaultMultiplicities,
   T.printNames = withNames,
   T.printNavigations = withDirections
   }

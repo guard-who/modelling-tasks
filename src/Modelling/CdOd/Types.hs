@@ -35,7 +35,7 @@ module Modelling.CdOd.Types (
   checkObjectDiagram,
   classNamesOd,
   defaultDrawSettings,
-  defaultOmittedDefaultMultiplicites,
+  defaultOmittedDefaultMultiplicities,
   defaultProperties,
   isIllegal,
   isObjectDiagramRandomisable,
@@ -572,14 +572,14 @@ data CdDrawSettings
     omittedDefaults :: !OmittedDefaultMultiplicities,
     -- | When set to 'False' relationship names will be omitted
     printNames :: !Bool,
-    -- | When set to 'False' associaiton arrows will be omitted
+    -- | When set to 'False' association arrows will be omitted
     printNavigations :: !Bool
     }
   deriving (Eq, Generic, Read, Show)
 
 defaultDrawSettings :: CdDrawSettings
 defaultDrawSettings = CdDrawSettings {
-  omittedDefaults = defaultOmittedDefaultMultiplicites,
+  omittedDefaults = defaultOmittedDefaultMultiplicities,
   printNames = True,
   printNavigations = True
   }
@@ -600,8 +600,8 @@ data OmittedDefaultMultiplicities
     }
   deriving (Eq, Generic, Read, Show)
 
-defaultOmittedDefaultMultiplicites :: OmittedDefaultMultiplicities
-defaultOmittedDefaultMultiplicites = OmittedDefaultMultiplicities {
+defaultOmittedDefaultMultiplicities :: OmittedDefaultMultiplicities
+defaultOmittedDefaultMultiplicities = OmittedDefaultMultiplicities {
   aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
   associationOmittedDefaultMultiplicity = Just (0, Nothing),
   compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)

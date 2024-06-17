@@ -9,7 +9,7 @@ import Modelling.CdOd.Types (
   CdDrawSettings (..),
   ClassDiagram (..),
   Relationship (..),
-  defaultOmittedDefaultMultiplicites,
+  defaultOmittedDefaultMultiplicities,
   )
 
 import Data.Char                        (toUpper)
@@ -40,7 +40,7 @@ run withNames howToMark input file = do
       }
     toInheritance sub super = Inheritance sub <$> super
     drawSettings = CdDrawSettings {
-      omittedDefaults = defaultOmittedDefaultMultiplicites,
+      omittedDefaults = defaultOmittedDefaultMultiplicities,
       printNames = withNames,
       printNavigations = False
       }
