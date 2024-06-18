@@ -624,9 +624,12 @@ checkOmittedDefaultMultiplicities OmittedDefaultMultiplicities {..} =
       | lower < 0
       = Just "The lower default multiplicity limit must not be negative."
       | Just upper <- maybeUpper, upper < 1
-      = Just "The upper default multiplicity limit most not be lower than 1."
+      = Just "The upper default multiplicity limit must not be lower than 1."
       | Just upper <- maybeUpper, upper < lower
-      = Just "The upper default multiplicity limit most not be lower than the lower limit."
+      = Just [iii|
+        The upper default multiplicity limit must not be lower than
+        the lower limit.
+        |]
       | otherwise
       = Nothing
 
