@@ -43,8 +43,7 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
   let inheritance = relationship [is],
       composition = relationship [cs] |
   no c : Class |
-    c in c.^(*inheritance.composition).*~inheritance
-      + c.^(*inheritance.~composition).*~inheritance
+    c in c.^((*~inheritance + *inheritance).composition)
 }
 
 pred isPartOfMultipleCompositions [c : Class, is : set Inheritance, cs : set Composition] {
