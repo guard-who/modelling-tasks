@@ -65,6 +65,7 @@ dependencies:
   - polysemy-plugin
   - random
   - random-shuffle
+  - size-based
   - split
   - string-interpolate
   - svg-builder

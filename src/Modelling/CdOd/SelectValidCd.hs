@@ -73,6 +73,7 @@ import Modelling.CdOd.Types (
   ArticleToUse (DefiniteArticle),
   Cd,
   CdDrawSettings (CdDrawSettings),
+  CdMutation,
   ClassConfig (..),
   ClassDiagram (..),
   Object (..),
@@ -80,6 +81,7 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   Od,
   Relationship (..),
+  allCdMutations,
   associationNames,
   checkCdDrawSettings,
   classNames,
@@ -138,6 +140,9 @@ data SelectValidCdConfig = SelectValidCdConfig {
     shuffleEachCd    :: Bool,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
+
+allowedCdMutations :: SelectValidCdConfig -> [CdMutation]
+allowedCdMutations _ = allCdMutations
 
 defaultSelectValidCdConfig :: SelectValidCdConfig
 defaultSelectValidCdConfig = SelectValidCdConfig {
@@ -390,6 +395,7 @@ selectValidCd config segment seed = flip evalRandT g $ do
   (_, chs)  <- repairIncorrect
     (allowedProperties config)
     (classConfig config)
+    (allowedCdMutations config)
     (objectProperties config)
     (articleToUse config)
     (maxInstances config)

@@ -139,6 +139,7 @@ library
     , polysemy-plugin
     , random
     , random-shuffle
+    , size-based
     , split
     , string-interpolate
     , svg-builder
@@ -234,6 +235,7 @@ test-suite modelling-tasks-test
     , process
     , random
     , random-shuffle
+    , size-based
     , split
     , string-interpolate
     , svg-builder

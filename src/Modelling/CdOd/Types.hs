@@ -4,6 +4,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
@@ -13,6 +14,7 @@ module Modelling.CdOd.Types (
   Annotation (..),
   Cd,
   CdDrawSettings (..),
+  CdMutation (..),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -25,7 +27,9 @@ module Modelling.CdOd.Types (
   OmittedDefaultMultiplicities (..),
   Property (..),
   Relationship (..),
+  RelationshipMutation (..),
   RelationshipProperties (..),
+  allCdMutations,
   anyThickEdge,
   associationNames,
   calculateThickRelationships,
@@ -68,6 +72,8 @@ import qualified Data.Set                         as S (fromList)
 import Modelling.Auxiliary.Common       (lowerFirst)
 
 import Control.Applicative              (Alternative ((<|>)))
+import Control.Enumerable               (deriveEnumerable)
+import Control.Enumerable.Values        (allValues)
 import Control.Exception                (Exception, throw)
 import Control.Monad                    (void)
 import Control.Monad.Catch              (MonadThrow)
@@ -170,6 +176,28 @@ shuffleObjectAndLinkOrder
 shuffleObjectAndLinkOrder ObjectDiagram {..} = ObjectDiagram
   <$> shuffleM objects
   <*> shuffleM links
+
+{-|
+The basic mutation operations.
+-}
+data RelationshipMutation
+  = ChangeKind
+  | ChangeLimit
+  | Flip
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
+deriveEnumerable ''RelationshipMutation
+
+data CdMutation
+  = AddRelationship
+  | MutateRelationship !RelationshipMutation
+  | RemoveRelationship
+  deriving (Eq, Generic, Ord, Read, Show)
+
+deriveEnumerable ''CdMutation
+
+allCdMutations :: [CdMutation]
+allCdMutations = concat allValues
 
 {-|
 A meta-level connection to a node name

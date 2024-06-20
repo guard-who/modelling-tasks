@@ -74,6 +74,7 @@ import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
   CdDrawSettings,
+  CdMutation,
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -84,6 +85,7 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   Od,
   Relationship (..),
+  allCdMutations,
   associationNames,
   checkCdDrawSettings,
   checkClassConfigWithProperties,
@@ -190,6 +192,9 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
     timeout          = Nothing,
     withNonTrivialInheritance = Just True
   }
+
+allowedCdMutations :: MatchCdOdConfig -> [CdMutation]
+allowedCdMutations _ = allCdMutations
 
 toMatching :: Map Char [Int] -> Map (Int, Char) Bool
 toMatching m =
@@ -603,6 +608,7 @@ getRandomTask
 getRandomTask config = do
   let alloyCode = Changes.transform
         (classConfig config)
+        (allowedCdMutations config)
         defaultProperties
         (withNonTrivialInheritance config)
   alloyInstances <- getInstances (maxInstances config) (timeout config) alloyCode

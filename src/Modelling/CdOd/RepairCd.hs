@@ -100,6 +100,7 @@ import Modelling.CdOd.Types (
   ArticleToUse (DefiniteArticle),
   Cd,
   CdDrawSettings (CdDrawSettings),
+  CdMutation,
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -107,6 +108,7 @@ import Modelling.CdOd.Types (
   Od,
   Relationship (..),
   RelationshipProperties (..),
+  allCdMutations,
   associationNames,
   checkCdDrawSettings,
   checkClassConfig,
@@ -255,6 +257,9 @@ defaultRepairCdConfig = RepairCdConfig {
     timeout          = Nothing,
     useNames         = False
   }
+
+allowedCdMutations :: RepairCdConfig -> [CdMutation]
+allowedCdMutations _ = allCdMutations
 
 checkRepairCdConfig :: RepairCdConfig -> Maybe String
 checkRepairCdConfig RepairCdConfig {..}
@@ -507,6 +512,7 @@ repairCd config segment seed = flip evalRandT g $ do
   (cd, chs) <- repairIncorrect
     (allowedProperties config)
     (classConfig config)
+    (allowedCdMutations config)
     (objectProperties config)
     (articleToUse config)
     (maxInstances config)
@@ -783,19 +789,21 @@ repairIncorrect
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => AllowedProperties
   -> ClassConfig
+  -> [CdMutation]
   -> ObjectProperties
   -> ArticlePreference
   -> Maybe Integer
   -> Maybe Int
   -> RandT g m (Cd, [CdChangeAndCd])
-repairIncorrect allowed config objectProperties preference maxInstances to = do
-  changeSets <- shuffleM $ diversify $ possibleChanges allowed
+repairIncorrect cdProperties config cdMutations objectProperties preference maxInstances to = do
+  changeSets <- shuffleM $ diversify $ possibleChanges cdProperties
   tryNextChangeSet changeSets
   where
     tryNextChangeSet [] = lift $ throwM NoInstanceAvailable
     tryNextChangeSet ((e0, propertyChanges) : changeSets) = do
       let alloyCode = Changes.transformChanges
             config
+            cdMutations
             (toProperty e0)
             (Just config)
             $ map toProperty propertyChanges
@@ -827,7 +835,11 @@ repairIncorrect allowed config objectProperties preference maxInstances to = do
       | otherwise = fmap Left
         <$> getImprovedCd (changeClassDiagram change) (toProperty propertyChange)
     getImprovedCd cd properties = do
-      let alloyCode = Changes.transformImproveCd cd config properties
+      let alloyCode = Changes.transformImproveCd
+            cd
+            config
+            cdMutations
+            properties
       changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
       fmap (relationshipChange . head . instanceChangesAndCds)
         <$> traverse fromInstanceWithPredefinedNames changes
