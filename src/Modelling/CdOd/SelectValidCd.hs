@@ -84,6 +84,7 @@ import Modelling.CdOd.Types (
   allCdMutations,
   associationNames,
   checkCdDrawSettings,
+  checkCdMutations,
   classNames,
   defaultOmittedDefaultMultiplicities,
   linkNames,
@@ -95,7 +96,7 @@ import Modelling.CdOd.Types (
   )
 import Modelling.Types                  (Change (..))
 
-import Control.Applicative              (Alternative)
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    ((>=>), unless, void, when)
 import Control.Monad.Catch              (MonadThrow (throwM))
@@ -175,7 +176,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
   }
 
 checkSelectValidCdConfig :: SelectValidCdConfig -> Maybe String
-checkSelectValidCdConfig SelectValidCdConfig {..}
+checkSelectValidCdConfig config@SelectValidCdConfig {..}
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
   | usesEveryRelationshipName objectProperties /= Just True
@@ -189,6 +190,7 @@ checkSelectValidCdConfig SelectValidCdConfig {..}
       |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
+  <|> checkCdMutations (allowedCdMutations config)
 
 type CdChange = InValidOption
   Cd

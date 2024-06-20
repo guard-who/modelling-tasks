@@ -34,6 +34,7 @@ module Modelling.CdOd.Types (
   associationNames,
   calculateThickRelationships,
   checkCdDrawSettings,
+  checkCdMutations,
   checkClassConfig,
   checkClassConfigWithProperties,
   checkObjectDiagram,
@@ -82,7 +83,7 @@ import Data.Bifunctor                   (Bifunctor (bimap, first, second))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
-import Data.List                        (isPrefixOf, stripPrefix)
+import Data.List                        ((\\), isPrefixOf, stripPrefix)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe (
   catMaybes,
@@ -198,6 +199,18 @@ deriveEnumerable ''CdMutation
 
 allCdMutations :: [CdMutation]
 allCdMutations = concat allValues
+
+checkCdMutations :: [CdMutation] -> Maybe String
+checkCdMutations mutations
+  | null mutations
+  = Just [iii|At least one CdMutation has to be enabled.|]
+  | x:_ <- mutations \\ allCdMutations
+  = Just [iii|
+    There are no duplications allowed for the configured cd mutations
+    but #{show x} appears twice.
+    |]
+  | otherwise
+  = Nothing
 
 {-|
 A meta-level connection to a node name

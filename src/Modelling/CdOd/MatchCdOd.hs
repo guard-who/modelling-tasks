@@ -88,6 +88,7 @@ import Modelling.CdOd.Types (
   allCdMutations,
   associationNames,
   checkCdDrawSettings,
+  checkCdMutations,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   classNames,
@@ -204,9 +205,9 @@ toMatching m =
     ods = take 5 ['a' ..]
 
 checkMatchCdOdConfig :: MatchCdOdConfig -> Maybe String
-checkMatchCdOdConfig config = checkClassConfigWithProperties
-  (classConfig config)
-  defaultProperties
+checkMatchCdOdConfig config@MatchCdOdConfig {..}
+  = checkClassConfigWithProperties classConfig defaultProperties
+  <|> checkCdMutations (allowedCdMutations config)
 
 checkMatchCdOdInstance :: MatchCdOdInstance -> Maybe String
 checkMatchCdOdInstance inst@MatchCdOdInstance {..}

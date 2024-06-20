@@ -111,6 +111,7 @@ import Modelling.CdOd.Types (
   allCdMutations,
   associationNames,
   checkCdDrawSettings,
+  checkCdMutations,
   checkClassConfig,
   checkClassConfigWithProperties,
   classNames,
@@ -262,7 +263,7 @@ allowedCdMutations :: RepairCdConfig -> [CdMutation]
 allowedCdMutations _ = allCdMutations
 
 checkRepairCdConfig :: RepairCdConfig -> Maybe String
-checkRepairCdConfig RepairCdConfig {..}
+checkRepairCdConfig config@RepairCdConfig {..}
   | not printNames && useNames
   = Just "use names is only possible when printing names"
   | completelyInhabited objectProperties /= Just True
@@ -278,6 +279,7 @@ checkRepairCdConfig RepairCdConfig {..}
       |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
+  <|> checkCdMutations (allowedCdMutations config)
 
 checkClassConfigAndChanges
   :: ClassConfig
