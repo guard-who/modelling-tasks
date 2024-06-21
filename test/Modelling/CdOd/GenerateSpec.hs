@@ -96,12 +96,10 @@ spec =
         hasReverseInheritances = False,
         hasReverseRelationships = Just False
         }
-    -- Disabled due to varying definitions of multiple inheritances:
-    {- generateProperty
+    generateProperty
       "multipleInheritances"
       (const $ not . null . multipleInheritances)
       defaultProperties { hasMultipleInheritances = Just True }
-    -}
     generateProperty
       "no multipleInheritances"
       (const $ null . multipleInheritances)

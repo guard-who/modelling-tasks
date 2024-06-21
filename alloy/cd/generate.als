@@ -178,7 +178,7 @@ pred classDiagram [
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
   #{ r : nonInheritances | selfRelationship [r]} = selfRelationships
   #{ i : inheritances | selfRelationship [i]} = selfInheritances
-  no i : inheritances | not noDoubleRelationships [i]
+  noDoubleRelationships [inheritances]
   no i : inheritances, a : nonInheritances |
     sameDirection [i, a] or reverseRelationship [i, a]
   hasDoubleRelationships = True
