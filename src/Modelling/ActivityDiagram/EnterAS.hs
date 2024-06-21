@@ -205,7 +205,7 @@ enterASTask path task = do
         For example, |]
       german [iii|
         Geben Sie eine Aktionsfolge (d.h., eine Folge von Aktionsknoten) an,
-        welche in einem Ablauf dieses Diagramms all Flüsse terminieren lässt,
+        welche in einem Ablauf dieses Diagramms alle Flüsse terminieren lässt,
         indem Sie eine Liste von Aktionsnamen angeben.
         \n
         Zum Beispiel drückt |]
