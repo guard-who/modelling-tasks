@@ -122,12 +122,10 @@ spec =
       "not anyThickEdge"
       (curry $ not . anyThickEdge . uncurry fromEdges)
       defaultProperties { hasThickEdges = Just False }
-    -- Disabled due to varying definition of composition cycles:
-    {- generateProperty
+    generateProperty
       "compositionCycles"
       (const $ not . null . compositionCycles)
       defaultProperties { hasCompositionCycles = True }
-    -}
     generateProperty
       "no compositionCycles"
       (const $ null . compositionCycles)

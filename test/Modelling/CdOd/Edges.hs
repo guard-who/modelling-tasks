@@ -23,6 +23,7 @@ import Modelling.CdOd.Types (
   )
 import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
+import Data.List                        ((\\), delete)
 import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
 
@@ -134,33 +135,27 @@ inheritanceCycles = cycles isInheritance
     isInheritance _           = False
 
 compositionCycles :: [DiagramEdge] -> [[DiagramEdge]]
-compositionCycles es = cycles isComposition (flatten es)
-  ++ [c:cs |   (s,  e, cs) <- getPaths isInheritance es
-           , c@(s', e', _) <- filter (isComposition . thd3) es
-           , s' == e && s == e' || s' == s && e' == e]
+compositionCycles = concatMap untilCycle . segmentsOf
   where
+    untilCycle (s, e, cs, remaining)
+      | s == e = [cs]
+      | otherwise
+      = concatMap
+        untilCycle
+        [ (s, e', cs ++ cs', remaining')
+        | (s', e', cs', remaining') <- segmentsOf remaining
+        , e == s'
+        ]
+    segmentsOf edges =
+      let compositions = filter (isComposition . thd3) edges
+      in [ (s, e, [c], delete c edges)
+         | c@(s, e, _) <- compositions]
+         ++ [ (if s' == e then s else e, e', c:cs, edges \\ (c:cs))
+            | c@(s', e', _) <- compositions
+            , (s, e, cs) <- getPaths isInheritance edges
+            , s' == e || s' == s]
     isInheritance Inheritance' = True
     isInheritance _           = False
-
-flatten :: [DiagramEdge] -> [DiagramEdge]
-flatten es
-  | Just ((s, e), es') <- findInheritance es
-  = flatten $ flattenInheritance s e `concatMap` es'
-  | otherwise
-  = es
-
-findInheritance :: [DiagramEdge] -> Maybe ((String, String), [DiagramEdge])
-findInheritance []                         = Nothing
-findInheritance ((s, e, Inheritance') : es) = Just ((s, e), es)
-findInheritance (e:es)                     = fmap (e:) <$> findInheritance es
-
-flattenInheritance :: String -> String -> DiagramEdge -> [DiagramEdge]
-flattenInheritance s e edge@(s', e', t) = case t of
-  Inheritance' | e == s', s /= e' -> [(s, e', Inheritance')]
-               | s == e', e /= s' -> [(s', e, Inheritance')]
-  NonInheritance {} | e == s' -> [(s, e', t), edge]
-  NonInheritance {} | e == e' -> [(s', e, t), edge]
-  _ -> [edge]
 
 isComposition :: Connection -> Bool
 isComposition (NonInheritance Composition' _ _ _ _) = True
