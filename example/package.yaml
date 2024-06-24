@@ -12,6 +12,7 @@ dependencies:
   - containers
   - graphviz
   - modelling-tasks
+  - pretty-simple
 library:
   source-dirs: src
 tests:

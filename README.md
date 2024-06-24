@@ -17,7 +17,7 @@ The example her is for `NameCdError` (i.e. module `Modelling.CdOd.NameCdError`).
 For German versions change `English` to `German`.
 
 ``` sh
-stack ghci
+stack ghci --stack-yaml=stack-examples.yaml
 ```
 
 ``` haskell
@@ -37,3 +37,12 @@ testTask English (randomRIO (0,1000) >>= nameCdErrorGenerate defaultNameCdErrorC
 ```
 
 Please also note, that the `..Task`, `..Syntax`, and `..Evaluation` functions sometimes require arguments for a directory (above `"/tmp/"`) and sometimes don't.
+
+In order to view configurations and instances slightly formatted you may use `pPrint`, e.g.:
+
+``` haskell
+:m +Text.Pretty.Simple
+pPrint defaultNameCdErrorConfig
+inst <- nameCdErrorGenerate defaultNameCdErrorConfig 0 0
+pPrint inst
+```
