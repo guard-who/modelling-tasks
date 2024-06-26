@@ -102,6 +102,7 @@ import Data.Maybe (isJust, fromJust)
 import Data.Graph.Inductive (Gr, mkGraph, lab, level)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.String.Interpolate ( i )
+import Data.Traversable                 (for)
 import GHC.Generics (Generic)
 import System.Random.Shuffle (shuffleM)
 
@@ -335,11 +336,9 @@ selectPetriTask path task = do
     english "Consider the following Petri nets:"
     german "Betrachten Sie die folgenden Petrinetze:"
   images show id
-    $=<< traverse (\c -> cacheNet path (show . PK.label) c
-      (not $ withPlaceNames drawSetting)
-      (not $ withTransitionNames drawSetting)
-      (not $ with1Weights drawSetting)
-      (withGraphvizCommand drawSetting)) mapping
+    $=<< for
+      mapping
+      (\c -> cacheNet path (show . PK.label) c drawSetting)
   paragraph $ translate $ do
     english [i|Which of these Petri nets is the translation of the given activity diagram?
 Please state your answer by giving a number indicating the matching Petri net.|]

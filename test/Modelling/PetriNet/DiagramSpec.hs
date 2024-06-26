@@ -6,6 +6,7 @@ import Modelling.Auxiliary.Common        (Object)
 import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.MatchToMath    (petriNetRnd)
 import Modelling.PetriNet.Types (
+  DrawSettings (..),
   SimplePetriLike,
   defaultAdvConfig,
   defaultBasicConfig,
@@ -27,5 +28,10 @@ spec =
         (inst:_) <- getInstances (Just 1)
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
         pl <- parseNet "flow" "tokens" inst
-        dia <- drawNet show (pl :: SimplePetriLike Object) False True True TwoPi
+        dia <- drawNet show (pl :: SimplePetriLike Object) DrawSettings {
+          withPlaceNames = True,
+          withTransitionNames = False,
+          with1Weights = False,
+          withGraphvizCommand = TwoPi
+          }
         withTempFile $ \f -> renderSVG f (mkWidth 200) dia `shouldReturn` ()

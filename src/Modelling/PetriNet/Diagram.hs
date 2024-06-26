@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards #-}
 
 {-|
 Provides the ability to render Petri nets.
@@ -50,20 +51,17 @@ cacheNet
   => String
   -> (a -> String)
   -> p n a
-  -> Bool
-  -> Bool
-  -> Bool
-  -> GraphvizCommand
+  -> DrawSettings
   -> m FilePath
-cacheNet path labelOf pl hidePlaceNames hideTransitionNames hide1 gc =
+cacheNet path labelOf pl drawSettings@DrawSettings {..} =
   cache path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
-    dia <- drawNet id pl' hidePlaceNames hideTransitionNames hide1 gc
+    dia <- drawNet id pl' drawSettings
     writeSvg svg dia
   where
-    ext = short hidePlaceNames
-      ++ short hideTransitionNames
-      ++ short hide1
-      ++ short gc
+    ext = short (not withPlaceNames)
+      ++ short (not withTransitionNames)
+      ++ short (not with1Weights)
+      ++ short withGraphvizCommand
       ++ ".svg"
 
 newtype UnknownPetriNetNodeException
@@ -82,21 +80,15 @@ drawNet
   -- ^ how to obtain labels of the nodes
   -> p n a
   -- ^ the graph definition
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
-  -> GraphvizCommand
-  -- ^ how to distribute the nodes
+  -> DrawSettings
+  -- ^ how to draw the graph
   -> m (Diagram B)
-drawNet labelOf pl hidePlaceNames hideTransitionNames hide1 gc = do
+drawNet labelOf pl drawSettings@DrawSettings {..} = do
   gr    <- either (throwM . CouldNotFindNodeWithinGraph . labelOf) return
     $ netToGr pl
-  graph <- layoutGraph gc gr
+  graph <- layoutGraph withGraphvizCommand gr
   preparedFont <- lin
-  return $ drawGraph labelOf hidePlaceNames hideTransitionNames hide1 preparedFont graph
+  return $ drawGraph labelOf drawSettings preparedFont graph
 
 getNet
   :: (MonadThrow m, Net p n, Traversable t)
@@ -146,32 +138,34 @@ drawGraph
   :: Ord a
   => (a -> String)
   -- ^ how to obtain labels from nodes
-  -> Bool
-  -- ^ whether to hide place names
-  -> Bool
-  -- ^ whether to hide transition names
-  -> Bool
-  -- ^ whether to hide weight of 1
+  -> DrawSettings
+  -- ^ how to draw the graph
   -> PreparedFont Double
   -- ^ the font to be used for labels
   -> Gr (AttributeNode (a, Maybe Int)) (AttributeEdge Int)
   -- ^ the graph consisting of nodes and edges
   -> Diagram B
-drawGraph labelOf hidePlaceNames hideTransitionNames hide1 preparedFont graph =
+drawGraph labelOf drawSettings@DrawSettings {..} preparedFont graph =
   graphEdges' # frame 1
   where
     (nodes, edges) = GV.getGraph graph
     graphNodes' = M.foldlWithKey
       (\g l p -> g
         `atop`
-        drawNode hidePlaceNames hideTransitionNames preparedFont (withLabel l) p)
+        drawNode drawSettings preparedFont (withLabel l) p)
       mempty
       nodes
     graphEdges' = foldl
       (\g (s, t, l, p) ->
         let ls = labelOnly s
             lt = labelOnly t
-        in g # drawEdge hide1 preparedFont l ls lt (nonEmptyPathBetween p ls lt g)
+        in g # drawEdge
+          (not with1Weights)
+          preparedFont
+          l
+          ls
+          lt
+          (nonEmptyPathBetween p ls lt g)
       )
       graphNodes'
       edges
@@ -188,10 +182,8 @@ if 5 or more tokens are within.
 Each node gets a label.
 -}
 drawNode
-  :: Bool
-  -- ^ whether to hide place name
-  -> Bool
-  -- ^ whether to hide transition name
+  :: DrawSettings
+  -- ^ how to draw
   -> PreparedFont Double
   -- ^ the font to use
   -> (String, Maybe Int)
@@ -199,14 +191,14 @@ drawNode
   -> Point V2 Double
   -- ^ where to place the node
   -> Diagram B
-drawNode _ hideTransitionName preparedFont (l, Nothing) p  = place
+drawNode DrawSettings {..} preparedFont (l, Nothing) p  = place
   (addTransitionName $ rect 20 20 # lwL 0.5 # named l # svgClass "rect")
   p
   where
     addTransitionName
-      | hideTransitionName = id
+      | not withTransitionNames = id
       | otherwise = (center (text' preparedFont 18 l) `atop`)
-drawNode hidePlaceName _ preparedFont (l, Just i) p
+drawNode DrawSettings {..} preparedFont (l, Just i) p
   | i < 5
   = place (foldl' atop label $ [placeToken j | j <- [1..i]] ++ [emptyPlace]) p
   | otherwise
@@ -221,7 +213,7 @@ drawNode hidePlaceName _ preparedFont (l, Just i) p
     spacer = 9
     emptyPlace = circle 20 # lwL 0.5 # named l # svgClass "node"
     label
-      | hidePlaceName = mempty
+      | not withPlaceNames = mempty
       | otherwise = center (text' preparedFont 18 l)
         # translate (r2 (0, - (3 * spacer)))
         # svgClass "nlabel"
@@ -274,9 +266,4 @@ renderWith
   -> p n String
   -> DrawSettings
   -> m FilePath
-renderWith path task net config =
-  cacheNet (path ++ task) id net
-    (not $ withPlaceNames config)
-    (not $ withTransitionNames config)
-    (not $ with1Weights config)
-    (withGraphvizCommand config)
+renderWith path task = cacheNet (path ++ task) id

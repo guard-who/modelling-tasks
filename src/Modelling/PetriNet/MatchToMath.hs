@@ -239,15 +239,12 @@ writeGraph
   -> String
   -> p n String
   -> m FilePath
-writeGraph s path index pl =
+writeGraph drawSettings path index pl =
   cacheNet
     (path ++ "graph" ++ index)
     id
     pl
-    (not $ withPlaceNames s)
-    (not $ withTransitionNames s)
-    (not $ with1Weights s)
-    (withGraphvizCommand s)
+    drawSettings
 
 graphToMath
   :: (MonadAlloy m, MonadThrow m, Net p n)

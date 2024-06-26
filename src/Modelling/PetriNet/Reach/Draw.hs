@@ -12,6 +12,7 @@ import Modelling.PetriNet.Reach.Type (
   mark,
   )
 import Modelling.PetriNet.Types (
+  DrawSettings (..),
   PetriLike (PetriLike),
   SimpleNode (SimplePlace, SimpleTransition),
   )
@@ -41,10 +42,12 @@ drawToFile hidePlaceNames path cmd x net = cacheNet
     (path ++ "graph" ++ show x)
     id
     (toPetriLike show show net)
-    hidePlaceNames
-    False
-    True
-    cmd
+    DrawSettings {
+      with1Weights = False,
+      withPlaceNames = not hidePlaceNames,
+      withTransitionNames = True,
+      withGraphvizCommand = cmd
+      }
 
 {-|
 Requires two functions that provide unique ids for places and nodes.
