@@ -226,6 +226,7 @@ prohibitHidePlaceNames gc
 defaultFindConflictPlacesInstance :: FindInstance SimplePetriNet Conflict
 defaultFindConflictPlacesInstance = FindInstance {
   drawFindWith = DrawSettings {
+    withAnnotatedLabels = False,
     withPlaceNames = True,
     withTransitionNames = True,
     with1Weights = False,

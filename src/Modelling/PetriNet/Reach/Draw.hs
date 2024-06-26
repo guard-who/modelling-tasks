@@ -43,6 +43,7 @@ drawToFile hidePlaceNames path cmd x net = cacheNet
     id
     (toPetriLike show show net)
     DrawSettings {
+      withAnnotatedLabels = False,
       with1Weights = False,
       withPlaceNames = not hidePlaceNames,
       withTransitionNames = True,

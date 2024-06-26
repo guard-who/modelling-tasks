@@ -58,9 +58,10 @@ cacheNet path labelOf pl drawSettings@DrawSettings {..} =
     dia <- drawNet id pl' drawSettings
     writeSvg svg dia
   where
-    ext = short (not withPlaceNames)
-      ++ short (not withTransitionNames)
-      ++ short (not with1Weights)
+    ext = short withPlaceNames
+      ++ short withTransitionNames
+      ++ short with1Weights
+      ++ short withAnnotatedLabels
       ++ short withGraphvizCommand
       ++ ".svg"
 
@@ -192,9 +193,12 @@ drawNode
   -- ^ where to place the node
   -> Diagram B
 drawNode DrawSettings {..} preparedFont (l, Nothing) p  = place
-  (addTransitionName $ rect 20 20 # lwL 0.5 # named l # svgClass "rect")
+  (addTransitionName $ rect 20 20 # lwL 0.5 # named l # svgClass "rect" # additionalLabel)
   p
   where
+    additionalLabel
+      | withAnnotatedLabels = svgClass $ ' ' : l
+      | otherwise = id
     addTransitionName
       | not withTransitionNames = id
       | otherwise = (center (text' preparedFont 18 l) `atop`)
@@ -210,8 +214,11 @@ drawNode DrawSettings {..} preparedFont (l, Just i) p
         ])
     p
   where
+    additionalLabel
+      | withAnnotatedLabels = svgClass $ ' ' : l
+      | otherwise = id
     spacer = 9
-    emptyPlace = circle 20 # lwL 0.5 # named l # svgClass "node"
+    emptyPlace = circle 20 # lwL 0.5 # named l # svgClass "node" # additionalLabel
     label
       | not withPlaceNames = mempty
       | otherwise = center (text' preparedFont 18 l)

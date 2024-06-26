@@ -634,6 +634,7 @@ defaultGraphToMathInstance = MatchInstance {
         ]
       },
     DrawSettings {
+      withAnnotatedLabels = False,
       withPlaceNames = True,
       withTransitionNames = True,
       with1Weights = False,
@@ -722,6 +723,7 @@ defaultMathToGraphInstance = MatchInstance {
           ]
         },
       DrawSettings {
+        withAnnotatedLabels = False,
         withPlaceNames = True,
         withTransitionNames = True,
         with1Weights = False,
@@ -741,6 +743,7 @@ defaultMathToGraphInstance = MatchInstance {
           ]
         },
       DrawSettings {
+        withAnnotatedLabels = False,
         withPlaceNames = True,
         withTransitionNames = True,
         with1Weights = False,
@@ -760,6 +763,7 @@ defaultMathToGraphInstance = MatchInstance {
           ]
         },
       DrawSettings {
+        withAnnotatedLabels = False,
         withPlaceNames = True,
         withTransitionNames = True,
         with1Weights = False,
@@ -778,6 +782,7 @@ defaultMathToGraphInstance = MatchInstance {
           ]
         },
       DrawSettings {
+        withAnnotatedLabels = False,
         withPlaceNames = True,
         withTransitionNames = True,
         with1Weights = False,

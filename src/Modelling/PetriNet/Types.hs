@@ -883,6 +883,7 @@ defaultPickConcurrencyConfig = PickConcurrencyConfig
   }
 
 data DrawSettings = DrawSettings {
+  withAnnotatedLabels  :: Bool,
   withPlaceNames       :: Bool,
   withTransitionNames  :: Bool,
   with1Weights         :: Bool,
@@ -893,6 +894,7 @@ type Drawable n = (n, DrawSettings)
 
 drawSettingsWithCommand :: GraphConfig -> GraphvizCommand -> DrawSettings
 drawSettingsWithCommand config c = DrawSettings {
+  withAnnotatedLabels = False,
   withPlaceNames = not $ hidePlaceNames config,
   withTransitionNames = not $ hideTransitionNames config,
   with1Weights = not $ hideWeight1 config,

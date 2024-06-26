@@ -29,6 +29,7 @@ spec =
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
         pl <- parseNet "flow" "tokens" inst
         dia <- drawNet show (pl :: SimplePetriLike Object) DrawSettings {
+          withAnnotatedLabels = False,
           withPlaceNames = True,
           withTransitionNames = False,
           with1Weights = False,
