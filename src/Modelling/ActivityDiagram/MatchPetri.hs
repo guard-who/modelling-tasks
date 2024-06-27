@@ -116,9 +116,9 @@ data MatchPetriConfig = MatchPetriConfig {
   adConfig :: AdConfig,
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
-  -- | Enable putting label information inside generated SVGs
-  petriAnnotatedLabels :: Bool,
   petriLayout :: [GraphvizCommand],
+  -- | Whether highlighting on hover should be enabled
+  petriSvgHighlighting :: Bool,
   -- | Option to prevent support STs from occurring
   supportSTAbsent :: Maybe Bool,
   -- | Option to disallow activity finals to reduce semantic confusion
@@ -138,8 +138,8 @@ defaultMatchPetriConfig = MatchPetriConfig
   { adConfig = defaultAdConfig {activityFinalNodes = 0, flowFinalNodes = 2},
     maxInstances = Just 25,
     hideBranchConditions = False,
-    petriAnnotatedLabels = False,
     petriLayout = [Dot],
+    petriSvgHighlighting = True,
     supportSTAbsent = Nothing,
     activityFinalsExist = Just False,
     avoidAddingSinksForFinals = Nothing,
@@ -426,8 +426,8 @@ getMatchPetriTask config = do
       },
     petriDrawConf =
       DrawSettings {
-        withAnnotatedLabels = petriAnnotatedLabels config,
         withPlaceNames = True,
+        withSvgHighlighting = petriSvgHighlighting config,
         withTransitionNames = True,
         with1Weights = False,
         withGraphvizCommand = layout
@@ -887,8 +887,8 @@ defaultMatchPetriInstance = MatchPetriInstance
   , plantUMLConf = defaultPlantUmlConfig
   , petriDrawConf =
     DrawSettings {
-      withAnnotatedLabels = False,
       withPlaceNames = True,
+      withSvgHighlighting = True,
       withTransitionNames = True,
       with1Weights = False,
       withGraphvizCommand = Dot

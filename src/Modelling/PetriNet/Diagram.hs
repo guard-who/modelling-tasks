@@ -61,7 +61,7 @@ cacheNet path labelOf pl drawSettings@DrawSettings {..} =
     ext = short withPlaceNames
       ++ short withTransitionNames
       ++ short with1Weights
-      ++ short withAnnotatedLabels
+      ++ short withSvgHighlighting
       ++ short withGraphvizCommand
       ++ ".svg"
 
@@ -197,8 +197,8 @@ drawNode DrawSettings {..} preparedFont (l, Nothing) p  = place
   p
   where
     additionalLabel
-      | withAnnotatedLabels = svgClass $ ' ' : l
-      | otherwise = id
+      | withSvgHighlighting = id
+      | otherwise = svgClass $ ' ' : l
     addTransitionName
       | not withTransitionNames = id
       | otherwise = (center (text' preparedFont 18 l) `atop`)
@@ -215,8 +215,8 @@ drawNode DrawSettings {..} preparedFont (l, Just i) p
     p
   where
     additionalLabel
-      | withAnnotatedLabels = svgClass $ ' ' : l
-      | otherwise = id
+      | withSvgHighlighting = id
+      | otherwise = svgClass $ ' ' : l
     spacer = 9
     emptyPlace = circle 20 # lwL 0.5 # named l # svgClass "node" # additionalLabel
     label

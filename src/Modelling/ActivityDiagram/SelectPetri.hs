@@ -123,9 +123,9 @@ data SelectPetriConfig = SelectPetriConfig {
   hideNodeNames :: Bool,
   hideBranchConditions :: Bool,
   hidePetriNodeLabels :: Bool,
-  -- | Enable putting label information inside generated SVGs
-  petriAnnotatedLabels :: Bool,
   petriLayout :: [GraphvizCommand],
+  -- | Whether highlighting on hover should be enabled
+  petriSvgHighlighting :: Bool,
   numberOfWrongAnswers :: Int,
   numberOfModifications :: Int,
   modifyAtMid :: Bool,
@@ -150,8 +150,8 @@ defaultSelectPetriConfig = SelectPetriConfig {
   hideNodeNames = False,
   hideBranchConditions = False,
   hidePetriNodeLabels = False,
-  petriAnnotatedLabels = False,
   petriLayout = [Dot],
+  petriSvgHighlighting = True,
   numberOfWrongAnswers = 2,
   numberOfModifications = 3,
   modifyAtMid = True,
@@ -427,8 +427,8 @@ getSelectPetriTask config = do
         suppressBranchConditions = hideBranchConditions config
       }
       petriDrawConf = DrawSettings {
-        withAnnotatedLabels = petriAnnotatedLabels config,
         withPlaceNames = not $ hidePetriNodeLabels config,
+        withSvgHighlighting = petriSvgHighlighting config,
         withTransitionNames = not $ hidePetriNodeLabels config,
         with1Weights = False,
         withGraphvizCommand = layout
@@ -500,8 +500,8 @@ defaultSelectPetriInstance =  SelectPetriInstance {
   },
   plantUMLConf = defaultPlantUmlConfig,
   petriDrawConf = DrawSettings {
-    withAnnotatedLabels = False,
     withPlaceNames = True,
+    withSvgHighlighting = True,
     withTransitionNames = True,
     with1Weights = False,
     withGraphvizCommand = Dot

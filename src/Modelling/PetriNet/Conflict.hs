@@ -383,8 +383,8 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     $ toPetriConflict c
   return $ FindInstance {
     drawFindWith = DrawSettings {
-      withAnnotatedLabels = False,
       withPlaceNames = not $ hidePlaceNames gc,
+      withSvgHighlighting = True,
       withTransitionNames = not $ hideTransitionNames gc,
       with1Weights = not $ hideWeight1 gc,
       withGraphvizCommand = gl
@@ -680,8 +680,8 @@ defaultPickConflictInstance = PickInstance {
           ("t3",SimpleTransition {flowOut = M.empty})]
         },
       DrawSettings {
-        withAnnotatedLabels = False,
         withPlaceNames = False,
+        withSvgHighlighting = True,
         withTransitionNames = False,
         with1Weights = False,
         withGraphvizCommand = Fdp
@@ -699,8 +699,8 @@ defaultPickConflictInstance = PickInstance {
           ("t3",SimpleTransition {flowOut = M.empty})]
         },
       DrawSettings {
-        withAnnotatedLabels = False,
         withPlaceNames = False,
+        withSvgHighlighting = True,
         withTransitionNames = False,
         with1Weights = False,
         withGraphvizCommand = Fdp
@@ -713,8 +713,8 @@ defaultPickConflictInstance = PickInstance {
 defaultFindConflictInstance :: FindInstance SimplePetriNet Conflict
 defaultFindConflictInstance = FindInstance {
   drawFindWith = DrawSettings {
-    withAnnotatedLabels = False,
     withPlaceNames = False,
+    withSvgHighlighting = True,
     withTransitionNames = True,
     with1Weights = False,
     withGraphvizCommand = Circo
