@@ -2,6 +2,16 @@ module uml/cd/generate
 
 open uml/cd/relationshipLimits
 
+pred change [c : Change, rs : set Relationship] {
+  some c.add + c.remove
+  no c.add or not c.add in rs
+  c.remove in rs
+  let c1 = changedLimit [c],
+      c2 = changedKind [c],
+      c3 = flip [c] |
+    one c.add and one c.remove iff c1 or c2 or c3
+}
+
 sig Inheritance extends Relationship {}
 
 sig Aggregation extends NonInheritance {}
@@ -135,16 +145,6 @@ pred sameRelationship [r, r2 : Relationship] {
   sameKind [r, r2]
   sameDirection [r, r2]
   r in NonInheritance implies sameLimits [r, r2]
-}
-
-pred change [c : Change, rs : set Relationship] {
-  some c.add + c.remove
-  no c.add or not c.add in rs
-  c.remove in rs
-  let c1 = changedLimit [c],
-      c2 = changedKind [c],
-      c3 = flip [c] |
-    one c.add and one c.remove iff c1 or c2 or c3
 }
 
 fact changesAreUnique {

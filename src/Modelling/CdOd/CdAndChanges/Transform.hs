@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -21,29 +22,29 @@ import Modelling.CdOd.Types (
   Relationship (..),
   RelationshipMutation (..),
   RelationshipProperties (..),
-  allCdMutations,
   maxRelationships,
   relationshipName,
   towardsValidProperties,
   )
 
-import qualified Data.Set                         as S ((\\), fromList)
-
 import Data.Bool                        (bool)
 import Data.FileEmbed                   (embedStringFile)
 import Data.Functor                     ((<&>))
 import Data.List                        (intercalate, unzip4)
+import Data.List.Extra                  (nubOrd)
 import Data.Maybe                       (fromMaybe)
-import Data.String.Interpolate          (__i, i)
+import Data.String.Interpolate          (__i, i, iii)
 
 transformWith
   :: ClassConfig
+  -> [CdMutation]
   -> Either (ClassDiagram String String) RelationshipProperties
   -> (Int, [String], String)
   -> String
-transformWith config cdOrProperties (cs, predicates, part) =
+transformWith config mutations cdOrProperties (cs, predicates, part) =
   removeLine $(embedStringFile "alloy/cd/relationshipLimits.als")
-  ++ removeLines 3 $(embedStringFile "alloy/cd/generate.als")
+  ++ removeLines 13 $(embedStringFile "alloy/cd/generate.als")
+  ++ changePredicate mutations
   ++ either givenClassDiagram (classDiagram config) cdOrProperties
   ++ part
   ++ createRunCommand config predicates cs
@@ -58,7 +59,7 @@ transformNoChanges
   -> Maybe Bool
   -> String
 transformNoChanges config properties withNonTrivialInheritance =
-  transformWith config (Right properties) (0, [], part)
+  transformWith config [] (Right properties) (0, [], part)
   where
     part = [__i|
       fact{
@@ -86,8 +87,8 @@ transform
   -> Maybe Bool
   -> String
 transform config mutations props withNonTrivialInheritance =
-  transformWith config (Right props)
-  $ matchCdOdChanges config mutations withNonTrivialInheritance
+  transformWith config mutations (Right props)
+  $ matchCdOdChanges config withNonTrivialInheritance
 
 transformChanges
   :: ClassConfig
@@ -97,8 +98,8 @@ transformChanges
   -> [RelationshipProperties]
   -> String
 transformChanges config mutations props maybeConfig propsList =
-  transformWith config (Right props)
-  $ changes maybeConfig mutations propsList
+  transformWith config mutations (Right props)
+  $ changes maybeConfig propsList
 
 transformImproveCd
   :: ClassDiagram String String
@@ -111,8 +112,8 @@ transformImproveCd
   -- ^ the properties of the original CD
   -> String
 transformImproveCd cd config mutations properties
-  = transformWith config (Left cd)
-  $ changes Nothing mutations [towardsValidProperties properties]
+  = transformWith config mutations (Left cd)
+  $ changes Nothing [towardsValidProperties properties]
 
 {-|
 Generates Alloy code that
@@ -129,12 +130,12 @@ transformGetNextFix
   -> String
 transformGetNextFix maybeCd config properties byName = transformWith
   config
+  [RemoveRelationship]
   (maybe (Right properties) Left maybeCd)
   (n, ps, part ++ restrictRelationships)
   where
     (n, ps, part) = changes
       Nothing
-      [RemoveRelationship]
       [towardsValidProperties properties]
     restrictRelationships =
       if byName
@@ -260,51 +261,48 @@ pred cd {
 maybeToAlloySet :: Show a => Maybe a -> String
 maybeToAlloySet = maybe "none" show
 
-changeConstraints :: [CdMutation] -> String
-changeConstraints allowed = concatMap changeConstraint disabled
+changePredicate :: [CdMutation] -> String
+changePredicate [] = [__i|
+  pred change [c : Change, rs : set Relationship] {
+    one c.add and no c.add
+  }
+  |]
+changePredicate allowed = [__i|
+  pred change [c : Change, rs : set Relationship] {
+    some c.add + c.remove
+    #{mutationConstraints}
+    no c.add or not c.add in rs
+    c.remove in rs
+  }
+  |]
   where
-    disabled = S.fromList allCdMutations S.\\ S.fromList allowed
+    mutationConstraints = intercalate " or "
+      $ map changeConstraint $ nubOrd allowed
     changeConstraint :: CdMutation -> String
-    changeConstraint mutation = case mutation of
-      AddRelationship -> [__i|
-        fact PreventAdds {
-          no c : Change | one c.add and no c.remove
-        }
+    changeConstraint change = case change of
+      AddRelationship -> [iii|one c.add and no c.remove|]
+      MutateRelationship mutation -> [iii|
+        one c.add and one c.remove and #{mutationConstraint mutation}
         |]
-      MutateRelationship ChangeKind -> [__i|
-        fact PreventKindChange {
-          no c : Change | changedKind[c]
-        }
-        |]
-      MutateRelationship ChangeLimit -> [__i|
-        fact PreventLimitChange {
-          no c : Change | changedLimit[c]
-        }
-        |]
-      MutateRelationship Flip -> [__i|
-        fact PreventFlips {
-          no c : Change | flip[c]
-        }
-        |]
-      RemoveRelationship -> [__i|
-        fact PreventRemoves {
-          no c : Change | no c.add and one c.remove
-        }
-        |]
+      RemoveRelationship -> [iii|no c.add and one c.remove|]
+    mutationConstraint :: RelationshipMutation -> String
+    mutationConstraint mutation = case mutation of
+      ChangeLimit -> [iii|changedLimit [c]|]
+      ChangeKind -> [iii|changedKind [c]|]
+      Flip -> [iii|flip [c]|]
 
 changes
   :: Maybe ClassConfig
-  -> [CdMutation]
   -> [RelationshipProperties]
   -> (Int, [String], String)
-changes config mutations propsList = uncurry (length propsList,,)
+changes config propsList = uncurry (length propsList,,)
   $ snd $ foldl change (1, limits) propsList
   where
     change (n, (cs, code)) p =
       let (c, code') = changeWithProperties p n
       in (n + 1, (c:cs, code ++ code'))
     limits = maybe
-      ([], header ++ changeConstraints mutations)
+      ([], header)
       ((["changeLimits"],) . changeLimits)
       config
     header = [i|
@@ -337,15 +335,13 @@ pred #{change} {
 
 matchCdOdChanges
   :: ClassConfig
-  -> [CdMutation]
   -> Maybe Bool
   -> (Int, [String], String)
-matchCdOdChanges config mutations withNonTrivialInheritance =
+matchCdOdChanges config withNonTrivialInheritance =
   (3, ["changes", "changeLimits"],) $ [i|
 //////////////////////////////////////////////////
 // Changes
 //////////////////////////////////////////////////
-#{changeConstraints mutations}
 sig C1, C2, C3 extends Change {}
 
 pred changes {
