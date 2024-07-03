@@ -32,7 +32,7 @@ import Modelling.PetriNet.Types (
   defaultFindConcurrencyConfig, defaultPickConcurrencyConfig,
   )
 
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import Control.Monad.Trans.Class        (lift)
 import Data.Maybe                        (isNothing)
 import System.IO (

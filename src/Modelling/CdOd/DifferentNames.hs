@@ -105,10 +105,11 @@ import Modelling.Types (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Extra              (whenJust)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
@@ -282,7 +283,7 @@ mappingShow :: [(Name, Name)] -> [(ShowName, ShowName)]
 mappingShow = fmap (bimap ShowName ShowName)
 
 differentNamesTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
   => FilePath
   -> DifferentNamesInstance
   -> LangM m
@@ -363,7 +364,7 @@ differentNamesInitial :: [(Name, Name)]
 differentNamesInitial = bimap Name Name <$> [("a", "x"), ("b", "y")]
 
 differentNamesSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => DifferentNamesInstance
   -> [(Name, Name)]
   -> LangM m
@@ -418,7 +419,7 @@ readMapping m (x, y)
   = Nothing
 
 differentNamesEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => DifferentNamesInstance
   -> [(Name, Name)]
   -> Rated m
@@ -432,7 +433,7 @@ differentNamesEvaluation task cs = do
         if showSolution task
         then Just . show . mappingShow $ differentNamesSolution task
         else Nothing
-  multipleChoice what solution ms (mapMaybe (readMapping m) cs)
+  multipleChoice DefiniteArticle what solution ms (mapMaybe (readMapping m) cs)
 
 differentNamesSolution :: DifferentNamesInstance -> [(Name, Name)]
 differentNamesSolution = BM.toAscList . nameMapping . mapping

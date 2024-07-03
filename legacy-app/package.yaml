@@ -59,7 +59,7 @@ executables:
       - graphviz
       - modelling-tasks
       - mtl
-      - output-monad
+      - output-blocks
       - random-shuffle
       - transformers
     other-modules:
@@ -101,7 +101,7 @@ executables:
       - graphviz
       - modelling-tasks
       - mtl
-      - output-monad
+      - output-blocks
       - random-shuffle
       - transformers
     other-modules:

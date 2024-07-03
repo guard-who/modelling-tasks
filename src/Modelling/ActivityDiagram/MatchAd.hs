@@ -47,17 +47,18 @@ import Modelling.Auxiliary.Common       (getFirstInstance)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
   Rated,
-  OutputMonad,
+  OutputCapable,
   ($=<<),
   english,
   german,
   translate,
   translations,
-  multipleChoice
+  multipleChoice,
   )
 import Control.Monad.Random (
   RandT,
@@ -159,7 +160,7 @@ matchAdSolution task =
     }
 
 matchAdTask
-  :: (MonadPlantUml m, OutputMonad m)
+  :: (MonadPlantUml m, OutputCapable m)
   => FilePath
   -> MatchAdInstance
   -> LangM m
@@ -200,7 +201,7 @@ matchAdInitial = MatchAdSolution {
 }
 
 matchAdSyntax
-  :: (OutputMonad m)
+  :: OutputCapable m
   => MatchAdInstance
   -> MatchAdSolution
   -> LangM m
@@ -212,7 +213,7 @@ matchAdSyntax task sub = addPretext $ do
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
 
 matchAdEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => MatchAdInstance
   -> MatchAdSolution
   -> Rated m
@@ -227,7 +228,7 @@ matchAdEvaluation task sub = addPretext $ do
         else Nothing
       solution = matchAdSolutionMap sol
       sub' = M.keys $ matchAdSolutionMap sub
-  multipleChoice as solutionString solution sub'
+  multipleChoice DefiniteArticle as solutionString solution sub'
 
 matchAdSolutionMap
   :: MatchAdSolution

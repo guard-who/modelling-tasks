@@ -114,10 +114,11 @@ import Control.Monad.Catch              (MonadThrow, throwM)
 #if __GLASGOW_HASKELL__ < 808
 import Control.Monad.Fail               (MonadFail)
 #endif
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
@@ -220,7 +221,7 @@ checkMatchCdOdInstance inst@MatchCdOdInstance {..}
   <|> checkCdDrawSettings (cdDrawSettings inst)
 
 matchCdOdTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
   => FilePath
   -> MatchCdOdInstance
   -> LangM m
@@ -300,7 +301,7 @@ matchCdOdInitial :: [(Int, Letters)]
 matchCdOdInitial = [(1, Letters "ab"), (2, Letters "")]
 
 matchCdOdSyntax
-  :: (OutputMonad m, Foldable t)
+  :: (Foldable t, OutputCapable m)
   => MatchCdOdInstance
   -> t (Int, Letters)
   -> LangM m
@@ -319,7 +320,7 @@ matchCdOdSyntax task sub = addPretext $ do
     availableOd = (`elem` M.keys (instances task))
 
 matchCdOdEvaluation
-  :: (OutputMonad m, Foldable t)
+  :: (Foldable t, OutputCapable m)
   => MatchCdOdInstance
   -> t (Int, Letters)
   -> Rated m
@@ -334,7 +335,7 @@ matchCdOdEvaluation task sub' = do
         if showSolution task
         then Just . show . matchingShow $ matchCdOdSolution task
         else Nothing
-  multipleChoice what solution matching sub
+  multipleChoice DefiniteArticle what solution matching sub
   where
     toMatching' :: Foldable f => f (Int, Letters) -> [(Int, Char)]
     toMatching' =

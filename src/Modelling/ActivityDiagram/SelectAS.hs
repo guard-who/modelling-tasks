@@ -56,17 +56,19 @@ import Modelling.Auxiliary.Common (
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Extra (firstJustM)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
   german,
   translate,
   translations,
-  singleChoice, singleChoiceSyntax
+  singleChoice,
+  singleChoiceSyntax,
   )
 import Control.Monad.Random (
   MonadRandom,
@@ -223,7 +225,7 @@ compareDistToCorrect correctSequence xs ys =
       $ leastChanges (asEditDistParams correctSequence) (V.fromList correctSequence) (V.fromList zs)
 
 selectASTask
-  :: (MonadPlantUml m, OutputMonad m)
+  :: (MonadPlantUml m, OutputCapable m)
   => FilePath
   -> SelectASInstance
   -> LangM m
@@ -267,7 +269,7 @@ selectASSolutionToMap sol = do
   return $ M.fromList $ zip [1..] solution
 
 selectASSyntax
-  :: (OutputMonad m)
+  :: OutputCapable m
   => SelectASInstance
   -> Int
   -> LangM m
@@ -276,7 +278,7 @@ selectASSyntax task sub = addPretext $ do
   singleChoiceSyntax False options sub
 
 selectASEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => SelectASInstance
   -> Int
   -> Rated m
@@ -290,7 +292,7 @@ selectASEvaluation task n = addPretext $ do
         if showSolution task
         then Just $ show validAS
         else Nothing
-  singleChoice as solutionString solution n
+  singleChoice DefiniteArticle as solutionString solution n
 
 selectASSolution
   :: SelectASInstance

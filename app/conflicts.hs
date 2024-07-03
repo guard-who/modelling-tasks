@@ -33,7 +33,7 @@ import Modelling.PetriNet.Types         (
   defaultFindConflictConfig, defaultPickConflictConfig,
   )
 
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.Maybe                       (isNothing)
 import System.IO (

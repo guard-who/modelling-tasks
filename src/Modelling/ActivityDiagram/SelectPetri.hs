@@ -76,17 +76,19 @@ import Modelling.PetriNet.Types (
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow, throwM)
 import Control.Monad.Extra (loopM, firstJustM)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
   Rated,
-  OutputMonad,
+  OutputCapable,
   ($=<<),
   english,
   german,
   translate,
   translations,
-  singleChoice, singleChoiceSyntax
+  singleChoice,
+  singleChoiceSyntax,
   )
 import Control.Monad.Random (
   MonadRandom,
@@ -320,7 +322,7 @@ selectPetriTask
     MonadGraphviz m,
     MonadPlantUml m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> SelectPetriInstance
@@ -366,7 +368,7 @@ selectPetriSolutionToMap sol = do
   return $ M.fromList $ zip [1..] solution
 
 selectPetriSyntax
-  :: (OutputMonad m)
+  :: OutputCapable m
   => SelectPetriInstance
   -> Int
   -> LangM m
@@ -375,7 +377,7 @@ selectPetriSyntax task sub = addPretext $ do
   singleChoiceSyntax False options sub
 
 selectPetriEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => SelectPetriInstance
   -> Int
   -> Rated m
@@ -389,7 +391,7 @@ selectPetriEvaluation task n = addPretext $ do
         if showSolution task
         then Just $ show solution
         else Nothing
-  singleChoice as maybeSolutionString solution n
+  singleChoice DefiniteArticle as maybeSolutionString solution n
 
 selectPetriSolution
   :: SelectPetriInstance

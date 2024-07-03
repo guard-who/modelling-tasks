@@ -8,9 +8,9 @@ module Common (
   withLang,
   ) where
 
-import qualified Control.Monad.Output.Generic     as GenericOutput (withLang)
+import qualified Control.OutputCapable.Blocks.Generic as GenericOutput (withLang)
 
-import Control.Monad.Output             (LangM', Language, ReportT)
+import Control.OutputCapable.Blocks     (LangM', Language, ReportT)
 import Control.Monad.Trans.Except       (ExceptT, runExceptT)
 import Data.Maybe                       (fromMaybe)
 import Diagrams.Prelude                 (Diagram, mkWidth)

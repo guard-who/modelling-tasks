@@ -8,7 +8,7 @@ import Modelling.ActivityDiagram.FindSupportST (
   findSupportSTTask,
   findSupportSTEvaluation
   )
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import System.Environment               (getArgs)
 
 import Common                           (withLang)

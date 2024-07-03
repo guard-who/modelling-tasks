@@ -50,17 +50,17 @@ import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (forM, unless)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra              (whenJust)
-import Control.Monad.Output (
-  GenericOutputMonad (assertion, code, image, indent, paragraph, refuse, text),
+import Control.OutputCapable.Blocks (
+  GenericOutputCapable (assertion, code, image, indent, paragraph, refuse, text),
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   english,
   german,
   translate,
   yesNo,
   )
-import Control.Monad.Output.Generic (
+import Control.OutputCapable.Blocks.Generic (
   ($>>),
   ($>>=),
   )
@@ -79,7 +79,7 @@ import Data.String.Interpolate          (i)
 import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
 
-verifyReach :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
+verifyReach :: (Ord a, Ord t, OutputCapable m, Show a, Show t)
   => ReachInstance a t
   -> LangM m
 verifyReach inst = do
@@ -96,7 +96,7 @@ reachTask
     MonadThrow m,
     Ord s,
     Ord t,
-    OutputMonad m,
+    OutputCapable m,
     Show s,
     Show t
     )
@@ -120,7 +120,7 @@ reachTask path inst = do
     n = petriNet inst
 
 reportReachFor
-  :: OutputMonad m
+  :: OutputCapable m
   => FilePath
   -> Maybe Int
   -> Maybe Int
@@ -181,13 +181,13 @@ reachInitial :: ReachInstance s Transition -> TransitionsList
 reachInitial = TransitionsList . reverse . S.toList . transitions . petriNet
 
 reachSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => ReachInstance s Transition
   -> [Transition]
   -> LangM m
 reachSyntax inst = transitionsValid (petriNet inst)
 
-transitionsValid :: OutputMonad m => Net s Transition -> [Transition] -> LangM m
+transitionsValid :: OutputCapable m => Net s Transition -> [Transition] -> LangM m
 transitionsValid n =
   traverse_ assertTransition . nubSort
   where
@@ -206,7 +206,7 @@ reachEvaluation
     MonadThrow m,
     Ord s,
     Ord t,
-    OutputMonad m,
+    OutputCapable m,
     Show s,
     Show t
     )
@@ -237,7 +237,7 @@ reachSolution inst = reverse $ snd $ head $ concatMap
   $ levels' $ petriNet inst
 
 assertReachPoints
-  :: OutputMonad m
+  :: OutputCapable m
   => (i -> a -> Bool)
   -> (i -> Int)
   -> i
@@ -258,7 +258,7 @@ assertReachPoints p size inst ts eitherOutcome = do
       then 0
       else toInteger x % toInteger y
 
-isNoLonger :: OutputMonad m => Maybe Int -> [a] -> LangM m
+isNoLonger :: OutputCapable m => Maybe Int -> [a] -> LangM m
 isNoLonger maybeMaxLength ts =
   whenJust maybeMaxLength $ \maxLength ->
     assertion (length ts <= maxLength) $ translate $ do

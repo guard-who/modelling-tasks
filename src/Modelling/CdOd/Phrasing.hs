@@ -9,7 +9,8 @@ module Modelling.CdOd.Phrasing (
 import qualified Modelling.CdOd.Phrasing.German    as German
 import qualified Modelling.CdOd.Phrasing.English   as English
 
-import Control.Monad.Output (
+import Control.OutputCapable.Blocks (
+  ArticleToUse,
   Language (English, German),
   )
 
@@ -17,7 +18,6 @@ import Modelling.Types (
   Change,
   )
 import Modelling.CdOd.Types (
-  ArticleToUse,
   Relationship,
   )
 

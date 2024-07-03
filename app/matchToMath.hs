@@ -24,7 +24,7 @@ import Modelling.PetriNet.Types (
   )
 
 import Control.Monad                    (when)
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import Control.Monad.Trans.Class        (lift)
 import Control.Monad.Trans.Except       (throwE)
 import System.IO (

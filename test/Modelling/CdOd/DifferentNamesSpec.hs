@@ -45,7 +45,7 @@ import Modelling.Types (
   toNameMapping,
   )
 
-import Control.Monad.Output (
+import Control.OutputCapable.Blocks (
   Language (English),
   )
 import Control.Monad.Trans.Except       (runExceptT)

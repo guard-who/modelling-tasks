@@ -12,7 +12,7 @@ import Modelling.ActivityDiagram.SelectPetri (
   selectPetriSyntax,
   selectPetriEvaluation
   )
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import System.Environment               (getArgs)
 
 import Common                           (withLang)

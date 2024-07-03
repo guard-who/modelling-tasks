@@ -12,9 +12,9 @@ import Language.Alloy.Call (
   SatSolver (..),
   defaultCallAlloyConfig,
   )
-import Control.Monad.Output.Generic     (GenericReportT)
 import Control.Monad.Trans.Except       (ExceptT)
 import Control.Monad.Trans.Random       (RandT)
+import Control.OutputCapable.Blocks.Generic (GenericReportT)
 
 class Monad m => MonadAlloy m where
   getInstancesWith :: CallAlloyConfig -> String -> m [AlloyInstance]

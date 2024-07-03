@@ -70,7 +70,6 @@ import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Annotation (..),
   ArticlePreference (..),
-  ArticleToUse (DefiniteArticle),
   Cd,
   CdDrawSettings (CdDrawSettings),
   CdMutation,
@@ -100,11 +99,12 @@ import Control.Applicative              (Alternative ((<|>)))
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    ((>=>), unless, void, when)
 import Control.Monad.Catch              (MonadThrow (throwM))
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
   Language (English, German),
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
@@ -226,12 +226,16 @@ checkSelectValidCdInstance task@SelectValidCdInstance {..}
   | otherwise
   = checkCdDrawSettings (cdDrawSettings task)
 
-selectValidCdSyntax :: OutputMonad m => SelectValidCdInstance -> [Int] -> LangM m
+selectValidCdSyntax
+  :: OutputCapable m
+  => SelectValidCdInstance
+  -> [Int]
+  -> LangM m
 selectValidCdSyntax inst xs =
   for_ xs $ singleChoiceSyntax False (M.keys $ classDiagrams inst)
 
 selectValidCdTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => FilePath
   -> SelectValidCdInstance
   -> LangM m
@@ -274,7 +278,7 @@ selectValidCdEvaluation
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> SelectValidCdInstance
@@ -289,14 +293,14 @@ selectValidCdEvaluation path inst@SelectValidCdInstance{..} xs = addPretext $ do
       correctAnswer
         | showSolution = Just $ show $ selectValidCdSolution inst
         | otherwise = Nothing
-  reRefuse (multipleChoice cds correctAnswer solution xs)
+  reRefuse (multipleChoice DefiniteArticle cds correctAnswer solution xs)
     $ when showExtendedFeedback
     $ void $ M.traverseWithKey
       (selectValidCdFeedback path (cdDrawSettings inst) xs)
       classDiagrams
 
 selectValidCdFeedback
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
   => FilePath
   -> CdDrawSettings
   -> [Int]

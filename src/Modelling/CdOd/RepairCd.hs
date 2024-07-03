@@ -97,7 +97,6 @@ import Modelling.CdOd.Phrasing (
 import Modelling.CdOd.Types (
   Annotation (..),
   ArticlePreference (..),
-  ArticleToUse (DefiniteArticle),
   Cd,
   CdDrawSettings (CdDrawSettings),
   CdMutation,
@@ -129,17 +128,18 @@ import Modelling.Types                  (Change (..))
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, void, when, zipWithM)
 import Control.Monad.Catch              (MonadThrow (throwM))
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  GenericOutputCapable (..),
   LangM,
   Language (English, German),
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
   enumerateM,
   german,
   multipleChoice,
+  ArticleToUse (DefiniteArticle),
   singleChoiceSyntax,
   translate,
   )
@@ -298,7 +298,7 @@ checkClassConfigAndChanges classConfig allowedProperties =
       <$> checkProp (toProperty c)
 
 repairCdTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => FilePath
   -> RepairCdInstance
   -> LangM m
@@ -336,12 +336,12 @@ repairCdTask path task = do
   paragraph hoveringInformation
   pure ()
 
-repairCdSyntax :: OutputMonad m => RepairCdInstance -> [Int] -> LangM m
+repairCdSyntax :: OutputCapable m => RepairCdInstance -> [Int] -> LangM m
 repairCdSyntax inst xs =
   for_ xs $ singleChoiceSyntax False (M.keys $ changes inst)
 
 repairCdEvaluation
-  :: (Alternative m, MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
+  :: (Alternative m, MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => FilePath
   -> RepairCdInstance
   -> [Int]
@@ -356,14 +356,14 @@ repairCdEvaluation path inst xs = addPretext $ do
         | showSolution inst = Just $ show $ repairCdSolution inst
         | otherwise = Nothing
   reRefuse
-    (multipleChoice chs correctAnswer solution xs)
+    (multipleChoice DefiniteArticle chs correctAnswer solution xs)
     $ when (showExtendedFeedback inst)
     $ void $ M.traverseWithKey
       (repairCdFeedback path (cdDrawSettings inst) xs)
       (changes inst)
 
 repairCdFeedback
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => FilePath
   -> CdDrawSettings
   -> [Int]

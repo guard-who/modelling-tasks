@@ -40,7 +40,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
-      - output-monad
+      - output-blocks
       - pretty-simple
     other-modules:
       - Common
@@ -53,7 +53,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
-      - output-monad
+      - output-blocks
       - pretty-simple
     other-modules:
       - Common
@@ -66,7 +66,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - EvaluateArgs
       - Common
@@ -77,7 +77,7 @@ executables:
       - common
     dependencies:
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common
   evalIsomorphic:
@@ -107,7 +107,7 @@ executables:
       - common
     dependencies:
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common
   matchAdTaskDemo:
@@ -117,7 +117,7 @@ executables:
       - common
     dependencies:
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common
   matchPetriTaskDemo:
@@ -127,7 +127,7 @@ executables:
       - common
     dependencies:
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common
   match-cd-od:
@@ -139,7 +139,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common
       - EvaluateArgs
@@ -152,7 +152,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
-      - output-monad
+      - output-blocks
       - pretty-simple
     other-modules:
       - Common
@@ -165,7 +165,7 @@ executables:
       - bytestring
       - digest
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common
       - EvaluateArgs
@@ -176,7 +176,7 @@ executables:
       - common
     dependencies:
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common
   selectPetriTaskDemo:
@@ -186,6 +186,6 @@ executables:
       - common
     dependencies:
       - modelling-tasks
-      - output-monad
+      - output-blocks
     other-modules:
       - Common

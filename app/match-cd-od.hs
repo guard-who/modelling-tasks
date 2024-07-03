@@ -18,7 +18,7 @@ import Modelling.CdOd.MatchCdOd (
   )
 import EvaluateArgs                     (evaluateArgs)
 
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import System.Environment               (getArgs)
 
 main :: IO ()

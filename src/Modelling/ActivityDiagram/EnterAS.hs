@@ -52,11 +52,12 @@ import Modelling.Auxiliary.Common       (getFirstInstance)
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
   Rated,
-  OutputMonad,
+  OutputCapable,
   ($=<<),
   english,
   german,
@@ -186,7 +187,7 @@ enterActionSequence ad =
   EnterASSolution {sampleSolution=generateActionSequence ad}
 
 enterASTask
-  :: (MonadPlantUml m, OutputMonad m)
+  :: (MonadPlantUml m, OutputCapable m)
   => FilePath
   -> EnterASInstance
   -> LangM m
@@ -220,7 +221,7 @@ enterASInitial :: [String]
 enterASInitial = ["A", "B"]
 
 enterASSyntax
-  :: (OutputMonad m)
+  :: OutputCapable m
   => EnterASInstance
   -> [String]
   -> LangM m
@@ -234,7 +235,7 @@ enterASSyntax task sub = addPretext $ do
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
 
 enterASEvaluation
-  :: (OutputMonad m)
+  :: OutputCapable m
   => EnterASInstance
   -> [String]
   -> Rated m
@@ -245,7 +246,7 @@ enterASEvaluation task sub = do
         if showSolution task
         then Just $ show $ sampleSequence task
         else Nothing
-  printSolutionAndAssert maybeSolutionString points
+  printSolutionAndAssert DefiniteArticle maybeSolutionString points
 
 enterASSolution
   :: EnterASInstance

@@ -104,7 +104,6 @@ import Modelling.CdOd.Types (
   AnnotatedCd,
   AnnotatedClassDiagram (..),
   ArticlePreference (..),
-  ArticleToUse (..),
   Cd,
   CdDrawSettings (CdDrawSettings),
   ClassConfig (..),
@@ -134,11 +133,12 @@ import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, join)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Except             (runExceptT)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
   Language (English, German),
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
@@ -152,7 +152,7 @@ import Control.Monad.Output (
   translate,
   translations,
   )
-import Control.Monad.Output.Generic     (($>>=))
+import Control.OutputCapable.Blocks.Generic (($>>=))
 import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
@@ -341,7 +341,7 @@ data NameCdErrorTaskTextElement =
   deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
 
 toTaskText
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => NameCdErrorTaskText
   -> FilePath
   -> NameCdErrorInstance
@@ -350,7 +350,7 @@ toTaskText xs path task =
   for_ xs $ \x -> toTaskTextPart x path task
 
 toTaskTextPart
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => TaskTextPart NameCdErrorTaskTextElement
   -> FilePath
   -> NameCdErrorInstance
@@ -559,7 +559,7 @@ defaultNameCdErrorTaskText = [
     answer = defaultNameCdErrorAnswer
 
 nameCdErrorTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => FilePath
   -> NameCdErrorInstance
   -> LangM m
@@ -592,7 +592,7 @@ parseNameCdErrorAnswer = do
     Right r -> parserReturn r
 
 nameCdErrorSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => NameCdErrorInstance
   -> NameCdErrorAnswer
   -> LangM m
@@ -615,7 +615,7 @@ nameCdErrorSyntax inst x = do
  * otherwise, multiple choice grading for answer on dueTo relationships
 -}
 nameCdErrorEvaluation
-  :: (Alternative m, Monad m, OutputMonad m)
+  :: (Alternative m, Monad m, OutputCapable m)
   => NameCdErrorInstance
   -> NameCdErrorAnswer
   -> Rated m
@@ -636,17 +636,17 @@ nameCdErrorEvaluation inst x = addPretext $ do
         | showSolution inst = Just $ toString $ encode $ nameCdErrorSolution inst
         | otherwise = Nothing
   recoverWith 0 (
-    singleChoice reasonTranslation Nothing solutionReason (reason x)
+    singleChoice DefiniteArticle reasonTranslation Nothing solutionReason (reason x)
     $>>= \p ->
       if p < 1
       then pure 0
-      else multipleChoice
+      else multipleChoice DefiniteArticle
         dueToTranslation
         Nothing
         solutionDueTo
         (dueTo x)
     )
-    $>>= printSolutionAndAssert correctAnswer . fromEither
+    $>>= printSolutionAndAssert DefiniteArticle correctAnswer . fromEither
 
 nameCdErrorSolution :: NameCdErrorInstance -> NameCdErrorAnswer
 nameCdErrorSolution x = NameCdErrorAnswer {

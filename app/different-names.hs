@@ -10,7 +10,7 @@ import Modelling.CdOd.DifferentNames
   (defaultDifferentNamesConfig, differentNames, differentNamesTask)
 import EvaluateArgs                     (evaluateArgs)
 
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import Control.Monad.Trans.Except       (runExceptT)
 import System.Environment               (getArgs)
 

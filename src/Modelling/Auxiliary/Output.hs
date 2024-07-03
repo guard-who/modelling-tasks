@@ -10,21 +10,21 @@ module Modelling.Auxiliary.Output (
   ) where
 
 import Control.Applicative              (Alternative)
-import Control.Monad.Output             (
-  GenericOutputMonad (paragraph, refuse),
+import Control.OutputCapable.Blocks     (
+  GenericOutputCapable (paragraph, refuse),
   LangM,
   LangM',
-  OutputMonad,
+  OutputCapable,
   Rated,
   english,
   german,
   recoverWith,
   translate,
   )
-import Control.Monad.Output.Generic     (($>>), ($>>=))
+import Control.OutputCapable.Blocks.Generic (($>>), ($>>=))
 import Data.String.Interpolate          (iii)
 
-hoveringInformation :: OutputMonad m => LangM m
+hoveringInformation :: OutputCapable m => LangM m
 hoveringInformation = translate $ do
   english [iii|
     Please note: When hovering over or clicking on edges / nodes or their
@@ -36,7 +36,7 @@ hoveringInformation = translate $ do
     werden die jeweils zusammengehörenden Komponenten hervorgehoben.
     |]
 
-directionsAdvice :: OutputMonad m => LangM m
+directionsAdvice :: OutputCapable m => LangM m
 directionsAdvice = translate $ do
   english [iii|
     As navigation directions are used,
@@ -51,7 +51,7 @@ directionsAdvice = translate $ do
     d.h., sie sind nicht in der entgegengesetzten Richtung navigierbar!
     |]
 
-simplifiedInformation :: OutputMonad m => LangM m
+simplifiedInformation :: OutputCapable m => LangM m
 simplifiedInformation = translate $ do
   english [iii|
     Please note: Classes are represented simplified here.
@@ -76,7 +76,7 @@ simplifiedInformation = translate $ do
     endLine :: String
     endLine = "\n"
 
-addPretext :: OutputMonad m => LangM' m a -> LangM' m a
+addPretext :: OutputCapable m => LangM' m a -> LangM' m a
 addPretext = (*>) $
   paragraph $ translate $ do
     english "Remarks on your solution:"
@@ -87,7 +87,7 @@ Append some remarks after some rating function.
 But re-reject afterwards (if it was rejected by the rating function).
 -}
 reRefuse
-  :: (Monad m, Alternative m, OutputMonad m)
+  :: (Alternative m, Monad m, OutputCapable m)
   => Rated m
   -> LangM m
   -> Rated m

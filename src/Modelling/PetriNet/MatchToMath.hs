@@ -101,11 +101,12 @@ import Modelling.PetriNet.Types (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (first)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output       (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks       (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
   Language,
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
@@ -344,7 +345,7 @@ mathInstance config inst = do
   return (f, petriLike', math)
 
 graphToMathTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
   => FilePath
   -> GraphToMathInstance
   -> LangM m
@@ -374,7 +375,7 @@ graphToMathTask path task = do
   paragraph hoveringInformation
   pure ()
 
-mathToOutput :: OutputMonad m => (a -> LangM m) -> PetriMath a -> LangM m
+mathToOutput :: OutputCapable m => (a -> LangM m) -> PetriMath a -> LangM m
 mathToOutput f pm = paragraph $ do
   f $ netMath pm
   translate $ do
@@ -406,7 +407,7 @@ mathToOutput f pm = paragraph $ do
   pure ()
 
 mathToGraphTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputMonad m)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
   => FilePath
   -> MathToGraphInstance
   -> LangM m
@@ -435,7 +436,7 @@ mathToGraphTask path task = do
   pure ()
 
 graphToMathSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => GraphToMathInstance
   -> Int
   -> LangM m
@@ -445,7 +446,7 @@ graphToMathSyntax task x =
     german "Die angegebene mathematische Repräsentation ist Bestandteil der Aufgabenstellung?"
 
 graphToMathEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => GraphToMathInstance
   -> Int
   -> Rated m
@@ -459,7 +460,7 @@ matchSolution :: MatchInstance a b -> Int
 matchSolution = head . M.keys . M.filter fst . to
 
 mathToGraphSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => MathToGraphInstance
   -> Int
   -> LangM m
@@ -469,7 +470,7 @@ mathToGraphSyntax task x =
     german "Die angegebene grafische Darstellung ist Bestandteil der Aufgabenstellung?"
 
 mathToGraphEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => MathToGraphInstance
   -> Int
   -> Rated m
@@ -480,7 +481,7 @@ mathToGraphEvaluation = do
   evaluation what
 
 evaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => Map Language String
   -> MatchInstance a b
   -> Int
@@ -491,7 +492,7 @@ evaluation what task = do
         if showSolution task
         then Just $ show solution
         else Nothing
-  singleChoice what maybeSolution solution
+  singleChoice DefiniteArticle what maybeSolution solution
 
 checkGraphToMathConfig :: MathConfig -> Maybe String
 checkGraphToMathConfig c@MathConfig {

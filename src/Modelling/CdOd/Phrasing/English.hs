@@ -11,13 +11,13 @@ import Modelling.Types (
   Change (..),
   )
 import Modelling.CdOd.Types (
-  ArticleToUse (..),
   LimitedLinking (..),
   NonInheritancePhrasing (..),
   Relationship (..),
   toPhrasing,
   )
 
+import Control.OutputCapable.Blocks     (ArticleToUse (..))
 import Data.String.Interpolate          (iii)
 
 phraseChange

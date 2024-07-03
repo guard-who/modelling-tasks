@@ -39,13 +39,13 @@ import Modelling.PetriNet.Reach.Type (
 
 import Control.Monad                    (foldM, unless, when)
 import Control.Monad.Identity           (Identity (runIdentity))
-import Control.Monad.Output (
-  GenericOutputMonad (indent, paragraph, refuse, text),
+import Control.OutputCapable.Blocks (
+  GenericOutputCapable (indent, paragraph, refuse, text),
   LangM,
   Language,
-  OutputMonad,
+  OutputCapable,
   )
-import Control.Monad.Output.Generic (
+import Control.OutputCapable.Blocks.Generic (
   evalLangM,
   )
 import Data.Either                      (fromLeft)
@@ -63,14 +63,14 @@ data Property
   deriving (Typeable, Generic)
 
 validates
-  :: (Foldable f, OutputMonad m, Show a, Show b, Ord b, Ord a)
+  :: (Foldable f, Ord a, Ord b, OutputCapable m, Show a, Show b)
   => f Property
   -> Net a b
   -> LangM m
 validates props n = for_ props $ \prop -> validate prop n
 
 validate
-  :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
+  :: (Ord a, Ord t, OutputCapable m, Show a, Show t)
   => Property
   -> Net a t
   -> LangM m
@@ -166,7 +166,7 @@ validate p n = case p of
         pure ()
     pure ()
 
-guardBound :: (Ord a, OutputMonad m, Show a) => String -> a -> a -> LangM m
+guardBound :: (Ord a, OutputCapable m, Show a) => String -> a -> a -> LangM m
 guardBound name actual bound =
   when (actual > bound) $
     refuse $ do

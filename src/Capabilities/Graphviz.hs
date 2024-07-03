@@ -5,8 +5,8 @@ module Capabilities.Graphviz (
   MonadGraphviz (errorWithoutGraphviz, layoutGraph, layoutGraph'),
   ) where
 
-import Control.Monad.Output.Generic     (GenericReportT)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
+import Control.OutputCapable.Blocks.Generic (GenericReportT)
 import Data.GraphViz (
   AttributeEdge,
   AttributeNode,

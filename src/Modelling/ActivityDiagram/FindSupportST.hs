@@ -71,17 +71,18 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
   german,
   translate,
   translations,
-  multipleChoice
+  multipleChoice,
   )
 import Control.Monad.Random (
   RandT,
@@ -206,7 +207,7 @@ isSupportST key =
     _ -> False
 
 findSupportSTTask
-  :: (MonadPlantUml m, OutputMonad m)
+  :: (MonadPlantUml m, OutputCapable m)
   => FilePath
   -> FindSupportSTInstance
   -> LangM m
@@ -240,7 +241,7 @@ findSupportSTInitial = FindSupportSTSolution {
 }
 
 findSupportSTEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => FindSupportSTInstance
   -> FindSupportSTSolution
   -> Rated m
@@ -255,7 +256,7 @@ findSupportSTEvaluation task sub = addPretext $ do
         if showSolution task
         then Just $ show sol
         else Nothing
-  multipleChoice as maybeSolutionString solution sub'
+  multipleChoice DefiniteArticle as maybeSolutionString solution sub'
 
 findSupportSTSolutionMap
   :: FindSupportSTSolution

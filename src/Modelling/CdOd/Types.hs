@@ -59,7 +59,6 @@ module Modelling.CdOd.Types (
   towardsValidProperties,
   unannotateCd,
   -- * Phrasing
-  ArticleToUse (..),
   ArticlePreference (..),
   NonInheritancePhrasing (..),
   toArticleToUse,
@@ -79,6 +78,7 @@ import Control.Exception                (Exception, throw)
 import Control.Monad                    (void)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom)
+import Control.OutputCapable.Blocks     (ArticleToUse (..))
 import Data.Bifunctor                   (Bifunctor (bimap, first, second))
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
@@ -979,16 +979,6 @@ toArticleToUse :: ArticlePreference -> ArticleToUse
 toArticleToUse = \case
   UseDefiniteArticleWherePossible -> DefiniteArticle
   UseIndefiniteArticleEverywhere -> IndefiniteArticle
-
-{-|
-When choosing the article(s) is possible
--}
-data ArticleToUse
-  = DefiniteArticle
-  -- ^ use definite article(s)
-  | IndefiniteArticle
-  -- ^ use indefinite article(s)
-  deriving (Eq, Generic, Read, Show)
 
 {-|
 How to phrase non inheritance relationships

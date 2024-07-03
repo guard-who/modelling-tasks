@@ -9,7 +9,7 @@ import Modelling.ActivityDiagram.MatchAd (
   matchAdSyntax,
   matchAdEvaluation
   )
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import System.Environment               (getArgs)
 
 import Common                           (withLang)

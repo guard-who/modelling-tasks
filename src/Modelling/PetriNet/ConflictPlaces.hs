@@ -65,11 +65,11 @@ import Control.Applicative              ((<|>))
 import Control.Lens                     ((.~))
 import Control.Monad                    (void)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  GenericOutputCapable (..),
   LangM',
   LangM,
-  OutputMonad,
+  OutputCapable,
   ($=<<),
   continueOrAbort,
   english,
@@ -96,7 +96,7 @@ simpleFindConflictPlacesTask
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> FindInstance SimplePetriNet Conflict
@@ -110,7 +110,7 @@ findConflictPlacesTask
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> FindInstance (p n String) Conflict
@@ -156,7 +156,7 @@ conflictInitial :: ConflictPlaces
 conflictInitial = (findInitial, [Place 0, Place 1])
 
 findConflictPlacesSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => FindInstance net Conflict
   -> ConflictPlaces
   -> LangM' m ()

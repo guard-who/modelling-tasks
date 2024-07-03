@@ -111,11 +111,12 @@ import Modelling.PetriNet.Types         (
   )
 
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM',
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   english,
@@ -146,7 +147,7 @@ simpleFindConcurrencyTask
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> FindInstance SimplePetriNet (Concurrent Transition)
@@ -160,7 +161,7 @@ findConcurrencyTask
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> FindInstance (p n String) (Concurrent Transition)
@@ -216,7 +217,7 @@ findConcurrencyTask path task = do
   pure ()
 
 findConcurrencySyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => FindInstance net (Concurrent Transition)
   -> (Transition, Transition)
   -> LangM' m ()
@@ -225,7 +226,7 @@ findConcurrencySyntax task = toFindSyntax withSol $ numberOfTransitions task
     withSol = F.showSolution task
 
 findConcurrencyEvaluation
-  :: (Monad m, OutputMonad m)
+  :: (Monad m, OutputCapable m)
   => FindInstance net (Concurrent Transition)
   -> (Transition, Transition)
   -> Rated m
@@ -233,7 +234,7 @@ findConcurrencyEvaluation task x = do
   let what = translations $ do
         english "are concurrently activated"
         german "sind nebenläufig aktiviert"
-  uncurry printSolutionAndAssert
+  uncurry (printSolutionAndAssert DefiniteArticle)
     $=<< unLangM $ toFindEvaluation what withSol concur x
   where
     concur = findConcurrencySolution task
@@ -249,7 +250,7 @@ simplePickConcurrencyTask
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> PickInstance SimplePetriNet
@@ -263,7 +264,7 @@ pickConcurrencyTask
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> PickInstance (p n String)

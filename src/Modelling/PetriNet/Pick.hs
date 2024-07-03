@@ -52,9 +52,10 @@ import Modelling.PetriNet.Types         (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   english,
   german,
@@ -139,7 +140,7 @@ pickGenerate pick gc useDifferent withSol config segment seed
       else return $ replicate (wrong + 1) s
 
 pickSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => PickInstance n
   -> Int
   -> LangM m
@@ -149,7 +150,7 @@ pickSyntax task = singleChoiceSyntax withSol options
     withSol = showSolution task
 
 pickEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => PickInstance n
   -> Int
   -> Rated m
@@ -157,7 +158,7 @@ pickEvaluation task = do
   let what = translations $ do
         english "petri net"
         german "Petrinetz"
-  singleChoice what maybeSolutionString solution
+  singleChoice DefiniteArticle what maybeSolutionString solution
   where
     maybeSolutionString =
       if withSol

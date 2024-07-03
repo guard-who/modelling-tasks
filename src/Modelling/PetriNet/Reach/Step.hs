@@ -37,10 +37,10 @@ import Control.Applicative              (Alternative)
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (guard, unless)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (image, indent, paragraph, refuse, text),
+import Control.OutputCapable.Blocks (
+  GenericOutputCapable (image, indent, paragraph, refuse, text),
   LangM',
-  OutputMonad,
+  OutputCapable,
   ($=<<),
   english,
   german,
@@ -48,7 +48,7 @@ import Control.Monad.Output (
   translate,
   unLangM,
   )
-import Control.Monad.Output.Generic (
+import Control.OutputCapable.Blocks.Generic (
   ($>>=),
   )
 import Data.Foldable                    (foldl')
@@ -123,7 +123,7 @@ executes
     MonadThrow m,
     Ord s,
     Ord t,
-    OutputMonad m,
+    OutputCapable m,
     Show s,
     Show t
     )
@@ -152,7 +152,7 @@ executeIO
     MonadThrow m,
     Ord a,
     Ord k,
-    OutputMonad m,
+    OutputCapable m,
     Show a,
     Show k
     )
@@ -169,7 +169,7 @@ executeIO path cmd i n t z0 = execute n t z0
   $>>= pure (pure z2)
 
 execute
-  :: (Monad m, OutputMonad m, Show a, Show k, Ord a, Ord k)
+  :: (Monad m, Ord a, Ord k, OutputCapable m, Show a, Show k)
   => Net k a
   -> a
   -> State k

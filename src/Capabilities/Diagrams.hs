@@ -4,8 +4,8 @@ module Capabilities.Diagrams (
   MonadDiagrams (lin, writeSvg),
   ) where
 
-import Control.Monad.Output.Generic               (GenericReportT)
 import Control.Monad.Trans.Class                  (MonadTrans (lift))
+import Control.OutputCapable.Blocks.Generic (GenericReportT)
 import Data.Data                                  (Typeable)
 import Diagrams.Backend.SVG                       (SVG)
 import Diagrams.Prelude                           (QDiagram)

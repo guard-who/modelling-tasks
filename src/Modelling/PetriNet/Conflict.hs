@@ -132,11 +132,12 @@ import Control.Applicative              (Alternative, (<|>))
 import Control.Lens                     ((.~), over)
 import Control.Monad                    (unless)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM',
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   ($=<<),
   continueOrAbort,
@@ -147,7 +148,7 @@ import Control.Monad.Output (
   translate,
   translations,
   )
-import Control.Monad.Output.Generic (
+import Control.OutputCapable.Blocks.Generic (
   ($>>=),
   )
 import Control.Monad.Random (
@@ -178,7 +179,7 @@ simpleFindConflictTask
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> FindInstance SimplePetriNet Conflict
@@ -192,7 +193,7 @@ findConflictTask
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> FindInstance (p n String) Conflict
@@ -226,7 +227,7 @@ findConflictTask path task = do
   pure ()
 
 findConflictSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => FindInstance net Conflict
   -> (Transition, Transition)
   -> LangM' m ()
@@ -235,7 +236,7 @@ findConflictSyntax task = toFindSyntax withSol $ numberOfTransitions task
     withSol = F.showSolution task
 
 findConflictEvaluation
-  :: (Alternative m, Monad m, OutputMonad m)
+  :: (Alternative m, Monad m, OutputCapable m)
   => FindInstance net Conflict
   -> (Transition, Transition)
   -> Rated m
@@ -256,7 +257,7 @@ conflictPlacesShow = bimap
   (fmap ShowPlace)
 
 findConflictPlacesEvaluation
-  :: (Alternative m, Monad m, OutputMonad m)
+  :: (Alternative m, Monad m, OutputCapable m)
   => FindInstance n Conflict
   -> ConflictPlaces
   -> Rated m
@@ -274,7 +275,7 @@ findConflictPlacesEvaluation task (conflict, ps) =
   let result = min
         res
         $ (base - size inducing + size correct - size wrong') % base
-  points <- printSolutionAndAssert (fixSolution <$> ms) result
+  points <- printSolutionAndAssert DefiniteArticle (fixSolution <$> ms) result
   pure points
   where
     assert = continueOrAbort withSol
@@ -302,7 +303,7 @@ simplePickConflictTask
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> PickInstance SimplePetriNet
@@ -316,7 +317,7 @@ pickConflictTask
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> PickInstance (p n String)

@@ -12,9 +12,9 @@ import Control.Monad.Random (
   )
 import Data.List (delete)
 import Data.String.Interpolate          (iii)
-import Control.Monad.Output (
+import Control.OutputCapable.Blocks (
   LangM,
-  OutputMonad,
+  OutputCapable,
   english,
   german,
   paragraph,
@@ -37,7 +37,7 @@ weightedShuffle xs = do
   ys <- weightedShuffle (delete a xs)
   return (fst a : ys)
 
-auxiliaryNodesAdvice :: OutputMonad m => Bool -> LangM m
+auxiliaryNodesAdvice :: OutputCapable m => Bool -> LangM m
 auxiliaryNodesAdvice withFinalTransitionAdvice = do
   paragraph $ translate $ do
     english [iii|

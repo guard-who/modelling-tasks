@@ -47,16 +47,16 @@ import Modelling.PetriNet.Reach.Type (
   )
 
 import Control.Applicative              (Alternative)
-import Control.Monad.Output (
+import Control.OutputCapable.Blocks (
   LangM,
-  OutputMonad,
+  OutputCapable,
   Rated,
   english,
   german,
   translate,
   yesNo,
   )
-import Control.Monad.Output.Generic (
+import Control.OutputCapable.Blocks.Generic (
   ($>>),
   ($>>=),
   )
@@ -74,7 +74,7 @@ import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
 
 verifyDeadlock
-  :: (OutputMonad m, Show a, Show t, Ord t, Ord a)
+  :: (OutputCapable m, Show a, Show t, Ord t, Ord a)
   => DeadlockInstance a t
   -> LangM m
 verifyDeadlock = validate Default . petriNet
@@ -87,7 +87,7 @@ deadlockTask
     MonadThrow m,
     Ord s,
     Ord t,
-    OutputMonad m,
+    OutputCapable m,
     Show s,
     Show t
     )
@@ -107,7 +107,7 @@ deadlockInitial :: DeadlockInstance s Transition -> TransitionsList
 deadlockInitial = TransitionsList . reverse . S.toList . transitions . petriNet
 
 deadlockSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => DeadlockInstance s Transition
   -> [Transition]
   -> LangM m
@@ -122,7 +122,7 @@ deadlockEvaluation
     MonadThrow m,
     Ord s,
     Ord t,
-    OutputMonad m,
+    OutputCapable m,
     Show s,
     Show t
     )

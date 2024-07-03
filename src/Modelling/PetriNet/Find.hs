@@ -47,10 +47,10 @@ import Modelling.PetriNet.Types (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Lens                     (makeLensesFor)
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
+import Control.OutputCapable.Blocks (
   LangM',
   Language (English, German),
-  OutputMonad,
+  OutputCapable,
   continueOrAbort,
   english,
   german,
@@ -84,7 +84,7 @@ findInitial :: (Transition, Transition)
 findInitial = (Transition 0, Transition 1)
 
 toFindSyntax
-  :: OutputMonad m
+  :: OutputCapable m
   => Bool
   -> Int
   -> (Transition, Transition)
@@ -113,7 +113,7 @@ findTaskInstance f inst = do
   return (pl', t')
 
 toFindEvaluation
-  :: (Num a, OutputMonad m)
+  :: (Num a, OutputCapable m)
   => Map Language String
   -> Bool
   -> (Transition, Transition)

@@ -12,7 +12,7 @@ import Modelling.ActivityDiagram.MatchPetri (
   matchPetriSyntax,
   matchPetriEvaluation
   )
-import Control.Monad.Output             (Language (English))
+import Control.OutputCapable.Blocks     (Language (English))
 import System.Environment               (getArgs)
 
 import Common                           (withLang)

@@ -73,11 +73,12 @@ import Modelling.PetriNet.Types (
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Output (
-  GenericOutputMonad (..),
+import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
+  GenericOutputCapable (..),
   LangM,
   Rated,
-  OutputMonad,
+  OutputCapable,
   ($=<<),
   english,
   german,
@@ -273,7 +274,7 @@ matchPetriTask
     MonadGraphviz m,
     MonadPlantUml m,
     MonadThrow m,
-    OutputMonad m
+    OutputCapable m
     )
   => FilePath
   -> MatchPetriInstance
@@ -327,7 +328,7 @@ matchPetriInitial = MatchPetriSolution {
 }
 
 matchPetriSyntax
-  :: (OutputMonad m)
+  :: OutputCapable m
   => MatchPetriInstance
   -> MatchPetriSolution
   -> LangM m
@@ -353,7 +354,7 @@ matchPetriSyntax task sub = addPretext $ do
   pure ()
 
 matchPetriEvaluation
-  :: OutputMonad m
+  :: OutputCapable m
   => MatchPetriInstance
   -> MatchPetriSolution
   -> Rated m
@@ -368,7 +369,7 @@ matchPetriEvaluation task sub = addPretext $ do
         else Nothing
       solution = matchPetriSolutionMap sol
       sub' = M.keys $ matchPetriSolutionMap sub
-  multipleChoice as maybeSolutionString solution sub'
+  multipleChoice DefiniteArticle as maybeSolutionString solution sub'
 
 matchPetriSolutionMap
   :: MatchPetriSolution
