@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- | Defines a Monad context for calling Alloy
 
 module Capabilities.Alloy (
@@ -37,6 +38,10 @@ getInstances
 getInstances maybeMaxInstances maybeTimeout = getInstancesWith
   $ defaultCallAlloyConfig {
     maxInstances = maybeMaxInstances,
+#if ALLOY_USE_SAT4J
+    satSolver    = SAT4J,
+#else
     satSolver    = MiniSat,
+#endif
     timeout      = maybeTimeout
     }

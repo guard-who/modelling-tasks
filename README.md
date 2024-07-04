@@ -11,7 +11,14 @@ The diagram types covered are
 
 ## Compatibility
 
-On Windows, you may have to replace `MiniSat` by `SAT4J` in the `Capabilities.Alloy` module.
+On Windows, you may have to use `SAT4J` instead of `MiniSat`.
+In order to do so you can change the provided flag in `stack.yaml` or `stack-*.yaml` to:
+
+``` yaml
+    alloy-use-sat4j: true
+```
+
+Or provide it as argument to stack, e.g. `stack build --flag modelling-tasks:alloy-use-sat4j`.
 
 ## Generating instances in GHCi
 
