@@ -53,7 +53,7 @@ import Modelling.Auxiliary.Common       (getFirstInstance)
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
 import Control.OutputCapable.Blocks (
-  ArticleToUse (DefiniteArticle),
+  ArticleToUse (IndefiniteArticle),
   GenericOutputCapable (..),
   LangM,
   Rated,
@@ -246,7 +246,7 @@ enterASEvaluation task sub = do
         if showSolution task
         then Just $ show $ sampleSequence task
         else Nothing
-  printSolutionAndAssert DefiniteArticle maybeSolutionString points
+  printSolutionAndAssert IndefiniteArticle maybeSolutionString points
 
 enterASSolution
   :: EnterASInstance
