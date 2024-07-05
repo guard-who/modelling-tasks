@@ -86,7 +86,7 @@ import Data.List                        (elemIndex)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
 import Data.Tuple.Extra                 (both)
 import Diagrams.Align                   (center)
-import Diagrams.Angle                   ((@@), deg)
+import Diagrams.Angle                   ((@@), cosA, deg, halfTurn)
 import Diagrams.Attributes              (lineWidth, lwL)
 import Diagrams.Backend.SVG             (B, svgClass)
 import Diagrams.Combinators             (atop, frame)
@@ -96,6 +96,7 @@ import Diagrams.Points                  (Point(..))
 import Diagrams.Prelude (
   Diagram,
   Style,
+  (^-^),
   applyStyle,
   black,
   local,
@@ -255,14 +256,13 @@ drawRelationship font CdDrawSettings {..} marking fl tl isThick l path =
   # applyStyle (if isThick then marking else mempty)
   # lwL 0.5
   where
-    angle :: Double
-    angle = 150
+    angle = 150 @@ deg
     opts = with
-      & arrowTail .~ theTail (angle @@ deg)
-      & arrowHead .~ theHead (angle @@ deg)
-      & headLength .~ local 7
+      & arrowTail .~ theTail angle
+      & arrowHead .~ theHead angle
+      & headLength .~ local headSize
       & headGap .~ local 0
-      & tailLength .~ local 7
+      & tailLength .~ local tailSize
     startLimits = case l of
       Inheritance {} -> Nothing
       Composition {..} ->
@@ -294,15 +294,19 @@ drawRelationship font CdDrawSettings {..} marking fl tl isThick l path =
     (from, to, fromLimits, toLimits, path')
       | flipEdge  = (tl, fl, endLimits, startLimits, reversePath path)
       | otherwise = (fl, tl, startLimits, endLimits, path)
+    (tailSize, headSize) = (7 * tailScaleFactor, 7)
     theTail = const lineTail
-    (flipEdge, theHead) = case l of
-      Inheritance {} -> (False, arrowheadTriangle)
+    triangleFactor = cosA (halfTurn ^-^ angle)
+    diamondFactor = 2 * cosA (halfTurn ^-^ angle)
+    (flipEdge, theHead, tailScaleFactor) = case l of
+      Inheritance {} -> (False, arrowheadTriangle, 0.9)
       Association {} -> (
           False,
-          if printNavigations then arrowheadVee else const (flipArrow lineTail)
+          if printNavigations then arrowheadVee else const (flipArrow lineTail),
+          triangleFactor
           )
-      Aggregation {} -> (True, arrowheadDiamond)
-      Composition {} -> (True, arrowheadFilledDiamond)
+      Aggregation {} -> (True, arrowheadDiamond, diamondFactor)
+      Composition {} -> (True, arrowheadFilledDiamond, diamondFactor)
     dir = case l of
       Association {} ->
         if printNavigations then Forward else NoDir
