@@ -103,8 +103,10 @@ import Modelling.CdOd.Types (
   Annotation (..),
   AnnotatedCd,
   AnnotatedClassDiagram (..),
+  AnyCd,
+  AnyClassDiagram (..),
+  AnyRelationship,
   ArticlePreference (..),
-  Cd,
   CdDrawSettings (CdDrawSettings),
   ClassConfig (..),
   ClassDiagram (..),
@@ -113,7 +115,7 @@ import Modelling.CdOd.Types (
   Property (..),
   Relationship (..),
   RelationshipProperties (..),
-  associationNames,
+  anyAssociationNames,
   checkCdDrawSettings,
   classNames,
   defaultOmittedDefaultMultiplicities,
@@ -124,6 +126,7 @@ import Modelling.CdOd.Types (
   shuffleAnnotatedClassAndConnectionOrder,
   toArticleToUse,
   toPropertySet,
+  toValidCd,
   towardsValidProperties,
   unannotateCd,
   )
@@ -401,7 +404,7 @@ cdDrawSettings NameCdErrorInstance {..} = CdDrawSettings {
 
 relevantRelationships
   :: NameCdErrorInstance
-  -> [(Int, Annotation Relevance (Relationship String String))]
+  -> [(Int, Annotation Relevance (AnyRelationship String String))]
 relevantRelationships NameCdErrorInstance {..} = zip [1..]
   . sortOn (listingPriority . annotation)
   . filter isRelevant
@@ -659,8 +662,8 @@ nameCdErrorSolution x = NameCdErrorAnswer {
 classAndNonInheritanceNames :: NameCdErrorInstance -> ([String], [String])
 classAndNonInheritanceNames inst =
   let cd = unannotateCd $ classDiagram inst
-      names = nubOrd $ classNames cd
-      nonInheritances = nubOrd $ associationNames cd
+      names = nubOrd $ anyClassNames cd
+      nonInheritances = nubOrd $ anyAssociationNames cd
   in (names, nonInheritances)
 
 instance Randomise NameCdErrorInstance where
@@ -766,11 +769,11 @@ generateAndRandomise NameCdErrorConfig {..} = do
         ++ take (preDefinedValid reasonsPerInstance) valid
   shuffleEverything $ NameCdErrorInstance {
     classDiagram = AnnotatedClassDiagram {
-      annotatedClasses = classNames cd,
+      annotatedClasses = anyClassNames cd,
       annotatedRelationships = zipWith
         (relevanceFor rs)
         [1..]
-        (relationships cd)
+        (anyRelationships cd)
       },
     errorReasons = M.fromAscList $ zip ['a' ..]
       $ map (second toTranslations)
@@ -802,7 +805,7 @@ nameCdError
   -> Bool
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g m (Cd, Property, [Relationship String String])
+  -> RandT g m (AnyCd, Property, [AnyRelationship String String])
 nameCdError allowed config objectProperties byName maxInstances to = do
   changes <- shuffleM $ (,)
     <$> illegalChanges allowed
@@ -835,7 +838,8 @@ nameCdError allowed config objectProperties byName maxInstances to = do
       let allChs = concatMap instanceChangesAndCds correctInstance
           cd2 = instanceClassDiagram $ head correctInstance
       possibleRemoves <- do
-        lift $ mapM (getOD . changeClassDiagram) allChs
+        validCds <- lift $ mapM (toValidCd . changeClassDiagram) allChs
+        lift $ mapM getOD validCds
         return $ traverse (remove . relationshipChange) allChs
       case possibleRemoves of
         Nothing -> getInstanceWithODs chs p randomInstances
@@ -940,7 +944,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
     annotatedClasses = ["D","C","B","A"],
     annotatedRelationships = [
       Annotation {
-        annotated = Aggregation {
+        annotated = Right Aggregation {
           aggregationName = "y",
           aggregationPart = LimitedLinking {linking = "B", limits = (2, Nothing)},
           aggregationWhole = LimitedLinking {linking = "D", limits = (2, Just 2)}
@@ -952,7 +956,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
           }
         },
       Annotation {
-        annotated = Composition {
+        annotated = Right Composition {
           compositionName = "x",
           compositionPart = LimitedLinking {linking = "A", limits = (0, Just 1)},
           compositionWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
@@ -964,7 +968,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
           }
         },
       Annotation {
-        annotated = Composition {
+        annotated = Right Composition {
           compositionName = "w",
           compositionPart = LimitedLinking {linking = "B", limits = (1, Nothing)},
           compositionWhole = LimitedLinking {linking = "D", limits = (1, Just 1)}
@@ -976,7 +980,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
           }
         },
       Annotation {
-        annotated = Composition {
+        annotated = Right Composition {
           compositionName = "z",
           compositionPart = LimitedLinking {linking = "D", limits = (1, Nothing)},
           compositionWhole = LimitedLinking {linking = "A", limits = (1, Just 1)}

@@ -85,6 +85,7 @@ import Modelling.CdOd.Types (
   classNames,
   defaultDrawSettings,
   defaultProperties,
+  fromClassDiagram,
   isObjectDiagramRandomisable,
   linkNames,
   relationshipName,
@@ -288,7 +289,7 @@ differentNamesTask
   -> DifferentNamesInstance
   -> LangM m
 differentNamesTask path task = do
-  let cd = cDiagram task
+  let cd = fromClassDiagram $ cDiagram task
       od = oDiagram task
       anonymous = fromMaybe (length (objects od) `div` 3)
         (if anonymousObjects task then Just 1000 else Nothing)

@@ -10,6 +10,7 @@ import Modelling.CdOd.Types (
   ClassDiagram (..),
   Relationship (..),
   defaultOmittedDefaultMultiplicities,
+  fromClassDiagram,
   )
 
 import Data.Char                        (toUpper)
@@ -34,7 +35,7 @@ run withNames howToMark input file = do
   output <- drawCd drawSettings howToMark (uncurry toCd parsed) file
   putStrLn $ "Output written to " ++ output
   where
-    toCd cs es = ClassDiagram {
+    toCd cs es = fromClassDiagram ClassDiagram {
       classNames = map fst cs,
       relationships = mapMaybe (uncurry toInheritance) cs ++ es
       }

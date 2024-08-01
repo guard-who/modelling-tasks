@@ -12,6 +12,8 @@ import Modelling.Types (
   Change (..),
   )
 import Modelling.CdOd.Types (
+  AnyRelationship,
+  InvalidRelationship (..),
   LimitedLinking (..),
   NonInheritancePhrasing (..),
   Relationship (..),
@@ -25,7 +27,7 @@ phraseChange
   :: ArticleToUse
   -> Bool
   -> Bool
-  -> Change (Relationship String String)
+  -> Change (AnyRelationship String String)
   -> String
 phraseChange article byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "verändere nichts"
@@ -53,7 +55,7 @@ phraseRelationship
   :: ArticleToUse
   -> Bool
   -> Bool
-  -> Relationship String String
+  -> AnyRelationship String String
   -> String
 phraseRelationship article byName withDir = phraseRelation article phrasing
   where
@@ -62,50 +64,55 @@ phraseRelationship article byName withDir = phraseRelation article phrasing
 phraseRelation
   :: ArticleToUse
   -> NonInheritancePhrasing
-  -> Relationship String String
+  -> AnyRelationship String String
   -> String
-phraseRelation article _ Inheritance {..} = [iii|
-  #{femaleArticle article} Vererbung,
-  bei der #{subClass} von #{superClass} erbt
-  |]
-phraseRelation _ ByName Association {..} = "Assoziation " ++ associationName
-phraseRelation _ ByName Aggregation {..} = "Aggregation " ++ aggregationName
-phraseRelation _ ByName Composition {..} = "Komposition " ++ compositionName
-phraseRelation article Lengthy Association {..}
-  | linking associationFrom == linking associationTo = [iii|
+phraseRelation article = curry $ \case
+  (_, Left InvalidInheritance {..}) -> [iii|
+    #{femaleArticle article} Vererbung,
+    bei der #{linking invalidSubClass} von #{linking invalidSuperClass} erbt
+    |] ++ participations invalidSubClass invalidSuperClass
+  (_, Right Inheritance {..}) -> [iii|
+    #{femaleArticle article} Vererbung,
+    bei der #{subClass} von #{superClass} erbt
+    |]
+  (ByName, Right Association {..}) -> "Assoziation " ++ associationName
+  (ByName, Right Aggregation {..}) -> "Aggregation " ++ aggregationName
+  (ByName, Right Composition {..}) -> "Komposition " ++ compositionName
+  (Lengthy, Right Association {..})
+    | linking associationFrom == linking associationTo -> [iii|
     #{femaleArticle article} Selbst-Assoziation für #{linking associationFrom},
     bei der #{linking associationFrom}
     an einem Ende #{phraseLimit $ limits associationFrom}
     und am anderen Ende #{phraseLimit $ limits associationTo} beteiligt ist
     |]
-  | otherwise = femaleArticle article ++ " Assoziation"
+    | otherwise -> femaleArticle article ++ " Assoziation"
       ++ participations associationFrom associationTo
-phraseRelation article ByDirection Association {..}
-  | associationFrom == associationTo = [iii|
+  (ByDirection, Right Association {..})
+    | linking associationFrom == linking associationTo -> [iii|
     #{femaleArticle article} Selbst-Assoziation für #{linking associationFrom},
     bei der {linking associationFrom}
     am Anfang #{phraseLimit $ limits associationFrom}
     und am Ende #{phraseLimit $ limits associationTo} beteiligt ist
     |]
-  | otherwise = [iii|
+    | otherwise -> [iii|
     #{femaleArticle article} Assoziation von #{linking associationFrom}
     nach #{linking associationTo}
     |] ++ participations associationFrom associationTo
-phraseRelation article _ Aggregation {..}
-  | aggregationPart == aggregationWhole = [iii|
+  (_, Right Aggregation {..})
+    | linking aggregationPart == linking aggregationWhole -> [iii|
     #{femaleArticle article} Selbst-Aggregation
     #{selfParticipatesPartWhole aggregationPart aggregationWhole}
     |]
-  | otherwise = [iii|
+    | otherwise -> [iii|
     #{femaleArticle article} Beziehung, die #{linking aggregationWhole}
     eine Aggregation aus #{linking aggregationPart}s macht
     |] ++ participations aggregationWhole aggregationPart
-phraseRelation article _ Composition {..}
-  | compositionPart == compositionWhole = [iii|
+  (_, Right Composition {..})
+    | linking compositionPart == linking compositionWhole -> [iii|
     #{femaleArticle article} Selbst-Komposition
     #{selfParticipatesPartWhole compositionPart compositionWhole}
     |]
-  | otherwise = [iii|
+    | otherwise -> [iii|
     #{femaleArticle article} Beziehung, die #{linking compositionWhole}
     eine Komposition aus #{linking compositionPart}s macht
     |] ++ participations compositionWhole compositionPart

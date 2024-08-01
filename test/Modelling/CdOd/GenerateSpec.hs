@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.GenerateSpec where
 
 import Capabilities.Alloy.IO            ()
@@ -13,12 +14,15 @@ import Modelling.CdOd.Edges (
   toEdges,
   wrongLimits,
   )
-import Modelling.CdOd.Generate          (generateCds, instanceToCd)
+import Modelling.CdOd.Generate (
+  generateCds,
+  instanceToAnyCd,
+  )
 import Modelling.CdOd.Types (
+  AnyClassDiagram (..),
   ClassConfig (..),
   RelationshipProperties (..),
   anyThickEdge,
-  classNames,
   defaultProperties,
   )
 
@@ -35,9 +39,10 @@ generateCd
   -> IO ([String], [DiagramEdge])
 generateCd wi c p mis to = do
   i <- head <$> evalRandTIO (generateCds wi c p mis to)
-  toEdges' <$> instanceToCd i
+  anyCd <- instanceToAnyCd i
+  toEdges' anyCd
   where
-    toEdges' x = (classNames x, toEdges x)
+    toEdges' x = (anyClassNames x,) <$> toEdges x
 
 spec :: Spec
 spec =

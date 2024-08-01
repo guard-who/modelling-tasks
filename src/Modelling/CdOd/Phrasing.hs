@@ -18,14 +18,14 @@ import Modelling.Types (
   Change,
   )
 import Modelling.CdOd.Types (
-  Relationship,
+  AnyRelationship,
   )
 
 phraseChange :: Language
   -> ArticleToUse
   -> Bool
   -> Bool
-  -> Change (Relationship String String)
+  -> Change (AnyRelationship String String)
   -> String
 phraseChange = \case
   English -> English.phraseChange
@@ -36,7 +36,7 @@ phraseRelationship
   -> ArticleToUse
   -> Bool
   -> Bool
-  -> Relationship String String -> String
+  -> AnyRelationship String String -> String
 phraseRelationship = \case
   English -> English.phraseRelationship
   German -> German.phraseRelationship

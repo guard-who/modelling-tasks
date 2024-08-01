@@ -16,13 +16,19 @@ module Modelling.CdOd.Edges (
   ) where
 
 import Modelling.CdOd.Types (
+  AnyCd,
+  AnyClassDiagram (..),
+  AnyRelationship,
   Cd,
   ClassDiagram (..),
+  InvalidRelationship (..),
   LimitedLinking (..),
   Relationship (..),
+  WrongRelationshipException (UnexpectedInvalidRelationship),
   )
 import Modelling.CdOd.Auxiliary.Util    (filterFirst)
 
+import Control.Monad.Catch              (MonadThrow (throwM))
 import Data.List                        ((\\), delete)
 import Data.Tuple.Extra                 (thd3)
 import GHC.Generics                     (Generic)
@@ -37,8 +43,17 @@ data AssociationType = Association' | Aggregation' | Composition'
 
 type DiagramEdge = (String, String, Connection)
 
-toEdges :: Cd -> [DiagramEdge]
-toEdges = map relationshipToEdge . relationships
+toEdges :: MonadThrow m => AnyCd -> m [DiagramEdge]
+toEdges = mapM anyRelationshipToEdge . anyRelationships
+
+anyRelationshipToEdge
+  :: MonadThrow m
+  => AnyRelationship String String
+  -> m (String, String, Connection)
+anyRelationshipToEdge anyRelationship = case anyRelationship of
+  Left InvalidInheritance {} ->
+    throwM $ UnexpectedInvalidRelationship anyRelationship
+  Right relationship -> pure $ relationshipToEdge relationship
 
 relationshipToEdge
   :: Relationship nodeName String

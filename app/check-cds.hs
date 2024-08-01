@@ -15,6 +15,7 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   Relationship (..),
   defaultDrawSettings,
+  fromClassDiagram,
   maxFiveObjects,
   reverseAssociation,
   )
@@ -197,7 +198,9 @@ drawCdAndOdsFor
   -> String
   -> IO ()
 drawCdAndOdsFor is c cds cmd = do
-  mapM_ (\(cd, i) -> drawCd' cd i >>= putStrLn) $ zip cds [0..]
+  mapM_
+    (\(cd, i) -> drawCd' (fromClassDiagram cd) i >>= putStrLn)
+    $ zip cds [0..]
   let mergedParts = foldr mergeParts (head parts) $ tail parts
   let parts' = combineParts mergedParts ++ createRunCommand
         cmd

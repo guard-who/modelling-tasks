@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.CdAndChanges.Instance (
   AnnotatedChangeAndCd (..),
@@ -14,6 +15,7 @@ module Modelling.CdOd.CdAndChanges.Instance (
   fromInstanceWithPredefinedNames,
   nameClassDiagramInstance,
   uniformlyAnnotateChangeAndCd,
+  validChangeClassDiagram,
   ) where
 
 import qualified Data.Bimap                       as BM (fromList, lookup)
@@ -29,16 +31,24 @@ import qualified Data.Set                         as S (
 import Modelling.Auxiliary.Common       (Object (Object, oName), toMap)
 import Modelling.CdOd.Types (
   Annotation (..),
-  ClassDiagram (..),
+  AnyClassDiagram (..),
+  AnyRelationship,
+  ClassDiagram,
   LimitedLinking (..),
   Relationship (..),
-  relationshipName,
+  anyRelationshipName,
+  toValidCd,
   )
 import Modelling.Types                  (Change (..))
 
 import Control.Monad                    ((<=<), forM)
 import Control.Monad.Catch              (Exception, MonadThrow (throwM))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
+import Data.Bifunctor.TH (
+  deriveBifoldable,
+  deriveBifunctor,
+  deriveBitraversable,
+  )
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
@@ -50,6 +60,7 @@ import Data.Maybe (
   mapMaybe,
   maybeToList,
   )
+import Data.Typeable                    (Typeable)
 import Language.Alloy.Call (
   AlloyInstance,
   AlloySig,
@@ -68,42 +79,42 @@ newtype NumberedClass = NumberedClass Int
 data NumberedNonInheritance = NumberedNonInheritance String Int
   deriving (Eq, Ord)
 
-type ClassDiagramInstance = GenericClassDiagramInstance String String
-
 data AnnotatedChangeAndCd annotation className relationshipName
   = AnnotatedChangeAndCd {
     annotatedRelationshipChange
-      :: Annotation
-         annotation
-         (Change (Relationship className relationshipName)),
+      :: !(Annotation
+        annotation
+        (Change (AnyRelationship className relationshipName))),
     annotatedChangeClassDiagram
-      :: ClassDiagram className relationshipName
+      :: !(AnyClassDiagram className relationshipName)
     }
-  deriving (Functor, Read, Show)
+  deriving (Read, Show)
 
 data ChangeAndCd className relationshipName
   = ChangeAndCd {
     relationshipChange
-      :: Change (Relationship className relationshipName),
+      :: !(Change (AnyRelationship className relationshipName)),
     changeClassDiagram
-      :: ClassDiagram className relationshipName
+      :: !(AnyClassDiagram className relationshipName)
     }
-  deriving (Functor, Read, Show)
+  deriving (Read, Show)
 
-instance Bifunctor ChangeAndCd where
-  bimap f g ChangeAndCd {..} = ChangeAndCd {
-    relationshipChange = fmap (bimap f g) relationshipChange,
-    changeClassDiagram = bimap f g changeClassDiagram
-    }
+$(deriveBifunctor ''ChangeAndCd)
+$(deriveBifoldable ''ChangeAndCd)
+$(deriveBitraversable ''ChangeAndCd)
 
-instance Bifoldable ChangeAndCd where
-  bifoldMap f g ChangeAndCd {..} = foldMap (bifoldMap f g) relationshipChange
-    <> bifoldMap f g changeClassDiagram
-
-instance Bitraversable ChangeAndCd where
-  bitraverse f g ChangeAndCd {..} = ChangeAndCd
-    <$> traverse (bitraverse f g) relationshipChange
-    <*> bitraverse f g changeClassDiagram
+validChangeClassDiagram
+  :: (
+    Eq className,
+    MonadThrow m,
+    Show className,
+    Show relationshipName,
+    Typeable className,
+    Typeable relationshipName
+    )
+  => ChangeAndCd className relationshipName
+  -> m (ClassDiagram className relationshipName)
+validChangeClassDiagram = toValidCd . changeClassDiagram
 
 uniformlyAnnotateChangeAndCd
   :: annotation
@@ -119,11 +130,11 @@ uniformlyAnnotateChangeAndCd annotation ChangeAndCd {..} = AnnotatedChangeAndCd 
 
 data GenericClassDiagramInstance className relationshipName
   = ClassDiagramInstance {
-    instanceClassDiagram      :: ClassDiagram className relationshipName,
+    instanceClassDiagram      :: !(AnyClassDiagram className relationshipName),
     instanceRelationshipNames :: [relationshipName],
     instanceChangesAndCds     :: [ChangeAndCd className relationshipName]
     }
-  deriving (Functor, Read, Show)
+  deriving (Read, Show)
 
 instance Bifunctor GenericClassDiagramInstance where
   bimap f g ClassDiagramInstance {..} = ClassDiagramInstance {
@@ -142,6 +153,8 @@ instance Bitraversable GenericClassDiagramInstance where
     <$> bitraverse f g instanceClassDiagram
     <*> traverse g instanceRelationshipNames
     <*> traverse (bitraverse f g) instanceChangesAndCds
+
+type ClassDiagramInstance = GenericClassDiagramInstance String String
 
 renameClassesAndRelationshipsInCdInstance
   :: (MonadThrow m, Ord c, Ord c', Ord r, Ord r')
@@ -178,11 +191,12 @@ fromInstanceWithNameOverlap alloyInstance = do
     deliberatelyNameReplacedEdgesSameInCdOnly change =
       case relationshipChange change of
         Change {add = Just rx, remove = Just ry}
-          | Just x <- relationshipName rx
-          , Just y <- relationshipName ry -> change {
-            changeClassDiagram = second (\x' -> if x' == x then y else x')
-              $ changeClassDiagram change
-            }
+          | Just x <- anyRelationshipName rx
+          , Just y <- anyRelationshipName ry ->
+            let rename = second (\x' -> if x' == x then y else x')
+            in change {
+              changeClassDiagram = rename $ changeClassDiagram change
+              }
         Change {} -> change
 
 {-|
@@ -200,6 +214,10 @@ fromInstanceWithPredefinedNames
 fromInstanceWithPredefinedNames =
   usePredefinedClassDiagramInstanceNames <=< fromInstanceWithNameOverlap
 
+{-|
+Parses an class diagram instance from Alloy consisting of a base CD,
+relationship names and changes with CDs derived from the base CD.
+-}
 fromInstance
   :: MonadThrow m
   => AlloyInstance
@@ -209,14 +227,14 @@ fromInstance alloyInstance = do
   cs <- instanceToChanges alloyInstance
   namesOfClasses <- instanceToNamesOf alloyInstance "Class"
   namesOfNonInheritances <- instanceToNamesOf alloyInstance "NonInheritance"
-  let baseCd = ClassDiagram {
-        classNames = namesOfClasses,
-        relationships =
+  let baseCd = AnyClassDiagram {
+        anyClassNames = namesOfClasses,
+        anyRelationships =
           [e | (o, e) <- es, o `notElem` mapMaybe add cs]
         }
       modifiedCd ma mr = baseCd {
-        relationships = maybeToList ma
-          ++ maybe id (filter . (/=)) mr (relationships baseCd)
+        anyRelationships = maybeToList ma
+          ++ maybe id (filter . (/=)) mr (anyRelationships baseCd)
         }
   return ClassDiagramInstance {
     instanceClassDiagram = baseCd,
@@ -267,7 +285,7 @@ newtype UnexpectedRelation
 instance Show UnexpectedRelation where
   show (SingleMemberExpected relation) = "SingleMemberExpected: "
     ++ "Relation " ++ unRelation relation
-    ++ " matches at least one"
+    ++ " matches at least one "
     ++ "member of its domain to multiple values of the codomain."
 
 instance Exception UnexpectedRelation
@@ -280,10 +298,13 @@ getRelation n i = getDoubleAs n (return .: Object) (return .: Object) i
       | S.size x == 1 = return $ S.findMin x
       | otherwise     = throwM $ SingleMemberExpected $ Relation n
 
+{-|
+Parses all Relationships.
+-}
 instanceToEdges
   :: MonadThrow m
   => AlloyInstance
-  -> m [(Object, Relationship String String)]
+  -> m [(Object, AnyRelationship String String)]
 instanceToEdges inst = do
   r'         <- lookupSig (scoped "this" "Relationship") inst
   rFrom      <- getRelation "from" r'
@@ -304,13 +325,14 @@ instanceToEdges'
   -> Map Object Object
   -> Map Object Object
   -> Map Object Object
-  -> m [(Object, Relationship String String)]
+  -> m [(Object, AnyRelationship String String)]
 instanceToEdges' alloyInstance rFrom rTo aFromLower aFromUpper aToLower aToUpper = do
   inheritances <- getInheritances
   compositions <- getRelationships toComposition "Composition"
   aggregations <- getRelationships toAggregation "Aggregation"
   associations <- getRelationships toAssociation "Association"
-  return $ inheritances ++ compositions ++ aggregations ++ associations
+  return . map (second Right)
+    $ inheritances ++ compositions ++ aggregations ++ associations
   where
     getInheritances = do
       inheritance' <- lookupSig (scoped "this" "Inheritance") alloyInstance
@@ -399,7 +421,7 @@ nameClassDiagramInstance
   -> m (GenericClassDiagramInstance String String)
 nameClassDiagramInstance cdInstance =
   let cd = instanceClassDiagram cdInstance
-      cs = classNames cd
+      cs = anyClassNames cd
       es = instanceRelationshipNames cdInstance
       bimapEdges = BM.fromList $ zip es $ map (:[]) ['z', 'y' ..]
       bimapClasses = BM.fromList $ zip cs $ map (:[]) ['A' ..]
@@ -423,7 +445,7 @@ usePredefinedClassDiagramInstanceNames
   -> m (GenericClassDiagramInstance String String)
 usePredefinedClassDiagramInstanceNames cdInstance =
   let cd = instanceClassDiagram cdInstance
-      cs = classNames cd
+      cs = anyClassNames cd
       es = instanceRelationshipNames cdInstance
       prefixOnly = takeWhile (/= '$')
       bimapEdges = BM.fromList $ zip es $ map prefixOnly es

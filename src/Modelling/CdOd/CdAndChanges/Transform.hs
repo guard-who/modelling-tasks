@@ -5,6 +5,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.CdAndChanges.Transform (
   transform,
   transformChanges,
@@ -14,16 +15,17 @@ module Modelling.CdOd.CdAndChanges.Transform (
   ) where
 
 import Modelling.CdOd.Types (
-  Cd,
+  AnyCd,
+  AnyClassDiagram (..),
+  AnyRelationship,
   CdMutation (..),
   ClassConfig (..),
-  ClassDiagram (..),
   LimitedLinking (..),
   Relationship (..),
   RelationshipMutation (..),
   RelationshipProperties (..),
+  anyRelationshipName,
   maxRelationships,
-  relationshipName,
   towardsValidProperties,
   )
 
@@ -38,7 +40,7 @@ import Data.String.Interpolate          (__i, i, iii)
 transformWith
   :: ClassConfig
   -> [CdMutation]
-  -> Either (ClassDiagram String String) RelationshipProperties
+  -> Either AnyCd RelationshipProperties
   -> (Int, [String], String)
   -> String
 transformWith config mutations cdOrProperties (cs, predicates, part) =
@@ -102,7 +104,7 @@ transformChanges config mutations props maybeConfig propsList =
   $ changes maybeConfig propsList
 
 transformImproveCd
-  :: ClassDiagram String String
+  :: AnyCd
   -- ^ the generated CD
   -> ClassConfig
   -- ^ the configuration used for generating the CD
@@ -123,7 +125,7 @@ Generates Alloy code that
    class diagram if they are not referenced by name
 -}
 transformGetNextFix
-  :: Maybe Cd
+  :: Maybe AnyCd
   -> ClassConfig
   -> RelationshipProperties
   -> Bool
@@ -148,25 +150,25 @@ fact preventSameNonInheritances {
 |]
 
 nameRelationships
-  :: ClassDiagram className String
-  -> [(String, Relationship className String)]
-nameRelationships ClassDiagram {relationships} = zipWith
+  :: AnyClassDiagram className String
+  -> [(String, AnyRelationship className String)]
+nameRelationships AnyClassDiagram {anyRelationships} = zipWith
   addName
   (map (("Relationship" ++) . show) [0 :: Int ..])
-  relationships
+  anyRelationships
   where
-    addName defaultName r = (fromMaybe defaultName $ relationshipName r, r)
+    addName defaultName r = (fromMaybe defaultName $ anyRelationshipName r, r)
 
-givenClassDiagram :: ClassDiagram String String -> String
-givenClassDiagram cd@ClassDiagram {classNames} = [i|
+givenClassDiagram :: AnyCd -> String
+givenClassDiagram cd@AnyClassDiagram {anyClassNames} = [i|
 //////////////////////////////////////////////////
 // Given CD
 //////////////////////////////////////////////////
 
-#{concatMap classSig classNames}
+#{concatMap classSig anyClassNames}
 #{concatMap relationshipSig namedRelationships}
 pred cd {
-  Class = #{unionOf classNames}
+  Class = #{unionOf anyClassNames}
 #{concatMap relationshipConstraints namedRelationships}
   NonInheritance = Association + Aggregation + Composition
   Relationship = NonInheritance + Inheritance
@@ -184,23 +186,23 @@ pred cd {
     (associations, aggregations, compositions, inheritances) =
       unzip4 $ map nonInheritanceName namedRelationships
     nonInheritanceName (name, x) = case x of
-      Association {} -> ([name], [], [], [])
-      Aggregation {} -> ([], [name], [], [])
-      Composition {} -> ([], [], [name], [])
-      Inheritance {} -> ([], [], [], [name])
+      Right Association {} -> ([name], [], [], [])
+      Right Aggregation {} -> ([], [name], [], [])
+      Right Composition {} -> ([], [], [name], [])
+      Right Inheritance {} -> ([], [], [], [name])
     classSig :: String -> String
     classSig x = [i|one sig #{x} extends Class {}\n|]
-    relationshipSig :: (String, Relationship String relationship) -> String
+    relationshipSig :: (String, AnyRelationship String relationship) -> String
     relationshipSig (name, x) = case x of
-      Association {} -> [i|one sig #{name} extends Association {}\n|]
-      Aggregation {} -> [i|one sig #{name} extends Aggregation {}\n|]
-      Composition {} -> [i|one sig #{name} extends Composition {}\n|]
-      Inheritance {} -> [i|one sig #{name} extends Inheritance {}\n|]
+      Right Association {} -> [i|one sig #{name} extends Association {}\n|]
+      Right Aggregation {} -> [i|one sig #{name} extends Aggregation {}\n|]
+      Right Composition {} -> [i|one sig #{name} extends Composition {}\n|]
+      Right Inheritance {} -> [i|one sig #{name} extends Inheritance {}\n|]
     relationshipConstraints (name, x) = case x of
-      Association {..} -> limitsConstraints name associationFrom associationTo
-      Aggregation {..} -> limitsConstraints name aggregationPart aggregationWhole
-      Composition {..} -> limitsConstraints name compositionPart compositionWhole
-      Inheritance {..} -> [i|  #{name}.from = #{subClass}\n|]
+      Right Association {..} -> limitsConstraints name associationFrom associationTo
+      Right Aggregation {..} -> limitsConstraints name aggregationPart aggregationWhole
+      Right Composition {..} -> limitsConstraints name compositionPart compositionWhole
+      Right Inheritance {..} -> [i|  #{name}.from = #{subClass}\n|]
         ++ [i|  #{name}.to = #{superClass}\n|]
     limitsConstraints x from to =
       limitConstraints "from" x from ++ limitConstraints "to" x to

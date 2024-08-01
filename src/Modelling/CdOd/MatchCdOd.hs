@@ -62,10 +62,10 @@ import Modelling.CdOd.CD2Alloy.Transform (
   transform,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
-  ChangeAndCd (..),
   GenericClassDiagramInstance (..),
   fromInstanceWithNameOverlap,
   nameClassDiagramInstance,
+  validChangeClassDiagram,
   )
 import Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
@@ -94,6 +94,7 @@ import Modelling.CdOd.Types (
   classNames,
   defaultDrawSettings,
   defaultProperties,
+  fromClassDiagram,
   isObjectDiagramRandomisable,
   linkNames,
   renameClassesAndRelationships,
@@ -231,7 +232,7 @@ matchCdOdTask path task = do
     english "Consider the following two class diagrams:"
     german "Betrachten Sie die folgenden zwei Klassendiagramme:"
   images show id
-    $=<< (\_ c -> cacheCd (cdDrawSettings task) mempty c path)
+    $=<< (\_ cd -> cacheCd (cdDrawSettings task) mempty (fromClassDiagram cd) path)
     `M.traverseWithKey` diagrams task
   paragraph $ translate $ do
     english [iii|
@@ -625,8 +626,9 @@ getODsFor
   -> m (Maybe (Map Int Cd, Map Char ([Int], AlloyInstance)))
 getODsFor _      []       = return Nothing
 getODsFor config (cd:cds) = do
-  [cd1, cd2, cd3] <- map changeClassDiagram . instanceChangesAndCds
+  cds' <- instanceChangesAndCds
     <$> (nameClassDiagramInstance <=< fromInstanceWithNameOverlap) cd
+  [cd1, cd2, cd3] <- mapM validChangeClassDiagram cds'
   alloyInstances <- getODInstances config cd1 cd2 cd3 $ length $ classNames cd1
   maybeRandomInstances <- takeRandomInstances alloyInstances
   case maybeRandomInstances of

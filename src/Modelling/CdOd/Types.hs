@@ -12,11 +12,15 @@ module Modelling.CdOd.Types (
   AnnotatedCd,
   AnnotatedClassDiagram (..),
   Annotation (..),
+  AnyCd,
+  AnyClassDiagram (..),
+  AnyRelationship,
   Cd,
   CdDrawSettings (..),
   CdMutation (..),
   ClassConfig (..),
   ClassDiagram (..),
+  InvalidRelationship (..),
   LimitedLinking (..),
   Link (..),
   Object (..),
@@ -29,10 +33,13 @@ module Modelling.CdOd.Types (
   Relationship (..),
   RelationshipMutation (..),
   RelationshipProperties (..),
+  WrongRelationshipException (..),
   allCdMutations,
+  anyAssociationNames,
+  anyRelationshipName,
   anyThickEdge,
   associationNames,
-  calculateThickRelationships,
+  calculateThickAnyRelationships,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
@@ -42,6 +49,7 @@ module Modelling.CdOd.Types (
   defaultDrawSettings,
   defaultOmittedDefaultMultiplicities,
   defaultProperties,
+  fromClassDiagram,
   isIllegal,
   isObjectDiagramRandomisable,
   linkNames,
@@ -54,8 +62,10 @@ module Modelling.CdOd.Types (
   reverseAssociation,
   shuffleAnnotatedClassAndConnectionOrder,
   shuffleClassAndConnectionOrder,
+  shuffleAnyClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   toPropertySet,
+  toValidCd,
   towardsValidProperties,
   unannotateCd,
   -- * Phrasing
@@ -74,12 +84,17 @@ import Modelling.Auxiliary.Common       (lowerFirst)
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Enumerable               (deriveEnumerable)
 import Control.Enumerable.Values        (allValues)
-import Control.Exception                (Exception, throw)
+import Control.Exception                (Exception)
 import Control.Monad                    (void)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.Random             (MonadRandom)
 import Control.OutputCapable.Blocks     (ArticleToUse (..))
 import Data.Bifunctor                   (Bifunctor (bimap, first, second))
+import Data.Bifunctor.TH (
+  deriveBifoldable,
+  deriveBifunctor,
+  deriveBitraversable,
+  )
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
@@ -95,6 +110,7 @@ import Data.Maybe (
 import Data.Set                         (Set)
 import Data.String.Interpolate          (iii)
 import Data.Tuple.Extra                 (both, dupe)
+import Data.Typeable                    (Typeable)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
 
@@ -303,12 +319,59 @@ instance Bitraversable Relationship where
       <$> f subClass
       <*> f superClass
 
+data InvalidRelationship className relationshipName
+  = InvalidInheritance {
+    invalidSubClass :: !(LimitedLinking className),
+    invalidSuperClass :: !(LimitedLinking className)
+    }
+  deriving (Eq, Functor, Generic, Ord, Read, Show)
+
+$(deriveBifunctor ''InvalidRelationship)
+$(deriveBifoldable ''InvalidRelationship)
+$(deriveBitraversable ''InvalidRelationship)
+
+type AnyRelationship className relationshipName
+  = Either
+    (InvalidRelationship className relationshipName)
+    (Relationship className relationshipName)
+
 relationshipName :: Relationship c r -> Maybe r
 relationshipName x = case x of
   Association {..} -> Just associationName
   Aggregation {..} -> Just aggregationName
   Composition {..} -> Just compositionName
   Inheritance {}   -> Nothing
+
+invalidRelationshipName
+  :: InvalidRelationship className relationshipName
+  -> Maybe relationshipName
+invalidRelationshipName = \case
+  InvalidInheritance {} -> Nothing
+
+anyRelationshipName
+  :: AnyRelationship className relationshipName
+  -> Maybe relationshipName
+anyRelationshipName = either invalidRelationshipName relationshipName
+
+isRelationshipValid
+  :: Eq className
+  => Relationship className relationshipName
+  -> Bool
+isRelationshipValid = \case
+  Association {..} ->
+    validLimit associationFrom && validLimit associationTo
+  Aggregation {..} ->
+    validLimit aggregationPart && validLimit aggregationWhole
+  Composition {..} ->
+    validLimit compositionPart && validComposition (limits compositionWhole)
+  Inheritance {..} ->
+    subClass /= superClass
+  where
+    validLimit = validLimit' . limits
+    validLimit' (x, Nothing) = x >= 0
+    validLimit' (x, Just y) = x >= 0 && y > 0 && y >= x
+    validComposition (_, Nothing) = False
+    validComposition limit@(_, Just y) = y <= 1 && validLimit' limit
 
 reverseAssociation :: Relationship c r -> Relationship c r
 reverseAssociation x = case x of
@@ -332,31 +395,37 @@ data AnnotatedClassDiagram relationshipAnnotation className relationshipName
     annotatedClasses
       :: [className],
     annotatedRelationships
-      :: [Annotation relationshipAnnotation (Relationship className relationshipName)]
+      :: [Annotation relationshipAnnotation (AnyRelationship className relationshipName)]
     }
-  deriving (Eq, Functor, Generic, Read, Show)
+  deriving (Eq, Generic, Read, Show)
 
 instance Bifunctor (AnnotatedClassDiagram annotation) where
   bimap f g AnnotatedClassDiagram {..} = AnnotatedClassDiagram {
     annotatedClasses  = map f annotatedClasses,
-    annotatedRelationships = map (fmap (bimap f g)) annotatedRelationships
+    annotatedRelationships = map
+      (fmap (bimap (bimap f g) (bimap f g)))
+      annotatedRelationships
     }
 
 instance Bifoldable (AnnotatedClassDiagram annotation) where
   bifoldMap f g AnnotatedClassDiagram {..} = foldMap f annotatedClasses
-    <> foldMap (foldMap (bifoldMap f g)) annotatedRelationships
+    <> foldMap
+      (foldMap $ bifoldMap (bifoldMap f g) (bifoldMap f g))
+      annotatedRelationships
 
 instance Bitraversable (AnnotatedClassDiagram annotation) where
   bitraverse f g AnnotatedClassDiagram {..} = AnnotatedClassDiagram
     <$> traverse f annotatedClasses
-    <*> traverse (traverse (bitraverse f g)) annotatedRelationships
+    <*> traverse
+      (traverse (bitraverse (bitraverse f g) (bitraverse f g)))
+       annotatedRelationships
 
 unannotateCd
   :: AnnotatedClassDiagram relationshipAnnotation className relationshipName
-  -> ClassDiagram className relationshipName
-unannotateCd AnnotatedClassDiagram {..} = ClassDiagram {
-  classNames = annotatedClasses,
-  relationships = map annotated annotatedRelationships
+  -> AnyClassDiagram className relationshipName
+unannotateCd AnnotatedClassDiagram {..} = AnyClassDiagram {
+  anyClassNames = annotatedClasses,
+  anyRelationships = map annotated annotatedRelationships
   }
 
 data ClassDiagram className relationshipName = ClassDiagram {
@@ -380,8 +449,62 @@ instance Bitraversable ClassDiagram where
     <$> traverse f classNames
     <*> traverse (bitraverse f g) relationships
 
+data AnyClassDiagram className relationshipName = AnyClassDiagram {
+  anyClassNames           :: ![className],
+  anyRelationships        :: ![AnyRelationship className relationshipName]
+  }
+  deriving (Eq, Generic, Read, Show)
+
+$(deriveBifunctor ''AnyClassDiagram)
+$(deriveBifoldable ''AnyClassDiagram)
+$(deriveBitraversable ''AnyClassDiagram)
+
+fromClassDiagram
+  :: ClassDiagram className relationshipName
+  -> AnyClassDiagram className relationshipName
+fromClassDiagram ClassDiagram {..} = AnyClassDiagram {
+  anyClassNames = classNames,
+  anyRelationships = map Right relationships
+  }
+
 type Cd = ClassDiagram String String
+type AnyCd = AnyClassDiagram String String
 type AnnotatedCd annotation = AnnotatedClassDiagram annotation String String
+
+toValidCd
+  :: (
+    Eq className,
+    MonadThrow m,
+    Show className,
+    Show relationshipName,
+    Typeable className,
+    Typeable relationshipName
+    )
+  => AnyClassDiagram className relationshipName
+  -> m (ClassDiagram className relationshipName)
+toValidCd AnyClassDiagram {..} = do
+  relationships <- mapM toRelationship anyRelationships
+  pure ClassDiagram {
+    classNames = anyClassNames,
+    ..
+    }
+  where
+    toRelationship anyRelationship
+      | Right r <- anyRelationship
+      , isRelationshipValid r = pure r
+      | otherwise = throwM $ UnexpectedInvalidRelationship anyRelationship
+
+newtype WrongRelationshipException className relationshipName
+  = UnexpectedInvalidRelationship (AnyRelationship className relationshipName)
+  deriving Show
+
+instance (
+  Show className,
+  Show relationshipName,
+  Typeable className,
+  Typeable relationshipName
+  )
+  => Exception (WrongRelationshipException className relationshipName)
 
 shuffleAnnotatedClassAndConnectionOrder
   :: MonadRandom m
@@ -390,6 +513,14 @@ shuffleAnnotatedClassAndConnectionOrder
 shuffleAnnotatedClassAndConnectionOrder AnnotatedClassDiagram {..} = AnnotatedClassDiagram
   <$> shuffleM annotatedClasses
   <*> shuffleM annotatedRelationships
+
+shuffleAnyClassAndConnectionOrder
+  :: MonadRandom m
+  => AnyCd
+  -> m AnyCd
+shuffleAnyClassAndConnectionOrder AnyClassDiagram {..} = AnyClassDiagram
+  <$> shuffleM anyClassNames
+  <*> shuffleM anyRelationships
 
 shuffleClassAndConnectionOrder :: MonadRandom m => Cd -> m Cd
 shuffleClassAndConnectionOrder ClassDiagram {..} = ClassDiagram
@@ -828,6 +959,11 @@ toPropertySet RelationshipProperties {..} =
 associationNames :: Cd -> [String]
 associationNames = mapMaybe relationshipName . relationships
 
+anyAssociationNames :: AnyCd -> [String]
+anyAssociationNames = mapMaybe names .  anyRelationships
+  where
+    names = either invalidRelationshipName relationshipName
+
 classNamesOd
   :: Ord className
   => ObjectDiagram objectName className linkName
@@ -885,7 +1021,7 @@ renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
           objectName = lowerFirst className' ++ objectNamePostfix,
           objectClass = className'
           }
-        Nothing -> throw ObjectNameNotMatchingToObjectClass
+        Nothing -> throwM ObjectNameNotMatchingToObjectClass
 
 canShuffleClassNames :: ObjectDiagram String String linkNames -> Bool
 canShuffleClassNames ObjectDiagram {..} =
@@ -906,23 +1042,48 @@ isObjectDiagramRandomisable od
 anyThickEdge :: Cd -> Bool
 anyThickEdge = any fst . calculateThickRelationships
 
+calculateThickAnyRelationships
+  :: AnyCd
+  -> [(Bool, AnyRelationship String String)]
+calculateThickAnyRelationships AnyClassDiagram {..} =
+  calculateThickRelationshipsHelper
+  toRelationship
+  anyClassNames
+  anyRelationships
+  where
+    toRelationship = either (const Nothing) Just
+
 calculateThickRelationships :: Cd -> [(Bool, Relationship String String)]
 calculateThickRelationships ClassDiagram {..} =
-  map (first isNonInheritanceThick . dupe) relationships
+  calculateThickRelationshipsHelper
+  Just
+  classNames
+  relationships
+
+calculateThickRelationshipsHelper
+  :: (relationship -> Maybe (Relationship String String))
+  -> [String]
+  -> [relationship]
+  -> [(Bool, relationship)]
+calculateThickRelationshipsHelper toRelationship allClassNames allRelationships =
+  map (first (isThick . toRelationship) . dupe) allRelationships
   where
-    classesWithSubclasses = map (\name -> (name, subs [] name)) classNames
+    classesWithSubclasses = map (\name -> (name, subs [] name)) allClassNames
       where
         subs seen name
           | name `elem` seen = []
           | otherwise = name : concatMap
               (subs (name:seen) . subClass)
               (filter ((name ==) . superClass) inheritances)
+    relevantRelationships = mapMaybe toRelationship allRelationships
     inheritances = filter
       (\case Inheritance {} -> True; _ -> False)
-      relationships
+      relevantRelationships
     nonInheritancesBothWays = concatMap
       (map (both linking) . nonInheritanceBothWays)
-      relationships
+      relevantRelationships
+    isThick Nothing = False
+    isThick (Just x) = isNonInheritanceThick x
     isNonInheritanceThick r = case r of
       Inheritance {} -> False
       Association {..} -> shouldBeThick

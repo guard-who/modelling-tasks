@@ -1,5 +1,6 @@
 module Modelling.CdOd.Generate (
   generateCds,
+  instanceToAnyCd,
   instanceToCd,
   ) where
 
@@ -16,12 +17,15 @@ import Modelling.CdOd.CdAndChanges.Transform (
   transformNoChanges,
   )
 import Modelling.CdOd.Types (
+  AnyCd,
+  AnyClassDiagram (..),
   Cd,
   ClassConfig (..),
-  ClassDiagram (..),
   RelationshipProperties,
-  relationshipName,
+  anyClassNames,
+  anyRelationshipName,
   renameClassesAndRelationships,
+  toValidCd,
   )
 
 import Control.Monad.Catch              (MonadThrow)
@@ -43,11 +47,14 @@ generateCds withNonTrivialInheritance config props maxInstances to = do
   alloyInstances <- getInstances maxInstances to alloyCode
   shuffleM alloyInstances
 
-instanceToCd :: MonadThrow m => AlloyInstance -> m Cd
-instanceToCd alloyInstance = do
+instanceToAnyCd :: MonadThrow m => AlloyInstance -> m AnyCd
+instanceToAnyCd alloyInstance = do
   cd <- instanceClassDiagram <$> fromInstance alloyInstance
-  let classRenamingMap = BM.fromList $ zip (classNames cd) $ map pure ['A'..]
-      relationshipNames = mapMaybe relationshipName $ relationships cd
+  let classRenamingMap = BM.fromList $ zip (anyClassNames cd) $ map pure ['A'..]
+      relationshipNames = mapMaybe anyRelationshipName $ anyRelationships cd
       relationshipRenamingMap =
         BM.fromList $ zip relationshipNames $ map pure ['z', 'y' ..]
   renameClassesAndRelationships classRenamingMap relationshipRenamingMap cd
+
+instanceToCd :: MonadThrow m => AlloyInstance -> m Cd
+instanceToCd alloyInstance = instanceToAnyCd alloyInstance >>= toValidCd

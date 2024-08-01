@@ -11,6 +11,8 @@ import Modelling.Types (
   Change (..),
   )
 import Modelling.CdOd.Types (
+  AnyRelationship,
+  InvalidRelationship (..),
   LimitedLinking (..),
   NonInheritancePhrasing (..),
   Relationship (..),
@@ -24,7 +26,7 @@ phraseChange
   :: ArticleToUse
   -> Bool
   -> Bool
-  -> Change (Relationship String String)
+  -> Change (AnyRelationship String String)
   -> String
 phraseChange article byName withDir c = case (add c, remove c) of
   (Nothing, Nothing) -> "change nothing"
@@ -51,7 +53,7 @@ phraseRelationship
   :: ArticleToUse
   -> Bool
   -> Bool
-  -> Relationship String String
+  -> AnyRelationship String String
   -> String
 phraseRelationship article byName withDir = phraseRelation article phrasing
   where
@@ -60,53 +62,59 @@ phraseRelationship article byName withDir = phraseRelation article phrasing
 phraseRelation
   :: ArticleToUse
   -> NonInheritancePhrasing
-  -> Relationship String String
+  -> AnyRelationship String String
   -> String
-phraseRelation article _ Inheritance {..} = [iii|
-  #{vowelArticle article} inheritance
-  where #{subClass} inherits from #{superClass}
-  |]
-phraseRelation _ ByName Association {..} = "association " ++ associationName
-phraseRelation _ ByName Aggregation {..} = "aggregation " ++ aggregationName
-phraseRelation _ ByName Composition {..} = "composition " ++ compositionName
-phraseRelation article Lengthy Association {..}
-  | associationFrom == associationTo = [iii|
+phraseRelation article = curry $ \case
+  (_, Left InvalidInheritance {..}) -> [iii|
+    #{vowelArticle article} inheritance
+    where #{linking invalidSubClass} inherits from #{linking invalidSuperClass}
+    and #{participations invalidSubClass invalidSuperClass}
+    |]
+  (_, Right Inheritance {..}) -> [iii|
+    #{vowelArticle article} inheritance
+    where #{subClass} inherits from #{superClass}
+    |]
+  (ByName, Right Association {..}) -> "association " ++ associationName
+  (ByName, Right Aggregation {..}) -> "aggregation " ++ aggregationName
+  (ByName, Right Composition {..}) -> "composition " ++ compositionName
+  (Lengthy, Right Association {..})
+    | linking associationFrom == linking associationTo -> [iii|
     #{consonantArticle article} self-association for #{linking associationFrom}
     where #{participates (limits associationFrom) "it"} at one end
     and #{phraseLimit $ limits associationTo} at the other end
     |]
-  | otherwise  = [iii|
+    | otherwise -> [iii|
     #{vowelArticle article} association
     #{participations associationFrom associationTo}
     |]
-phraseRelation article ByDirection Association {..}
-  | associationFrom == associationTo = [iii|
+  (ByDirection, Right Association {..})
+    | linking associationFrom == linking associationTo -> [iii|
     #{consonantArticle article} self-association for #{linking associationFrom}
     where #{participates (limits associationFrom) "it"} at its beginning
     and #{phraseLimit $ limits associationTo} at its arrow end
     |]
-  | otherwise = [iii|
+    | otherwise -> [iii|
     #{vowelArticle article} association from #{linking associationFrom}
     to #{linking associationTo}
     #{participations associationFrom associationTo}
     |]
-phraseRelation article _ Aggregation {..}
-  | aggregationPart == aggregationWhole = [iii|
+  (_, Right Aggregation {..})
+    | linking aggregationPart == linking aggregationWhole -> [iii|
     #{consonantArticle article} self-aggregation
     #{selfParticipatesPartWhole aggregationPart aggregationWhole}
     |]
-  | otherwise = [iii|
+    | otherwise -> [iii|
     #{consonantArticle article} relationship
     that makes #{linking aggregationWhole}
     an aggregation of #{linking aggregationPart}s
     #{participations aggregationWhole aggregationPart}
     |]
-phraseRelation article _ Composition {..}
-  | compositionPart == compositionWhole = [iii|
+  (_, Right Composition {..})
+    | linking compositionPart == linking compositionWhole -> [iii|
     #{consonantArticle article} self-composition
     #{selfParticipatesPartWhole compositionPart compositionWhole}
     |]
-  | otherwise = [iii|
+    | otherwise -> [iii|
     #{consonantArticle article} relationship
     that makes #{linking compositionWhole}
     a composition of #{linking compositionPart}s

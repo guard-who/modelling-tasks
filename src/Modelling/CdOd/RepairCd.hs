@@ -96,6 +96,9 @@ import Modelling.CdOd.Phrasing (
   )
 import Modelling.CdOd.Types (
   Annotation (..),
+  AnyCd,
+  AnyClassDiagram (..),
+  AnyRelationship,
   ArticlePreference (..),
   Cd,
   CdDrawSettings (CdDrawSettings),
@@ -108,7 +111,8 @@ import Modelling.CdOd.Types (
   Relationship (..),
   RelationshipProperties (..),
   allCdMutations,
-  associationNames,
+  anyAssociationNames,
+  anyRelationshipName,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
@@ -116,12 +120,14 @@ import Modelling.CdOd.Types (
   classNames,
   defaultOmittedDefaultMultiplicities,
   defaultProperties,
+  fromClassDiagram,
   maxObjects,
-  relationshipName,
   renameClassesAndRelationships,
   reverseAssociation,
+  shuffleAnyClassAndConnectionOrder,
   shuffleClassAndConnectionOrder,
   toArticleToUse,
+  toValidCd,
   )
 import Modelling.Types                  (Change (..))
 
@@ -171,11 +177,11 @@ data PropertyChange = PropertyChange {
 toProperty :: PropertyChange -> RelationshipProperties
 toProperty p = operation p defaultProperties
 
-isValid :: PropertyChange -> Bool
-isValid p = validityChange p True
+isValidChange :: PropertyChange -> Bool
+isValidChange p = validityChange p True
 
 type RelationshipChangeWithArticle
-  = Annotation ArticleToUse (Change (Relationship String String))
+  = Annotation ArticleToUse (Change (AnyRelationship String String))
 
 type CdChangeAndCd = InValidOption
   (AnnotatedChangeAndCd ArticleToUse String String)
@@ -184,7 +190,7 @@ type CdChangeAndCd = InValidOption
 
 type RelationshipChange = InValidOption
   RelationshipChangeWithArticle
-  Cd
+  AnyCd
   Cd
 
 data InValidOption option forInvalidity forValidity = InValidOption {
@@ -376,8 +382,8 @@ repairCdFeedback path drawSettings xs x cdChange =
       | x `elem` xs -> notCorrect *> makesIncorrect *> showCd cd
       | otherwise   -> correct *> makesIncorrect *> showCd cd
     Right cd
-      | x `elem` xs -> correct *> makesCorrect *> showCd cd
-      | otherwise   -> notCorrect *> makesCorrect *> showCd cd
+      | x `elem` xs -> correct *> makesCorrect *> showCd (fromClassDiagram cd)
+      | otherwise -> notCorrect *> makesCorrect *> showCd (fromClassDiagram cd)
   where
     correct = paragraph $ translate $ do
       english [iii|Your answer about change #{x} is correct.|]
@@ -403,7 +409,7 @@ repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
 
 data RepairCdInstance = RepairCdInstance {
     changes        :: Map Int RelationshipChange,
-    classDiagram   :: Cd,
+    classDiagram   :: AnyCd,
     showExtendedFeedback :: Bool,
     showSolution   :: Bool,
     withDirections :: Bool,
@@ -433,14 +439,14 @@ classAndNonInheritanceNames :: RepairCdInstance -> ([String], [String])
 classAndNonInheritanceNames inst =
   let cd = classDiagram inst
       allChs = M.elems $ changes inst
-      cds = map (either id id . hint) allChs
+      cds = map (either id fromClassDiagram . hint) allChs
       chs = map option allChs
-      names = nubOrd $ classNames cd
-        ++ concatMap classNames cds
-      nonInheritances = nubOrd $ associationNames cd
-        ++ mapMaybe (add . annotated >=> relationshipName) chs
-        ++ mapMaybe (remove . annotated >=> relationshipName) chs
-        ++ concatMap associationNames cds
+      names = nubOrd $ anyClassNames cd
+        ++ concatMap anyClassNames cds
+      nonInheritances = nubOrd $ anyAssociationNames cd
+        ++ mapMaybe (add . annotated >=> anyRelationshipName) chs
+        ++ mapMaybe (remove . annotated >=> anyRelationshipName) chs
+        ++ concatMap anyAssociationNames cds
   in (names, nonInheritances)
 
 instance Randomise RepairCdInstance where
@@ -453,10 +459,10 @@ instance Randomise RepairCdInstance where
 
 instance RandomiseLayout RepairCdInstance where
   randomiseLayout RepairCdInstance {..} = do
-    cd <- shuffleClassAndConnectionOrder classDiagram
+    cd <- shuffleAnyClassAndConnectionOrder classDiagram
     changes' <- mapInValidOptionM
       pure
-      shuffleClassAndConnectionOrder
+      shuffleAnyClassAndConnectionOrder
       shuffleClassAndConnectionOrder
       `mapM` changes
     return RepairCdInstance {
@@ -491,9 +497,13 @@ renameInstance inst names' nonInheritances' = do
       bmNames  = BM.fromList $ zip names names'
       bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
       renameCd = renameClassesAndRelationships bmNames bmNonInheritances
+      renameAnyCd = renameClassesAndRelationships bmNames bmNonInheritances
       renameEdge = renameClassesAndRelationships bmNames bmNonInheritances
-  cd <- renameCd $ classDiagram inst
-  chs <- mapM (mapInValidOptionM (mapM $ mapM renameEdge) renameCd renameCd)
+      renameAnyEdge = renameClassesAndRelationships bmNames bmNonInheritances
+      renameEdges = mapM $ mapM $ bimapM renameAnyEdge renameEdge
+  cd <- renameAnyCd $ classDiagram inst
+  chs <- mapM
+    (mapInValidOptionM renameEdges renameAnyCd renameCd)
     $ changes inst
   return $ RepairCdInstance {
     changes        = chs,
@@ -519,7 +529,7 @@ repairCd config segment seed = flip evalRandT g $ do
     (articleToUse config)
     (maxInstances config)
     (timeout config)
-  let chs' = map cdAsHint chs
+  chs' <- lift $ mapM cdAsHint chs
   shuffleEverything $ RepairCdInstance
     (M.fromAscList $ zip [1..] chs')
     cd
@@ -529,32 +539,33 @@ repairCd config segment seed = flip evalRandT g $ do
     (printNames config && useNames config)
   where
     g = mkStdGen $ (segment +) $ 4 * seed
-    cdAsHint x =
-      let cd _ = annotatedChangeClassDiagram $ option x
-      in mapInValidOption annotatedRelationshipChange cd cd x
+    cdAsHint x = do
+      let cd _ = pure $ annotatedChangeClassDiagram $ option x
+          validCd _ = toValidCd $ annotatedChangeClassDiagram $ option x
+      mapInValidOptionM (pure . annotatedRelationshipChange) cd validCd x
 
 defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
   changes = M.fromAscList [
     (1, InValidOption {
-      hint = Left $ ClassDiagram {
-        classNames = ["A", "D", "B", "C"],
-        relationships = [
-          Composition {
+      hint = Left $ AnyClassDiagram {
+        anyClassNames = ["A", "D", "B", "C"],
+        anyRelationships = [
+          Right Composition {
             compositionName = "x",
             compositionPart =
               LimitedLinking {linking = "B", limits = (0, Just 1)},
             compositionWhole =
               LimitedLinking {linking = "D", limits = (0, Just 1)}
             },
-          Composition {
+          Right Composition {
             compositionName = "v",
             compositionPart =
               LimitedLinking {linking = "A", limits = (1, Just 0)},
             compositionWhole =
               LimitedLinking {linking = "C", limits = (0, Just 1)}
             },
-          Aggregation {
+          Right Aggregation {
             aggregationName = "z",
             aggregationPart =
               LimitedLinking {linking = "A", limits = (0, Just 1)},
@@ -566,7 +577,7 @@ defaultRepairCdInstance = RepairCdInstance {
       option = Annotation {
         annotated = Change {
           add = Nothing,
-          remove = Just $ Composition {
+          remove = Just $ Right Composition {
             compositionName = "y",
             compositionPart = LimitedLinking {linking = "D", limits = (0, Just 2)},
             compositionWhole = LimitedLinking {linking = "A", limits = (0, Just 1)}
@@ -611,12 +622,12 @@ defaultRepairCdInstance = RepairCdInstance {
         },
       option = Annotation {
         annotated = Change {
-          add = Just $ Composition {
+          add = Just $ Right Composition {
             compositionName = "w",
             compositionPart = LimitedLinking {linking = "A", limits = (1, Just 1)},
             compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
             },
-          remove = Just $ Composition {
+          remove = Just $ Right Composition {
             compositionName = "v",
             compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
             compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
@@ -655,7 +666,7 @@ defaultRepairCdInstance = RepairCdInstance {
       option = Annotation {
         annotated = Change {
           add = Nothing,
-          remove = Just $ Composition {
+          remove = Just $ Right Composition {
             compositionName = "v",
             compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
             compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
@@ -665,38 +676,38 @@ defaultRepairCdInstance = RepairCdInstance {
         }
       }),
     (4, InValidOption {
-      hint = Left $ ClassDiagram {
-        classNames = ["A", "D", "B", "C"],
-        relationships = [
-          Association {
+      hint = Left $ AnyClassDiagram {
+        anyClassNames = ["A", "D", "B", "C"],
+        anyRelationships = [
+          Right Association {
             associationName = "u",
             associationFrom =
               LimitedLinking {linking = "C", limits = (2, Just 2)},
             associationTo =
               LimitedLinking {linking = "A", limits = (2, Just 2)}
             },
-          Composition {
+          Right Composition {
             compositionName = "y",
             compositionPart =
               LimitedLinking {linking = "D", limits = (0, Just 2)},
             compositionWhole =
               LimitedLinking {linking = "A", limits = (0, Just 1)}
             },
-          Aggregation {
+          Right Aggregation {
             aggregationName = "z",
             aggregationPart =
               LimitedLinking {linking = "A", limits = (0, Just 1)},
             aggregationWhole =
               LimitedLinking {linking = "B", limits = (0, Just 1)}
             },
-          Composition {
+          Right Composition {
             compositionName = "v",
             compositionPart =
               LimitedLinking {linking = "A", limits = (1, Just 0)},
             compositionWhole =
               LimitedLinking {linking = "C", limits = (0, Just 1)}
             },
-          Composition {
+          Right Composition {
             compositionName = "x",
             compositionPart =
               LimitedLinking {linking = "B", limits = (0, Just 1)},
@@ -707,7 +718,7 @@ defaultRepairCdInstance = RepairCdInstance {
         },
       option = Annotation {
         annotated = Change {
-          add = Just $ Association {
+          add = Just $ Right Association {
             associationName = "u",
             associationFrom = LimitedLinking {linking = "C", limits = (2, Just 2)},
             associationTo = LimitedLinking {linking = "A", limits = (2, Just 2)}
@@ -718,25 +729,25 @@ defaultRepairCdInstance = RepairCdInstance {
         }
       })
     ],
-  classDiagram = ClassDiagram {
-    classNames = ["D", "A", "C", "B"],
-    relationships = [
-      Composition {
+  classDiagram = AnyClassDiagram {
+    anyClassNames = ["D", "A", "C", "B"],
+    anyRelationships = [
+      Right Composition {
         compositionName = "x",
         compositionPart = LimitedLinking {linking = "B", limits = (0, Just 1)},
         compositionWhole = LimitedLinking {linking = "D", limits = (0, Just 1)}
         },
-      Aggregation {
+      Right Aggregation {
         aggregationName = "z",
         aggregationPart = LimitedLinking {linking = "A", limits = (0, Just 1)},
         aggregationWhole = LimitedLinking {linking = "B", limits = (0, Just 1)}
         },
-      Composition {
+      Right Composition {
         compositionName = "v",
         compositionPart = LimitedLinking {linking = "A", limits = (1, Just 0)},
         compositionWhole = LimitedLinking {linking = "C", limits = (0, Just 1)}
         },
-      Composition {
+      Right Composition {
         compositionName = "y",
         compositionPart = LimitedLinking {linking = "D", limits = (0, Just 2)},
         compositionWhole = LimitedLinking {linking = "A", limits = (0, Just 1)}
@@ -796,7 +807,7 @@ repairIncorrect
   -> ArticlePreference
   -> Maybe Integer
   -> Maybe Int
-  -> RandT g m (Cd, [CdChangeAndCd])
+  -> RandT g m (AnyCd, [CdChangeAndCd])
 repairIncorrect cdProperties config cdMutations objectProperties preference maxInstances to = do
   changeSets <- shuffleM $ diversify $ possibleChanges cdProperties
   tryNextChangeSet changeSets
@@ -833,7 +844,10 @@ repairIncorrect cdProperties config cdMutations objectProperties preference maxI
           return (cd, zipWith InValidOption odsAndCdWithArticle chs')
     addArticle = (`Annotation` article)
     getOdOrImprovedCd propertyChange change
-      | isValid propertyChange = fmap Right <$> getOD (changeClassDiagram change)
+      | isValidChange propertyChange
+      = do
+        cd <- toValidCd $ changeClassDiagram change
+        fmap Right <$> getOD cd
       | otherwise = fmap Left
         <$> getImprovedCd (changeClassDiagram change) (toProperty propertyChange)
     getImprovedCd cd properties = do

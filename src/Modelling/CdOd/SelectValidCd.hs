@@ -1,6 +1,7 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -69,26 +70,26 @@ import Modelling.CdOd.RepairCd (
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Annotation (..),
+  AnyCd,
+  AnyClassDiagram (..),
   ArticlePreference (..),
-  Cd,
   CdDrawSettings (CdDrawSettings),
   CdMutation,
   ClassConfig (..),
-  ClassDiagram (..),
+  InvalidRelationship (..),
   Object (..),
   ObjectDiagram (..),
   ObjectProperties (..),
   Od,
   Relationship (..),
   allCdMutations,
-  associationNames,
+  anyAssociationNames,
+  anyRelationshipName,
   checkCdDrawSettings,
   checkCdMutations,
-  classNames,
   defaultOmittedDefaultMultiplicities,
   linkNames,
-  shuffleClassAndConnectionOrder,
-  relationshipName,
+  shuffleAnyClassAndConnectionOrder,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
   shuffleObjectAndLinkOrder,
@@ -115,6 +116,7 @@ import Control.OutputCapable.Blocks (
   )
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
+import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight, partitionEithers)
 import Data.Foldable                    (for_)
@@ -193,7 +195,7 @@ checkSelectValidCdConfig config@SelectValidCdConfig {..}
   <|> checkCdMutations (allowedCdMutations config)
 
 type CdChange = InValidOption
-  Cd
+  AnyCd
   RelationshipChangeWithArticle
   Od
 
@@ -368,9 +370,11 @@ selectValidCdFeedback path drawSettings xs x cdChange =
     notCorrect = paragraph $ translate $ do
       english [iii|Your answer to class diagram #{x} is not correct.|]
       german [iii|Ihre Antwort zu Klassendiagramm #{x} ist nicht richtig.|]
-    isInheritance Inheritance {} = True
-    isInheritance _ = False
-    onlyInheritances = all isInheritance . relationships
+    isInheritance = \case
+      Right Inheritance {} -> True
+      Right {} -> False
+      Left InvalidInheritance {} -> True
+    onlyInheritances = all isInheritance . anyRelationships
     useNames = drawSettings {
       T.printNames = True
       }
@@ -431,7 +435,7 @@ instance Randomise SelectValidCdInstance where
 instance RandomiseLayout SelectValidCdInstance where
   randomiseLayout SelectValidCdInstance {..} = do
     cds <- mapInValidOptionM
-      shuffleClassAndConnectionOrder
+      shuffleAnyClassAndConnectionOrder
       pure
       shuffleObjectAndLinkOrder
       `mapM` classDiagrams
@@ -470,7 +474,12 @@ shuffleCdChange inst x = do
       renameCd = renameClassesAndRelationships bmNames bmNonInheritances
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmNonInheritances
       renameEdge = renameClassesAndRelationships bmNames bmNonInheritances
-  mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd x
+      renameEdge' = renameClassesAndRelationships bmNames bmNonInheritances
+  mapInValidOptionM
+    renameCd
+    (mapM $ mapM $ bimapM renameEdge renameEdge')
+    renameOd
+    x
   where
     (names, nonInheritances) = classAndNonInheritanceNames inst
 
@@ -492,10 +501,10 @@ classAndNonInheritanceNames :: SelectValidCdInstance -> ([String], [String])
 classAndNonInheritanceNames inst =
   let cds = classDiagrams inst
       (improves, evidences) = partitionEithers $ map hint $ M.elems cds
-      names = nubOrd $ concatMap (classNames . option) cds
-      nonInheritances = nubOrd $ concatMap (associationNames . option) cds
-        ++ mapMaybe (add . annotated >=> relationshipName) improves
-        ++ mapMaybe (remove . annotated >=> relationshipName) improves
+      names = nubOrd $ concatMap (anyClassNames . option) cds
+      nonInheritances = nubOrd $ concatMap (anyAssociationNames . option) cds
+        ++ mapMaybe (add . annotated >=> anyRelationshipName) improves
+        ++ mapMaybe (remove . annotated >=> anyRelationshipName) improves
         ++ concatMap linkNames evidences
   in (names, nonInheritances)
 
@@ -511,9 +520,10 @@ renameInstance inst names' nonInheritances' = do
       bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
       renameCd = renameClassesAndRelationships bmNames bmNonInheritances
       renameEdge = renameClassesAndRelationships bmNames bmNonInheritances
+      renameEdge' = renameClassesAndRelationships bmNames bmNonInheritances
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmNonInheritances
   cds <- mapM
-    (mapInValidOptionM renameCd (mapM $ mapM renameEdge) renameOd)
+    (mapInValidOptionM renameCd (mapM $ mapM $ bimapM renameEdge renameEdge') renameOd)
     $ classDiagrams inst
   return $ SelectValidCdInstance {
     classDiagrams   = cds,
@@ -536,12 +546,12 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
           ],
         links = []
         },
-      option = ClassDiagram {
-        classNames = ["A", "D", "B", "C"],
-        relationships = [
-          Inheritance {subClass = "B", superClass = "A"},
-          Inheritance {subClass = "C", superClass = "A"},
-          Inheritance {subClass = "D", superClass = "C"}
+      option = AnyClassDiagram {
+        anyClassNames = ["A", "D", "B", "C"],
+        anyRelationships = [
+          Right Inheritance {subClass = "B", superClass = "A"},
+          Right Inheritance {subClass = "C", superClass = "A"},
+          Right Inheritance {subClass = "D", superClass = "C"}
           ]
         }
       }),
@@ -555,12 +565,12 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
           ],
         links = []
         },
-      option = ClassDiagram {
-        classNames = ["C", "A", "D", "B"],
-        relationships = [
-          Inheritance {subClass = "A", superClass = "B"},
-          Inheritance {subClass = "D", superClass = "C"},
-          Inheritance {subClass = "C", superClass = "A"}
+      option = AnyClassDiagram {
+        anyClassNames = ["C", "A", "D", "B"],
+        anyRelationships = [
+          Right Inheritance {subClass = "A", superClass = "B"},
+          Right Inheritance {subClass = "D", superClass = "C"},
+          Right Inheritance {subClass = "C", superClass = "A"}
           ]
         }
       }),
@@ -568,16 +578,16 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
       hint = Left $ Annotation {
           annotated = Change {
             add = Nothing,
-            remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+            remove = Just $ Right Inheritance {subClass = "A", superClass = "B"}
             },
           annotation = DefiniteArticle
         },
-      option = ClassDiagram {
-        classNames = ["A", "C", "B", "D"],
-        relationships = [
-          Inheritance {subClass = "C", superClass = "A"},
-          Inheritance {subClass = "B", superClass = "A"},
-          Inheritance {subClass = "A", superClass = "B"}
+      option = AnyClassDiagram {
+        anyClassNames = ["A", "C", "B", "D"],
+        anyRelationships = [
+          Right Inheritance {subClass = "C", superClass = "A"},
+          Right Inheritance {subClass = "B", superClass = "A"},
+          Right Inheritance {subClass = "A", superClass = "B"}
           ]
         }
       }),
@@ -585,16 +595,16 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
       hint = Left $ Annotation {
           annotated = Change {
             add = Nothing,
-            remove = Just $ Inheritance {subClass = "A", superClass = "B"}
+            remove = Just $ Right Inheritance {subClass = "A", superClass = "B"}
             },
           annotation = DefiniteArticle
         },
-      option = ClassDiagram {
-        classNames = ["A", "D", "C", "B"],
-        relationships = [
-          Inheritance {subClass = "D", superClass = "C"},
-          Inheritance {subClass = "A", superClass = "B"},
-          Inheritance {subClass = "B", superClass = "A"}
+      option = AnyClassDiagram {
+        anyClassNames = ["A", "D", "C", "B"],
+        anyRelationships = [
+          Right Inheritance {subClass = "D", superClass = "C"},
+          Right Inheritance {subClass = "A", superClass = "B"},
+          Right Inheritance {subClass = "B", superClass = "A"}
           ]
         }
       })
