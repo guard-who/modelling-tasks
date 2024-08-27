@@ -177,6 +177,8 @@ checkSelectPetriConfig' SelectPetriConfig {
   }
   | activityFinalNodes adConfig > 1
   = Just "There is at most one 'activityFinalNode' allowed."
+  | activityFinalNodes adConfig >= 1 && flowFinalNodes adConfig >= 1
+  = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | numberOfWrongAnswers < 1
