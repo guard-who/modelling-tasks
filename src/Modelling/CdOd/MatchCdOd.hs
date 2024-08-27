@@ -208,8 +208,8 @@ toMatching m =
 
 checkMatchCdOdConfig :: MatchCdOdConfig -> Maybe String
 checkMatchCdOdConfig config@MatchCdOdConfig {..}
-  | Just True <- hasSelfLoops $ objectProperties config
-  = [iii|
+  | Just True <- hasSelfLoops objectProperties
+  = Just [iii|
     Enforcing self-loops in all object diagrams is not supported.
     You might want to change 'hasSelfLoops' to 'Nothing' in order
     to have self-loops (by chance) in some (or even all) of the object diagrams.
