@@ -106,8 +106,6 @@ data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
   hideBranchConditions :: Bool,
-  -- | Option to disallow activity finals to reduce semantic confusion
-  activityFinalsExist :: Maybe Bool,
   -- | Avoid having to add new sink transitions for representing finals
   avoidAddingSinksForFinals :: Maybe Bool,
   printSolution :: Bool
@@ -119,7 +117,6 @@ defaultFindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig
     maxInstances = Just 50,
     hideNodeNames = False,
     hideBranchConditions = False,
-    activityFinalsExist = Just False,
     avoidAddingSinksForFinals = Nothing,
     printSolution = False
   }
@@ -133,7 +130,6 @@ findAuxiliaryPetriNodesConfig' :: FindAuxiliaryPetriNodesConfig -> Maybe String
 findAuxiliaryPetriNodesConfig' FindAuxiliaryPetriNodesConfig {
     adConfig,
     maxInstances,
-    activityFinalsExist,
     avoidAddingSinksForFinals
   }
   | activityFinalNodes adConfig > 1
@@ -142,10 +138,6 @@ findAuxiliaryPetriNodesConfig' FindAuxiliaryPetriNodesConfig {
   = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | Just instances <- maxInstances, instances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
-  | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
-    = Just "Setting the parameter 'activityFinalsExist' to True implies having at least 1 Activity Final Node"
-  | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
-    = Just "Setting the parameter 'activityFinalsExist' to False prohibits having more than 0 Activity Final Node"
   | Just True <- avoidAddingSinksForFinals,
     fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
@@ -155,18 +147,19 @@ findAuxiliaryPetriNodesConfig' FindAuxiliaryPetriNodesConfig {
 findAuxiliaryPetriNodesAlloy :: FindAuxiliaryPetriNodesConfig -> String
 findAuxiliaryPetriNodesAlloy FindAuxiliaryPetriNodesConfig {
   adConfig,
-  activityFinalsExist,
   avoidAddingSinksForFinals
 }
   = adConfigToAlloy modules predicates adConfig
-  where modules = modulePetriNet
-        predicates =
+  where
+    activityFinalsExist = Just (activityFinalNodes adConfig > 0)
+    modules = modulePetriNet
+    predicates =
           [i|
             not auxiliaryPetriNodeAbsent
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
           |]
-        f opt s =
+    f opt s =
           case opt of
             Just True -> s
             Just False -> [i| not #{s}|]

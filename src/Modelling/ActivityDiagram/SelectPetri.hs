@@ -131,8 +131,6 @@ data SelectPetriConfig = SelectPetriConfig {
   modifyAtMid :: Bool,
   -- | Option to prevent auxiliary PetriNodes from occurring
   auxiliaryPetriNodeAbsent :: Maybe Bool,
-  -- | Option to disallow activity finals to reduce semantic confusion
-  activityFinalsExist :: Maybe Bool,
   -- | Avoid having to add new sink transitions for representing finals
   avoidAddingSinksForFinals :: Maybe Bool,
   -- | Avoid Activity Finals in concurrent flows to reduce confusion
@@ -156,7 +154,6 @@ defaultSelectPetriConfig = SelectPetriConfig {
   numberOfModifications = 3,
   modifyAtMid = True,
   auxiliaryPetriNodeAbsent = Nothing,
-  activityFinalsExist = Just False,
   avoidAddingSinksForFinals = Nothing,
   noActivityFinalInForkBlocks = Just True,
   printSolution = False
@@ -175,14 +172,11 @@ checkSelectPetriConfig' SelectPetriConfig {
     numberOfWrongAnswers,
     numberOfModifications,
     auxiliaryPetriNodeAbsent,
-    activityFinalsExist,
     avoidAddingSinksForFinals,
     noActivityFinalInForkBlocks
   }
   | activityFinalNodes adConfig > 1
   = Just "There is at most one 'activityFinalNode' allowed."
-  | activityFinalNodes adConfig >= 1 && flowFinalNodes adConfig >= 1
-  = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | numberOfWrongAnswers < 1
@@ -194,17 +188,13 @@ checkSelectPetriConfig' SelectPetriConfig {
     Setting the parameter 'auxiliaryPetriNodeAbsent' to True
     prohibits having more than 0 cycles
     |]
-  | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
-    = Just "Setting the parameter 'activityFinalsExist' to True implies having at least 1 Activity Final Node"
-  | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
-    = Just "Setting the parameter 'activityFinalsExist' to False prohibits having more than 0 Activity Final Node"
   | Just True <- avoidAddingSinksForFinals,
     fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
-    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
-  | noActivityFinalInForkBlocks == Just False && activityFinalsExist /= Just True
-    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to False implies that the parameter 'activityFinalsExit' should be True"
+    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 'activityFinalNodes'"
+  | noActivityFinalInForkBlocks == Just False && activityFinalNodes adConfig == 0
+    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to False implies that there are 'activityFinalNodes'"
   | null petriLayout
     = Just "The parameter 'petriLayout' can not be the empty list"
   | any (`notElem` [Dot, Neato, TwoPi, Circo, Fdp]) petriLayout
@@ -216,20 +206,21 @@ selectPetriAlloy :: SelectPetriConfig -> String
 selectPetriAlloy SelectPetriConfig {
   adConfig,
   auxiliaryPetriNodeAbsent,
-  activityFinalsExist,
   avoidAddingSinksForFinals,
   noActivityFinalInForkBlocks
 }
   = adConfigToAlloy modules predicates adConfig
-  where modules = modulePetriNet
-        predicates =
+  where
+    activityFinalsExist = Just (activityFinalNodes adConfig > 0)
+    modules = modulePetriNet
+    predicates =
           [i|
             #{f auxiliaryPetriNodeAbsent "auxiliaryPetriNodeAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
             #{f noActivityFinalInForkBlocks "noActivityFinalInForkBlocks"}
           |]
-        f opt s =
+    f opt s =
           case opt of
             Just True -> s
             Just False -> [i| not #{s}|]

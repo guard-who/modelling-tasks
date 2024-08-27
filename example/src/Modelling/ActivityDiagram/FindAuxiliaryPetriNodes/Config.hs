@@ -27,7 +27,6 @@ task41 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  activityFinalsExist = Just False,
   avoidAddingSinksForFinals = Nothing,
   printSolution = True
   }
@@ -52,7 +51,6 @@ task42 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  activityFinalsExist = Just True,
   avoidAddingSinksForFinals = Nothing,
   printSolution = True
   }
