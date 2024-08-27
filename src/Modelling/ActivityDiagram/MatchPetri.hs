@@ -14,7 +14,7 @@ module Modelling.ActivityDiagram.MatchPetri (
   checkMatchPetriConfig,
   matchPetriAlloy,
   matchPetriSolution,
-  extractSupportPetriNodes,
+  extractAuxiliaryPetriNodes,
   matchPetriTask,
   matchPetriInitial,
   matchPetriSyntax,
@@ -119,8 +119,8 @@ data MatchPetriConfig = MatchPetriConfig {
   petriLayout :: [GraphvizCommand],
   -- | Whether highlighting on hover should be enabled
   petriSvgHighlighting :: Bool,
-  -- | Option to prevent support PetriNodes from occurring
-  supportPetriNodeAbsent :: Maybe Bool,
+  -- | Option to prevent auxiliary PetriNodes from occurring
+  auxiliaryPetriNodeAbsent :: Maybe Bool,
   -- | Option to disallow activity finals to reduce semantic confusion
   activityFinalsExist :: Maybe Bool,
   -- | Avoid having to add new sink transitions for representing finals
@@ -140,7 +140,7 @@ defaultMatchPetriConfig = MatchPetriConfig
     hideBranchConditions = False,
     petriLayout = [Dot],
     petriSvgHighlighting = True,
-    supportPetriNodeAbsent = Nothing,
+    auxiliaryPetriNodeAbsent = Nothing,
     activityFinalsExist = Just False,
     avoidAddingSinksForFinals = Nothing,
     noActivityFinalInForkBlocks = Just True,
@@ -158,7 +158,7 @@ checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
     maxInstances,
     petriLayout,
-    supportPetriNodeAbsent,
+    auxiliaryPetriNodeAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals,
     noActivityFinalInForkBlocks
@@ -169,9 +169,9 @@ checkMatchPetriConfig' MatchPetriConfig {
   = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
-  | supportPetriNodeAbsent == Just True && cycles adConfig > 0
+  | auxiliaryPetriNodeAbsent == Just True && cycles adConfig > 0
   = Just [iii|
-    Setting the parameter 'supportPetriNodeAbsent' to True
+    Setting the parameter 'auxiliaryPetriNodeAbsent' to True
     prohibits having more than 0 cycles
     |]
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
@@ -196,7 +196,7 @@ checkMatchPetriConfig' MatchPetriConfig {
 matchPetriAlloy :: MatchPetriConfig -> String
 matchPetriAlloy MatchPetriConfig {
   adConfig,
-  supportPetriNodeAbsent,
+  auxiliaryPetriNodeAbsent,
   activityFinalsExist,
   avoidAddingSinksForFinals,
   noActivityFinalInForkBlocks
@@ -205,7 +205,7 @@ matchPetriAlloy MatchPetriConfig {
   where modules = modulePetriNet
         predicates =
           [i|
-            #{f supportPetriNodeAbsent "supportPetriNodeAbsent"}
+            #{f auxiliaryPetriNodeAbsent "auxiliaryPetriNodeAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
             #{f noActivityFinalInForkBlocks "noActivityFinalInForkBlocks"}
@@ -226,10 +226,10 @@ mapTypesToLabels petri =
     objectNodes = extractNameLabelTuple isObjectNode,
     decisionNodes = extractLabels isDecisionNode,
     mergeNodes = extractLabels isMergeNode,
-    forkNodes = extractLabels isForkNode,
-    joinNodes = extractLabels isJoinNode,
+    forks = extractLabels isForkNode,
+    joins = extractLabels isJoinNode,
     initialNodes = extractLabels isInitialNode,
-    supportPetriNodes = sort $ map PK.label $ extractSupportPetriNodes petri
+    auxiliaryPetriNodes = sort $ map PK.label $ extractAuxiliaryPetriNodes petri
   }
   where
     extractNameLabelTuple fn =
@@ -242,7 +242,7 @@ mapTypesToLabels petri =
       keysByNodeType fn
     keysByNodeType fn =
       filter (fn . sourceNode)  $
-      filter (not . isSupportPetriNode) $
+      filter (not . isAuxiliaryPetriNode) $
       M.keys $ Petri.nodes petri
 
 data MatchPetriSolution = MatchPetriSolution {
@@ -250,27 +250,27 @@ data MatchPetriSolution = MatchPetriSolution {
   objectNodes :: [(String, Int)],
   decisionNodes :: [Int],
   mergeNodes :: [Int],
-  forkNodes :: [Int],
-  joinNodes :: [Int],
+  forks :: [Int],
+  joins :: [Int],
   initialNodes :: [Int],
-  supportPetriNodes :: [Int]
+  auxiliaryPetriNodes :: [Int]
 } deriving (Generic, Show, Eq, Read)
 
 matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
 matchPetriSolution task = mapTypesToLabels $ petriNet task
 
-extractSupportPetriNodes :: Net p n => p n PetriKey -> [PetriKey]
-extractSupportPetriNodes petri = filter
-  (\x -> isSupportPetriNode x && not (isSinkPetriNode x petri))
+extractAuxiliaryPetriNodes :: Net p n => p n PetriKey -> [PetriKey]
+extractAuxiliaryPetriNodes petri = filter
+  (\x -> isAuxiliaryPetriNode x && not (isSinkPetriNode x petri))
   $ M.keys $ Petri.nodes petri
 
 isSinkPetriNode :: Net p n => PetriKey -> p n PetriKey -> Bool
 isSinkPetriNode key petri = M.null $ outFlow key petri
 
-isSupportPetriNode :: PetriKey -> Bool
-isSupportPetriNode key =
+isAuxiliaryPetriNode :: PetriKey -> Bool
+isAuxiliaryPetriNode key =
   case key of
-    SupportPetriNode {} -> True
+    AuxiliaryPetriNode {} -> True
     _ -> False
 
 matchPetriTask
@@ -327,10 +327,10 @@ matchPetriInitial = MatchPetriSolution {
   objectNodes = [("C", 3), ("D", 4)],
   decisionNodes = [5, 7],
   mergeNodes = [6, 8],
-  forkNodes = [10],
-  joinNodes = [11],
+  forks = [10],
+  joins = [11],
   initialNodes = [12],
-  supportPetriNodes = [13, 14, 15]
+  auxiliaryPetriNodes = [13, 14, 15]
 }
 
 matchPetriSyntax
@@ -347,10 +347,10 @@ matchPetriSyntax task sub = addPretext $ do
         ++ map snd (objectNodes sub)
         ++ decisionNodes sub
         ++ mergeNodes sub
-        ++ forkNodes sub
-        ++ joinNodes sub
+        ++ forks sub
+        ++ joins sub
         ++ initialNodes sub
-        ++ supportPetriNodes sub
+        ++ auxiliaryPetriNodes sub
   assertion (all (`elem` adNames) subNames) $ translate $ do
     english "Referenced node names were provided within task?"
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
@@ -386,10 +386,10 @@ matchPetriSolutionMap sol =
         Left $ sort $ objectNodes sol,
         Right $ sort $ decisionNodes sol,
         Right $ sort $ mergeNodes sol,
-        Right $ sort $ forkNodes sol,
-        Right $ sort $ joinNodes sol,
+        Right $ sort $ forks sol,
+        Right $ sort $ joins sol,
         Right $ sort $ initialNodes sol,
-        Right $ sort $ supportPetriNodes sol
+        Right $ sort $ auxiliaryPetriNodes sol
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
@@ -578,7 +578,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   , name = "C" } }
               , 1 )
             ,
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 14 }
               , 1 ) ] } )
       ,
@@ -604,7 +604,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   , name = "A" } }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 4 }
         , SimpleTransition
           { flowOut = M.empty } )
@@ -617,7 +617,7 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 21 }
               , 1 ) ] } )
       ,
@@ -650,7 +650,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   { label = 12 } }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 8 }
         , SimpleTransition
           { flowOut = M.fromList
@@ -670,7 +670,7 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 4 }
               , 1 ) ] } )
       ,
@@ -689,7 +689,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   , name = "D" } }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 11 }
         , SimplePlace
           { initial = 0
@@ -714,7 +714,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   { label = 11 } }
               , 1 )
             ,
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 15 }
               , 1 )
             ,
@@ -733,11 +733,11 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 23 }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 14 }
         , SimpleTransition
           { flowOut = M.fromList
@@ -749,7 +749,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   , name = "F" } }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 15 }
         , SimplePlace
           { initial = 0
@@ -770,11 +770,11 @@ defaultMatchPetriInstance = MatchPetriInstance
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 11 }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 17 }
         , SimpleTransition
           { flowOut = M.fromList
@@ -786,7 +786,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   , name = "G" } }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 18 }
         , SimpleTransition
           { flowOut = M.fromList
@@ -805,11 +805,11 @@ defaultMatchPetriInstance = MatchPetriInstance
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 20 }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 20 }
         , SimplePlace
           { initial = 0
@@ -822,7 +822,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   , name = "E" } }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 21 }
         , SimpleTransition
           { flowOut = M.fromList
@@ -842,11 +842,11 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 17 }
               , 1 ) ] } )
       ,
-        ( SupportPetriNode
+        ( AuxiliaryPetriNode
           { label = 23 }
         , SimpleTransition
           { flowOut = M.fromList
@@ -871,7 +871,7 @@ defaultMatchPetriInstance = MatchPetriInstance
                   { label = 14 } }
               , 1 )
             ,
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 18 }
               , 1 ) ] } )
       ,
@@ -884,7 +884,7 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportPetriNode
+              ( AuxiliaryPetriNode
                 { label = 8 }
               , 1 ) ] } ) ] }
   , plantUMLConf = defaultPlantUmlConfig

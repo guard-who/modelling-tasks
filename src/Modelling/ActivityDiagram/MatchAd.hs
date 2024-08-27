@@ -133,30 +133,30 @@ matchAdAlloy MatchAdConfig {
         Nothing -> ""
 
 data MatchAdSolution = MatchAdSolution {
-  actionNames :: [String],
+  actionNodeNames :: [String],
   objectNodeNames :: [String],
-  numberOfDecisionNodes :: Int,
-  numberOfMergeNodes :: Int,
-  numberOfForkNodes :: Int,
-  numberOfJoinNodes :: Int,
-  numberOfInitialNodes :: Int,
-  numberOfActivityFinalNodes :: Int,
-  numberOfFlowFinalNodes :: Int
+  countOfDecisionNodes :: Int,
+  countOfMergeNodes :: Int,
+  countOfForks :: Int,
+  countOfJoins :: Int,
+  countOfInitialNodes :: Int,
+  countOfActivityFinalNodes :: Int,
+  countOfFlowFinalNodes :: Int
 } deriving (Generic, Eq, Show, Read)
 
 matchAdSolution :: MatchAdInstance -> MatchAdSolution
 matchAdSolution task =
   let ad = activityDiagram task
   in MatchAdSolution {
-        actionNames = sort $ map name $ filter isActionNode $ nodes ad,
+        actionNodeNames = sort $ map name $ filter isActionNode $ nodes ad,
         objectNodeNames = sort $ map name $ filter isObjectNode $ nodes ad,
-        numberOfDecisionNodes = length $ filter isDecisionNode  $ nodes ad,
-        numberOfMergeNodes = length $ filter isMergeNode $ nodes ad,
-        numberOfForkNodes = length $ filter isForkNode $ nodes ad,
-        numberOfJoinNodes = length $ filter isJoinNode  $ nodes ad,
-        numberOfInitialNodes = length $ filter isInitialNode $ nodes ad,
-        numberOfActivityFinalNodes = length $ filter isActivityFinalNode $ nodes ad,
-        numberOfFlowFinalNodes = length $ filter isFlowFinalNode $ nodes ad
+        countOfDecisionNodes = length $ filter isDecisionNode  $ nodes ad,
+        countOfMergeNodes = length $ filter isMergeNode $ nodes ad,
+        countOfForks = length $ filter isForkNode $ nodes ad,
+        countOfJoins = length $ filter isJoinNode  $ nodes ad,
+        countOfInitialNodes = length $ filter isInitialNode $ nodes ad,
+        countOfActivityFinalNodes = length $ filter isActivityFinalNode $ nodes ad,
+        countOfFlowFinalNodes = length $ filter isFlowFinalNode $ nodes ad
     }
 
 matchAdTask
@@ -189,15 +189,15 @@ matchAdTask path task = do
 
 matchAdInitial :: MatchAdSolution
 matchAdInitial = MatchAdSolution {
-  actionNames = ["A", "B"],
+  actionNodeNames = ["A", "B"],
   objectNodeNames = ["C", "D"],
-  numberOfDecisionNodes = 2,
-  numberOfMergeNodes = 2,
-  numberOfForkNodes = 0,
-  numberOfJoinNodes = 0,
-  numberOfInitialNodes = 1,
-  numberOfActivityFinalNodes = 1,
-  numberOfFlowFinalNodes = 0
+  countOfDecisionNodes = 2,
+  countOfMergeNodes = 2,
+  countOfForks = 0,
+  countOfJoins = 0,
+  countOfInitialNodes = 1,
+  countOfActivityFinalNodes = 1,
+  countOfFlowFinalNodes = 0
 }
 
 matchAdSyntax
@@ -207,7 +207,7 @@ matchAdSyntax
   -> LangM m
 matchAdSyntax task sub = addPretext $ do
   let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
-      subNames = actionNames sub ++ objectNodeNames sub
+      subNames = actionNodeNames sub ++ objectNodeNames sub
   assertion (all (`elem` adNames) subNames) $ translate $ do
     english "Referenced node names were provided within task?"
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
@@ -235,15 +235,15 @@ matchAdSolutionMap
   -> Map (Int, Either [String] Int) Bool
 matchAdSolutionMap sol =
   let xs = [
-        Left $ sort $ actionNames sol,
+        Left $ sort $ actionNodeNames sol,
         Left $ sort $ objectNodeNames sol,
-        Right $ numberOfDecisionNodes sol,
-        Right $ numberOfMergeNodes sol,
-        Right $ numberOfForkNodes sol,
-        Right $ numberOfJoinNodes sol,
-        Right $ numberOfInitialNodes sol,
-        Right $ numberOfActivityFinalNodes sol,
-        Right $ numberOfFlowFinalNodes sol
+        Right $ countOfDecisionNodes sol,
+        Right $ countOfMergeNodes sol,
+        Right $ countOfForks sol,
+        Right $ countOfJoins sol,
+        Right $ countOfInitialNodes sol,
+        Right $ countOfActivityFinalNodes sol,
+        Right $ countOfFlowFinalNodes sol
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 

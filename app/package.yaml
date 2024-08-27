@@ -100,8 +100,8 @@ executables:
       - criterion-measurement
       - modelling-tasks
       - string-interpolate
-  findSupportPetriNodeTaskDemo:
-    main: findSupportPetriNodeTaskDemo.hs
+  findAuxiliaryPetriNodesTaskDemo:
+    main: findAuxiliaryPetriNodesTaskDemo.hs
     source-dirs:
       - .
       - common

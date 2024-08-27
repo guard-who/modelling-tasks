@@ -100,7 +100,7 @@ library:
     - Modelling.ActivityDiagram.Config
     - Modelling.ActivityDiagram.Datatype
     - Modelling.ActivityDiagram.EnterAS
-    - Modelling.ActivityDiagram.FindSupportPetriNode
+    - Modelling.ActivityDiagram.FindAuxiliaryPetriNodes
     - Modelling.ActivityDiagram.Instance
     - Modelling.ActivityDiagram.Isomorphism
     - Modelling.ActivityDiagram.MatchAd

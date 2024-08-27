@@ -41,7 +41,7 @@ import Modelling.ActivityDiagram.Datatype (
 
 
 data PetriKey
-  = SupportPetriNode {label :: Int}
+  = AuxiliaryPetriNode {label :: Int}
   | NormalPetriNode {label :: Int, sourceNode :: Ad.AdNode}
   deriving (Generic, Eq, Read, Show)
 
@@ -55,11 +55,11 @@ convertToPetriNet :: Net p n => Ad.UMLActivityDiagram -> p n PetriKey
 convertToPetriNet diag =
   let st_petri = foldr insertNode emptyNet (Ad.nodes diag)
       st_edges_petri = foldr insertEdge st_petri (Ad.connections diag)
-      st_support_petri = foldr
-        addSupportPetriNode
+      auxiliaryPetri = foldr
+        addAuxiliaryPetriNode
         st_edges_petri
         (M.keys $ nodes st_edges_petri)
-  in relabelPetri $ removeFinalPlaces st_support_petri
+  in relabelPetri $ removeFinalPlaces auxiliaryPetri
 
 -- Relabels Petri net nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
 relabelPetri
@@ -76,7 +76,7 @@ updatePetriKey relabeling key =
   case key of
     NormalPetriNode {label, sourceNode} ->
       NormalPetriNode {label = relabel label, sourceNode = sourceNode}
-    SupportPetriNode {label} -> SupportPetriNode {label = relabel label}
+    AuxiliaryPetriNode {label} -> AuxiliaryPetriNode {label = relabel label}
   where relabel n = relabeling M.! n
 
 removeFinalPlaces
@@ -98,24 +98,24 @@ removeIfFinal key petri =
       else petri
     _ -> petri
 
-addSupportPetriNode :: Net p n => PetriKey -> p n PetriKey -> p n PetriKey
-addSupportPetriNode sourceKey petri =
+addAuxiliaryPetriNode :: Net p n => PetriKey -> p n PetriKey -> p n PetriKey
+addAuxiliaryPetriNode sourceKey petri =
   let sourceNode = nodes petri M.! sourceKey
       fn = if isPlaceNode sourceNode then isPlaceNode else isTransitionNode
       nodesToBeFixed = M.filter fn
         $ M.mapMaybeWithKey (\k _ -> M.lookup k (nodes petri))
         $ outFlow sourceKey petri
-  in M.foldrWithKey (addSupportPetriNode' sourceKey) petri nodesToBeFixed
+  in M.foldrWithKey (addAuxiliaryPetriNode' sourceKey) petri nodesToBeFixed
 
-addSupportPetriNode'
+addAuxiliaryPetriNode'
   :: Net p n
   => PetriKey
   -> PetriKey
   -> n PetriKey
   -> p n PetriKey
   -> p n PetriKey
-addSupportPetriNode' sourceKey targetKey targetNode petri =
-  let supportKey = SupportPetriNode {
+addAuxiliaryPetriNode' sourceKey targetKey targetNode petri =
+  let supportKey = AuxiliaryPetriNode {
         label = (+ 1) $ maximum $ map label $ M.keys $ nodes petri
         }
   in alterFlow supportKey 1 targetKey

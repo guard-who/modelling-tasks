@@ -7,19 +7,19 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Modelling.ActivityDiagram.FindSupportPetriNode (
-  FindSupportPetriNodeConfig(..),
-  FindSupportPetriNodeInstance(..),
-  FindSupportPetriNodeSolution(..),
-  checkFindSupportPetriNodeConfig,
-  defaultFindSupportPetriNodeConfig,
-  defaultFindSupportPetriNodeInstance,
-  findSupportPetriNode,
-  findSupportPetriNodeAlloy,
-  findSupportPetriNodeEvaluation,
-  findSupportPetriNodeInitial,
-  findSupportPetriNodeSolution,
-  findSupportPetriNodeTask,
+module Modelling.ActivityDiagram.FindAuxiliaryPetriNodes (
+  FindAuxiliaryPetriNodesConfig (..),
+  FindAuxiliaryPetriNodesInstance (..),
+  FindAuxiliaryPetriNodesSolution (..),
+  checkFindAuxiliaryPetriNodesConfig,
+  defaultFindAuxiliaryPetriNodesConfig,
+  defaultFindAuxiliaryPetriNodesInstance,
+  findAuxiliaryPetriNodes,
+  findAuxiliaryPetriNodesAlloy,
+  findAuxiliaryPetriNodesEvaluation,
+  findAuxiliaryPetriNodesInitial,
+  findAuxiliaryPetriNodesSolution,
+  findAuxiliaryPetriNodesTask,
 ) where
 
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
@@ -95,13 +95,13 @@ import Data.String.Interpolate ( i )
 import GHC.Generics (Generic)
 import System.Random.Shuffle (shuffleM)
 
-data FindSupportPetriNodeInstance = FindSupportPetriNodeInstance {
+data FindAuxiliaryPetriNodesInstance = FindAuxiliaryPetriNodesInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUmlConfig,
   showSolution :: Bool
 } deriving (Generic, Show)
 
-data FindSupportPetriNodeConfig = FindSupportPetriNodeConfig {
+data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
   adConfig :: AdConfig,
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
@@ -113,8 +113,8 @@ data FindSupportPetriNodeConfig = FindSupportPetriNodeConfig {
   printSolution :: Bool
 } deriving (Generic, Show)
 
-defaultFindSupportPetriNodeConfig :: FindSupportPetriNodeConfig
-defaultFindSupportPetriNodeConfig = FindSupportPetriNodeConfig
+defaultFindAuxiliaryPetriNodesConfig :: FindAuxiliaryPetriNodesConfig
+defaultFindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig
   { adConfig = defaultAdConfig {activityFinalNodes = 0, flowFinalNodes = 2},
     maxInstances = Just 50,
     hideNodeNames = False,
@@ -124,13 +124,13 @@ defaultFindSupportPetriNodeConfig = FindSupportPetriNodeConfig
     printSolution = False
   }
 
-checkFindSupportPetriNodeConfig :: FindSupportPetriNodeConfig -> Maybe String
-checkFindSupportPetriNodeConfig conf =
+checkFindAuxiliaryPetriNodesConfig :: FindAuxiliaryPetriNodesConfig -> Maybe String
+checkFindAuxiliaryPetriNodesConfig conf =
   checkAdConfig (adConfig conf)
-  <|> findSupportPetriNodeConfig' conf
+  <|> findAuxiliaryPetriNodesConfig' conf
 
-findSupportPetriNodeConfig' :: FindSupportPetriNodeConfig -> Maybe String
-findSupportPetriNodeConfig' FindSupportPetriNodeConfig {
+findAuxiliaryPetriNodesConfig' :: FindAuxiliaryPetriNodesConfig -> Maybe String
+findAuxiliaryPetriNodesConfig' FindAuxiliaryPetriNodesConfig {
     adConfig,
     maxInstances,
     activityFinalsExist,
@@ -152,8 +152,8 @@ findSupportPetriNodeConfig' FindSupportPetriNodeConfig {
   | otherwise
     = Nothing
 
-findSupportPetriNodeAlloy :: FindSupportPetriNodeConfig -> String
-findSupportPetriNodeAlloy FindSupportPetriNodeConfig {
+findAuxiliaryPetriNodesAlloy :: FindAuxiliaryPetriNodesConfig -> String
+findAuxiliaryPetriNodesAlloy FindAuxiliaryPetriNodesConfig {
   adConfig,
   activityFinalsExist,
   avoidAddingSinksForFinals
@@ -162,7 +162,7 @@ findSupportPetriNodeAlloy FindSupportPetriNodeConfig {
   where modules = modulePetriNet
         predicates =
           [i|
-            not supportPetriNodeAbsent
+            not auxiliaryPetriNodeAbsent
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
           |]
@@ -172,49 +172,49 @@ findSupportPetriNodeAlloy FindSupportPetriNodeConfig {
             Just False -> [i| not #{s}|]
             Nothing -> ""
 
-data FindSupportPetriNodeSolution = FindSupportPetriNodeSolution {
-  numberOfPetriNodes :: Int,
-  numberOfSupportPlaces :: Int,
-  numberOfSupportTransitions :: Int
+data FindAuxiliaryPetriNodesSolution = FindAuxiliaryPetriNodesSolution {
+  countOfPetriNodes :: Int,
+  countOfAuxiliaryPlaces :: Int,
+  countOfAuxiliaryTransitions :: Int
 } deriving (Generic, Show, Eq, Read)
 
-findSupportPetriNodeSolution
-  :: FindSupportPetriNodeInstance
-  -> FindSupportPetriNodeSolution
-findSupportPetriNodeSolution task =
-  findSupportPetriNodeSolution' @PetriLike @SimpleNode
+findAuxiliaryPetriNodesSolution
+  :: FindAuxiliaryPetriNodesInstance
+  -> FindAuxiliaryPetriNodesSolution
+findAuxiliaryPetriNodesSolution task =
+  findAuxiliaryPetriNodesSolution' @PetriLike @SimpleNode
   $ convertToPetriNet $ activityDiagram task
 
-findSupportPetriNodeSolution'
+findAuxiliaryPetriNodesSolution'
   :: Net p n
   => p n PetriKey
-  -> FindSupportPetriNodeSolution
-findSupportPetriNodeSolution' petri = FindSupportPetriNodeSolution {
-    numberOfPetriNodes = M.size $ Petri.nodes petri,
-    numberOfSupportPlaces = M.size $ M.filter isPlaceNode supportPetriNodeMap,
-    numberOfSupportTransitions =
-      M.size $ M.filter isTransitionNode supportPetriNodeMap
+  -> FindAuxiliaryPetriNodesSolution
+findAuxiliaryPetriNodesSolution' petri = FindAuxiliaryPetriNodesSolution {
+    countOfPetriNodes = M.size $ Petri.nodes petri,
+    countOfAuxiliaryPlaces = M.size $ M.filter isPlaceNode auxiliaryPetriNodeMap,
+    countOfAuxiliaryTransitions =
+      M.size $ M.filter isTransitionNode auxiliaryPetriNodeMap
   }
   where
-    supportPetriNodeMap = M.filterWithKey
-      (\k _ -> isSupportPetriNode k && not (isSinkPetriNode k petri))
+    auxiliaryPetriNodeMap = M.filterWithKey
+      (\k _ -> isAuxiliaryPetriNode k && not (isSinkPetriNode k petri))
       $ Petri.nodes petri
 
 isSinkPetriNode :: Net p n => PetriKey -> p n PetriKey -> Bool
 isSinkPetriNode key petri = M.null $ outFlow key petri
 
-isSupportPetriNode :: PetriKey -> Bool
-isSupportPetriNode key =
+isAuxiliaryPetriNode :: PetriKey -> Bool
+isAuxiliaryPetriNode key =
   case key of
-    SupportPetriNode {} -> True
+    AuxiliaryPetriNode {} -> True
     _ -> False
 
-findSupportPetriNodeTask
+findAuxiliaryPetriNodesTask
   :: (MonadPlantUml m, OutputCapable m)
   => FilePath
-  -> FindSupportPetriNodeInstance
+  -> FindAuxiliaryPetriNodesInstance
   -> LangM m
-findSupportPetriNodeTask path task = do
+findAuxiliaryPetriNodesTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
@@ -228,7 +228,7 @@ an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl
     translate $ do
       english [i|To do this, enter your answer as in the following example:|]
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
-    code $ show findSupportPetriNodeInitial
+    code $ show findAuxiliaryPetriNodesInitial
     translate $ do
       english [i|In this example, the resulting net contains 10 nodes in total, of which 2 are auxiliary places and 3 are auxiliary transitions.|]
       german [i|In diesem Beispiel etwa enthält das entstehende Netz insgesamt 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransitionen.|]
@@ -236,64 +236,64 @@ an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl
   auxiliaryNodesAdvice True
   pure ()
 
-findSupportPetriNodeInitial :: FindSupportPetriNodeSolution
-findSupportPetriNodeInitial = FindSupportPetriNodeSolution {
-  numberOfPetriNodes = 10,
-  numberOfSupportPlaces = 2,
-  numberOfSupportTransitions = 3
+findAuxiliaryPetriNodesInitial :: FindAuxiliaryPetriNodesSolution
+findAuxiliaryPetriNodesInitial = FindAuxiliaryPetriNodesSolution {
+  countOfPetriNodes = 10,
+  countOfAuxiliaryPlaces = 2,
+  countOfAuxiliaryTransitions = 3
 }
 
-findSupportPetriNodeEvaluation
+findAuxiliaryPetriNodesEvaluation
   :: OutputCapable m
-  => FindSupportPetriNodeInstance
-  -> FindSupportPetriNodeSolution
+  => FindAuxiliaryPetriNodesInstance
+  -> FindAuxiliaryPetriNodesSolution
   -> Rated m
-findSupportPetriNodeEvaluation task sub = addPretext $ do
+findAuxiliaryPetriNodesEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "answer parts"
         german "Teilantworten"
-      sol = findSupportPetriNodeSolution task
-      solution = findSupportPetriNodeSolutionMap sol
-      sub' = M.keys $ findSupportPetriNodeSolutionMap sub
+      sol = findAuxiliaryPetriNodesSolution task
+      solution = findAuxiliaryPetriNodesSolutionMap sol
+      sub' = M.keys $ findAuxiliaryPetriNodesSolutionMap sub
       maybeSolutionString =
         if showSolution task
         then Just $ show sol
         else Nothing
   multipleChoice DefiniteArticle as maybeSolutionString solution sub'
 
-findSupportPetriNodeSolutionMap
-  :: FindSupportPetriNodeSolution
+findAuxiliaryPetriNodesSolutionMap
+  :: FindAuxiliaryPetriNodesSolution
   -> Map (Int, Int) Bool
-findSupportPetriNodeSolutionMap sol =
+findAuxiliaryPetriNodesSolutionMap sol =
   let xs = [
-        numberOfPetriNodes sol,
-        numberOfSupportPlaces sol,
-        numberOfSupportTransitions sol
+        countOfPetriNodes sol,
+        countOfAuxiliaryPlaces sol,
+        countOfAuxiliaryTransitions sol
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
-findSupportPetriNode
+findAuxiliaryPetriNodes
   :: (MonadAlloy m, MonadThrow m)
-  => FindSupportPetriNodeConfig
+  => FindAuxiliaryPetriNodesConfig
   -> Int
   -> Int
-  -> m FindSupportPetriNodeInstance
-findSupportPetriNode config segment seed = do
+  -> m FindAuxiliaryPetriNodesInstance
+findAuxiliaryPetriNodes config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  evalRandT (getFindSupportPetriNodeTask config) g
+  evalRandT (getFindAuxiliaryPetriNodesTask config) g
 
-getFindSupportPetriNodeTask
+getFindAuxiliaryPetriNodesTask
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
-  => FindSupportPetriNodeConfig
-  -> RandT g m FindSupportPetriNodeInstance
-getFindSupportPetriNodeTask config = do
+  => FindAuxiliaryPetriNodesConfig
+  -> RandT g m FindAuxiliaryPetriNodesInstance
+getFindAuxiliaryPetriNodesTask config = do
   alloyInstances <- getInstances
     (maxInstances config)
     Nothing
-    $ findSupportPetriNodeAlloy config
+    $ findAuxiliaryPetriNodesAlloy config
   randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
   ad <- mapM (fmap snd . shuffleAdNames) randomInstances >>= getFirstInstance
-  return $ FindSupportPetriNodeInstance {
+  return $ FindAuxiliaryPetriNodesInstance {
     activityDiagram = ad,
     plantUMLConf =
       PlantUmlConfig {
@@ -303,8 +303,8 @@ getFindSupportPetriNodeTask config = do
     showSolution = printSolution config
   }
 
-defaultFindSupportPetriNodeInstance :: FindSupportPetriNodeInstance
-defaultFindSupportPetriNodeInstance = FindSupportPetriNodeInstance {
+defaultFindAuxiliaryPetriNodesInstance :: FindAuxiliaryPetriNodesInstance
+defaultFindAuxiliaryPetriNodesInstance = FindAuxiliaryPetriNodesInstance {
   activityDiagram = UMLActivityDiagram {
     nodes = [
       AdActionNode {label = 1, name = "A"},

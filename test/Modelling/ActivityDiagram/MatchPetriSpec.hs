@@ -4,7 +4,7 @@ import Modelling.ActivityDiagram.MatchPetri (
   MatchPetriConfig (..),
   checkMatchPetriConfig,
   defaultMatchPetriConfig,
-  extractSupportPetriNodes,
+  extractAuxiliaryPetriNodes,
   matchPetriAlloy,
   )
 
@@ -33,20 +33,20 @@ spec = do
           }
             `shouldSatisfy` isJust
   describe "matchPetriAlloy" $ do
-    context "when supportPetriNodeAbsent is set to Just False" $
-      it "it returns an Alloy Specification from which only diagrams which contain support PetriNodes are generated" $ do
+    context "when auxiliaryPetriNodeAbsent is set to Just False" $
+      it "it returns an Alloy Specification from which only diagrams which contain Auxiliary PetriNodes are generated" $ do
         let spec' = matchPetriAlloy
-              defaultMatchPetriConfig {supportPetriNodeAbsent = Just False}
+              defaultMatchPetriConfig {auxiliaryPetriNodeAbsent = Just False}
         inst <- getInstances (Just 50) spec'
         ad <- mapM parseInstance inst
-        all (hasSupportPetriNodes . convertToSimple) ad `shouldBe` True
-    context "when supportPetriNodeAbsent is set to Just True" $
-      it "it returns an Alloy Specification from which only diagrams which contain no support PetriNodes are generated" $ do
+        all (hasAuxiliaryPetriNodes . convertToSimple) ad `shouldBe` True
+    context "when auxiliaryPetriNodeAbsent is set to Just True" $
+      it "it returns an Alloy Specification from which only diagrams which contain no Auxiliary PetriNodes are generated" $ do
         let spec' = matchPetriAlloy defaultMatchPetriConfig {
               adConfig = defaultAdConfig {cycles = 0, decisionMergePairs = 1},
-              supportPetriNodeAbsent = Just True
+              auxiliaryPetriNodeAbsent = Just True
               }
         inst <- getInstances (Just 50) spec'
         ad <- mapM parseInstance inst
-        any (hasSupportPetriNodes . convertToSimple) ad `shouldBe` False
-  where hasSupportPetriNodes = not . null . extractSupportPetriNodes
+        any (hasAuxiliaryPetriNodes . convertToSimple) ad `shouldBe` False
+  where hasAuxiliaryPetriNodes = not . null . extractAuxiliaryPetriNodes

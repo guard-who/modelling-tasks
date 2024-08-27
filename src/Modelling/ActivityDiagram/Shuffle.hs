@@ -101,5 +101,5 @@ updatePetriKey relabeling key =
   case key of
     NormalPetriNode {label, sourceNode} ->
       NormalPetriNode {label = relabel label, sourceNode = sourceNode}
-    SupportPetriNode {label} -> SupportPetriNode {label = relabel label}
+    AuxiliaryPetriNode {label} -> AuxiliaryPetriNode {label = relabel label}
   where relabel n = relabeling M.! n
