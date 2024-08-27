@@ -14,7 +14,7 @@ module Modelling.ActivityDiagram.MatchPetri (
   checkMatchPetriConfig,
   matchPetriAlloy,
   matchPetriSolution,
-  extractSupportSTs,
+  extractSupportPetriNodes,
   matchPetriTask,
   matchPetriInitial,
   matchPetriSyntax,
@@ -119,8 +119,8 @@ data MatchPetriConfig = MatchPetriConfig {
   petriLayout :: [GraphvizCommand],
   -- | Whether highlighting on hover should be enabled
   petriSvgHighlighting :: Bool,
-  -- | Option to prevent support STs from occurring
-  supportSTAbsent :: Maybe Bool,
+  -- | Option to prevent support PetriNodes from occurring
+  supportPetriNodeAbsent :: Maybe Bool,
   -- | Option to disallow activity finals to reduce semantic confusion
   activityFinalsExist :: Maybe Bool,
   -- | Avoid having to add new sink transitions for representing finals
@@ -140,7 +140,7 @@ defaultMatchPetriConfig = MatchPetriConfig
     hideBranchConditions = False,
     petriLayout = [Dot],
     petriSvgHighlighting = True,
-    supportSTAbsent = Nothing,
+    supportPetriNodeAbsent = Nothing,
     activityFinalsExist = Just False,
     avoidAddingSinksForFinals = Nothing,
     noActivityFinalInForkBlocks = Just True,
@@ -158,7 +158,7 @@ checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
     maxInstances,
     petriLayout,
-    supportSTAbsent,
+    supportPetriNodeAbsent,
     activityFinalsExist,
     avoidAddingSinksForFinals,
     noActivityFinalInForkBlocks
@@ -169,8 +169,11 @@ checkMatchPetriConfig' MatchPetriConfig {
   = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
-  | supportSTAbsent == Just True && cycles adConfig > 0
-    = Just "Setting the parameter 'supportSTAbsent' to True prohibits having more than 0 cycles"
+  | supportPetriNodeAbsent == Just True && cycles adConfig > 0
+  = Just [iii|
+    Setting the parameter 'supportPetriNodeAbsent' to True
+    prohibits having more than 0 cycles
+    |]
   | activityFinalsExist == Just True && activityFinalNodes adConfig < 1
     = Just "Setting the parameter 'activityFinalsExist' to True implies having at least 1 Activity Final Node"
   | activityFinalsExist == Just False && activityFinalNodes adConfig > 0
@@ -193,7 +196,7 @@ checkMatchPetriConfig' MatchPetriConfig {
 matchPetriAlloy :: MatchPetriConfig -> String
 matchPetriAlloy MatchPetriConfig {
   adConfig,
-  supportSTAbsent,
+  supportPetriNodeAbsent,
   activityFinalsExist,
   avoidAddingSinksForFinals,
   noActivityFinalInForkBlocks
@@ -202,7 +205,7 @@ matchPetriAlloy MatchPetriConfig {
   where modules = modulePetriNet
         predicates =
           [i|
-            #{f supportSTAbsent "supportSTAbsent"}
+            #{f supportPetriNodeAbsent "supportPetriNodeAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
             #{f noActivityFinalInForkBlocks "noActivityFinalInForkBlocks"}
@@ -226,7 +229,7 @@ mapTypesToLabels petri =
     forkNodes = extractLabels isForkNode,
     joinNodes = extractLabels isJoinNode,
     initialNodes = extractLabels isInitialNode,
-    supportSTs = sort $ map PK.label $ extractSupportSTs petri
+    supportPetriNodes = sort $ map PK.label $ extractSupportPetriNodes petri
   }
   where
     extractNameLabelTuple fn =
@@ -239,7 +242,7 @@ mapTypesToLabels petri =
       keysByNodeType fn
     keysByNodeType fn =
       filter (fn . sourceNode)  $
-      filter (not . isSupportST) $
+      filter (not . isSupportPetriNode) $
       M.keys $ Petri.nodes petri
 
 data MatchPetriSolution = MatchPetriSolution {
@@ -250,24 +253,24 @@ data MatchPetriSolution = MatchPetriSolution {
   forkNodes :: [Int],
   joinNodes :: [Int],
   initialNodes :: [Int],
-  supportSTs :: [Int]
+  supportPetriNodes :: [Int]
 } deriving (Generic, Show, Eq, Read)
 
 matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
 matchPetriSolution task = mapTypesToLabels $ petriNet task
 
-extractSupportSTs :: Net p n => p n PetriKey -> [PetriKey]
-extractSupportSTs petri = filter
-  (\x -> isSupportST x && not (isSinkST x petri))
+extractSupportPetriNodes :: Net p n => p n PetriKey -> [PetriKey]
+extractSupportPetriNodes petri = filter
+  (\x -> isSupportPetriNode x && not (isSinkPetriNode x petri))
   $ M.keys $ Petri.nodes petri
 
-isSinkST :: Net p n => PetriKey -> p n PetriKey -> Bool
-isSinkST key petri = M.null $ outFlow key petri
+isSinkPetriNode :: Net p n => PetriKey -> p n PetriKey -> Bool
+isSinkPetriNode key petri = M.null $ outFlow key petri
 
-isSupportST :: PetriKey -> Bool
-isSupportST key =
+isSupportPetriNode :: PetriKey -> Bool
+isSupportPetriNode key =
   case key of
-    SupportST {} -> True
+    SupportPetriNode {} -> True
     _ -> False
 
 matchPetriTask
@@ -327,7 +330,7 @@ matchPetriInitial = MatchPetriSolution {
   forkNodes = [10],
   joinNodes = [11],
   initialNodes = [12],
-  supportSTs = [13, 14, 15]
+  supportPetriNodes = [13, 14, 15]
 }
 
 matchPetriSyntax
@@ -347,7 +350,7 @@ matchPetriSyntax task sub = addPretext $ do
         ++ forkNodes sub
         ++ joinNodes sub
         ++ initialNodes sub
-        ++ supportSTs sub
+        ++ supportPetriNodes sub
   assertion (all (`elem` adNames) subNames) $ translate $ do
     english "Referenced node names were provided within task?"
     german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
@@ -386,7 +389,7 @@ matchPetriSolutionMap sol =
         Right $ sort $ forkNodes sol,
         Right $ sort $ joinNodes sol,
         Right $ sort $ initialNodes sol,
-        Right $ sort $ supportSTs sol
+        Right $ sort $ supportPetriNodes sol
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
@@ -560,7 +563,7 @@ defaultMatchPetriInstance = MatchPetriInstance
   , petriNet = PetriLike
     { allNodes = M.fromList
       [
-        ( NormalST
+        ( NormalPetriNode
           { label = 1
           , sourceNode = AdDecisionNode
             { label = 10 } }
@@ -568,25 +571,25 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 7
                 , sourceNode = AdActionNode
                   { label = 1
                   , name = "C" } }
               , 1 )
             ,
-              ( SupportST
+              ( SupportPetriNode
                 { label = 14 }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 2
           , sourceNode = AdJoinNode
             { label = 14 } }
         , SimpleTransition
           { flowOut = M.empty } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 3
           , sourceNode = AdInitialNode
             { label = 17 } }
@@ -594,19 +597,19 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 1
           , flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 19
                 , sourceNode = AdActionNode
                   { label = 3
                   , name = "A" } }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 4 }
         , SimpleTransition
           { flowOut = M.empty } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 5
           , sourceNode = AdMergeNode
             { label = 11 } }
@@ -614,11 +617,11 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportST
+              ( SupportPetriNode
                 { label = 21 }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 6
           , sourceNode = AdObjectNode
             { label = 6
@@ -627,13 +630,13 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 2
                 , sourceNode = AdJoinNode
                   { label = 14 } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 7
           , sourceNode = AdActionNode
             { label = 1
@@ -641,24 +644,24 @@ defaultMatchPetriInstance = MatchPetriInstance
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 13
                 , sourceNode = AdMergeNode
                   { label = 12 } }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 8 }
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 13
                 , sourceNode = AdMergeNode
                   { label = 12 } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 9
           , sourceNode = AdObjectNode
             { label = 7
@@ -667,11 +670,11 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportST
+              ( SupportPetriNode
                 { label = 4 }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 10
           , sourceNode = AdActionNode
             { label = 2
@@ -679,50 +682,50 @@ defaultMatchPetriInstance = MatchPetriInstance
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 6
                 , sourceNode = AdObjectNode
                   { label = 6
                   , name = "D" } }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 11 }
         , SimplePlace
           { initial = 0
           , flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 12
                 , sourceNode = AdForkNode
                   { label = 13 } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 12
           , sourceNode = AdForkNode
             { label = 13 } }
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 5
                 , sourceNode = AdMergeNode
                   { label = 11 } }
               , 1 )
             ,
-              ( SupportST
+              ( SupportPetriNode
                 { label = 15 }
               , 1 )
             ,
-              ( NormalST
+              ( NormalPetriNode
                 { label = 22
                 , sourceNode = AdObjectNode
                   { label = 8
                   , name = "B" } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 13
           , sourceNode = AdMergeNode
             { label = 12 } }
@@ -730,36 +733,36 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportST
+              ( SupportPetriNode
                 { label = 23 }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 14 }
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 25
                 , sourceNode = AdObjectNode
                   { label = 5
                   , name = "F" } }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 15 }
         , SimplePlace
           { initial = 0
           , flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 10
                 , sourceNode = AdActionNode
                   { label = 2
                   , name = "H" } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 16
           , sourceNode = AdActionNode
             { label = 4
@@ -767,34 +770,34 @@ defaultMatchPetriInstance = MatchPetriInstance
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( SupportST
+              ( SupportPetriNode
                 { label = 11 }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 17 }
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 9
                 , sourceNode = AdObjectNode
                   { label = 7
                   , name = "G" } }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 18 }
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 5
                 , sourceNode = AdMergeNode
                   { label = 11 } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 19
           , sourceNode = AdActionNode
             { label = 3
@@ -802,35 +805,35 @@ defaultMatchPetriInstance = MatchPetriInstance
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( SupportST
+              ( SupportPetriNode
                 { label = 20 }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 20 }
         , SimplePlace
           { initial = 0
           , flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 16
                 , sourceNode = AdActionNode
                   { label = 4
                   , name = "E" } }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 21 }
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 1
                 , sourceNode = AdDecisionNode
                   { label = 10 } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 22
           , sourceNode = AdObjectNode
             { label = 8
@@ -839,22 +842,22 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportST
+              ( SupportPetriNode
                 { label = 17 }
               , 1 ) ] } )
       ,
-        ( SupportST
+        ( SupportPetriNode
           { label = 23 }
         , SimpleTransition
           { flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 24
                 , sourceNode = AdDecisionNode
                   { label = 9 } }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 24
           , sourceNode = AdDecisionNode
             { label = 9 } }
@@ -862,17 +865,17 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( NormalST
+              ( NormalPetriNode
                 { label = 2
                 , sourceNode = AdJoinNode
                   { label = 14 } }
               , 1 )
             ,
-              ( SupportST
+              ( SupportPetriNode
                 { label = 18 }
               , 1 ) ] } )
       ,
-        ( NormalST
+        ( NormalPetriNode
           { label = 25
           , sourceNode = AdObjectNode
             { label = 5
@@ -881,7 +884,7 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( SupportST
+              ( SupportPetriNode
                 { label = 8 }
               , 1 ) ] } ) ] }
   , plantUMLConf = defaultPlantUmlConfig

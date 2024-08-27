@@ -55,7 +55,7 @@ library
       Modelling.ActivityDiagram.Config
       Modelling.ActivityDiagram.Datatype
       Modelling.ActivityDiagram.EnterAS
-      Modelling.ActivityDiagram.FindSupportST
+      Modelling.ActivityDiagram.FindSupportPetriNode
       Modelling.ActivityDiagram.Instance
       Modelling.ActivityDiagram.Isomorphism
       Modelling.ActivityDiagram.MatchAd
@@ -168,7 +168,7 @@ test-suite modelling-tasks-test
       Modelling.ActivityDiagram.Auxiliary.ParserSpec
       Modelling.ActivityDiagram.ConfigSpec
       Modelling.ActivityDiagram.EnterASSpec
-      Modelling.ActivityDiagram.FindSupportSTSpec
+      Modelling.ActivityDiagram.FindSupportPetriNodeSpec
       Modelling.ActivityDiagram.MatchAdSpec
       Modelling.ActivityDiagram.MatchPetriSpec
       Modelling.ActivityDiagram.PetriNetSpec

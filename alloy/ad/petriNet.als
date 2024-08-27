@@ -2,7 +2,7 @@ module petriNet
 
 open exerciseRules
 
-pred supportSTAbsent {
+pred supportPetriNodeAbsent {
   let places = ObjectNodes + InitialNodes + DecisionNodes + MergeNodes |
     disj[from.places.to, places]
   let transitions = ActionNodes + ForkNodes + JoinNodes |

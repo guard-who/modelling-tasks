@@ -41,8 +41,8 @@ import Modelling.ActivityDiagram.Datatype (
 
 
 data PetriKey
-  = SupportST {label :: Int}
-  | NormalST {label :: Int, sourceNode :: Ad.AdNode}
+  = SupportPetriNode {label :: Int}
+  | NormalPetriNode {label :: Int, sourceNode :: Ad.AdNode}
   deriving (Generic, Eq, Read, Show)
 
 instance Ord PetriKey where
@@ -55,7 +55,10 @@ convertToPetriNet :: Net p n => Ad.UMLActivityDiagram -> p n PetriKey
 convertToPetriNet diag =
   let st_petri = foldr insertNode emptyNet (Ad.nodes diag)
       st_edges_petri = foldr insertEdge st_petri (Ad.connections diag)
-      st_support_petri = foldr addSupportST st_edges_petri (M.keys $ nodes st_edges_petri)
+      st_support_petri = foldr
+        addSupportPetriNode
+        st_edges_petri
+        (M.keys $ nodes st_edges_petri)
   in relabelPetri $ removeFinalPlaces st_support_petri
 
 -- Relabels Petri net nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
@@ -71,8 +74,9 @@ relabelPetri petri =
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
 updatePetriKey relabeling key =
   case key of
-    NormalST {label, sourceNode} -> NormalST {label=relabel label, sourceNode=sourceNode}
-    SupportST {label} -> SupportST {label=relabel label}
+    NormalPetriNode {label, sourceNode} ->
+      NormalPetriNode {label = relabel label, sourceNode = sourceNode}
+    SupportPetriNode {label} -> SupportPetriNode {label = relabel label}
   where relabel n = relabeling M.! n
 
 removeFinalPlaces
@@ -88,30 +92,32 @@ removeIfFinal
   -> p n PetriKey
 removeIfFinal key petri =
   case key of
-    NormalST {sourceNode} ->
+    NormalPetriNode {sourceNode} ->
       if isActivityFinalNode sourceNode || isFlowFinalNode sourceNode then
          deleteNode key petri
       else petri
     _ -> petri
 
-addSupportST :: Net p n => PetriKey -> p n PetriKey -> p n PetriKey
-addSupportST sourceKey petri =
+addSupportPetriNode :: Net p n => PetriKey -> p n PetriKey -> p n PetriKey
+addSupportPetriNode sourceKey petri =
   let sourceNode = nodes petri M.! sourceKey
       fn = if isPlaceNode sourceNode then isPlaceNode else isTransitionNode
       nodesToBeFixed = M.filter fn
         $ M.mapMaybeWithKey (\k _ -> M.lookup k (nodes petri))
         $ outFlow sourceKey petri
-  in M.foldrWithKey (addSupportST' sourceKey) petri nodesToBeFixed
+  in M.foldrWithKey (addSupportPetriNode' sourceKey) petri nodesToBeFixed
 
-addSupportST'
+addSupportPetriNode'
   :: Net p n
   => PetriKey
   -> PetriKey
   -> n PetriKey
   -> p n PetriKey
   -> p n PetriKey
-addSupportST' sourceKey targetKey targetNode petri =
-  let supportKey = SupportST {label = (+ 1) $ maximum $ map label $ M.keys $ nodes petri}
+addSupportPetriNode' sourceKey targetKey targetNode petri =
+  let supportKey = SupportPetriNode {
+        label = (+ 1) $ maximum $ map label $ M.keys $ nodes petri
+        }
   in alterFlow supportKey 1 targetKey
      . alterFlow sourceKey 1 supportKey
      . alterNode supportKey (if isPlaceNode targetNode then Nothing else Just 0)
@@ -124,36 +130,45 @@ insertNode
   -> p n PetriKey
   -> p n PetriKey
 insertNode =
-  uncurry alterNode . nodeToST
+  uncurry alterNode . nodeToPetriNode
 
-nodeToST :: Ad.AdNode -> (PetriKey, Maybe Int)
-nodeToST node =
+nodeToPetriNode :: Ad.AdNode -> (PetriKey, Maybe Int)
+nodeToPetriNode node =
   case node of
-    Ad.AdInitialNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdInitialNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Just 1
       )
-    Ad.AdActionNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdActionNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Nothing
       )
-    Ad.AdObjectNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdObjectNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Just 0
       )
-    Ad.AdDecisionNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdDecisionNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Just 0
       )
-    Ad.AdMergeNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdMergeNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Just 0
       )
-    Ad.AdForkNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdForkNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Nothing
       )
-    Ad.AdJoinNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdJoinNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Nothing
       )
-    Ad.AdActivityFinalNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdActivityFinalNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Just 0
       )
-    Ad.AdFlowFinalNode {label} -> (NormalST{label=label, sourceNode=node},
+    Ad.AdFlowFinalNode {label} -> (
+      NormalPetriNode {label = label, sourceNode = node},
       Just 0
       )
 

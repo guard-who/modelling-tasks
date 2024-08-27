@@ -8,7 +8,13 @@ import System.Environment (getArgs, withArgs)
 import System.FilePath ((</>), addTrailingPathSeparator)
 
 import Modelling.ActivityDiagram.Instance (parseInstance)
-import Modelling.ActivityDiagram.FindSupportST(findSupportSTText, findSupportSTTaskDescription, defaultFindSupportSTConfig, findSupportSTAlloy, FindSupportSTInstance (..))
+import Modelling.ActivityDiagram.FindSupportPetriNode (
+  FindSupportPetriNodeInstance (..),
+  defaultFindSupportPetriNodeConfig,
+  findSupportPetriNodeAlloy,
+  findSupportPetriNodeTaskDescription,
+  findSupportPetriNodeText,
+  )
 import Modelling.ActivityDiagram.PlantUMLConverter(convertToPlantUML)
 import Language.Alloy.Call (getInstances)
 import Language.PlantUML.Call (DiagramType(SVG), drawPlantUMLDiagram)
@@ -19,13 +25,21 @@ main = do
   xs <- getArgs
   case xs of
     pathToFolder:xs' -> do
-      inst <- getInstances (Just 50) $ findSupportSTAlloy defaultFindSupportSTConfig
+      inst <- getInstances (Just 50)
+        $ findSupportPetriNodeAlloy defaultFindSupportPetriNodeConfig
       folders <- createExerciseFolders pathToFolder (length inst)
       let ad = map (failWith id . parseInstance) inst
-          findSupportSTPetri = map (\x -> findSupportSTText $ FindSupportSTInstance {activityDiagram = x, seed=123}) ad
-          plantUmlString = map (convertToPlantUML . fst) findSupportSTPetri
-          taskDescription = replicate (length folders) findSupportSTTaskDescription
-          taskSolution = map snd findSupportSTPetri
+          findSupportPetriNodePetri = map
+            (\x -> findSupportPetriNodeText
+              $ FindSupportPetriNodeInstance {activityDiagram = x, seed=123})
+            ad
+          plantUmlString = map
+            (convertToPlantUML . fst)
+            findSupportPetriNodePetri
+          taskDescription = replicate
+            (length folders)
+            findSupportPetriNodeTaskDescription
+          taskSolution = map snd findSupportPetriNodePetri
       svg <- mapM (drawPlantUMLDiagram SVG) plantUmlString
       writeFilesToFolders folders B.writeFile svg "Diagram.svg"
       writeFilesToFolders folders writeFile taskDescription  "TaskDescription.txt"

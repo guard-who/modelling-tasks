@@ -184,8 +184,8 @@ executable evalTimeToGenerate
     , transformers
   default-language: Haskell2010
 
-executable findSupportSTTaskDemo
-  main-is: findSupportSTTaskDemo.hs
+executable findSupportPetriNodeTaskDemo
+  main-is: findSupportPetriNodeTaskDemo.hs
   other-modules:
       Common
   hs-source-dirs:

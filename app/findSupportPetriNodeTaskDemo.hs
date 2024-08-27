@@ -2,11 +2,11 @@ module Main (main) where
 
 import Capabilities.Alloy.IO            ()
 import Capabilities.PlantUml.IO         ()
-import Modelling.ActivityDiagram.FindSupportST (
-  defaultFindSupportSTConfig,
-  findSupportST,
-  findSupportSTTask,
-  findSupportSTEvaluation
+import Modelling.ActivityDiagram.FindSupportPetriNode (
+  defaultFindSupportPetriNodeConfig,
+  findSupportPetriNode,
+  findSupportPetriNodeTask,
+  findSupportPetriNodeEvaluation
   )
 import Control.OutputCapable.Blocks     (Language (English))
 import System.Environment               (getArgs)
@@ -20,10 +20,13 @@ main = do
     [path, s, seed] -> do
       putStrLn $ "Segment: " ++ s
       putStrLn $ "Seed: " ++ seed
-      task <- findSupportST defaultFindSupportSTConfig (read s) (read seed)
+      task <- findSupportPetriNode
+        defaultFindSupportPetriNodeConfig
+        (read s)
+        (read seed)
       print task
-      findSupportSTTask path task `withLang` English
+      findSupportPetriNodeTask path task `withLang` English
       sub <- read <$> getLine
-      points <- findSupportSTEvaluation task sub `withLang` English
+      points <- findSupportPetriNodeEvaluation task sub `withLang` English
       putStrLn $ "Points: " ++ show points
     _ -> error "usage: three parameters required: FilePath (Output Folder) Segment (Int) Seed (Int)"

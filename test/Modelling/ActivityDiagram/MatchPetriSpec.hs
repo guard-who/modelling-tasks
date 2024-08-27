@@ -1,6 +1,12 @@
 module Modelling.ActivityDiagram.MatchPetriSpec where
 
-import Modelling.ActivityDiagram.MatchPetri (MatchPetriConfig(..), checkMatchPetriConfig, defaultMatchPetriConfig, matchPetriAlloy, extractSupportSTs)
+import Modelling.ActivityDiagram.MatchPetri (
+  MatchPetriConfig (..),
+  checkMatchPetriConfig,
+  defaultMatchPetriConfig,
+  extractSupportPetriNodes,
+  matchPetriAlloy,
+  )
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
@@ -27,19 +33,20 @@ spec = do
           }
             `shouldSatisfy` isJust
   describe "matchPetriAlloy" $ do
-    context "when supportSTAbsent is set to Just False" $
-      it "it returns an Alloy Specification from which only diagrams which contain support STs are generated" $ do
-        let spec' = matchPetriAlloy defaultMatchPetriConfig {supportSTAbsent = Just False}
+    context "when supportPetriNodeAbsent is set to Just False" $
+      it "it returns an Alloy Specification from which only diagrams which contain support PetriNodes are generated" $ do
+        let spec' = matchPetriAlloy
+              defaultMatchPetriConfig {supportPetriNodeAbsent = Just False}
         inst <- getInstances (Just 50) spec'
         ad <- mapM parseInstance inst
-        all (hasSupportSTs . convertToSimple) ad `shouldBe` True
-    context "when supportSTAbsent is set to Just True" $
-      it "it returns an Alloy Specification from which only diagrams which contain no support STs are generated" $ do
+        all (hasSupportPetriNodes . convertToSimple) ad `shouldBe` True
+    context "when supportPetriNodeAbsent is set to Just True" $
+      it "it returns an Alloy Specification from which only diagrams which contain no support PetriNodes are generated" $ do
         let spec' = matchPetriAlloy defaultMatchPetriConfig {
               adConfig = defaultAdConfig {cycles = 0, decisionMergePairs = 1},
-              supportSTAbsent = Just True
+              supportPetriNodeAbsent = Just True
               }
         inst <- getInstances (Just 50) spec'
         ad <- mapM parseInstance inst
-        any (hasSupportSTs . convertToSimple) ad `shouldBe` False
-  where hasSupportSTs = not . null . extractSupportSTs
+        any (hasSupportPetriNodes . convertToSimple) ad `shouldBe` False
+  where hasSupportPetriNodes = not . null . extractSupportPetriNodes

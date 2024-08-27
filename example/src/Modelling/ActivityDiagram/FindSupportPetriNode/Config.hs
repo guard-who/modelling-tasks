@@ -1,8 +1,10 @@
 -- |
 
-module Modelling.ActivityDiagram.FindSupportSt.Config where
+module Modelling.ActivityDiagram.FindSupportPetriNode.Config where
 
-import Modelling.ActivityDiagram.FindSupportST (FindSupportSTConfig(..))
+import Modelling.ActivityDiagram.FindSupportPetriNode (
+  FindSupportPetriNodeConfig (..),
+  )
 import Modelling.ActivityDiagram.Config (AdConfig(..))
 
 {-|
@@ -10,8 +12,8 @@ points: 0.15
 generation time: 2:00min
 CPU usage: 120%
 -}
-task41 :: FindSupportSTConfig
-task41 = FindSupportSTConfig {
+task41 :: FindSupportPetriNodeConfig
+task41 = FindSupportPetriNodeConfig {
   adConfig = AdConfig {
     actionLimits = (6, 6),
     objectNodeLimits = (4, 4),
@@ -35,8 +37,8 @@ points: 0.15
 generation time: 3:30min
 CPU usage: 100%
 -}
-task42 :: FindSupportSTConfig
-task42 = FindSupportSTConfig {
+task42 :: FindSupportPetriNodeConfig
+task42 = FindSupportPetriNodeConfig {
   adConfig = AdConfig {
     actionLimits = (8, 8),
     objectNodeLimits = (4, 4),

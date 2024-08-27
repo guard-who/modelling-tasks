@@ -1,6 +1,10 @@
-module Modelling.ActivityDiagram.FindSupportSTSpec where
+module Modelling.ActivityDiagram.FindSupportPetriNodeSpec where
 
-import Modelling.ActivityDiagram.FindSupportST (FindSupportSTConfig(..), checkFindSupportSTConfig, defaultFindSupportSTConfig)
+import Modelling.ActivityDiagram.FindSupportPetriNode (
+  FindSupportPetriNodeConfig(..),
+  checkFindSupportPetriNodeConfig,
+  defaultFindSupportPetriNodeConfig,
+  )
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
 import Data.Maybe (isJust)
@@ -12,12 +16,13 @@ import Modelling.ActivityDiagram.Config (
 
 spec :: Spec
 spec =
-  describe "checkFindSupportSTConfig" $ do
+  describe "checkFindSupportPetriNodeConfig" $ do
     it "checks if the basic Input is in given boundaries" $
-      checkFindSupportSTConfig defaultFindSupportSTConfig  `shouldBe` Nothing
+      checkFindSupportPetriNodeConfig defaultFindSupportPetriNodeConfig
+        `shouldBe` Nothing
     context "when provided with Input out of the constraints" $
       it "it returns a String with necessary changes" $
-        checkFindSupportSTConfig defaultFindSupportSTConfig {
+        checkFindSupportPetriNodeConfig defaultFindSupportPetriNodeConfig {
           adConfig = defaultAdConfig {actionLimits = (0, 4), forkJoinPairs = 0},
           avoidAddingSinksForFinals = Just True
           }

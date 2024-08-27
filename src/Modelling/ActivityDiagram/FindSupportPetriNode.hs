@@ -7,19 +7,19 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Modelling.ActivityDiagram.FindSupportST (
-  FindSupportSTInstance(..),
-  FindSupportSTConfig(..),
-  FindSupportSTSolution(..),
-  defaultFindSupportSTConfig,
-  checkFindSupportSTConfig,
-  findSupportSTSolution,
-  findSupportSTAlloy,
-  findSupportSTTask,
-  findSupportSTInitial,
-  findSupportSTEvaluation,
-  findSupportST,
-  defaultFindSupportSTInstance
+module Modelling.ActivityDiagram.FindSupportPetriNode (
+  FindSupportPetriNodeConfig(..),
+  FindSupportPetriNodeInstance(..),
+  FindSupportPetriNodeSolution(..),
+  checkFindSupportPetriNodeConfig,
+  defaultFindSupportPetriNodeConfig,
+  defaultFindSupportPetriNodeInstance,
+  findSupportPetriNode,
+  findSupportPetriNodeAlloy,
+  findSupportPetriNodeEvaluation,
+  findSupportPetriNodeInitial,
+  findSupportPetriNodeSolution,
+  findSupportPetriNodeTask,
 ) where
 
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
@@ -95,13 +95,13 @@ import Data.String.Interpolate ( i )
 import GHC.Generics (Generic)
 import System.Random.Shuffle (shuffleM)
 
-data FindSupportSTInstance = FindSupportSTInstance {
+data FindSupportPetriNodeInstance = FindSupportPetriNodeInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUmlConfig,
   showSolution :: Bool
 } deriving (Generic, Show)
 
-data FindSupportSTConfig = FindSupportSTConfig {
+data FindSupportPetriNodeConfig = FindSupportPetriNodeConfig {
   adConfig :: AdConfig,
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
@@ -113,8 +113,8 @@ data FindSupportSTConfig = FindSupportSTConfig {
   printSolution :: Bool
 } deriving (Generic, Show)
 
-defaultFindSupportSTConfig :: FindSupportSTConfig
-defaultFindSupportSTConfig = FindSupportSTConfig
+defaultFindSupportPetriNodeConfig :: FindSupportPetriNodeConfig
+defaultFindSupportPetriNodeConfig = FindSupportPetriNodeConfig
   { adConfig = defaultAdConfig {activityFinalNodes = 0, flowFinalNodes = 2},
     maxInstances = Just 50,
     hideNodeNames = False,
@@ -124,13 +124,13 @@ defaultFindSupportSTConfig = FindSupportSTConfig
     printSolution = False
   }
 
-checkFindSupportSTConfig :: FindSupportSTConfig -> Maybe String
-checkFindSupportSTConfig conf =
+checkFindSupportPetriNodeConfig :: FindSupportPetriNodeConfig -> Maybe String
+checkFindSupportPetriNodeConfig conf =
   checkAdConfig (adConfig conf)
-  <|> findSupportSTConfig' conf
+  <|> findSupportPetriNodeConfig' conf
 
-findSupportSTConfig' :: FindSupportSTConfig -> Maybe String
-findSupportSTConfig' FindSupportSTConfig {
+findSupportPetriNodeConfig' :: FindSupportPetriNodeConfig -> Maybe String
+findSupportPetriNodeConfig' FindSupportPetriNodeConfig {
     adConfig,
     maxInstances,
     activityFinalsExist,
@@ -152,8 +152,8 @@ findSupportSTConfig' FindSupportSTConfig {
   | otherwise
     = Nothing
 
-findSupportSTAlloy :: FindSupportSTConfig -> String
-findSupportSTAlloy FindSupportSTConfig {
+findSupportPetriNodeAlloy :: FindSupportPetriNodeConfig -> String
+findSupportPetriNodeAlloy FindSupportPetriNodeConfig {
   adConfig,
   activityFinalsExist,
   avoidAddingSinksForFinals
@@ -162,7 +162,7 @@ findSupportSTAlloy FindSupportSTConfig {
   where modules = modulePetriNet
         predicates =
           [i|
-            not supportSTAbsent
+            not supportPetriNodeAbsent
             #{f activityFinalsExist "activityFinalsExist"}
             #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
           |]
@@ -172,46 +172,49 @@ findSupportSTAlloy FindSupportSTConfig {
             Just False -> [i| not #{s}|]
             Nothing -> ""
 
-data FindSupportSTSolution = FindSupportSTSolution {
+data FindSupportPetriNodeSolution = FindSupportPetriNodeSolution {
   numberOfPetriNodes :: Int,
   numberOfSupportPlaces :: Int,
   numberOfSupportTransitions :: Int
 } deriving (Generic, Show, Eq, Read)
 
-findSupportSTSolution :: FindSupportSTInstance -> FindSupportSTSolution
-findSupportSTSolution task =
-  findSupportSTSolution' @PetriLike @SimpleNode
+findSupportPetriNodeSolution
+  :: FindSupportPetriNodeInstance
+  -> FindSupportPetriNodeSolution
+findSupportPetriNodeSolution task =
+  findSupportPetriNodeSolution' @PetriLike @SimpleNode
   $ convertToPetriNet $ activityDiagram task
 
-findSupportSTSolution'
+findSupportPetriNodeSolution'
   :: Net p n
   => p n PetriKey
-  -> FindSupportSTSolution
-findSupportSTSolution' petri = FindSupportSTSolution {
+  -> FindSupportPetriNodeSolution
+findSupportPetriNodeSolution' petri = FindSupportPetriNodeSolution {
     numberOfPetriNodes = M.size $ Petri.nodes petri,
-    numberOfSupportPlaces = M.size $ M.filter isPlaceNode supportSTMap,
-    numberOfSupportTransitions = M.size $ M.filter isTransitionNode supportSTMap
+    numberOfSupportPlaces = M.size $ M.filter isPlaceNode supportPetriNodeMap,
+    numberOfSupportTransitions =
+      M.size $ M.filter isTransitionNode supportPetriNodeMap
   }
   where
-    supportSTMap = M.filterWithKey
-      (\k _ -> isSupportST k && not (isSinkST k petri))
+    supportPetriNodeMap = M.filterWithKey
+      (\k _ -> isSupportPetriNode k && not (isSinkPetriNode k petri))
       $ Petri.nodes petri
 
-isSinkST :: Net p n => PetriKey -> p n PetriKey -> Bool
-isSinkST key petri = M.null $ outFlow key petri
+isSinkPetriNode :: Net p n => PetriKey -> p n PetriKey -> Bool
+isSinkPetriNode key petri = M.null $ outFlow key petri
 
-isSupportST :: PetriKey -> Bool
-isSupportST key =
+isSupportPetriNode :: PetriKey -> Bool
+isSupportPetriNode key =
   case key of
-    SupportST {} -> True
+    SupportPetriNode {} -> True
     _ -> False
 
-findSupportSTTask
+findSupportPetriNodeTask
   :: (MonadPlantUml m, OutputCapable m)
   => FilePath
-  -> FindSupportSTInstance
+  -> FindSupportPetriNodeInstance
   -> LangM m
-findSupportSTTask path task = do
+findSupportPetriNodeTask path task = do
   paragraph $ translate $ do
     english "Consider the following activity diagram:"
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
@@ -225,7 +228,7 @@ an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl
     translate $ do
       english [i|To do this, enter your answer as in the following example:|]
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
-    code $ show findSupportSTInitial
+    code $ show findSupportPetriNodeInitial
     translate $ do
       english [i|In this example, the resulting net contains 10 nodes in total, of which 2 are auxiliary places and 3 are auxiliary transitions.|]
       german [i|In diesem Beispiel etwa enthält das entstehende Netz insgesamt 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransitionen.|]
@@ -233,35 +236,35 @@ an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl
   auxiliaryNodesAdvice True
   pure ()
 
-findSupportSTInitial :: FindSupportSTSolution
-findSupportSTInitial = FindSupportSTSolution {
+findSupportPetriNodeInitial :: FindSupportPetriNodeSolution
+findSupportPetriNodeInitial = FindSupportPetriNodeSolution {
   numberOfPetriNodes = 10,
   numberOfSupportPlaces = 2,
   numberOfSupportTransitions = 3
 }
 
-findSupportSTEvaluation
+findSupportPetriNodeEvaluation
   :: OutputCapable m
-  => FindSupportSTInstance
-  -> FindSupportSTSolution
+  => FindSupportPetriNodeInstance
+  -> FindSupportPetriNodeSolution
   -> Rated m
-findSupportSTEvaluation task sub = addPretext $ do
+findSupportPetriNodeEvaluation task sub = addPretext $ do
   let as = translations $ do
         english "answer parts"
         german "Teilantworten"
-      sol = findSupportSTSolution task
-      solution = findSupportSTSolutionMap sol
-      sub' = M.keys $ findSupportSTSolutionMap sub
+      sol = findSupportPetriNodeSolution task
+      solution = findSupportPetriNodeSolutionMap sol
+      sub' = M.keys $ findSupportPetriNodeSolutionMap sub
       maybeSolutionString =
         if showSolution task
         then Just $ show sol
         else Nothing
   multipleChoice DefiniteArticle as maybeSolutionString solution sub'
 
-findSupportSTSolutionMap
-  :: FindSupportSTSolution
+findSupportPetriNodeSolutionMap
+  :: FindSupportPetriNodeSolution
   -> Map (Int, Int) Bool
-findSupportSTSolutionMap sol =
+findSupportPetriNodeSolutionMap sol =
   let xs = [
         numberOfPetriNodes sol,
         numberOfSupportPlaces sol,
@@ -269,28 +272,28 @@ findSupportSTSolutionMap sol =
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 
-findSupportST
+findSupportPetriNode
   :: (MonadAlloy m, MonadThrow m)
-  => FindSupportSTConfig
+  => FindSupportPetriNodeConfig
   -> Int
   -> Int
-  -> m FindSupportSTInstance
-findSupportST config segment seed = do
+  -> m FindSupportPetriNodeInstance
+findSupportPetriNode config segment seed = do
   let g = mkStdGen $ (segment +) $ 4 * seed
-  evalRandT (getFindSupportSTTask config) g
+  evalRandT (getFindSupportPetriNodeTask config) g
 
-getFindSupportSTTask
+getFindSupportPetriNodeTask
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
-  => FindSupportSTConfig
-  -> RandT g m FindSupportSTInstance
-getFindSupportSTTask config = do
+  => FindSupportPetriNodeConfig
+  -> RandT g m FindSupportPetriNodeInstance
+getFindSupportPetriNodeTask config = do
   alloyInstances <- getInstances
     (maxInstances config)
     Nothing
-    $ findSupportSTAlloy config
+    $ findSupportPetriNodeAlloy config
   randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
   ad <- mapM (fmap snd . shuffleAdNames) randomInstances >>= getFirstInstance
-  return $ FindSupportSTInstance {
+  return $ FindSupportPetriNodeInstance {
     activityDiagram = ad,
     plantUMLConf =
       PlantUmlConfig {
@@ -300,8 +303,8 @@ getFindSupportSTTask config = do
     showSolution = printSolution config
   }
 
-defaultFindSupportSTInstance :: FindSupportSTInstance
-defaultFindSupportSTInstance = FindSupportSTInstance {
+defaultFindSupportPetriNodeInstance :: FindSupportPetriNodeInstance
+defaultFindSupportPetriNodeInstance = FindSupportPetriNodeInstance {
   activityDiagram = UMLActivityDiagram {
     nodes = [
       AdActionNode {label = 1, name = "A"},

@@ -9,10 +9,10 @@ import Modelling.ActivityDiagram.EnterAs.Config (
   task35,
   task36,
   )
-import Modelling.ActivityDiagram.FindSupportST (
-  checkFindSupportSTConfig,
+import Modelling.ActivityDiagram.FindSupportPetriNode (
+  checkFindSupportPetriNodeConfig,
   )
-import Modelling.ActivityDiagram.FindSupportSt.Config (
+import Modelling.ActivityDiagram.FindSupportPetriNode.Config (
   task41,
   task42,
   )
@@ -184,6 +184,6 @@ spec =
     it "task40" $
       checkMatchPetriConfig task40 `shouldBe` Nothing
     it "task41" $
-      checkFindSupportSTConfig task41 `shouldBe` Nothing
+      checkFindSupportPetriNodeConfig task41 `shouldBe` Nothing
     it "task42" $
-      checkFindSupportSTConfig task42 `shouldBe` Nothing
+      checkFindSupportPetriNodeConfig task42 `shouldBe` Nothing
