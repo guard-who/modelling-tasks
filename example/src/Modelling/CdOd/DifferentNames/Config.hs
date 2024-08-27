@@ -40,7 +40,6 @@ task12 = DifferentNamesConfig {
     usesEveryRelationshipName = Just False
     },
   onlyAnonymousObjects = True,
-  ignoreOneRelationship = Just True,
   printSolution = True,
   timeout = Nothing
   }
@@ -74,7 +73,6 @@ task13 = DifferentNamesConfig {
     usesEveryRelationshipName = Just True
     },
   onlyAnonymousObjects = False,
-  ignoreOneRelationship = Just False,
   printSolution = True,
   timeout = Nothing
   }
@@ -108,7 +106,6 @@ task25 = DifferentNamesConfig {
     usesEveryRelationshipName = Just True
     },
   onlyAnonymousObjects = True,
-  ignoreOneRelationship = Just False,
   printSolution = True,
   timeout = Nothing
   }

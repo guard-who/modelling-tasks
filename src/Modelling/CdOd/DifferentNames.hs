@@ -204,9 +204,6 @@ data DifferentNamesConfig = DifferentNamesConfig {
     objectConfig     :: ObjectConfig,
     objectProperties :: ObjectProperties,
     onlyAnonymousObjects :: Bool,
-    -- | whether to enforce one relationship not matching to
-    -- any link in the object diagram
-    ignoreOneRelationship :: Maybe Bool,
     printSolution    :: Bool,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
@@ -235,12 +232,6 @@ checkDifferentNamesConfig DifferentNamesConfig {..}
       if the maximum number of relationships is not fixed.
       Otherwise task instances would vary too much in complexity.
       |]
-  | fmap not (usesEveryRelationshipName objectProperties)
-    /= ignoreOneRelationship
-  = Just [iii|
-      If 'ignoreOneRelationship' is set, 'usesEveryRelationshipName' must not
-      and vice versa. Or both have to be set to 'Nothing'.
-      |]
   | otherwise = checkClassConfigWithProperties classConfig defaultProperties
   where
     different (_, Nothing) = True
@@ -268,7 +259,6 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
       usesEveryRelationshipName = Just True
       },
     onlyAnonymousObjects = True,
-    ignoreOneRelationship = Just False,
     printSolution    = False,
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
@@ -568,8 +558,11 @@ getDifferentNamesTask tryNext config cd' = do
           cd1 = renameEdges (BM.twist bm) cd'
           bm' = BM.filter (const (`elem` used)) bm
           isCompleteMapping = BM.keysR bm == sort used
-      if maybe (const True) (bool id not) (ignoreOneRelationship config)
-         isCompleteMapping
+      if maybe
+        (const True)
+        (bool not id)
+        (usesEveryRelationshipName $ objectProperties config)
+        isCompleteMapping
         then do
         od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
         return $ DifferentNamesInstance {
