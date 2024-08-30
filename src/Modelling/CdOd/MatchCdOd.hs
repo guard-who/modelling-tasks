@@ -93,7 +93,7 @@ import Modelling.CdOd.Types (
   checkObjectDiagram,
   checkOmittedDefaultMultiplicities,
   classNames,
-  defaultDrawSettings,
+  defaultCdDrawSettings,
   defaultOmittedDefaultMultiplicities,
   defaultProperties,
   fromClassDiagram,
@@ -397,7 +397,7 @@ getMatchCdOdTask f config@MatchCdOdConfig {..} = do
 
 defaultMatchCdOdInstance :: MatchCdOdInstance
 defaultMatchCdOdInstance = MatchCdOdInstance {
-  cdDrawSettings = defaultDrawSettings,
+  cdDrawSettings = defaultCdDrawSettings,
   diagrams = M.fromList [
     (1, ClassDiagram {
       classNames = ["C","A","D","B"],

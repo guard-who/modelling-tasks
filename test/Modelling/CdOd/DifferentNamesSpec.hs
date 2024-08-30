@@ -36,7 +36,7 @@ import Modelling.CdOd.Types (
   Relationship (..),
   associationNames,
   classNames,
-  defaultDrawSettings,
+  defaultCdDrawSettings,
   linkNames,
   )
 import Modelling.Common                 (withLang)
@@ -325,7 +325,7 @@ evaluateDifferentNames
   -> Either String Rational
 evaluateDifferentNames coins cs cs' = flip withLang English $ do
   let i = DifferentNamesInstance {
-        cdDrawSettings = defaultDrawSettings,
+        cdDrawSettings = defaultCdDrawSettings,
         anonymousObjects = error "anonymousObjects is undefined",
         cDiagram = ClassDiagram {
           classNames = [classA],

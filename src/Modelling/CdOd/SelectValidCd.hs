@@ -85,7 +85,7 @@ import Modelling.CdOd.Types (
   anyRelationshipName,
   checkCdDrawSettings,
   checkCdMutations,
-  defaultDrawSettings,
+  defaultCdDrawSettings,
   linkNames,
   shuffleAnyClassAndConnectionOrder,
   renameClassesAndRelationships,
@@ -159,7 +159,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         inheritanceLimits  = (2, Just 4),
         relationshipLimits = (2, Just 4)
       },
-    drawSettings = defaultDrawSettings,
+    drawSettings = defaultCdDrawSettings,
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
       completelyInhabited = Just True,
@@ -515,7 +515,7 @@ renameInstance inst@SelectValidCdInstance {..} names' nonInheritances' = do
 
 defaultSelectValidCdInstance :: SelectValidCdInstance
 defaultSelectValidCdInstance = SelectValidCdInstance {
-  cdDrawSettings = defaultDrawSettings,
+  cdDrawSettings = defaultCdDrawSettings,
   classDiagrams = M.fromAscList [
     (1, InValidOption {
       hint = Right $ ObjectDiagram {

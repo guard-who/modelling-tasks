@@ -47,7 +47,7 @@ module Modelling.CdOd.Types (
   checkObjectDiagram,
   checkOmittedDefaultMultiplicities,
   classNamesOd,
-  defaultDrawSettings,
+  defaultCdDrawSettings,
   defaultOmittedDefaultMultiplicities,
   defaultProperties,
   fromClassDiagram,
@@ -750,8 +750,8 @@ data CdDrawSettings
     }
   deriving (Eq, Generic, Read, Show)
 
-defaultDrawSettings :: CdDrawSettings
-defaultDrawSettings = CdDrawSettings {
+defaultCdDrawSettings :: CdDrawSettings
+defaultCdDrawSettings = CdDrawSettings {
   omittedDefaults = defaultOmittedDefaultMultiplicities,
   printNames = True,
   printNavigations = True

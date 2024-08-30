@@ -117,7 +117,7 @@ import Modelling.CdOd.Types (
   anyAssociationNames,
   checkCdDrawSettings,
   classNames,
-  defaultDrawSettings,
+  defaultCdDrawSettings,
   isIllegal,
   maxObjects,
   renameClassesAndRelationships,
@@ -235,7 +235,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     inheritanceLimits = (0, Just 0),
     relationshipLimits = (3, Just 5)
     },
-  drawSettings = defaultDrawSettings,
+  drawSettings = defaultCdDrawSettings,
   maxInstances = Just 200,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
@@ -932,7 +932,7 @@ translatePropertyWithDirections x = translations $ case x of
 defaultNameCdErrorInstance :: NameCdErrorInstance
 defaultNameCdErrorInstance = NameCdErrorInstance {
   byName = True,
-  cdDrawSettings = defaultDrawSettings,
+  cdDrawSettings = defaultCdDrawSettings,
   classDiagram = AnnotatedClassDiagram {
     annotatedClasses = ["D","C","B","A"],
     annotatedRelationships = [

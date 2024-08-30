@@ -117,7 +117,7 @@ import Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   classNames,
-  defaultDrawSettings,
+  defaultCdDrawSettings,
   defaultProperties,
   fromClassDiagram,
   maxObjects,
@@ -248,7 +248,7 @@ defaultRepairCdConfig = RepairCdConfig {
         inheritanceLimits  = (0, Just 0),
         relationshipLimits = (3, Just 4)
       },
-    drawSettings = defaultDrawSettings,
+    drawSettings = defaultCdDrawSettings,
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
       completelyInhabited = Just True,
@@ -540,7 +540,7 @@ repairCd config@RepairCdConfig {..} segment seed = flip evalRandT g $ do
 defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
   byName = True,
-  cdDrawSettings = defaultDrawSettings,
+  cdDrawSettings = defaultCdDrawSettings,
   changes = M.fromAscList [
     (1, InValidOption {
       hint = Left $ AnyClassDiagram {

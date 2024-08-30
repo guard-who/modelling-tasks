@@ -83,7 +83,7 @@ import Modelling.CdOd.Types (
   checkObjectDiagram,
   checkOmittedDefaultMultiplicities,
   classNames,
-  defaultDrawSettings,
+  defaultCdDrawSettings,
   defaultOmittedDefaultMultiplicities,
   defaultProperties,
   fromClassDiagram,
@@ -500,7 +500,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
         }
       ]
     },
-  cdDrawSettings = defaultDrawSettings,
+  cdDrawSettings = defaultCdDrawSettings,
   generatorValue = -3894126834283525023,
   oDiagram = ObjectDiagram {
     objects = [
