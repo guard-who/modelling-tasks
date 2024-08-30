@@ -9,6 +9,7 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   ObjectConfig (..),
   ObjectProperties (..),
+  OmittedDefaultMultiplicities (..),
   )
 
 {-|
@@ -37,6 +38,11 @@ task14 = MatchCdOdConfig {
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Nothing
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
   printSolution = True,
   timeout = Nothing,
@@ -69,6 +75,11 @@ task15 = MatchCdOdConfig {
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just False
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
   printSolution = True,
   timeout = Nothing,

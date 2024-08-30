@@ -45,6 +45,7 @@ module Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   checkObjectDiagram,
+  checkOmittedDefaultMultiplicities,
   classNamesOd,
   defaultDrawSettings,
   defaultOmittedDefaultMultiplicities,

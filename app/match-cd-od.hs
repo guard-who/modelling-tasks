@@ -10,6 +10,7 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   ObjectConfig (..),
   ObjectProperties (..),
+  defaultOmittedDefaultMultiplicities,
   )
 import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
@@ -45,6 +46,7 @@ main = do
             hasSelfLoops = Nothing,
             usesEveryRelationshipName = Nothing
             },
+          omittedDefaultMultiplicities = defaultOmittedDefaultMultiplicities,
           printSolution    = False,
           timeout          = Nothing,
           withNonTrivialInheritance = Nothing

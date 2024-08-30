@@ -25,7 +25,6 @@ module Modelling.CdOd.MatchCdOd (
   ) where
 
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (transform)
-import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
@@ -73,7 +72,7 @@ import Modelling.CdOd.Auxiliary.Util (
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
-  CdDrawSettings,
+  CdDrawSettings (..),
   CdMutation,
   ClassConfig (..),
   ClassDiagram (..),
@@ -84,6 +83,7 @@ import Modelling.CdOd.Types (
   ObjectDiagram (..),
   ObjectProperties (..),
   Od,
+  OmittedDefaultMultiplicities,
   Relationship (..),
   allCdMutations,
   associationNames,
@@ -91,8 +91,10 @@ import Modelling.CdOd.Types (
   checkCdMutations,
   checkClassConfigWithProperties,
   checkObjectDiagram,
+  checkOmittedDefaultMultiplicities,
   classNames,
   defaultDrawSettings,
+  defaultOmittedDefaultMultiplicities,
   defaultProperties,
   fromClassDiagram,
   isObjectDiagramRandomisable,
@@ -149,21 +151,22 @@ instance Exception MatchCdOdException
 data MatchCdOdException = InvalidMatchCdOdInstance
   deriving Show
 
-data MatchCdOdInstance = MatchCdOdInstance {
+data MatchCdOdInstance
+  = MatchCdOdInstance {
+    cdDrawSettings :: !CdDrawSettings,
     diagrams       :: Map Int Cd,
     generatorValue :: Int,
     instances      :: Map Char ([Int], Od),
     showSolution   :: Bool
   } deriving (Generic, Read, Show)
 
-cdDrawSettings :: MatchCdOdInstance -> CdDrawSettings
-cdDrawSettings _ = defaultDrawSettings
-
-data MatchCdOdConfig = MatchCdOdConfig {
+data MatchCdOdConfig
+  = MatchCdOdConfig {
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectConfig     :: ObjectConfig,
     objectProperties :: ObjectProperties,
+    omittedDefaultMultiplicities :: OmittedDefaultMultiplicities,
     printSolution    :: Bool,
     timeout          :: Maybe Int,
     withNonTrivialInheritance :: Maybe Bool
@@ -191,6 +194,7 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       hasSelfLoops = Nothing,
       usesEveryRelationshipName = Nothing
       },
+    omittedDefaultMultiplicities = defaultOmittedDefaultMultiplicities,
     printSolution    = False,
     timeout          = Nothing,
     withNonTrivialInheritance = Just True
@@ -217,16 +221,17 @@ checkMatchCdOdConfig config@MatchCdOdConfig {..}
   | otherwise
   = checkClassConfigWithProperties classConfig defaultProperties
   <|> checkCdMutations (allowedCdMutations config)
+  <|> checkOmittedDefaultMultiplicities omittedDefaultMultiplicities
 
 checkMatchCdOdInstance :: MatchCdOdInstance -> Maybe String
-checkMatchCdOdInstance inst@MatchCdOdInstance {..}
-  | not $ T.printNames $ cdDrawSettings inst
+checkMatchCdOdInstance MatchCdOdInstance {..}
+  | not $ printNames cdDrawSettings
   = Just [iii|printNames has to be set to True for this task type.|]
-  | not $ T.printNavigations $ cdDrawSettings inst
+  | not $ printNavigations cdDrawSettings
   = Just [iii|printNavigations has to be set to True for this task type.|]
   | otherwise
   = foldr ((<>) . checkObjectDiagram . snd) Nothing (M.elems instances)
-  <|> checkCdDrawSettings (cdDrawSettings inst)
+  <|> checkCdDrawSettings cdDrawSettings
 
 matchCdOdTask
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
@@ -375,18 +380,24 @@ getMatchCdOdTask
     -> m (Map Int Cd, Map Char ([Int], AlloyInstance)))
   -> MatchCdOdConfig
   -> m MatchCdOdInstance
-getMatchCdOdTask f config = do
+getMatchCdOdTask f config@MatchCdOdConfig {..} = do
   (cds, ods) <- f config
   ods' <- mapM (mapM alloyInstanceToOd) ods
   return $ MatchCdOdInstance {
+        cdDrawSettings = CdDrawSettings {
+          omittedDefaults = omittedDefaultMultiplicities,
+          printNames = True,
+          printNavigations = True
+          },
         diagrams       = cds,
         generatorValue = 0,
         instances      = ods',
-        showSolution   = printSolution config
+        showSolution   = printSolution
         }
 
 defaultMatchCdOdInstance :: MatchCdOdInstance
 defaultMatchCdOdInstance = MatchCdOdInstance {
+  cdDrawSettings = defaultDrawSettings,
   diagrams = M.fromList [
     (1, ClassDiagram {
       classNames = ["C","A","D","B"],
@@ -553,6 +564,7 @@ shuffleNodesAndEdges MatchCdOdInstance {..} = do
   cds <- mapM shuffleClassAndConnectionOrder diagrams
   ods <- mapM (mapM shuffleObjectAndLinkOrder) instances
   return MatchCdOdInstance {
+    cdDrawSettings = cdDrawSettings,
     diagrams = cds,
     generatorValue = generatorValue,
     instances = ods,
@@ -571,9 +583,9 @@ shuffleInstance
   :: (MonadThrow m, MonadRandom m)
   => MatchCdOdInstance
   -> m MatchCdOdInstance
-shuffleInstance inst = do
-  cds <- shuffleM $ M.toList $ diagrams inst
-  ods <- shuffleM $ M.toList $ instances inst
+shuffleInstance MatchCdOdInstance {..} = do
+  cds <- shuffleM $ M.toList diagrams
+  ods <- shuffleM $ M.toList instances
   let changeId x (y, cd) = ((y, x), (x, cd))
       (idMap, cds') = unzip $ zipWith changeId [1..] cds
       replaceId x (_, od) = (x, od)
@@ -582,10 +594,11 @@ shuffleInstance inst = do
   ods' <- mapM (mapM $ bimapM (mapM rename) return)
     $ zipWith replaceId ['a'..] ods
   return $ MatchCdOdInstance {
+    cdDrawSettings = cdDrawSettings,
     diagrams = M.fromAscList cds',
-    generatorValue = generatorValue inst,
+    generatorValue = generatorValue,
     instances = M.fromAscList ods',
-    showSolution = showSolution inst
+    showSolution = showSolution
     }
 
 renameInstance
@@ -594,21 +607,20 @@ renameInstance
   -> [String]
   -> [String]
   -> m MatchCdOdInstance
-renameInstance inst names' nonInheritances' = do
-  let cds = diagrams inst
-      ods = instances inst
-      (names, nonInheritances) = classAndNonInheritanceNames inst
+renameInstance inst@MatchCdOdInstance {..} names' nonInheritances' = do
+  let (names, nonInheritances) = classAndNonInheritanceNames inst
       bmNames  = BM.fromList $ zip names names'
       bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
       renameCd = renameClassesAndRelationships bmNames bmNonInheritances
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmNonInheritances
-  cds' <- renameCd `mapM` cds
-  ods' <- mapM renameOd `mapM` ods
+  cds <- renameCd `mapM` diagrams
+  ods <- mapM renameOd `mapM` instances
   return $ MatchCdOdInstance {
-    diagrams = cds',
-    generatorValue = generatorValue inst,
-    instances = ods',
-    showSolution = showSolution inst
+    cdDrawSettings = cdDrawSettings,
+    diagrams = cds,
+    generatorValue = generatorValue,
+    instances = ods,
+    showSolution = showSolution
     }
 
 getRandomTask

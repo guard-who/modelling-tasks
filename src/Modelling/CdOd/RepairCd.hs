@@ -41,7 +41,6 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
   transformImproveCd,
   )
 import qualified Modelling.CdOd.Types             as T (
-  CdDrawSettings (..),
   RelationshipProperties (selfInheritances, selfRelationships),
   )
 
@@ -101,7 +100,7 @@ import Modelling.CdOd.Types (
   AnyRelationship,
   ArticlePreference (..),
   Cd,
-  CdDrawSettings (CdDrawSettings),
+  CdDrawSettings (..),
   CdMutation,
   ClassConfig (..),
   ClassDiagram (..),
@@ -118,7 +117,7 @@ import Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   classNames,
-  defaultOmittedDefaultMultiplicities,
+  defaultDrawSettings,
   defaultProperties,
   fromClassDiagram,
   maxObjects,
@@ -225,11 +224,10 @@ data RepairCdConfig = RepairCdConfig {
     -- | the article preference when referring to relationships
     articleToUse      :: ArticlePreference,
     classConfig      :: ClassConfig,
+    drawSettings      :: !CdDrawSettings,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
     printExtendedFeedback :: Bool,
-    printNames       :: Bool,
-    printNavigations :: Bool,
     printSolution    :: Bool,
     timeout          :: Maybe Int,
     useNames         :: Bool
@@ -250,6 +248,7 @@ defaultRepairCdConfig = RepairCdConfig {
         inheritanceLimits  = (0, Just 0),
         relationshipLimits = (3, Just 4)
       },
+    drawSettings = defaultDrawSettings,
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
       completelyInhabited = Just True,
@@ -258,8 +257,6 @@ defaultRepairCdConfig = RepairCdConfig {
       usesEveryRelationshipName = Just True
       },
     printExtendedFeedback = False,
-    printNames       = True,
-    printNavigations = True,
     printSolution    = False,
     timeout          = Nothing,
     useNames         = False
@@ -270,7 +267,7 @@ allowedCdMutations _ = allCdMutations
 
 checkRepairCdConfig :: RepairCdConfig -> Maybe String
 checkRepairCdConfig config@RepairCdConfig {..}
-  | not printNames && useNames
+  | not (printNames drawSettings) && useNames
   = Just "use names is only possible when printing names"
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
@@ -286,6 +283,7 @@ checkRepairCdConfig config@RepairCdConfig {..}
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
   <|> checkCdMutations (allowedCdMutations config)
+  <|> checkCdDrawSettings drawSettings
 
 checkClassConfigAndChanges
   :: ClassConfig
@@ -308,14 +306,14 @@ repairCdTask
   => FilePath
   -> RepairCdInstance
   -> LangM m
-repairCdTask path task = do
+repairCdTask path RepairCdInstance {..} = do
   paragraph $ translate $ do
     english "Consider the following class diagram, which unfortunately is invalid:"
     german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:"
   image $=<< cacheCd
-    (cdDrawSettings task)
+    cdDrawSettings
     mempty
-    (classDiagram task)
+    classDiagram
     path
   paragraph $ translate $ do
     english [i|Which of the following changes would repair the class diagram?|]
@@ -324,8 +322,8 @@ repairCdTask path task = do
         english $ phraseChange English annotation x y annotated
         german $ phraseChange German annotation x y annotated
   enumerateM (text . show)
-    $ second (phrase (withNames task) (withDirections task) . option)
-    <$> M.toList (changes task)
+    $ second (phrase byName (printNavigations cdDrawSettings) . option)
+    <$> M.toList changes
   paragraph $ translate $ do
     english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
     german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren.|]
@@ -407,33 +405,27 @@ repairCdFeedback path drawSettings xs x cdChange =
 repairCdSolution :: RepairCdInstance -> [Int]
 repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
 
-data RepairCdInstance = RepairCdInstance {
+data RepairCdInstance
+  = RepairCdInstance {
+    byName         :: !Bool,
+    cdDrawSettings :: !CdDrawSettings,
     changes        :: Map Int RelationshipChange,
     classDiagram   :: AnyCd,
     showExtendedFeedback :: Bool,
-    showSolution   :: Bool,
-    withDirections :: Bool,
-    withNames      :: Bool
+    showSolution   :: Bool
   } deriving (Eq, Generic, Read, Show)
 
-cdDrawSettings
-  :: RepairCdInstance
-  -> CdDrawSettings
-cdDrawSettings RepairCdInstance {..} = CdDrawSettings {
-  omittedDefaults = defaultOmittedDefaultMultiplicities,
-  T.printNames = withNames,
-  T.printNavigations = withDirections
-  }
-
 checkRepairCdInstance :: RepairCdInstance -> Maybe String
-checkRepairCdInstance task@RepairCdInstance {..}
+checkRepairCdInstance RepairCdInstance {..}
+  | not (printNames cdDrawSettings) && byName
+  = Just "by name is only possible when printing names"
   | showExtendedFeedback && not showSolution
   = Just [iii|
       showExtendedFeedback leaks the correct solution
       and thus can only be enabled when showSolution is set to True
       |]
   | otherwise
-  = checkCdDrawSettings (cdDrawSettings task)
+  = checkCdDrawSettings cdDrawSettings
 
 classAndNonInheritanceNames :: RepairCdInstance -> ([String], [String])
 classAndNonInheritanceNames inst =
@@ -466,24 +458,24 @@ instance RandomiseLayout RepairCdInstance where
       shuffleClassAndConnectionOrder
       `mapM` changes
     return RepairCdInstance {
+      byName = byName,
+      cdDrawSettings = cdDrawSettings,
       changes = changes',
       classDiagram = cd,
       showExtendedFeedback = showExtendedFeedback,
-      showSolution = showSolution,
-      withDirections = withDirections,
-      withNames = withNames
+      showSolution = showSolution
       }
 
 shuffleInstance :: MonadRandom m => RepairCdInstance -> m RepairCdInstance
-shuffleInstance inst = do
-  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems $ changes inst)
+shuffleInstance RepairCdInstance {..} = do
+  chs <- M.fromAscList . zip [1..] <$> shuffleM (M.elems changes)
   return $ RepairCdInstance {
+    byName = byName,
+    cdDrawSettings = cdDrawSettings,
     changes = chs,
-    classDiagram = classDiagram inst,
-    showExtendedFeedback = showExtendedFeedback inst,
-    showSolution = showSolution inst,
-    withDirections = withDirections inst,
-    withNames = withNames inst
+    classDiagram = classDiagram,
+    showExtendedFeedback = showExtendedFeedback,
+    showSolution = showSolution
     }
 
 renameInstance
@@ -492,7 +484,7 @@ renameInstance
   -> [String]
   -> [String]
   -> m RepairCdInstance
-renameInstance inst names' nonInheritances' = do
+renameInstance inst@RepairCdInstance {..} names' nonInheritances' = do
   let (names, nonInheritances) = classAndNonInheritanceNames inst
       bmNames  = BM.fromList $ zip names names'
       bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
@@ -501,17 +493,17 @@ renameInstance inst names' nonInheritances' = do
       renameEdge = renameClassesAndRelationships bmNames bmNonInheritances
       renameAnyEdge = renameClassesAndRelationships bmNames bmNonInheritances
       renameEdges = mapM $ mapM $ bimapM renameAnyEdge renameEdge
-  cd <- renameAnyCd $ classDiagram inst
+  cd <- renameAnyCd classDiagram
   chs <- mapM
     (mapInValidOptionM renameEdges renameAnyCd renameCd)
-    $ changes inst
+    changes
   return $ RepairCdInstance {
+    byName         = byName,
+    cdDrawSettings = cdDrawSettings,
     changes        = chs,
     classDiagram   = cd,
-    showExtendedFeedback = showExtendedFeedback inst,
-    showSolution   = showSolution inst,
-    withDirections = withDirections inst,
-    withNames      = withNames inst
+    showExtendedFeedback = showExtendedFeedback,
+    showSolution   = showSolution
     }
 
 repairCd
@@ -520,23 +512,24 @@ repairCd
   -> Int
   -> Int
   -> m RepairCdInstance
-repairCd config segment seed = flip evalRandT g $ do
+repairCd config@RepairCdConfig {..} segment seed = flip evalRandT g $ do
   (cd, chs) <- repairIncorrect
-    (allowedProperties config)
-    (classConfig config)
+    allowedProperties
+    classConfig
     (allowedCdMutations config)
-    (objectProperties config)
-    (articleToUse config)
-    (maxInstances config)
-    (timeout config)
+    objectProperties
+    articleToUse
+    maxInstances
+    timeout
   chs' <- lift $ mapM cdAsHint chs
-  shuffleEverything $ RepairCdInstance
-    (M.fromAscList $ zip [1..] chs')
-    cd
-    (printExtendedFeedback config)
-    (printSolution config)
-    (printNavigations config)
-    (printNames config && useNames config)
+  shuffleEverything $ RepairCdInstance {
+    byName = printNames drawSettings && useNames,
+    cdDrawSettings = drawSettings,
+    changes = M.fromAscList $ zip [1..] chs',
+    classDiagram = cd,
+    showExtendedFeedback = printExtendedFeedback,
+    showSolution = printSolution
+    }
   where
     g = mkStdGen $ (segment +) $ 4 * seed
     cdAsHint x = do
@@ -546,6 +539,8 @@ repairCd config segment seed = flip evalRandT g $ do
 
 defaultRepairCdInstance :: RepairCdInstance
 defaultRepairCdInstance = RepairCdInstance {
+  byName = True,
+  cdDrawSettings = defaultDrawSettings,
   changes = M.fromAscList [
     (1, InValidOption {
       hint = Left $ AnyClassDiagram {
@@ -755,9 +750,7 @@ defaultRepairCdInstance = RepairCdInstance {
       ]
     },
   showExtendedFeedback = False,
-  showSolution = False,
-  withDirections = False,
-  withNames = True
+  showSolution = False
   }
 
 type PropertyChangeSet = ChangeSet PropertyChange

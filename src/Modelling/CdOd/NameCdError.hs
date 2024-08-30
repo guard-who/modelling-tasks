@@ -38,7 +38,6 @@ module Modelling.CdOd.NameCdError (
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
   transformGetNextFix,
   )
-import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
@@ -107,7 +106,7 @@ import Modelling.CdOd.Types (
   AnyClassDiagram (..),
   AnyRelationship,
   ArticlePreference (..),
-  CdDrawSettings (CdDrawSettings),
+  CdDrawSettings (..),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -118,7 +117,7 @@ import Modelling.CdOd.Types (
   anyAssociationNames,
   checkCdDrawSettings,
   classNames,
-  defaultOmittedDefaultMultiplicities,
+  defaultDrawSettings,
   isIllegal,
   maxObjects,
   renameClassesAndRelationships,
@@ -211,11 +210,10 @@ data NameCdErrorConfig = NameCdErrorConfig {
   -- | the article preference when referring to relationships
   articleToUse                :: ArticlePreference,
   classConfig                 :: ClassConfig,
+  drawSettings                :: !CdDrawSettings,
   maxInstances                :: Maybe Integer,
   objectProperties            :: ObjectProperties,
   possibleReasons             :: [Reason],
-  printNames                  :: Bool,
-  printNavigations            :: Bool,
   printSolution               :: Bool,
   reasonsPerInstance          :: NumberOfReasons,
   timeout                     :: Maybe Int,
@@ -237,6 +235,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     inheritanceLimits = (0, Just 0),
     relationshipLimits = (3, Just 5)
     },
+  drawSettings = defaultDrawSettings,
   maxInstances = Just 200,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
@@ -245,8 +244,6 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     usesEveryRelationshipName = Just True
     },
   possibleReasons = map PreDefined [minBound ..],
-  printNames = True,
-  printNavigations = True,
   printSolution = False,
   reasonsPerInstance = NumberOfReasons {
     customReasons = 0,
@@ -259,7 +256,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
 
 checkNameCdErrorConfig :: NameCdErrorConfig -> Maybe String
 checkNameCdErrorConfig NameCdErrorConfig {..}
-  | not printNames && useNames
+  | not (printNames drawSettings) && useNames
   = Just "use names is only possible when printing names"
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
@@ -302,6 +299,7 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
       |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
+  <|> checkCdDrawSettings drawSettings
   where
     predefined = concatMap
       (\case Custom {} -> []; PreDefined x -> [x])
@@ -358,26 +356,26 @@ toTaskTextPart
   -> FilePath
   -> NameCdErrorInstance
   -> LangM m
-toTaskTextPart output path task = case output of
+toTaskTextPart output path task@NameCdErrorInstance {..} = case output of
   Code c -> code c
   Paragraph xs -> paragraph $ for_ xs $ \x -> toTaskTextPart x path task
   TaskSpecific element -> case element of
     IncorrectCd -> image $=<< cacheCd
-      (cdDrawSettings task)
+      cdDrawSettings
       mempty
-      (unannotateCd $ classDiagram task)
+      (unannotateCd classDiagram)
       path
     ReasonsList -> enumerateM (text . singleton)
       $ second (translate . put . snd)
-      <$> M.toList (errorReasons task)
+      <$> M.toList errorReasons
     RelationshipsList -> do
       let phrase article x y z = translate $ do
             english $ phraseRelationship English article x y z
             german $ phraseRelationship German article x y z
           phraseRelationship' Annotation {..} = phrase
             (referenceUsing annotation)
-            (withNames task)
-            (withDirections task)
+            byName
+            (printNavigations cdDrawSettings)
             annotated
       enumerateM (text . show)
         $ map (second phraseRelationship')
@@ -385,22 +383,13 @@ toTaskTextPart output path task = case output of
   Translated xs -> translate $ put xs
 
 data NameCdErrorInstance = NameCdErrorInstance {
+  byName                      :: !Bool,
   classDiagram                :: AnnotatedCd Relevance,
+  cdDrawSettings              :: !CdDrawSettings,
   errorReasons                :: Map Char (Bool, Map Language String),
   showSolution                :: Bool,
-  taskText                    :: NameCdErrorTaskText,
-  withDirections              :: Bool,
-  withNames                   :: Bool
+  taskText                    :: !NameCdErrorTaskText
   } deriving (Eq, Generic, Read, Show)
-
-cdDrawSettings
-  :: NameCdErrorInstance
-  -> CdDrawSettings
-cdDrawSettings NameCdErrorInstance {..} = CdDrawSettings {
-  omittedDefaults = defaultOmittedDefaultMultiplicities,
-  T.printNames = withNames,
-  T.printNavigations = withDirections
-  }
 
 relevantRelationships
   :: NameCdErrorInstance
@@ -431,7 +420,9 @@ isRelevant =
   . annotation
 
 checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
-checkNameCdErrorInstance inst@NameCdErrorInstance {..}
+checkNameCdErrorInstance NameCdErrorInstance {..}
+  | not (printNames cdDrawSettings) && byName
+  = Just "by name is only possible when printing names"
   | 1 /= length (filter fst $ M.elems errorReasons)
   = Just [iii|
       There needs to be exactly one error defined within errorReasons
@@ -455,7 +446,7 @@ checkNameCdErrorInstance inst@NameCdErrorInstance {..}
   = Just $ [i|Problem within 'errorReasons': |] ++ x
   | otherwise
   = checkNameCdErrorTaskText taskText
-  <|> checkCdDrawSettings (cdDrawSettings inst)
+  <|> checkCdDrawSettings cdDrawSettings
   where
     letters = ['a' .. 'z'] ++ ['A' .. 'Z']
     reasons = map snd $ M.elems errorReasons
@@ -678,12 +669,12 @@ instance RandomiseLayout NameCdErrorInstance where
   randomiseLayout NameCdErrorInstance {..} = do
     cd <- shuffleAnnotatedClassAndConnectionOrder classDiagram
     return NameCdErrorInstance {
+      byName = byName,
+      cdDrawSettings = cdDrawSettings,
       classDiagram = cd,
       errorReasons = errorReasons,
       showSolution = showSolution,
-      taskText = taskText,
-      withDirections = withDirections,
-      withNames = withNames
+      taskText = taskText
       }
 
 shuffleInstance :: MonadRandom m => NameCdErrorInstance -> m NameCdErrorInstance
@@ -694,6 +685,8 @@ shuffleInstance NameCdErrorInstance {..} = do
     $ annotatedRelationships classDiagram
   rs <- M.fromAscList . zip ['a' ..] <$> shuffleM (M.elems errorReasons)
   return $ NameCdErrorInstance {
+    byName = byName,
+    cdDrawSettings = cdDrawSettings,
     classDiagram = classDiagram {
       annotatedRelationships = snd $ foldr
         updatePriority
@@ -702,9 +695,7 @@ shuffleInstance NameCdErrorInstance {..} = do
       },
     errorReasons = rs,
     showSolution = showSolution,
-    taskText = taskText,
-    withDirections = withDirections,
-    withNames = withNames
+    taskText = taskText
     }
   where
     updatePriority x (priorities, ys) = case x of
@@ -729,12 +720,12 @@ renameInstance inst@NameCdErrorInstance {..} names' nonInheritances' = do
       renameCd = renameClassesAndRelationships bmNames bmNonInheritances
   cd <- renameCd classDiagram
   return $ NameCdErrorInstance {
+    byName = byName,
+    cdDrawSettings = cdDrawSettings,
     classDiagram = cd,
     errorReasons = errorReasons,
     showSolution = showSolution,
-    taskText = taskText,
-    withDirections = withDirections,
-    withNames = withNames
+    taskText = taskText
     }
 
 nameCdErrorGenerate
@@ -768,6 +759,8 @@ generateAndRandomise NameCdErrorConfig {..} = do
         ++ take (preDefinedInvalid reasonsPerInstance - 1) invalid
         ++ take (preDefinedValid reasonsPerInstance) valid
   shuffleEverything $ NameCdErrorInstance {
+    byName = printNames drawSettings && useNames,
+    cdDrawSettings = drawSettings,
     classDiagram = AnnotatedClassDiagram {
       annotatedClasses = anyClassNames cd,
       annotatedRelationships = zipWith
@@ -780,9 +773,7 @@ generateAndRandomise NameCdErrorConfig {..} = do
       $ (True, PreDefined reason)
       : map (False,) chosenReasons,
     showSolution = printSolution,
-    taskText = defaultNameCdErrorTaskText,
-    withDirections = printNavigations,
-    withNames = printNames && useNames
+    taskText = defaultNameCdErrorTaskText
     }
   where
     relevanceFor xs n x = Annotation {
@@ -795,7 +786,7 @@ generateAndRandomise NameCdErrorConfig {..} = do
       }
     toTranslations x = case x of
       Custom y -> y
-      PreDefined y -> translateProperty printNavigations y
+      PreDefined y -> translateProperty (printNavigations drawSettings) y
 
 nameCdError
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
@@ -940,6 +931,8 @@ translatePropertyWithDirections x = translations $ case x of
 
 defaultNameCdErrorInstance :: NameCdErrorInstance
 defaultNameCdErrorInstance = NameCdErrorInstance {
+  byName = True,
+  cdDrawSettings = defaultDrawSettings,
   classDiagram = AnnotatedClassDiagram {
     annotatedClasses = ["D","C","B","A"],
     annotatedRelationships = [
@@ -1042,7 +1035,5 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
       ]))
     ],
   showSolution = False,
-  taskText = defaultNameCdErrorTaskText,
-  withDirections = True,
-  withNames = True
+  taskText = defaultNameCdErrorTaskText
   }

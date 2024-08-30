@@ -9,6 +9,7 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   ObjectConfig (..),
   ObjectProperties (..),
+  OmittedDefaultMultiplicities (..),
   )
 
 {-|
@@ -38,6 +39,11 @@ task12 = DifferentNamesConfig {
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just False
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
   onlyAnonymousObjects = True,
   printSolution = True,
@@ -72,6 +78,11 @@ task13 = DifferentNamesConfig {
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
     },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
+    },
   onlyAnonymousObjects = False,
   printSolution = True,
   timeout = Nothing
@@ -104,6 +115,11 @@ task25 = DifferentNamesConfig {
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
     usesEveryRelationshipName = Just True
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
   onlyAnonymousObjects = True,
   printSolution = True,

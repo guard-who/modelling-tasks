@@ -19,8 +19,6 @@ module Modelling.CdOd.SelectValidCd (
   selectValidCdTask,
   ) where
 
-import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
-
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
   elems,
@@ -73,7 +71,7 @@ import Modelling.CdOd.Types (
   AnyCd,
   AnyClassDiagram (..),
   ArticlePreference (..),
-  CdDrawSettings (CdDrawSettings),
+  CdDrawSettings (..),
   CdMutation,
   ClassConfig (..),
   InvalidRelationship (..),
@@ -87,7 +85,7 @@ import Modelling.CdOd.Types (
   anyRelationshipName,
   checkCdDrawSettings,
   checkCdMutations,
-  defaultOmittedDefaultMultiplicities,
+  defaultDrawSettings,
   linkNames,
   shuffleAnyClassAndConnectionOrder,
   renameClassesAndRelationships,
@@ -132,13 +130,12 @@ data SelectValidCdConfig = SelectValidCdConfig {
     -- | the preferred article to use when referring to relationships
     articleToUse      :: ArticlePreference,
     classConfig      :: ClassConfig,
+    drawSettings     :: !CdDrawSettings,
     maxInstances     :: Maybe Integer,
     objectProperties :: ObjectProperties,
     -- | when enabled feedback for wrong answers will be shown
     -- this might include ODs
     printExtendedFeedback :: Bool,
-    printNames       :: Bool,
-    printNavigations :: Bool,
     printSolution    :: Bool,
     shuffleEachCd    :: Bool,
     timeout          :: Maybe Int
@@ -162,6 +159,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
         inheritanceLimits  = (2, Just 4),
         relationshipLimits = (2, Just 4)
       },
+    drawSettings = defaultDrawSettings,
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
       completelyInhabited = Just True,
@@ -170,8 +168,6 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
       usesEveryRelationshipName = Just True
       },
     printExtendedFeedback = False,
-    printNames       = True,
-    printNavigations = True,
     printSolution    = False,
     shuffleEachCd    = False,
     timeout          = Nothing
@@ -193,40 +189,32 @@ checkSelectValidCdConfig config@SelectValidCdConfig {..}
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
   <|> checkCdMutations (allowedCdMutations config)
+  <|> checkCdDrawSettings drawSettings
 
 type CdChange = InValidOption
   AnyCd
   RelationshipChangeWithArticle
   Od
 
-data SelectValidCdInstance = SelectValidCdInstance {
+data SelectValidCdInstance
+  = SelectValidCdInstance {
+    cdDrawSettings  :: !CdDrawSettings,
     classDiagrams   :: Map Int CdChange,
     -- | when enabled feedback for wrong answers will be shown
     -- this might include ODs
     showExtendedFeedback :: Bool,
-    showSolution    :: Bool,
-    withNames       :: Bool,
-    withNavigations :: Bool
+    showSolution    :: Bool
   } deriving (Generic, Read, Show)
 
-cdDrawSettings
-  :: SelectValidCdInstance
-  -> CdDrawSettings
-cdDrawSettings SelectValidCdInstance {..} = CdDrawSettings {
-  omittedDefaults = defaultOmittedDefaultMultiplicities,
-  T.printNames = withNames,
-  T.printNavigations = withNavigations
-  }
-
 checkSelectValidCdInstance :: SelectValidCdInstance -> Maybe String
-checkSelectValidCdInstance task@SelectValidCdInstance {..}
+checkSelectValidCdInstance SelectValidCdInstance {..}
   | showExtendedFeedback && not showSolution
   = Just [iii|
       showExtendedFeedback leaks the correct solution
       and thus can only be enabled when showSolution is set to True
       |]
   | otherwise
-  = checkCdDrawSettings (cdDrawSettings task)
+  = checkCdDrawSettings cdDrawSettings
 
 selectValidCdSyntax
   :: OutputCapable m
@@ -241,7 +229,7 @@ selectValidCdTask
   => FilePath
   -> SelectValidCdInstance
   -> LangM m
-selectValidCdTask path inst@SelectValidCdInstance {..} = do
+selectValidCdTask path SelectValidCdInstance {..} = do
   paragraph $ translate $ do
     english [i|Consider the following class diagram candidates:|]
     german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten:|]
@@ -267,7 +255,7 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
   where
     drawCd x theChange cds =
       let f = cacheCd
-            (cdDrawSettings inst)
+            cdDrawSettings
             mempty
             (option theChange)
             path
@@ -298,7 +286,7 @@ selectValidCdEvaluation path inst@SelectValidCdInstance{..} xs = addPretext $ do
   reRefuse (multipleChoice DefiniteArticle cds correctAnswer solution xs)
     $ when showExtendedFeedback
     $ void $ M.traverseWithKey
-      (selectValidCdFeedback path (cdDrawSettings inst) xs)
+      (selectValidCdFeedback path cdDrawSettings xs)
       classDiagrams
 
 selectValidCdFeedback
@@ -362,8 +350,8 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       pure ()
     _ -> pure ()
   where
-    byName = T.printNames drawSettings
-    withDir = T.printNavigations drawSettings
+    byName = printNames drawSettings
+    withDir = printNavigations drawSettings
     dir
       | withDir = Back
       | otherwise = NoDir
@@ -375,9 +363,6 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       Right {} -> False
       Left InvalidInheritance {} -> True
     onlyInheritances = all isInheritance . anyRelationships
-    useNames = drawSettings {
-      T.printNames = True
-      }
     showNamedCd sufficient =
       unless sufficient $ do
         paragraph $ translate $ do
@@ -388,7 +373,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
             Die Beziehungen in dem Klassendiagramm könnten auf folgende Weise
             mit Namen versehen werden:
             |]
-        paragraph $ image $=<< cacheCd useNames mempty (option cdChange) path
+        paragraph $ image $=<< cacheCd drawSettings mempty (option cdChange) path
         pure ()
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
@@ -401,27 +386,26 @@ selectValidCd
   -> Int
   -> Int
   -> m SelectValidCdInstance
-selectValidCd config segment seed = flip evalRandT g $ do
+selectValidCd config@SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
   (_, chs)  <- repairIncorrect
-    (allowedProperties config)
-    (classConfig config)
+    allowedProperties
+    classConfig
     (allowedCdMutations config)
-    (objectProperties config)
-    (articleToUse config)
-    (maxInstances config)
-    (timeout config)
+    objectProperties
+    articleToUse
+    maxInstances
+    timeout
   let cds = map (mapInValidOption annotatedChangeClassDiagram id id) chs
   shuffleCds >=> shuffleEverything $ SelectValidCdInstance {
+    cdDrawSettings  = drawSettings,
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
-    showExtendedFeedback = printExtendedFeedback config,
-    showSolution    = printSolution config,
-    withNames       = printNames config,
-    withNavigations = printNavigations config
+    showExtendedFeedback = printExtendedFeedback,
+    showSolution    = printSolution
     }
   where
     g = mkStdGen $ (segment +) $ 4 * seed
     shuffleCds
-      | shuffleEachCd config = shuffleEach
+      | shuffleEachCd        = shuffleEach
       | otherwise            = return
 
 instance Randomise SelectValidCdInstance where
@@ -440,11 +424,10 @@ instance RandomiseLayout SelectValidCdInstance where
       shuffleObjectAndLinkOrder
       `mapM` classDiagrams
     return $ SelectValidCdInstance {
+      cdDrawSettings          = cdDrawSettings,
       classDiagrams           = cds,
       showExtendedFeedback    = showExtendedFeedback,
-      showSolution            = showSolution,
-      withNames               = withNames,
-      withNavigations         = withNavigations
+      showSolution            = showSolution
       }
 
 shuffleEach
@@ -454,11 +437,10 @@ shuffleEach
 shuffleEach inst@SelectValidCdInstance {..} = do
   cds <- shuffleCdChange inst `mapM` classDiagrams
   return $ SelectValidCdInstance {
+    cdDrawSettings          = cdDrawSettings,
     classDiagrams           = cds,
     showExtendedFeedback    = showExtendedFeedback,
-    showSolution            = showSolution,
-    withNames               = withNames,
-    withNavigations         = withNavigations
+    showSolution            = showSolution
     }
 
 shuffleCdChange
@@ -488,12 +470,11 @@ shuffleInstance
   => SelectValidCdInstance
   -> m SelectValidCdInstance
 shuffleInstance inst =
-  (SelectValidCdInstance . M.fromAscList . zipWith replaceId [1..]
+  (SelectValidCdInstance (cdDrawSettings inst)
+    . M.fromAscList . zipWith replaceId [1..]
        <$> shuffleM (M.toList $ classDiagrams inst))
   <*> pure (showExtendedFeedback inst)
   <*> pure (showSolution inst)
-  <*> pure (withNames inst)
-  <*> pure (withNavigations inst)
   where
     replaceId x (_, cd) = (x, cd)
 
@@ -514,7 +495,7 @@ renameInstance
   -> [String]
   -> [String]
   -> m SelectValidCdInstance
-renameInstance inst names' nonInheritances' = do
+renameInstance inst@SelectValidCdInstance {..} names' nonInheritances' = do
   let (names, nonInheritances) = classAndNonInheritanceNames inst
       bmNames  = BM.fromList $ zip names names'
       bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
@@ -524,17 +505,17 @@ renameInstance inst names' nonInheritances' = do
       renameOd = renameObjectsWithClassesAndLinksInOd bmNames bmNonInheritances
   cds <- mapM
     (mapInValidOptionM renameCd (mapM $ mapM $ bimapM renameEdge renameEdge') renameOd)
-    $ classDiagrams inst
+    classDiagrams
   return $ SelectValidCdInstance {
+    cdDrawSettings  = cdDrawSettings,
     classDiagrams   = cds,
-    showExtendedFeedback = showExtendedFeedback inst,
-    showSolution    = showSolution inst,
-    withNames       = withNames inst,
-    withNavigations = withNavigations inst
+    showExtendedFeedback = showExtendedFeedback,
+    showSolution    = showSolution
     }
 
 defaultSelectValidCdInstance :: SelectValidCdInstance
 defaultSelectValidCdInstance = SelectValidCdInstance {
+  cdDrawSettings = defaultDrawSettings,
   classDiagrams = M.fromAscList [
     (1, InValidOption {
       hint = Right $ ObjectDiagram {
@@ -610,7 +591,5 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
       })
     ],
   showExtendedFeedback = False,
-  showSolution = False,
-  withNames = True,
-  withNavigations = True
+  showSolution = False
   }

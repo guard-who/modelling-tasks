@@ -11,7 +11,9 @@ import Modelling.CdOd.RepairCd (
 import Modelling.CdOd.Types (
   ArticlePreference (..),
   ClassConfig (..),
+  CdDrawSettings (..),
   ObjectProperties (..),
+  OmittedDefaultMultiplicities (..),
   )
 
 {-|
@@ -41,6 +43,15 @@ task05 = SelectValidCdConfig {
     inheritanceLimits = (1, Just 2),
     relationshipLimits = (7, Just 8)
     },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
+      },
+    printNames = True,
+    printNavigations = False
+    },
   maxInstances = Just 4000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
@@ -49,8 +60,6 @@ task05 = SelectValidCdConfig {
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,
-  printNames = True,
-  printNavigations = False,
   printSolution = True,
   shuffleEachCd = True,
   timeout = Nothing
@@ -83,6 +92,15 @@ task06 = SelectValidCdConfig {
     inheritanceLimits = (1, Just 1),
     relationshipLimits = (7, Just 8)
     },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
+      },
+    printNames = False,
+    printNavigations = True
+    },
   maxInstances = Just 4000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
@@ -91,8 +109,6 @@ task06 = SelectValidCdConfig {
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,
-  printNames = False,
-  printNavigations = True,
   printSolution = True,
   shuffleEachCd = True,
   timeout = Nothing

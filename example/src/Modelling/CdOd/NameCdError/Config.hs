@@ -13,7 +13,9 @@ import Modelling.CdOd.RepairCd (
 import Modelling.CdOd.Types (
   ArticlePreference (..),
   ClassConfig (..),
+  CdDrawSettings (..),
   ObjectProperties (..),
+  OmittedDefaultMultiplicities (..),
   Property (..),
   )
 
@@ -44,6 +46,15 @@ task09 = NameCdErrorConfig {
     inheritanceLimits = (2, Just 2),
     relationshipLimits = (7, Just 7)
     },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
+      },
+    printNames = True,
+    printNavigations = True
+    },
   maxInstances = Just 4000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
@@ -63,8 +74,6 @@ task09 = NameCdErrorConfig {
     PreDefined WrongAssociationLimits,
     PreDefined WrongCompositionLimits
     ],
-  printNames = True,
-  printNavigations = True,
   printSolution = True,
   reasonsPerInstance = NumberOfReasons {
     customReasons = 0,
@@ -102,6 +111,15 @@ task10 = NameCdErrorConfig {
     inheritanceLimits = (2, Just 2),
     relationshipLimits = (8, Just 8)
     },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
+      },
+    printNames = True,
+    printNavigations = False
+    },
   maxInstances = Just 4000,
   objectProperties = ObjectProperties {
     completelyInhabited = Just True,
@@ -121,8 +139,6 @@ task10 = NameCdErrorConfig {
     PreDefined WrongAssociationLimits,
     PreDefined WrongCompositionLimits
     ],
-  printNames = True,
-  printNavigations = False,
   printSolution = True,
   reasonsPerInstance = NumberOfReasons {
     customReasons = 0,

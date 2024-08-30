@@ -24,8 +24,6 @@ module Modelling.CdOd.DifferentNames (
   renameInstance,
   ) where
 
-import qualified Modelling.CdOd.Types             as T (CdDrawSettings (..))
-
 import qualified Data.Bimap                       as BM (
   filter,
   fromList,
@@ -67,7 +65,7 @@ import Modelling.CdOd.Generate          (generateCds, instanceToCd)
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
-  CdDrawSettings,
+  CdDrawSettings (..),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -77,13 +75,16 @@ import Modelling.CdOd.Types (
   ObjectDiagram (..),
   ObjectProperties (..),
   Od,
+  OmittedDefaultMultiplicities,
   Relationship (..),
   associationNames,
   checkCdDrawSettings,
   checkClassConfigWithProperties,
   checkObjectDiagram,
+  checkOmittedDefaultMultiplicities,
   classNames,
   defaultDrawSettings,
+  defaultOmittedDefaultMultiplicities,
   defaultProperties,
   fromClassDiagram,
   isObjectDiagramRandomisable,
@@ -159,6 +160,7 @@ data ShufflingOption a =
 data DifferentNamesInstance = DifferentNamesInstance {
     anonymousObjects :: Bool,
     cDiagram :: Cd,
+    cdDrawSettings :: !CdDrawSettings,
     generatorValue :: Int,
     oDiagram :: Od,
     showSolution :: Bool,
@@ -168,14 +170,11 @@ data DifferentNamesInstance = DifferentNamesInstance {
     usesAllRelationships :: Bool
   } deriving (Eq, Generic, Read, Show)
 
-cdDrawSettings :: DifferentNamesInstance -> CdDrawSettings
-cdDrawSettings _ = defaultDrawSettings
-
 checkDifferentNamesInstance :: DifferentNamesInstance -> Maybe String
-checkDifferentNamesInstance inst@DifferentNamesInstance {..}
-  | not $ T.printNames $ cdDrawSettings inst
+checkDifferentNamesInstance DifferentNamesInstance {..}
+  | not $ printNames cdDrawSettings
   = Just [iii|printNames has to be set to True for this task type.|]
-  | not $ T.printNavigations $ cdDrawSettings inst
+  | not $ printNavigations cdDrawSettings
   = Just [iii|printNavigations has to be set to True for this task type.|]
   | WithAdditionalNames xs <- linkShuffling
   , length associations > length links + length xs
@@ -192,7 +191,7 @@ checkDifferentNamesInstance inst@DifferentNamesInstance {..}
       |]
   | otherwise
   = checkObjectDiagram oDiagram
-  <|> checkCdDrawSettings (cdDrawSettings inst)
+  <|> checkCdDrawSettings cdDrawSettings
   where
     associations = associationNames cDiagram
     links = linkNames oDiagram
@@ -203,6 +202,7 @@ data DifferentNamesConfig = DifferentNamesConfig {
     maxInstances     :: Maybe Integer,
     objectConfig     :: ObjectConfig,
     objectProperties :: ObjectProperties,
+    omittedDefaultMultiplicities :: OmittedDefaultMultiplicities,
     onlyAnonymousObjects :: Bool,
     printSolution    :: Bool,
     timeout          :: Maybe Int
@@ -233,6 +233,7 @@ checkDifferentNamesConfig DifferentNamesConfig {..}
       Otherwise task instances would vary too much in complexity.
       |]
   | otherwise = checkClassConfigWithProperties classConfig defaultProperties
+    <|> checkOmittedDefaultMultiplicities omittedDefaultMultiplicities
   where
     different (_, Nothing) = True
     different (x, Just y)  = x /= y
@@ -258,6 +259,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
       hasSelfLoops = Nothing,
       usesEveryRelationshipName = Just True
       },
+    omittedDefaultMultiplicities = defaultOmittedDefaultMultiplicities,
     onlyAnonymousObjects = True,
     printSolution    = False,
     withNonTrivialInheritance = Just True,
@@ -498,6 +500,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
         }
       ]
     },
+  cdDrawSettings = defaultDrawSettings,
   generatorValue = -3894126834283525023,
   oDiagram = ObjectDiagram {
     objects = [
@@ -526,7 +529,7 @@ getDifferentNamesTask
   -> DifferentNamesConfig
   -> Cd
   -> m DifferentNamesInstance
-getDifferentNamesTask tryNext config cd' = do
+getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
     let cd     = cd' {
           relationships = map reverseAssociation $ relationships cd'
           }
@@ -542,13 +545,13 @@ getDifferentNamesTask tryNext config cd' = do
         onlyCd0 = createRunCommand
           runCmd
           (length $ classNames cd)
-          (objectConfig config)
+          objectConfig
           (concatMap relationships cds)
           partsList'
         partsList' = foldr mergeParts parts0 partsList
     instances  <- getInstances
-      (maxInstances config)
-      (timeout config)
+      maxInstances
+      timeout
       (combineParts partsList' ++ onlyCd0)
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
@@ -561,16 +564,21 @@ getDifferentNamesTask tryNext config cd' = do
       if maybe
         (const True)
         (bool not id)
-        (usesEveryRelationshipName $ objectProperties config)
+        (usesEveryRelationshipName objectProperties)
         isCompleteMapping
         then do
         od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
         return $ DifferentNamesInstance {
-              anonymousObjects = onlyAnonymousObjects config,
+              anonymousObjects = onlyAnonymousObjects,
               cDiagram  = cd1,
+              cdDrawSettings = CdDrawSettings {
+                omittedDefaults = omittedDefaultMultiplicities,
+                printNames = True,
+                printNavigations = True
+                },
               generatorValue = 0,
               oDiagram  = od1',
-              showSolution = printSolution config,
+              showSolution = printSolution,
               mapping   = toNameMapping bm',
               linkShuffling = ConsecutiveLetters,
               usesAllRelationships = isCompleteMapping
@@ -581,8 +589,8 @@ getDifferentNamesTask tryNext config cd' = do
     alloyFor n cd = transform
       cd
       []
-      (objectConfig config)
-      (objectProperties config)
+      objectConfig
+      objectProperties
       (show n)
       ""
     continueWithHead []    _ = tryNext
@@ -631,6 +639,7 @@ instance RandomiseLayout DifferentNamesInstance where
     return $ DifferentNamesInstance {
       anonymousObjects = anonymousObjects,
       cDiagram = cd,
+      cdDrawSettings = cdDrawSettings,
       generatorValue = generatorValue,
       oDiagram = od,
       showSolution = showSolution,
@@ -654,11 +663,11 @@ renameInstance
   -> [String]
   -> [String]
   -> m DifferentNamesInstance
-renameInstance inst names' nonInheritances' linkNs' = do
-  let cd = cDiagram inst
-      od = oDiagram inst
+renameInstance inst@DifferentNamesInstance {..} names' nonInheritances' linkNs' = do
+  let cd = cDiagram
+      od = oDiagram
       (names, nonInheritances, linkNs) = classNonInheritanceAndLinkNames inst
-      bm = BM.toAscList $ fromNameMapping $ mapping inst
+      bm = BM.toAscList $ fromNameMapping mapping
       bmNames  = BM.fromList $ zip names names'
       bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
       bmLinks  = BM.fromList $ zip linkNs linkNs'
@@ -670,14 +679,15 @@ renameInstance inst names' nonInheritances' linkNs' = do
         ]
   cd' <- renameClassesAndRelationships bmNames bmNonInheritances cd
   od' <- renameObjectsWithClassesAndLinksInOd bmNames bmLinks od
-  shuffling <- mapM (`BM.lookup` bmLinks) $ linkShuffling inst
+  shuffling <- mapM (`BM.lookup` bmLinks) linkShuffling
   return $ DifferentNamesInstance {
-    anonymousObjects = anonymousObjects inst,
+    anonymousObjects = anonymousObjects,
     cDiagram  = cd',
-    generatorValue = generatorValue inst,
+    cdDrawSettings = cdDrawSettings,
+    generatorValue = generatorValue,
     oDiagram  = od',
-    showSolution = showSolution inst,
+    showSolution = showSolution,
     mapping   = toNameMapping bm',
     linkShuffling = shuffling,
-    usesAllRelationships = usesAllRelationships inst
+    usesAllRelationships = usesAllRelationships
     }
