@@ -10,8 +10,10 @@ import Modelling.CdOd.Types (
   ArticlePreference (..),
   ClassConfig (..),
   CdDrawSettings (..),
+  CdMutation (..),
   ObjectProperties (..),
   OmittedDefaultMultiplicities (..),
+  RelationshipMutation (..),
   )
 
 import Data.Ratio                       ((%))
@@ -23,6 +25,13 @@ CPU usage: 600%
 -}
 task07 :: RepairCdConfig
 task07 = RepairCdConfig {
+  allowedCdMutations = [
+    AddRelationship,
+    RemoveRelationship,
+    MutateRelationship ChangeKind,
+    MutateRelationship ChangeLimit,
+    MutateRelationship Flip
+    ],
   allowedProperties = AllowedProperties {
     compositionCycles = False,
     doubleRelationships = True,
@@ -72,6 +81,13 @@ attention: invalid configuration! (increase maxInstances!)
 -}
 task08 :: RepairCdConfig
 task08 = RepairCdConfig {
+  allowedCdMutations = [
+    AddRelationship,
+    RemoveRelationship,
+    MutateRelationship ChangeKind,
+    MutateRelationship ChangeLimit,
+    MutateRelationship Flip
+    ],
   allowedProperties = AllowedProperties {
     compositionCycles = True,
     doubleRelationships = False,

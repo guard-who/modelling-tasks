@@ -222,7 +222,9 @@ mapInValidOptionM f g h InValidOption {..} = InValidOption
   <$> bimapM g h hint
   <*> f option
 
-data RepairCdConfig = RepairCdConfig {
+data RepairCdConfig
+  = RepairCdConfig {
+    allowedCdMutations :: ![CdMutation],
     allowedProperties :: AllowedProperties,
     -- | the article preference when referring to relationships
     articleToUse      :: ArticlePreference,
@@ -237,7 +239,9 @@ data RepairCdConfig = RepairCdConfig {
   } deriving (Generic, Read, Show)
 
 defaultRepairCdConfig :: RepairCdConfig
-defaultRepairCdConfig = RepairCdConfig {
+defaultRepairCdConfig
+  = RepairCdConfig {
+    allowedCdMutations = allCdMutations,
     allowedProperties = allowNothing {
         compositionCycles = True,
         Modelling.CdOd.RepairCd.selfRelationships = True
@@ -266,11 +270,8 @@ defaultRepairCdConfig = RepairCdConfig {
     useNames         = False
   }
 
-allowedCdMutations :: RepairCdConfig -> [CdMutation]
-allowedCdMutations _ = allCdMutations
-
 checkRepairCdConfig :: RepairCdConfig -> Maybe String
-checkRepairCdConfig config@RepairCdConfig {..}
+checkRepairCdConfig RepairCdConfig {..}
   | not (printNames drawSettings) && useNames
   = Just "use names is only possible when printing names"
   | completelyInhabited objectProperties /= Just True
@@ -286,7 +287,7 @@ checkRepairCdConfig config@RepairCdConfig {..}
       |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
-  <|> checkCdMutations (allowedCdMutations config)
+  <|> checkCdMutations allowedCdMutations
   <|> checkCdDrawSettings drawSettings
   <|> checkObjectProperties objectProperties
 
@@ -517,11 +518,11 @@ repairCd
   -> Int
   -> Int
   -> m RepairCdInstance
-repairCd config@RepairCdConfig {..} segment seed = flip evalRandT g $ do
+repairCd RepairCdConfig {..} segment seed = flip evalRandT g $ do
   (cd, chs) <- repairIncorrect
     allowedProperties
     classConfig
-    (allowedCdMutations config)
+    allowedCdMutations
     objectProperties
     articleToUse
     maxInstances

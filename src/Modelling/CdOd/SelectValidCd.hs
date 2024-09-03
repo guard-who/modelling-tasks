@@ -127,7 +127,9 @@ import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
 
-data SelectValidCdConfig = SelectValidCdConfig {
+data SelectValidCdConfig
+  = SelectValidCdConfig {
+    allowedCdMutations :: ![CdMutation],
     allowedProperties :: AllowedProperties,
     -- | the preferred article to use when referring to relationships
     articleToUse      :: ArticlePreference,
@@ -143,11 +145,10 @@ data SelectValidCdConfig = SelectValidCdConfig {
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
 
-allowedCdMutations :: SelectValidCdConfig -> [CdMutation]
-allowedCdMutations _ = allCdMutations
-
 defaultSelectValidCdConfig :: SelectValidCdConfig
-defaultSelectValidCdConfig = SelectValidCdConfig {
+defaultSelectValidCdConfig
+  = SelectValidCdConfig {
+    allowedCdMutations = allCdMutations,
     allowedProperties = allowNothing {
       inheritanceCycles = True,
       reverseInheritances = True
@@ -177,7 +178,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
   }
 
 checkSelectValidCdConfig :: SelectValidCdConfig -> Maybe String
-checkSelectValidCdConfig config@SelectValidCdConfig {..}
+checkSelectValidCdConfig SelectValidCdConfig {..}
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
   | usesEveryRelationshipName objectProperties /= Just True
@@ -191,7 +192,7 @@ checkSelectValidCdConfig config@SelectValidCdConfig {..}
       |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
-  <|> checkCdMutations (allowedCdMutations config)
+  <|> checkCdMutations allowedCdMutations
   <|> checkCdDrawSettings drawSettings
   <|> checkObjectProperties objectProperties
 
@@ -389,11 +390,11 @@ selectValidCd
   -> Int
   -> Int
   -> m SelectValidCdInstance
-selectValidCd config@SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
+selectValidCd SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
   (_, chs)  <- repairIncorrect
     allowedProperties
     classConfig
-    (allowedCdMutations config)
+    allowedCdMutations
     objectProperties
     articleToUse
     maxInstances

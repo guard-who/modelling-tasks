@@ -164,6 +164,7 @@ data MatchCdOdInstance
 
 data MatchCdOdConfig
   = MatchCdOdConfig {
+    allowedCdMutations :: ![CdMutation],
     classConfig      :: ClassConfig,
     maxInstances     :: Maybe Integer,
     objectConfig     :: ObjectConfig,
@@ -175,7 +176,9 @@ data MatchCdOdConfig
   } deriving (Generic, Read, Show)
 
 defaultMatchCdOdConfig :: MatchCdOdConfig
-defaultMatchCdOdConfig = MatchCdOdConfig {
+defaultMatchCdOdConfig
+  = MatchCdOdConfig {
+    allowedCdMutations = allCdMutations,
     classConfig  = ClassConfig {
         classLimits        = (4, 4),
         aggregationLimits  = (0, Just 2),
@@ -203,9 +206,6 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
     withNonTrivialInheritance = Just True
   }
 
-allowedCdMutations :: MatchCdOdConfig -> [CdMutation]
-allowedCdMutations _ = allCdMutations
-
 toMatching :: Map Char [Int] -> Map (Int, Char) Bool
 toMatching m =
   M.fromList [((cd, od), any (cd `elem`) $ M.lookup od m) | cd <- cds, od <- ods]
@@ -214,7 +214,7 @@ toMatching m =
     ods = take 5 ['a' ..]
 
 checkMatchCdOdConfig :: MatchCdOdConfig -> Maybe String
-checkMatchCdOdConfig config@MatchCdOdConfig {..}
+checkMatchCdOdConfig MatchCdOdConfig {..}
   | Just True <- hasSelfLoops objectProperties
   = Just [iii|
     Enforcing self-loops in all object diagrams is not supported.
@@ -223,7 +223,7 @@ checkMatchCdOdConfig config@MatchCdOdConfig {..}
     |]
   | otherwise
   = checkClassConfigWithProperties classConfig defaultProperties
-  <|> checkCdMutations (allowedCdMutations config)
+  <|> checkCdMutations allowedCdMutations
   <|> checkObjectProperties objectProperties
   <|> checkOmittedDefaultMultiplicities omittedDefaultMultiplicities
 

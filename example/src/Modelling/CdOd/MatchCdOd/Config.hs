@@ -6,10 +6,12 @@ import Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
   )
 import Modelling.CdOd.Types (
+  CdMutation (..),
   ClassConfig (..),
   ObjectConfig (..),
   ObjectProperties (..),
   OmittedDefaultMultiplicities (..),
+  RelationshipMutation (..),
   )
 
 import Data.Ratio                       ((%))
@@ -21,6 +23,13 @@ CPU usage: 150%
 -}
 task14 :: MatchCdOdConfig
 task14 = MatchCdOdConfig {
+  allowedCdMutations = [
+    AddRelationship,
+    RemoveRelationship,
+    MutateRelationship ChangeKind,
+    MutateRelationship ChangeLimit,
+    MutateRelationship Flip
+    ],
   classConfig = ClassConfig {
     classLimits = (5, 5),
     aggregationLimits = (2, Just 2),
@@ -59,6 +68,13 @@ CPU usage: 150%
 -}
 task15 :: MatchCdOdConfig
 task15 = MatchCdOdConfig {
+  allowedCdMutations = [
+    AddRelationship,
+    RemoveRelationship,
+    MutateRelationship ChangeKind,
+    MutateRelationship ChangeLimit,
+    MutateRelationship Flip
+    ],
   classConfig = ClassConfig {
     classLimits = (5, 5),
     aggregationLimits = (1, Just 1),
