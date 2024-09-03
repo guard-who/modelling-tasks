@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 module Modelling.CdOd.Output (
   cacheCd,
   cacheOd,
@@ -16,7 +15,7 @@ import qualified Data.Map                         as M (
   )
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 
-import Capabilities.Cache               (MonadCache, cache, cacheT, short)
+import Capabilities.Cache               (MonadCache, cache, short)
 import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
 import Capabilities.Graphviz (
   MonadGraphviz (errorWithoutGraphviz, layoutGraph'),
@@ -50,14 +49,13 @@ import Modelling.CdOd.Types (
   Od,
   OmittedDefaultMultiplicities (..),
   Relationship (..),
-  calculateThickAnyRelationships,
+  calculateThickAnyRelationships, anonymiseObjects,
   )
 
 import Control.Lens                     ((.~))
 import Control.Monad                    (guard)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random (
-  MonadRandom (getRandom),
   RandT,
   RandomGen,
   )
@@ -87,6 +85,7 @@ import Data.GraphViz.Attributes.Complete (Attribute (..), DPoint (..), Label)
 import Data.Function                    ((&))
 import Data.List                        (elemIndex)
 import Data.Maybe                       (fromJust, fromMaybe, maybeToList)
+import Data.Ratio                       ((%))
 import Data.Tuple.Extra                 (both)
 import Diagrams.Align                   (center)
 import Diagrams.Angle                   ((@@), cosA, deg, halfTurn)
@@ -119,7 +118,6 @@ import Diagrams.TwoD.Attributes         (fc, lc)
 import Diagrams.Util                    ((#), with)
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
-import System.Random.Shuffle            (shuffleM)
 
 relationshipArrow
   :: CdDrawSettings
@@ -366,60 +364,53 @@ drawClass font l (P p) = translate p
 drawOdFromInstance
   :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
   => AlloyInstance
-  -> Maybe Int
+  -> Maybe Rational
   -> DirType
   -> Bool
   -> FilePath
   -> RandT g m FilePath
 drawOdFromInstance i anonymous direction printNames path = do
   g <- alloyInstanceToOd i
-  drawOd
-    g
-    (fromMaybe (length (objects g) `div` 3) anonymous)
+  od <- anonymiseObjects (fromMaybe (1 % 3) anonymous) g
+  lift $ drawOd
+    od
     direction
     printNames
     path
 
 cacheOd
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m)
   => Od
-  -> Int
   -> DirType
   -> Bool
   -> FilePath
-  -> RandT g m FilePath
-cacheOd od anonymous direction printNames path = do
-  x <- getRandom
-  cacheT path (ext x) "od" od $ \file od' ->
-    drawOd od' anonymous direction printNames file
+  -> m FilePath
+cacheOd od direction printNames path =
+  cache path ext "od" od $ \file od' ->
+    drawOd od' direction printNames file
   where
-    ext x = short anonymous
-      ++ short printNames
+    ext = short printNames
       ++ short direction
-      ++ show @Int x
       ++ ".svg"
 
 drawOd
-  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
+  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m)
   => Od
-  -> Int
   -> DirType
   -> Bool
   -> FilePath
-  -> RandT g m FilePath
-drawOd ObjectDiagram {..} anonymous direction printNames file = do
+  -> m FilePath
+drawOd ObjectDiagram {..} direction printNames file = do
   let numberedObjects = zip [0..] objects
       bmObjects = BM.fromList $ map (second objectName) numberedObjects
       toEdge l@Link {..} = (,,)
         <$> BM.lookupR linkFrom bmObjects
         <*> BM.lookupR linkTo bmObjects
         <*> pure l
-  linkEdges <- lift $ mapM toEdge links
+  linkEdges <- mapM toEdge links
   let graph = mkGraph numberedObjects linkEdges
-  objectNames <-
-    map (\x -> (objectName x, objectName x ++ " "))
-    . drop anonymous
-    <$> shuffleM objects
+  let objectNames = map (\x -> (objectName x, objectName x ++ " "))
+        $ filter (not . isAnonymous) objects
   let params = nonClusteredParams {
         fmtNode = \(_, Object {..}) -> [
           underlinedLabel $ fromMaybe "" (lookup objectName objectNames)
@@ -433,9 +424,9 @@ drawOd ObjectDiagram {..} anonymous direction printNames file = do
         fmtEdge = \(_,_,Link {..}) -> arrowHeads
           ++ [ArrowSize 0.4, FontSize 16]
           ++ [toLabel linkName | printNames] }
-  lift errorWithoutGraphviz
-  graph' <- lift $ layoutGraph' params undirCommand graph
-  font <- lift lin
+  errorWithoutGraphviz
+  graph' <- layoutGraph' params undirCommand graph
+  font <- lin
   let (nodes, edges) = GV.getGraph graph'
       graphNodes = M.foldrWithKey
         (\l p g -> drawObject font objectNames l p `atop` g)
@@ -446,7 +437,7 @@ drawOd ObjectDiagram {..} anonymous direction printNames file = do
            g # drawLink font direction printNames s t l p)
         graphNodes
         edges
-  lift $ writeSvg file graphEdges
+  writeSvg file graphEdges
   return file
   where
     arrowHeads = case direction of

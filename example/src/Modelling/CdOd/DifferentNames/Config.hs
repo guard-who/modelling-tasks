@@ -12,6 +12,8 @@ import Modelling.CdOd.Types (
   OmittedDefaultMultiplicities (..),
   )
 
+import Data.Ratio                       ((%))
+
 {-|
 points: 0.15
 generation time: 0:27min
@@ -35,6 +37,7 @@ task12 = DifferentNamesConfig {
     objectLimits = (8, 8)
     },
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 1,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
@@ -45,7 +48,6 @@ task12 = DifferentNamesConfig {
     associationOmittedDefaultMultiplicity = Just (0, Nothing),
     compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
-  onlyAnonymousObjects = True,
   printSolution = True,
   timeout = Nothing
   }
@@ -73,6 +75,7 @@ task13 = DifferentNamesConfig {
     objectLimits = (6, 6)
     },
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
@@ -83,7 +86,6 @@ task13 = DifferentNamesConfig {
     associationOmittedDefaultMultiplicity = Just (0, Nothing),
     compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
-  onlyAnonymousObjects = False,
   printSolution = True,
   timeout = Nothing
   }
@@ -111,6 +113,7 @@ task25 = DifferentNamesConfig {
     objectLimits = (8, 10)
     },
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 1,
     completelyInhabited = Nothing,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
@@ -121,7 +124,6 @@ task25 = DifferentNamesConfig {
     associationOmittedDefaultMultiplicity = Just (0, Nothing),
     compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
-  onlyAnonymousObjects = True,
   printSolution = True,
   timeout = Nothing
   }

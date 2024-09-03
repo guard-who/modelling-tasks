@@ -20,6 +20,7 @@ import Modelling.CdOd.MatchCdOd (
 import EvaluateArgs                     (evaluateArgs)
 
 import Control.OutputCapable.Blocks     (Language (English))
+import Data.Ratio                       ((%))
 import System.Environment               (getArgs)
 
 main :: IO ()
@@ -41,6 +42,7 @@ main = do
             },
           maxInstances     = Nothing,
           objectProperties = ObjectProperties {
+            anonymousObjectProportion = 0 % 1,
             completelyInhabited = Nothing,
             hasLimitedIsolatedObjects = True,
             hasSelfLoops = Nothing,

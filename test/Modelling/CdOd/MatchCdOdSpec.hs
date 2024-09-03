@@ -71,15 +71,15 @@ spec = do
     opposingOd = both (:[]) (
       ObjectDiagram {
         objects = [
-          Object {objectName = "a", objectClass = "A"},
-          Object {objectName = "b", objectClass = "B"}],
+          Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+          Object {isAnonymous = False, objectName = "b", objectClass = "B"}],
         links = [
           Link {linkName = "x", linkFrom = "b", linkTo = "a"}]
         },
       ObjectDiagram {
         objects = [
-          Object {objectName = "a", objectClass = "A"},
-          Object {objectName = "b", objectClass = "B"}],
+          Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+          Object {isAnonymous = False, objectName = "b", objectClass = "B"}],
         links = [
           Link {linkName = "x", linkFrom = "a", linkTo = "b"}]
         }
@@ -88,8 +88,8 @@ spec = do
       [
         ObjectDiagram {
           objects = [
-            Object {objectName = "a", objectClass = "A"},
-            Object {objectName = "a1", objectClass = "A"}
+            Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+            Object {isAnonymous = False, objectName = "a1", objectClass = "A"}
             ],
           links = [
             Link {linkName = "x", linkFrom = "a", linkTo = "a"},
@@ -98,8 +98,8 @@ spec = do
           },
         ObjectDiagram {
           objects = [
-            Object {objectName = "a", objectClass = "A"},
-            Object {objectName = "a1", objectClass = "A"}
+            Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+            Object {isAnonymous = False, objectName = "a1", objectClass = "A"}
             ],
           links = [
             Link {linkName = "x", linkFrom = "a", linkTo = "a1"},
@@ -110,8 +110,8 @@ spec = do
       [
         ObjectDiagram {
           objects = [
-            Object {objectName = "a", objectClass = "A"},
-            Object {objectName = "b", objectClass = "B"}
+            Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+            Object {isAnonymous = False, objectName = "b", objectClass = "B"}
             ],
           links = [
             Link {linkName = "x", linkFrom = "b", linkTo = "a"}

@@ -12,6 +12,8 @@ import Modelling.CdOd.Types (
   OmittedDefaultMultiplicities (..),
   )
 
+import Data.Ratio                       ((%))
+
 {-|
 points: 0.15
 generation time: 2:00min
@@ -34,6 +36,7 @@ task14 = MatchCdOdConfig {
     objectLimits = (6, 6)
     },
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 4,
     completelyInhabited = Just False,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
@@ -71,6 +74,7 @@ task15 = MatchCdOdConfig {
     objectLimits = (3, 6)
     },
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 3,
     completelyInhabited = Just False,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,

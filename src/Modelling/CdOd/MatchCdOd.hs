@@ -86,11 +86,13 @@ import Modelling.CdOd.Types (
   OmittedDefaultMultiplicities,
   Relationship (..),
   allCdMutations,
+  anonymiseObjects,
   associationNames,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfigWithProperties,
   checkObjectDiagram,
+  checkObjectProperties,
   checkOmittedDefaultMultiplicities,
   classNames,
   defaultCdDrawSettings,
@@ -131,7 +133,7 @@ import Control.OutputCapable.Blocks (
   translations,
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
+  MonadRandom,
   evalRandT,
   mkStdGen,
   )
@@ -141,6 +143,7 @@ import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, listToMaybe, mapMaybe)
+import Data.Ratio                       ((%))
 import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call              (AlloyInstance)
@@ -155,7 +158,6 @@ data MatchCdOdInstance
   = MatchCdOdInstance {
     cdDrawSettings :: !CdDrawSettings,
     diagrams       :: Map Int Cd,
-    generatorValue :: Int,
     instances      :: Map Char ([Int], Od),
     showSolution   :: Bool
   } deriving (Generic, Read, Show)
@@ -189,6 +191,7 @@ defaultMatchCdOdConfig = MatchCdOdConfig {
       objectLimits         = (2, 4)
       },
     objectProperties = ObjectProperties {
+      anonymousObjectProportion = 1 % 3,
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
       hasSelfLoops = Nothing,
@@ -221,6 +224,7 @@ checkMatchCdOdConfig config@MatchCdOdConfig {..}
   | otherwise
   = checkClassConfigWithProperties classConfig defaultProperties
   <|> checkCdMutations (allowedCdMutations config)
+  <|> checkObjectProperties objectProperties
   <|> checkOmittedDefaultMultiplicities omittedDefaultMultiplicities
 
 checkMatchCdOdInstance :: MatchCdOdInstance -> Maybe String
@@ -239,7 +243,6 @@ matchCdOdTask
   -> MatchCdOdInstance
   -> LangM m
 matchCdOdTask path task = do
-  let anonymous o = length (objects o) `div` 3
   paragraph $ translate $ do
     english "Consider the following two class diagrams:"
     german "Betrachten Sie die folgenden zwei Klassendiagramme:"
@@ -260,8 +263,7 @@ matchCdOdTask path task = do
       einem oder beiden Klassendiagrammen passen.
       |]
   images (:[]) snd
-    $=<< flip evalRandT (mkStdGen $ generatorValue task)
-    $ (\_ (is,o) -> (is,) <$> cacheOd o (anonymous o) Back True path)
+    $=<< (\_ (is,o) -> (is,) <$> cacheOd o Back True path)
     `M.traverseWithKey` instances task
   paragraph $ do
     translate $ do
@@ -375,14 +377,14 @@ matchCdOd config segment seed = flip evalRandT g $ do
     g = mkStdGen $ (segment +) $ 4 * seed
 
 getMatchCdOdTask
-  :: MonadThrow m
+  :: (MonadRandom m, MonadThrow m)
   => (MatchCdOdConfig
     -> m (Map Int Cd, Map Char ([Int], AlloyInstance)))
   -> MatchCdOdConfig
   -> m MatchCdOdInstance
 getMatchCdOdTask f config@MatchCdOdConfig {..} = do
   (cds, ods) <- f config
-  ods' <- mapM (mapM alloyInstanceToOd) ods
+  ods' <- mapM (mapM toOd) ods
   return $ MatchCdOdInstance {
         cdDrawSettings = CdDrawSettings {
           omittedDefaults = omittedDefaultMultiplicities,
@@ -390,10 +392,12 @@ getMatchCdOdTask f config@MatchCdOdConfig {..} = do
           printNavigations = True
           },
         diagrams       = cds,
-        generatorValue = 0,
         instances      = ods',
         showSolution   = printSolution
         }
+  where
+    toOd = anonymiseObjects (anonymousObjectProportion objectProperties)
+      <=< alloyInstanceToOd
 
 defaultMatchCdOdInstance :: MatchCdOdInstance
 defaultMatchCdOdInstance = MatchCdOdInstance {
@@ -469,14 +473,13 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
       }
     )
     ],
-  generatorValue = 7777369639206507645,
   instances = M.fromList [
     ('a',([1],ObjectDiagram {
       objects = [
-        Object {objectName = "b", objectClass = "B"},
-        Object {objectName = "b1", objectClass = "B"},
-        Object {objectName = "c", objectClass = "C"},
-        Object {objectName = "d", objectClass = "D"}
+        Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+        Object {isAnonymous = False, objectName = "b1", objectClass = "B"},
+        Object {isAnonymous = True, objectName = "c", objectClass = "C"},
+        Object {isAnonymous = False, objectName = "d", objectClass = "D"}
         ],
       links = [
         Link {linkName = "z", linkFrom = "c", linkTo = "b"},
@@ -487,10 +490,10 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
       })),
     ('b',([1],ObjectDiagram {
       objects = [
-        Object {objectName = "b", objectClass = "B"},
-        Object {objectName = "b1", objectClass = "B"},
-        Object {objectName = "c", objectClass = "C"},
-        Object {objectName = "d", objectClass = "D"}
+        Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+        Object {isAnonymous = False, objectName = "b1", objectClass = "B"},
+        Object {isAnonymous = True, objectName = "c", objectClass = "C"},
+        Object {isAnonymous = False, objectName = "d", objectClass = "D"}
         ],
       links = [
         Link {linkName = "z", linkFrom = "c", linkTo = "b"},
@@ -500,10 +503,10 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
       })),
     ('c',([2],ObjectDiagram {
       objects = [
-        Object {objectName = "a", objectClass = "A"},
-        Object {objectName = "c", objectClass = "C"},
-        Object {objectName = "d", objectClass = "D"},
-        Object {objectName = "d1", objectClass = "D"}],
+        Object {isAnonymous = True, objectName = "a", objectClass = "A"},
+        Object {isAnonymous = False, objectName = "c", objectClass = "C"},
+        Object {isAnonymous = False, objectName = "d", objectClass = "D"},
+        Object {isAnonymous = True, objectName = "d1", objectClass = "D"}],
       links = [
         Link {linkName = "x", linkFrom = "a", linkTo = "d"},
         Link {linkName = "x", linkFrom = "c", linkTo = "d1"}
@@ -511,9 +514,9 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
       })),
     ('d',([2],ObjectDiagram {
       objects = [
-        Object {objectName = "a", objectClass = "A"},
-        Object {objectName = "b", objectClass = "B"},
-        Object {objectName = "d", objectClass = "D"}
+        Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+        Object {isAnonymous = True, objectName = "b", objectClass = "B"},
+        Object {isAnonymous = False, objectName = "d", objectClass = "D"}
         ],
       links = [
         Link {linkName = "x", linkFrom = "a", linkTo = "d"}
@@ -521,9 +524,9 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
       })),
     ('e',([],ObjectDiagram {
       objects = [
-        Object {objectName = "a", objectClass = "A"},
-        Object {objectName = "b", objectClass = "B"},
-        Object {objectName = "d", objectClass = "D"}
+        Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+        Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+        Object {isAnonymous = True, objectName = "d", objectClass = "D"}
         ],
       links = [
         Link {linkName = "x", linkFrom = "a", linkTo = "d"},
@@ -549,7 +552,6 @@ instance Randomise MatchCdOdInstance where
     nonInheritances' <- shuffleM nonInheritances
     renameInstance inst names' nonInheritances'
       >>= shuffleInstance
-      >>= changeGeneratorValue
   isRandomisable MatchCdOdInstance {..} = listToMaybe
     $ mapMaybe (isObjectDiagramRandomisable . snd) $ M.elems instances
 
@@ -566,18 +568,9 @@ shuffleNodesAndEdges MatchCdOdInstance {..} = do
   return MatchCdOdInstance {
     cdDrawSettings = cdDrawSettings,
     diagrams = cds,
-    generatorValue = generatorValue,
     instances = ods,
     showSolution = showSolution
     }
-
-changeGeneratorValue
-  :: MonadRandom m
-  => MatchCdOdInstance
-  -> m MatchCdOdInstance
-changeGeneratorValue inst = do
-  r <- getRandom
-  return inst { generatorValue = r }
 
 shuffleInstance
   :: (MonadThrow m, MonadRandom m)
@@ -596,7 +589,6 @@ shuffleInstance MatchCdOdInstance {..} = do
   return $ MatchCdOdInstance {
     cdDrawSettings = cdDrawSettings,
     diagrams = M.fromAscList cds',
-    generatorValue = generatorValue,
     instances = M.fromAscList ods',
     showSolution = showSolution
     }
@@ -618,7 +610,6 @@ renameInstance inst@MatchCdOdInstance {..} names' nonInheritances' = do
   return $ MatchCdOdInstance {
     cdDrawSettings = cdDrawSettings,
     diagrams = cds,
-    generatorValue = generatorValue,
     instances = ods,
     showSolution = showSolution
     }

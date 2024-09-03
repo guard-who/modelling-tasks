@@ -85,6 +85,7 @@ import Modelling.CdOd.Types (
   anyRelationshipName,
   checkCdDrawSettings,
   checkCdMutations,
+  checkObjectProperties,
   defaultCdDrawSettings,
   linkNames,
   shuffleAnyClassAndConnectionOrder,
@@ -121,6 +122,7 @@ import Data.Foldable                    (for_)
 import Data.GraphViz                    (DirType (Back, NoDir))
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe)
+import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffleM)
@@ -162,6 +164,7 @@ defaultSelectValidCdConfig = SelectValidCdConfig {
     drawSettings = defaultCdDrawSettings,
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
+      anonymousObjectProportion = 0 % 1,
       completelyInhabited = Just True,
       hasLimitedIsolatedObjects = False,
       hasSelfLoops = Nothing,
@@ -190,6 +193,7 @@ checkSelectValidCdConfig config@SelectValidCdConfig {..}
   = checkClassConfigAndChanges classConfig allowedProperties
   <|> checkCdMutations (allowedCdMutations config)
   <|> checkCdDrawSettings drawSettings
+  <|> checkObjectProperties objectProperties
 
 type CdChange = InValidOption
   AnyCd
@@ -345,8 +349,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
           Betrachten Sie das folgende Objektdiagramm,
           das Instanz dieses Klassendiagramms ist:
           |]
-      paragraph $ image $=<< flip evalRandT (mkStdGen 0)
-        $ cacheOd od 0 dir True path
+      paragraph $ image $=<< cacheOd od dir True path
       pure ()
     _ -> pure ()
   where
@@ -520,10 +523,10 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
     (1, InValidOption {
       hint = Right $ ObjectDiagram {
         objects = [
-          Object {objectName = "b", objectClass = "B"},
-          Object {objectName = "b1", objectClass = "B"},
-          Object {objectName = "b2", objectClass = "B"},
-          Object {objectName = "d", objectClass = "D"}
+          Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+          Object {isAnonymous = False, objectName = "b1", objectClass = "B"},
+          Object {isAnonymous = False, objectName = "b2", objectClass = "B"},
+          Object {isAnonymous = False, objectName = "d", objectClass = "D"}
           ],
         links = []
         },
@@ -539,10 +542,10 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
     (2, InValidOption {
       hint = Right $ ObjectDiagram {
         objects = [
-          Object {objectName = "b2", objectClass = "B"},
-          Object {objectName = "b1", objectClass = "B"},
-          Object {objectName = "d", objectClass = "D"},
-          Object {objectName = "b", objectClass = "B"}
+          Object {isAnonymous = False, objectName = "b2", objectClass = "B"},
+          Object {isAnonymous = False, objectName = "b1", objectClass = "B"},
+          Object {isAnonymous = False, objectName = "d", objectClass = "D"},
+          Object {isAnonymous = False, objectName = "b", objectClass = "B"}
           ],
         links = []
         },

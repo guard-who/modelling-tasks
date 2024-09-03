@@ -110,12 +110,14 @@ import Modelling.CdOd.Types (
   Relationship (..),
   RelationshipProperties (..),
   allCdMutations,
+  anonymiseObjects,
   anyAssociationNames,
   anyRelationshipName,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
   checkClassConfigWithProperties,
+  checkObjectProperties,
   classNames,
   defaultCdDrawSettings,
   defaultProperties,
@@ -163,6 +165,7 @@ import Data.Either                      (isRight)
 import Data.Foldable                    (for_)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
+import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffle', shuffleM)
@@ -251,6 +254,7 @@ defaultRepairCdConfig = RepairCdConfig {
     drawSettings = defaultCdDrawSettings,
     maxInstances     = Just 200,
     objectProperties = ObjectProperties {
+      anonymousObjectProportion = 0 % 1,
       completelyInhabited = Just True,
       hasLimitedIsolatedObjects = False,
       hasSelfLoops = Nothing,
@@ -284,6 +288,7 @@ checkRepairCdConfig config@RepairCdConfig {..}
   = checkClassConfigAndChanges classConfig allowedProperties
   <|> checkCdMutations (allowedCdMutations config)
   <|> checkCdDrawSettings drawSettings
+  <|> checkObjectProperties objectProperties
 
 checkClassConfigAndChanges
   :: ClassConfig
@@ -852,7 +857,7 @@ repairIncorrect cdProperties config cdMutations objectProperties preference maxI
       changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
       fmap (relationshipChange . head . instanceChangesAndCds)
         <$> traverse fromInstanceWithPredefinedNames changes
-    getOD :: (MonadAlloy m, MonadThrow m) => Cd -> m (Maybe Od)
+    getOD :: (MonadAlloy m, MonadRandom m, MonadThrow m) => Cd -> m (Maybe Od)
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
           maxNumberOfObjects = maxObjects $ snd $ classLimits config
@@ -871,7 +876,8 @@ repairIncorrect cdProperties config cdMutations objectProperties preference maxI
             parts
       od <- listToMaybe
         <$> getInstances (Just 1) to (combineParts parts ++ command)
-      forM od alloyInstanceToOd
+      od' <- forM od alloyInstanceToOd
+      mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 
 data AllowedProperties = AllowedProperties {
   compositionCycles      :: Bool,

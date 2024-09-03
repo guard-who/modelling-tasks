@@ -19,6 +19,8 @@ import Modelling.CdOd.Types (
   Property (..),
   )
 
+import Data.Ratio                       ((%))
+
 {-|
 points: 0.15
 generation time: 0:20min
@@ -57,6 +59,7 @@ task09 = NameCdErrorConfig {
     },
   maxInstances = Just 4000,
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
@@ -122,6 +125,7 @@ task10 = NameCdErrorConfig {
     },
   maxInstances = Just 4000,
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,

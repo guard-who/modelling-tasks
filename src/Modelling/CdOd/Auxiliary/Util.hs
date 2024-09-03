@@ -67,6 +67,7 @@ alloyInstanceToOd i = do
     oName x = return . toObjectName x
     toObjectName x y = lowerFirst x ++ if y == 0 then [] else show y
     toObject x y = return $ Object {
+      isAnonymous = False,
       objectName = toObjectName x y,
       objectClass = x
       }

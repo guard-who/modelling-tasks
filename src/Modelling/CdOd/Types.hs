@@ -35,6 +35,7 @@ module Modelling.CdOd.Types (
   RelationshipProperties (..),
   WrongRelationshipException (..),
   allCdMutations,
+  anonymiseObjects,
   anyAssociationNames,
   anyRelationshipName,
   anyThickEdge,
@@ -45,6 +46,7 @@ module Modelling.CdOd.Types (
   checkClassConfig,
   checkClassConfigWithProperties,
   checkObjectDiagram,
+  checkObjectProperties,
   checkOmittedDefaultMultiplicities,
   classNamesOd,
   defaultCdDrawSettings,
@@ -108,6 +110,7 @@ import Data.Maybe (
   isNothing,
   mapMaybe,
   )
+import Data.Ratio                       (denominator, numerator)
 import Data.Set                         (Set)
 import Data.String.Interpolate          (iii)
 import Data.Tuple.Extra                 (both, dupe)
@@ -119,6 +122,7 @@ type Od = ObjectDiagram String String String
 
 data Object objectName className
   = Object {
+    isAnonymous               :: !Bool,
     objectName                :: objectName,
     objectClass               :: className
     }
@@ -126,6 +130,7 @@ data Object objectName className
 
 instance Bifunctor Object where
   bimap f g Object {..} = Object {
+    isAnonymous     = isAnonymous,
     objectName      = f objectName,
     objectClass     = g objectClass
     }
@@ -136,6 +141,7 @@ instance Bifoldable Object where
 
 instance Bitraversable Object where
   bitraverse f g Object {..} = Object
+    isAnonymous
     <$> f objectName
     <*> g objectClass
 
@@ -822,6 +828,10 @@ data ObjectConfig = ObjectConfig {
 Defines structural constraints of an object diagram.
 -}
 data ObjectProperties = ObjectProperties {
+  -- | a proportion in the interval 0 to 1
+  -- describing what ratio of the objects should be anonymous
+  -- where 0 is meaning none and 1 is meaning all
+  anonymousObjectProportion   :: !Rational,
   -- | if there is at least one object for each existing class
   completelyInhabited         :: !(Maybe Bool),
   -- | if the number of isolated objects should be restricted
@@ -832,6 +842,19 @@ data ObjectProperties = ObjectProperties {
   -- for every association, aggregation and composition
   usesEveryRelationshipName   :: !(Maybe Bool)
   } deriving (Eq, Generic, Read, Show)
+
+checkObjectProperties :: ObjectProperties -> Maybe String
+checkObjectProperties ObjectProperties {..}
+  | numerator anonymousObjectProportion < 0
+  = Just [iii|
+    anonymousObjectProportion must be positive
+    |]
+  | numerator anonymousObjectProportion > denominator anonymousObjectProportion
+  = Just [iii|
+    anonymousObjectProportion must be in the interval [0..1]
+    |]
+  | otherwise
+  = Nothing
 
 {-|
 Defines an 'ObjectConfig' demanding at least one but at most five objects
@@ -1019,10 +1042,29 @@ renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
       className' <- BM.lookup objectClass bmClasses
       case stripPrefix (lowerFirst objectClass) objectName of
         Just objectNamePostfix -> return Object {
+          isAnonymous = isAnonymous,
           objectName = lowerFirst className' ++ objectNamePostfix,
           objectClass = className'
           }
         Nothing -> throwM ObjectNameNotMatchingToObjectClass
+
+anonymiseObjects
+  :: MonadRandom m
+  => Rational
+  -> ObjectDiagram className relationshipName linkName
+  -> m (ObjectDiagram className relationshipName linkName)
+anonymiseObjects proportion ObjectDiagram {..} = do
+  let objectCount = length objects
+      anonymous = round (fromIntegral objectCount * proportion)
+  makeAnonymouses <- shuffleM
+    $ take objectCount $ replicate anonymous True ++ repeat False
+  return ObjectDiagram {
+    links = links,
+    objects = zipWith anonymise makeAnonymouses objects
+    }
+  where
+    anonymise :: Bool -> Object a b -> Object a b
+    anonymise anonymous o = o {isAnonymous = anonymous}
 
 canShuffleClassNames :: ObjectDiagram String String linkNames -> Bool
 canShuffleClassNames ObjectDiagram {..} =

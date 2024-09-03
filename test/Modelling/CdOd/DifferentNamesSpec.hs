@@ -169,9 +169,9 @@ spec = do
       odFor cdBCCircle
       `shouldReturn` ObjectDiagram {
         objects = [
-          Object {objectName = "a", objectClass = "A"},
-          Object {objectName = "c", objectClass = "C"},
-          Object {objectName = "c1", objectClass = "C"}
+          Object {isAnonymous = True, objectName = "a", objectClass = "A"},
+          Object {isAnonymous = True, objectName = "c", objectClass = "C"},
+          Object {isAnonymous = True, objectName = "c1", objectClass = "C"}
           ],
         links = [
           Link {linkName = "y", linkFrom = "a", linkTo = "c"},
@@ -269,9 +269,9 @@ composition name part whole = Composition {
 simpleCircleOd :: Od
 simpleCircleOd = ObjectDiagram {
   objects = [
-    Object {objectName = "a", objectClass = "A"},
-    Object {objectName = "b", objectClass = "B"},
-    Object {objectName = "c", objectClass = "C"}
+    Object {isAnonymous = True, objectName = "a", objectClass = "A"},
+    Object {isAnonymous = True, objectName = "b", objectClass = "B"},
+    Object {isAnonymous = True, objectName = "c", objectClass = "C"}
     ],
   links = [
     Link {linkName = "z", linkFrom = "a", linkTo = "c"},
@@ -326,14 +326,12 @@ evaluateDifferentNames
 evaluateDifferentNames coins cs cs' = flip withLang English $ do
   let i = DifferentNamesInstance {
         cdDrawSettings = defaultCdDrawSettings,
-        anonymousObjects = error "anonymousObjects is undefined",
         cDiagram = ClassDiagram {
           classNames = [classA],
           relationships = map newAssociation associationsToUse
           },
-        generatorValue = 1,
         oDiagram = ObjectDiagram {
-          objects = [Object linkA classA],
+          objects = [Object False linkA classA],
           links = map newLink linksToUse
           },
         showSolution = True,

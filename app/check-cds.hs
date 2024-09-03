@@ -23,6 +23,7 @@ import Modelling.CdOd.Types (
 import Control.Monad.Random             (evalRandT, getStdGen)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.GraphViz                    (DirType (..))
+import Data.Ratio                       ((%))
 
 v :: Relationship String String
 v = Aggregation {
@@ -238,6 +239,7 @@ drawCdAndOdsFor is c cds cmd = do
     shorten (y:ys) = y : shorten ys
     shorten []     = []
     objectProperties = ObjectProperties {
+      anonymousObjectProportion = 0 % 1,
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
       hasSelfLoops = Nothing,

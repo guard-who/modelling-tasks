@@ -14,6 +14,8 @@ import Modelling.CdOd.Types (
   OmittedDefaultMultiplicities (..),
   )
 
+import Data.Ratio                       ((%))
+
 {-|
 points: 0.15
 generation time: 5:00h
@@ -52,6 +54,7 @@ task07 = RepairCdConfig {
     },
   maxInstances = Just 1000,
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 3,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = False,
     hasSelfLoops = Just False,
@@ -100,6 +103,7 @@ task08 = RepairCdConfig {
     },
   maxInstances = Just 1000,
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = False,
     hasSelfLoops = Just False,

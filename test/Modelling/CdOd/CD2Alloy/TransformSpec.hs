@@ -10,8 +10,9 @@ import Modelling.CdOd.Types (
   )
 import Modelling.Common                 (withUnitTestsUsingPath)
 
+import Data.Ratio                       ((%))
 import Test.Hspec
-import Test.Similarity
+import Test.Similarity                  (debugAssertEqual)
 
 spec :: Spec
 spec = do
@@ -28,6 +29,7 @@ spec = do
       objectLimits         = (2, 4)
       }
     objectProperties = ObjectProperties {
+      anonymousObjectProportion = 1 % 3,
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
       hasSelfLoops = Just True,

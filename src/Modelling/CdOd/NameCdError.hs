@@ -114,8 +114,10 @@ import Modelling.CdOd.Types (
   Property (..),
   Relationship (..),
   RelationshipProperties (..),
+  anonymiseObjects,
   anyAssociationNames,
   checkCdDrawSettings,
+  checkObjectProperties,
   classNames,
   defaultCdDrawSettings,
   isIllegal,
@@ -174,6 +176,7 @@ import Data.List (
   )
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
+import Data.Ratio                       ((%))
 import Data.Set                         (Set)
 import Data.String.Interpolate          (i, iii)
 import Data.Yaml                        (decodeEither', encode)
@@ -238,6 +241,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
   drawSettings = defaultCdDrawSettings,
   maxInstances = Just 200,
   objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Nothing,
@@ -299,6 +303,7 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
       |]
   | otherwise
   = checkClassConfigAndChanges classConfig allowedProperties
+  <|> checkObjectProperties objectProperties
   <|> checkCdDrawSettings drawSettings
   where
     predefined = concatMap
@@ -830,7 +835,7 @@ nameCdError allowed config objectProperties byName maxInstances to = do
           cd2 = instanceClassDiagram $ head correctInstance
       possibleRemoves <- do
         validCds <- lift $ mapM (toValidCd . changeClassDiagram) allChs
-        lift $ mapM getOD validCds
+        mapM_ getOD validCds
         return $ traverse (remove . relationshipChange) allChs
       case possibleRemoves of
         Nothing -> getInstanceWithODs chs p randomInstances
@@ -858,8 +863,9 @@ nameCdError allowed config objectProperties byName maxInstances to = do
             parts
       od <- listToMaybe
         <$> getInstances (Just 1) to (combineParts parts ++ command)
-      fmap join $ forM od
+      od' <- fmap join $ forM od
         $ runExceptT . alloyInstanceToOd >=> return . eitherToMaybe
+      mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 
 translateProperty :: Bool -> Property -> Map Language String
 translateProperty True x = translatePropertyWithDirections x

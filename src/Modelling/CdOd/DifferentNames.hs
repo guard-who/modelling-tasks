@@ -77,10 +77,12 @@ import Modelling.CdOd.Types (
   Od,
   OmittedDefaultMultiplicities,
   Relationship (..),
+  anonymiseObjects,
   associationNames,
   checkCdDrawSettings,
   checkClassConfigWithProperties,
   checkObjectDiagram,
+  checkObjectProperties,
   checkOmittedDefaultMultiplicities,
   classNames,
   defaultCdDrawSettings,
@@ -122,7 +124,7 @@ import Control.OutputCapable.Blocks (
   yesNo,
   )
 import Control.Monad.Random (
-  MonadRandom (getRandom),
+  MonadRandom,
   evalRandT,
   mkStdGen,
   )
@@ -135,12 +137,12 @@ import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Back))
 import Data.List                        (group, intersect, permutations, sort)
 import Data.Maybe (
-  fromMaybe,
   isJust,
   isNothing,
   listToMaybe,
   mapMaybe,
   )
+import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i, iii)
 import Data.Tuple.Extra                 (snd3, swap)
 import GHC.Generics                     (Generic)
@@ -158,10 +160,8 @@ data ShufflingOption a =
   deriving (Eq, Generic, Foldable, Functor, Read, Show, Traversable)
 
 data DifferentNamesInstance = DifferentNamesInstance {
-    anonymousObjects :: Bool,
     cDiagram :: Cd,
     cdDrawSettings :: !CdDrawSettings,
-    generatorValue :: Int,
     oDiagram :: Od,
     showSolution :: Bool,
     mapping  :: NameMapping,
@@ -203,7 +203,6 @@ data DifferentNamesConfig = DifferentNamesConfig {
     objectConfig     :: ObjectConfig,
     objectProperties :: ObjectProperties,
     omittedDefaultMultiplicities :: OmittedDefaultMultiplicities,
-    onlyAnonymousObjects :: Bool,
     printSolution    :: Bool,
     timeout          :: Maybe Int
   } deriving (Generic, Read, Show)
@@ -233,6 +232,7 @@ checkDifferentNamesConfig DifferentNamesConfig {..}
       Otherwise task instances would vary too much in complexity.
       |]
   | otherwise = checkClassConfigWithProperties classConfig defaultProperties
+    <|> checkObjectProperties objectProperties
     <|> checkOmittedDefaultMultiplicities omittedDefaultMultiplicities
   where
     different (_, Nothing) = True
@@ -254,13 +254,13 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
       objectLimits         = (4, 6)
       },
     objectProperties = ObjectProperties {
+      anonymousObjectProportion = 1 % 1,
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
       hasSelfLoops = Nothing,
       usesEveryRelationshipName = Just True
       },
     omittedDefaultMultiplicities = defaultOmittedDefaultMultiplicities,
-    onlyAnonymousObjects = True,
     printSolution    = False,
     withNonTrivialInheritance = Just True,
     maxInstances     = Nothing,
@@ -283,8 +283,6 @@ differentNamesTask
 differentNamesTask path task = do
   let cd = fromClassDiagram $ cDiagram task
       od = oDiagram task
-      anonymous = fromMaybe (length (objects od) `div` 3)
-        (if anonymousObjects task then Just 1000 else Nothing)
   paragraph $ translate $ do
     english "Consider the following class diagram:"
     german "Betrachten Sie folgendes Klassendiagramm:"
@@ -293,8 +291,7 @@ differentNamesTask path task = do
     english "and the following object diagram (which conforms to it):"
     german "und das folgende (dazu passende) Objektdiagramm:"
   paragraph $ image $=<<
-    flip evalRandT (mkStdGen $ generatorValue task)
-    $ cacheOd od anonymous Back True path
+    cacheOd od Back True path
   paragraph $ do
     translate $ do
       english [iii|
@@ -459,7 +456,6 @@ differentNames config segment seed = do
 
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
-  anonymousObjects = True,
   cDiagram = ClassDiagram {
     classNames = ["A","D","B","C"],
     relationships = [
@@ -501,13 +497,12 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
       ]
     },
   cdDrawSettings = defaultCdDrawSettings,
-  generatorValue = -3894126834283525023,
   oDiagram = ObjectDiagram {
     objects = [
-      Object {objectName = "c", objectClass = "C"},
-      Object {objectName = "b", objectClass = "B"},
-      Object {objectName = "b1", objectClass = "B"},
-      Object {objectName = "b2", objectClass = "B"}
+      Object {isAnonymous = True, objectName = "c", objectClass = "C"},
+      Object {isAnonymous = True, objectName = "b", objectClass = "B"},
+      Object {isAnonymous = True, objectName = "b1", objectClass = "B"},
+      Object {isAnonymous = True, objectName = "b2", objectClass = "B"}
       ],
     links = [
       Link {linkName = "y", linkFrom = "c", linkTo = "b"},
@@ -568,16 +563,15 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
         isCompleteMapping
         then do
         od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
+        od1'' <- anonymiseObjects (anonymousObjectProportion objectProperties) od1'
         return $ DifferentNamesInstance {
-              anonymousObjects = onlyAnonymousObjects,
               cDiagram  = cd1,
               cdDrawSettings = CdDrawSettings {
                 omittedDefaults = omittedDefaultMultiplicities,
                 printNames = True,
                 printNavigations = True
                 },
-              generatorValue = 0,
-              oDiagram  = od1',
+              oDiagram  = od1'',
               showSolution = printSolution,
               mapping   = toNameMapping bm',
               linkShuffling = ConsecutiveLetters,
@@ -628,7 +622,6 @@ instance Randomise DifferentNamesInstance where
     nonInheritances' <- shuffleM nonInheritances
     links' <- shuffleM links
     renameInstance inst names' nonInheritances' links'
-      >>= changeGeneratorValue
   isRandomisable DifferentNamesInstance {..} =
     isObjectDiagramRandomisable oDiagram
 
@@ -637,24 +630,14 @@ instance RandomiseLayout DifferentNamesInstance where
     cd <- shuffleClassAndConnectionOrder cDiagram
     od <- shuffleObjectAndLinkOrder oDiagram
     return $ DifferentNamesInstance {
-      anonymousObjects = anonymousObjects,
       cDiagram = cd,
       cdDrawSettings = cdDrawSettings,
-      generatorValue = generatorValue,
       oDiagram = od,
       showSolution = showSolution,
       mapping = mapping,
       linkShuffling = linkShuffling,
       usesAllRelationships = usesAllRelationships
       }
-
-changeGeneratorValue
-  :: MonadRandom m
-  => DifferentNamesInstance
-  -> m DifferentNamesInstance
-changeGeneratorValue inst = do
-  r <- getRandom
-  return inst { generatorValue = r }
 
 renameInstance
   :: MonadThrow m
@@ -681,10 +664,8 @@ renameInstance inst@DifferentNamesInstance {..} names' nonInheritances' linkNs' 
   od' <- renameObjectsWithClassesAndLinksInOd bmNames bmLinks od
   shuffling <- mapM (`BM.lookup` bmLinks) linkShuffling
   return $ DifferentNamesInstance {
-    anonymousObjects = anonymousObjects,
     cDiagram  = cd',
     cdDrawSettings = cdDrawSettings,
-    generatorValue = generatorValue,
     oDiagram  = od',
     showSolution = showSolution,
     mapping   = toNameMapping bm',

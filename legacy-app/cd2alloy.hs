@@ -12,6 +12,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad
 import Data.Maybe                       (mapMaybe)
+import Data.Ratio                       ((%))
 import Data.Time.LocalTime
 import System.Environment (getArgs)
 
@@ -47,6 +48,7 @@ run input output template index = do
       }
     toInheritance sub super = Inheritance sub <$> super
     objectProperties = ObjectProperties {
+      anonymousObjectProportion = 0 % 1,
       completelyInhabited = Nothing,
       hasLimitedIsolatedObjects = True,
       hasSelfLoops = Nothing,
