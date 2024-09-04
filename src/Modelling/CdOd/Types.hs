@@ -1056,11 +1056,11 @@ anonymiseObjects
 anonymiseObjects proportion ObjectDiagram {..} = do
   let objectCount = length objects
       anonymous = round (fromIntegral objectCount * proportion)
-  makeAnonymouses <- shuffleM
+  makeAnonymousList <- shuffleM
     $ take objectCount $ replicate anonymous True ++ repeat False
   return ObjectDiagram {
     links = links,
-    objects = zipWith anonymise makeAnonymouses objects
+    objects = zipWith anonymise makeAnonymousList objects
     }
   where
     anonymise :: Bool -> Object a b -> Object a b
