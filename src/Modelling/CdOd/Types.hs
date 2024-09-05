@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.Types (
+  AllowedProperties (..),
   AnnotatedCd,
   AnnotatedClassDiagram (..),
   Annotation (..),
@@ -35,6 +36,8 @@ module Modelling.CdOd.Types (
   RelationshipProperties (..),
   WrongRelationshipException (..),
   allCdMutations,
+  allowEverything,
+  allowNothing,
   anonymiseObjects,
   anyAssociationNames,
   anyRelationshipName,
@@ -629,11 +632,11 @@ checkClassConfigWithProperties
       | Just False == y = 0
       | otherwise = x
     plusOne x = if x /= 0 then x + 1 else x
-    minNonInheritances = (+ selfRelationships) . plusOne $ sum [
+    minNonInheritances = (+ selfRelationshipsAmount) . plusOne $ sum [
       1 `forMaybe` hasDoubleRelationships,
       1 `forMaybe` hasReverseRelationships
       ]
-    minInheritances = (+ selfInheritances) . plusOne $ sum [
+    minInheritances = (+ selfInheritancesAmount) . plusOne $ sum [
       1 `for` hasReverseInheritances,
       1 `forMaybe` hasMultipleInheritances,
       2 `for` hasNonTrivialInheritanceCycles
@@ -877,8 +880,8 @@ maxObjects x = ObjectConfig {
 data RelationshipProperties = RelationshipProperties {
     wrongNonInheritances    :: Int,
     wrongCompositions       :: Int,
-    selfRelationships       :: Int,
-    selfInheritances        :: Int,
+    selfRelationshipsAmount :: Int,
+    selfInheritancesAmount  :: Int,
     hasDoubleRelationships  :: Maybe Bool,
     hasReverseRelationships :: Maybe Bool,
     hasReverseInheritances  :: Bool,
@@ -893,8 +896,8 @@ defaultProperties :: RelationshipProperties
 defaultProperties = RelationshipProperties {
     wrongNonInheritances    = 0,
     wrongCompositions       = 0,
-    selfRelationships       = 0,
-    selfInheritances        = 0,
+    selfRelationshipsAmount = 0,
+    selfInheritancesAmount  = 0,
     hasDoubleRelationships  = Just False,
     hasReverseRelationships = Just False,
     hasReverseInheritances  = False,
@@ -909,7 +912,7 @@ towardsValidProperties :: RelationshipProperties -> RelationshipProperties
 towardsValidProperties properties@RelationshipProperties {..} = properties {
   wrongNonInheritances = snd betterWrongNonInheritances,
   wrongCompositions = snd betterWrongCompositions,
-  selfInheritances = snd betterSelfInheritances,
+  selfInheritancesAmount = snd betterSelfInheritances,
   hasReverseInheritances = snd fixedReverseInheritances,
   hasNonTrivialInheritanceCycles = snd fixedNonTrivialInheritanceCycles,
   hasCompositionCycles = snd fixedCompositionCycles
@@ -919,7 +922,7 @@ towardsValidProperties properties@RelationshipProperties {..} = properties {
     betterWrongCompositions =
       hasBetter (fst betterWrongNonInheritances) wrongCompositions
     betterSelfInheritances =
-      hasBetter (fst betterWrongCompositions) selfInheritances
+      hasBetter (fst betterWrongCompositions) selfInheritancesAmount
     fixedReverseInheritances =
       fixed (fst betterSelfInheritances) hasReverseInheritances
     fixedNonTrivialInheritanceCycles =
@@ -969,8 +972,8 @@ toPropertySet RelationshipProperties {..} =
     ifJustTrue hasMultipleInheritances MultipleInheritances,
     ifTrue hasReverseInheritances ReverseInheritances,
     ifJustTrue hasReverseRelationships ReverseRelationships,
-    ifAny selfInheritances SelfInheritances,
-    ifAny selfRelationships SelfRelationships,
+    ifAny selfInheritancesAmount SelfInheritances,
+    ifAny selfRelationshipsAmount SelfRelationships,
     ifAny wrongNonInheritances WrongAssociationLimits,
     ifAny wrongCompositions WrongCompositionLimits
     ]
@@ -979,6 +982,44 @@ toPropertySet RelationshipProperties {..} =
     ifTrue x p = if x then Just p else Nothing
     ifJustTrue Nothing _ = Nothing
     ifJustTrue (Just x) p = ifTrue x p
+
+data AllowedProperties = AllowedProperties {
+  compositionCycles           :: Bool,
+  doubleRelationships         :: Bool,
+  inheritanceCycles           :: Bool,
+  reverseInheritances         :: Bool,
+  reverseRelationships        :: Bool,
+  selfInheritances            :: Bool,
+  selfRelationships           :: Bool,
+  wrongAssociationLimits      :: Bool,
+  wrongCompositionLimits      :: Bool
+  } deriving (Generic, Read, Show)
+
+allowEverything :: AllowedProperties
+allowEverything = AllowedProperties {
+  compositionCycles           = True,
+  doubleRelationships         = True,
+  inheritanceCycles           = True,
+  reverseInheritances         = True,
+  reverseRelationships        = True,
+  selfInheritances            = True,
+  selfRelationships           = True,
+  wrongAssociationLimits      = True,
+  wrongCompositionLimits      = True
+  }
+
+allowNothing :: AllowedProperties
+allowNothing = AllowedProperties {
+  compositionCycles           = False,
+  doubleRelationships         = False,
+  inheritanceCycles           = False,
+  reverseInheritances         = False,
+  reverseRelationships        = False,
+  selfInheritances            = False,
+  selfRelationships           = False,
+  wrongAssociationLimits      = False,
+  wrongCompositionLimits      = False
+  }
 
 associationNames :: Cd -> [String]
 associationNames = mapMaybe relationshipName . relationships

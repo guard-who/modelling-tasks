@@ -56,10 +56,8 @@ import Modelling.CdOd.Phrasing (
   trailingCommaGerman,
   )
 import Modelling.CdOd.RepairCd (
-  AllowedProperties (..),
   InValidOption (..),
   RelationshipChangeWithArticle,
-  allowNothing,
   checkClassConfigAndChanges,
   mapInValidOption,
   mapInValidOptionM,
@@ -67,6 +65,7 @@ import Modelling.CdOd.RepairCd (
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
+  AllowedProperties (..),
   Annotation (..),
   AnyCd,
   AnyClassDiagram (..),
@@ -80,6 +79,7 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   Od,
   Relationship (..),
+  allowNothing,
   allCdMutations,
   anyAssociationNames,
   anyRelationshipName,

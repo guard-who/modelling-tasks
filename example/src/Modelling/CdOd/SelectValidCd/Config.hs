@@ -5,10 +5,8 @@ module Modelling.CdOd.SelectValidCd.Config where
 import Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (..),
   )
-import Modelling.CdOd.RepairCd (
-  AllowedProperties (..),
-  )
 import Modelling.CdOd.Types (
+  AllowedProperties (..),
   ArticlePreference (..),
   ClassConfig (..),
   CdDrawSettings (..),

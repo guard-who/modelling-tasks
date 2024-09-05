@@ -3,10 +3,10 @@
 module Modelling.CdOd.RepairCd.Config where
 
 import Modelling.CdOd.RepairCd (
-  AllowedProperties (..),
   RepairCdConfig (..),
   )
 import Modelling.CdOd.Types (
+  AllowedProperties (..),
   ArticlePreference (..),
   ClassConfig (..),
   CdDrawSettings (..),

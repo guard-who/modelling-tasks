@@ -73,17 +73,17 @@ spec =
     generateProperty
       "selfEdges (NonInheritance)"
       (const $ not . null . selfEdges)
-      defaultProperties { selfRelationships = 1 }
+      defaultProperties { selfRelationshipsAmount = 1 }
     generateProperty
       "selfEdges (Inheritance)"
       (const $ not . null . selfEdges)
-      defaultProperties { selfInheritances = 1 }
+      defaultProperties { selfInheritancesAmount = 1 }
     generateProperty
       "no selfEdges"
       (const $ null . selfEdges)
       defaultProperties {
-        selfInheritances = 0,
-        selfRelationships = 0
+        selfInheritancesAmount = 0,
+        selfRelationshipsAmount = 0
         }
     generateProperty
       "doubleConnections (same direction)"

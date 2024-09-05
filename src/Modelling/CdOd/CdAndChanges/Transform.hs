@@ -15,6 +15,7 @@ module Modelling.CdOd.CdAndChanges.Transform (
   ) where
 
 import Modelling.CdOd.Types (
+  AllowedProperties (..),
   AnyCd,
   AnyClassDiagram (..),
   AnyRelationship,
@@ -35,7 +36,7 @@ import Data.Functor                     ((<&>))
 import Data.List                        (intercalate, unzip4)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe                       (fromMaybe)
-import Data.String.Interpolate          (__i, i, iii)
+import Data.String.Interpolate          (__i, __i'E, i, iii)
 
 transformWith
   :: ClassConfig
@@ -51,6 +52,8 @@ transformWith config mutations cdOrProperties (cs, predicates, part) =
   ++ part
   ++ createRunCommand config predicates cs
 
+nameErrorPredicates :: String
+nameErrorPredicates =  removeLines 3 $(embedStringFile "alloy/cd/nameError.als")
 {-|
 Create Alloy code for the generation of a single class diagram with the
 given properties.
@@ -128,17 +131,34 @@ transformGetNextFix
   :: Maybe AnyCd
   -> ClassConfig
   -> RelationshipProperties
+  -> AllowedProperties
   -> Bool
   -> String
-transformGetNextFix maybeCd config properties byName = transformWith
+transformGetNextFix maybeCd config properties allowed byName = transformWith
   config
   [RemoveRelationship]
   (maybe (Right properties) Left maybeCd)
-  (n, ps, part ++ restrictRelationships)
+  (n, ps, part ++ restrictOverlappings ++ restrictRelationships)
   where
     (n, ps, part) = changes
       Nothing
       [towardsValidProperties properties]
+    overlappingFacts = restrictOverlapping allowed
+    restrictOverlappings =
+      if null overlappingFacts
+      then ""
+      else overlappingFacts ++ nameErrorPredicates
+    restrictOverlapping AllowedProperties {..}
+      = addFact (compositionCycles && selfRelationships) [__i'E|
+        fact restrictSelfCompositionCycles {
+          noSelfCycle  [Inheritance, Composition]
+        }|]
+      $ addFact (compositionCycles && reverseRelationships) [__i'E|
+        fact restrictReverseCompositions {
+          noInheritedReverseRelationships [Inheritance, Composition]
+        }|]
+      ""
+    addFact x fact facts = (if x then fact else "") ++ facts
     restrictRelationships =
       if byName
       then ""
@@ -233,8 +253,9 @@ pred cd {
       Relationship2 = Relationship - Change.add,
       Inheritance2 = Inheritance - Change.add {
     classDiagram [NonInheritance2, Composition2, Inheritance2, Relationship2,
-      #{wrongNonInheritances props}, #{wrongCompositions props}, #{selfRelationships props},
-      #{selfInheritances props},
+      #{wrongNonInheritances props}, #{wrongCompositions props},
+      #{selfRelationshipsAmount props},
+      #{selfInheritancesAmount props},
       #{maybeToAlloySet $ hasDoubleRelationships props},
       #{maybeToAlloySet $ hasReverseRelationships props},
       #{hasReverseInheritances props},
@@ -322,8 +343,9 @@ sig C#{n} extends Change {}
 
 pred #{change} {
   changeOfFirstCD [C#{n},
-    #{wrongNonInheritances props}, #{wrongCompositions props}, #{selfRelationships props},
-    #{selfInheritances props},
+    #{wrongNonInheritances props}, #{wrongCompositions props},
+    #{selfRelationshipsAmount props},
+    #{selfInheritancesAmount props},
     #{maybeToAlloySet $ hasDoubleRelationships props},
     #{maybeToAlloySet $ hasReverseRelationships props},
     #{hasReverseInheritances props},
@@ -407,7 +429,7 @@ run { #{command} } for #{relationships} Relationship, #{bitSize} Int,
 
 removeLines :: Int -> String -> String
 removeLines n
-  | n < 0     = id
+  | n < 1     = id
   | otherwise = removeLines (n - 1) . removeLine
 
 removeLine :: String -> String

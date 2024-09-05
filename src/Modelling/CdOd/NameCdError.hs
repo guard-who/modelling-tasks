@@ -90,15 +90,14 @@ import Modelling.CdOd.Phrasing (
   phraseRelationship,
   )
 import Modelling.CdOd.RepairCd (
-  AllowedProperties (..),
   (.&.),
-  allowEverything,
   checkClassConfigAndChanges,
   illegalChanges,
   legalChanges,
   toProperty,
   )
 import Modelling.CdOd.Types (
+  AllowedProperties (..),
   Annotation (..),
   AnnotatedCd,
   AnnotatedClassDiagram (..),
@@ -114,6 +113,7 @@ import Modelling.CdOd.Types (
   Property (..),
   Relationship (..),
   RelationshipProperties (..),
+  allowEverything,
   anonymiseObjects,
   anyAssociationNames,
   checkCdDrawSettings,
@@ -227,7 +227,7 @@ defaultNameCdErrorConfig :: NameCdErrorConfig
 defaultNameCdErrorConfig = NameCdErrorConfig {
   allowedProperties = allowEverything {
     reverseInheritances = False,
-    Modelling.CdOd.RepairCd.selfInheritances = False
+    selfInheritances = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
   classConfig = ClassConfig {
@@ -812,7 +812,7 @@ nameCdError allowed config objectProperties byName maxInstances to = do
       error "there seems to be no instance for the provided configuration"
     getInstanceWithChanges ((e0, l0) : chs) = do
       let p = toProperty $ e0 .&. l0
-          alloyCode = Changes.transformGetNextFix Nothing config p byName
+          alloyCode = Changes.transformGetNextFix Nothing config p allowed byName
       instances <- lift $ getInstances maxInstances to alloyCode
       randomInstances <- shuffleM instances
       getInstanceWithODs chs p randomInstances
@@ -828,7 +828,8 @@ nameCdError allowed config objectProperties byName maxInstances to = do
             hasReverseRelationships = Nothing,
             hasMultipleInheritances = Nothing
             }
-          alloyCode = Changes.transformGetNextFix (Just cd) config p' byName
+          alloyCode =
+            Changes.transformGetNextFix (Just cd) config p' allowed byName
       instances <- lift $ getInstances Nothing to alloyCode
       correctInstance <- lift $ mapM fromInstanceWithPredefinedNames instances
       let allChs = concatMap instanceChangesAndCds correctInstance

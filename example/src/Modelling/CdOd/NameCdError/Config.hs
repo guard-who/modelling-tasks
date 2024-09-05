@@ -7,10 +7,8 @@ import Modelling.CdOd.NameCdError (
   NumberOfReasons (..),
   Reason (..),
   )
-import Modelling.CdOd.RepairCd (
-  AllowedProperties (..),
-  )
 import Modelling.CdOd.Types (
+  AllowedProperties (..),
   ArticlePreference (..),
   ClassConfig (..),
   CdDrawSettings (..),

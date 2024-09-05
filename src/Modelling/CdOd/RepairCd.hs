@@ -7,7 +7,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.RepairCd (
-  AllowedProperties (..),
   InValidOption (..),
   RelationshipChangeWithArticle,
   RepairCdConfig (..),
@@ -18,8 +17,6 @@ module Modelling.CdOd.RepairCd (
   classAndNonInheritanceNames,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
-  allowEverything,
-  allowNothing,
   mapInValidOption,
   mapInValidOptionM,
   renameInstance,
@@ -39,9 +36,6 @@ module Modelling.CdOd.RepairCd (
 import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
   transformChanges,
   transformImproveCd,
-  )
-import qualified Modelling.CdOd.Types             as T (
-  RelationshipProperties (selfInheritances, selfRelationships),
   )
 
 import qualified Data.Bimap                       as BM (fromList)
@@ -94,6 +88,7 @@ import Modelling.CdOd.Phrasing (
   phraseChange,
   )
 import Modelling.CdOd.Types (
+  AllowedProperties (..),
   Annotation (..),
   AnyCd,
   AnyClassDiagram (..),
@@ -110,6 +105,7 @@ import Modelling.CdOd.Types (
   Relationship (..),
   RelationshipProperties (..),
   allCdMutations,
+  allowNothing,
   anonymiseObjects,
   anyAssociationNames,
   anyRelationshipName,
@@ -244,7 +240,7 @@ defaultRepairCdConfig
     allowedCdMutations = allCdMutations,
     allowedProperties = allowNothing {
         compositionCycles = True,
-        Modelling.CdOd.RepairCd.selfRelationships = True
+        selfRelationships = True
         },
     articleToUse = UseDefiniteArticleWherePossible,
     classConfig = ClassConfig {
@@ -880,44 +876,6 @@ repairIncorrect cdProperties config cdMutations objectProperties preference maxI
       od' <- forM od alloyInstanceToOd
       mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 
-data AllowedProperties = AllowedProperties {
-  compositionCycles      :: Bool,
-  doubleRelationships    :: Bool,
-  inheritanceCycles      :: Bool,
-  reverseInheritances    :: Bool,
-  reverseRelationships   :: Bool,
-  selfInheritances       :: Bool,
-  selfRelationships      :: Bool,
-  wrongAssociationLimits :: Bool,
-  wrongCompositionLimits :: Bool
-  } deriving (Generic, Read, Show)
-
-allowEverything :: AllowedProperties
-allowEverything = AllowedProperties {
-  compositionCycles = True,
-  doubleRelationships    = True,
-  inheritanceCycles      = True,
-  reverseInheritances = True,
-  reverseRelationships   = True,
-  selfInheritances       = True,
-  selfRelationships      = True,
-  wrongAssociationLimits = True,
-  wrongCompositionLimits = True
-  }
-
-allowNothing :: AllowedProperties
-allowNothing = AllowedProperties {
-  compositionCycles           = False,
-  doubleRelationships         = False,
-  inheritanceCycles           = False,
-  reverseInheritances         = False,
-  reverseRelationships        = False,
-  selfInheritances            = False,
-  selfRelationships           = False,
-  wrongAssociationLimits      = False,
-  wrongCompositionLimits      = False
-  }
-
 allChanges :: AllowedProperties -> [PropertyChange]
 allChanges c = legalChanges c ++ illegalChanges c
 
@@ -934,7 +892,7 @@ PropertyChange n1 o1 v1 .&. PropertyChange n2 o2 v2 = PropertyChange
 legalChanges :: AllowedProperties -> [PropertyChange]
 legalChanges allowed = noChange : [
     PropertyChange "add one self relationship" addSelfRelationships id
-  | Modelling.CdOd.RepairCd.selfRelationships allowed] ++ [
+  | selfRelationships allowed] ++ [
     PropertyChange "force double relationships" withDoubleRelationships id
   | doubleRelationships allowed] ++ [
     PropertyChange "force reverse relationships" withReverseRelationships id
@@ -943,7 +901,7 @@ legalChanges allowed = noChange : [
   where
     addSelfRelationships :: RelationshipProperties -> RelationshipProperties
     addSelfRelationships config@RelationshipProperties {..}
-      = config { T.selfRelationships = selfRelationships + 1 }
+      = config { selfRelationshipsAmount = selfRelationshipsAmount + 1 }
     withDoubleRelationships :: RelationshipProperties -> RelationshipProperties
     withDoubleRelationships config
       = config { hasDoubleRelationships = Just True }
@@ -965,7 +923,7 @@ illegalChanges allowed = map ($ const False) $ [
     PropertyChange "force reverse inheritances" withReverseInheritances
   | reverseInheritances allowed] ++ [
     PropertyChange "add self inheritance" addSelfInheritance
-  | Modelling.CdOd.RepairCd.selfInheritances allowed] ++ [
+  | selfInheritances allowed] ++ [
     PropertyChange "force composition cycles" withCompositionCycles
   | compositionCycles allowed]
   where
@@ -977,7 +935,7 @@ illegalChanges allowed = map ($ const False) $ [
       = config { wrongCompositions = wrongCompositions + 1 }
     addSelfInheritance :: RelationshipProperties -> RelationshipProperties
     addSelfInheritance config@RelationshipProperties {..}
-      = config { T.selfInheritances = selfInheritances + 1 }
+      = config { selfInheritancesAmount = selfInheritancesAmount + 1 }
     withReverseInheritances :: RelationshipProperties -> RelationshipProperties
     withReverseInheritances config
       = config { hasReverseInheritances = True }
