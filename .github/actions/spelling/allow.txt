@@ -79,6 +79,7 @@ graphviz
 hspace
 hspec
 https
+iden
 includegraphics
 ispell
 konfliktauslösenden
@@ -96,6 +97,7 @@ mul
 multicolumn
 nlabel
 oneof
+overlappings
 pagebreak
 parenthesise
 postbreak
