@@ -309,11 +309,11 @@ instanceToEdges inst = do
   r'         <- lookupSig (scoped "this" "Relationship") inst
   rFrom      <- getRelation "from" r'
   rTo        <- getRelation "to" r'
-  a'         <- lookupSig (scoped "this" "NonInheritance") inst
-  aFromLower <- getRelation "fromLower" a'
-  aFromUpper <- getRelation "fromUpper" a'
-  aToLower   <- getRelation "toLower" a'
-  aToUpper   <- getRelation "toUpper" a'
+  limited    <- lookupSig (scoped "this" "Limited") inst
+  aFromLower <- getRelation "fromLower" limited
+  aFromUpper <- getRelation "fromUpper" limited
+  aToLower   <- getRelation "toLower" limited
+  aToUpper   <- getRelation "toUpper" limited
   instanceToEdges' inst rFrom rTo aFromLower aFromUpper aToLower aToUpper
 
 instanceToEdges'

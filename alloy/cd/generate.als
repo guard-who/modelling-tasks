@@ -12,7 +12,9 @@ pred change [c : Change, rs : set Relationship] {
     one c.add and one c.remove iff c1 or c2 or c3
 }
 
-sig Inheritance extends Relationship {}
+abstract sig Inheritance extends Relationship {}
+sig ValidInheritance extends Inheritance {} {not this in Limited}
+sig InvalidInheritance extends Inheritance {} {this in Limited}
 
 sig Aggregation extends NonInheritance {}
 sig Association extends NonInheritance {}
@@ -233,4 +235,8 @@ pred changeOfFirstCD [
         hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,
         hasCompositionsPreventingParts, hasThickEdges]
   }
+}
+
+fact {
+  no InvalidInheritance
 }
