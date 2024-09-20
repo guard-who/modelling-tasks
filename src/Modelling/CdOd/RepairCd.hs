@@ -914,6 +914,8 @@ legalChanges allowed = noChange : [
 
 illegalChanges :: AllowedProperties -> [PropertyChange]
 illegalChanges allowed = map ($ const False) $ [
+    PropertyChange "add invalid inheritance" addInvalidInheritances
+  | invalidInheritanceLimits allowed] ++ [
     PropertyChange "add wrong association" addWrongNonInheritances
   | wrongAssociationLimits allowed] ++ [
     PropertyChange "add wrong composition" addWrongCompositions
@@ -927,6 +929,9 @@ illegalChanges allowed = map ($ const False) $ [
     PropertyChange "force composition cycles" withCompositionCycles
   | compositionCycles allowed]
   where
+    addInvalidInheritances :: RelationshipProperties -> RelationshipProperties
+    addInvalidInheritances config@RelationshipProperties {..}
+      = config { invalidInheritances = invalidInheritances + 1 }
     addWrongNonInheritances :: RelationshipProperties -> RelationshipProperties
     addWrongNonInheritances config@RelationshipProperties {..}
       = config { wrongNonInheritances = wrongNonInheritances + 1 }

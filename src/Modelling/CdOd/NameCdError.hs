@@ -321,6 +321,7 @@ allowedPropertiesToPropertySet AllowedProperties {..} =
     ifTrue compositionCycles CompositionCycles,
     ifTrue doubleRelationships DoubleRelationships,
     ifTrue inheritanceCycles InheritanceCycles,
+    ifTrue invalidInheritanceLimits InvalidInheritanceLimits,
     ifTrue reverseInheritances ReverseInheritances,
     ifTrue reverseRelationships ReverseRelationships,
     ifTrue selfInheritances SelfInheritances,
@@ -901,6 +902,11 @@ translatePropertyWithDirections x = translations $ case x of
   InheritanceCycles -> do
     english "contains at least one inheritance cycle."
     german "enthält mindestens einen Vererbungszyklus."
+  InvalidInheritanceLimits -> do
+    english "contains at least one invalid multiplicity at some inheritance."
+    german [iii|
+      enthält mindestens eine nicht erlaubte Multiplizität an einer Vererbung.
+      |]
   MultipleInheritances -> do
     english "contains at least one multiple inheritance."
     german "enthält mindestens eine Mehrfachvererbung."
@@ -926,14 +932,20 @@ translatePropertyWithDirections x = translations $ case x of
     english "contains at least one self-relationship that is no inheritance."
     german "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist."
   WrongAssociationLimits -> do
-    english "contains at least one invalid multiplicity at some relationship."
-    german "enthält mindestens eine ungültige Multiplizität an einer Beziehung."
+    english [iii|
+      contains at least one invalid multiplicity at some relationship
+      that is no inheritance.
+      |]
+    german [iii|
+      enthält mindestens eine nicht erlaubte Multiplizität an einer Beziehung,
+      die keine Vererbung ist.
+      |]
   WrongCompositionLimits -> do
     english [iii|
       contains at least one invalid multiplicity near the whole of a composition.
       |]
     german [iii|
-      enthält mindestens eine ungültige Multiplizität am Ganzen einer Komposition.
+      enthält mindestens eine nicht erlaubte Multiplizität am Ganzen einer Komposition.
       |]
 
 defaultNameCdErrorInstance :: NameCdErrorInstance

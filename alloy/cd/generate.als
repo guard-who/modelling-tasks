@@ -163,6 +163,7 @@ pred classDiagram [
   compositions : set Composition,
   inheritances : set Inheritance,
   relationships : set Relationship,
+  invalidInheritances : one Int,
   wrongNonInheritances : one Int,
   wrongCompositions : one Int,
   selfRelationships : one Int,
@@ -175,6 +176,7 @@ pred classDiagram [
   hasCompositionCycles : one Boolean,
   hasCompositionsPreventingParts : lone Boolean,
   hasThickEdges : lone Boolean] {
+  #{ inheritances & InvalidInheritance } = invalidInheritances
   #{ a : nonInheritances | not validLimitsNonInheritance [a]} = wrongNonInheritances
   #{ a : nonInheritances | not validFromLimitsNonInheritance [a] iff validToLimitsNonInheritance [a]} = wrongNonInheritances
   #{ c : compositions | not validLimitsComposition [c]} = wrongCompositions
@@ -212,6 +214,7 @@ pred classDiagram [
 
 pred changeOfFirstCD [
   c : one Change,
+  invalidInheritances : one Int,
   wrongNonInheritances : one Int,
   wrongCompositions : one Int,
   selfRelationships : one Int,
@@ -230,13 +233,10 @@ pred changeOfFirstCD [
         Inheritance2 = Inheritance - (Change.add - c.add) - c.remove {
       change[c, Relationship - Change.add]
       classDiagram [NonInheritance2, Composition2, Inheritance2, Relationship2,
+        invalidInheritances,
         wrongNonInheritances, wrongCompositions, selfRelationships, selfInheritances,
         hasDoubleRelationships, hasReverseRelationships, hasReverseInheritances,
         hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,
         hasCompositionsPreventingParts, hasThickEdges]
   }
-}
-
-fact {
-  no InvalidInheritance
 }

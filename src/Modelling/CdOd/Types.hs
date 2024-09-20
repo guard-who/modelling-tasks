@@ -877,7 +877,9 @@ maxObjects x = ObjectConfig {
   objectLimits                = (1, x)
   }
 
-data RelationshipProperties = RelationshipProperties {
+data RelationshipProperties
+  = RelationshipProperties {
+    invalidInheritances     :: !Int,
     wrongNonInheritances    :: Int,
     wrongCompositions       :: Int,
     selfRelationshipsAmount :: Int,
@@ -893,7 +895,9 @@ data RelationshipProperties = RelationshipProperties {
   } deriving (Generic, Read, Show)
 
 defaultProperties :: RelationshipProperties
-defaultProperties = RelationshipProperties {
+defaultProperties =
+  RelationshipProperties {
+    invalidInheritances     = 0,
     wrongNonInheritances    = 0,
     wrongCompositions       = 0,
     selfRelationshipsAmount = 0,
@@ -910,6 +914,7 @@ defaultProperties = RelationshipProperties {
 
 towardsValidProperties :: RelationshipProperties -> RelationshipProperties
 towardsValidProperties properties@RelationshipProperties {..} = properties {
+  invalidInheritances = snd betterInvalidInheritances,
   wrongNonInheritances = snd betterWrongNonInheritances,
   wrongCompositions = snd betterWrongCompositions,
   selfInheritancesAmount = snd betterSelfInheritances,
@@ -918,7 +923,9 @@ towardsValidProperties properties@RelationshipProperties {..} = properties {
   hasCompositionCycles = snd fixedCompositionCycles
   }
   where
-    betterWrongNonInheritances = hasBetter False wrongNonInheritances
+    betterInvalidInheritances = hasBetter False invalidInheritances
+    betterWrongNonInheritances =
+      hasBetter (fst betterInvalidInheritances) wrongNonInheritances
     betterWrongCompositions =
       hasBetter (fst betterWrongNonInheritances) wrongCompositions
     betterSelfInheritances =
@@ -938,6 +945,7 @@ data Property =
     CompositionCycles
   | DoubleRelationships
   | InheritanceCycles
+  | InvalidInheritanceLimits
   | MultipleInheritances
   | ReverseInheritances
   | ReverseRelationships
@@ -952,6 +960,7 @@ isIllegal x = case x of
   CompositionCycles -> True
   DoubleRelationships -> False
   InheritanceCycles -> True
+  InvalidInheritanceLimits -> True
   MultipleInheritances -> False
   ReverseInheritances -> True
   ReverseRelationships -> False
@@ -974,6 +983,7 @@ toPropertySet RelationshipProperties {..} =
     ifJustTrue hasReverseRelationships ReverseRelationships,
     ifAny selfInheritancesAmount SelfInheritances,
     ifAny selfRelationshipsAmount SelfRelationships,
+    ifAny invalidInheritances InvalidInheritanceLimits,
     ifAny wrongNonInheritances WrongAssociationLimits,
     ifAny wrongCompositions WrongCompositionLimits
     ]
@@ -987,6 +997,7 @@ data AllowedProperties = AllowedProperties {
   compositionCycles           :: Bool,
   doubleRelationships         :: Bool,
   inheritanceCycles           :: Bool,
+  invalidInheritanceLimits    :: Bool,
   reverseInheritances         :: Bool,
   reverseRelationships        :: Bool,
   selfInheritances            :: Bool,
@@ -1000,6 +1011,7 @@ allowEverything = AllowedProperties {
   compositionCycles           = True,
   doubleRelationships         = True,
   inheritanceCycles           = True,
+  invalidInheritanceLimits    = True,
   reverseInheritances         = True,
   reverseRelationships        = True,
   selfInheritances            = True,
@@ -1013,6 +1025,7 @@ allowNothing = AllowedProperties {
   compositionCycles           = False,
   doubleRelationships         = False,
   inheritanceCycles           = False,
+  invalidInheritanceLimits    = False,
   reverseInheritances         = False,
   reverseRelationships        = False,
   selfInheritances            = False,

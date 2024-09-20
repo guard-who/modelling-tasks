@@ -240,7 +240,7 @@ pred cd {
     limit _ = "Star"
 
 classDiagram :: ClassConfig -> RelationshipProperties -> String
-classDiagram config props = [i|
+classDiagram config RelationshipProperties {..} = [i|
 //////////////////////////////////////////////////
 // Basic CD
 //////////////////////////////////////////////////
@@ -253,17 +253,19 @@ pred cd {
       Relationship2 = Relationship - Change.add,
       Inheritance2 = Inheritance - Change.add {
     classDiagram [NonInheritance2, Composition2, Inheritance2, Relationship2,
-      #{wrongNonInheritances props}, #{wrongCompositions props},
-      #{selfRelationshipsAmount props},
-      #{selfInheritancesAmount props},
-      #{maybeToAlloySet $ hasDoubleRelationships props},
-      #{maybeToAlloySet $ hasReverseRelationships props},
-      #{hasReverseInheritances props},
-      #{maybeToAlloySet $ hasMultipleInheritances props},
-      #{hasNonTrivialInheritanceCycles props},
-      #{hasCompositionCycles props},
-      #{maybeToAlloySet $ hasCompositionsPreventingParts props},
-      #{maybeToAlloySet $ hasThickEdges props}]
+      #{invalidInheritances},
+      #{wrongNonInheritances},
+      #{wrongCompositions},
+      #{selfRelationshipsAmount},
+      #{selfInheritancesAmount},
+      #{maybeToAlloySet hasDoubleRelationships},
+      #{maybeToAlloySet hasReverseRelationships},
+      #{hasReverseInheritances},
+      #{maybeToAlloySet hasMultipleInheritances},
+      #{hasNonTrivialInheritanceCycles},
+      #{hasCompositionCycles},
+      #{maybeToAlloySet hasCompositionsPreventingParts},
+      #{maybeToAlloySet hasThickEdges}]
     #{fst $ associationLimits config} <= \#Association2
     \#Association2 <= #{upper $ associationLimits config}
     #{fst $ aggregationLimits config} <= \#Aggregation2
@@ -335,25 +337,28 @@ changes config propsList = uncurry (length propsList,,)
 |]
 
 changeWithProperties :: RelationshipProperties -> Int -> (String, String)
-changeWithProperties props n = (change, alloy)
+changeWithProperties RelationshipProperties {..} n = (change, alloy)
   where
     change = [i|change#{n}|]
     alloy =  [i|
 sig C#{n} extends Change {}
 
 pred #{change} {
-  changeOfFirstCD [C#{n},
-    #{wrongNonInheritances props}, #{wrongCompositions props},
-    #{selfRelationshipsAmount props},
-    #{selfInheritancesAmount props},
-    #{maybeToAlloySet $ hasDoubleRelationships props},
-    #{maybeToAlloySet $ hasReverseRelationships props},
-    #{hasReverseInheritances props},
-    #{maybeToAlloySet $ hasMultipleInheritances props},
-    #{hasNonTrivialInheritanceCycles props},
-    #{hasCompositionCycles props},
-    #{maybeToAlloySet $ hasCompositionsPreventingParts props},
-    #{maybeToAlloySet $ hasThickEdges props}]
+  changeOfFirstCD [
+    C#{n},
+    #{invalidInheritances},
+    #{wrongNonInheritances},
+    #{wrongCompositions},
+    #{selfRelationshipsAmount},
+    #{selfInheritancesAmount},
+    #{maybeToAlloySet hasDoubleRelationships},
+    #{maybeToAlloySet hasReverseRelationships},
+    #{hasReverseInheritances},
+    #{maybeToAlloySet hasMultipleInheritances},
+    #{hasNonTrivialInheritanceCycles},
+    #{hasCompositionCycles},
+    #{maybeToAlloySet hasCompositionsPreventingParts},
+    #{maybeToAlloySet hasThickEdges}]
 }
 |]
 
@@ -380,9 +385,9 @@ pred changes {
         #{nonTrivialInheritanceConstraint "c2Inheritances" "c2NonInheritances" withNonTrivialInheritance}
       }
     }
-    changeOfFirstCD [C1, 0, 0, 0, 0, False, False, False, False, False, False, False, m1]
-    changeOfFirstCD [C2, 0, 0, 0, 0, False, False, False, False, False, False, False, m2]
-    changeOfFirstCD [C3, 0, 0, 0, 0, False, False, False, False, False, False, False, False]
+    changeOfFirstCD [C1, 0, 0, 0, 0, 0, False, False, False, False, False, False, False, m1]
+    changeOfFirstCD [C2, 0, 0, 0, 0, 0, False, False, False, False, False, False, False, m2]
+    changeOfFirstCD [C3, 0, 0, 0, 0, 0, False, False, False, False, False, False, False, False]
   }
 }
 |] ++ changeLimits config
