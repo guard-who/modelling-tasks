@@ -21,6 +21,7 @@ import Modelling.CdOd.Types (
   AnyRelationship,
   CdMutation (..),
   ClassConfig (..),
+  InvalidRelationship (..),
   LimitedLinking (..),
   Relationship (..),
   RelationshipMutation (..),
@@ -33,7 +34,7 @@ import Modelling.CdOd.Types (
 import Data.Bool                        (bool)
 import Data.FileEmbed                   (embedStringFile)
 import Data.Functor                     ((<&>))
-import Data.List                        (intercalate, unzip4)
+import Data.List                        (intercalate, unzip5)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe                       (fromMaybe)
 import Data.String.Interpolate          (__i, __i'E, i, iii)
@@ -195,7 +196,8 @@ pred cd {
   Association - Change.add = #{unionOf $ concat associations}
   Aggregation - Change.add = #{unionOf $ concat aggregations}
   Composition - Change.add = #{unionOf $ concat compositions}
-  Inheritance - Change.add = #{unionOf $ concat inheritances}
+  ValidInheritance - Change.add = #{unionOf $ concat validInheritances}
+  InvalidInheritance - Change.add = #{unionOf $ concat invalidInheritances}
 }
 |]
   where
@@ -203,22 +205,25 @@ pred cd {
       | null xs = "none"
       | otherwise = intercalate " + " xs
     namedRelationships = nameRelationships cd
-    (associations, aggregations, compositions, inheritances) =
-      unzip4 $ map nonInheritanceName namedRelationships
+    (invalidInheritances, associations, aggregations, compositions, validInheritances) =
+      unzip5 $ map nonInheritanceName namedRelationships
     nonInheritanceName (name, x) = case x of
-      Right Association {} -> ([name], [], [], [])
-      Right Aggregation {} -> ([], [name], [], [])
-      Right Composition {} -> ([], [], [name], [])
-      Right Inheritance {} -> ([], [], [], [name])
+      Left InvalidInheritance {} -> ([name], [], [], [], [])
+      Right Association {} -> ([], [name], [], [], [])
+      Right Aggregation {} -> ([], [], [name], [], [])
+      Right Composition {} -> ([], [], [], [name], [])
+      Right Inheritance {} -> ([], [], [], [], [name])
     classSig :: String -> String
     classSig x = [i|one sig #{x} extends Class {}\n|]
     relationshipSig :: (String, AnyRelationship String relationship) -> String
     relationshipSig (name, x) = case x of
+      Left InvalidInheritance {} -> [i|one sig #{name} extends InvalidInheritance {}\n|]
       Right Association {} -> [i|one sig #{name} extends Association {}\n|]
       Right Aggregation {} -> [i|one sig #{name} extends Aggregation {}\n|]
       Right Composition {} -> [i|one sig #{name} extends Composition {}\n|]
-      Right Inheritance {} -> [i|one sig #{name} extends Inheritance {}\n|]
+      Right Inheritance {} -> [i|one sig #{name} extends ValidInheritance {}\n|]
     relationshipConstraints (name, x) = case x of
+      Left InvalidInheritance {..} -> limitsConstraints name invalidSubClass invalidSuperClass
       Right Association {..} -> limitsConstraints name associationFrom associationTo
       Right Aggregation {..} -> limitsConstraints name aggregationPart aggregationWhole
       Right Composition {..} -> limitsConstraints name compositionPart compositionWhole

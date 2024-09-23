@@ -34,6 +34,7 @@ import Modelling.CdOd.Types (
   AnyClassDiagram (..),
   AnyRelationship,
   ClassDiagram,
+  InvalidRelationship (..),
   LimitedLinking (..),
   Relationship (..),
   anyRelationshipName,
@@ -331,11 +332,13 @@ instanceToEdges' alloyInstance rFrom rTo aFromLower aFromUpper aToLower aToUpper
   compositions <- getRelationships toComposition "Composition"
   aggregations <- getRelationships toAggregation "Aggregation"
   associations <- getRelationships toAssociation "Association"
-  return . map (second Right)
+  invalidInheritances <- map (second Left)
+    <$> getRelationships toInvalidInheritance "InvalidInheritance"
+  return . (++ invalidInheritances) . map (second Right)
     $ inheritances ++ compositions ++ aggregations ++ associations
   where
     getInheritances = do
-      inheritance' <- lookupSig (scoped "this" "Inheritance") alloyInstance
+      inheritance' <- lookupSig (scoped "this" "ValidInheritance") alloyInstance
       inheritances <-
         S.toList <$> getSingleAs "" (return .: Object) inheritance'
       forM inheritances $ \inheritance -> (inheritance,) <$> do
@@ -370,6 +373,10 @@ instanceToEdges' alloyInstance rFrom rTo aFromLower aFromUpper aToLower aToUpper
       compositionName = name,
       compositionPart = from,
       compositionWhole = to
+      }
+    toInvalidInheritance _ from to = InvalidInheritance {
+      invalidSubClass = from,
+      invalidSuperClass = to
       }
 
 data ReadObjectDiagramFromAlloyException
