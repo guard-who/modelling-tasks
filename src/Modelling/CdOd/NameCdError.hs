@@ -1041,7 +1041,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
     ('h', (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity "
         ++ "near the whole of a composition."),
-      (German, "enthält mindestens eine ungültige Multiplizität "
+      (German, "enthält mindestens eine nicht erlaubte Multiplizität "
         ++ "am Ganzen einer Komposition.")
       ])),
     ('i', (False, M.fromAscList [
@@ -1050,7 +1050,7 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
       ])),
     ('j', (False, M.fromAscList [
       (English, "contains at least one invalid multiplicity at some relationship."),
-      (German, "enthält mindestens eine ungültige Multiplizität an einer Beziehung.")
+      (German, "enthält mindestens eine nicht erlaubte Multiplizität an einer Beziehung.")
       ]))
     ],
   showSolution = False,
