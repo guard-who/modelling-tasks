@@ -14,7 +14,10 @@ pred change [c : Change, rs : set Relationship] {
 
 abstract sig Inheritance extends Relationship {}
 sig ValidInheritance extends Inheritance {} {not this in Limited}
-sig InvalidInheritance extends Inheritance {} {this in Limited}
+sig InvalidInheritance extends Inheritance {} {
+  this in Limited
+  validLimitsNonInheritance [this]
+}
 
 sig Aggregation extends NonInheritance {}
 sig Association extends NonInheritance {}
