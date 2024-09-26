@@ -63,7 +63,6 @@ import Modelling.Auxiliary.Common (
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
-  reRefuse,
   simplifiedInformation,
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
@@ -132,6 +131,7 @@ import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, void, when, zipWithM)
 import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.OutputCapable.Blocks (
+  ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
   Language (English, German),
@@ -142,8 +142,8 @@ import Control.OutputCapable.Blocks (
   enumerateM,
   german,
   multipleChoice,
-  ArticleToUse (DefiniteArticle),
-  singleChoiceSyntax,
+  multipleChoiceSyntax,
+  reRefuse,
   translate,
   )
 import Control.Monad.Random (
@@ -158,7 +158,6 @@ import Data.Bifunctor                   (bimap, first, second)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.Either                      (isRight)
-import Data.Foldable                    (for_)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Ratio                       ((%))
@@ -343,8 +342,8 @@ repairCdTask path RepairCdInstance {..} = do
   pure ()
 
 repairCdSyntax :: OutputCapable m => RepairCdInstance -> [Int] -> LangM m
-repairCdSyntax inst xs =
-  for_ xs $ singleChoiceSyntax False (M.keys $ changes inst)
+repairCdSyntax inst =
+  multipleChoiceSyntax False (M.keys $ changes inst)
 
 repairCdEvaluation
   :: (Alternative m, MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)

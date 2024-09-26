@@ -1,5 +1,6 @@
 ---
 name: modelling-tasks
+version: 0.0.0.1
 extra-source-files:
   - alloy/ad/actionSequencesRules.als
   - alloy/ad/components.als
@@ -61,7 +62,7 @@ dependencies:
   - latex-svg-image
   - lens
   - mtl
-  - output-blocks >= 0.2
+  - output-blocks >= 0.2.0.1
   - parsec
   - polysemy-plugin
   - random

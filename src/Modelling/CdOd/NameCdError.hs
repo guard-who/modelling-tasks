@@ -149,6 +149,7 @@ import Control.OutputCapable.Blocks (
   enumerateM,
   german,
   multipleChoice,
+  multipleChoiceSyntax,
   printSolutionAndAssert,
   recoverWith,
   singleChoice,
@@ -604,9 +605,7 @@ nameCdErrorSyntax inst x = do
   paragraph $ translate $ do
     english "Feedback on chosen relationships:"
     german "Hinweis zu gewählten Beziehungen:"
-  for_
-    (dueTo x)
-    $ singleChoiceSyntax False (map fst $ relevantRelationships inst)
+  multipleChoiceSyntax False (map fst $ relevantRelationships inst) (dueTo x)
   pure ()
 
 {-| Grading is done the following way:

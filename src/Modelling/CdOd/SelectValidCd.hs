@@ -45,7 +45,6 @@ import Modelling.Auxiliary.Common (
 import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
-  reRefuse,
   simplifiedInformation,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
@@ -110,7 +109,8 @@ import Control.OutputCapable.Blocks (
   english,
   german,
   multipleChoice,
-  singleChoiceSyntax,
+  multipleChoiceSyntax,
+  reRefuse,
   translate,
   )
 import Control.Monad.Random             (evalRandT, mkStdGen)
@@ -118,7 +118,6 @@ import Control.Monad.Random.Class       (MonadRandom)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight, partitionEithers)
-import Data.Foldable                    (for_)
 import Data.GraphViz                    (DirType (Back, NoDir))
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe)
@@ -226,8 +225,8 @@ selectValidCdSyntax
   => SelectValidCdInstance
   -> [Int]
   -> LangM m
-selectValidCdSyntax inst xs =
-  for_ xs $ singleChoiceSyntax False (M.keys $ classDiagrams inst)
+selectValidCdSyntax inst =
+  multipleChoiceSyntax False (M.keys $ classDiagrams inst)
 
 selectValidCdTask
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)

@@ -5,23 +5,18 @@ module Modelling.Auxiliary.Output (
   addPretext,
   directionsAdvice,
   hoveringInformation,
-  reRefuse,
   simplifiedInformation,
   ) where
 
-import Control.Applicative              (Alternative)
 import Control.OutputCapable.Blocks     (
-  GenericOutputCapable (paragraph, refuse),
+  GenericOutputCapable (paragraph),
   LangM,
   LangM',
   OutputCapable,
-  Rated,
   english,
   german,
-  recoverWith,
   translate,
   )
-import Control.OutputCapable.Blocks.Generic (($>>), ($>>=))
 import Data.String.Interpolate          (iii)
 
 hoveringInformation :: OutputCapable m => LangM m
@@ -81,17 +76,3 @@ addPretext = (*>) $
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
-
-{-
-Append some remarks after some rating function.
-But re-reject afterwards (if it was rejected by the rating function).
--}
-reRefuse
-  :: (Alternative m, Monad m, OutputCapable m)
-  => Rated m
-  -> LangM m
-  -> Rated m
-reRefuse xs ys =
-  recoverWith (pure 0) xs
-    $>>= \x -> ys
-    $>> either (refuse (pure ()) *>) pure x

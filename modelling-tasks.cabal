@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           modelling-tasks
-version:        0.0.0
+version:        0.0.0.1
 build-type:     Simple
 extra-source-files:
     alloy/ad/actionSequencesRules.als
@@ -140,7 +140,7 @@ library
     , latex-svg-image
     , lens
     , mtl
-    , output-blocks >=0.2
+    , output-blocks >=0.2.0.1
     , parsec
     , polysemy-plugin
     , random
@@ -238,7 +238,7 @@ test-suite modelling-tasks-test
     , lens
     , modelling-tasks
     , mtl
-    , output-blocks >=0.2
+    , output-blocks >=0.2.0.1
     , parsec
     , polysemy-plugin
     , process
