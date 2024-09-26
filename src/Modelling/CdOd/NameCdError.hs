@@ -823,7 +823,6 @@ nameCdError allowed config objectProperties byName maxInstances to = do
         >>= nameClassDiagramInstance
       let cd = instanceClassDiagram cdInstance
           p' = p {
-            hasCompositionsPreventingParts = Nothing,
             hasDoubleRelationships = Nothing,
             hasReverseRelationships = Nothing,
             hasMultipleInheritances = Nothing
