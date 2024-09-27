@@ -61,9 +61,19 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
     c in c.^((*~inheritance + *inheritance).composition)
 }
 
+pred isPartOfSuperfluousComposition [c : Class, is : set Inheritance, cs : set Composition] {
+  let subs = *~(relationship [is]) |
+    some disj x, y : cs {
+      c in x.from.subs
+      c in y.from.subs
+      x.toLower in Zero + One
+      y.toLower = One
+    }
+}
+
 pred isPartOfMultipleCompositions [c : Class, is : set Inheritance, cs : set Composition] {
   let subs = *~(relationship [is]) |
-    some x : cs, y : cs - x {
+    some disj x, y : cs {
       c in x.from.subs
       c in y.from.subs
       x.toLower = One
@@ -213,6 +223,7 @@ pred classDiagram [
   hasThickEdges = True
     implies not noThickEdges[nonInheritances, inheritances]
     else hasThickEdges = False implies noThickEdges[nonInheritances, inheritances]
+  no c : Class | isPartOfSuperfluousComposition [c, inheritances, compositions]
 }
 
 pred changeOfFirstCD [
