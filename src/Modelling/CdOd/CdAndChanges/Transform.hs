@@ -5,7 +5,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS_GHC -Wwarn=incomplete-patterns #-}
 module Modelling.CdOd.CdAndChanges.Transform (
   transform,
   transformChanges,

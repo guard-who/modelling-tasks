@@ -196,12 +196,20 @@ $(deriveJSON defaultOptions {fieldLabelModifier = upperToDash} ''NameCdErrorAnsw
 data Reason
   = Custom (Map Language String)
   | PreDefined Property
-  deriving (Eq, Generic, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 isCustom :: Reason -> Bool
 isCustom = \case
   Custom {} -> True
   PreDefined {} -> False
+
+renderReason :: OutputCapable m => Bool -> Reason -> LangM m
+renderReason withDirections = translate . put . toTranslations withDirections
+
+toTranslations :: Bool -> Reason -> Map Language String
+toTranslations withDirections = \case
+  Custom x -> x
+  PreDefined x -> translateProperty withDirections x
 
 data NumberOfReasons = NumberOfReasons {
   customReasons :: Int,
@@ -373,7 +381,7 @@ toTaskTextPart output path task@NameCdErrorInstance {..} = case output of
       (unannotateCd classDiagram)
       path
     ReasonsList -> enumerateM (text . singleton)
-      $ second (translate . put . snd)
+      $ second (renderReason (printNavigations cdDrawSettings) . snd)
       <$> M.toList errorReasons
     RelationshipsList -> do
       let phrase article x y z = translate $ do
@@ -393,7 +401,7 @@ data NameCdErrorInstance = NameCdErrorInstance {
   byName                      :: !Bool,
   classDiagram                :: AnnotatedCd Relevance,
   cdDrawSettings              :: !CdDrawSettings,
-  errorReasons                :: Map Char (Bool, Map Language String),
+  errorReasons                :: !(Map Char (Bool, Reason)),
   showSolution                :: Bool,
   taskText                    :: !NameCdErrorTaskText
   } deriving (Eq, Generic, Read, Show)
@@ -449,7 +457,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   = Just [iii|
       'errorReasons' contains duplicate '#{x}' which is not allowed.
       |]
-  | x:_ <- mapMaybe checkTranslation reasons
+  | x:_ <- mapMaybe (checkTranslation . toTranslations True) reasons
   = Just $ [i|Problem within 'errorReasons': |] ++ x
   | otherwise
   = checkNameCdErrorTaskText taskText
@@ -774,7 +782,6 @@ generateAndRandomise NameCdErrorConfig {..} = do
         (anyRelationships cd)
       },
     errorReasons = M.fromAscList $ zip ['a' ..]
-      $ map (second toTranslations)
       $ (True, PreDefined reason)
       : map (False,) chosenReasons,
     showSolution = printSolution,
@@ -789,9 +796,6 @@ generateAndRandomise NameCdErrorConfig {..} = do
         referenceUsing = toArticleToUse articleToUse
         }
       }
-    toTranslations x = case x of
-      Custom y -> y
-      PreDefined y -> translateProperty (printNavigations drawSettings) y
 
 nameCdError
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
@@ -1004,52 +1008,17 @@ defaultNameCdErrorInstance = NameCdErrorInstance {
       ]
     },
   errorReasons = M.fromAscList [
-    ('a', (False, M.fromAscList [
-      (English, "contains at least one self-inheritance."),
-      (German, "enthält mindestens eine Selbstvererbung.")
-      ])),
-    ('b', (False, M.fromAscList [
-      (English, "contains at least one multiple inheritance."),
-      (German, "enthält mindestens eine Mehrfachvererbung.")
-      ])),
-    ('c', (False, M.fromAscList [
-      (English, "contains at least one self-relationship that is no inheritance."),
-      (German, "enthält mindestens eine Selbstbeziehung, die keine Vererbung ist.")
-      ])),
-    ('d', (False, M.fromAscList [
-      (English, "contains at least two non-inheritance relationships "
-        ++ "between the same two classes pointing in opposite directions."),
-      (German, "enthält mindestens zwei Nicht-Vererbungsbeziehungen "
-        ++ "zwischen denselben beiden Klassen, die in entgegengesetzte Richtungen zeigen.")
-      ])),
-    ('e', (False, M.fromAscList [
-      (English, "contains at least two non-inheritance relationships "
-        ++ "between the same two classes each pointing in the same direction."),
-      (German, "enthält mindestens zwei Nicht-Vererbungsbeziehungen "
-        ++ "zwischen denselben beiden Klassen, die in dieselbe Richtung zeigen.")
-      ])),
-    ('f', (True, M.fromAscList [
-      (English, "contains at least one composition cycle."),
-      (German, "enthält mindestens einen Kompositionszyklus.")
-      ])),
-    ('g', (False, M.fromAscList [
-      (English, "contains at least one inheritance cycle."),
-      (German, "enthält mindestens einen Vererbungszyklus.")
-      ])),
-    ('h', (False, M.fromAscList [
-      (English, "contains at least one invalid multiplicity "
-        ++ "near the whole of a composition."),
-      (German, "enthält mindestens eine nicht erlaubte Multiplizität "
-        ++ "am Ganzen einer Komposition.")
-      ])),
-    ('i', (False, M.fromAscList [
-      (English, "contains at least one pair of classes each inheriting from the other."),
-      (German, "enthält mindestens ein Paar von Klassen, die sich gegenseitig beerben.")
-      ])),
-    ('j', (False, M.fromAscList [
-      (English, "contains at least one invalid multiplicity at some relationship."),
-      (German, "enthält mindestens eine nicht erlaubte Multiplizität an einer Beziehung.")
-      ]))
+    ('a', (False, PreDefined SelfInheritances)),
+    ('b', (False, PreDefined MultipleInheritances)),
+    ('c', (False, PreDefined SelfRelationships)),
+    ('d', (False, PreDefined ReverseRelationships)),
+    ('e', (False, PreDefined DoubleRelationships)),
+    ('f', (True, PreDefined CompositionCycles)),
+    ('g', (False, PreDefined InheritanceCycles)),
+    ('h', (False, PreDefined WrongCompositionLimits)),
+    ('i', (False, PreDefined ReverseInheritances)),
+    ('j', (False, PreDefined WrongAssociationLimits)),
+    ('k', (False, PreDefined InvalidInheritanceLimits))
     ],
   showSolution = False,
   taskText = defaultNameCdErrorTaskText
