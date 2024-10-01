@@ -188,7 +188,7 @@ execute n t z0 = do
         english "Intermediate marking (after collecting tokens)"
         german "Zwischenmarkierung (nach Einziehen der Marken im Vorbereich)"
       indent $ text $ show z1
-      unless (allNonNegative z1) $ refuse $ translate $ do
+      unless (allNonNegative z1) $ refuse $ paragraph $ translate $ do
         english "contains negative markings (transition was not activated)!"
         german "enthält negative Markierungen (Transition war nicht aktiviert)!"
       let z2 = change succ nach z1
@@ -196,7 +196,7 @@ execute n t z0 = do
         english "Final marking (after distributing tokens)"
         german "Endmarkierung (nach Austeilen der Marken im Nachbereich)"
       indent $ text $ show z2
-      unless (conforms (capacity n) z2) $ refuse $ translate $ do
+      unless (conforms (capacity n) z2) $ refuse $ paragraph $ translate $ do
         english "contains more tokens than capacity permits!"
         german "enthält mehr Marken, als die Kapazität zulässt!"
       pure z2

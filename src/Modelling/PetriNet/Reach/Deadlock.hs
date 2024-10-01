@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
 {-|
@@ -121,14 +122,12 @@ deadlockEvaluation
     MonadGraphviz m,
     MonadThrow m,
     Ord s,
-    Ord t,
     OutputCapable m,
-    Show s,
-    Show t
+    Show s
     )
   => FilePath
-  -> DeadlockInstance s t
-  -> [t]
+  -> DeadlockInstance s Transition
+  -> [Transition]
   -> Rated m
 deadlockEvaluation path deadlockInstance ts =
   isNoLonger (noLongerThan deadlockInstance) ts
@@ -141,6 +140,7 @@ deadlockEvaluation path deadlockInstance ts =
           german "Zielmarkierung hat keine Nachfolger?"
       )
   $>> assertReachPoints
+    aSolution
     (const $ null . successors n)
     minLength
     deadlockInstance
@@ -148,6 +148,11 @@ deadlockEvaluation path deadlockInstance ts =
     eitherOutcome
   where
     n = petriNet deadlockInstance
+    aSolution
+      | showSolution deadlockInstance
+      = Just $ show $ TransitionsList $ deadlockSolution deadlockInstance
+      | otherwise
+      = Nothing
 
 deadlockSolution :: Ord s => DeadlockInstance s t -> [t]
 deadlockSolution = reverse . snd . head . concat . deadlocks' . petriNet
@@ -157,6 +162,7 @@ data DeadlockInstance s t = DeadlockInstance {
   minLength         :: Int,
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
+  showSolution      :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Maybe Int
   } deriving (Generic, Read, Show, Typeable)
@@ -167,13 +173,14 @@ bimapDeadlockInstance
   -> (t -> b)
   -> DeadlockInstance s t
   -> DeadlockInstance a b
-bimapDeadlockInstance f g x = DeadlockInstance {
-    drawUsing         = drawUsing x,
-    minLength         = minLength x,
-    noLongerThan      = noLongerThan x,
-    petriNet          = bimapNet f g (petriNet x),
-    withLengthHint    = withLengthHint x,
-    withMinLengthHint = withMinLengthHint x
+bimapDeadlockInstance f g DeadlockInstance {..} = DeadlockInstance {
+    drawUsing         = drawUsing,
+    minLength         = minLength,
+    noLongerThan      = noLongerThan,
+    petriNet          = bimapNet f g petriNet,
+    showSolution      = showSolution,
+    withLengthHint    = withLengthHint,
+    withMinLengthHint = withMinLengthHint
     }
 
 toShowDeadlockInstance
@@ -190,6 +197,7 @@ data DeadlockConfig = DeadlockConfig {
   minTransitionLength :: Int,
   postconditionsRange :: (Int, Maybe Int),
   preconditionsRange  :: (Int, Maybe Int),
+  printSolution       :: Bool,
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
   showMinLengthHint   :: Bool
@@ -207,6 +215,7 @@ defaultDeadlockConfig =
   minTransitionLength = 8,
   postconditionsRange = (0, Nothing),
   preconditionsRange  = (0, Nothing),
+  printSolution       = False,
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
   showMinLengthHint   = True
@@ -218,20 +227,22 @@ defaultDeadlockInstance = DeadlockInstance {
   minLength         = 6,
   noLongerThan      = Nothing,
   petriNet          = fst example,
+  showSolution      = False,
   withLengthHint    = Just 9,
   withMinLengthHint = Just 6
   }
 
 generateDeadlock :: DeadlockConfig -> Int -> DeadlockInstance Place Transition
-generateDeadlock conf seed = DeadlockInstance {
+generateDeadlock conf@DeadlockConfig {..} seed = DeadlockInstance {
   drawUsing         = cmd,
-  minLength         = minTransitionLength conf,
-  noLongerThan      = rejectLongerThan conf,
+  minLength         = minTransitionLength,
+  noLongerThan      = rejectLongerThan,
   petriNet          = petri,
+  showSolution      = printSolution,
   withLengthHint    =
-    if showLengthHint conf then Just $ maxTransitionLength conf else Nothing,
+    if showLengthHint then Just maxTransitionLength else Nothing,
   withMinLengthHint =
-    if showMinLengthHint conf then Just $ minTransitionLength conf else Nothing
+    if showMinLengthHint then Just minTransitionLength else Nothing
   }
   where
     (petri, cmd) = tries 1000 conf seed

@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
 {-|
@@ -47,16 +48,19 @@ import Modelling.PetriNet.Reach.Type (
 
 import Control.Applicative              (Alternative)
 import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad                    (forM, unless)
+import Control.Monad                    (forM)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra              (whenJust)
 import Control.OutputCapable.Blocks (
-  GenericOutputCapable (assertion, code, image, indent, paragraph, refuse, text),
+  ArticleToUse (IndefiniteArticle),
+  GenericOutputCapable (assertion, code, image, indent, paragraph, text),
   LangM,
+  MinimumThreshold (MinimumThreshold),
   OutputCapable,
   Rated,
   english,
   german,
+  printSolutionAndAssertMinimum,
   translate,
   yesNo,
   )
@@ -205,14 +209,12 @@ reachEvaluation
     MonadGraphviz m,
     MonadThrow m,
     Ord s,
-    Ord t,
     OutputCapable m,
-    Show s,
-    Show t
+    Show s
     )
   => FilePath
-  -> ReachInstance s t
-  -> [t]
+  -> ReachInstance s Transition
+  -> [Transition]
   -> Rated m
 reachEvaluation path inst ts =
   do isNoLonger (noLongerThan inst) ts
@@ -227,9 +229,12 @@ reachEvaluation path inst ts =
       english "Reached target marking?"
       german "Zielmarkierung erreicht?"
     )
-  $>> assertReachPoints ((==) . goal) minLength inst ts eitherOutcome
+  $>> assertReachPoints aSolution ((==) . goal) minLength inst ts eitherOutcome
   where
     n = petriNet inst
+    aSolution
+      | showSolution inst = Just $ show $ TransitionsList $ reachSolution inst
+      | otherwise = Nothing
 
 reachSolution :: Ord s => ReachInstance s t -> [t]
 reachSolution inst = reverse $ snd $ head $ concatMap
@@ -238,19 +243,23 @@ reachSolution inst = reverse $ snd $ head $ concatMap
 
 assertReachPoints
   :: OutputCapable m
-  => (i -> a -> Bool)
+  => Maybe String
+  -> (i -> a -> Bool)
   -> (i -> Int)
   -> i
   -> [b]
   -> Either Int a
   -> Rated m
-assertReachPoints p size inst ts eitherOutcome = do
+assertReachPoints aCorrectSolution p size inst ts eitherOutcome = do
   let points = either
         partly
         (\x -> if p inst x then 1 else partly $ length ts)
         eitherOutcome
-  unless (points >= 1 % 3) $ refuse $ pure ()
-  pure points
+  printSolutionAndAssertMinimum
+    (MinimumThreshold $ 1 % 3)
+    IndefiniteArticle
+    aCorrectSolution
+    points
   where
     partly x = partiallyCorrect x $ size inst
     partiallyCorrect x y = min 0.6 $
@@ -280,6 +289,7 @@ data ReachInstance s t = ReachInstance {
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
   showGoalNet       :: Bool,
+  showSolution      :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Maybe Int
   } deriving (Generic, Read, Show, Typeable)
@@ -290,15 +300,16 @@ bimapReachInstance
   -> (t -> b)
   -> ReachInstance s t
   -> ReachInstance a b
-bimapReachInstance f g x = ReachInstance {
-    drawUsing         = drawUsing x,
-    goal              = mapState f (goal x),
-    minLength         = minLength x,
-    noLongerThan      = noLongerThan x,
-    petriNet          = bimapNet f g (petriNet x),
-    showGoalNet       = showGoalNet x,
-    withLengthHint    = withLengthHint x,
-    withMinLengthHint = withMinLengthHint x
+bimapReachInstance f g ReachInstance {..} = ReachInstance {
+    drawUsing         = drawUsing,
+    goal              = mapState f goal,
+    minLength         = minLength,
+    noLongerThan      = noLongerThan,
+    petriNet          = bimapNet f g petriNet,
+    showGoalNet       = showGoalNet,
+    showSolution      = showSolution,
+    withLengthHint    = withLengthHint,
+    withMinLengthHint = withMinLengthHint
     }
 
 toShowReachInstance
@@ -315,6 +326,7 @@ data ReachConfig = ReachConfig {
   minTransitionLength :: Int,
   postconditionsRange :: (Int, Maybe Int),
   preconditionsRange  :: (Int, Maybe Int),
+  printSolution       :: Bool,
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
   showMinLengthHint   :: Bool,
@@ -332,6 +344,7 @@ defaultReachConfig = ReachConfig {
   minTransitionLength = 6,
   postconditionsRange = (0, Nothing),
   preconditionsRange  = (0, Nothing),
+  printSolution       = False,
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
   showMinLengthHint   = True,
@@ -346,6 +359,7 @@ defaultReachInstance = ReachInstance {
   noLongerThan      = Nothing,
   petriNet          = fst example,
   showGoalNet       = True,
+  showSolution      = False,
   withLengthHint    = Just 12,
   withMinLengthHint = Nothing
 }
@@ -380,6 +394,7 @@ generateReach conf seed =
     noLongerThan      = rejectLongerThan conf,
     petriNet          = petri,
     showGoalNet       = showTargetNet conf,
+    showSolution      = printSolution conf,
     withLengthHint    =
       if showLengthHint conf then Just $ maxTransitionLength conf else Nothing,
     withMinLengthHint =
