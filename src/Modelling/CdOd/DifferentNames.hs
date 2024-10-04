@@ -133,7 +133,7 @@ import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bitraverse)
 import Data.Bool                        (bool)
-import Data.Containers.ListUtils        (nubOrd)
+import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.GraphViz                    (DirType (Back))
 import Data.List                        (group, intersect, permutations, sort)
 import Data.Maybe (
@@ -389,15 +389,17 @@ differentNamesSyntax DifferentNamesInstance {..} cs = addPretext $ do
   pure ()
   where
     links = linkNames oDiagram
+    sortPair (x, y) = if x <= y then (x, y) else (y, x)
+    choices = nubOrdOn sortPair cs
     associations = associationNames cDiagram
     isAssociationMappingForward (Name x, Name y) =
       x `elem` associations && y `elem` links
     isAssociationMapping x = isAssociationMappingForward x
       || isAssociationMappingForward (swap x)
-    invalidMappings = filter (not . isAssociationMapping) cs
+    invalidMappings = filter (not . isAssociationMapping) choices
     allMappingValues = filter
       (not . null . tail)
-      $ group $ sort (map fst cs ++ map snd cs)
+      $ group $ sort (map fst choices ++ map snd choices)
 
 readMapping :: Ord a => Bimap a a -> (a, a) -> Maybe (a, a)
 readMapping m (x, y)
