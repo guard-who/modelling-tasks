@@ -61,6 +61,13 @@ pred noCompositionCycles [is : set Inheritance, cs : set Composition] {
     c in c.^((*~inheritance + *inheritance).composition)
 }
 
+pred noCompositionCyclesWithInheritances [is : set Inheritance, cs : set Composition] {
+  let inheritance = relationship [is],
+      composition = relationship [cs] |
+  no c : Class |
+    c in c.(^~inheritance + ^inheritance).composition.*((*~inheritance + *inheritance).composition)
+}
+
 pred canDifferentlyBePartOfSameClass [is : set Inheritance, cs : set Composition] {
   let inheritance = relationship [is] |
     some disj x, y : cs {
@@ -189,6 +196,7 @@ pred classDiagram [
   wrongCompositions : one Int,
   selfRelationships : one Int,
   selfInheritances : one Int,
+  anyCompositionCyclesInvolveInheritances : lone Boolean,
   hasDoubleRelationships : lone Boolean,
   hasReverseRelationships : lone Boolean,
   hasReverseInheritances : one Boolean,
@@ -206,6 +214,10 @@ pred classDiagram [
   noDoubleRelationships [inheritances]
   no i : inheritances, a : nonInheritances |
     sameDirection [i, a] or reverseRelationship [i, a]
+  anyCompositionCyclesInvolveInheritances = True
+    implies noCompositionCycles[none, compositions]
+    else anyCompositionCyclesInvolveInheritances = False
+      implies noCompositionCyclesWithInheritances[inheritances, compositions]
   hasDoubleRelationships = True
     implies not noDoubleRelationships [nonInheritances]
     else hasDoubleRelationships = False implies noDoubleRelationships [nonInheritances]
@@ -242,6 +254,7 @@ pred changeOfFirstCD [
   wrongCompositions : one Int,
   selfRelationships : one Int,
   selfInheritances : one Int,
+  anyCompositionCyclesInvolveInheritances : lone Boolean,
   hasDoubleRelationships : lone Boolean,
   hasReverseRelationships : lone Boolean,
   hasReverseInheritances : one Boolean,
@@ -258,6 +271,7 @@ pred changeOfFirstCD [
       classDiagram [NonInheritance2, Composition2, Inheritance2, Relationship2,
         invalidInheritances,
         wrongNonInheritances, wrongCompositions, selfRelationships, selfInheritances,
+        anyCompositionCyclesInvolveInheritances,
         hasDoubleRelationships, hasReverseRelationships, hasReverseInheritances,
         hasMultipleInheritances, hasNonTrivialInheritanceCycles, hasCompositionCycles,
         hasCompositionsPreventingParts, hasThickEdges]

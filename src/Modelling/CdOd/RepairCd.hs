@@ -94,6 +94,7 @@ import Modelling.CdOd.Types (
   AnyRelationship,
   ArticlePreference (..),
   Cd,
+  CdConstraints (..),
   CdDrawSettings (..),
   CdMutation,
   ClassConfig (..),
@@ -114,6 +115,7 @@ import Modelling.CdOd.Types (
   checkClassConfigWithProperties,
   checkObjectProperties,
   classNames,
+  defaultCdConstraints,
   defaultCdDrawSettings,
   defaultProperties,
   fromClassDiagram,
@@ -223,6 +225,7 @@ data RepairCdConfig
     allowedProperties :: AllowedProperties,
     -- | the article preference when referring to relationships
     articleToUse      :: ArticlePreference,
+    cdConstraints :: !CdConstraints,
     classConfig      :: ClassConfig,
     drawSettings      :: !CdDrawSettings,
     maxInstances     :: Maybe Integer,
@@ -242,6 +245,7 @@ defaultRepairCdConfig
         selfRelationships = True
         },
     articleToUse = UseDefiniteArticleWherePossible,
+    cdConstraints = defaultCdConstraints,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
         aggregationLimits  = (0, Just 0),
@@ -517,6 +521,7 @@ repairCd RepairCdConfig {..} segment seed = flip evalRandT g $ do
   (cd, chs) <- repairIncorrect
     allowedProperties
     classConfig
+    cdConstraints
     allowedCdMutations
     objectProperties
     articleToUse
@@ -796,13 +801,23 @@ repairIncorrect
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => AllowedProperties
   -> ClassConfig
+  -> CdConstraints
   -> [CdMutation]
   -> ObjectProperties
   -> ArticlePreference
   -> Maybe Integer
   -> Maybe Int
   -> RandT g m (AnyCd, [CdChangeAndCd])
-repairIncorrect cdProperties config cdMutations objectProperties preference maxInstances to = do
+repairIncorrect
+  cdProperties
+  config
+  cdConstraints
+  cdMutations
+  objectProperties
+  preference
+  maxInstances
+  to
+  = do
   changeSets <- shuffleM $ diversify $ possibleChanges cdProperties
   tryNextChangeSet changeSets
   where
@@ -810,6 +825,7 @@ repairIncorrect cdProperties config cdMutations objectProperties preference maxI
     tryNextChangeSet ((e0, propertyChanges) : changeSets) = do
       let alloyCode = Changes.transformChanges
             config
+            cdConstraints
             cdMutations
             (toProperty e0)
             (Just config)

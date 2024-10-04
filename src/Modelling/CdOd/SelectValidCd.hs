@@ -69,6 +69,7 @@ import Modelling.CdOd.Types (
   AnyCd,
   AnyClassDiagram (..),
   ArticlePreference (..),
+  CdConstraints (..),
   CdDrawSettings (..),
   CdMutation,
   ClassConfig (..),
@@ -85,6 +86,7 @@ import Modelling.CdOd.Types (
   checkCdDrawSettings,
   checkCdMutations,
   checkObjectProperties,
+  defaultCdConstraints,
   defaultCdDrawSettings,
   linkNames,
   shuffleAnyClassAndConnectionOrder,
@@ -132,6 +134,7 @@ data SelectValidCdConfig
     allowedProperties :: AllowedProperties,
     -- | the preferred article to use when referring to relationships
     articleToUse      :: ArticlePreference,
+    cdConstraints :: CdConstraints,
     classConfig      :: ClassConfig,
     drawSettings     :: !CdDrawSettings,
     maxInstances     :: Maybe Integer,
@@ -153,6 +156,7 @@ defaultSelectValidCdConfig
       reverseInheritances = True
       },
     articleToUse = UseDefiniteArticleWherePossible,
+    cdConstraints = defaultCdConstraints,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
         aggregationLimits  = (0, Just 0),
@@ -393,6 +397,7 @@ selectValidCd SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
   (_, chs)  <- repairIncorrect
     allowedProperties
     classConfig
+    cdConstraints
     allowedCdMutations
     objectProperties
     articleToUse

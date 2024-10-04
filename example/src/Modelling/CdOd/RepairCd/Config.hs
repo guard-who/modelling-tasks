@@ -9,6 +9,7 @@ import Modelling.CdOd.Types (
   AllowedProperties (..),
   ArticlePreference (..),
   ClassConfig (..),
+  CdConstraints (..),
   CdDrawSettings (..),
   CdMutation (..),
   ObjectProperties (..),
@@ -45,6 +46,9 @@ task07 = RepairCdConfig {
     wrongCompositionLimits = True
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = CdConstraints {
+    anyCompositionCyclesInvolveInheritances = Nothing
+    },
   classConfig = ClassConfig {
     classLimits = (5, 5),
     aggregationLimits = (2, Just 3),
@@ -102,6 +106,9 @@ task08 = RepairCdConfig {
     wrongCompositionLimits = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = CdConstraints {
+    anyCompositionCyclesInvolveInheritances = Just True
+    },
   classConfig = ClassConfig {
     classLimits = (5, 5),
     aggregationLimits = (2, Just 2),

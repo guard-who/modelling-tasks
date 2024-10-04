@@ -18,6 +18,7 @@ import Modelling.CdOd.Types (
   AnyCd,
   AnyClassDiagram (..),
   AnyRelationship,
+  CdConstraints (..),
   CdMutation (..),
   ClassConfig (..),
   InvalidRelationship (..),
@@ -26,6 +27,7 @@ import Modelling.CdOd.Types (
   RelationshipMutation (..),
   RelationshipProperties (..),
   anyRelationshipName,
+  defaultCdConstraints,
   maxRelationships,
   towardsValidProperties,
   )
@@ -40,15 +42,16 @@ import Data.String.Interpolate          (__i, __i'E, i, iii)
 
 transformWith
   :: ClassConfig
+  -> CdConstraints
   -> [CdMutation]
   -> Either AnyCd RelationshipProperties
   -> (Int, [String], String)
   -> String
-transformWith config mutations cdOrProperties (cs, predicates, part) =
+transformWith config constraints mutations cdOrProperties (cs, predicates, part) =
   removeLine $(embedStringFile "alloy/cd/relationshipLimits.als")
   ++ removeLines 13 $(embedStringFile "alloy/cd/generate.als")
   ++ changePredicate mutations
-  ++ either givenClassDiagram (classDiagram config) cdOrProperties
+  ++ either givenClassDiagram (classDiagram config constraints) cdOrProperties
   ++ part
   ++ createRunCommand config predicates cs
 
@@ -64,7 +67,7 @@ transformNoChanges
   -> Maybe Bool
   -> String
 transformNoChanges config properties withNonTrivialInheritance =
-  transformWith config [] (Right properties) (0, [], part)
+  transformWith config defaultCdConstraints [] (Right properties) (0, [], part)
   where
     part = [__i|
       fact{
@@ -92,19 +95,20 @@ transform
   -> Maybe Bool
   -> String
 transform config mutations props withNonTrivialInheritance =
-  transformWith config mutations (Right props)
+  transformWith config defaultCdConstraints mutations (Right props)
   $ matchCdOdChanges config withNonTrivialInheritance
 
 transformChanges
   :: ClassConfig
+  -> CdConstraints
   -> [CdMutation]
   -> RelationshipProperties
   -> Maybe ClassConfig
   -> [RelationshipProperties]
   -> String
-transformChanges config mutations props maybeConfig propsList =
-  transformWith config mutations (Right props)
-  $ changes maybeConfig propsList
+transformChanges config constraints mutations props maybeConfig propsList =
+  transformWith config constraints mutations (Right props)
+  $ changes maybeConfig constraints propsList
 
 transformImproveCd
   :: AnyCd
@@ -117,8 +121,10 @@ transformImproveCd
   -- ^ the properties of the original CD
   -> String
 transformImproveCd cd config mutations properties
-  = transformWith config mutations (Left cd)
-  $ changes Nothing [towardsValidProperties properties]
+  = transformWith config constraints mutations (Left cd)
+  $ changes Nothing constraints [towardsValidProperties properties]
+  where
+    constraints = defaultCdConstraints
 
 {-|
 Generates Alloy code that
@@ -136,12 +142,15 @@ transformGetNextFix
   -> String
 transformGetNextFix maybeCd config properties allowed byName = transformWith
   config
+  constraints
   [RemoveRelationship]
   (maybe (Right properties) Left maybeCd)
   (n, ps, part ++ restrictOverlappings ++ restrictRelationships)
   where
+    constraints = defaultCdConstraints
     (n, ps, part) = changes
       Nothing
+      constraints
       [towardsValidProperties properties]
     overlappingFacts = restrictOverlapping allowed
     restrictOverlappings =
@@ -243,8 +252,8 @@ pred cd {
     limit 2 = "Two"
     limit _ = "Star"
 
-classDiagram :: ClassConfig -> RelationshipProperties -> String
-classDiagram config RelationshipProperties {..} = [i|
+classDiagram :: ClassConfig -> CdConstraints -> RelationshipProperties -> String
+classDiagram config CdConstraints {..} RelationshipProperties {..} = [i|
 //////////////////////////////////////////////////
 // Basic CD
 //////////////////////////////////////////////////
@@ -262,6 +271,7 @@ pred cd {
       #{wrongCompositions},
       #{selfRelationshipsAmount},
       #{selfInheritancesAmount},
+      #{maybeToAlloySet anyCompositionCyclesInvolveInheritances},
       #{maybeToAlloySet hasDoubleRelationships},
       #{maybeToAlloySet hasReverseRelationships},
       #{hasReverseInheritances},
@@ -322,13 +332,14 @@ changePredicate allowed = [__i|
 
 changes
   :: Maybe ClassConfig
+  -> CdConstraints
   -> [RelationshipProperties]
   -> (Int, [String], String)
-changes config propsList = uncurry (length propsList,,)
+changes config cdConstraints propsList = uncurry (length propsList,,)
   $ snd $ foldl change (1, limits) propsList
   where
     change (n, (cs, code)) p =
-      let (c, code') = changeWithProperties p n
+      let (c, code') = changeWithProperties cdConstraints p n
       in (n + 1, (c:cs, code ++ code'))
     limits = maybe
       ([], header)
@@ -340,8 +351,19 @@ changes config propsList = uncurry (length propsList,,)
 //////////////////////////////////////////////////
 |]
 
-changeWithProperties :: RelationshipProperties -> Int -> (String, String)
-changeWithProperties RelationshipProperties {..} n = (change, alloy)
+{-|
+Generates Alloy code for the changeOfFirstCD predicate.
+-}
+changeWithProperties
+  :: CdConstraints
+  -- ^ additional properties
+  -> RelationshipProperties
+  -- ^ properties of the specific change
+  -> Int
+  -- ^ an unique index number for the change
+  -> (String, String)
+changeWithProperties CdConstraints {..} RelationshipProperties {..} n
+  = (change, alloy)
   where
     change = [i|change#{n}|]
     alloy =  [i|
@@ -355,6 +377,7 @@ pred #{change} {
     #{wrongCompositions},
     #{selfRelationshipsAmount},
     #{selfInheritancesAmount},
+    #{maybeToAlloySet anyCompositionCyclesInvolveInheritances},
     #{maybeToAlloySet hasDoubleRelationships},
     #{maybeToAlloySet hasReverseRelationships},
     #{hasReverseInheritances},
@@ -389,9 +412,9 @@ pred changes {
         #{nonTrivialInheritanceConstraint "c2Inheritances" "c2NonInheritances" withNonTrivialInheritance}
       }
     }
-    changeOfFirstCD [C1, 0, 0, 0, 0, 0, False, False, False, False, False, False, False, m1]
-    changeOfFirstCD [C2, 0, 0, 0, 0, 0, False, False, False, False, False, False, False, m2]
-    changeOfFirstCD [C3, 0, 0, 0, 0, 0, False, False, False, False, False, False, False, False]
+    changeOfFirstCD [C1, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, m1]
+    changeOfFirstCD [C2, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, m2]
+    changeOfFirstCD [C3, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, False]
   }
 }
 |] ++ changeLimits config

@@ -17,6 +17,7 @@ module Modelling.CdOd.Types (
   AnyClassDiagram (..),
   AnyRelationship,
   Cd,
+  CdConstraints (..),
   CdDrawSettings (..),
   CdMutation (..),
   ClassConfig (..),
@@ -52,6 +53,7 @@ module Modelling.CdOd.Types (
   checkObjectProperties,
   checkOmittedDefaultMultiplicities,
   classNamesOd,
+  defaultCdConstraints,
   defaultCdDrawSettings,
   defaultOmittedDefaultMultiplicities,
   defaultProperties,
@@ -689,6 +691,22 @@ checkClassConfig c@ClassConfig {..} = checkRange Just "classLimits" classLimits
         compositionLimits,
         inheritanceLimits
         ]
+
+{-|
+Additional structural constraints that should be applied to all class diagrams.
+-}
+newtype CdConstraints
+  = CdConstraints {
+    anyCompositionCyclesInvolveInheritances :: Maybe Bool
+    -- ^ if composition cycles have to contain inheritances (@Just True@),
+    -- must not contain inheritances (@Just False@),
+    -- or could contain inheritances (@Nothing@)
+    } deriving (Eq, Generic, Read, Show)
+
+defaultCdConstraints :: CdConstraints
+defaultCdConstraints = CdConstraints {
+  anyCompositionCyclesInvolveInheritances = Nothing
+  }
 
 checkRange
   :: (Num n, Ord n, Show b, Show n)
