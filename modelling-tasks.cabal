@@ -140,7 +140,7 @@ library
     , latex-svg-image
     , lens
     , mtl
-    , output-blocks >=0.2.0.1
+    , output-blocks >=0.3
     , parsec
     , polysemy-plugin
     , random
@@ -238,7 +238,7 @@ test-suite modelling-tasks-test
     , lens
     , modelling-tasks
     , mtl
-    , output-blocks >=0.2.0.1
+    , output-blocks >=0.3
     , parsec
     , polysemy-plugin
     , process

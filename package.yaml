@@ -62,7 +62,7 @@ dependencies:
   - latex-svg-image
   - lens
   - mtl
-  - output-blocks >= 0.2.0.1
+  - output-blocks >= 0.3
   - parsec
   - polysemy-plugin
   - random
