@@ -92,8 +92,8 @@ import Modelling.CdOd.Phrasing (
 import Modelling.CdOd.RepairCd (
   (.&.),
   checkClassConfigAndChanges,
-  illegalChanges,
-  legalChanges,
+  illegalStructuralWeakenings,
+  legalStructuralWeakenings,
   toProperty,
   )
 import Modelling.CdOd.Types (
@@ -802,10 +802,10 @@ nameCdError
   => NameCdErrorConfig
   -> RandT g m (AnyCd, Property, [AnyRelationship String String])
 nameCdError NameCdErrorConfig {..}  = do
-  changes <- shuffleM $ (,)
-    <$> illegalChanges allowedProperties
-    <*> legalChanges allowedProperties
-  getInstanceWithChanges changes
+  structuralWeakenings <- shuffleM $ (,)
+    <$> illegalStructuralWeakenings allowedProperties
+    <*> legalStructuralWeakenings allowedProperties
+  getInstanceWithStructuralWeakenings structuralWeakenings
   where
     getFixWith cd properties = Changes.transformGetNextFix
       cd
@@ -814,15 +814,15 @@ nameCdError NameCdErrorConfig {..}  = do
       properties
       allowedProperties
       useNames
-    getInstanceWithChanges [] =
+    getInstanceWithStructuralWeakenings [] =
       error "there seems to be no instance for the provided configuration"
-    getInstanceWithChanges ((e0, l0) : chs) = do
+    getInstanceWithStructuralWeakenings ((e0, l0) : chs) = do
       let p = toProperty $ e0 .&. l0
           alloyCode = getFixWith Nothing p
       instances <- lift $ getInstances maxInstances timeout alloyCode
       randomInstances <- shuffleM instances
       getInstanceWithODs chs p randomInstances
-    getInstanceWithODs chs _ [] = getInstanceWithChanges chs
+    getInstanceWithODs chs _ [] = getInstanceWithStructuralWeakenings chs
     getInstanceWithODs chs p (randomInstance:randomInstances) = do
       cdInstance <- lift
         $ fromInstance randomInstance

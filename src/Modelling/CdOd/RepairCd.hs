@@ -26,10 +26,10 @@ module Modelling.CdOd.RepairCd (
   repairCdSyntax,
   repairCdTask,
   repairIncorrect,
-  PropertyChange (..),
+  StructuralWeakening (..),
   (.&.),
-  illegalChanges,
-  legalChanges,
+  illegalStructuralWeakenings,
+  legalStructuralWeakenings,
   toProperty,
   ) where
 
@@ -168,17 +168,17 @@ import Data.String.Interpolate          (i, iii)
 import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffle', shuffleM)
 
-data PropertyChange = PropertyChange {
-    changeName     :: String,
+data StructuralWeakening = StructuralWeakening {
+    weakeningName  :: !String,
     operation      :: RelationshipProperties -> RelationshipProperties,
     validityChange :: Bool -> Bool
   }
 
-toProperty :: PropertyChange -> RelationshipProperties
+toProperty :: StructuralWeakening -> RelationshipProperties
 toProperty p = operation p defaultProperties
 
-isValidChange :: PropertyChange -> Bool
-isValidChange p = validityChange p True
+isValidWeakening :: StructuralWeakening -> Bool
+isValidWeakening p = validityChange p True
 
 type RelationshipChangeWithArticle
   = Annotation ArticleToUse (Change (AnyRelationship String String))
@@ -298,14 +298,14 @@ checkClassConfigAndChanges
   -> Maybe String
 checkClassConfigAndChanges classConfig allowedProperties =
   checkClassConfig classConfig
-  <|> onlyFirst (map checkChange $ legalChanges allowedProperties)
+  <|> onlyFirst (map checkChange $ legalStructuralWeakenings allowedProperties)
   where
     checkProp = checkClassConfigWithProperties classConfig
     onlyFirst = listToMaybe . catMaybes
     checkChange c =
       ([iii|
          You should amend your class configuration for
-         or disable the property change "#{changeName c}":|] ++)
+         or disable the property change "#{weakeningName c}":|] ++)
       <$> checkProp (toProperty c)
 
 repairCdTask
@@ -761,38 +761,38 @@ defaultRepairCdInstance = RepairCdInstance {
   showSolution = False
   }
 
-type PropertyChangeSet = ChangeSet PropertyChange
+type PropertyWeakeningSet = WeakeningSet StructuralWeakening
 
-data ChangeSet a = ChangeSet {
+data WeakeningSet a = WeakeningSet {
   illegalChange :: a,
   otherChanges :: (a, a, a, a)
   } deriving (Eq, Functor, Ord)
 
 possibleChanges
   :: AllowedProperties
-  -> [PropertyChangeSet]
+  -> [PropertyWeakeningSet]
 possibleChanges allowed = nubOrdOn
-  (fmap changeName)
-  [ ChangeSet e0 cs
-  | e0 <- illegalChanges allowed
-  , l0 <- legalChanges allowed
-  , let ls = delete l0 $ legalChanges allowed
-  , c0 <- allChanges allowed
-  , l1 <- if null ls then [[]] else map (\x -> [x .&. noChange, x]) ls
-  , let changes = [c0, noChange, e0] ++ l1
+  (fmap weakeningName)
+  [ WeakeningSet e0 cs
+  | e0 <- illegalStructuralWeakenings allowed
+  , l0 <- legalStructuralWeakenings allowed
+  , let ls = delete l0 $ legalStructuralWeakenings allowed
+  , c0 <- allStructuralWeakenings allowed
+  , l1 <- if null ls then [[]] else map (\x -> [x .&. noStructuralWeakening, x]) ls
+  , let changes = [c0, noStructuralWeakening, e0] ++ l1
   , c1 <- changes
   , c2 <- delete c1 changes
-  , let cs = (l0 .&. e0, noChange, c1, c2)
+  , let cs = (l0 .&. e0, noStructuralWeakening, c1, c2)
   ]
   where
-    delete x xs = M.elems . M.delete (changeName x) . M.fromList
-      $ zip (map changeName xs) xs
+    delete x xs = M.elems . M.delete (weakeningName x) . M.fromList
+      $ zip (map weakeningName xs) xs
 
 {-|
-Introduces deterministic permutations on a a list of 'PropertyChangeSet's.
+Introduces deterministic permutations on a a list of 'PropertyWeakeningSet's.
 The key point is to maintain reproducibility but achieving diversity nonetheless.
 -}
-diversify :: [PropertyChangeSet] -> [(PropertyChange, [PropertyChange])]
+diversify :: [PropertyWeakeningSet] -> [(StructuralWeakening, [StructuralWeakening])]
 diversify = zipWith permutate [0..]
   where
     permutate g c =
@@ -820,48 +820,48 @@ repairIncorrect
   maxInstances
   to
   = do
-  changeSets <- shuffleM $ diversify $ possibleChanges cdProperties
-  tryNextChangeSet changeSets
+  weakeningSets <- shuffleM $ diversify $ possibleChanges cdProperties
+  tryNextWeakeningSet weakeningSets
   where
-    tryNextChangeSet [] = lift $ throwM NoInstanceAvailable
-    tryNextChangeSet ((e0, propertyChanges) : changeSets) = do
+    tryNextWeakeningSet [] = lift $ throwM NoInstanceAvailable
+    tryNextWeakeningSet ((e0, structuralWeakenings) : weakeningSets) = do
       let alloyCode = Changes.transformChanges
             config
             cdConstraints
             cdMutations
             (toProperty e0)
             (Just config)
-            $ map toProperty propertyChanges
+            $ map toProperty structuralWeakenings
       instances <- getInstances maxInstances to alloyCode
       randomInstances <- shuffleM instances
-      getInstanceWithODs changeSets propertyChanges randomInstances
+      getInstanceWithODs weakeningSets structuralWeakenings randomInstances
     article = toArticleToUse preference
-    getInstanceWithODs changeSets _  [] =
-      tryNextChangeSet changeSets
-    getInstanceWithODs cs propertyChanges (alloyInstance : alloyInstances) = do
+    getInstanceWithODs weakeningSets _  [] =
+      tryNextWeakeningSet weakeningSets
+    getInstanceWithODs cs structuralWeakenings (alloyInstance : alloyInstances) = do
       cdInstance <- fromInstance alloyInstance >>= nameClassDiagramInstance
-      (shuffledPropertyChanges, shuffledChangesAndCds) <-
-        unzip <$> shuffleM (zip propertyChanges $ instanceChangesAndCds cdInstance)
+      (shuffledStructuralWeakenings, shuffledChangesAndCds) <-
+        unzip <$> shuffleM (zip structuralWeakenings $ instanceChangesAndCds cdInstance)
       let shuffledCdInstance = cdInstance {
             instanceChangesAndCds = shuffledChangesAndCds
             }
       let cd = instanceClassDiagram shuffledCdInstance
           chs = instanceChangesAndCds shuffledCdInstance
-      hints <- zipWithM getOdOrImprovedCd shuffledPropertyChanges chs
+      hints <- zipWithM getOdOrImprovedCd shuffledStructuralWeakenings chs
       case sequenceA hints of
-        Nothing -> getInstanceWithODs cs propertyChanges alloyInstances
+        Nothing -> getInstanceWithODs cs structuralWeakenings alloyInstances
         Just odsAndCds -> do
           let odsAndCdWithArticle = map (first addArticle) odsAndCds
               chs' = map (uniformlyAnnotateChangeAndCd article) chs
           return (cd, zipWith InValidOption odsAndCdWithArticle chs')
     addArticle = (`Annotation` article)
-    getOdOrImprovedCd propertyChange change
-      | isValidChange propertyChange
+    getOdOrImprovedCd structuralWeakenings change
+      | isValidWeakening structuralWeakenings
       = do
         cd <- toValidCd $ changeClassDiagram change
         fmap Right <$> getOD cd
       | otherwise = fmap Left
-        <$> getImprovedCd (changeClassDiagram change) (toProperty propertyChange)
+        <$> getImprovedCd (changeClassDiagram change) (toProperty structuralWeakenings)
     getImprovedCd cd properties = do
       let alloyCode = Changes.transformImproveCd
             cd
@@ -893,28 +893,30 @@ repairIncorrect
       od' <- forM od alloyInstanceToOd
       mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 
-allChanges :: AllowedProperties -> [PropertyChange]
-allChanges c = legalChanges c ++ illegalChanges c
+allStructuralWeakenings :: AllowedProperties -> [StructuralWeakening]
+allStructuralWeakenings c =
+  legalStructuralWeakenings c ++ illegalStructuralWeakenings c
 
-noChange :: PropertyChange
-noChange = PropertyChange "none" id id
+noStructuralWeakening :: StructuralWeakening
+noStructuralWeakening = StructuralWeakening "none" id id
 
 infixl 9 .&.
-(.&.) :: PropertyChange -> PropertyChange -> PropertyChange
-PropertyChange n1 o1 v1 .&. PropertyChange n2 o2 v2 = PropertyChange
+(.&.) :: StructuralWeakening -> StructuralWeakening -> StructuralWeakening
+StructuralWeakening n1 o1 v1 .&. StructuralWeakening n2 o2 v2 =
+  StructuralWeakening
   (n1 ++ " + " ++ n2)
   (o1 . o2)
   (v1 . v2)
 
-legalChanges :: AllowedProperties -> [PropertyChange]
-legalChanges allowed = noChange : [
-    PropertyChange "add one self relationship" addSelfRelationships id
+legalStructuralWeakenings :: AllowedProperties -> [StructuralWeakening]
+legalStructuralWeakenings allowed = noStructuralWeakening : [
+    StructuralWeakening "add one self relationship" addSelfRelationships id
   | selfRelationships allowed] ++ [
-    PropertyChange "force double relationships" withDoubleRelationships id
+    StructuralWeakening "force double relationships" withDoubleRelationships id
   | doubleRelationships allowed] ++ [
-    PropertyChange "force reverse relationships" withReverseRelationships id
+    StructuralWeakening "force reverse relationships" withReverseRelationships id
   | reverseRelationships allowed]
---    PropertyChange "force multiple inheritances" withMultipleInheritances id
+--    StructuralWeakening "force multiple inheritances" withMultipleInheritances id
   where
     addSelfRelationships :: RelationshipProperties -> RelationshipProperties
     addSelfRelationships config@RelationshipProperties {..}
@@ -929,21 +931,21 @@ legalChanges allowed = noChange : [
     -- withMultipleInheritances config
     --   = config { hasMultipleInheritances = True }
 
-illegalChanges :: AllowedProperties -> [PropertyChange]
-illegalChanges allowed = map ($ const False) $ [
-    PropertyChange "add invalid inheritance" addInvalidInheritances
+illegalStructuralWeakenings :: AllowedProperties -> [StructuralWeakening]
+illegalStructuralWeakenings allowed = map ($ const False) $ [
+    StructuralWeakening "add invalid inheritance" addInvalidInheritances
   | invalidInheritanceLimits allowed] ++ [
-    PropertyChange "add wrong association" addWrongNonInheritances
+    StructuralWeakening "add wrong association" addWrongNonInheritances
   | wrongAssociationLimits allowed] ++ [
-    PropertyChange "add wrong composition" addWrongCompositions
+    StructuralWeakening "add wrong composition" addWrongCompositions
   | wrongCompositionLimits allowed] ++ [
-    PropertyChange "force inheritance cycles" withNonTrivialInheritanceCycles
+    StructuralWeakening "force inheritance cycles" withNonTrivialInheritanceCycles
   | inheritanceCycles allowed] ++ [
-    PropertyChange "force reverse inheritances" withReverseInheritances
+    StructuralWeakening "force reverse inheritances" withReverseInheritances
   | reverseInheritances allowed] ++ [
-    PropertyChange "add self inheritance" addSelfInheritance
+    StructuralWeakening "add self inheritance" addSelfInheritance
   | selfInheritances allowed] ++ [
-    PropertyChange "force composition cycles" withCompositionCycles
+    StructuralWeakening "force composition cycles" withCompositionCycles
   | compositionCycles allowed]
   where
     addInvalidInheritances :: RelationshipProperties -> RelationshipProperties
