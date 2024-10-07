@@ -169,7 +169,7 @@ findConflictPlacesSyntax task (conflict, ps) = do
   pure ()
   where
     isValidPlace (Place x) = x >= 1 && x <= numberOfPlaces task
-    assert = continueOrAbort $ showSolution task
+    assert = continueOrAbort False
 
 parseConflictPlacesPrec :: Int -> Parser ConflictPlaces
 parseConflictPlacesPrec _  = do

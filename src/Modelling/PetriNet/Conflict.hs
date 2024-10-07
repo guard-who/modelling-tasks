@@ -231,9 +231,7 @@ findConflictSyntax
   => FindInstance net Conflict
   -> (Transition, Transition)
   -> LangM' m ()
-findConflictSyntax task = toFindSyntax withSol $ numberOfTransitions task
-  where
-    withSol = F.showSolution task
+findConflictSyntax = toFindSyntax False . numberOfTransitions
 
 findConflictEvaluation
   :: (Alternative m, Monad m, OutputCapable m)

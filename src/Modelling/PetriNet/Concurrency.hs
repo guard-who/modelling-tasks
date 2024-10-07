@@ -221,9 +221,7 @@ findConcurrencySyntax
   => FindInstance net (Concurrent Transition)
   -> (Transition, Transition)
   -> LangM' m ()
-findConcurrencySyntax task = toFindSyntax withSol $ numberOfTransitions task
-  where
-    withSol = F.showSolution task
+findConcurrencySyntax = toFindSyntax False . numberOfTransitions
 
 findConcurrencyEvaluation
   :: (Monad m, OutputCapable m)
