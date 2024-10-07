@@ -45,6 +45,7 @@ module Modelling.CdOd.Types (
   anyThickEdge,
   associationNames,
   calculateThickAnyRelationships,
+  checkCdConstraints,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
@@ -112,6 +113,7 @@ import Data.Maybe (
   catMaybes,
   fromJust,
   fromMaybe,
+  isJust,
   isNothing,
   mapMaybe,
   )
@@ -707,6 +709,16 @@ defaultCdConstraints :: CdConstraints
 defaultCdConstraints = CdConstraints {
   anyCompositionCyclesInvolveInheritances = Nothing
   }
+
+checkCdConstraints :: AllowedProperties -> CdConstraints -> Maybe String
+checkCdConstraints AllowedProperties {..} CdConstraints {..}
+  | not compositionCycles, isJust anyCompositionCyclesInvolveInheritances
+  = Just [iii|
+    Setting anyCompositionCyclesInvolveInheritances to True or False
+    makes no sense when composition cycles are not allowed.
+    |]
+  | otherwise
+  = Nothing
 
 checkRange
   :: (Num n, Ord n, Show b, Show n)
