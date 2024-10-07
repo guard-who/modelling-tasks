@@ -65,7 +65,7 @@ pred sameToLimits [a, a2 : Limited] {
   a.toUpper = a2.toUpper
 }
 
-pred sameLimits [a, a2 : Limited] {
+pred identicalLimits [a, a2 : Limited] {
   sameFromLimits [a, a2]
   sameToLimits [a, a2]
 }
@@ -115,9 +115,9 @@ pred shiftedRange [a, a2 : Limited] {
   shiftedRangeUp [a, a2] iff not shiftedRangeUp [a2, a]
 }
 
-assert sameLimits {
+assert identicalLimits {
   all disj a, a2 : Limited |
-    sameLimits [a, a2] iff sameFromLimits [a, a2] and sameToLimits [a, a2]
+    identicalLimits [a, a2] iff sameFromLimits [a, a2] and sameToLimits [a, a2]
 }
 
 assert shiftingLimit {

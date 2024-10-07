@@ -27,12 +27,12 @@ pred selfRelationship [r : Relationship] {
   r.from = r.to
 }
 
-pred sameDirection [r, r2 : Relationship] {
+pred identicalDirection [r, r2 : Relationship] {
   r.from = r2.from and r.to = r2.to
 }
 
 pred doubleRelationship [r, r2 : Relationship] {
-  disj [r, r2] and sameDirection [r, r2]
+  disj [r, r2] and identicalDirection [r, r2]
 }
 
 pred reverseRelationship [r, r2 : Relationship] {
@@ -149,38 +149,38 @@ pred sameKind [r, r2 : Relationship] {
 pred flip [c : Change] {
   c.add.from = c.remove.to and c.add.to = c.remove.from
   sameKind [c.add, c.remove]
-  c.add in NonInheritance implies sameLimits [c.add, c.remove]
+  c.add in NonInheritance implies identicalLimits [c.add, c.remove]
 }
 
 pred changedKind [c : Change] {
-  sameDirection [c.add, c.remove]
+  identicalDirection [c.add, c.remove]
   not sameKind [c.add, c.remove]
   c.add in NonInheritance and c.remove in NonInheritance implies sameFromLimits [c.add, c.remove]
   c.add in NonInheritance and c.remove in NonInheritance
     and (validLimitsComposition [c.remove] or not c.add in Composition)
-    implies sameLimits [c.add, c.remove]
+    implies identicalLimits [c.add, c.remove]
 }
 
 pred changedLimit [c : Change] {
   c.add in NonInheritance
-  sameDirection [c.add, c.remove]
+  identicalDirection [c.add, c.remove]
   sameKind [c.add, c.remove]
   validLimitsNonInheritance [c.add]
   c.add in Composition implies validLimitsComposition [c.add]
   shiftedRange [c.add, c.remove] iff not changedRange [c.add, c.remove]
 }
 
-pred sameRelationship [r, r2 : Relationship] {
+pred identicalRelationship [r, r2 : Relationship] {
   r.from = r2.from
   sameKind [r, r2]
-  sameDirection [r, r2]
-  r in NonInheritance implies sameLimits [r, r2]
+  identicalDirection [r, r2]
+  r in NonInheritance implies identicalLimits [r, r2]
 }
 
 fact changesAreUnique {
   all disj c, c2 : Change |
-    disj [c.add, c2.add] and not sameRelationship [c.add, c2.add]
-    or disj [c.remove, c2.remove] and not sameRelationship [c.remove, c2.remove]
+    disj [c.add, c2.add] and not identicalRelationship [c.add, c2.add]
+    or disj [c.remove, c2.remove] and not identicalRelationship [c.remove, c2.remove]
 }
 
 abstract sig Boolean {}
@@ -213,7 +213,7 @@ pred classDiagram [
   #{ i : inheritances | selfRelationship [i]} = selfInheritances
   noDoubleRelationships [inheritances]
   no i : inheritances, a : nonInheritances |
-    sameDirection [i, a] or reverseRelationship [i, a]
+    identicalDirection [i, a] or reverseRelationship [i, a]
   anyCompositionCyclesInvolveInheritances = True
     implies noCompositionCycles[none, compositions]
     else anyCompositionCyclesInvolveInheritances = False
