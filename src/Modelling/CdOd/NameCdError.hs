@@ -105,6 +105,7 @@ import Modelling.CdOd.Types (
   AnyClassDiagram (..),
   AnyRelationship,
   ArticlePreference (..),
+  CdConstraints (..),
   CdDrawSettings (..),
   ClassConfig (..),
   ClassDiagram (..),
@@ -119,6 +120,7 @@ import Modelling.CdOd.Types (
   checkCdDrawSettings,
   checkObjectProperties,
   classNames,
+  defaultCdConstraints,
   defaultCdDrawSettings,
   isIllegal,
   maxObjects,
@@ -221,6 +223,7 @@ data NameCdErrorConfig = NameCdErrorConfig {
   allowedProperties           :: AllowedProperties,
   -- | the article preference when referring to relationships
   articleToUse                :: ArticlePreference,
+  cdConstraints               :: !CdConstraints,
   classConfig                 :: ClassConfig,
   drawSettings                :: !CdDrawSettings,
   maxInstances                :: Maybe Integer,
@@ -239,6 +242,7 @@ defaultNameCdErrorConfig = NameCdErrorConfig {
     selfInheritances = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = defaultCdConstraints,
   classConfig = ClassConfig {
     classLimits = (4, 4),
     aggregationLimits = (1, Just 1),
@@ -755,14 +759,8 @@ generateAndRandomise
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
   => NameCdErrorConfig
   -> RandT g m NameCdErrorInstance
-generateAndRandomise NameCdErrorConfig {..} = do
-  (cd, reason, rs) <- nameCdError
-    allowedProperties
-    classConfig
-    objectProperties
-    useNames
-    maxInstances
-    timeout
+generateAndRandomise config@NameCdErrorConfig {..} = do
+  (cd, reason, rs) <- nameCdError config
   reasons <- shuffleM possibleReasons
   let (custom, predefined) = partition isCustom $ delete (PreDefined reason) reasons
       (invalid, valid) = partition
@@ -799,25 +797,27 @@ generateAndRandomise NameCdErrorConfig {..} = do
 
 nameCdError
   :: (MonadAlloy m, MonadThrow m, RandomGen g)
-  => AllowedProperties
-  -> ClassConfig
-  -> ObjectProperties
-  -> Bool
-  -> Maybe Integer
-  -> Maybe Int
+  => NameCdErrorConfig
   -> RandT g m (AnyCd, Property, [AnyRelationship String String])
-nameCdError allowed config objectProperties byName maxInstances to = do
+nameCdError NameCdErrorConfig {..}  = do
   changes <- shuffleM $ (,)
-    <$> illegalChanges allowed
-    <*> legalChanges allowed
+    <$> illegalChanges allowedProperties
+    <*> legalChanges allowedProperties
   getInstanceWithChanges changes
   where
+    getFixWith cd properties = Changes.transformGetNextFix
+      cd
+      classConfig
+      cdConstraints
+      properties
+      allowedProperties
+      useNames
     getInstanceWithChanges [] =
       error "there seems to be no instance for the provided configuration"
     getInstanceWithChanges ((e0, l0) : chs) = do
       let p = toProperty $ e0 .&. l0
-          alloyCode = Changes.transformGetNextFix Nothing config p allowed byName
-      instances <- lift $ getInstances maxInstances to alloyCode
+          alloyCode = getFixWith Nothing p
+      instances <- lift $ getInstances maxInstances timeout alloyCode
       randomInstances <- shuffleM instances
       getInstanceWithODs chs p randomInstances
     getInstanceWithODs chs _ [] = getInstanceWithChanges chs
@@ -831,9 +831,8 @@ nameCdError allowed config objectProperties byName maxInstances to = do
             hasReverseRelationships = Nothing,
             hasMultipleInheritances = Nothing
             }
-          alloyCode =
-            Changes.transformGetNextFix (Just cd) config p' allowed byName
-      instances <- lift $ getInstances Nothing to alloyCode
+          alloyCode = getFixWith (Just cd) p'
+      instances <- lift $ getInstances Nothing timeout alloyCode
       correctInstance <- lift $ mapM fromInstanceWithPredefinedNames instances
       let allChs = concatMap instanceChangesAndCds correctInstance
           cd2 = instanceClassDiagram $ head correctInstance
@@ -851,7 +850,7 @@ nameCdError allowed config objectProperties byName maxInstances to = do
             _ -> error "error in task type: property fix is not unique"
     getOD cd = do
       let reversedRelationships = map reverseAssociation $ relationships cd
-          maxNumberOfObjects = maxObjects $ snd $ classLimits config
+          maxNumberOfObjects = maxObjects $ snd $ classLimits classConfig
           parts = transform
             (cd {relationships = reversedRelationships})
             []
@@ -866,7 +865,7 @@ nameCdError allowed config objectProperties byName maxInstances to = do
             reversedRelationships
             parts
       od <- listToMaybe
-        <$> getInstances (Just 1) to (combineParts parts ++ command)
+        <$> getInstances (Just 1) timeout (combineParts parts ++ command)
       od' <- fmap join $ forM od
         $ runExceptT . alloyInstanceToOd >=> return . eitherToMaybe
       mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'

@@ -136,18 +136,19 @@ Generates Alloy code that
 transformGetNextFix
   :: Maybe AnyCd
   -> ClassConfig
+  -> CdConstraints
   -> RelationshipProperties
   -> AllowedProperties
   -> Bool
   -> String
-transformGetNextFix maybeCd config properties allowed byName = transformWith
+transformGetNextFix maybeCd config constraints properties allowed byName
+  = transformWith
   config
   constraints
   [RemoveRelationship]
   (maybe (Right properties) Left maybeCd)
   (n, ps, part ++ restrictOverlappings ++ restrictRelationships)
   where
-    constraints = defaultCdConstraints
     (n, ps, part) = changes
       Nothing
       constraints
