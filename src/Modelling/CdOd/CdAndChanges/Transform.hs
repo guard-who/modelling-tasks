@@ -173,9 +173,9 @@ transformGetNextFix maybeCd config constraints properties allowed byName
       if byName
       then ""
       else [i|
-fact preventIdenticalNonInheritances {
+fact preventEqualNonInheritances {
   no disj x, y : NonInheritance |
-    identicalRelationship[x, y]
+    equalRelationship[x, y]
 }
 |]
 
