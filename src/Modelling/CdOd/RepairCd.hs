@@ -761,27 +761,27 @@ defaultRepairCdInstance = RepairCdInstance {
   showSolution = False
   }
 
-type PropertyWeakeningSet = WeakeningSet StructuralWeakening
+type StructuralWeakeningSet = ChangeSet StructuralWeakening
 
-data WeakeningSet a = WeakeningSet {
+data ChangeSet a = ChangeSet {
   illegalChange :: a,
   otherChanges :: (a, a, a, a)
   } deriving (Eq, Functor, Ord)
 
-possibleChanges
+possibleWeakenings
   :: AllowedProperties
-  -> [PropertyWeakeningSet]
-possibleChanges allowed = nubOrdOn
+  -> [StructuralWeakeningSet]
+possibleWeakenings allowed = nubOrdOn
   (fmap weakeningName)
-  [ WeakeningSet e0 cs
+  [ ChangeSet e0 cs
   | e0 <- illegalStructuralWeakenings allowed
   , l0 <- legalStructuralWeakenings allowed
   , let ls = delete l0 $ legalStructuralWeakenings allowed
   , c0 <- allStructuralWeakenings allowed
   , l1 <- if null ls then [[]] else map (\x -> [x .&. noStructuralWeakening, x]) ls
-  , let changes = [c0, noStructuralWeakening, e0] ++ l1
-  , c1 <- changes
-  , c2 <- delete c1 changes
+  , let weakenings = [c0, noStructuralWeakening, e0] ++ l1
+  , c1 <- weakenings
+  , c2 <- delete c1 weakenings
   , let cs = (l0 .&. e0, noStructuralWeakening, c1, c2)
   ]
   where
@@ -789,10 +789,10 @@ possibleChanges allowed = nubOrdOn
       $ zip (map weakeningName xs) xs
 
 {-|
-Introduces deterministic permutations on a a list of 'PropertyWeakeningSet's.
+Introduces deterministic permutations on a a list of 'StructuralWeakeningSet's.
 The key point is to maintain reproducibility but achieving diversity nonetheless.
 -}
-diversify :: [PropertyWeakeningSet] -> [(StructuralWeakening, [StructuralWeakening])]
+diversify :: [StructuralWeakeningSet] -> [(StructuralWeakening, [StructuralWeakening])]
 diversify = zipWith permutate [0..]
   where
     permutate g c =
@@ -820,7 +820,7 @@ repairIncorrect
   maxInstances
   to
   = do
-  weakeningSets <- shuffleM $ diversify $ possibleChanges cdProperties
+  weakeningSets <- shuffleM $ diversify $ possibleWeakenings cdProperties
   tryNextWeakeningSet weakeningSets
   where
     tryNextWeakeningSet [] = lift $ throwM NoInstanceAvailable
