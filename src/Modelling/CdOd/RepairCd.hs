@@ -62,6 +62,7 @@ import Modelling.Auxiliary.Common (
   )
 import Modelling.Auxiliary.Output (
   addPretext,
+  checkTaskText,
   hoveringInformation,
   simplifiedInformation,
   uniform,
@@ -149,6 +150,14 @@ import Control.OutputCapable.Blocks (
   multipleChoiceSyntax,
   reRefuse,
   translate,
+  translations,
+  )
+import Control.OutputCapable.Blocks.Generic.Type (
+  GenericOutput (Code, Paragraph, Special, Translated),
+  )
+import Control.OutputCapable.Blocks.Type (
+  SpecialOutput,
+  specialToOutputCapable,
   )
 import Control.Monad.Random (
   MonadRandom,
@@ -162,6 +171,7 @@ import Data.Bifunctor                   (bimap, first, second)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.Either                      (isRight)
+import Data.List                        (singleton)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Ratio                       ((%))
@@ -309,41 +319,37 @@ checkClassConfigAndChanges classConfig allowedProperties =
          or disable the property change "#{weakeningName c}":|] ++)
       <$> checkProp (toProperty c)
 
+defaultRepairCdTaskText :: RepairCdTaskText
+defaultRepairCdTaskText = [
+  Paragraph $ singleton $ Translated $ translations $ do
+    english "Consider the following class diagram, which unfortunately is invalid:"
+    german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:",
+  Paragraph $ singleton $ Special IncorrectCd,
+  Paragraph $ singleton $ Translated $ translations $ do
+    english [i|Which of the following changes would repair the class diagram?|]
+    german [i|Welche der folgenden Änderungen würden das Klassendiagramm reparieren?|],
+  Special PotentialFixes,
+  Paragraph $ singleton $ Translated $ translations $ do
+    english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
+    german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren.|],
+  Paragraph [
+    Translated $ translations $ do
+      english [i|Answer by giving a comma separated list of all valid options, e.g., |]
+      german [i|Antworten Sie durch Angabe einer durch Komma separierten Liste aller gültigen Optionen. Zum Beispiel |],
+    Code $ uniform "[1, 2]",
+    Translated $ translations $ do
+      english [i| would indicate that options 1 and 2 each repair the given class diagram.|]
+      german [i| als Angabe würde bedeuten, dass die Optionen 1 und 2 jeweils das gegebene Klassendiagramm reparieren.|]
+    ]
+  ]
+
 repairCdTask
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => FilePath
   -> RepairCdInstance
   -> LangM m
-repairCdTask path RepairCdInstance {..} = do
-  paragraph $ translate $ do
-    english "Consider the following class diagram, which unfortunately is invalid:"
-    german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:"
-  image $=<< cacheCd
-    cdDrawSettings
-    mempty
-    classDiagram
-    path
-  paragraph $ translate $ do
-    english [i|Which of the following changes would repair the class diagram?|]
-    german [i|Welche der folgenden Änderungen würden das Klassendiagramm reparieren?|]
-  let phrase x y Annotation {..} = translate $ do
-        english $ phraseChange English annotation x y annotated
-        german $ phraseChange German annotation x y annotated
-  enumerateM (text . show)
-    $ second (phrase byName (printNavigations cdDrawSettings) . option)
-    <$> M.toList changes
-  paragraph $ translate $ do
-    english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
-    german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren.|]
-  paragraph $ do
-    translate $ do
-      english [i|Answer by giving a comma separated list of all valid options, e.g., |]
-      german [i|Antworten Sie durch Angabe einer durch Komma separierten Liste aller gültigen Optionen. Zum Beispiel |]
-    code "[1, 2]"
-    translate $ do
-      english [i| would indicate that options 1 and 2 each repair the given class diagram.|]
-      german [i| als Angabe würde bedeuten, dass die Optionen 1 und 2 jeweils das gegebene Klassendiagramm reparieren.|]
-    pure ()
+repairCdTask path task = do
+  toTaskText path task
   paragraph simplifiedInformation
   paragraph hoveringInformation
   pure ()
@@ -413,6 +419,42 @@ repairCdFeedback path drawSettings xs x cdChange =
 repairCdSolution :: RepairCdInstance -> [Int]
 repairCdSolution = M.keys . M.filter id . fmap (isRight . hint) . changes
 
+type RepairCdTaskText = [SpecialOutput RepairCdTaskTextElement]
+
+data RepairCdTaskTextElement
+  = IncorrectCd
+  | PotentialFixes
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
+toTaskText
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
+  => FilePath
+  -> RepairCdInstance
+  -> LangM m
+toTaskText path task =
+  specialToOutputCapable (toTaskSpecificText path task) (taskText task)
+
+toTaskSpecificText
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
+  => FilePath
+  -> RepairCdInstance
+  -> RepairCdTaskTextElement
+  -> LangM m
+toTaskSpecificText path RepairCdInstance {..} = \case
+  IncorrectCd -> image $=<< cacheCd
+    cdDrawSettings
+    mempty
+    classDiagram
+    path
+  PotentialFixes ->
+    enumerateM (text . show)
+      $ second (phrase byName (printNavigations cdDrawSettings) . option)
+      <$> M.toList changes
+  where
+    phrase x y Annotation {..} = translate $ do
+      english $ phraseChange English annotation x y annotated
+      german $ phraseChange German annotation x y annotated
+
 data RepairCdInstance
   = RepairCdInstance {
     byName         :: !Bool,
@@ -420,7 +462,8 @@ data RepairCdInstance
     changes        :: Map Int RelationshipChange,
     classDiagram   :: AnyCd,
     showExtendedFeedback :: Bool,
-    showSolution   :: Bool
+    showSolution   :: !Bool,
+    taskText       :: !RepairCdTaskText
   } deriving (Eq, Generic, Read, Show)
 
 checkRepairCdInstance :: RepairCdInstance -> Maybe String
@@ -433,7 +476,8 @@ checkRepairCdInstance RepairCdInstance {..}
       and thus can only be enabled when showSolution is set to True
       |]
   | otherwise
-  = checkCdDrawSettings cdDrawSettings
+  = checkTaskText taskText
+  <|> checkCdDrawSettings cdDrawSettings
 
 classAndNonInheritanceNames :: RepairCdInstance -> ([String], [String])
 classAndNonInheritanceNames inst =
@@ -471,7 +515,8 @@ instance RandomiseLayout RepairCdInstance where
       changes = changes',
       classDiagram = cd,
       showExtendedFeedback = showExtendedFeedback,
-      showSolution = showSolution
+      showSolution = showSolution,
+      taskText = taskText
       }
 
 shuffleInstance :: MonadRandom m => RepairCdInstance -> m RepairCdInstance
@@ -483,7 +528,8 @@ shuffleInstance RepairCdInstance {..} = do
     changes = chs,
     classDiagram = classDiagram,
     showExtendedFeedback = showExtendedFeedback,
-    showSolution = showSolution
+    showSolution = showSolution,
+    taskText = taskText
     }
 
 renameInstance
@@ -511,7 +557,8 @@ renameInstance inst@RepairCdInstance {..} names' nonInheritances' = do
     changes        = chs,
     classDiagram   = cd,
     showExtendedFeedback = showExtendedFeedback,
-    showSolution   = showSolution
+    showSolution   = showSolution,
+    taskText       = taskText
     }
 
 repairCd
@@ -537,7 +584,8 @@ repairCd RepairCdConfig {..} segment seed = flip evalRandT g $ do
     changes = M.fromAscList $ zip [1..] chs',
     classDiagram = cd,
     showExtendedFeedback = printExtendedFeedback,
-    showSolution = printSolution
+    showSolution = printSolution,
+    taskText = defaultRepairCdTaskText
     }
   where
     g = mkStdGen $ (segment +) $ 4 * seed
@@ -759,7 +807,8 @@ defaultRepairCdInstance = RepairCdInstance {
       ]
     },
   showExtendedFeedback = False,
-  showSolution = False
+  showSolution = False,
+  taskText = defaultRepairCdTaskText
   }
 
 type StructuralWeakeningSet = ChangeSet StructuralWeakening
