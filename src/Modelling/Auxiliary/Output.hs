@@ -3,6 +3,7 @@
 -- | This module provides common skeletons for printing tasks
 module Modelling.Auxiliary.Output (
   addPretext,
+  checkTaskText,
   directionsAdvice,
   hoveringInformation,
   simplifiedInformation,
@@ -21,6 +22,12 @@ import Control.OutputCapable.Blocks     (
   german,
   translate,
   )
+import Control.OutputCapable.Blocks.Type (
+  SpecialOutput,
+  checkTranslations,
+  withRefusal,
+  )
+import Data.List                        ((\\), singleton)
 import Data.Map                         (Map)
 import Data.String.Interpolate          (iii)
 
@@ -84,3 +91,27 @@ addPretext = (*>) $
 
 uniform :: a -> Map Language a
 uniform x = foldr (`M.insert` x) M.empty [minBound ..]
+
+checkTaskText
+  :: (Bounded element, Enum element, Eq element, Show element)
+  => [SpecialOutput element]
+  -> Maybe String
+checkTaskText taskText
+  | x:_ <- allElements \\ usedElements
+  = Just [iii|Your task text is incomplete as it is missing '#{show x}'.|]
+  | x:_ <- usedElements \\ allElements
+  = Just [iii|
+      Your task text is using '#{show x}' at least twice,
+      but it should appear exactly once.
+      |]
+  | x:_ <- concatMap (checkTranslations (const [])) taskText
+  = Just $ [iii|Problem within your task text: |] ++ x
+  | any (withRefusal (const False)) taskText
+  = Just [iii|
+    Your task text must not refuse output! (i.e. use Refuse or Assertion)
+    |]
+  | otherwise
+  = Nothing
+  where
+    usedElements = concatMap (concatMap singleton) taskText
+    allElements = [minBound ..]

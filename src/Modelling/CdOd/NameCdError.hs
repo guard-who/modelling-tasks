@@ -66,6 +66,7 @@ import Modelling.Auxiliary.Common (
   )
 import Modelling.Auxiliary.Output (
   addPretext,
+  checkTaskText,
   hoveringInformation,
   simplifiedInformation,
   uniform,
@@ -167,7 +168,6 @@ import Control.OutputCapable.Blocks.Generic.Type (
 import Control.OutputCapable.Blocks.Type (
   SpecialOutput,
   checkTranslation,
-  checkTranslations,
   specialToOutputCapable,
   )
 import Control.Monad.Random
@@ -462,7 +462,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   | x:_ <- concatMap (checkTranslation . toTranslations True) reasons
   = Just $ [i|Problem within 'errorReasons': |] ++ x
   | otherwise
-  = checkNameCdErrorTaskText taskText
+  = checkTaskText taskText
   <|> checkCdDrawSettings cdDrawSettings
   where
     letters = ['a' .. 'z'] ++ ['A' .. 'Z']
@@ -470,23 +470,6 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
     listingPriorities = map (listingPriority . annotation)
       . filter isRelevant
       $ annotatedRelationships classDiagram
-
-checkNameCdErrorTaskText :: NameCdErrorTaskText -> Maybe String
-checkNameCdErrorTaskText xs
-  | x:_ <- allElements \\ usedElements
-  = Just [iii|Your task text is incomplete as it is missing '#{x}'.|]
-  | x:_ <- usedElements \\ allElements
-  = Just [iii|
-      Your task text is using '#{x}' at least twice,
-      but it should appear exactly once.
-      |]
-  | x:_ <- concatMap (checkTranslations (const [])) xs
-  = Just $ [i|Problem within your task text: |] ++ x
-  | otherwise
-  = Nothing
-  where
-    usedElements = concatMap (concatMap singleton) xs
-    allElements = [minBound ..]
 
 defaultNameCdErrorTaskText :: NameCdErrorTaskText
 defaultNameCdErrorTaskText = [
