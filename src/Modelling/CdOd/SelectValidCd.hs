@@ -44,8 +44,10 @@ import Modelling.Auxiliary.Common (
   )
 import Modelling.Auxiliary.Output (
   addPretext,
+  checkTaskText,
   hoveringInformation,
   simplifiedInformation,
+  uniform,
   )
 import Modelling.CdOd.CdAndChanges.Instance (
   AnnotatedChangeAndCd (..),
@@ -115,6 +117,14 @@ import Control.OutputCapable.Blocks (
   multipleChoiceSyntax,
   reRefuse,
   translate,
+  translations,
+  )
+import Control.OutputCapable.Blocks.Generic.Type (
+  GenericOutput (Code, Paragraph, Special, Translated),
+  )
+import Control.OutputCapable.Blocks.Type (
+  SpecialOutput,
+  specialToOutputCapable,
   )
 import Control.Monad.Random             (evalRandT, mkStdGen)
 import Control.Monad.Random.Class       (MonadRandom)
@@ -122,6 +132,7 @@ import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight, partitionEithers)
 import Data.GraphViz                    (DirType (Back, NoDir))
+import Data.List                        (singleton)
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe)
 import Data.Ratio                       ((%))
@@ -213,7 +224,8 @@ data SelectValidCdInstance
     -- | when enabled feedback for wrong answers will be shown
     -- this might include ODs
     showExtendedFeedback :: Bool,
-    showSolution    :: Bool
+    showSolution    :: !Bool,
+    taskText        :: !SelectValidCdTaskText
   } deriving (Generic, Read, Show)
 
 checkSelectValidCdInstance :: SelectValidCdInstance -> Maybe String
@@ -224,7 +236,8 @@ checkSelectValidCdInstance SelectValidCdInstance {..}
       and thus can only be enabled when showSolution is set to True
       |]
   | otherwise
-  = checkCdDrawSettings cdDrawSettings
+  = checkTaskText taskText
+  <|> checkCdDrawSettings cdDrawSettings
 
 selectValidCdSyntax
   :: OutputCapable m
@@ -234,34 +247,40 @@ selectValidCdSyntax
 selectValidCdSyntax inst =
   multipleChoiceSyntax False (M.keys $ classDiagrams inst)
 
+type SelectValidCdTaskText = [SpecialOutput SelectValidCdTaskTextElement]
+
+data SelectValidCdTaskTextElement
+  = CdCandidates
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
 selectValidCdTask
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
   => FilePath
   -> SelectValidCdInstance
   -> LangM m
-selectValidCdTask path SelectValidCdInstance {..} = do
-  paragraph $ translate $ do
-    english [i|Consider the following class diagram candidates:|]
-    german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten:|]
-  images show snd $=<< sequence $
-    M.foldrWithKey drawCd mempty classDiagrams
-  paragraph $ translate $ do
-    english [i|Which of these class diagram candidates are valid class diagrams?
-Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
-    german [i|Welche dieser Klassendiagrammkandidaten sind valide Klassendiagramme?
-Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültigen Klassendiagramme enthält.|]
-  paragraph $ do
-    translate $ do
-      english [i|For example,|]
-      german [i|Zum Beispiel würde|]
-    code "[1, 2]"
-    translate $ do
-      english [i|would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
-      german [i|bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
-    pure ()
+selectValidCdTask path task = do
+  toTaskText path task
   paragraph simplifiedInformation
   paragraph hoveringInformation
   pure ()
+
+toTaskText
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
+  => FilePath
+  -> SelectValidCdInstance
+  -> LangM m
+toTaskText path task =
+  specialToOutputCapable (toTaskSpecificText path task) (taskText task)
+
+toTaskSpecificText
+  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
+  => FilePath
+  -> SelectValidCdInstance
+  -> SelectValidCdTaskTextElement
+  -> LangM m
+toTaskSpecificText path SelectValidCdInstance {..} = \case
+  CdCandidates -> images show snd $=<< sequence
+    $ M.foldrWithKey drawCd mempty classDiagrams
   where
     drawCd x theChange cds =
       let f = cacheCd
@@ -270,6 +289,28 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
             (option theChange)
             path
       in M.insert x ((isRight $ hint theChange,) <$> f) cds
+
+defaultSelectValidCdTaskText :: SelectValidCdTaskText
+defaultSelectValidCdTaskText = [
+  Paragraph $ singleton $ Translated $ translations $ do
+    english [i|Consider the following class diagram candidates:|]
+    german [i|Betrachten Sie die folgenden Klassendiagrammkandidaten:|],
+  Special CdCandidates,
+  Paragraph $ singleton $ Translated $ translations $ do
+    english [i|Which of these class diagram candidates are valid class diagrams?
+Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
+    german [i|Welche dieser Klassendiagrammkandidaten sind valide Klassendiagramme?
+Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültigen Klassendiagramme enthält.|],
+  Paragraph [
+    Translated $ translations $ do
+      english [i|For example,|]
+      german [i|Zum Beispiel würde|],
+    Code $ uniform "[1, 2]",
+    Translated $ translations $ do
+      english [i|would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
+      german [i|bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
+    ]
+  ]
 
 selectValidCdEvaluation
   :: (
@@ -410,7 +451,8 @@ selectValidCd SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
     cdDrawSettings  = drawSettings,
     classDiagrams   = M.fromAscList $ zip [1 ..] cds,
     showExtendedFeedback = printExtendedFeedback,
-    showSolution    = printSolution
+    showSolution    = printSolution,
+    taskText        = defaultSelectValidCdTaskText
     }
   where
     g = mkStdGen $ (segment +) $ 4 * seed
@@ -437,7 +479,8 @@ instance RandomiseLayout SelectValidCdInstance where
       cdDrawSettings          = cdDrawSettings,
       classDiagrams           = cds,
       showExtendedFeedback    = showExtendedFeedback,
-      showSolution            = showSolution
+      showSolution            = showSolution,
+      taskText                = taskText
       }
 
 shuffleEach
@@ -450,7 +493,8 @@ shuffleEach inst@SelectValidCdInstance {..} = do
     cdDrawSettings          = cdDrawSettings,
     classDiagrams           = cds,
     showExtendedFeedback    = showExtendedFeedback,
-    showSolution            = showSolution
+    showSolution            = showSolution,
+    taskText                = taskText
     }
 
 shuffleCdChange
@@ -479,12 +523,13 @@ shuffleInstance
   :: MonadRandom m
   => SelectValidCdInstance
   -> m SelectValidCdInstance
-shuffleInstance inst =
-  (SelectValidCdInstance (cdDrawSettings inst)
+shuffleInstance SelectValidCdInstance {..} =
+  (SelectValidCdInstance cdDrawSettings
     . M.fromAscList . zipWith replaceId [1..]
-       <$> shuffleM (M.toList $ classDiagrams inst))
-  <*> pure (showExtendedFeedback inst)
-  <*> pure (showSolution inst)
+       <$> shuffleM (M.toList classDiagrams))
+  <*> pure showExtendedFeedback
+  <*> pure showSolution
+  <*> pure taskText
   where
     replaceId x (_, cd) = (x, cd)
 
@@ -520,7 +565,8 @@ renameInstance inst@SelectValidCdInstance {..} names' nonInheritances' = do
     cdDrawSettings  = cdDrawSettings,
     classDiagrams   = cds,
     showExtendedFeedback = showExtendedFeedback,
-    showSolution    = showSolution
+    showSolution    = showSolution,
+    taskText        = taskText
     }
 
 defaultSelectValidCdInstance :: SelectValidCdInstance
@@ -601,5 +647,6 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
       })
     ],
   showExtendedFeedback = False,
-  showSolution = False
+  showSolution = False,
+  taskText = defaultSelectValidCdTaskText
   }
