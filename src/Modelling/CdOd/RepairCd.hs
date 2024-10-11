@@ -64,6 +64,7 @@ import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
   simplifiedInformation,
+  uniform,
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (

@@ -17,7 +17,6 @@ module Modelling.CdOd.NameCdError (
   NumberOfReasons (..),
   Reason (..),
   Relevance (..),
-  TaskTextPart (..),
   checkNameCdErrorConfig,
   checkNameCdErrorInstance,
   classAndNonInheritanceNames,
@@ -69,6 +68,7 @@ import Modelling.Auxiliary.Output (
   addPretext,
   hoveringInformation,
   simplifiedInformation,
+  uniform,
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
@@ -161,6 +161,15 @@ import Control.OutputCapable.Blocks (
   translations,
   )
 import Control.OutputCapable.Blocks.Generic (($>>=))
+import Control.OutputCapable.Blocks.Generic.Type (
+  GenericOutput (Code, Paragraph, Special, Translated),
+  )
+import Control.OutputCapable.Blocks.Type (
+  SpecialOutput,
+  checkTranslation,
+  checkTranslations,
+  specialToOutputCapable,
+  )
 import Control.Monad.Random
   (MonadRandom, RandT, RandomGen, evalRandT, mkStdGen)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
@@ -170,7 +179,6 @@ import Data.Bifunctor                   (second)
 import Data.ByteString.UTF8             (fromString, toString)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either.Extra                (eitherToMaybe, fromEither)
-import Data.Foldable                    (for_)
 import Data.List (
   (\\),
   delete,
@@ -179,7 +187,7 @@ import Data.List (
   sortOn,
   )
 import Data.Map                         (Map)
-import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
+import Data.Maybe                       (catMaybes, listToMaybe)
 import Data.Ratio                       ((%))
 import Data.Set                         (Set)
 import Data.String.Interpolate          (i, iii)
@@ -347,14 +355,7 @@ allowedPropertiesToPropertySet AllowedProperties {..} =
   where
     ifTrue x p = if x then Just p else Nothing
 
-type NameCdErrorTaskText = [TaskTextPart NameCdErrorTaskTextElement]
-
-data TaskTextPart element =
-  Code String |
-  Paragraph [TaskTextPart element] |
-  TaskSpecific element |
-  Translated (Map Language String)
-  deriving (Eq, Foldable, Generic, Read, Show)
+type NameCdErrorTaskText = [SpecialOutput NameCdErrorTaskTextElement]
 
 data NameCdErrorTaskTextElement =
   IncorrectCd |
@@ -364,23 +365,19 @@ data NameCdErrorTaskTextElement =
 
 toTaskText
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
-  => NameCdErrorTaskText
-  -> FilePath
+  => FilePath
   -> NameCdErrorInstance
   -> LangM m
-toTaskText xs path task =
-  for_ xs $ \x -> toTaskTextPart x path task
+toTaskText path task =
+  specialToOutputCapable (toTaskSpecificText path task) (taskText task)
 
-toTaskTextPart
+toTaskSpecificText
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
-  => TaskTextPart NameCdErrorTaskTextElement
-  -> FilePath
+  => FilePath
   -> NameCdErrorInstance
+  -> NameCdErrorTaskTextElement
   -> LangM m
-toTaskTextPart output path task@NameCdErrorInstance {..} = case output of
-  Code c -> code c
-  Paragraph xs -> paragraph $ for_ xs $ \x -> toTaskTextPart x path task
-  TaskSpecific element -> case element of
+toTaskSpecificText path task@NameCdErrorInstance {..} = \case
     IncorrectCd -> image $=<< cacheCd
       cdDrawSettings
       mempty
@@ -401,7 +398,6 @@ toTaskTextPart output path task@NameCdErrorInstance {..} = case output of
       enumerateM (text . show)
         $ map (second phraseRelationship')
         $ relevantRelationships task
-  Translated xs -> translate $ put xs
 
 data NameCdErrorInstance = NameCdErrorInstance {
   byName                      :: !Bool,
@@ -463,7 +459,7 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
   = Just [iii|
       'errorReasons' contains duplicate '#{x}' which is not allowed.
       |]
-  | x:_ <- mapMaybe (checkTranslation . toTranslations True) reasons
+  | x:_ <- concatMap (checkTranslation . toTranslations True) reasons
   = Just $ [i|Problem within 'errorReasons': |] ++ x
   | otherwise
   = checkNameCdErrorTaskText taskText
@@ -475,20 +471,6 @@ checkNameCdErrorInstance NameCdErrorInstance {..}
       . filter isRelevant
       $ annotatedRelationships classDiagram
 
-checkTranslation :: Map Language String -> Maybe String
-checkTranslation xs
-  | x:_ <- [minBound ..] \\ M.keys xs
-  = Just [i|Missing #{x} translation for #{xs}.|]
-  | otherwise
-  = Nothing
-
-checkTranslations :: TaskTextPart element -> [Maybe String]
-checkTranslations output = case output of
-  Code {} -> []
-  Paragraph xs -> concatMap checkTranslations xs
-  TaskSpecific {} -> []
-  Translated xs -> [checkTranslation xs]
-
 checkNameCdErrorTaskText :: NameCdErrorTaskText -> Maybe String
 checkNameCdErrorTaskText xs
   | x:_ <- allElements \\ usedElements
@@ -498,8 +480,8 @@ checkNameCdErrorTaskText xs
       Your task text is using '#{x}' at least twice,
       but it should appear exactly once.
       |]
-  | x:_ <- concatMap checkTranslations xs
-  = ([i|Problem within your task text: |] ++) <$> x
+  | x:_ <- concatMap (checkTranslations (const [])) xs
+  = Just $ [i|Problem within your task text: |] ++ x
   | otherwise
   = Nothing
   where
@@ -511,11 +493,11 @@ defaultNameCdErrorTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
     english "Consider the following class diagram, which unfortunately is invalid:"
     german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:",
-  Paragraph $ singleton $ TaskSpecific IncorrectCd,
+  Paragraph $ singleton $ Special IncorrectCd,
   Paragraph $ singleton $ Translated $ translations $ do
     english "It contains the following relationships between classes:"
     german "Es enthält die folgenden Beziehungen zwischen Klassen:",
-  Paragraph $ singleton $ TaskSpecific RelationshipsList,
+  Paragraph $ singleton $ Special RelationshipsList,
   Paragraph $ singleton $ Translated $ translations $ do
     english [iii|
       Choose what you think is the single reason that this class diagram is incorrect,
@@ -534,7 +516,7 @@ defaultNameCdErrorTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
     english [i|The class diagram ...|]
     german [i|Das Klassendiagramm ...|],
-  Paragraph $ singleton $ TaskSpecific ReasonsList,
+  Paragraph $ singleton $ Special ReasonsList,
   Paragraph [
     Paragraph $ singleton $ Translated $ translations $ do
       english [iii|
@@ -555,7 +537,7 @@ defaultNameCdErrorTaskText = [
         von deren individueller Präsenz das Problem abhängt.
         Zum Beispiel würde
         |],
-    Paragraph $ singleton $ Code $ showNameCdErrorAnswer answer,
+    Paragraph $ singleton $ Code $ uniform $ showNameCdErrorAnswer answer,
     Paragraph $ singleton $ Translated $ translations $ do
       english [iii|
         would indicate that the class diagram is invalid
@@ -579,7 +561,7 @@ nameCdErrorTask
   -> NameCdErrorInstance
   -> LangM m
 nameCdErrorTask path task = do
-  toTaskText (taskText task) path task
+  toTaskText path task
   paragraph simplifiedInformation
   paragraph hoveringInformation
   pure ()

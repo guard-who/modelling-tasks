@@ -6,10 +6,14 @@ module Modelling.Auxiliary.Output (
   directionsAdvice,
   hoveringInformation,
   simplifiedInformation,
+  uniform,
   ) where
+
+import qualified Data.Map                         as M (empty, insert)
 
 import Control.OutputCapable.Blocks     (
   GenericOutputCapable (paragraph),
+  Language,
   LangM,
   LangM',
   OutputCapable,
@@ -17,6 +21,7 @@ import Control.OutputCapable.Blocks     (
   german,
   translate,
   )
+import Data.Map                         (Map)
 import Data.String.Interpolate          (iii)
 
 hoveringInformation :: OutputCapable m => LangM m
@@ -76,3 +81,6 @@ addPretext = (*>) $
   paragraph $ translate $ do
     english "Remarks on your solution:"
     german "Anmerkungen zur eingereichten Lösung:"
+
+uniform :: a -> Map Language a
+uniform x = foldr (`M.insert` x) M.empty [minBound ..]
