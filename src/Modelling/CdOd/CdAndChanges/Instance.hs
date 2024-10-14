@@ -100,6 +100,12 @@ data ChangeAndCd className relationshipName
     }
   deriving (Read, Show)
 
+instance Functor (ChangeAndCd className) where
+  fmap f ChangeAndCd {..} = ChangeAndCd {
+    relationshipChange = fmap (bimap (fmap f) (fmap f)) relationshipChange,
+    changeClassDiagram = fmap f changeClassDiagram
+    }
+
 $(deriveBifunctor ''ChangeAndCd)
 $(deriveBifoldable ''ChangeAndCd)
 $(deriveBitraversable ''ChangeAndCd)
@@ -135,7 +141,7 @@ data GenericClassDiagramInstance className relationshipName
     instanceRelationshipNames :: [relationshipName],
     instanceChangesAndCds     :: [ChangeAndCd className relationshipName]
     }
-  deriving (Read, Show)
+  deriving (Functor, Read, Show)
 
 instance Bifunctor GenericClassDiagramInstance where
   bimap f g ClassDiagramInstance {..} = ClassDiagramInstance {

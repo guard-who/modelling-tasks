@@ -404,6 +404,10 @@ data Annotation annotation annotated = Annotation {
   }
   deriving (Eq, Foldable, Functor, Generic, Read, Show, Traversable)
 
+$(deriveBifunctor ''Annotation)
+$(deriveBifoldable ''Annotation)
+$(deriveBitraversable ''Annotation)
+
 data AnnotatedClassDiagram relationshipAnnotation className relationshipName
   = AnnotatedClassDiagram {
     annotatedClasses
@@ -413,26 +417,17 @@ data AnnotatedClassDiagram relationshipAnnotation className relationshipName
     }
   deriving (Eq, Generic, Read, Show)
 
-instance Bifunctor (AnnotatedClassDiagram annotation) where
-  bimap f g AnnotatedClassDiagram {..} = AnnotatedClassDiagram {
-    annotatedClasses  = map f annotatedClasses,
+instance Functor (AnnotatedClassDiagram relationshipAnnotation className) where
+  fmap f AnnotatedClassDiagram {..} = AnnotatedClassDiagram {
+    annotatedClasses = annotatedClasses,
     annotatedRelationships = map
-      (fmap (bimap (bimap f g) (bimap f g)))
+      (fmap $ bimap (fmap f) (fmap f))
       annotatedRelationships
     }
 
-instance Bifoldable (AnnotatedClassDiagram annotation) where
-  bifoldMap f g AnnotatedClassDiagram {..} = foldMap f annotatedClasses
-    <> foldMap
-      (foldMap $ bifoldMap (bifoldMap f g) (bifoldMap f g))
-      annotatedRelationships
-
-instance Bitraversable (AnnotatedClassDiagram annotation) where
-  bitraverse f g AnnotatedClassDiagram {..} = AnnotatedClassDiagram
-    <$> traverse f annotatedClasses
-    <*> traverse
-      (traverse (bitraverse (bitraverse f g) (bitraverse f g)))
-       annotatedRelationships
+$(deriveBifunctor ''AnnotatedClassDiagram)
+$(deriveBifoldable ''AnnotatedClassDiagram)
+$(deriveBitraversable ''AnnotatedClassDiagram)
 
 unannotateCd
   :: AnnotatedClassDiagram relationshipAnnotation className relationshipName
@@ -468,6 +463,12 @@ data AnyClassDiagram className relationshipName = AnyClassDiagram {
   anyRelationships        :: ![AnyRelationship className relationshipName]
   }
   deriving (Eq, Generic, Read, Show)
+
+instance Functor (AnyClassDiagram className) where
+  fmap f AnyClassDiagram {..} = AnyClassDiagram {
+    anyClassNames = anyClassNames,
+    anyRelationships = map (bimap (fmap f) (fmap f)) anyRelationships
+    }
 
 $(deriveBifunctor ''AnyClassDiagram)
 $(deriveBifoldable ''AnyClassDiagram)
