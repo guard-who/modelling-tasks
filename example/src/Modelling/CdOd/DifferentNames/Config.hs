@@ -49,7 +49,8 @@ task12 = DifferentNamesConfig {
     compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
   printSolution = True,
-  timeout = Nothing
+  timeout = Nothing,
+  withObviousMapping = Nothing
   }
 
 {-|
@@ -87,7 +88,8 @@ task13 = DifferentNamesConfig {
     compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
   printSolution = True,
-  timeout = Nothing
+  timeout = Nothing,
+  withObviousMapping = Nothing
   }
 
 {-|
@@ -106,8 +108,8 @@ task25 = DifferentNamesConfig {
     relationshipLimits = (9, Just 9)
     },
   withNonTrivialInheritance = Just True,
-    maxInstances = Just 100,
-    objectConfig = ObjectConfig {
+  maxInstances = Just 100,
+  objectConfig = ObjectConfig {
     linkLimits = (14, Just 16),
     linksPerObjectLimits = (2, Just 6),
     objectLimits = (8, 10)
@@ -125,5 +127,6 @@ task25 = DifferentNamesConfig {
     compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
     },
   printSolution = True,
-  timeout = Nothing
+  timeout = Nothing,
+  withObviousMapping = Nothing
   }

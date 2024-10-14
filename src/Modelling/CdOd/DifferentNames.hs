@@ -196,7 +196,8 @@ checkDifferentNamesInstance DifferentNamesInstance {..}
     associations = associationNames cDiagram
     links = linkNames oDiagram
 
-data DifferentNamesConfig = DifferentNamesConfig {
+data DifferentNamesConfig
+  = DifferentNamesConfig {
     classConfig      :: ClassConfig,
     withNonTrivialInheritance :: Maybe Bool,
     maxInstances     :: Maybe Integer,
@@ -204,11 +205,18 @@ data DifferentNamesConfig = DifferentNamesConfig {
     objectProperties :: ObjectProperties,
     omittedDefaultMultiplicities :: OmittedDefaultMultiplicities,
     printSolution    :: Bool,
-    timeout          :: Maybe Int
+    timeout          :: !(Maybe Int),
+    -- | Obvious means here that each individual relationship to link mapping
+    -- can be made without considering other relationships.
+    withObviousMapping :: !(Maybe Bool)
   } deriving (Generic, Read, Show)
 
 checkDifferentNamesConfig :: DifferentNamesConfig -> Maybe String
 checkDifferentNamesConfig DifferentNamesConfig {..}
+  | isJust withObviousMapping
+  = Just [iii|
+    'withObviousMapping' is not yet supported and has to be set to Nothing
+    |]
   | (x, Just y) <- relationshipLimits classConfig, x /= y
   = Just [iii|
       The minimum number of relationships has to equal its maximum number
@@ -263,6 +271,7 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     omittedDefaultMultiplicities = defaultOmittedDefaultMultiplicities,
     printSolution    = False,
     withNonTrivialInheritance = Just True,
+    withObviousMapping = Nothing,
     maxInstances     = Nothing,
     timeout          = Nothing
   }
