@@ -176,8 +176,8 @@ fact SizeConstraints {
     fields =
       unlines (fieldNames index relationships classNames)
       -- Figure 2.2, Rule 2, relevant portion, alternative implementation
-    compositeStructures =
-      unlines (compositesAndFieldNames index relationships classNames)
+    compositeStructures = unlines
+      $ compositesAndFieldNames index relationships abstractClassNames classNames
       -- Figure 2.1, Rule 6, corrected
     inhabitance = case completelyInhabited of
       Nothing   -> ""
@@ -277,17 +277,37 @@ subTypes
   -> [String]
   -> [String]
   -> [String]
-subTypes index rs abstractClassNames = concatMap $ \name ->
+subTypes index relationships abstractClassNames = concatMap $ \name ->
   [ "fun " ++ name ++ subsCD ++ " : set Object {"
-  , "  " ++ intercalate " + " ((if name `elem` abstractClassNames then "none" else name)
-                               : map (++ subsCD) (directSubclassesOf name))
+  , "  " ++ alloySetOf (allSubclassesOf relationships abstractClassNames name)
   , "}"
   ]
   where
     subsCD = "SubsCD" ++ index
-    directSubclassesOf x = (`mapMaybe` rs) $ \case
-      Inheritance { superClass = s, .. } | x == s -> Just subClass
+
+{-|
+Retrieve the set of all subclasses of the given class.
+-}
+allSubclassesOf
+  :: [Relationship String String]
+  -- ^ all relationships of the class diagram
+  -> [String]
+  -- ^ the set of abstract class names
+  -> String
+  -- ^ the name of the class to consider
+  -> [String]
+allSubclassesOf relationships abstractClassNames name =
+  (if name `elem` abstractClassNames then "none" else name)
+  : concatMap (allSubclassesOf remaining abstractClassNames) subclasses
+  where
+    subclasses = (`mapMaybe` relationships) $ \case
+      Inheritance {superClass = s, ..} | name == s -> Just subClass
       _ -> Nothing
+    remaining = (`filter` relationships) $ \case
+      Inheritance {subClass = s}
+        | name == s -> False
+        | otherwise -> True
+      _ -> False
 
 fieldNames
   :: String
@@ -295,16 +315,27 @@ fieldNames
   -> [String]
   -> [String]
 fieldNames index relationships = concatMap $ \this ->
-  let (superClasses, associationNames) = relationshipsFrom this
-  in [ "fun " ++ this ++ fieldNamesCD ++" : set FieldName {"
-     , "  " ++ intercalate
-         " + "
-         (maybe "none" (++ fieldNamesCD) (singleListToJust superClasses)
-           : associationNames)
+     [ "fun " ++ this ++ fieldNamesCD ++" : set FieldName {"
+     , "  " ++ alloySetOf (allFieldNamesOf relationships this)
      , "}"
      ]
   where
     fieldNamesCD = "FieldNamesCD" ++ index
+
+{-|
+Retrieve the set of all composites of the given class.
+-}
+allFieldNamesOf
+  :: [Relationship String String]
+  -- ^ all relationships of the class diagram
+  -> String
+  -- ^ the name of the class to consider
+  -> [String]
+allFieldNamesOf relationships name =
+  maybe ["none"] (allFieldNamesOf relationships) (singleListToJust superClasses)
+  ++ associationNames
+  where
+    (superClasses, associationNames) = relationshipsFrom name
     relationshipsFrom x =
       foldr (addRelationship x) ([], []) relationships
     addRelationship from c = case c of
@@ -345,32 +376,96 @@ compositesAndFieldNames
   -> [Relationship String String]
   -> [String]
   -> [String]
-compositesAndFieldNames index relationships = concatMap $ \this ->
-  let (superClasses, compositions) = supersAndCompositionsOf this
-      super = singleListToJust superClasses
-  in [ "fun " ++ this ++ compositesCD ++ " : set Object {"
-     , "  " ++ intercalate " + " (maybe "none" (++ compositesCD) super
-                                  : map (\c -> whole c ++ subsCD) compositions)
+  -> [String]
+compositesAndFieldNames index relationships abstractClassNames = concatMap $ \this ->
+     [ "fun " ++ this ++ compositesCD ++ " : set Object {"
+     , "  " ++ alloySetOf (allCompositesOf relationships abstractClassNames this)
      , "}"
      , "fun " ++ this ++ compFieldNamesCD ++ " : set FieldName {"
-     , "  " ++ intercalate " + " (maybe "none" (++ compFieldNamesCD) super
-                                  : map compositionName compositions)
+     , "  " ++ alloySetOf (allCompositionFieldNamesOf relationships abstractClassNames this)
      , "}"
      ]
   where
-    whole = linking . compositionWhole
     compositesCD = "CompositesCD" ++ index
     compFieldNamesCD = "CompFieldNamesCD" ++ index
-    subsCD = "SubsCD" ++ index
-    supersAndCompositionsOf x =
-      foldr (addSuperOrComposition x) ([], []) relationships
-    addSuperOrComposition here c = case c of
+
+{-|
+Retrieves the direct superclass and composites of the given class.
+-}
+supersAndCompositionsOf
+  :: [Relationship String String]
+  -- ^ all relationships of the class diagram
+  -> String
+  -- ^ the name of the class to consider
+  -> (Maybe String, [Relationship String String])
+supersAndCompositionsOf relationships name =
+  first singleListToJust
+  $ foldr addSuperOrComposition ([], []) relationships
+  where
+    addSuperOrComposition c = case c of
       Association {} -> id
       Aggregation {} -> id
-      CompositionTo x | here == x -> second (c :)
-                      | otherwise -> id
-      Inheritance {..} | here == subClass -> first (superClass :)
-                       | otherwise -> id
+      CompositionTo x
+        | name == x -> second (c :)
+        | otherwise -> id
+      Inheritance {..}
+        | name == subClass -> first (superClass :)
+        | otherwise -> id
+
+{-|
+Retrieve the set of all composites of the given class.
+-}
+allCompositesOf
+  :: [Relationship String String]
+  -- ^ all relationships of the class diagram
+  -> [String]
+  -- ^ the set of abstract class names
+  -> String
+  -- ^ the name of the class to consider
+  -> [String]
+allCompositesOf relationships abstractClassNames name =
+  maybe ["none"] (allCompositesOf remaining abstractClassNames) super
+  ++ concatMap (allSubclassesOf relationships abstractClassNames . whole) compositions
+  where
+    whole = linking . compositionWhole
+    (super, compositions) = supersAndCompositionsOf relationships name
+    remaining = filterCompositionsAndInheritancesOf relationships name
+
+{-|
+Retrieve the set of all composites of the given class.
+-}
+allCompositionFieldNamesOf
+  :: [Relationship String String]
+  -- ^ all relationships of the class diagram
+  -> [String]
+  -- ^ the set of abstract class names
+  -> String
+  -- ^ the name of the class to consider
+  -> [String]
+allCompositionFieldNamesOf relationships abstractClassNames name =
+  maybe ["none"] (allCompositionFieldNamesOf remaining abstractClassNames) super
+  ++ map compositionName compositions
+  where
+    (super, compositions) = supersAndCompositionsOf relationships name
+    remaining = filterCompositionsAndInheritancesOf relationships name
+
+{-|
+Filters relationships such that only all compositions
+and all inheritances but with the given super class remain.
+-}
+filterCompositionsAndInheritancesOf
+  :: [Relationship String String]
+  -- ^ all relationships to filter
+  -> String
+  -- ^ the name of the super class to consider
+  -> [Relationship String String]
+filterCompositionsAndInheritancesOf relationships name = (`filter` relationships) $ \case
+  Aggregation {} -> False
+  Association {} -> False
+  Composition {} -> True
+  Inheritance {superClass = s}
+    | name == s -> False
+    | otherwise -> True
 
 predicate :: String -> [Relationship String String] -> [String] -> String
 predicate index relationships nonAbstractClassNames = [i|
@@ -442,3 +537,6 @@ mergeParts p p' = Parts
 
 combineParts :: Parts -> String
 combineParts Parts {..} = part1 ++ part2 ++ part3 ++ part4
+
+alloySetOf :: [String] -> String
+alloySetOf = intercalate " + "
