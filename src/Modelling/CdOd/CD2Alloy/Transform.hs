@@ -10,9 +10,9 @@ in order to generate object diagrams
 based on (at least) one given class diagram using Alloy.
 
 The whole transformation is based on the following paper
-https://git.rwth-aachen.de/monticore/publications-additional-material/blob/master/cd2alloy/CD2AlloyTranslationTR.pdf
+<https://git.rwth-aachen.de/monticore/publications-additional-material/blob/master/cd2alloy/CD2AlloyTranslationTR.pdf>
 although a newer version of this document exists
-https://www.se-rwth.de/publications/CD2Alloy-A-Translation-of-Class-Diagrams-to-Alloy.pdf
+<https://www.se-rwth.de/publications/CD2Alloy-A-Translation-of-Class-Diagrams-to-Alloy.pdf>
 
 Throughout this module there are references to figures of the former paper,
 indicating which part of the original work
@@ -21,6 +21,7 @@ the previous value definition is representing.
 Also to increase readability, some identifiers, predicates, etc.
 have been renamed opposed to the original work, these are:
 
+@
 Original: umlp2alloy ––– Here: cd2alloy
 Original: FName ––– Here: FieldName
 Original: fName ––– Here: fieldName
@@ -28,6 +29,14 @@ Original: Obj ––– Here: Object
 Original: ObjUAttrib ––– Here: ObjectUpperAttribute
 Original: ObjLAttrib ––– Here: ObjectLowerAttribute
 Original: ObjLUAttrib ––– Here: ObjectLowerUpperAttribute
+@
+
+Furthermore refactorings have been made which inline Alloy functions, these are
+
+ * @...CompFieldNamesCD...@
+ * @...CompositesCD...@
+ * @...FieldNamesCD...@
+ * @...SubsCD...@
 -}
 module Modelling.CdOd.CD2Alloy.Transform (
   Parts {- only for legacy-apps: -} (..),
@@ -47,6 +56,15 @@ import Modelling.CdOd.Types (
   relationshipName,
   )
 
+import qualified Data.Set                         as S (
+  fromList,
+  insert,
+  null,
+  toList,
+  union,
+  unions,
+  )
+
 import Data.Bifunctor                   (first, second)
 import Data.List                        ((\\), intercalate, isPrefixOf, union)
 import Data.FileEmbed                   (embedStringFile)
@@ -56,6 +74,7 @@ import Data.Maybe (
   isJust,
   mapMaybe,
   )
+import Data.Set                         (Set)
 import Data.String.Interpolate          (i)
 import Data.Tuple.Extra                 (uncurry3)
 import Polysemy.Plugin.Fundep.Utils     (singleListToJust)
@@ -159,26 +178,10 @@ fact SizeConstraints {
 // CD#{index}
 ///////////////////////////////////////////////////
 
-// Types wrapping subtypes
-#{typeHierarchy}
-// Types wrapping field names
-#{fields}
-// Types wrapping composite structures and field names
-#{if noCompositions then "" else compositeStructures}
 // Properties
-#{predicate index relationships nonAbstractClassNames}
+#{predicate index relationships abstractClassNames nonAbstractClassNames}
 |]
     nonAbstractClassNames = classNames \\ abstractClassNames
-    noCompositions = all (\case Composition {} -> False; _ -> True) relationships
-    typeHierarchy =
-      unlines (subTypes index relationships abstractClassNames classNames)
-      -- Figure 2.1, Rule 1, part 2, alternative implementation
-    fields =
-      unlines (fieldNames index relationships classNames)
-      -- Figure 2.2, Rule 2, relevant portion, alternative implementation
-    compositeStructures = unlines
-      $ compositesAndFieldNames index relationships abstractClassNames classNames
-      -- Figure 2.1, Rule 6, corrected
     inhabitance = case completelyInhabited of
       Nothing   -> ""
       Just False -> [i|
@@ -271,20 +274,8 @@ associationSigs = mapMaybe
 classSigs :: [String] -> [String]
 classSigs = map (\name -> "sig " ++ name ++ " extends Object {}")
 
-subTypes
-  :: String
-  -> [Relationship String String]
-  -> [String]
-  -> [String]
-  -> [String]
-subTypes index relationships abstractClassNames = concatMap $ \name ->
-  [ "fun " ++ name ++ subsCD ++ " : set Object {"
-  , "  " ++ alloySetOf (allSubclassesOf relationships abstractClassNames name)
-  , "}"
-  ]
-  where
-    subsCD = "SubsCD" ++ index
-
+-- Figure 2.1, Rule 1, part 2, alternative implementation
+-- (SubsCD - inlined)
 {-|
 Retrieve the set of all subclasses of the given class.
 -}
@@ -295,10 +286,10 @@ allSubclassesOf
   -- ^ the set of abstract class names
   -> String
   -- ^ the name of the class to consider
-  -> [String]
+  -> Set String
 allSubclassesOf relationships abstractClassNames name =
-  (if name `elem` abstractClassNames then "none" else name)
-  : concatMap (allSubclassesOf remaining abstractClassNames) subclasses
+  (if name `elem` abstractClassNames then id else S.insert name)
+  $ S.unions $ map (allSubclassesOf remaining abstractClassNames) subclasses
   where
     subclasses = (`mapMaybe` relationships) $ \case
       Inheritance {superClass = s, ..} | name == s -> Just subClass
@@ -309,19 +300,8 @@ allSubclassesOf relationships abstractClassNames name =
         | otherwise -> True
       _ -> False
 
-fieldNames
-  :: String
-  -> [Relationship String String]
-  -> [String]
-  -> [String]
-fieldNames index relationships = concatMap $ \this ->
-     [ "fun " ++ this ++ fieldNamesCD ++" : set FieldName {"
-     , "  " ++ alloySetOf (allFieldNamesOf relationships this)
-     , "}"
-     ]
-  where
-    fieldNamesCD = "FieldNamesCD" ++ index
-
+-- Figure 2.2, Rule 2, relevant portion, alternative implementation
+-- (FieldNamesCD - inlined)
 {-|
 Retrieve the set of all composites of the given class.
 -}
@@ -330,10 +310,10 @@ allFieldNamesOf
   -- ^ all relationships of the class diagram
   -> String
   -- ^ the name of the class to consider
-  -> [String]
+  -> Set String
 allFieldNamesOf relationships name =
-  maybe ["none"] (allFieldNamesOf relationships) (singleListToJust superClasses)
-  ++ associationNames
+  maybeUnion (allFieldNamesOf relationships) (singleListToJust superClasses)
+  $ S.fromList associationNames
   where
     (superClasses, associationNames) = relationshipsFrom name
     relationshipsFrom x =
@@ -371,24 +351,6 @@ pattern CompositionTo to <- Composition {
   compositionPart = LimitedLinking { linking = to }
   }
 
-compositesAndFieldNames
-  :: String
-  -> [Relationship String String]
-  -> [String]
-  -> [String]
-  -> [String]
-compositesAndFieldNames index relationships abstractClassNames = concatMap $ \this ->
-     [ "fun " ++ this ++ compositesCD ++ " : set Object {"
-     , "  " ++ alloySetOf (allCompositesOf relationships abstractClassNames this)
-     , "}"
-     , "fun " ++ this ++ compFieldNamesCD ++ " : set FieldName {"
-     , "  " ++ alloySetOf (allCompositionFieldNamesOf relationships abstractClassNames this)
-     , "}"
-     ]
-  where
-    compositesCD = "CompositesCD" ++ index
-    compFieldNamesCD = "CompFieldNamesCD" ++ index
-
 {-|
 Retrieves the direct superclass and composites of the given class.
 -}
@@ -412,6 +374,8 @@ supersAndCompositionsOf relationships name =
         | name == subClass -> first (superClass :)
         | otherwise -> id
 
+-- Figure 2.1, Rule 6, corrected
+-- (CompositesCD - inlined)
 {-|
 Retrieve the set of all composites of the given class.
 -}
@@ -422,15 +386,21 @@ allCompositesOf
   -- ^ the set of abstract class names
   -> String
   -- ^ the name of the class to consider
-  -> [String]
+  -> Set String
 allCompositesOf relationships abstractClassNames name =
-  maybe ["none"] (allCompositesOf remaining abstractClassNames) super
-  ++ concatMap (allSubclassesOf relationships abstractClassNames . whole) compositions
+  maybeUnion (allCompositesOf remaining abstractClassNames) super
+  $ S.unions
+  $ map (allSubclassesOf relationships abstractClassNames . whole) compositions
   where
     whole = linking . compositionWhole
     (super, compositions) = supersAndCompositionsOf relationships name
     remaining = filterCompositionsAndInheritancesOf relationships name
 
+maybeUnion :: Ord b => (a -> Set b) -> Maybe a -> Set b -> Set b
+maybeUnion f = maybe id (S.union . f)
+
+-- Figure 2.1, Rule 6, corrected
+-- (CompFieldNamesCD - inlined)
 {-|
 Retrieve the set of all composites of the given class.
 -}
@@ -441,10 +411,10 @@ allCompositionFieldNamesOf
   -- ^ the set of abstract class names
   -> String
   -- ^ the name of the class to consider
-  -> [String]
+  -> Set String
 allCompositionFieldNamesOf relationships abstractClassNames name =
-  maybe ["none"] (allCompositionFieldNamesOf remaining abstractClassNames) super
-  ++ map compositionName compositions
+  maybeUnion (allCompositionFieldNamesOf remaining abstractClassNames) super
+  $ S.fromList $ map compositionName compositions
   where
     (super, compositions) = supersAndCompositionsOf relationships name
     remaining = filterCompositionsAndInheritancesOf relationships name
@@ -467,8 +437,13 @@ filterCompositionsAndInheritancesOf relationships name = (`filter` relationships
     | name == s -> False
     | otherwise -> True
 
-predicate :: String -> [Relationship String String] -> [String] -> String
-predicate index relationships nonAbstractClassNames = [i|
+predicate
+  :: String
+  -> [Relationship String String]
+  -> [String]
+  -> [String]
+  -> String
+predicate index relationships abstractClassNames nonAbstractClassNames = [i|
 pred cd#{index} {
 
   #{objects}
@@ -486,7 +461,7 @@ pred cd#{index} {
       "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
     objectFieldNames = map
-      (\name -> [i|  ObjectFieldNames[#{name}, #{name}#{fieldNamesCD}]|])
+      (\name -> [i|  ObjectFieldNames[#{name}, #{fieldNamesCd name}]|])
       nonAbstractClassNames
       -- Figure 2.3, Rule A3
     nameFromTo = \case
@@ -509,19 +484,20 @@ pred cd#{index} {
       :: Show a
       => String -> String -> String -> String -> (a, Maybe a) -> String
     makeNonInheritance att from name to (low, Nothing) =
-      [i|  ObjectLower#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}]|]
+      [i|  ObjectLower#{att}[#{subsCd from}, #{name}, #{subsCd to}, #{show low}]|]
     makeNonInheritance att from name to (low, Just up) =
-      [i|  ObjectLowerUpper#{att}[#{from}#{subsCD}, #{name}, #{to}#{subsCD}, #{show low}, #{show up}]|]
+      [i|  ObjectLowerUpper#{att}[#{subsCd from}, #{name}, #{subsCd to}, #{show low}, #{show up}]|]
     anyCompositions =
       any (\case Composition {} -> True; _ -> False) relationships
     compositions = map
-      (\name -> [i|  Composition[#{name}#{compositesCD}, #{name}#{compFieldNamesCD}, #{name}]|])
+      (\name -> [i|  Composition[#{compositesCd name}, #{compFieldNamesCd name}, #{name}]|])
       nonAbstractClassNames
       -- Figure 2.2, Rule 4, corrected
-    fieldNamesCD     = "FieldNamesCD" ++ index
-    compositesCD     = "CompositesCD" ++ index
-    compFieldNamesCD = "CompFieldNamesCD" ++ index
-    subsCD           = "SubsCD" ++ index
+    fieldNamesCd = alloySetOf . allFieldNamesOf relationships
+    compositesCd = alloySetOf . allCompositesOf relationships abstractClassNames
+    compFieldNamesCd = alloySetOf
+      . allCompositionFieldNamesOf relationships abstractClassNames
+    subsCd = alloySetOf . allSubclassesOf relationships abstractClassNames
 
 mergeParts
   :: Parts
@@ -538,5 +514,10 @@ mergeParts p p' = Parts
 combineParts :: Parts -> String
 combineParts Parts {..} = part1 ++ part2 ++ part3 ++ part4
 
-alloySetOf :: [String] -> String
-alloySetOf = intercalate " + "
+{-|
+Transform a 'Set' into Alloy code of a set.
+-}
+alloySetOf :: Set String -> String
+alloySetOf xs
+  | S.null xs = "none"
+  | otherwise = intercalate " + " $ S.toList xs
