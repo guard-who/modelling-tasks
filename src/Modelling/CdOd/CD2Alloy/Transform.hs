@@ -37,6 +37,16 @@ Furthermore refactorings have been made which inline Alloy functions, these are
  * @...CompositesCD...@
  * @...FieldNamesCD...@
  * @...SubsCD...@
+
+also the following Alloy predicates, have been inlined
+
+ * @ObjectFieldNames@
+ * @ObjectLowerUpperAttribute@
+ * @ObjectLowerAttribute@
+ * @ObjectLowerUpper@
+ * @ObjectLower@
+ * @ObjectUpper@
+ * @Composition@
 -}
 module Modelling.CdOd.CD2Alloy.Transform (
   Parts {- only for legacy-apps: -} (..),
@@ -476,7 +486,7 @@ pred cd#{index} {
     makeNonInheritanceAttribute
       :: String -> String -> String -> (Int, Maybe Int) -> String
     makeNonInheritanceAttribute from name to (low, maybeUp) =
-      [i|  #{from}.get[#{name}] in #{to}|]
+      [i|  (#{from}).get[#{name}] in #{to}|]
       ++ '\n' : [i|  all o : #{from} | |]
       ++ case maybeUp of
         Nothing -> [iii|\#o.get[#{name}] >= #{low}|]
