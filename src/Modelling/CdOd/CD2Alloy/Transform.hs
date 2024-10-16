@@ -467,12 +467,12 @@ pred cd#{index} {
       (maybe [] (uncurry3 associationFromTo) . nameFromTo)
       relationships
     associationFromTo name from to = [
-      makeNonInheritanceAttribute froms name tos (limits to),
-      makeNonInheritance tos name froms (limits from)
+      makeNonInheritanceAttribute subsFrom name subsTo (limits to),
+      makeNonInheritance subsTo name subsFrom (limits from)
       ]
       where
-        froms = subsCd $ linking from
-        tos = subsCd $ linking to
+        subsFrom = subsCd $ linking from
+        subsTo = subsCd $ linking to
     makeNonInheritanceAttribute
       :: String -> String -> String -> (Int, Maybe Int) -> String
     makeNonInheritanceAttribute from name to (low, maybeUp) =
