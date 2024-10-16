@@ -89,13 +89,29 @@ data Parts = Parts {
   part4 :: !String
   }
 
+{-|
+Generates Alloy code to generate object diagrams for a given class diagram.
+The given class diagram must be valid otherwise the code generation
+might not terminate.
+
+The resulting code is split into parts which allows for recombination
+with the generated Alloy code for other (similar) class diagrams.
+
+(See 'mergeParts', 'combineParts' and 'createRunCommand')
+-}
 transform
   :: Cd
+  -- ^ the class diagram for which to generate the code
   -> [String]
+  -- ^ the list of abstract class names
   -> ObjectConfig
+  -- ^ size constraints on the object diagrams
   -> ObjectProperties
+  -- ^ structural constraints for the object diagrams
   -> String
+  -- ^ an identifier for the class diagram
   -> String
+  -- ^ a time stamp
   -> Parts
 transform
   ClassDiagram {classNames, relationships}
@@ -289,21 +305,16 @@ allSubclassesOf
   -> Set String
 allSubclassesOf relationships abstractClassNames name =
   (if name `elem` abstractClassNames then id else S.insert name)
-  $ S.unions $ map (allSubclassesOf remaining abstractClassNames) subclasses
+  $ S.unions $ map (allSubclassesOf relationships abstractClassNames) subclasses
   where
     subclasses = (`mapMaybe` relationships) $ \case
       Inheritance {superClass = s, ..} | name == s -> Just subClass
       _ -> Nothing
-    remaining = (`filter` relationships) $ \case
-      Inheritance {subClass = s}
-        | name == s -> False
-        | otherwise -> True
-      _ -> False
 
 -- Figure 2.2, Rule 2, relevant portion, alternative implementation
 -- (FieldNamesCD - inlined)
 {-|
-Retrieve the set of all composites of the given class.
+Retrieve the set of all field names of the given class.
 -}
 allFieldNamesOf
   :: [Relationship String String]
@@ -354,13 +365,13 @@ pattern CompositionTo to <- Composition {
 {-|
 Retrieves the direct superclass and composites of the given class.
 -}
-supersAndCompositionsOf
+superAndCompositionsOf
   :: [Relationship String String]
   -- ^ all relationships of the class diagram
   -> String
   -- ^ the name of the class to consider
   -> (Maybe String, [Relationship String String])
-supersAndCompositionsOf relationships name =
+superAndCompositionsOf relationships name =
   first singleListToJust
   $ foldr addSuperOrComposition ([], []) relationships
   where
@@ -388,13 +399,12 @@ allCompositesOf
   -- ^ the name of the class to consider
   -> Set String
 allCompositesOf relationships abstractClassNames name =
-  maybeUnion (allCompositesOf remaining abstractClassNames) super
+  maybeUnion (allCompositesOf relationships abstractClassNames) super
   $ S.unions
   $ map (allSubclassesOf relationships abstractClassNames . whole) compositions
   where
     whole = linking . compositionWhole
-    (super, compositions) = supersAndCompositionsOf relationships name
-    remaining = filterCompositionsAndInheritancesOf relationships name
+    (super, compositions) = superAndCompositionsOf relationships name
 
 maybeUnion :: Ord b => (a -> Set b) -> Maybe a -> Set b -> Set b
 maybeUnion f = maybe id (S.union . f)
@@ -413,29 +423,10 @@ allCompositionFieldNamesOf
   -- ^ the name of the class to consider
   -> Set String
 allCompositionFieldNamesOf relationships abstractClassNames name =
-  maybeUnion (allCompositionFieldNamesOf remaining abstractClassNames) super
+  maybeUnion (allCompositionFieldNamesOf relationships abstractClassNames) super
   $ S.fromList $ map compositionName compositions
   where
-    (super, compositions) = supersAndCompositionsOf relationships name
-    remaining = filterCompositionsAndInheritancesOf relationships name
-
-{-|
-Filters relationships such that only all compositions
-and all inheritances but with the given super class remain.
--}
-filterCompositionsAndInheritancesOf
-  :: [Relationship String String]
-  -- ^ all relationships to filter
-  -> String
-  -- ^ the name of the super class to consider
-  -> [Relationship String String]
-filterCompositionsAndInheritancesOf relationships name = (`filter` relationships) $ \case
-  Aggregation {} -> False
-  Association {} -> False
-  Composition {} -> True
-  Inheritance {superClass = s}
-    | name == s -> False
-    | otherwise -> True
+    (super, compositions) = superAndCompositionsOf relationships name
 
 predicate
   :: String
