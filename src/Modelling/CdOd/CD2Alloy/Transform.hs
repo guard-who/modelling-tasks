@@ -67,6 +67,7 @@ import Modelling.CdOd.Types (
   )
 
 import qualified Data.Set                         as S (
+  (\\),
   fromList,
   insert,
   null,
@@ -461,7 +462,7 @@ pred cd#{index} {
       "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
     objectFieldNames = map
-      (\name -> [i|  no #{name}.get[#{noFieldNamesCd name}]|])
+      (\name -> [i|  no #{name}.get[#{fieldNamesCd name}]|])
       nonAbstractClassNames
       -- Figure 2.3, Rule A3
     nameFromTo = \case
@@ -490,46 +491,42 @@ pred cd#{index} {
       ++ '\n' : [i|  all o : #{from} | |]
       ++ case maybeUp of
         Nothing -> [iii|\#o.get[#{name}] >= #{low}|]
-        Just up -> [iii|let n = \#o.get[#{name}] | n >= #{low} and n =< #{up}|]
+        Just up -> case low of
+          0 -> [iii|\#o.get[#{name}] =< #{up}|]
+          _ -> [iii|let n = \#o.get[#{name}] | n >= #{low} and n =< #{up}|]
     makeNonInheritance
       :: String -> String -> String -> (Int, Maybe Int) -> String
     makeNonInheritance from name to (low, maybeUp) =
       [i|  all r : #{from} | |]
       ++ case maybeUp of
         Nothing -> [iii|\#{l : #{to} | r in l.get[#{name}]} >= #{low}|]
-        Just up -> [iii|
-          let n = \#{l : #{to} | r in l.get[#{name}]} |
-            n >= #{low} and n =< #{up}
-          |]
+        Just up -> case low of
+          0 -> [iii|\#{l : #{to} | r in l.get[#{name}]} =< #{up}|]
+          _ -> [iii|
+            let n = \#{l : #{to} | r in l.get[#{name}]} |
+              n >= #{low} and n =< #{up}
+            |]
     anyCompositions =
       any (\case Composition {} -> True; _ -> False) relationships
-    compositions = map
-      (\name -> "  " ++ [iii|
-        all r : #{name} |
-          \#{l : #{compositesCd name}, lF : #{compFieldNamesCd name}
-            | r in l.get[lF]} =< 1
-        |])
+    compositions = mapMaybe
+      (\to -> ("  " ++)
+        <$> compositeConstraint (compositesCd to) to (compFieldNamesCd to))
       nonAbstractClassNames
       -- Figure 2.2, Rule 4, corrected
-    noFieldNamesCd = alloySetMinus "FieldName" . S.toList
+    compositeConstraint :: Set String -> String -> Set String -> Maybe String
+    compositeConstraint from to name
+      | S.null name || S.null from = Nothing
+      | otherwise = Just $
+        (\usedFieldCount -> [i|all r : #{to} | #{usedFieldCount} =< 1|])
+        $ intercalate " + "
+        $ (`map` S.toList name) $ \fieldName ->
+          [iii|\#{l : #{alloySetOf from} | r in l.get[#{fieldName}]}|]
+    fieldNamesCd = alloySetOf . (relationshipNames S.\\)
       . allFieldNamesOf relationships
-    compositesCd = alloySetOf . allCompositesOf relationships
-    compFieldNamesCd = alloySetOf
-      . allCompositionFieldNamesOf relationships
+    relationshipNames = S.fromList $ mapMaybe relationshipName relationships
+    compositesCd = allCompositesOf relationships
+    compFieldNamesCd = allCompositionFieldNamesOf relationships
     subsCd = alloySetOf . allSubclassesOf relationships
-
-{-|
-Returns the Alloy code for a set difference of the first parameter
-and the set to subtract as second parameter.
--}
-alloySetMinus
-  :: String
-  -- ^ Alloy code for the original set (e.g. the set name)
-  -> [String]
-  -- ^ the set to subtract (i.e. a list of Alloy identifiers)
-  -> String
-alloySetMinus x [] = x
-alloySetMinus x ys = [iii|#{x} - #{intercalate " - " ys}|]
 
 mergeParts
   :: Parts
