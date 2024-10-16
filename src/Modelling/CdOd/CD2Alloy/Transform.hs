@@ -75,7 +75,7 @@ import Data.Maybe (
   mapMaybe,
   )
 import Data.Set                         (Set)
-import Data.String.Interpolate          (i)
+import Data.String.Interpolate          (i, iii)
 import Data.Tuple.Extra                 (uncurry3)
 import Polysemy.Plugin.Fundep.Utils     (singleListToJust)
 
@@ -428,11 +428,18 @@ allCompositionFieldNamesOf relationships abstractClassNames name =
   where
     (super, compositions) = superAndCompositionsOf relationships name
 
+{-|
+The predicate constraining the specific class diagram.
+-}
 predicate
   :: String
+  -- ^ an identifier for the class diagram
   -> [Relationship String String]
+  -- ^ all relationships belonging to the class diagram
   -> [String]
+  -- ^ the set of abstract class names
   -> [String]
+  -- ^ the set of non abstract class names
   -> String
 predicate index relationships abstractClassNames nonAbstractClassNames = [i|
 pred cd#{index} {
@@ -452,7 +459,7 @@ pred cd#{index} {
       "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
     objectFieldNames = map
-      (\name -> [i|  ObjectFieldNames[#{name}, #{fieldNamesCd name}]|])
+      (\name -> [i|  no #{name}.get[#{noFieldNamesCd name}]|])
       nonAbstractClassNames
       -- Figure 2.3, Rule A3
     nameFromTo = \case
@@ -468,27 +475,59 @@ pred cd#{index} {
       (maybe [] (uncurry3 associationFromTo) . nameFromTo)
       relationships
     associationFromTo name from to = [
-      makeNonInheritance "Attribute" (linking from) name (linking to) (limits to),
-      makeNonInheritance "" (linking to) name (linking from) (limits from)
+      makeNonInheritanceAttribute froms name tos (limits to),
+      makeNonInheritance tos name froms (limits from)
       ]
+      where
+        froms = subsCd $ linking from
+        tos = subsCd $ linking to
+    makeNonInheritanceAttribute
+      :: String -> String -> String -> (Int, Maybe Int) -> String
+    makeNonInheritanceAttribute from name to (low, maybeUp) =
+      [i|  #{from}.get[#{name}] in #{to}|]
+      ++ '\n' : [i|  all o : #{from} | |]
+      ++ case maybeUp of
+        Nothing -> [iii|\#o.get[#{name}] >= #{low}|]
+        Just up -> [iii|let n = \#o.get[#{name}] | n >= #{low} and n =< #{up}|]
     makeNonInheritance
-      :: Show a
-      => String -> String -> String -> String -> (a, Maybe a) -> String
-    makeNonInheritance att from name to (low, Nothing) =
-      [i|  ObjectLower#{att}[#{subsCd from}, #{name}, #{subsCd to}, #{show low}]|]
-    makeNonInheritance att from name to (low, Just up) =
-      [i|  ObjectLowerUpper#{att}[#{subsCd from}, #{name}, #{subsCd to}, #{show low}, #{show up}]|]
+      :: String -> String -> String -> (Int, Maybe Int) -> String
+    makeNonInheritance from name to (low, maybeUp) =
+      [i|  all r : #{from} | |]
+      ++ case maybeUp of
+        Nothing -> [iii|\#{l : #{to} | r in l.get[#{name}]} >= #{low}|]
+        Just up -> [iii|
+          let n = \#{l : #{to} | r in l.get[#{name}]} |
+            n >= #{low} and n =< #{up}
+          |]
     anyCompositions =
       any (\case Composition {} -> True; _ -> False) relationships
     compositions = map
-      (\name -> [i|  Composition[#{compositesCd name}, #{compFieldNamesCd name}, #{name}]|])
+      (\name -> "  " ++ [iii|
+        all r : #{name} |
+          \#{l : #{compositesCd name}, lF : #{compFieldNamesCd name}
+            | r in l.get[lF]} =< 1
+        |])
       nonAbstractClassNames
       -- Figure 2.2, Rule 4, corrected
-    fieldNamesCd = alloySetOf . allFieldNamesOf relationships
+    noFieldNamesCd = alloySetMinus "FieldName" . S.toList
+      . allFieldNamesOf relationships
     compositesCd = alloySetOf . allCompositesOf relationships abstractClassNames
     compFieldNamesCd = alloySetOf
       . allCompositionFieldNamesOf relationships abstractClassNames
     subsCd = alloySetOf . allSubclassesOf relationships abstractClassNames
+
+{-|
+Returns the Alloy code for a set difference of the first parameter
+and the set to subtract as second parameter.
+-}
+alloySetMinus
+  :: String
+  -- ^ Alloy code for the original set (e.g. the set name)
+  -> [String]
+  -- ^ the set to subtract (i.e. a list of Alloy identifiers)
+  -> String
+alloySetMinus x [] = x
+alloySetMinus x ys = [iii|#{x} - #{intercalate " - " ys}|]
 
 mergeParts
   :: Parts
