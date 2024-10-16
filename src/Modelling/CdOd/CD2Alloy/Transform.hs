@@ -195,7 +195,7 @@ fact SizeConstraints {
 ///////////////////////////////////////////////////
 
 // Properties
-#{predicate index relationships abstractClassNames nonAbstractClassNames}
+#{predicate index relationships nonAbstractClassNames}
 |]
     nonAbstractClassNames = classNames \\ abstractClassNames
     inhabitance = case completelyInhabited of
@@ -298,14 +298,12 @@ Retrieve the set of all subclasses of the given class.
 allSubclassesOf
   :: [Relationship String String]
   -- ^ all relationships of the class diagram
-  -> [String]
-  -- ^ the set of abstract class names
   -> String
   -- ^ the name of the class to consider
   -> Set String
-allSubclassesOf relationships abstractClassNames name =
-  (if name `elem` abstractClassNames then id else S.insert name)
-  $ S.unions $ map (allSubclassesOf relationships abstractClassNames) subclasses
+allSubclassesOf relationships name =
+  S.insert name
+  $ S.unions $ map (allSubclassesOf relationships) subclasses
   where
     subclasses = (`mapMaybe` relationships) $ \case
       Inheritance {superClass = s, ..} | name == s -> Just subClass
@@ -393,15 +391,13 @@ Retrieve the set of all composites of the given class.
 allCompositesOf
   :: [Relationship String String]
   -- ^ all relationships of the class diagram
-  -> [String]
-  -- ^ the set of abstract class names
   -> String
   -- ^ the name of the class to consider
   -> Set String
-allCompositesOf relationships abstractClassNames name =
-  maybeUnion (allCompositesOf relationships abstractClassNames) super
+allCompositesOf relationships name =
+  maybeUnion (allCompositesOf relationships) super
   $ S.unions
-  $ map (allSubclassesOf relationships abstractClassNames . whole) compositions
+  $ map (allSubclassesOf relationships . whole) compositions
   where
     whole = linking . compositionWhole
     (super, compositions) = superAndCompositionsOf relationships name
@@ -417,13 +413,11 @@ Retrieve the set of all composites of the given class.
 allCompositionFieldNamesOf
   :: [Relationship String String]
   -- ^ all relationships of the class diagram
-  -> [String]
-  -- ^ the set of abstract class names
   -> String
   -- ^ the name of the class to consider
   -> Set String
-allCompositionFieldNamesOf relationships abstractClassNames name =
-  maybeUnion (allCompositionFieldNamesOf relationships abstractClassNames) super
+allCompositionFieldNamesOf relationships name =
+  maybeUnion (allCompositionFieldNamesOf relationships) super
   $ S.fromList $ map compositionName compositions
   where
     (super, compositions) = superAndCompositionsOf relationships name
@@ -437,11 +431,9 @@ predicate
   -> [Relationship String String]
   -- ^ all relationships belonging to the class diagram
   -> [String]
-  -- ^ the set of abstract class names
-  -> [String]
   -- ^ the set of non abstract class names
   -> String
-predicate index relationships abstractClassNames nonAbstractClassNames = [i|
+predicate index relationships nonAbstractClassNames = [i|
 pred cd#{index} {
 
   #{objects}
@@ -511,10 +503,10 @@ pred cd#{index} {
       -- Figure 2.2, Rule 4, corrected
     noFieldNamesCd = alloySetMinus "FieldName" . S.toList
       . allFieldNamesOf relationships
-    compositesCd = alloySetOf . allCompositesOf relationships abstractClassNames
+    compositesCd = alloySetOf . allCompositesOf relationships
     compFieldNamesCd = alloySetOf
-      . allCompositionFieldNamesOf relationships abstractClassNames
-    subsCd = alloySetOf . allSubclassesOf relationships abstractClassNames
+      . allCompositionFieldNamesOf relationships
+    subsCd = alloySetOf . allSubclassesOf relationships
 
 {-|
 Returns the Alloy code for a set difference of the first parameter
