@@ -270,6 +270,9 @@ hasLinkNames :: Parts -> Bool
 hasLinkNames Parts { part2 } =
   any (oneSig `isPrefixOf`) $ lines part2
 
+{-|
+Creates an Alloy run command line taking provided size constraints into account.
+-}
 createRunCommand
   :: String
   -> Int
@@ -488,7 +491,10 @@ pred cd#{index} {
       "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
     objectFieldNames = map
-      (\name -> [i|  no #{name}.get[#{noFieldNamesCd name}]|])
+      (\name ->
+        [i|  no #{name}.get[#{noFieldNamesCd name}]|]
+        -- @ObjectFieldNames@ predicate inlined
+        )
       nonAbstractClassNames
       -- Figure 2.3, Rule A3
     nameFromTo = \case
@@ -510,28 +516,6 @@ pred cd#{index} {
       where
         subsFrom = subsCd $ linking from
         subsTo = subsCd $ linking to
-    makeNonInheritanceAttribute
-      :: String -> String -> String -> (Int, Maybe Int) -> String
-    makeNonInheritanceAttribute fromSet name toSet (low, maybeUp) =
-      [i|  (#{fromSet}).get[#{name}] in #{toSet}|]
-      ++ '\n' : [i|  all o : #{fromSet} | |]
-      ++ case maybeUp of
-        Nothing -> [iii|\#o.get[#{name}] >= #{low}|]
-        Just up -> case low of
-          0 -> [iii|\#o.get[#{name}] =< #{up}|]
-          _ -> [iii|let n = \#o.get[#{name}] | n >= #{low} and n =< #{up}|]
-    makeNonInheritance
-      :: String -> String -> String -> (Int, Maybe Int) -> String
-    makeNonInheritance fromSet name toSet (low, maybeUp) =
-      [i|  all r : #{fromSet} | |]
-      ++ case maybeUp of
-        Nothing -> [iii|\#{l : #{toSet} | r in l.get[#{name}]} >= #{low}|]
-        Just up -> case low of
-          0 -> [iii|\#{l : #{toSet} | r in l.get[#{name}]} =< #{up}|]
-          _ -> [iii|
-            let n = \#{l : #{toSet} | r in l.get[#{name}]} |
-              n >= #{low} and n =< #{up}
-            |]
     anyCompositions =
       any (\case Composition {} -> True; _ -> False) relationships
     compositions = mapMaybe
@@ -539,19 +523,64 @@ pred cd#{index} {
         <$> compositeConstraint (compositesCd to) (compFieldNamesCd to) to)
       nonAbstractClassNames
       -- Figure 2.2, Rule 4, corrected
-    compositeConstraint :: Set String -> Set String -> String -> Maybe String
-    compositeConstraint fromSet nameSet to
-      | S.null nameSet || S.null fromSet = Nothing
-      | otherwise = Just $
-        (\usedFieldCount -> [i|all r : #{to} | #{usedFieldCount} =< 1|])
-        $ alloyPlus
-        $ (`map` S.toList nameSet) $ \fieldName ->
-          [iii|\#{l : #{alloySetOf fromSet} | r in l.get[#{fieldName}]}|]
     noFieldNamesCd = alloySetOf . (allRelationshipNames S.\\)
       . allFieldNamesOf relationships
     compositesCd = allCompositesOf relationships
     compFieldNamesCd = allCompositionFieldNamesOf relationships
     subsCd = alloySetOf . allSubclassesOf relationships
+
+{-|
+Generates inlined Alloy code equivalent to the @ObjectLowerAttribute@
+or @ObjectLowerUppperAttribute@ predicate.
+-}
+makeNonInheritanceAttribute
+  :: String
+  -> String
+  -> String
+  -> (Int, Maybe Int)
+  -> String
+makeNonInheritanceAttribute fromSet name toSet (low, maybeUp) =
+  [i|  (#{fromSet}).get[#{name}] in #{toSet}|]
+  ++ '\n' : [i|  all o : #{fromSet} | |]
+  ++ case maybeUp of
+    Nothing ->
+      [iii|\#o.get[#{name}] >= #{low}|]
+      -- @ObjectLowerAttribute@ predicate inlined
+    Just up -> case low of
+      0 -> [iii|\#o.get[#{name}] =< #{up}|]
+      _ -> [iii|let n = \#o.get[#{name}] | n >= #{low} and n =< #{up}|]
+      -- @ObjectLowerUpperAttribute@ predicate inlined
+
+{-|
+Generates inlined Alloy code equivalent to the @ObjectLowerUpper@ predicate.
+-}
+makeNonInheritance :: String -> String -> String -> (Int, Maybe Int) -> String
+makeNonInheritance fromSet name toSet (low, maybeUp) =
+  [i|  all r : #{fromSet} | |]
+  ++ case maybeUp of
+    Nothing ->
+      [iii|\#{l : #{toSet} | r in l.get[#{name}]} >= #{low}|]
+      -- @ObjectLower@ predicate inlined
+    Just up -> case low of
+      0 -> [iii|\#{l : #{toSet} | r in l.get[#{name}]} =< #{up}|]
+      _ -> [iii|
+        let n = \#{l : #{toSet} | r in l.get[#{name}]} |
+          n >= #{low} and n =< #{up}
+        |]
+      -- @ObjectLowerUpper@ predicate inlined
+
+{-|
+Generates inlined Alloy code equivalent to the @Composition@ predicate.
+-}
+compositeConstraint :: Set String -> Set String -> String -> Maybe String
+compositeConstraint fromSet nameSet to
+  | S.null nameSet || S.null fromSet = Nothing
+  | otherwise = Just $
+    (\usedFieldCount -> [i|all r : #{to} | #{usedFieldCount} =< 1|])
+    $ alloyPlus
+    $ (`map` S.toList nameSet) $ \fieldName ->
+      [iii|\#{l : #{alloySetOf fromSet} | r in l.get[#{fieldName}]}|]
+  -- @Composition@ predicate inlined
 
 {-|
 Generates the code to add the Alloy Int values of the given list.
@@ -567,6 +596,10 @@ alloyPlus = \case
       x@[_] -> x
       (x:y:zs) -> [i|plus[#{x}, #{y}]|] : pairPlus zs
 
+{-|
+Merges Alloy code 'Parts' for multiple class diagrams
+to be used in a single Alloy query.
+-}
 mergeParts
   :: Parts
   -> Parts
@@ -579,6 +612,11 @@ mergeParts p p' = Parts
   where
     unionL x y = unlines $ (++ [""]) $ filter (not . null) $ lines x `union` lines y
 
+{-|
+Transforms 'Parts' into an Alloy program (besides the run command).
+
+(See 'createRunCommand' for the latter)
+-}
 combineParts :: Parts -> String
 combineParts Parts {..} = part1 ++ part2 ++ part3 ++ part4
 
