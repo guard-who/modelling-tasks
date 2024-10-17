@@ -252,18 +252,19 @@ fact UsesNotEveryRelationshipName {
 fact UsesEveryRelationshipName {
 #{unlines $ map ("  some " ++) namesLinkingTo}
 }|]
-    namesLinkingTo = mapMaybe
-      (fmap (\name -> "Object.get[" ++ name ++ "]") . relationshipName)
-      relationships
+    namesLinkingTo = map
+      (\name -> "Object.get[" ++ name ++ "]")
+      $ S.toList allRelationshipNames
+    allRelationships = alloySetOf allRelationshipNames
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just True  -> [i|
 fact SomeSelfLoops {
-  some o : Object | o in o.get[FieldName]
+  some o : Object | o in o.get[#{allRelationships}]
 }|]
       Just False -> [i|
 fact NoSelfLoops {
-  no o : Object | o in o.get[FieldName]
+  no o : Object | o in o.get[#{allRelationships}]
 }|]
 
 hasLinkNames :: Parts -> Bool
