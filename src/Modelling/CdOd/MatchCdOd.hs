@@ -55,6 +55,7 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   )
 import Modelling.CdOd.CD2Alloy.Transform (
+  allRelationshipNamesOf,
   combineParts,
   createRunCommand,
   mergeParts,
@@ -684,11 +685,13 @@ getODInstances config cd1 cd2 cd3 numClasses = do
   where
     alloyFor cd nr = transform
       (cd {relationships = map reverseAssociation $ relationships cd})
+      allRelationshipNames
       []
       (objectConfig config)
       (objectProperties config)
       nr
       ""
+    allRelationshipNames = allRelationshipNamesOf [cd1, cd2, cd3]
     to = timeout config
     maxIs = maxInstances config
     runCommand x = createRunCommand

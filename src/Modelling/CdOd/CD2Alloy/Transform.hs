@@ -50,6 +50,7 @@ also the following Alloy predicates, have been inlined
 -}
 module Modelling.CdOd.CD2Alloy.Transform (
   Parts {- only for legacy-apps: -} (..),
+  allRelationshipNamesOf,
   combineParts,
   createRunCommand,
   mergeParts,
@@ -68,6 +69,7 @@ import Modelling.CdOd.Types (
 
 import qualified Data.Set                         as S (
   (\\),
+  empty,
   fromList,
   insert,
   null,
@@ -101,6 +103,22 @@ data Parts = Parts {
   }
 
 {-|
+Retrieves all relationship names that occur within all given class diagrams.
+
+If used for the parameter of 'transform', all class diagrams
+that potentially provide new relationship names
+and are part of the resulting formula (i.e. 'mergeParts') must be provided.
+-}
+allRelationshipNamesOf
+  :: (Foldable f, Ord relationshipName)
+  => f (ClassDiagram className relationshipName)
+  -> Set relationshipName
+allRelationshipNamesOf =
+  foldr
+  (flip (foldr S.insert) . mapMaybe relationshipName . relationships)
+  S.empty
+
+{-|
 Generates Alloy code to generate object diagrams for a given class diagram.
 The given class diagram must be valid otherwise the code generation
 might not terminate.
@@ -113,6 +131,10 @@ with the generated Alloy code for other (similar) class diagrams.
 transform
   :: Cd
   -- ^ the class diagram for which to generate the code
+  -> Set String
+  -- ^ all relationship names to consider
+  -- (possibly across multiple class diagrams;
+  -- use 'allRelationshipNamesOf' in order to retrieve them)
   -> [String]
   -- ^ the list of abstract class names
   -> ObjectConfig
@@ -126,6 +148,7 @@ transform
   -> Parts
 transform
   ClassDiagram {classNames, relationships}
+  allRelationshipNames
   abstractClassNames
   objectConfig
   ObjectProperties {..}
@@ -206,7 +229,7 @@ fact SizeConstraints {
 ///////////////////////////////////////////////////
 
 // Properties
-#{predicate index relationships nonAbstractClassNames}
+#{predicate index allRelationshipNames relationships nonAbstractClassNames}
 |]
     nonAbstractClassNames = classNames \\ abstractClassNames
     inhabitance = case completelyInhabited of
@@ -439,12 +462,15 @@ The predicate constraining the specific class diagram.
 predicate
   :: String
   -- ^ an identifier for the class diagram
+  -> Set String
+  -- ^ all relationship names to consider
+  -- (possibly across multiple class diagrams)
   -> [Relationship String String]
   -- ^ all relationships belonging to the class diagram
   -> [String]
   -- ^ the set of non abstract class names
   -> String
-predicate index relationships nonAbstractClassNames = [i|
+predicate index allRelationshipNames relationships nonAbstractClassNames = [i|
 pred cd#{index} {
 
   #{objects}
@@ -521,9 +547,8 @@ pred cd#{index} {
         $ alloyPlus
         $ (`map` S.toList nameSet) $ \fieldName ->
           [iii|\#{l : #{alloySetOf fromSet} | r in l.get[#{fieldName}]}|]
-    noFieldNamesCd = alloySetOf . (relationshipNames S.\\)
+    noFieldNamesCd = alloySetOf . (allRelationshipNames S.\\)
       . allFieldNamesOf relationships
-    relationshipNames = S.fromList $ mapMaybe relationshipName relationships
     compositesCd = allCompositesOf relationships
     compFieldNamesCd = allCompositionFieldNamesOf relationships
     subsCd = alloySetOf . allSubclassesOf relationships
