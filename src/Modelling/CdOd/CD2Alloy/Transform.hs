@@ -462,7 +462,7 @@ pred cd#{index} {
       "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
     objectFieldNames = map
-      (\name -> [i|  no #{name}.get[#{fieldNamesCd name}]|])
+      (\name -> [i|  no #{name}.get[#{noFieldNamesCd name}]|])
       nonAbstractClassNames
       -- Figure 2.3, Rule A3
     nameFromTo = \case
@@ -486,9 +486,9 @@ pred cd#{index} {
         subsTo = subsCd $ linking to
     makeNonInheritanceAttribute
       :: String -> String -> String -> (Int, Maybe Int) -> String
-    makeNonInheritanceAttribute from name to (low, maybeUp) =
-      [i|  (#{from}).get[#{name}] in #{to}|]
-      ++ '\n' : [i|  all o : #{from} | |]
+    makeNonInheritanceAttribute fromSet name toSet (low, maybeUp) =
+      [i|  (#{fromSet}).get[#{name}] in #{toSet}|]
+      ++ '\n' : [i|  all o : #{fromSet} | |]
       ++ case maybeUp of
         Nothing -> [iii|\#o.get[#{name}] >= #{low}|]
         Just up -> case low of
@@ -496,37 +496,51 @@ pred cd#{index} {
           _ -> [iii|let n = \#o.get[#{name}] | n >= #{low} and n =< #{up}|]
     makeNonInheritance
       :: String -> String -> String -> (Int, Maybe Int) -> String
-    makeNonInheritance from name to (low, maybeUp) =
-      [i|  all r : #{from} | |]
+    makeNonInheritance fromSet name toSet (low, maybeUp) =
+      [i|  all r : #{fromSet} | |]
       ++ case maybeUp of
-        Nothing -> [iii|\#{l : #{to} | r in l.get[#{name}]} >= #{low}|]
+        Nothing -> [iii|\#{l : #{toSet} | r in l.get[#{name}]} >= #{low}|]
         Just up -> case low of
-          0 -> [iii|\#{l : #{to} | r in l.get[#{name}]} =< #{up}|]
+          0 -> [iii|\#{l : #{toSet} | r in l.get[#{name}]} =< #{up}|]
           _ -> [iii|
-            let n = \#{l : #{to} | r in l.get[#{name}]} |
+            let n = \#{l : #{toSet} | r in l.get[#{name}]} |
               n >= #{low} and n =< #{up}
             |]
     anyCompositions =
       any (\case Composition {} -> True; _ -> False) relationships
     compositions = mapMaybe
       (\to -> ("  " ++)
-        <$> compositeConstraint (compositesCd to) to (compFieldNamesCd to))
+        <$> compositeConstraint (compositesCd to) (compFieldNamesCd to) to)
       nonAbstractClassNames
       -- Figure 2.2, Rule 4, corrected
-    compositeConstraint :: Set String -> String -> Set String -> Maybe String
-    compositeConstraint from to name
-      | S.null name || S.null from = Nothing
+    compositeConstraint :: Set String -> Set String -> String -> Maybe String
+    compositeConstraint fromSet nameSet to
+      | S.null nameSet || S.null fromSet = Nothing
       | otherwise = Just $
         (\usedFieldCount -> [i|all r : #{to} | #{usedFieldCount} =< 1|])
-        $ intercalate " + "
-        $ (`map` S.toList name) $ \fieldName ->
-          [iii|\#{l : #{alloySetOf from} | r in l.get[#{fieldName}]}|]
-    fieldNamesCd = alloySetOf . (relationshipNames S.\\)
+        $ alloyPlus
+        $ (`map` S.toList nameSet) $ \fieldName ->
+          [iii|\#{l : #{alloySetOf fromSet} | r in l.get[#{fieldName}]}|]
+    noFieldNamesCd = alloySetOf . (relationshipNames S.\\)
       . allFieldNamesOf relationships
     relationshipNames = S.fromList $ mapMaybe relationshipName relationships
     compositesCd = allCompositesOf relationships
     compFieldNamesCd = allCompositionFieldNamesOf relationships
     subsCd = alloySetOf . allSubclassesOf relationships
+
+{-|
+Generates the code to add the Alloy Int values of the given list.
+-}
+alloyPlus :: [String] -> String
+alloyPlus = \case
+  [] -> "0"
+  [x] -> x
+  xs@(_:_:_) -> alloyPlus $ pairPlus xs
+  where
+    pairPlus = \case
+      [] -> []
+      x@[_] -> x
+      (x:y:zs) -> [i|plus[#{x}, #{y}]|] : pairPlus zs
 
 mergeParts
   :: Parts
