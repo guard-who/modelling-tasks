@@ -73,7 +73,6 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
-  allRelationshipNamesOf,
   combineParts,
   createRunCommand,
   transform,
@@ -821,7 +820,7 @@ nameCdError NameCdErrorConfig {..}  = do
           maxNumberOfObjects = maxObjects $ snd $ classLimits classConfig
           parts = transform
             (cd {relationships = reversedRelationships})
-            (allRelationshipNamesOf [cd])
+            Nothing
             []
             maxNumberOfObjects
             objectProperties

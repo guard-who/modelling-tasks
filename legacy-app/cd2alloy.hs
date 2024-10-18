@@ -22,7 +22,14 @@ run input output template index = do
   let parsed = parser tokens
   let cd = uncurry toCd parsed
   time <- getZonedTime
-  let parts = transform cd [] maxFiveObjects objectProperties index (show time)
+  let parts = transform
+        cd
+        Nothing
+        []
+        maxFiveObjects
+        objectProperties
+        index
+        (show time)
       p1 = part1 parts
       p2 = part2 parts
       p3 = part3 parts

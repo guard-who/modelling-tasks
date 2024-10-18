@@ -22,7 +22,7 @@ spec = do
     does = "generates expected Alloy code"
     dir = "test/unit/Modelling/CdOd/CD2Alloy/Transform/"
     getResult cd = combineParts
-      $ transform cd [] objectConfig objectProperties "1" "-"
+      $ transform cd Nothing [] objectConfig objectProperties "1" "-"
     objectConfig = ObjectConfig {
       linkLimits           = (4, Just 10),
       linksPerObjectLimits = (0, Just 4),

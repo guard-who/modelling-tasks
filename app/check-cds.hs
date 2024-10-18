@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 module Main where
 
+import qualified Data.Set                         as S (fromList)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Capabilities.Diagrams.IO         ()
@@ -17,12 +18,14 @@ import Modelling.CdOd.Types (
   defaultCdDrawSettings,
   fromClassDiagram,
   maxFiveObjects,
+  relationshipName,
   reverseAssociation,
   )
 
 import Control.Monad.Random             (evalRandT, getStdGen)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
 import Data.GraphViz                    (DirType (..))
+import Data.Maybe                       (mapMaybe)
 import Data.Ratio                       ((%))
 
 v :: Relationship String String
@@ -203,11 +206,15 @@ drawCdAndOdsFor is c cds cmd = do
     (\(cd, i) -> drawCd' (fromClassDiagram cd) i >>= putStrLn)
     $ zip cds [0..]
   let mergedParts = foldr mergeParts (head parts) $ tail parts
+      parts = getParts allRelationshipNames
+      allRelationships = concatMap relationships cds
+      allRelationshipNames = S.fromList
+        $ mapMaybe relationshipName allRelationships
   let parts' = combineParts mergedParts ++ createRunCommand
         cmd
         3
         maxThreeObjects
-        (concatMap relationships cds)
+        allRelationships
         mergedParts
   ods <- Alloy.getInstances is parts'
   g <- getStdGen
@@ -224,9 +231,10 @@ drawCdAndOdsFor is c cds cmd = do
     drawCd' cd i =
       drawCd defaultCdDrawSettings mempty cd (c ++ "-cd" ++ show i ++ ".svg")
     maxThreeObjects = maxFiveObjects { objectLimits = (1, 3) }
-    parts = zipWith cdToAlloy cds [0..]
-    cdToAlloy cd i = transform
+    getParts relationshipNames = zipWith (cdToAlloy relationshipNames) cds [0..]
+    cdToAlloy relationshipNames cd i = transform
       (cd {relationships = map reverseAssociation $ relationships cd})
+      (Just relationshipNames)
       []
       maxThreeObjects
       objectProperties

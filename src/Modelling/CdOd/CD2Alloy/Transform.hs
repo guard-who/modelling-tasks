@@ -50,7 +50,6 @@ also the following Alloy predicates, have been inlined
 -}
 module Modelling.CdOd.CD2Alloy.Transform (
   Parts {- only for legacy-apps: -} (..),
-  allRelationshipNamesOf,
   combineParts,
   createRunCommand,
   mergeParts,
@@ -69,7 +68,6 @@ import Modelling.CdOd.Types (
 
 import qualified Data.Set                         as S (
   (\\),
-  empty,
   fromList,
   insert,
   null,
@@ -103,22 +101,6 @@ data Parts = Parts {
   }
 
 {-|
-Retrieves all relationship names that occur within all given class diagrams.
-
-If used for the parameter of 'transform', all class diagrams
-that potentially provide new relationship names
-and are part of the resulting formula (i.e. 'mergeParts') must be provided.
--}
-allRelationshipNamesOf
-  :: (Foldable f, Ord relationshipName)
-  => f (ClassDiagram className relationshipName)
-  -> Set relationshipName
-allRelationshipNamesOf =
-  foldr
-  (flip (foldr S.insert) . mapMaybe relationshipName . relationships)
-  S.empty
-
-{-|
 Generates Alloy code to generate object diagrams for a given class diagram.
 The given class diagram must be valid otherwise the code generation
 might not terminate.
@@ -131,10 +113,10 @@ with the generated Alloy code for other (similar) class diagrams.
 transform
   :: Cd
   -- ^ the class diagram for which to generate the code
-  -> Set String
+  -> Maybe (Set String)
   -- ^ all relationship names to consider
   -- (possibly across multiple class diagrams;
-  -- use 'allRelationshipNamesOf' in order to retrieve them)
+  -- if not provided, they will be taken from the provided class diagram)
   -> [String]
   -- ^ the list of abstract class names
   -> ObjectConfig
@@ -148,7 +130,7 @@ transform
   -> Parts
 transform
   ClassDiagram {classNames, relationships}
-  allRelationshipNames
+  maybeAllRelationshipNames
   abstractClassNames
   objectConfig
   ObjectProperties {..}
@@ -156,6 +138,9 @@ transform
   time =
   Parts { part1, part2, part3, part4 }
   where
+    allRelationshipNames = fromMaybe
+      (S.fromList $ mapMaybe relationshipName relationships)
+      maybeAllRelationshipNames
     template :: String
     template = $(embedStringFile "alloy/od/template.als")
     part1 :: String

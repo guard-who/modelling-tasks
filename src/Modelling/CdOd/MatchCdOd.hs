@@ -38,6 +38,7 @@ import qualified Data.Map                         as M (
   toList,
   traverseWithKey,
   )
+import qualified Data.Set                         as S (fromList)
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.Cache               (MonadCache)
@@ -55,7 +56,6 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   )
 import Modelling.CdOd.CD2Alloy.Transform (
-  allRelationshipNamesOf,
   combineParts,
   createRunCommand,
   mergeParts,
@@ -102,6 +102,7 @@ import Modelling.CdOd.Types (
   fromClassDiagram,
   isObjectDiagramRandomisable,
   linkNames,
+  relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
   reverseAssociation,
@@ -666,6 +667,9 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       parts1to3 = mergeParts parts1and2 parts3
       relationships1and2 = relationships cd1 ++ relationships cd2
       relationships1to3 = relationships1and2 ++ relationships cd3
+      allRelationshipNames = S.fromList
+        $ mapMaybe relationshipName relationships1to3
+      alloyFor = alloyForAllRelationships allRelationshipNames
       cd1not2 = runCommand "cd1 and (not cd2)" relationships1and2 parts1and2
       cd2not1 = runCommand "cd2 and (not cd1)" relationships1and2 parts1and2
       cd1and2 = runCommand "cd1 and cd2" relationships1and2 parts1and2
@@ -683,15 +687,14 @@ getODInstances config cd1 cd2 cd3 numClasses = do
                        ([1,2], instances1and2),
                        ([]   , instancesNot1not2)]
   where
-    alloyFor cd nr = transform
+    alloyForAllRelationships allRelationshipNames cd nr = transform
       (cd {relationships = map reverseAssociation $ relationships cd})
-      allRelationshipNames
+      (Just allRelationshipNames)
       []
       (objectConfig config)
       (objectProperties config)
       nr
       ""
-    allRelationshipNames = allRelationshipNamesOf [cd1, cd2, cd3]
     to = timeout config
     maxIs = maxInstances config
     runCommand x = createRunCommand
