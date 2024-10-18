@@ -206,7 +206,7 @@ fact SizeConstraints {
 |] -- Figure 2.1, Rule 3, part 2
     part3 = [i|
 // Classes (non-abstract)
-#{unlines (classSigs nonAbstractClassNames)}
+#{unlines (classSigs classNames)}
 |] -- Figure 2.1, Rule 1, part 1
     part4 = [i|
 ///////////////////////////////////////////////////
@@ -517,7 +517,7 @@ pred cd#{index} {
 
 {-|
 Generates inlined Alloy code equivalent to the @ObjectLowerAttribute@
-or @ObjectLowerUppperAttribute@ predicate.
+or @ObjectLowerUpperAttribute@ predicate.
 -}
 makeNonInheritanceAttribute
   :: String
