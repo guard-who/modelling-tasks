@@ -3,7 +3,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-|
 This modules performs a Alloy code generation based on CD2Alloy
 in order to generate object diagrams
@@ -70,20 +69,19 @@ import qualified Data.Set                         as S (
   (\\),
   fromList,
   insert,
-  null,
-  toList,
   union,
   unions,
   )
 
 import Data.Bifunctor                   (first, second)
-import Data.List                        ((\\), intercalate, isPrefixOf, union)
-import Data.FileEmbed                   (embedStringFile)
+import Data.Foldable                    (Foldable (toList))
+import Data.List                        ((\\), intercalate, union)
 import Data.Maybe (
   catMaybes,
   fromMaybe,
   isJust,
   mapMaybe,
+  maybeToList,
   )
 import Data.Set                         (Set)
 import Data.String.Interpolate          (i, iii)
@@ -141,8 +139,6 @@ transform
     allRelationshipNames = fromMaybe
       (S.fromList $ mapMaybe relationshipName relationships)
       maybeAllRelationshipNames
-    template :: String
-    template = $(embedStringFile "alloy/od/template.als")
     part1 :: String
     part1 = [i|
 // Alloy Model for CD#{index}
@@ -151,7 +147,15 @@ transform
 
 module cd2alloy/CD#{index}Module
 
-#{template}
+///////////////////////////////////////////////////
+// Generic Head of CD Model - adapted/simplified;
+// and now specialized for a fixed FieldName set originally appearing further below
+///////////////////////////////////////////////////
+
+//Parent of all classes relating fields and values
+abstract sig Object {
+#{fields}
+}
 #{objectsFact}
 #{sizeConstraints}
 #{loops}
@@ -161,6 +165,10 @@ module cd2alloy/CD#{index}Module
 // Structures potentially common to multiple CDs
 ///////////////////////////////////////////////////
 |]
+    fields = intercalate ",\n" $ map
+      (\fieldName -> [i|  #{fieldName} : set Object|])
+      allRelationshipsList
+    allRelationshipsList = toList allRelationshipNames
     objectsFact :: String
     objectsFact
       | hasLimitedIsolatedObjects
@@ -169,6 +177,7 @@ module cd2alloy/CD#{index}Module
       = noEmptyInstances
     limitIsolatedObjects = [i|
 fact LimitIsolatedObjects {
+ let get = #{allRelationships} |
   \#Object > mul[2, \#{o : Object | no o.get and no get.o}]
 }
 |]
@@ -186,24 +195,31 @@ fact SizeConstraints {
 }
 |]) [
       ("  #Object >= " ++) . show <$> maybeLower 1 (objectLimits objectConfig),
-      ("  #get >= " ++) . show <$> maybeLower 0 (linkLimits objectConfig),
-      ("  #get <= " ++) . show <$> snd (linkLimits objectConfig),
+      fmap ("  " ++) . count
+        $ maybeToList ((" >= " ++) . show <$> maybeLower 0 (linkLimits objectConfig))
+        ++ maybeToList ((" <= " ++) . show <$> snd (linkLimits objectConfig)),
       uncurry linksPerObjects
         $ first (maybeLow 0)
         $ linksPerObjectLimits objectConfig
       ]
+    counted = alloyPlus $ map ('#':) allRelationshipsList
+    count [] = Nothing
+    count [x] = Just $ counted ++ x
+    count (x:y:_) = Just [iii|let count = #{counted} | count#{x} and count#{y}|]
     linksPerObjects Nothing Nothing = Nothing
     linksPerObjects maybeMin maybeMax = Just $
-      "  all o : Object | let x = plus[#o.get,minus[#get.o,#o.get.o]] |"
+      "  all o : Object | "
+      ++ [iii|
+        let x = plus[#{alloyPlus $ map ("#o." ++) allRelationshipsList},
+          minus[#{alloyPlus $ map (\get -> '#' : get ++ ".o") allRelationshipsList},
+           #{alloyPlus $ map (\get -> "#(o." ++ get ++ " & o)") allRelationshipsList}]] |
+        |]
       ++ maybe "" ((" x >= " ++) . show) maybeMin
       ++ maybe "" (const " &&") (maybeMin >> maybeMax)
       ++ maybe "" ((" x <= " ++) . show) maybeMax
     maybeLower l = maybeLow l . fst
     maybeLow l x = if x <= l then Nothing else Just x
-    part2 = [i|
-// Concrete names of fields
-#{unlines (associationSigs relationships)}
-|] -- Figure 2.1, Rule 3, part 2
+    part2 = "" -- Figure 2.1, Rule 3, part 2
     part3 = [i|
 // Classes (non-abstract)
 #{unlines (classSigs classNames)}
@@ -237,24 +253,20 @@ fact UsesNotEveryRelationshipName {
 fact UsesEveryRelationshipName {
 #{unlines $ map ("  some " ++) namesLinkingTo}
 }|]
-    namesLinkingTo = map
-      (\name -> "Object.get[" ++ name ++ "]")
-      $ S.toList allRelationshipNames
+    namesLinkingTo = map ("Object." ++) allRelationshipsList
     allRelationships = alloySetOf allRelationshipNames
     loops            = case hasSelfLoops of
       Nothing    -> ""
-      Just True  -> [i|
+      Just hasLoops -> withAlloyJoin ["o"] allRelationshipNames $ \join ->
+        if hasLoops
+        then [i|
 fact SomeSelfLoops {
-  some o : Object | o in o.get[#{allRelationships}]
+  some o : Object | o in #{join})]
 }|]
-      Just False -> [i|
+        else [i|
 fact NoSelfLoops {
-  no o : Object | o in o.get[#{allRelationships}]
+  no o : Object | o in #{join})]
 }|]
-
-hasLinkNames :: Parts -> Bool
-hasLinkNames Parts { part2 } =
-  any (oneSig `isPrefixOf`) $ lines part2
 
 {-|
 Creates an Alloy run command line taking provided size constraints into account.
@@ -271,7 +283,7 @@ createRunCommand command numClasses objectConfig relationships ps = [i|
 // Run commands
 ///////////////////////////////////////////////////
 
-run { #{command} } for #{fieldNamesLimit}#{maxObjects} Object, #{intSize} Int
+run { #{command} } for #{maxObjects} Object, #{intSize} Int
 |]
   where
     maxLimit = maximum $ map maximumLimitOf relationships
@@ -280,9 +292,6 @@ run { #{command} } for #{fieldNamesLimit}#{maxObjects} Object, #{intSize} Int
     intSize = ceiling intSize'
     intSize' :: Double
     intSize' = logBase 2 $ fromIntegral $ 2 * maxInt + 1
-    fieldNamesLimit
-      | hasLinkNames ps = "" :: String
-      | otherwise       = "0 FieldName, "
     maxInt = maximum [
       numClasses * maxObjects,
       maxLimit,
@@ -301,14 +310,6 @@ maximumLimitOf = \case
   where
     maximumLimit l1 l2 = max (maximumLinking l1) (maximumLinking l2)
     maximumLinking LimitedLinking {limits = (low, high)} = fromMaybe low high
-
-oneSig :: String
-oneSig = "one sig "
-
-associationSigs :: [Relationship c String] -> [String]
-associationSigs = mapMaybe
-  $ fmap (\name -> oneSig ++ name ++ " extends FieldName {}") . relationshipName
-
 
 classSigs :: [String] -> [String]
 classSigs = map (\name -> "sig " ++ name ++ " extends Object {}")
@@ -477,8 +478,8 @@ pred cd#{index} {
       "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
     objectFieldNames = map
-      (\name ->
-        [i|  no #{name}.get[#{noFieldNamesCd name}]|]
+      (\name -> withAlloyJoin [name] (noFieldNamesCd name) $ \join ->
+        [i|  no #{join}|]
         -- @ObjectFieldNames@ predicate inlined
         )
       nonAbstractClassNames
@@ -509,48 +510,54 @@ pred cd#{index} {
         <$> compositeConstraint (compositesCd to) (compFieldNamesCd to) to)
       nonAbstractClassNames
       -- Figure 2.2, Rule 4, corrected
-    noFieldNamesCd = alloySetOf . (allRelationshipNames S.\\)
+    noFieldNamesCd = (allRelationshipNames S.\\)
       . allFieldNamesOf relationships
     compositesCd = allCompositesOf relationships
     compFieldNamesCd = allCompositionFieldNamesOf relationships
-    subsCd = alloySetOf . allSubclassesOf relationships
+    subsCd = allSubclassesOf relationships
 
 {-|
 Generates inlined Alloy code equivalent to the @ObjectLowerAttribute@
 or @ObjectLowerUpperAttribute@ predicate.
 -}
 makeNonInheritanceAttribute
-  :: String
+  :: Set String
   -> String
-  -> String
+  -> Set String
   -> (Int, Maybe Int)
   -> String
 makeNonInheritanceAttribute fromSet name toSet (low, maybeUp) =
-  [i|  (#{fromSet}).get[#{name}] in #{toSet}|]
-  ++ '\n' : [i|  all o : #{fromSet} | |]
+  withAlloyJoin fromSet [name] $ \relationshipTo ->
+  [i|  #{relationshipTo} in #{alloySetOf toSet}|]
+  ++ '\n' : [i|  all o : #{alloySetOf fromSet} | |]
   ++ case maybeUp of
     Nothing ->
-      [iii|\#o.get[#{name}] >= #{low}|]
+      [iii|\#o.#{name} >= #{low}|]
       -- @ObjectLowerAttribute@ predicate inlined
     Just up -> case low of
-      0 -> [iii|\#o.get[#{name}] =< #{up}|]
-      _ -> [iii|let n = \#o.get[#{name}] | n >= #{low} and n =< #{up}|]
+      0 -> [iii|\#o.#{name} =< #{up}|]
+      _ -> [iii|let n = \#o.#{name} | n >= #{low} and n =< #{up}|]
       -- @ObjectLowerUpperAttribute@ predicate inlined
 
 {-|
 Generates inlined Alloy code equivalent to the @ObjectLowerUpper@ predicate.
 -}
-makeNonInheritance :: String -> String -> String -> (Int, Maybe Int) -> String
+makeNonInheritance
+  :: Set String
+  -> String
+  -> Set String
+  -> (Int, Maybe Int)
+  -> String
 makeNonInheritance fromSet name toSet (low, maybeUp) =
-  [i|  all r : #{fromSet} | |]
+  [i|  all r : #{alloySetOf fromSet} | |]
   ++ case maybeUp of
     Nothing ->
-      [iii|\#{l : #{toSet} | r in l.get[#{name}]} >= #{low}|]
+      [iii|\#{l : #{alloySetOf toSet} | r in l.#{name}} >= #{low}|]
       -- @ObjectLower@ predicate inlined
     Just up -> case low of
-      0 -> [iii|\#{l : #{toSet} | r in l.get[#{name}]} =< #{up}|]
+      0 -> [iii|\#{l : #{alloySetOf toSet} | r in l.#{name}} =< #{up}|]
       _ -> [iii|
-        let n = \#{l : #{toSet} | r in l.get[#{name}]} |
+        let n = \#{l : #{alloySetOf toSet} | r in l.#{name}} |
           n >= #{low} and n =< #{up}
         |]
       -- @ObjectLowerUpper@ predicate inlined
@@ -560,12 +567,12 @@ Generates inlined Alloy code equivalent to the @Composition@ predicate.
 -}
 compositeConstraint :: Set String -> Set String -> String -> Maybe String
 compositeConstraint fromSet nameSet to
-  | S.null nameSet || S.null fromSet = Nothing
+  | null nameSet || null fromSet = Nothing
   | otherwise = Just $
     (\usedFieldCount -> [i|all r : #{to} | #{usedFieldCount} =< 1|])
     $ alloyPlus
-    $ (`map` S.toList nameSet) $ \fieldName ->
-      [iii|\#{l : #{alloySetOf fromSet} | r in l.get[#{fieldName}]}|]
+    $ (`map` toList nameSet) $ \fieldName ->
+      [iii|\#{l : #{alloySetOf fromSet} | r in l.#{fieldName}}|]
   -- @Composition@ predicate inlined
 
 {-|
@@ -607,9 +614,41 @@ combineParts :: Parts -> String
 combineParts Parts {..} = part1 ++ part2 ++ part3 ++ part4
 
 {-|
-Transform a 'Set' into Alloy code of a set.
+Transform a 'Foldable structure' into Alloy code of a set.
 -}
-alloySetOf :: Set String -> String
+alloySetOf :: Foldable f => f String -> String
 alloySetOf xs
-  | S.null xs = "none"
-  | otherwise = intercalate " + " $ S.toList xs
+  | null xs = "none"
+  | otherwise = intercalate " + " $ toList xs
+
+{-|
+Generate code for joining two sets (but return Nothing if either is empty).
+
+Uses 'alloySetOf' in order to transform the sets into alloySets.
+-}
+maybeAlloyJoin
+  :: (Foldable f1, Foldable f2)
+  => f1 String
+  -> f2 String
+  -> Maybe String
+maybeAlloyJoin xs ys
+  | null xs || null ys = Nothing
+  | otherwise = Just $ alloySet xs ++ '.' : alloySet ys
+  where
+    alloySet zs =
+      if length zs == 1
+      then alloySetOf zs
+      else "(" ++ alloySetOf zs ++ ")"
+
+{-|
+Generate Alloy code to join two sets and process it using the given function.
+
+(uses 'maybeAlloyJoin')
+-}
+withAlloyJoin
+  :: (Foldable f1, Foldable f2)
+  => f1 String
+  -> f2 String
+  -> (String -> String)
+  -> String
+withAlloyJoin xs ys f = maybe "" f (maybeAlloyJoin xs ys)
