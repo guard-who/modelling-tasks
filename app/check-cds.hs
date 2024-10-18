@@ -24,6 +24,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.Random             (evalRandT, getStdGen)
 import Control.Monad.Trans.Class        (MonadTrans (lift))
+import Data.Foldable                    (toList)
 import Data.GraphViz                    (DirType (..))
 import Data.Maybe                       (mapMaybe)
 import Data.Ratio                       ((%))
@@ -215,15 +216,16 @@ drawCdAndOdsFor is c cds cmd = do
         3
         maxThreeObjects
         allRelationships
-        mergedParts
   ods <- Alloy.getInstances is parts'
   g <- getStdGen
+  let possibleLinks = toList allRelationshipNames
   flip evalRandT g $
-    mapM_ (\(od, i) -> drawOd od i >>= lift . putStrLn)
+    mapM_ (\(od, i) -> drawOd possibleLinks od i >>= lift . putStrLn)
     $ zip (maybe id (take . fromInteger) is ods) [1..]
   where
-    drawOd od i = drawOdFromInstance
+    drawOd allRelationshipNames od i = drawOdFromInstance
       od
+      allRelationshipNames
       Nothing
       Back
       True

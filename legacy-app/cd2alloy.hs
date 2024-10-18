@@ -39,7 +39,6 @@ run input output template index = do
         (length $ classNames cd)
         maxFiveObjects
         (relationships cd)
-        parts
   case output of
     Just file -> do
       when template $ let out = file ++ ".part1" in writeFile out p1 >> putStrLn ("Some output written to " ++ out)

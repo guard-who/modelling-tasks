@@ -361,16 +361,27 @@ drawClass font l (P p) = translate p
   # lineWidth 0.6
   # svgClass "label"
 
+{-|
+Parses an Alloy object diagram instance, draws it and safes it to a file.
+(the path where it has been stored is returned)
+-}
 drawOdFromInstance
   :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
   => AlloyInstance
+  -- ^ the Alloy object diagram instance
+  -> [String]
+  -- ^ possible link names
   -> Maybe Rational
+  -- ^ ratio of anonymous objects
   -> DirType
+  -- ^ direction of links
   -> Bool
+  -- ^ whether to print link names
   -> FilePath
+  -- ^ where to store the object diagram
   -> RandT g m FilePath
-drawOdFromInstance i anonymous direction printNames path = do
-  g <- alloyInstanceToOd i
+drawOdFromInstance i possibleLinkNames anonymous direction printNames path = do
+  g <- alloyInstanceToOd possibleLinkNames i
   od <- anonymiseObjects (fromMaybe (1 % 3) anonymous) g
   lift $ drawOd
     od

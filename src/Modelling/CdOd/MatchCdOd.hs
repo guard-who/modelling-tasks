@@ -386,7 +386,10 @@ getMatchCdOdTask
   -> m MatchCdOdInstance
 getMatchCdOdTask f config@MatchCdOdConfig {..} = do
   (cds, ods) <- f config
-  ods' <- mapM (mapM toOd) ods
+  let possibleLinkNames = concatMap
+        (mapMaybe relationshipName . relationships)
+        cds
+  ods' <- mapM (mapM $ toOd possibleLinkNames) ods
   return $ MatchCdOdInstance {
         cdDrawSettings = CdDrawSettings {
           omittedDefaults = omittedDefaultMultiplicities,
@@ -398,8 +401,9 @@ getMatchCdOdTask f config@MatchCdOdConfig {..} = do
         showSolution   = printSolution
         }
   where
-    toOd = anonymiseObjects (anonymousObjectProportion objectProperties)
-      <=< alloyInstanceToOd
+    toOd possibleLinkNames =
+      anonymiseObjects (anonymousObjectProportion objectProperties)
+      <=< alloyInstanceToOd possibleLinkNames
 
 defaultMatchCdOdInstance :: MatchCdOdInstance
 defaultMatchCdOdInstance = MatchCdOdInstance {
@@ -670,13 +674,12 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       allRelationshipNames = S.fromList
         $ mapMaybe relationshipName relationships1to3
       alloyFor = alloyForAllRelationships allRelationshipNames
-      cd1not2 = runCommand "cd1 and (not cd2)" relationships1and2 parts1and2
-      cd2not1 = runCommand "cd2 and (not cd1)" relationships1and2 parts1and2
-      cd1and2 = runCommand "cd1 and cd2" relationships1and2 parts1and2
+      cd1not2 = runCommand "cd1 and (not cd2)" relationships1and2
+      cd2not1 = runCommand "cd2 and (not cd1)" relationships1and2
+      cd1and2 = runCommand "cd1 and cd2" relationships1and2
       cdNot1not2 = runCommand
         "(not cd1) and (not cd2) and cd3"
         relationships1to3
-        parts1to3
   instances1not2 <- getInstances maxIs to (combined1and2 ++ cd1not2)
   instances2not1 <- getInstances maxIs to (combined1and2 ++ cd2not1)
   instances1and2 <- getInstances maxIs to (combined1and2 ++ cd1and2)

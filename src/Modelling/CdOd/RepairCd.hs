@@ -123,6 +123,7 @@ import Modelling.CdOd.Types (
   defaultProperties,
   fromClassDiagram,
   maxObjects,
+  relationshipName,
   renameClassesAndRelationships,
   reverseAssociation,
   shuffleAnyClassAndConnectionOrder,
@@ -938,10 +939,10 @@ repairIncorrect
             (length $ classNames cd)
             maxNumberOfObjects
             reversedRelationships
-            parts
       od <- listToMaybe
         <$> getInstances (Just 1) to (combineParts parts ++ command)
-      od' <- forM od alloyInstanceToOd
+      od' <- forM od $ alloyInstanceToOd
+        $ mapMaybe relationshipName $ relationships cd
       mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 
 allStructuralWeakenings :: AllowedProperties -> [StructuralWeakening]

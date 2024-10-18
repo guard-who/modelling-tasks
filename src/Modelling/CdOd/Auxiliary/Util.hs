@@ -19,7 +19,7 @@ import Modelling.CdOd.Types (
 import Language.Alloy.Call              as Alloy (
   AlloyInstance,
   getSingleAs,
-  getTripleAs,
+  getDoubleAs,
   lookupSig,
   scoped,
   )
@@ -54,16 +54,24 @@ emptyArr = AType [(openMod, Normal)]
 redColor :: Attribute
 redColor = Color [toWColor Red]
 
+{-|
+Parses the Alloy object diagram instance.
+-}
 alloyInstanceToOd
   :: MonadThrow m
-  => AlloyInstance
+  => [String]
+  -- ^ all possible link names
+  -> AlloyInstance
+  -- ^ the alloy instance to parse
   -> m Od
-alloyInstanceToOd i = do
+alloyInstanceToOd allLinkNames i = do
   os    <- lookupSig (scoped "this" "Object") i
   objects <- S.toList <$> getSingleAs "" toObject os
-  links <- fmap toLink . S.toList <$> getTripleAs "get" oName nameOnly oName os
+  links <- concat <$> mapM (getLink os) allLinkNames
   return ObjectDiagram {..}
   where
+    getLink os l = fmap (toLink l) . S.toList
+      <$> getDoubleAs l oName oName os
     oName x = return . toObjectName x
     toObjectName x y = lowerFirst x ++ if y == 0 then [] else show y
     toObject x y = return $ Object {
@@ -71,8 +79,7 @@ alloyInstanceToOd i = do
       objectName = toObjectName x y,
       objectClass = x
       }
-    nameOnly x _ = return x
-    toLink (x, l, y) = Link {
+    toLink l (x, y) = Link {
       linkName = l,
       linkFrom = x,
       linkTo = y

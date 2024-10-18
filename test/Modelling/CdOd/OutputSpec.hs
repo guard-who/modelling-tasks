@@ -44,5 +44,5 @@ spec = do
       Right alloyInstance <- runExceptT $ parseInstance (pack alloy)
       void $ flip evalRandT
         (mkStdGen 0)
-        $ drawOdFromInstance alloyInstance (Just 1) Back True file
+        $ drawOdFromInstance alloyInstance undefined (Just 1) Back True file
       readFile file

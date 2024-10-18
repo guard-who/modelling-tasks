@@ -36,7 +36,6 @@ import qualified Data.Bimap                       as BM (
 import qualified Data.Map                         as M (
   fromAscList,
   )
-import qualified Data.Set                         as S (toList)
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.Cache               (MonadCache)
@@ -137,6 +136,7 @@ import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.GraphViz                    (DirType (Back))
 import Data.List                        (group, intersect, permutations, sort)
 import Data.Maybe (
+  catMaybes,
   isJust,
   isNothing,
   listToMaybe,
@@ -144,11 +144,11 @@ import Data.Maybe (
   )
 import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i, iii)
-import Data.Tuple.Extra                 (snd3, swap)
+import Data.Tuple.Extra                 (swap)
 import GHC.Generics                     (Generic)
 import Language.Alloy.Call (
   AlloyInstance,
-  getTripleAs,
+  getDoubleAs,
   lookupSig,
   scoped,
   )
@@ -553,7 +553,6 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
           (length $ classNames cd)
           objectConfig
           (concatMap relationships cds)
-          partsList'
         partsList' = foldr mergeParts parts0 partsList
     instances  <- getInstances
       maxInstances
@@ -562,7 +561,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
-      used <- usedLabels od1
+      used <- usedLabels labels od1
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
           cd1 = renameEdges (BM.twist bm) cd'
           bm' = BM.filter (const (`elem` used)) bm
@@ -573,7 +572,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
         (usesEveryRelationshipName objectProperties)
         isCompleteMapping
         then do
-        od1' <- either error id <$> runExceptT (alloyInstanceToOd od1)
+        od1' <- either error id <$> runExceptT (alloyInstanceToOd labels od1)
         od1'' <- anonymiseObjects (anonymousObjectProportion objectProperties) od1'
         return $ DifferentNamesInstance {
               cDiagram  = cd1,
@@ -601,12 +600,13 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
       ""
     continueWithHead []    _ = tryNext
     continueWithHead (x:_) f = f x
-    usedLabels :: MonadThrow m => AlloyInstance -> m [String]
-    usedLabels inst = do
+    usedLabels :: MonadThrow m => [String] -> AlloyInstance -> m [String]
+    usedLabels labels inst = do
       let ignore = const $ const $ return ()
-          name = const . return
+          usedLabel label xs = if null xs then Nothing else Just label
       os    <- lookupSig (scoped "this" "Object") inst
-      map snd3 . S.toList <$> getTripleAs "get" ignore name ignore os
+      catMaybes . zipWith usedLabel labels
+        <$> mapM (\label -> getDoubleAs label ignore ignore os) labels
 
 {-|
 All names within a 'DifferentNamesInstance'

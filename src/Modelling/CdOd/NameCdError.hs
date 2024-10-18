@@ -126,6 +126,7 @@ import Modelling.CdOd.Types (
   defaultCdDrawSettings,
   isIllegal,
   maxObjects,
+  relationshipName,
   renameClassesAndRelationships,
   reverseAssociation,
   shuffleAnnotatedClassAndConnectionOrder,
@@ -187,7 +188,7 @@ import Data.List (
   sortOn,
   )
 import Data.Map                         (Map)
-import Data.Maybe                       (catMaybes, listToMaybe)
+import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Ratio                       ((%))
 import Data.Set                         (Set)
 import Data.String.Interpolate          (i, iii)
@@ -831,11 +832,12 @@ nameCdError NameCdErrorConfig {..}  = do
             (length $ classNames cd)
             maxNumberOfObjects
             reversedRelationships
-            parts
+          possibleLinkNames = mapMaybe relationshipName $ relationships cd
       od <- listToMaybe
         <$> getInstances (Just 1) timeout (combineParts parts ++ command)
       od' <- fmap join $ forM od
-        $ runExceptT . alloyInstanceToOd >=> return . eitherToMaybe
+        $ runExceptT . alloyInstanceToOd possibleLinkNames
+        >=> return . eitherToMaybe
       mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 
 translateProperty :: Bool -> Property -> Map Language String

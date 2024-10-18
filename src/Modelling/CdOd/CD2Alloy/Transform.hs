@@ -276,9 +276,8 @@ createRunCommand
   -> Int
   -> ObjectConfig
   -> [Relationship a b]
-  -> Parts
   -> String
-createRunCommand command numClasses objectConfig relationships ps = [i|
+createRunCommand command numClasses objectConfig relationships = [i|
 ///////////////////////////////////////////////////
 // Run commands
 ///////////////////////////////////////////////////

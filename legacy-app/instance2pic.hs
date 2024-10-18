@@ -19,19 +19,21 @@ main :: IO ()
 main = do
   args <- getArgs
   void $ case args of
-   [] -> getContents >>= drawOd "output"
-   [file] -> readFile file >>= drawOd file
-   [file, format]
-     | fmap toUpper format == "SVG" -> readFile file >>= drawOd file
+   [] -> error "possible links required (first parameter)"
+   [xs] -> getContents >>= drawOd (read xs) "output"
+   [xs, file] -> readFile file >>= drawOd (read xs) file
+   [xs, file, format]
+     | fmap toUpper format == "SVG" -> readFile file >>= drawOd (read xs) file
      | otherwise -> error $ "format " ++ format
          ++ "is not supported, only SVG is supported"
    _ -> error "zu viele Parameter"
 
-drawOd :: FilePath -> String -> IO ()
-drawOd file contents = flip evalRandT (mkStdGen 0) $ do
+drawOd :: [String] -> FilePath -> String -> IO ()
+drawOd possibleLinks file contents = flip evalRandT (mkStdGen 0) $ do
   i <- parseInstance $ BS.pack contents
   output <- drawOdFromInstance
     i
+    possibleLinks
     (Just $ 1 % 3)
     NoDir
     False

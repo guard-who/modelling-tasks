@@ -22,12 +22,13 @@ import Modelling.CdOd.Types (
   ObjectDiagram (..),
   Od,
   Relationship (..),
+  relationshipName,
   )
 import Modelling.Auxiliary.Common       (oneOf)
 
 import Control.Monad.Random             (randomIO)
 import Control.Monad.Except             (runExceptT)
-import Data.Maybe                       (fromMaybe)
+import Data.Maybe                       (fromMaybe, mapMaybe)
 import Data.Tuple.Extra                 (both)
 import Test.Hspec
 import Test.QuickCheck                  (ioProperty)
@@ -130,7 +131,10 @@ getOdsFor cd1 cd2 = do
         relationships = [Inheritance {subClass = "A", superClass = "B"}]
         }
   ods <- getODInstances fewObjects cd1 cd2 cd3 2
-  Right ods' <- runExceptT $ mapM alloyInstanceToOd `mapM` ods
+  let possibleLinks = concatMap
+        (mapMaybe relationshipName . relationships)
+        [cd1, cd2, cd3]
+  Right ods' <- runExceptT $ mapM (alloyInstanceToOd possibleLinks) `mapM` ods
   return (get [1] ods', get [2] ods')
   where
     get x = fromMaybe [] . M.lookup x
