@@ -215,7 +215,7 @@ fact SizeConstraints {
            #{alloyPlus $ map (\get -> "#(o." ++ get ++ " & o)") allRelationshipsList}]] |
         |]
       ++ maybe "" ((" x >= " ++) . show) maybeMin
-      ++ maybe "" (const " &&") (maybeMin >> maybeMax)
+      ++ maybe "" (const " and") (maybeMin >> maybeMax)
       ++ maybe "" ((" x <= " ++) . show) maybeMax
     maybeLower l = maybeLow l . fst
     maybeLow l x = if x <= l then Nothing else Just x

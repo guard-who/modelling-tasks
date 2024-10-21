@@ -362,7 +362,7 @@ drawClass font l (P p) = translate p
   # svgClass "label"
 
 {-|
-Parses an Alloy object diagram instance, draws it and safes it to a file.
+Parses an Alloy object diagram instance, draws it and saves it to a file.
 (the path where it has been stored is returned)
 -}
 drawOdFromInstance
