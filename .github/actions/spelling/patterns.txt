@@ -33,6 +33,7 @@ Int\sInt
 Nothing\sNothing
 String\sString
 True\sTrue
+getDoubleAs\slabel\signore\signore
 obj\sobj\ssig
 
 # ignore complete commit hashes
