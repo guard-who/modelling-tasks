@@ -36,6 +36,7 @@ import Data.GraphViz.Attributes.Complete (
   )
 import Data.GraphViz.Attributes.HTML    as Html
   (Label, Format (..), Label (Text), TextItem (..))
+import Data.List.Extra                  (nubOrd)
 import Data.Text.Lazy                   (pack)
 
 filterFirst :: Eq a => a -> [a] -> [a]
@@ -67,7 +68,7 @@ alloyInstanceToOd
 alloyInstanceToOd allLinkNames i = do
   os    <- lookupSig (scoped "this" "Object") i
   objects <- S.toList <$> getSingleAs "" toObject os
-  links <- concat <$> mapM (getLink os) allLinkNames
+  links <- concat <$> mapM (getLink os) (nubOrd allLinkNames)
   return ObjectDiagram {..}
   where
     getLink os l = fmap (toLink l) . S.toList
