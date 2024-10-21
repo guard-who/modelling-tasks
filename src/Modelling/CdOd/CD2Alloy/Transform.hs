@@ -221,7 +221,7 @@ fact SizeConstraints {
     maybeLow l x = if x <= l then Nothing else Just x
     part2 = "" -- Figure 2.1, Rule 3, part 2
     part3 = [i|
-// Classes (non-abstract)
+// Classes
 #{unlines (classSigs classNames)}
 |] -- Figure 2.1, Rule 1, part 1
     part4 = [i|
