@@ -66,7 +66,6 @@ import Modelling.CdOd.Types (
   )
 
 import qualified Data.Set                         as S (
-  (\\),
   fromList,
   insert,
   union,
@@ -75,6 +74,7 @@ import qualified Data.Set                         as S (
 
 import Data.Bifunctor                   (first, second)
 import Data.Foldable                    (Foldable (toList))
+import Data.Function                    ((&))
 import Data.List                        ((\\), intercalate, union)
 import Data.Maybe (
   catMaybes,
@@ -332,51 +332,7 @@ allSubclassesOf relationships name =
       Inheritance {superClass = s, ..} | name == s -> Just subClass
       _ -> Nothing
 
--- Figure 2.2, Rule 2, relevant portion, alternative implementation
--- (FieldNamesCD - inlined)
-{-|
-Retrieve the set of all field names of the given class.
--}
-allFieldNamesOf
-  :: [Relationship String String]
-  -- ^ all relationships of the class diagram
-  -> String
-  -- ^ the name of the class to consider
-  -> Set String
-allFieldNamesOf relationships name =
-  maybeUnion (allFieldNamesOf relationships) (singleListToJust superClasses)
-  $ S.fromList associationNames
-  where
-    (superClasses, associationNames) = relationshipsFrom name
-    relationshipsFrom x =
-      foldr (addRelationship x) ([], []) relationships
-    addRelationship from c = case c of
-      AssociationFrom x | from == x -> second (associationName c :)
-                        | otherwise -> id
-      AggregationFrom x | from == x -> second (aggregationName c :)
-                        | otherwise -> id
-      CompositionFrom x | from == x -> second (compositionName c :)
-                        | otherwise -> id
-      Inheritance {..} | from == subClass -> first (superClass :)
-                       | otherwise -> id
-
-{-# COMPLETE AssociationFrom, AggregationFrom, CompositionFrom, Inheritance #-}
 {-# COMPLETE Association, Aggregation, CompositionTo, Inheritance #-}
-
-pattern AssociationFrom :: className -> Relationship className relationshipName
-pattern AssociationFrom from <- Association {
-  associationFrom = LimitedLinking { linking = from }
-  }
-
-pattern AggregationFrom :: className -> Relationship className relationshipName
-pattern AggregationFrom from <- Aggregation {
-  aggregationWhole = LimitedLinking { linking = from }
-  }
-
-pattern CompositionFrom :: className -> Relationship className relationshipName
-pattern CompositionFrom from <- Composition {
-  compositionWhole = LimitedLinking { linking = from }
-  }
 
 pattern CompositionTo :: className -> Relationship className relationshipName
 pattern CompositionTo to <- Composition {
@@ -405,25 +361,6 @@ superAndCompositionsOf relationships name =
       Inheritance {..}
         | name == subClass -> first (superClass :)
         | otherwise -> id
-
--- Figure 2.1, Rule 6, corrected
--- (CompositesCD - inlined)
-{-|
-Retrieve the set of all composites of the given class.
--}
-allCompositesOf
-  :: [Relationship String String]
-  -- ^ all relationships of the class diagram
-  -> String
-  -- ^ the name of the class to consider
-  -> Set String
-allCompositesOf relationships name =
-  maybeUnion (allCompositesOf relationships) super
-  $ S.unions
-  $ map (allSubclassesOf relationships . whole) compositions
-  where
-    whole = linking . compositionWhole
-    (super, compositions) = superAndCompositionsOf relationships name
 
 maybeUnion :: Ord b => (a -> Set b) -> Maybe a -> Set b -> Set b
 maybeUnion f = maybe id (S.union . f)
@@ -465,24 +402,19 @@ pred cd#{index} {
   #{objects}
 
   // Contents
-#{unlines objectFieldNames}
+#{unlines nonExistingRelationships}
   // Associations
 #{unlines objectAttributes}
   // Compositions
-#{if anyCompositions then unlines compositions else ""}
+#{unlines compositions}
 }
 |]
   where
     objects =
       "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
       -- Figure 2.2, Rule 5
-    objectFieldNames = map
-      (\name -> withAlloyJoin [name] (noFieldNamesCd name) $ \join ->
-        [i|  no #{join}|]
-        -- @ObjectFieldNames@ predicate inlined
-        )
-      nonAbstractClassNames
-      -- Figure 2.3, Rule A3
+    nonExistingRelationships = map ("  no " ++)
+      $ toList allRelationshipNames \\ mapMaybe relationshipName relationships
     nameFromTo = \case
       Association {..} ->
         Just (associationName, associationFrom, associationTo)
@@ -497,21 +429,16 @@ pred cd#{index} {
       relationships
     associationFromTo name from to = [
       makeNonInheritanceAttribute subsFrom name subsTo (limits to),
-      makeNonInheritance subsTo name subsFrom (limits from)
+      makeNonInheritance subsTo name (limits from)
       ]
       where
         subsFrom = subsCd $ linking from
         subsTo = subsCd $ linking to
-    anyCompositions =
-      any (\case Composition {} -> True; _ -> False) relationships
     compositions = mapMaybe
       (\to -> ("  " ++)
-        <$> compositeConstraint (compositesCd to) (compFieldNamesCd to) to)
+        <$> compositeConstraint (compFieldNamesCd to) to)
       nonAbstractClassNames
       -- Figure 2.2, Rule 4, corrected
-    noFieldNamesCd = (allRelationshipNames S.\\)
-      . allFieldNamesOf relationships
-    compositesCd = allCompositesOf relationships
     compFieldNamesCd = allCompositionFieldNamesOf relationships
     subsCd = allSubclassesOf relationships
 
@@ -526,17 +453,22 @@ makeNonInheritanceAttribute
   -> (Int, Maybe Int)
   -> String
 makeNonInheritanceAttribute fromSet name toSet (low, maybeUp) =
-  withAlloyJoin fromSet [name] $ \relationshipTo ->
-  [i|  #{relationshipTo} in #{alloySetOf toSet}|]
-  ++ '\n' : [i|  all o : #{alloySetOf fromSet} | |]
-  ++ case maybeUp of
-    Nothing ->
-      [iii|\#o.#{name} >= #{low}|]
+  (++) [i|  #{name}.Object in #{fromAlloySet}
+  Object.#{name} in #{alloySetOf toSet}|]
+  -- alternative to @ObjectFieldNames@ predicate inlined and simplified
+  $ ('\n' : [i|  all o : #{fromAlloySet} | |])
+  & case maybeUp of
+    Nothing -> case low of
+      0 -> const ""
+      _ -> (++ [iii|\#o.#{name} >= #{low}|])
       -- @ObjectLowerAttribute@ predicate inlined
     Just up -> case low of
-      0 -> [iii|\#o.#{name} =< #{up}|]
-      _ -> [iii|let n = \#o.#{name} | n >= #{low} and n =< #{up}|]
+      0 -> (++ [iii|\#o.#{name} =< #{up}|])
+      _ | low == up -> (++ [iii|\#o.#{name} = #{up}|])
+        | otherwise -> (++ [iii|let n = \#o.#{name} | n >= #{low} and n =< #{up}|])
       -- @ObjectLowerUpperAttribute@ predicate inlined
+  where
+    fromAlloySet = alloySetOf fromSet
 
 {-|
 Generates inlined Alloy code equivalent to the @ObjectLowerUpper@ predicate.
@@ -544,34 +476,35 @@ Generates inlined Alloy code equivalent to the @ObjectLowerUpper@ predicate.
 makeNonInheritance
   :: Set String
   -> String
-  -> Set String
   -> (Int, Maybe Int)
   -> String
-makeNonInheritance fromSet name toSet (low, maybeUp) =
-  [i|  all r : #{alloySetOf fromSet} | |]
-  ++ case maybeUp of
-    Nothing ->
-      [iii|\#{l : #{alloySetOf toSet} | r in l.#{name}} >= #{low}|]
-      -- @ObjectLower@ predicate inlined
+makeNonInheritance fromSet name (low, maybeUp) =
+  [i|  all o : #{alloySetOf fromSet} | |]
+  & case maybeUp of
+    Nothing -> case low of
+      0 -> const ""
+      _ -> (++ [iii|\##{name}.o >= #{low}|])
+      -- @ObjectLower@ predicate inlined and simplified
     Just up -> case low of
-      0 -> [iii|\#{l : #{alloySetOf toSet} | r in l.#{name}} =< #{up}|]
-      _ -> [iii|
-        let n = \#{l : #{alloySetOf toSet} | r in l.#{name}} |
+      0 -> (++ [iii|\##{name}.o =< #{up}|])
+      _ | low == up -> (++ [iii|\##{name}.o = #{up}|])
+        | otherwise -> flip (++) [iii|
+        let n = \##{name}.o |
           n >= #{low} and n =< #{up}
         |]
-      -- @ObjectLowerUpper@ predicate inlined
+      -- @ObjectLowerUpper@ predicate inlined and simplified
 
 {-|
 Generates inlined Alloy code equivalent to the @Composition@ predicate.
 -}
-compositeConstraint :: Set String -> Set String -> String -> Maybe String
-compositeConstraint fromSet nameSet to
-  | null nameSet || null fromSet = Nothing
+compositeConstraint :: Set String -> String -> Maybe String
+compositeConstraint nameSet to
+  | null nameSet = Nothing
   | otherwise = Just $
-    (\usedFieldCount -> [i|all r : #{to} | #{usedFieldCount} =< 1|])
+    (\usedFieldCount -> [i|all o : #{to} | #{usedFieldCount} =< 1|])
     $ alloyPlus
     $ (`map` toList nameSet) $ \fieldName ->
-      [iii|\#{l : #{alloySetOf fromSet} | r in l.#{fieldName}}|]
+      [iii|\##{fieldName}.o|]
   -- @Composition@ predicate inlined
 
 {-|
