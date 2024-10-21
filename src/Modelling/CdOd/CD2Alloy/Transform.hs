@@ -261,11 +261,11 @@ fact UsesEveryRelationshipName {
         if hasLoops
         then [i|
 fact SomeSelfLoops {
-  some o : Object | o in #{join})]
+  some o : Object | o in #{join}
 }|]
         else [i|
 fact NoSelfLoops {
-  no o : Object | o in #{join})]
+  no o : Object | o in #{join}
 }|]
 
 {-|
