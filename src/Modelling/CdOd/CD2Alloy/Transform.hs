@@ -424,7 +424,7 @@ makeNonInheritanceLimits attribute fromSet name (low, maybeUp) =
     Just up -> case low of
       0 -> (++ [iii|#{linkCount} =< #{up}|])
       _ | low == up -> (++ [iii|#{linkCount} = #{up}|])
-        | otherwise -> (++ [iii|let n = #{linkCount} | n >= #{low} and n =< #{up}|])
+        | otherwise -> (++ [iii|#{linkCount} >= #{low} and #{linkCount} =< #{up}|])
       -- @ObjectLowerUpperAttribute@ or @ObjectLowerUpper@ predicate
       -- inlined and simplified
   where
