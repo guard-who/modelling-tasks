@@ -22,12 +22,14 @@ import Modelling.CdOd.Types (
   ObjectDiagram (..),
   Od,
   Relationship (..),
+  normaliseObjectDiagram,
   relationshipName,
   )
 import Modelling.Auxiliary.Common       (oneOf)
 
 import Control.Monad.Random             (randomIO)
 import Control.Monad.Except             (runExceptT)
+import Data.List                        (sort)
 import Data.Maybe                       (fromMaybe, mapMaybe)
 import Data.Tuple.Extra                 (both)
 import Test.Hspec
@@ -137,7 +139,7 @@ getOdsFor cd1 cd2 = do
   Right ods' <- runExceptT $ mapM (alloyInstanceToOd possibleLinks) `mapM` ods
   return (get [1] ods', get [2] ods')
   where
-    get x = fromMaybe [] . M.lookup x
+    get x = sort . map normaliseObjectDiagram . fromMaybe [] . M.lookup x
     fewObjects = defaultMatchCdOdConfig { objectConfig = oc }
     oc = ObjectConfig {
       linkLimits = (0, Just 2),

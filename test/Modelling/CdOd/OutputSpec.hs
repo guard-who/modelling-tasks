@@ -42,7 +42,8 @@ spec = do
       readFile file
     drawOdInstance alloy = withTempFile $ \file -> do
       Right alloyInstance <- runExceptT $ parseInstance (pack alloy)
+      let possibleLinks = map (: []) ['w'..'y']
       void $ flip evalRandT
         (mkStdGen 0)
-        $ drawOdFromInstance alloyInstance undefined (Just 1) Back True file
+        $ drawOdFromInstance alloyInstance possibleLinks (Just 1) Back True file
       readFile file

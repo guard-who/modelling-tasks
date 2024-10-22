@@ -187,7 +187,7 @@ fact SizeConstraints {
       ("  #Object >= " ++) . show <$> maybeLower 1 (objectLimits objectConfig),
       fmap ("  " ++) . count
         $ maybeToList ((" >= " ++) . show <$> maybeLower 0 (linkLimits objectConfig))
-        ++ maybeToList ((" <= " ++) . show <$> snd (linkLimits objectConfig)),
+        ++ maybeToList ((" =< " ++) . show <$> snd (linkLimits objectConfig)),
       uncurry linksPerObjects
         $ first (maybeLow 0)
         $ linksPerObjectLimits objectConfig
@@ -199,14 +199,14 @@ fact SizeConstraints {
     linksPerObjects Nothing Nothing = Nothing
     linksPerObjects maybeMin maybeMax = Just $
       (
-        (\x -> [i|  all o : Object | let x = #{x} | |])
+        (\x -> [i|  all o : Object | let x = #{x} ||])
         . alloyPlus $ map
         (\link -> [i|plus[\#o.#{link}, minus[\##{link}.o, \#(o.#{link} & o)]]|])
         allRelationshipNames
         )
       ++ maybe "" ((" x >= " ++) . show) maybeMin
       ++ maybe "" (const " and") (maybeMin >> maybeMax)
-      ++ maybe "" ((" x <= " ++) . show) maybeMax
+      ++ maybe "" ((" x =< " ++) . show) maybeMax
     maybeLower l = maybeLow l . fst
     maybeLow l x = if x <= l then Nothing else Just x
     part2 = [i|
@@ -397,8 +397,7 @@ makeNonInheritance
   -> String
 makeNonInheritance fromSet name toSet = [i|
   #{name}.Object in #{alloySetOf fromSet}
-  Object.#{name} in #{alloySetOf toSet}
-  |]
+  Object.#{name} in #{alloySetOf toSet}|]
   -- alternative to @ObjectFieldNames@ predicate inlined and simplified
 
 {-|

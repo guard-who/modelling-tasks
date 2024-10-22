@@ -38,6 +38,7 @@ import Modelling.CdOd.Types (
   classNames,
   defaultCdDrawSettings,
   linkNames,
+  normaliseObjectDiagram,
   )
 import Modelling.Common                 (withLang)
 import Modelling.Types (
@@ -174,10 +175,10 @@ spec = do
           Object {isAnonymous = True, objectName = "c1", objectClass = "C"}
           ],
         links = [
-          Link {linkName = "y", linkFrom = "a", linkTo = "c"},
-          Link {linkName = "y", linkFrom = "a", linkTo = "c1"},
           Link {linkName = "x", linkFrom = "c", linkTo = "a"},
-          Link {linkName = "x", linkFrom = "c1", linkTo = "a"}
+          Link {linkName = "x", linkFrom = "c1", linkTo = "a"},
+          Link {linkName = "y", linkFrom = "a", linkTo = "c"},
+          Link {linkName = "y", linkFrom = "a", linkTo = "c1"}
           ]
         }
   where
@@ -186,7 +187,7 @@ spec = do
       }
 
 odFor :: Cd -> IO Od
-odFor cd = oDiagram <$> do
+odFor cd = normaliseObjectDiagram . oDiagram <$> do
   g <- getStdGen
   evalRandT (getDifferentNamesTask failed fewObjects cd) g
   where
@@ -274,9 +275,9 @@ simpleCircleOd = ObjectDiagram {
     Object {isAnonymous = True, objectName = "c", objectClass = "C"}
     ],
   links = [
-    Link {linkName = "z", linkFrom = "a", linkTo = "c"},
     Link {linkName = "x", linkFrom = "b", linkTo = "a"},
-    Link {linkName = "y", linkFrom = "c", linkTo = "b"}
+    Link {linkName = "y", linkFrom = "c", linkTo = "b"},
+    Link {linkName = "z", linkFrom = "a", linkTo = "c"}
     ]
   }
 

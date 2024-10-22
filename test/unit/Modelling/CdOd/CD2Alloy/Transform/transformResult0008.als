@@ -12,25 +12,26 @@ module cd2alloy/CD1Module
 
 //Parent of all classes relating fields and values
 abstract sig Object {
-  x : set Object
+  x : set Object,
+  y : set Object
 }
 
 fact LimitIsolatedObjects {
- let get = x |
+ let get = x + y |
   #Object > mul[2, #{o : Object | no o.get and no get.o}]
 }
 
 
 fact SizeConstraints {
   #Object >= 2
-  let count = #x | count >= 4 and count =< 10
-  all o : Object | let x = plus[#o.x, minus[#x.o, #(o.x & o)]] | x =< 4
+  let count = plus[#x, #y] | count >= 4 and count =< 10
+  all o : Object | let x = plus[plus[#o.x, minus[#x.o, #(o.x & o)]], plus[#o.y, minus[#y.o, #(o.y & o)]]] | x =< 4
 
 }
 
 
 fact SomeSelfLoops {
-  some o : Object | o in o.x
+  some o : Object | o in o.(x + y)
 }
 
 
@@ -60,11 +61,16 @@ pred cd1 {
   // Associations
 
   x.Object in C
-  Object.x in D
+  Object.x in B + A
 
-  all o : D | #x.o = 1
+  all o : B + A | #x.o =< 1
+
+  y.Object in D
+  Object.y in B + A
+
+  all o : B + A | #y.o =< 1
 
   // Compositions
-  all o : Object | #x.o =< 1
+  all o : Object | plus[#x.o, #y.o] =< 1
 }
 

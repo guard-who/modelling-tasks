@@ -65,6 +65,7 @@ module Modelling.CdOd.Types (
   maxFiveObjects,
   maxObjects,
   maxRelationships,
+  normaliseObjectDiagram,
   relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
@@ -107,7 +108,7 @@ import Data.Bifunctor.TH (
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
-import Data.List                        ((\\), isPrefixOf, stripPrefix)
+import Data.List                        ((\\), isPrefixOf, sort, stripPrefix)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe (
   catMaybes,
@@ -152,13 +153,19 @@ instance Bitraversable Object where
     <$> f objectName
     <*> g objectClass
 
+{-|
+A link connects two objects and has a name.
+-}
 data Link objectName linkName
   = Link {
+    -- | how the link is called, indicating which relationship it belongs to
     linkName                  :: linkName,
+    -- | the starting point of the link
     linkFrom                  :: objectName,
+    -- | the end point of the link
     linkTo                    :: objectName
     }
-  deriving (Eq, Functor, Generic, Read, Show)
+  deriving (Eq, Functor, Generic, Ord, Read, Show)
 
 instance Bifunctor Link where
   bimap f g Link {..} = Link {
@@ -178,12 +185,20 @@ instance Bitraversable Link where
     <*> f linkFrom
     <*> f linkTo
 
+{-|
+The object diagram consits of objects and links between them.
+
+Note, the order of both, links and objects,
+might influence its visual appearance when drawn.
+-}
 data ObjectDiagram objectName className linkName
   = ObjectDiagram {
+    -- | all objects belonging to the object diagram
     objects                   :: [Object objectName className],
+    -- | all links belonging to the object diagram
     links                     :: [Link objectName linkName]
     }
-  deriving (Eq, Functor, Generic, Read, Show)
+  deriving (Eq, Functor, Generic, Ord, Read, Show)
 
 instance Bifunctor (ObjectDiagram a) where
   bimap f g ObjectDiagram {..} = ObjectDiagram {
@@ -199,6 +214,19 @@ instance Bitraversable (ObjectDiagram a) where
   bitraverse f g ObjectDiagram {..} = ObjectDiagram
     <$> traverse (bitraverse pure f) objects
     <*> traverse (bitraverse pure g) links
+
+{-|
+Sort objects, and links of the 'ObjectDiagram'.
+This enables better comparison (especially for test cases).
+-}
+normaliseObjectDiagram
+  :: (Ord className, Ord linkName, Ord objectName)
+  => ObjectDiagram objectName className linkName
+  -> ObjectDiagram objectName className linkName
+normaliseObjectDiagram ObjectDiagram {..} = ObjectDiagram {
+  objects = sort objects,
+  links = sort links
+  }
 
 shuffleObjectAndLinkOrder
   :: MonadRandom m
