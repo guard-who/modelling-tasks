@@ -139,7 +139,7 @@ getOdsFor cd1 cd2 = do
   Right ods' <- runExceptT $ mapM (alloyInstanceToOd possibleLinks) `mapM` ods
   return (get [1] ods', get [2] ods')
   where
-    get x = sort . map normaliseObjectDiagram . fromMaybe [] . M.lookup x
+    get x = sort . maybe [] (map normaliseObjectDiagram) . M.lookup x
     fewObjects = defaultMatchCdOdConfig { objectConfig = oc }
     oc = ObjectConfig {
       linkLimits = (0, Just 2),

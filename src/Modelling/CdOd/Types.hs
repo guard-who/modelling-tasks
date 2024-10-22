@@ -186,7 +186,7 @@ instance Bitraversable Link where
     <*> f linkTo
 
 {-|
-The object diagram consits of objects and links between them.
+The object diagram consists of objects and links between them.
 
 Note, the order of both, links and objects,
 might influence its visual appearance when drawn.
