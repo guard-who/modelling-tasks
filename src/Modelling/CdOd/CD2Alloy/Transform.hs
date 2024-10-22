@@ -86,8 +86,7 @@ Parts belonging to the CD2Alloy Alloy program.
 data Parts = Parts {
   part1 :: !String,
   part2 :: !String,
-  part3 :: !String,
-  part4 :: !String
+  part3 :: !String
   }
 
 {-|
@@ -126,7 +125,7 @@ transform
   ObjectProperties {..}
   index
   time =
-  Parts { part1, part2, part3, part4 }
+  Parts { part1, part2, part3 }
   where
     allRelationshipNames = nubOrd $ fromMaybe
       (mapMaybe relationshipName relationships)
@@ -210,12 +209,11 @@ fact SizeConstraints {
       ++ maybe "" ((" x <= " ++) . show) maybeMax
     maybeLower l = maybeLow l . fst
     maybeLow l x = if x <= l then Nothing else Just x
-    part2 = "" -- Figure 2.1, Rule 3, part 2
-    part3 = [i|
+    part2 = [i|
 // Classes
 #{unlines (classSigs classNames)}
 |] -- Figure 2.1, Rule 1, part 1
-    part4 = [i|
+    part3 = [i|
 ///////////////////////////////////////////////////
 // CD#{index}
 ///////////////////////////////////////////////////
@@ -474,8 +472,7 @@ mergeParts
 mergeParts p p' = Parts
   (part1 p)
   (part2 p `unionL` part2 p')
-  (part3 p `unionL` part3 p')
-  (part4 p ++ part4 p')
+  (part3 p ++ part3 p')
   where
     unionL x y = unlines $ (++ [""]) $ filter (not . null) $ lines x `union` lines y
 
@@ -485,7 +482,7 @@ Transforms 'Parts' into an Alloy program (besides the run command).
 (See 'createRunCommand' for the latter)
 -}
 combineParts :: Parts -> String
-combineParts Parts {..} = part1 ++ part2 ++ part3 ++ part4
+combineParts Parts {..} = part1 ++ part2 ++ part3
 
 {-|
 Transform a set into Alloy code of a set.

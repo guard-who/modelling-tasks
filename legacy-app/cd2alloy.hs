@@ -33,8 +33,7 @@ run input output template index = do
       p1 = part1 parts
       p2 = part2 parts
       p3 = part3 parts
-      p4 = part4 parts
-      p5 = createRunCommand
+      p4 = createRunCommand
         ("cd" ++ index)
         (length $ classNames cd)
         maxFiveObjects
@@ -44,9 +43,8 @@ run input output template index = do
       when template $ let out = file ++ ".part1" in writeFile out p1 >> putStrLn ("Some output written to " ++ out)
       let out = file ++ ".part2" in writeFile out p2 >> putStrLn ("Some output written to " ++ out)
       let out = file ++ ".part3" in writeFile out p3 >> putStrLn ("Some output written to " ++ out)
-      let out = file ++ ".part4" in writeFile out p4 >> putStrLn ("Some output written to " ++ out)
-      when template $ let out = file ++ ".part5" in writeFile out p5 >> putStrLn ("Some output written to " ++ out)
-    Nothing -> putStrLn $ (if template then p1 else "") ++ p2 ++ p3 ++ p4 ++ (if template then p5 else "")
+      when template $ let out = file ++ ".part4" in writeFile out p4 >> putStrLn ("Some output written to " ++ out)
+    Nothing -> putStrLn $ (if template then p1 else "") ++ p2 ++ p3 ++ (if template then p4 else "")
   where
     toCd cs es = ClassDiagram {
       classNames = map fst cs,
