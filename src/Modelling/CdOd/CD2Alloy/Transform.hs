@@ -68,11 +68,10 @@ import Modelling.CdOd.Types (
 import qualified Data.Set                         as S (
   fromList,
   insert,
-  union,
   unions,
   )
 
-import Data.Bifunctor                   (first, second)
+import Data.Bifunctor                   (first)
 import Data.Foldable                    (Foldable (toList))
 import Data.Function                    ((&))
 import Data.List                        ((\\), intercalate, union)
@@ -84,9 +83,8 @@ import Data.Maybe (
   maybeToList,
   )
 import Data.Set                         (Set)
-import Data.String.Interpolate          (i, iii)
+import Data.String.Interpolate          (__i, i, iii)
 import Data.Tuple.Extra                 (uncurry3)
-import Polysemy.Plugin.Fundep.Utils     (singleListToJust)
 
 {-|
 Parts belonging to the CD2Alloy Alloy program.
@@ -208,12 +206,12 @@ fact SizeConstraints {
     count (x:y:_) = Just [iii|let count = #{counted} | count#{x} and count#{y}|]
     linksPerObjects Nothing Nothing = Nothing
     linksPerObjects maybeMin maybeMax = Just $
-      "  all o : Object | "
-      ++ [iii|
-        let x = plus[#{alloyPlus $ map ("#o." ++) allRelationshipsList},
-          minus[#{alloyPlus $ map (\get -> '#' : get ++ ".o") allRelationshipsList},
-           #{alloyPlus $ map (\get -> "#(o." ++ get ++ " & o)") allRelationshipsList}]] |
-        |]
+      (
+        (\x -> [i|  all o : Object | let x = #{x} | |])
+        . alloyPlus $ map
+        (\link -> [i|plus[\#o.#{link}, minus[\##{link}.o, \#(o.#{link} & o)]]|])
+        allRelationshipsList
+        )
       ++ maybe "" ((" x >= " ++) . show) maybeMin
       ++ maybe "" (const " and") (maybeMin >> maybeMax)
       ++ maybe "" ((" x <= " ++) . show) maybeMax
@@ -257,7 +255,12 @@ fact UsesEveryRelationshipName {
     allRelationships = alloySetOf allRelationshipNames
     loops            = case hasSelfLoops of
       Nothing    -> ""
-      Just hasLoops -> withAlloyJoin ["o"] allRelationshipNames $ \join ->
+      Just hasLoops
+        | null allRelationshipNames -> [__i|
+          fact NeverSelfLoops {
+            false
+          }|]
+        | otherwise -> withAlloyJoin ["o"] allRelationshipNames $ \join ->
         if hasLoops
         then [i|
 fact SomeSelfLoops {
@@ -332,56 +335,6 @@ allSubclassesOf relationships name =
       Inheritance {superClass = s, ..} | name == s -> Just subClass
       _ -> Nothing
 
-{-# COMPLETE Association, Aggregation, CompositionTo, Inheritance #-}
-
-pattern CompositionTo :: className -> Relationship className relationshipName
-pattern CompositionTo to <- Composition {
-  compositionPart = LimitedLinking { linking = to }
-  }
-
-{-|
-Retrieves the direct superclass and composites of the given class.
--}
-superAndCompositionsOf
-  :: [Relationship String String]
-  -- ^ all relationships of the class diagram
-  -> String
-  -- ^ the name of the class to consider
-  -> (Maybe String, [Relationship String String])
-superAndCompositionsOf relationships name =
-  first singleListToJust
-  $ foldr addSuperOrComposition ([], []) relationships
-  where
-    addSuperOrComposition c = case c of
-      Association {} -> id
-      Aggregation {} -> id
-      CompositionTo x
-        | name == x -> second (c :)
-        | otherwise -> id
-      Inheritance {..}
-        | name == subClass -> first (superClass :)
-        | otherwise -> id
-
-maybeUnion :: Ord b => (a -> Set b) -> Maybe a -> Set b -> Set b
-maybeUnion f = maybe id (S.union . f)
-
--- Figure 2.1, Rule 6, corrected
--- (CompFieldNamesCD - inlined)
-{-|
-Retrieve the set of all composites of the given class.
--}
-allCompositionFieldNamesOf
-  :: [Relationship String String]
-  -- ^ all relationships of the class diagram
-  -> String
-  -- ^ the name of the class to consider
-  -> Set String
-allCompositionFieldNamesOf relationships name =
-  maybeUnion (allCompositionFieldNamesOf relationships) super
-  $ S.fromList $ map compositionName compositions
-  where
-    (super, compositions) = superAndCompositionsOf relationships name
-
 {-|
 The predicate constraining the specific class diagram.
 -}
@@ -406,7 +359,7 @@ pred cd#{index} {
   // Associations
 #{unlines objectAttributes}
   // Compositions
-#{unlines compositions}
+#{compositions}
 }
 |]
   where
@@ -428,84 +381,82 @@ pred cd#{index} {
       (maybe [] (uncurry3 associationFromTo) . nameFromTo)
       relationships
     associationFromTo name from to = [
-      makeNonInheritanceAttribute subsFrom name subsTo (limits to),
-      makeNonInheritance subsTo name (limits from)
+      makeNonInheritance subsFrom name subsTo,
+      makeNonInheritanceLimits True subsFrom name (limits to),
+      makeNonInheritanceLimits False subsTo name (limits from)
       ]
       where
         subsFrom = subsCd $ linking from
         subsTo = subsCd $ linking to
-    compositions = mapMaybe
-      (\to -> ("  " ++)
-        <$> compositeConstraint (compFieldNamesCd to) to)
-      nonAbstractClassNames
-      -- Figure 2.2, Rule 4, corrected
-    compFieldNamesCd = allCompositionFieldNamesOf relationships
+    compositions = compositeConstraint $ S.fromList
+      $ flip mapMaybe relationships
+      $ \case
+        Composition {compositionName} -> Just compositionName
+        _ -> Nothing
+      -- Figure 2.2, Rule 4, corrected, simplified
     subsCd = allSubclassesOf relationships
 
 {-|
-Generates inlined Alloy code equivalent to the @ObjectLowerAttribute@
-or @ObjectLowerUpperAttribute@ predicate.
--}
-makeNonInheritanceAttribute
-  :: Set String
-  -> String
-  -> Set String
-  -> (Int, Maybe Int)
-  -> String
-makeNonInheritanceAttribute fromSet name toSet (low, maybeUp) =
-  (++) [i|  #{name}.Object in #{fromAlloySet}
-  Object.#{name} in #{alloySetOf toSet}|]
-  -- alternative to @ObjectFieldNames@ predicate inlined and simplified
-  $ ('\n' : [i|  all o : #{fromAlloySet} | |])
-  & case maybeUp of
-    Nothing -> case low of
-      0 -> const ""
-      _ -> (++ [iii|\#o.#{name} >= #{low}|])
-      -- @ObjectLowerAttribute@ predicate inlined
-    Just up -> case low of
-      0 -> (++ [iii|\#o.#{name} =< #{up}|])
-      _ | low == up -> (++ [iii|\#o.#{name} = #{up}|])
-        | otherwise -> (++ [iii|let n = \#o.#{name} | n >= #{low} and n =< #{up}|])
-      -- @ObjectLowerUpperAttribute@ predicate inlined
-  where
-    fromAlloySet = alloySetOf fromSet
-
-{-|
-Generates inlined Alloy code equivalent to the @ObjectLowerUpper@ predicate.
+Generates inlined Alloy code equivalent to a combination of the first parts of
+the @ObjectLowerAttribute@ or @ObjectLowerUpperAttribute@
+and the @ObjectFieldNames@ predicate.
 -}
 makeNonInheritance
   :: Set String
   -> String
+  -> Set String
+  -> String
+makeNonInheritance fromSet name toSet = [i|
+  #{name}.Object in #{alloySetOf fromSet}
+  Object.#{name} in #{alloySetOf toSet}
+  |]
+  -- alternative to @ObjectFieldNames@ predicate inlined and simplified
+
+{-|
+Generates inline, simplified Alloy code equivalent to
+the @ObjectLowerAttribute@ or @ObjectLowerUpperAttribute@ predicate
+when the first parameter is set to true
+and Alloy code equivalent to
+the @ObjectLower@ or @ObjectLowerUpper@ predicate otherwise.
+-}
+makeNonInheritanceLimits
+  :: Bool
+  -> Set String
+  -> String
   -> (Int, Maybe Int)
   -> String
-makeNonInheritance fromSet name (low, maybeUp) =
+makeNonInheritanceLimits attribute fromSet name (low, maybeUp) =
   [i|  all o : #{alloySetOf fromSet} | |]
   & case maybeUp of
     Nothing -> case low of
       0 -> const ""
-      _ -> (++ [iii|\##{name}.o >= #{low}|])
-      -- @ObjectLower@ predicate inlined and simplified
+      _ -> (++ [iii|#{linkCount} >= #{low}|])
+      -- @ObjectLowerAttribute@ or @ObjectLower@ predicate
+      -- inlined and simplified
     Just up -> case low of
-      0 -> (++ [iii|\##{name}.o =< #{up}|])
-      _ | low == up -> (++ [iii|\##{name}.o = #{up}|])
-        | otherwise -> flip (++) [iii|
-        let n = \##{name}.o |
-          n >= #{low} and n =< #{up}
-        |]
-      -- @ObjectLowerUpper@ predicate inlined and simplified
+      0 -> (++ [iii|#{linkCount} =< #{up}|])
+      _ | low == up -> (++ [iii|#{linkCount} = #{up}|])
+        | otherwise -> (++ [iii|let n = #{linkCount} | n >= #{low} and n =< #{up}|])
+      -- @ObjectLowerUpperAttribute@ or @ObjectLowerUpper@ predicate
+      -- inlined and simplified
+  where
+    linkCount
+      | attribute = "#o." ++ name
+      | otherwise = '#' : name ++ ".o"
 
 {-|
-Generates inlined Alloy code equivalent to the @Composition@ predicate.
+Generates inlined, simplified Alloy code
+equivalent to the @Composition@ predicate.
 -}
-compositeConstraint :: Set String -> String -> Maybe String
-compositeConstraint nameSet to
-  | null nameSet = Nothing
-  | otherwise = Just $
-    (\usedFieldCount -> [i|all o : #{to} | #{usedFieldCount} =< 1|])
+compositeConstraint :: Set String -> String
+compositeConstraint nameSet
+  | null nameSet = ""
+  | otherwise =
+    (\usedFieldCount -> [i|  all o : Object | #{usedFieldCount} =< 1|])
     $ alloyPlus
     $ (`map` toList nameSet) $ \fieldName ->
       [iii|\##{fieldName}.o|]
-  -- @Composition@ predicate inlined
+  -- @Composition@ predicate inlined and simplified
 
 {-|
 Generates the code to add the Alloy Int values of the given list.
