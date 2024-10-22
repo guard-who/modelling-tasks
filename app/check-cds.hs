@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 module Main where
 
-import qualified Data.Set                         as S (fromList)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Capabilities.Diagrams.IO         ()
@@ -209,8 +208,7 @@ drawCdAndOdsFor is c cds cmd = do
   let mergedParts = foldr mergeParts (head parts) $ tail parts
       parts = getParts allRelationshipNames
       allRelationships = concatMap relationships cds
-      allRelationshipNames = S.fromList
-        $ mapMaybe relationshipName allRelationships
+      allRelationshipNames = mapMaybe relationshipName allRelationships
   let parts' = combineParts mergedParts ++ createRunCommand
         cmd
         3

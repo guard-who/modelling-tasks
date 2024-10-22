@@ -38,7 +38,6 @@ import qualified Data.Map                         as M (
   toList,
   traverseWithKey,
   )
-import qualified Data.Set                         as S (fromList)
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.Cache               (MonadCache)
@@ -671,8 +670,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
       parts1to3 = mergeParts parts1and2 parts3
       relationships1and2 = relationships cd1 ++ relationships cd2
       relationships1to3 = relationships1and2 ++ relationships cd3
-      allRelationshipNames = S.fromList
-        $ mapMaybe relationshipName relationships1to3
+      allRelationshipNames = mapMaybe relationshipName relationships1to3
       alloyFor = alloyForAllRelationships allRelationshipNames
       cd1not2 = runCommand "cd1 and (not cd2)" relationships1and2
       cd2not1 = runCommand "cd2 and (not cd1)" relationships1and2

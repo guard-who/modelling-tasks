@@ -65,16 +65,11 @@ import Modelling.CdOd.Types (
   relationshipName,
   )
 
-import qualified Data.Set                         as S (
-  fromList,
-  insert,
-  unions,
-  )
-
 import Data.Bifunctor                   (first)
 import Data.Foldable                    (Foldable (toList))
 import Data.Function                    ((&))
 import Data.List                        ((\\), intercalate, union)
+import Data.List.Extra                  (nubOrd)
 import Data.Maybe (
   catMaybes,
   fromMaybe,
@@ -82,7 +77,6 @@ import Data.Maybe (
   mapMaybe,
   maybeToList,
   )
-import Data.Set                         (Set)
 import Data.String.Interpolate          (__i, i, iii)
 import Data.Tuple.Extra                 (uncurry3)
 
@@ -109,7 +103,7 @@ with the generated Alloy code for other (similar) class diagrams.
 transform
   :: Cd
   -- ^ the class diagram for which to generate the code
-  -> Maybe (Set String)
+  -> Maybe [String]
   -- ^ all relationship names to consider
   -- (possibly across multiple class diagrams;
   -- if not provided, they will be taken from the provided class diagram)
@@ -134,8 +128,8 @@ transform
   time =
   Parts { part1, part2, part3, part4 }
   where
-    allRelationshipNames = fromMaybe
-      (S.fromList $ mapMaybe relationshipName relationships)
+    allRelationshipNames = nubOrd $ fromMaybe
+      (mapMaybe relationshipName relationships)
       maybeAllRelationshipNames
     part1 :: String
     part1 = [i|
@@ -165,8 +159,7 @@ abstract sig Object {
 |]
     fields = intercalate ",\n" $ map
       (\fieldName -> [i|  #{fieldName} : set Object|])
-      allRelationshipsList
-    allRelationshipsList = toList allRelationshipNames
+      allRelationshipNames
     objectsFact :: String
     objectsFact
       | hasLimitedIsolatedObjects
@@ -175,7 +168,7 @@ abstract sig Object {
       = noEmptyInstances
     limitIsolatedObjects = [i|
 fact LimitIsolatedObjects {
- let get = #{allRelationships} |
+ let get = #{alloySetOf allRelationshipNames} |
   \#Object > mul[2, \#{o : Object | no o.get and no get.o}]
 }
 |]
@@ -200,7 +193,7 @@ fact SizeConstraints {
         $ first (maybeLow 0)
         $ linksPerObjectLimits objectConfig
       ]
-    counted = alloyPlus $ map ('#':) allRelationshipsList
+    counted = alloyPlus $ map ('#':) allRelationshipNames
     count [] = Nothing
     count [x] = Just $ counted ++ x
     count (x:y:_) = Just [iii|let count = #{counted} | count#{x} and count#{y}|]
@@ -210,7 +203,7 @@ fact SizeConstraints {
         (\x -> [i|  all o : Object | let x = #{x} | |])
         . alloyPlus $ map
         (\link -> [i|plus[\#o.#{link}, minus[\##{link}.o, \#(o.#{link} & o)]]|])
-        allRelationshipsList
+        allRelationshipNames
         )
       ++ maybe "" ((" x >= " ++) . show) maybeMin
       ++ maybe "" (const " and") (maybeMin >> maybeMax)
@@ -251,8 +244,7 @@ fact UsesNotEveryRelationshipName {
 fact UsesEveryRelationshipName {
 #{unlines $ map ("  some " ++) namesLinkingTo}
 }|]
-    namesLinkingTo = map ("Object." ++) allRelationshipsList
-    allRelationships = alloySetOf allRelationshipNames
+    namesLinkingTo = map ("Object." ++) allRelationshipNames
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just hasLoops
@@ -326,10 +318,9 @@ allSubclassesOf
   -- ^ all relationships of the class diagram
   -> String
   -- ^ the name of the class to consider
-  -> Set String
+  -> [String]
 allSubclassesOf relationships name =
-  S.insert name
-  $ S.unions $ map (allSubclassesOf relationships) subclasses
+  nubOrd $ name : concatMap (allSubclassesOf relationships) subclasses
   where
     subclasses = (`mapMaybe` relationships) $ \case
       Inheritance {superClass = s, ..} | name == s -> Just subClass
@@ -341,7 +332,7 @@ The predicate constraining the specific class diagram.
 predicate
   :: String
   -- ^ an identifier for the class diagram
-  -> Set String
+  -> [String]
   -- ^ all relationship names to consider
   -- (possibly across multiple class diagrams)
   -> [Relationship String String]
@@ -386,15 +377,15 @@ pred cd#{index} {
       makeNonInheritanceLimits False subsTo name (limits from)
       ]
       where
+        subsCd = allSubclassesOf relationships
         subsFrom = subsCd $ linking from
         subsTo = subsCd $ linking to
-    compositions = compositeConstraint $ S.fromList
-      $ flip mapMaybe relationships
+    compositions = compositeConstraint
+      $ nubOrd $ flip mapMaybe relationships
       $ \case
         Composition {compositionName} -> Just compositionName
         _ -> Nothing
       -- Figure 2.2, Rule 4, corrected, simplified
-    subsCd = allSubclassesOf relationships
 
 {-|
 Generates inlined Alloy code equivalent to a combination of the first parts of
@@ -402,9 +393,9 @@ the @ObjectLowerAttribute@ or @ObjectLowerUpperAttribute@
 and the @ObjectFieldNames@ predicate.
 -}
 makeNonInheritance
-  :: Set String
+  :: [String]
   -> String
-  -> Set String
+  -> [String]
   -> String
 makeNonInheritance fromSet name toSet = [i|
   #{name}.Object in #{alloySetOf fromSet}
@@ -421,7 +412,7 @@ the @ObjectLower@ or @ObjectLowerUpper@ predicate otherwise.
 -}
 makeNonInheritanceLimits
   :: Bool
-  -> Set String
+  -> [String]
   -> String
   -> (Int, Maybe Int)
   -> String
@@ -448,7 +439,7 @@ makeNonInheritanceLimits attribute fromSet name (low, maybeUp) =
 Generates inlined, simplified Alloy code
 equivalent to the @Composition@ predicate.
 -}
-compositeConstraint :: Set String -> String
+compositeConstraint :: [String] -> String
 compositeConstraint nameSet
   | null nameSet = ""
   | otherwise =
@@ -497,12 +488,12 @@ combineParts :: Parts -> String
 combineParts Parts {..} = part1 ++ part2 ++ part3 ++ part4
 
 {-|
-Transform a 'Foldable structure' into Alloy code of a set.
+Transform a set into Alloy code of a set.
 -}
-alloySetOf :: Foldable f => f String -> String
+alloySetOf :: [String] -> String
 alloySetOf xs
   | null xs = "none"
-  | otherwise = intercalate " + " $ toList xs
+  | otherwise = intercalate " + " xs
 
 {-|
 Generate code for joining two sets (but return Nothing if either is empty).
@@ -510,9 +501,8 @@ Generate code for joining two sets (but return Nothing if either is empty).
 Uses 'alloySetOf' in order to transform the sets into alloySets.
 -}
 maybeAlloyJoin
-  :: (Foldable f1, Foldable f2)
-  => f1 String
-  -> f2 String
+  :: [String]
+  -> [String]
   -> Maybe String
 maybeAlloyJoin xs ys
   | null xs || null ys = Nothing
@@ -529,9 +519,8 @@ Generate Alloy code to join two sets and process it using the given function.
 (uses 'maybeAlloyJoin')
 -}
 withAlloyJoin
-  :: (Foldable f1, Foldable f2)
-  => f1 String
-  -> f2 String
+  :: [String]
+  -> [String]
   -> (String -> String)
   -> String
 withAlloyJoin xs ys f = maybe "" f (maybeAlloyJoin xs ys)
