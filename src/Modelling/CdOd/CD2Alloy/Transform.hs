@@ -371,8 +371,8 @@ pred cd#{index} {
       relationships
     associationFromTo name from to = [
       makeNonInheritance subsFrom name subsTo,
-      makeNonInheritanceLimits True subsFrom name (limits to),
-      makeNonInheritanceLimits False subsTo name (limits from)
+      makeNonInheritanceLimits (++ ('.' : name)) subsFrom (limits to),
+      makeNonInheritanceLimits ((name ++) . ('.' :)) subsTo (limits from)
       ]
       where
         subsCd = allSubclassesOf relationships
@@ -403,17 +403,16 @@ makeNonInheritance fromSet name toSet = [i|
 {-|
 Generates inline, simplified Alloy code equivalent to
 the @ObjectLowerAttribute@ or @ObjectLowerUpperAttribute@ predicate
-when the first parameter is set to true
-and Alloy code equivalent to
-the @ObjectLower@ or @ObjectLowerUpper@ predicate otherwise.
+or
+the @ObjectLower@ or @ObjectLowerUpper@ predicate,
+depending on the first parameter.
 -}
 makeNonInheritanceLimits
-  :: Bool
+  :: (String -> String)
   -> [String]
-  -> String
   -> (Int, Maybe Int)
   -> String
-makeNonInheritanceLimits attribute fromSet name (low, maybeUp) =
+makeNonInheritanceLimits nameLinking fromSet (low, maybeUp) =
   [i|  all o : #{alloySetOf fromSet} | |]
   & case maybeUp of
     Nothing -> case low of
@@ -428,9 +427,7 @@ makeNonInheritanceLimits attribute fromSet name (low, maybeUp) =
       -- @ObjectLowerUpperAttribute@ or @ObjectLowerUpper@ predicate
       -- inlined and simplified
   where
-    linkCount
-      | attribute = "#o." ++ name
-      | otherwise = '#' : name ++ ".o"
+    linkCount = '#' : nameLinking "o"
 
 {-|
 Generates inlined, simplified Alloy code
