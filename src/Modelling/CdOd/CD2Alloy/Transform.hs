@@ -281,7 +281,7 @@ alloyCompare
   -> Maybe Int
   -- ^ the upper limit
   -> String
-  -- ^ the Alloy code prefex to prepend
+  -- ^ the Alloy code prefix to prepend
   -> Maybe String
 alloyCompare maybeWhat maybeMin maybeMax = case maybeWhat of
   Nothing
