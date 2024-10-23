@@ -30,7 +30,7 @@ import Modelling.Auxiliary.Common       (oneOf)
 import Control.Monad.Random             (randomIO)
 import Control.Monad.Except             (runExceptT)
 import Data.List                        (sort)
-import Data.Maybe                       (fromMaybe, mapMaybe)
+import Data.Maybe                       (mapMaybe)
 import Data.Tuple.Extra                 (both)
 import Test.Hspec
 import Test.QuickCheck                  (ioProperty)
