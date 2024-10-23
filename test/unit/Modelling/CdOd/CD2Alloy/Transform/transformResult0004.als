@@ -62,7 +62,7 @@ pred cd1 {
 
   x.Object in A
   Object.x in B + D
-  all o : A | let n = #o.x | n >= 1 and n =< 2
+  all o : A | #o.x >= 1 and #o.x =< 2
 
 
   y.Object in C + A
