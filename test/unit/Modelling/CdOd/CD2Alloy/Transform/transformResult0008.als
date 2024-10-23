@@ -25,7 +25,7 @@ fact LimitIsolatedObjects {
 fact SizeConstraints {
   #Object >= 2
   let count = plus[#x, #y] | count >= 4 and count =< 10
-  all o : Object | let x = plus[plus[#o.x, minus[#x.o, #(o.x & o)]], plus[#o.y, minus[#y.o, #(o.y & o)]]] | x =< 4
+  all o : Object | plus[plus[#o.x, minus[#x.o, #(o.x & o)]], plus[#o.y, minus[#y.o, #(o.y & o)]]] =< 4
 
 }
 
@@ -54,7 +54,7 @@ sig D extends Object {}
 
 pred cd1 {
 
-  Object = none + A + B + C + D
+  Object = A + B + C + D
 
   // Contents
 

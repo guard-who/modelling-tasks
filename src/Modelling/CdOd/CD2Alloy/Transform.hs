@@ -55,6 +55,8 @@ module Modelling.CdOd.CD2Alloy.Transform (
   transform,
   ) where
 
+import qualified Data.List.NonEmpty.Extra         as NE (nubOrd)
+
 import Modelling.CdOd.Types (
   Cd,
   ClassDiagram (..),
@@ -69,13 +71,13 @@ import Data.Bifunctor                   (first)
 import Data.Foldable                    (Foldable (toList))
 import Data.Function                    ((&))
 import Data.List                        ((\\), intercalate, union)
+import Data.List.NonEmpty               (NonEmpty ((:|)))
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe (
   catMaybes,
   fromMaybe,
   isJust,
   mapMaybe,
-  maybeToList,
   )
 import Data.String.Interpolate          (__i, i, iii)
 import Data.Tuple.Extra                 (uncurry3)
@@ -165,7 +167,13 @@ abstract sig Object {
       = limitIsolatedObjects
       | otherwise
       = noEmptyInstances
-    limitIsolatedObjects = [i|
+    limitIsolatedObjects
+      | null allRelationshipNames = [i|
+fact LimitIsolatedObjects {
+  false
+}
+|]
+      | otherwise = [i|
 fact LimitIsolatedObjects {
  let get = #{alloySetOf allRelationshipNames} |
   \#Object > mul[2, \#{o : Object | no o.get and no get.o}]
@@ -185,28 +193,18 @@ fact SizeConstraints {
 }
 |]) [
       ("  #Object >= " ++) . show <$> maybeLower 1 (objectLimits objectConfig),
-      fmap ("  " ++) . count
-        $ maybeToList ((" >= " ++) . show <$> maybeLower 0 (linkLimits objectConfig))
-        ++ maybeToList ((" =< " ++) . show <$> snd (linkLimits objectConfig)),
+      "  " & uncurry count (first (maybeLow 0) $ linkLimits objectConfig),
       uncurry linksPerObjects
         $ first (maybeLow 0)
         $ linksPerObjectLimits objectConfig
       ]
-    counted = alloyPlus $ map ('#':) allRelationshipNames
-    count [] = Nothing
-    count [x] = Just $ counted ++ x
-    count (x:y:_) = Just [iii|let count = #{counted} | count#{x} and count#{y}|]
-    linksPerObjects Nothing Nothing = Nothing
-    linksPerObjects maybeMin maybeMax = Just $
-      (
-        (\x -> [i|  all o : Object | let x = #{x} ||])
-        . alloyPlus $ map
-        (\link -> [i|plus[\#o.#{link}, minus[\##{link}.o, \#(o.#{link} & o)]]|])
-        allRelationshipNames
-        )
-      ++ maybe "" ((" x >= " ++) . show) maybeMin
-      ++ maybe "" (const " and") (maybeMin >> maybeMax)
-      ++ maybe "" ((" x =< " ++) . show) maybeMax
+    count = alloyCompare $ alloyPlus $ map ('#':) allRelationshipNames
+    linksPerObjects :: Maybe Int -> Maybe Int -> Maybe String
+    linksPerObjects maybeMin maybeMax =
+      let maybeLinkCount = alloyPlus $ map
+            (\link -> [i|plus[\#o.#{link}, minus[\##{link}.o, \#(o.#{link} & o)]]|])
+            allRelationshipNames
+      in [i|  all o : Object | |] & alloyCompare maybeLinkCount maybeMin maybeMax
     maybeLower l = maybeLow l . fst
     maybeLow l x = if x <= l then Nothing else Just x
     part2 = [i|
@@ -246,20 +244,59 @@ fact UsesEveryRelationshipName {
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just hasLoops
-        | null allRelationshipNames -> [__i|
-          fact NeverSelfLoops {
+        | null allRelationshipNames, hasLoops -> [__i|
+          fact SomeSelfLoops {
             false
           }|]
-        | otherwise -> withAlloyJoin ["o"] allRelationshipNames $ \join ->
+        | null allRelationshipNames -> ""
+        | otherwise ->
         if hasLoops
         then [i|
 fact SomeSelfLoops {
-  some o : Object | o in #{join}
+  some o : Object | o in o.#{relationshipSet}
 }|]
         else [i|
 fact NoSelfLoops {
-  no o : Object | o in #{join}
+  no o : Object | o in o.#{relationshipSet}
 }|]
+    relationshipSet
+      | [_] <- allRelationshipNames
+      = alloySetOf allRelationshipNames
+      | otherwise
+      = "(" ++ alloySetOf allRelationshipNames ++ ")"
+
+{-|
+Given a possible counter formula and two limiters this function generates
+Alloy code which is to be applied to an Alloy code prefix in order
+to possible generate Alloy code that describes the resulting constraint.
+
+(If the result is 'Nothing', nothing needs to be constrained)
+-}
+alloyCompare
+  :: Maybe String
+  -- ^ if 'Nothing' this counter formula is assumed to be equal to '0'
+  -- (e.g. the case for the result of 'alloyPlus')
+  -> Maybe Int
+  -- ^ the lower limit
+  -> Maybe Int
+  -- ^ the upper limit
+  -> String
+  -- ^ the Alloy code prefex to prepend
+  -> Maybe String
+alloyCompare maybeWhat maybeMin maybeMax = case maybeWhat of
+  Nothing
+    | fromMaybe 0 maybeMin == 0 -> const Nothing
+    | otherwise -> const $ Just "  false"
+  Just what -> case maybeMax of
+    Nothing -> case maybeMin of
+      Nothing -> const Nothing
+      Just low -> Just . (++ [iii|#{what} >= #{low}|])
+    Just up -> Just . case maybeMin of
+      Nothing -> (++ [iii|#{what} =< #{up}|])
+      Just low
+        | low == up -> (++ [iii|#{what} = #{up}|])
+        | otherwise ->
+          (++ [iii|let count = #{what} | count >= #{low} and count =< #{up}|])
 
 {-|
 Creates an Alloy run command line taking provided size constraints into account.
@@ -316,9 +353,10 @@ allSubclassesOf
   -- ^ all relationships of the class diagram
   -> String
   -- ^ the name of the class to consider
-  -> [String]
+  -> NonEmpty String
 allSubclassesOf relationships name =
-  nubOrd $ name : concatMap (allSubclassesOf relationships) subclasses
+  NE.nubOrd
+  $ name :| concatMap (toList . allSubclassesOf relationships) subclasses
   where
     subclasses = (`mapMaybe` relationships) $ \case
       Inheritance {superClass = s, ..} | name == s -> Just subClass
@@ -353,7 +391,7 @@ pred cd#{index} {
 |]
   where
     objects =
-      "Object = " ++ intercalate " + " ("none" : nonAbstractClassNames)
+      "Object = " ++ alloySetOf nonAbstractClassNames
       -- Figure 2.2, Rule 5
     nonExistingRelationships = map ("  no " ++)
       $ toList allRelationshipNames \\ mapMaybe relationshipName relationships
@@ -370,7 +408,7 @@ pred cd#{index} {
       (maybe [] (uncurry3 associationFromTo) . nameFromTo)
       relationships
     associationFromTo name from to = [
-      makeNonInheritance subsFrom name subsTo,
+      makeNonInheritance (toList subsFrom) name (toList subsTo),
       makeNonInheritanceLimits (++ ('.' : name)) subsFrom (limits to),
       makeNonInheritanceLimits ((name ++) . ('.' :)) subsTo (limits from)
       ]
@@ -409,11 +447,11 @@ depending on the first parameter.
 -}
 makeNonInheritanceLimits
   :: (String -> String)
-  -> [String]
+  -> NonEmpty String
   -> (Int, Maybe Int)
   -> String
 makeNonInheritanceLimits nameLinking fromSet (low, maybeUp) =
-  [i|  all o : #{alloySetOf fromSet} | |]
+  [i|  all o : #{alloySetOf $ toList fromSet} | |]
   & case maybeUp of
     Nothing -> case low of
       0 -> const ""
@@ -434,9 +472,8 @@ Generates inlined, simplified Alloy code
 equivalent to the @Composition@ predicate.
 -}
 compositeConstraint :: [String] -> String
-compositeConstraint nameSet
-  | null nameSet = ""
-  | otherwise =
+compositeConstraint nameSet =
+  maybe ""
     (\usedFieldCount -> [i|  all o : Object | #{usedFieldCount} =< 1|])
     $ alloyPlus
     $ (`map` toList nameSet) $ \fieldName ->
@@ -446,10 +483,10 @@ compositeConstraint nameSet
 {-|
 Generates the code to add the Alloy Int values of the given list.
 -}
-alloyPlus :: [String] -> String
+alloyPlus :: [String] -> Maybe String
 alloyPlus = \case
-  [] -> "0"
-  [x] -> x
+  [] -> Nothing
+  [x] -> Just x
   xs@(_:_:_) -> alloyPlus $ pairPlus xs
   where
     pairPlus = \case
@@ -487,33 +524,3 @@ alloySetOf :: [String] -> String
 alloySetOf xs
   | null xs = "none"
   | otherwise = intercalate " + " xs
-
-{-|
-Generate code for joining two sets (but return Nothing if either is empty).
-
-Uses 'alloySetOf' in order to transform the sets into alloySets.
--}
-maybeAlloyJoin
-  :: [String]
-  -> [String]
-  -> Maybe String
-maybeAlloyJoin xs ys
-  | null xs || null ys = Nothing
-  | otherwise = Just $ alloySet xs ++ '.' : alloySet ys
-  where
-    alloySet zs =
-      if length zs == 1
-      then alloySetOf zs
-      else "(" ++ alloySetOf zs ++ ")"
-
-{-|
-Generate Alloy code to join two sets and process it using the given function.
-
-(uses 'maybeAlloyJoin')
--}
-withAlloyJoin
-  :: [String]
-  -> [String]
-  -> (String -> String)
-  -> String
-withAlloyJoin xs ys f = maybe "" f (maybeAlloyJoin xs ys)

@@ -16,19 +16,17 @@ abstract sig Object {
 }
 
 fact LimitIsolatedObjects {
- let get = none |
-  #Object > mul[2, #{o : Object | no o.get and no get.o}]
+  false
 }
 
 
 fact SizeConstraints {
   #Object >= 2
-  let count = 0 | count >= 4 and count =< 10
-  all o : Object | let x = 0 | x =< 4
+  false
 
 }
 
-fact NeverSelfLoops {
+fact SomeSelfLoops {
   false
 }
 
@@ -52,7 +50,7 @@ sig D extends Object {}
 
 pred cd1 {
 
-  Object = none + A + B + C + D
+  Object = A + B + C + D
 
   // Contents
 
