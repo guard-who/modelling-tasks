@@ -12,7 +12,6 @@ extra-source-files:
   - alloy/ad/reachabilityRules.als
   - alloy/cd/relationshipLimits.als
   - alloy/cd/generate.als
-  - alloy/od/template.als
   - alloy/petri/Helpers.als
   - alloy/petri/PetriAdditions.als
   - alloy/petri/PetriConcepts.als

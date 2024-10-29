@@ -104,7 +104,6 @@ import Modelling.CdOd.Types (
   relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
-  reverseAssociation,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   )
@@ -141,7 +140,7 @@ import Control.Monad.Random (
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
-import Data.GraphViz                    (DirType (Back))
+import Data.GraphViz                    (DirType (Forward))
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, listToMaybe, mapMaybe)
 import Data.Ratio                       ((%))
@@ -264,7 +263,7 @@ matchCdOdTask path task = do
       einem oder beiden Klassendiagrammen passen.
       |]
   images (:[]) snd
-    $=<< (\_ (is,o) -> (is,) <$> cacheOd o Back True path)
+    $=<< (\_ (is,o) -> (is,) <$> cacheOd o Forward True path)
     `M.traverseWithKey` instances task
   paragraph $ do
     translate $ do
@@ -689,7 +688,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
                        ([]   , instancesNot1not2)]
   where
     alloyForAllRelationships allRelationshipNames cd nr = transform
-      (cd {relationships = map reverseAssociation $ relationships cd})
+      cd
       (Just allRelationshipNames)
       []
       (objectConfig config)

@@ -399,9 +399,9 @@ pred cd#{index} {
       Association {..} ->
         Just (associationName, associationFrom, associationTo)
       Aggregation {..} ->
-        Just (aggregationName, aggregationWhole, aggregationPart)
+        Just (aggregationName, aggregationPart, aggregationWhole)
       Composition {..} ->
-        Just (compositionName, compositionWhole, compositionPart)
+        Just (compositionName, compositionPart, compositionWhole)
       Inheritance {} ->
         Nothing
     objectAttributes = concatMap
@@ -477,7 +477,7 @@ compositeConstraint nameSet =
     (\usedFieldCount -> [i|  all o : Object | #{usedFieldCount} =< 1|])
     $ alloyPlus
     $ (`map` toList nameSet) $ \fieldName ->
-      [iii|\##{fieldName}.o|]
+      [iii|\#o.#{fieldName}|]
   -- @Composition@ predicate inlined and simplified
 
 {-|

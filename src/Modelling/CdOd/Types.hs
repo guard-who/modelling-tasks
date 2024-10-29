@@ -69,7 +69,6 @@ module Modelling.CdOd.Types (
   relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
-  reverseAssociation,
   shuffleAnnotatedClassAndConnectionOrder,
   shuffleClassAndConnectionOrder,
   shuffleAnyClassAndConnectionOrder,
@@ -414,17 +413,6 @@ isRelationshipValid = \case
     validLimit' (x, Just y) = x >= 0 && y > 0 && y >= x
     validComposition (_, Nothing) = False
     validComposition limit@(_, Just y) = y <= 1 && validLimit' limit
-
-reverseAssociation :: Relationship c r -> Relationship c r
-reverseAssociation x = case x of
-  Association {..} -> Association {
-    associationName           = associationName,
-    associationFrom           = associationTo,
-    associationTo             = associationFrom
-    }
-  Aggregation {} -> x
-  Composition {} -> x
-  Inheritance {} -> x
 
 data Annotation annotation annotated = Annotation {
   annotated                   :: annotated,

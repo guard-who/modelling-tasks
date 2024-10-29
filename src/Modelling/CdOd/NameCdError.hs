@@ -128,7 +128,6 @@ import Modelling.CdOd.Types (
   maxObjects,
   relationshipName,
   renameClassesAndRelationships,
-  reverseAssociation,
   shuffleAnnotatedClassAndConnectionOrder,
   toArticleToUse,
   toPropertySet,
@@ -817,10 +816,9 @@ nameCdError NameCdErrorConfig {..}  = do
             [problem] -> return (cd2, problem, removes)
             _ -> error "error in task type: property fix is not unique"
     getOD cd = do
-      let reversedRelationships = map reverseAssociation $ relationships cd
-          maxNumberOfObjects = maxObjects $ snd $ classLimits classConfig
+      let maxNumberOfObjects = maxObjects $ snd $ classLimits classConfig
           parts = transform
-            (cd {relationships = reversedRelationships})
+            cd
             Nothing
             []
             maxNumberOfObjects
@@ -831,7 +829,7 @@ nameCdError NameCdErrorConfig {..}  = do
             "cd"
             (length $ classNames cd)
             maxNumberOfObjects
-            reversedRelationships
+            (relationships cd)
           possibleLinkNames = mapMaybe relationshipName $ relationships cd
       od <- listToMaybe
         <$> getInstances (Just 1) timeout (combineParts parts ++ command)

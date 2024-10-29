@@ -93,7 +93,6 @@ import Modelling.CdOd.Types (
   relationshipName,
   renameObjectsWithClassesAndLinksInOd,
   renameClassesAndRelationships,
-  reverseAssociation,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   )
@@ -133,7 +132,7 @@ import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bitraverse)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
-import Data.GraphViz                    (DirType (Back))
+import Data.GraphViz                    (DirType (Forward))
 import Data.List                        (group, intersect, permutations, sort)
 import Data.Maybe (
   catMaybes,
@@ -300,7 +299,7 @@ differentNamesTask path task = do
     english "and the following object diagram (which conforms to it):"
     german "und das folgende (dazu passende) Objektdiagramm:"
   paragraph $ image $=<<
-    cacheOd od Back True path
+    cacheOd od Forward True path
   paragraph $ do
     translate $ do
       english [iii|
@@ -535,11 +534,8 @@ getDifferentNamesTask
   -> DifferentNamesConfig
   -> Cd
   -> m DifferentNamesInstance
-getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
-    let cd     = cd' {
-          relationships = map reverseAssociation $ relationships cd'
-          }
-        cd0    = (0 :: Integer, cd)
+getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
+    let cd0    = (0 :: Integer, cd)
         parts0 = uncurry alloyFor cd0
         labels = mapMaybe relationshipName . relationships $ snd cd0
         cds    = map
@@ -563,7 +559,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
       labels' <- shuffleM labels
       used <- usedLabels labels od1
       let bm  = BM.fromList $ zip (map (:[]) ['a', 'b' ..]) labels'
-          cd1 = renameEdges (BM.twist bm) cd'
+          cd1 = renameEdges (BM.twist bm) cd
           bm' = BM.filter (const (`elem` used)) bm
           isCompleteMapping = BM.keysR bm == sort used
       if maybe
@@ -590,8 +586,8 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd' = do
         else tryNext
   where
     renameEdges bm = either (error . show) id . bitraverse pure (`BM.lookup` bm)
-    alloyFor n cd = transform
-      cd
+    alloyFor n cd' = transform
+      cd'
       Nothing
       []
       objectConfig

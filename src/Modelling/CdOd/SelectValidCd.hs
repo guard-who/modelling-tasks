@@ -131,7 +131,7 @@ import Control.Monad.Random.Class       (MonadRandom)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Either                      (isRight, partitionEithers)
-import Data.GraphViz                    (DirType (Back, NoDir))
+import Data.GraphViz                    (DirType (Forward, NoDir))
 import Data.List                        (singleton)
 import Data.Map                         (Map)
 import Data.Maybe                       (mapMaybe)
@@ -403,7 +403,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
     byName = printNames drawSettings
     withDir = printNavigations drawSettings
     dir
-      | withDir = Back
+      | withDir = Forward
       | otherwise = NoDir
     notCorrect = paragraph $ translate $ do
       english [iii|Your answer to class diagram #{x} is not correct.|]

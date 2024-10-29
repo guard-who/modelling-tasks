@@ -65,10 +65,10 @@ pred cd1 {
   all o : A | #o.x >= 1 and #o.x =< 2
 
 
-  y.Object in C
-  Object.y in D
+  y.Object in D
+  Object.y in C
+  all o : D | #o.y = 1
 
-  all o : D | #y.o = 1
 
   // Compositions
 

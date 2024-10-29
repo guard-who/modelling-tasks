@@ -18,7 +18,6 @@ import Modelling.CdOd.Types (
   fromClassDiagram,
   maxFiveObjects,
   relationshipName,
-  reverseAssociation,
   )
 
 import Control.Monad.Random             (evalRandT, getStdGen)
@@ -233,7 +232,7 @@ drawCdAndOdsFor is c cds cmd = do
     maxThreeObjects = maxFiveObjects { objectLimits = (1, 3) }
     getParts relationshipNames = zipWith (cdToAlloy relationshipNames) cds [0..]
     cdToAlloy relationshipNames cd i = transform
-      (cd {relationships = map reverseAssociation $ relationships cd})
+      cd
       (Just relationshipNames)
       []
       maxThreeObjects

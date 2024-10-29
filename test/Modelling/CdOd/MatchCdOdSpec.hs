@@ -77,14 +77,14 @@ spec = do
           Object {isAnonymous = False, objectName = "a", objectClass = "A"},
           Object {isAnonymous = False, objectName = "b", objectClass = "B"}],
         links = [
-          Link {linkName = "x", linkFrom = "b", linkTo = "a"}]
+          Link {linkName = "x", linkFrom = "a", linkTo = "b"}]
         },
       ObjectDiagram {
         objects = [
           Object {isAnonymous = False, objectName = "a", objectClass = "A"},
           Object {isAnonymous = False, objectName = "b", objectClass = "B"}],
         links = [
-          Link {linkName = "x", linkFrom = "a", linkTo = "b"}]
+          Link {linkName = "x", linkFrom = "b", linkTo = "a"}]
         }
       )
     inheritOd = (
@@ -117,7 +117,7 @@ spec = do
             Object {isAnonymous = False, objectName = "b", objectClass = "B"}
             ],
           links = [
-            Link {linkName = "x", linkFrom = "b", linkTo = "a"}
+            Link {linkName = "x", linkFrom = "a", linkTo = "b"}
             ]
           }
         ]

@@ -15,7 +15,7 @@ import Control.Monad                    (void)
 import Control.Monad.Except             (runExceptT)
 import Control.Monad.Random             (evalRandT)
 import Data.ByteString.Char8            (pack)
-import Data.GraphViz                    (DirType (Back))
+import Data.GraphViz                    (DirType (Forward))
 import Test.Hspec                       (Spec)
 import Test.Similarity                  (Deviation (..), shouldReturnSimilar)
 import System.IO.Extra                  (withTempFile)
@@ -45,5 +45,5 @@ spec = do
       let possibleLinks = map (: []) ['w'..'y']
       void $ flip evalRandT
         (mkStdGen 0)
-        $ drawOdFromInstance alloyInstance possibleLinks (Just 1) Back True file
+        $ drawOdFromInstance alloyInstance possibleLinks (Just 1) Forward True file
       readFile file

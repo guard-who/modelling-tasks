@@ -60,17 +60,17 @@ pred cd1 {
 
   // Associations
 
-  x.Object in C
-  Object.x in B + A
+  x.Object in B + A
+  Object.x in C
+  all o : B + A | #o.x =< 1
 
-  all o : B + A | #x.o =< 1
 
-  y.Object in D
-  Object.y in B + A
+  y.Object in B + A
+  Object.y in D
+  all o : B + A | #o.y =< 1
 
-  all o : B + A | #y.o =< 1
 
   // Compositions
-  all o : Object | plus[#x.o, #y.o] =< 1
+  all o : Object | plus[#o.x, #o.y] =< 1
 }
 

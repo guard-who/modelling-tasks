@@ -125,7 +125,6 @@ import Modelling.CdOd.Types (
   maxObjects,
   relationshipName,
   renameClassesAndRelationships,
-  reverseAssociation,
   shuffleAnyClassAndConnectionOrder,
   shuffleClassAndConnectionOrder,
   toArticleToUse,
@@ -924,10 +923,9 @@ repairIncorrect
         <$> traverse fromInstanceWithPredefinedNames changes
     getOD :: (MonadAlloy m, MonadRandom m, MonadThrow m) => Cd -> m (Maybe Od)
     getOD cd = do
-      let reversedRelationships = map reverseAssociation $ relationships cd
-          maxNumberOfObjects = maxObjects $ snd $ classLimits config
+      let maxNumberOfObjects = maxObjects $ snd $ classLimits config
           parts = transform
-            (cd {relationships = reversedRelationships})
+            cd
             Nothing
             []
             maxNumberOfObjects
@@ -938,7 +936,7 @@ repairIncorrect
             "cd"
             (length $ classNames cd)
             maxNumberOfObjects
-            reversedRelationships
+            (relationships cd)
       od <- listToMaybe
         <$> getInstances (Just 1) to (combineParts parts ++ command)
       od' <- forM od $ alloyInstanceToOd

@@ -59,12 +59,12 @@ pred cd1 {
 
   // Associations
 
-  x.Object in C
-  Object.x in D
+  x.Object in D
+  Object.x in C
+  all o : D | #o.x = 1
 
-  all o : D | #x.o = 1
 
   // Compositions
-  all o : Object | #x.o =< 1
+  all o : Object | #o.x =< 1
 }
 
