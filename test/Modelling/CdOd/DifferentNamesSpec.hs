@@ -9,7 +9,7 @@ import qualified Data.Bimap                       as BM
 
 import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.DifferentNames (
-  DifferentNamesConfig (maxInstances, objectConfig),
+  DifferentNamesConfig (objectConfig),
   ShufflingOption (..),
   differentNames,
   checkDifferentNamesConfig,
@@ -93,14 +93,17 @@ spec = do
           linkShuffling = WithAdditionalNames ["v"]
           }
         `shouldBe` Nothing
-  describe "differentNames" $
-    context "using defaultDifferentNamesConfig with limited instances" $
+  describe "differentNames" $ do
+    context "using defaultDifferentNamesConfig" $ do
       it "generates an instance" $ do
         inst <- runExceptT @String $ do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
-          differentNames cfg segment seed
+          differentNames defaultDifferentNamesConfig segment seed
         inst `shouldSatisfy` isRight
+      it "reproducible generates defaultDifferentNamesInstance" $
+        differentNames defaultDifferentNamesConfig 0 0
+        `shouldReturn` defaultDifferentNamesInstance
   describe "differentNamesEvaluation" $ do
     it "accepts the initial example" $
       let cs = bimap unName unName <$> differentNamesInitial
@@ -181,10 +184,6 @@ spec = do
           Link {linkName = "y", linkFrom = "c1", linkTo = "a"}
           ]
         }
-  where
-    cfg = defaultDifferentNamesConfig {
-      maxInstances = Just 200
-      }
 
 odFor :: Cd -> IO Od
 odFor cd = normaliseObjectDiagram . oDiagram <$> do

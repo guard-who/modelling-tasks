@@ -4,9 +4,10 @@ import qualified Data.Map                         as M (lookup, null)
 
 import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.MatchCdOd (
-  MatchCdOdConfig (maxInstances, objectConfig),
+  MatchCdOdConfig (objectConfig),
   checkMatchCdOdConfig,
   defaultMatchCdOdConfig,
+  defaultMatchCdOdInstance,
   diagrams,
   getODInstances,
   matchCdOd,
@@ -41,13 +42,17 @@ spec = do
     it "is valid" $
       checkMatchCdOdConfig defaultMatchCdOdConfig `shouldBe` Nothing
   describe "matchCdOd" $
-    context "using defaultMatchCdOdConfig with limited instances" $
+    context "using defaultMatchCdOdConfig" $ do
       it "generates an instance" $
         do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
-          not . M.null . diagrams <$> matchCdOd cfg segment seed
+          not . M.null . diagrams
+            <$> matchCdOd defaultMatchCdOdConfig segment seed
         `shouldReturn` True
+      it "reproducible generates defaultMatchCdOdInstance" $
+        matchCdOd defaultMatchCdOdConfig 0 0
+        `shouldReturn` defaultMatchCdOdInstance
   describe "getODsFor" $ do
     it "does not generate specific false instance" $ ioProperty $ do
       getOdsFor cdAggregateBofAs cdAtoB
@@ -122,9 +127,6 @@ spec = do
           }
         ]
       )
-    cfg = defaultMatchCdOdConfig {
-      maxInstances = Just 300
-      }
 
 getOdsFor :: Cd -> Cd -> IO ([Od], [Od])
 getOdsFor cd1 cd2 = do

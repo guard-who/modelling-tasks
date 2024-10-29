@@ -80,6 +80,7 @@ import Modelling.CdOd.Types (
   ObjectDiagram (..),
   ObjectProperties (..),
   Od,
+  OmittedDefaultMultiplicities (..),
   Relationship (..),
   allowNothing,
   allCdMutations,
@@ -186,8 +187,8 @@ defaultSelectValidCdConfig
       hasSelfLoops = Nothing,
       usesEveryRelationshipName = Just True
       },
-    printExtendedFeedback = False,
-    printSolution    = False,
+    printExtendedFeedback = True,
+    printSolution    = True,
     shuffleEachCd    = False,
     timeout          = Nothing
   }
@@ -226,7 +227,7 @@ data SelectValidCdInstance
     showExtendedFeedback :: Bool,
     showSolution    :: !Bool,
     taskText        :: !SelectValidCdTaskText
-  } deriving (Generic, Read, Show)
+  } deriving (Eq, Generic, Read, Show)
 
 checkSelectValidCdInstance :: SelectValidCdInstance -> Maybe String
 checkSelectValidCdInstance SelectValidCdInstance {..}
@@ -571,82 +572,95 @@ renameInstance inst@SelectValidCdInstance {..} names' nonInheritances' = do
 
 defaultSelectValidCdInstance :: SelectValidCdInstance
 defaultSelectValidCdInstance = SelectValidCdInstance {
-  cdDrawSettings = defaultCdDrawSettings,
-  classDiagrams = M.fromAscList [
+  cdDrawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
+      },
+    printNames = True,
+    printNavigations = True
+    },
+  classDiagrams = M.fromList [
     (1, InValidOption {
-      hint = Right $ ObjectDiagram {
-        objects = [
-          Object {isAnonymous = False, objectName = "b", objectClass = "B"},
-          Object {isAnonymous = False, objectName = "b1", objectClass = "B"},
-          Object {isAnonymous = False, objectName = "b2", objectClass = "B"},
-          Object {isAnonymous = False, objectName = "d", objectClass = "D"}
-          ],
-        links = []
-        },
+      hint = Left (Annotation {
+        annotated = Change {
+          add = Nothing,
+          remove = Just (Right Inheritance {
+            subClass = "D",
+            superClass = "C"
+            })
+          },
+        annotation = DefiniteArticle
+        }),
       option = AnyClassDiagram {
-        anyClassNames = ["A", "D", "B", "C"],
+        anyClassNames = ["B", "C", "D", "A"],
         anyRelationships = [
-          Right Inheritance {subClass = "B", superClass = "A"},
-          Right Inheritance {subClass = "C", superClass = "A"},
-          Right Inheritance {subClass = "D", superClass = "C"}
-          ]
-        }
-      }),
-    (2, InValidOption {
-      hint = Right $ ObjectDiagram {
-        objects = [
-          Object {isAnonymous = False, objectName = "b2", objectClass = "B"},
-          Object {isAnonymous = False, objectName = "b1", objectClass = "B"},
-          Object {isAnonymous = False, objectName = "d", objectClass = "D"},
-          Object {isAnonymous = False, objectName = "b", objectClass = "B"}
-          ],
-        links = []
-        },
-      option = AnyClassDiagram {
-        anyClassNames = ["C", "A", "D", "B"],
-        anyRelationships = [
-          Right Inheritance {subClass = "A", superClass = "B"},
           Right Inheritance {subClass = "D", superClass = "C"},
-          Right Inheritance {subClass = "C", superClass = "A"}
-          ]
-        }
-      }),
-    (3, InValidOption {
-      hint = Left $ Annotation {
-          annotated = Change {
-            add = Nothing,
-            remove = Just $ Right Inheritance {subClass = "A", superClass = "B"}
-            },
-          annotation = DefiniteArticle
-        },
-      option = AnyClassDiagram {
-        anyClassNames = ["A", "C", "B", "D"],
-        anyRelationships = [
-          Right Inheritance {subClass = "C", superClass = "A"},
-          Right Inheritance {subClass = "B", superClass = "A"},
+          Right Inheritance {subClass = "C", superClass = "D"},
+          Right Inheritance {subClass = "B", superClass = "D"},
           Right Inheritance {subClass = "A", superClass = "B"}
           ]
         }
       }),
-    (4, InValidOption {
-      hint = Left $ Annotation {
-          annotated = Change {
-            add = Nothing,
-            remove = Just $ Right Inheritance {subClass = "A", superClass = "B"}
-            },
-          annotation = DefiniteArticle
+    (2, InValidOption {
+      hint = Right ObjectDiagram {
+        objects = [
+          Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+          Object {isAnonymous = False, objectName = "c", objectClass = "C"},
+          Object {isAnonymous = False, objectName = "d", objectClass = "D"},
+          Object {isAnonymous = False, objectName = "a", objectClass = "A"}
+          ],
+        links = []
         },
       option = AnyClassDiagram {
-        anyClassNames = ["A", "D", "C", "B"],
+        anyClassNames = ["B", "A", "D", "C"],
         anyRelationships = [
-          Right Inheritance {subClass = "D", superClass = "C"},
+          Right Inheritance {subClass = "C", superClass = "D"},
+          Right Inheritance {subClass = "A", superClass = "B"}
+          ]
+        }
+      }),
+    (3, InValidOption {
+      hint = Left (Annotation {
+        annotated = Change {
+          add = Nothing,
+          remove = Just (Right Inheritance {
+            subClass = "D",
+            superClass = "C"
+            })
+          },
+        annotation = DefiniteArticle
+        }),
+      option = AnyClassDiagram {
+        anyClassNames = ["B", "D", "C", "A"],
+        anyRelationships = [
+          Right Inheritance {subClass = "B", superClass = "A"},
+          Right Inheritance {subClass = "C", superClass = "D"},
+          Right Inheritance {subClass = "D", superClass = "C"}
+          ]
+        }
+      }),
+    (4, InValidOption {
+      hint = Right ObjectDiagram {
+        objects = [
+          Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+          Object {isAnonymous = False, objectName = "d", objectClass = "D"},
+          Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+          Object {isAnonymous = False, objectName = "c", objectClass = "C"}
+          ],
+        links = []
+        },
+      option = AnyClassDiagram {
+        anyClassNames = ["D", "C", "B", "A"],
+        anyRelationships = [
           Right Inheritance {subClass = "A", superClass = "B"},
-          Right Inheritance {subClass = "B", superClass = "A"}
+          Right Inheritance {subClass = "D", superClass = "C"}
           ]
         }
       })
     ],
-  showExtendedFeedback = False,
-  showSolution = False,
+  showExtendedFeedback = True,
+  showSolution = True,
   taskText = defaultSelectValidCdTaskText
   }

@@ -32,15 +32,18 @@ spec = do
     it "is valid" $
       checkNameCdErrorInstance defaultNameCdErrorInstance `shouldBe` Nothing
   describe "nameCdErrorGenerate" $
-    context "using defaultNameCdErrorConfig" $
+    context "using defaultNameCdErrorConfig" $ do
       it "generates an instance" $
         do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
           let check x = any isRelevant (annotatedRelationships $ classDiagram x)
                 && not (M.null $ errorReasons x)
-          check <$> nameCdErrorGenerate cfg segment seed
+          check <$> nameCdErrorGenerate defaultNameCdErrorConfig segment seed
         `shouldReturn` True
+      it "reproducible generates defaultNameCdErrorInstance" $
+        nameCdErrorGenerate defaultNameCdErrorConfig 0 0
+        `shouldReturn` defaultNameCdErrorInstance
   describe "renameInstance" $
     it "is reversable" $ do
       let inst = defaultNameCdErrorInstance
@@ -49,5 +52,3 @@ spec = do
       nonInheritances' <- shuffleM nonInheritances
       renamed <- renameInstance inst names' nonInheritances'
       renameInstance renamed names nonInheritances `shouldReturn` inst
-  where
-    cfg = defaultNameCdErrorConfig

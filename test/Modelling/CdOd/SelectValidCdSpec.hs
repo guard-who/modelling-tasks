@@ -7,6 +7,7 @@ import Modelling.CdOd.SelectValidCd (
   SelectValidCdInstance (classDiagrams),
   checkSelectValidCdConfig,
   defaultSelectValidCdConfig,
+  defaultSelectValidCdInstance,
   selectValidCd,
   )
 import Modelling.Auxiliary.Common       (oneOf)
@@ -20,7 +21,7 @@ spec = do
     it "is valid" $
       checkSelectValidCdConfig defaultSelectValidCdConfig `shouldBe` Nothing
   describe "selectValidCd" $
-    context "using defaultSelectValidCdConfig" $
+    context "using defaultSelectValidCdConfig" $ do
       it "generates an instance" $ do
         do
           segment <- oneOf [0 .. 3]
@@ -28,3 +29,6 @@ spec = do
           not . M.null . classDiagrams
             <$> selectValidCd defaultSelectValidCdConfig segment seed
         `shouldReturn` True
+      it "reproducible generates defaultSelectValidCdInstance" $
+        selectValidCd defaultSelectValidCdConfig 0 0
+        `shouldReturn` defaultSelectValidCdInstance

@@ -4,7 +4,6 @@ import qualified Data.Map                         as M (null)
 
 import Capabilities.Alloy.IO            ()
 import Modelling.CdOd.RepairCd (
-  RepairCdConfig (maxInstances),
   RepairCdInstance (changes),
   checkRepairCdConfig,
   checkRepairCdInstance,
@@ -29,13 +28,16 @@ spec = do
     it "is valid" $
       checkRepairCdInstance defaultRepairCdInstance `shouldBe` Nothing
   describe "repairCd" $
-    context "using defaultRepairCdConfig with limited instances" $
+    context "using defaultRepairCdConfig with limited instances" $ do
       it "generates an instance" $
         do
           segment <- oneOf [0 .. 3]
           seed <- randomIO
-          not . M.null . changes <$> repairCd cfg segment seed
+          not . M.null . changes <$> repairCd defaultRepairCdConfig segment seed
         `shouldReturn` True
+      it "reproducible generates defaultRepairCdInstance" $
+        repairCd defaultRepairCdConfig 0 0
+        `shouldReturn` defaultRepairCdInstance
   describe "renameInstance" $
     it "is reversable" $ do
       let inst = defaultRepairCdInstance
@@ -44,7 +46,3 @@ spec = do
       nonInheritances' <- shuffleM nonInheritances
       renamed <- renameInstance inst names' nonInheritances'
       renameInstance renamed names nonInheritances `shouldReturn` inst
-  where
-    cfg = defaultRepairCdConfig {
-      maxInstances = Just 10
-      }
