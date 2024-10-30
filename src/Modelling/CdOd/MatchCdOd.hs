@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -9,6 +10,7 @@
 module Modelling.CdOd.MatchCdOd (
   MatchCdOdConfig (..),
   MatchCdOdInstance (..),
+  MatchCdOdTaskTextElement (..),
   checkMatchCdOdConfig,
   checkMatchCdOdInstance,
   defaultMatchCdOdConfig,
@@ -53,6 +55,7 @@ import Modelling.Auxiliary.Output (
   directionsAdvice,
   hoveringInformation,
   simplifiedInformation,
+  uniform,
   )
 import Modelling.CdOd.CD2Alloy.Transform (
   combineParts,
@@ -131,6 +134,13 @@ import Control.OutputCapable.Blocks (
   translate,
   translations,
   )
+import Control.OutputCapable.Blocks.Generic.Type (
+  GenericOutput (Code, Paragraph, Special, Translated),
+  )
+import Control.OutputCapable.Blocks.Type (
+  SpecialOutput,
+  specialToOutputCapable,
+  )
 import Control.Monad.Random (
   MonadRandom,
   evalRandT,
@@ -140,6 +150,7 @@ import Data.Bifunctor                   (Bifunctor (second))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Forward))
+import Data.List                        (singleton)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromJust, listToMaybe, mapMaybe)
 import Data.Ratio                       ((%))
@@ -158,7 +169,8 @@ data MatchCdOdInstance
     cdDrawSettings :: !CdDrawSettings,
     diagrams       :: Map Int Cd,
     instances      :: Map Char ([Int], Od),
-    showSolution   :: Bool
+    showSolution   :: !Bool,
+    taskText       :: !MatchCdOdTaskText
   } deriving (Eq, Generic, Read, Show)
 
 data MatchCdOdConfig
@@ -236,19 +248,72 @@ checkMatchCdOdInstance MatchCdOdInstance {..}
   = foldr ((<>) . checkObjectDiagram . snd) Nothing (M.elems instances)
   <|> checkCdDrawSettings cdDrawSettings
 
+type MatchCdOdTaskText = [SpecialOutput MatchCdOdTaskTextElement]
+
+data MatchCdOdTaskTextElement
+  = GivenCds
+  | GivenOds
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
 matchCdOdTask
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputCapable m
+    )
   => FilePath
   -> MatchCdOdInstance
   -> LangM m
 matchCdOdTask path task = do
-  paragraph $ translate $ do
+  toTaskText path task
+  paragraph simplifiedInformation
+  paragraph directionsAdvice
+  paragraph hoveringInformation
+  pure ()
+
+toTaskText
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputCapable m
+    )
+  => FilePath
+  -> MatchCdOdInstance
+  -> LangM m
+toTaskText path task =
+  specialToOutputCapable (toTaskSpecificText path task) (taskText task)
+
+toTaskSpecificText
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputCapable m
+    )
+  => FilePath
+  -> MatchCdOdInstance
+  -> MatchCdOdTaskTextElement
+  -> LangM m
+toTaskSpecificText path MatchCdOdInstance {..} = \case
+  GivenCds -> images show id
+    $=<< (\_ cd -> cacheCd cdDrawSettings mempty (fromClassDiagram cd) path)
+    `M.traverseWithKey` diagrams
+  GivenOds -> images (:[]) snd
+    $=<< (\_ (is,o) -> (is,) <$> cacheOd o Forward True path)
+    `M.traverseWithKey` instances
+
+defaultMatchCdOdTaskText :: MatchCdOdTaskText
+defaultMatchCdOdTaskText = [
+  Paragraph $ singleton $ Translated $ translations $ do
     english "Consider the following two class diagrams:"
-    german "Betrachten Sie die folgenden zwei Klassendiagramme:"
-  images show id
-    $=<< (\_ cd -> cacheCd (cdDrawSettings task) mempty (fromClassDiagram cd) path)
-    `M.traverseWithKey` diagrams task
-  paragraph $ translate $ do
+    german "Betrachten Sie die folgenden zwei Klassendiagramme:",
+  Special GivenCds,
+  Paragraph $ singleton $ Translated $ translations $ do
     english [iii|
       Which of the following five object diagrams conform to which class diagram?
       \n
@@ -260,12 +325,10 @@ matchCdOdTask path task = do
       \n
       Ein Objektdiagramm kann zu keinem,
       einem oder beiden Klassendiagrammen passen.
-      |]
-  images (:[]) snd
-    $=<< (\_ (is,o) -> (is,) <$> cacheOd o Forward True path)
-    `M.traverseWithKey` instances task
-  paragraph $ do
-    translate $ do
+      |],
+  Special GivenOds,
+  Paragraph [
+    Translated $ translations $ do
       english [iii|
         Please state your answer by giving a list of pairs,
         each comprising of a class diagram number and object diagram letters.
@@ -282,9 +345,9 @@ matchCdOdTask path task = do
         Jedes Paar gibt an, dass die genannten Objektdiagramme
         zu dem jeweiligen Klassendiagramm passen.
         \n
-        Zum Beispiel drückt#{" "}|]
-    code . show $ matchingShow matchCdOdInitial
-    translate $ do
+        Zum Beispiel drückt#{" "}|],
+    Code . uniform . show $ matchingShow matchCdOdInitial,
+    Translated $ translations $ do
       english [iii|
         expresses that among the offered choices exactly
         the object diagrams a and b are instances of class diagram 1 and
@@ -297,11 +360,8 @@ matchCdOdTask path task = do
         und dass keines der angebotenen Objektdiagramme
         Instanz des Klassendiagramms 2 ist.
         |]
-    pure ()
-  paragraph simplifiedInformation
-  paragraph directionsAdvice
-  paragraph hoveringInformation
-  pure ()
+    ]
+  ]
 
 newtype ShowLetters = ShowLetters { showLetters' :: Letters }
 
@@ -395,7 +455,8 @@ getMatchCdOdTask f config@MatchCdOdConfig {..} = do
           },
         diagrams       = cds,
         instances      = ods',
-        showSolution   = printSolution
+        showSolution = printSolution,
+        taskText = defaultMatchCdOdTaskText
         }
   where
     toOd possibleLinkNames =
@@ -544,7 +605,8 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         ]
       }))
     ],
-  showSolution = False
+  showSolution = False,
+  taskText = defaultMatchCdOdTaskText
   }
 
 classAndNonInheritanceNames :: MatchCdOdInstance -> ([String], [String])
@@ -578,7 +640,8 @@ shuffleNodesAndEdges MatchCdOdInstance {..} = do
     cdDrawSettings = cdDrawSettings,
     diagrams = cds,
     instances = ods,
-    showSolution = showSolution
+    showSolution = showSolution,
+    taskText = taskText
     }
 
 shuffleInstance
@@ -599,7 +662,8 @@ shuffleInstance MatchCdOdInstance {..} = do
     cdDrawSettings = cdDrawSettings,
     diagrams = M.fromAscList cds',
     instances = M.fromAscList ods',
-    showSolution = showSolution
+    showSolution = showSolution,
+    taskText = taskText
     }
 
 renameInstance
@@ -620,7 +684,8 @@ renameInstance inst@MatchCdOdInstance {..} names' nonInheritances' = do
     cdDrawSettings = cdDrawSettings,
     diagrams = cds,
     instances = ods,
-    showSolution = showSolution
+    showSolution = showSolution,
+    taskText = taskText
     }
 
 getRandomTask

@@ -8,6 +8,7 @@
 module Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (..),
   SelectValidCdInstance (..),
+  SelectValidCdTaskTextElement (..),
   checkSelectValidCdConfig,
   checkSelectValidCdInstance,
   defaultSelectValidCdConfig,

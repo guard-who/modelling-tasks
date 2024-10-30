@@ -11,6 +11,7 @@ module Modelling.CdOd.RepairCd (
   RelationshipChangeWithArticle,
   RepairCdConfig (..),
   RepairCdInstance (..),
+  RepairCdTaskTextElement (..),
   checkClassConfigAndChanges,
   checkRepairCdConfig,
   checkRepairCdInstance,

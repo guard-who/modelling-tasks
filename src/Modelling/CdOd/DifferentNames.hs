@@ -2,17 +2,20 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (..),
   DifferentNamesInstance (..),
+  DifferentNamesTaskTextElement (..),
   ShufflingOption (..),
   checkDifferentNamesConfig,
   checkDifferentNamesInstance,
   defaultDifferentNamesConfig,
   defaultDifferentNamesInstance,
+  defaultDifferentNamesTaskText,
   differentNames,
   differentNamesEvaluation,
   differentNamesInitial,
@@ -52,6 +55,7 @@ import Modelling.Auxiliary.Output (
   directionsAdvice,
   hoveringInformation,
   simplifiedInformation,
+  uniform,
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (
@@ -121,6 +125,13 @@ import Control.OutputCapable.Blocks (
   translate,
   yesNo,
   )
+import Control.OutputCapable.Blocks.Generic.Type (
+  GenericOutput (Code, Paragraph, Special, Translated),
+  )
+import Control.OutputCapable.Blocks.Type (
+  SpecialOutput,
+  specialToOutputCapable,
+  )
 import Control.Monad.Random (
   MonadRandom,
   evalRandT,
@@ -133,7 +144,13 @@ import Data.Bitraversable               (bitraverse)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.GraphViz                    (DirType (Forward))
-import Data.List                        (group, intersect, permutations, sort)
+import Data.List (
+  group,
+  intersect,
+  permutations,
+  singleton,
+  sort,
+  )
 import Data.Maybe (
   catMaybes,
   isJust,
@@ -165,6 +182,7 @@ data DifferentNamesInstance = DifferentNamesInstance {
     showSolution :: Bool,
     mapping  :: NameMapping,
     linkShuffling :: ShufflingOption String,
+    taskText :: !DifferentNamesTaskText,
     -- | whether every relationship has an associated link (in the mapping)
     usesAllRelationships :: Bool
   } deriving (Eq, Generic, Read, Show)
@@ -283,25 +301,104 @@ instance Show ShowName where
 mappingShow :: [(Name, Name)] -> [(ShowName, ShowName)]
 mappingShow = fmap (bimap ShowName ShowName)
 
+type DifferentNamesTaskText = [SpecialOutput DifferentNamesTaskTextElement]
+
+data DifferentNamesTaskTextElement
+  = GivenCd
+  | GivenOd
+  | MappingAdvice
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
 differentNamesTask
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, OutputCapable m)
   => FilePath
   -> DifferentNamesInstance
   -> LangM m
 differentNamesTask path task = do
-  let cd = fromClassDiagram $ cDiagram task
-      od = oDiagram task
-  paragraph $ translate $ do
+  toTaskText path task
+  paragraph simplifiedInformation
+  paragraph directionsAdvice
+  paragraph hoveringInformation
+  pure ()
+
+toTaskText
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputCapable m
+    )
+  => FilePath
+  -> DifferentNamesInstance
+  -> LangM m
+toTaskText path task =
+  specialToOutputCapable (toTaskSpecificText path task) (taskText task)
+
+toTaskSpecificText
+  :: (
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    OutputCapable m
+    )
+  => FilePath
+  -> DifferentNamesInstance
+  -> DifferentNamesTaskTextElement
+  -> LangM m
+toTaskSpecificText path DifferentNamesInstance {..} = \case
+  GivenCd ->
+    paragraph $ image $=<< cacheCd cdDrawSettings mempty cd path
+  GivenOd -> paragraph $ image $=<<
+    cacheOd oDiagram Forward True path
+  MappingAdvice -> do
+    paragraph $ translate $ do
+      english [iii|
+        Please note: Links are already grouped correctly and fully,
+        i.e., all links with the same name (and only links with the same name!)
+        in the OD correspond to exactly the same relationship name in the CD.
+        |]
+      german [iii|
+        Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert,
+        d.h., alle Links mit dem selben Namen
+        (and auch nur Links mit dem selben Namen!)
+        im OD entsprechen genau dem selben Beziehungsnamen im CD.
+        |]
+    paragraph $ translate $
+      if usesAllRelationships
+      then do
+      english [iii|
+        Thus, every link name and every relationship name should occur
+        exactly once in your mapping.
+        |]
+      german [iii|
+        Deshalb sollte jeder Linkname und jeder Beziehungsname
+        genau einmal in Ihrer Zuordnung auftauchen.
+        |]
+      else do
+      english [i|Thus, every link name should occur exactly once in your mapping.|]
+      german [iii|
+        Deshalb sollte jeder Linkname
+        genau einmal in Ihrer Zuordnung auftauchen.
+        |]
+      pure ()
+    pure ()
+  where
+    cd = fromClassDiagram cDiagram
+
+defaultDifferentNamesTaskText :: DifferentNamesTaskText
+defaultDifferentNamesTaskText = [
+  Paragraph $ singleton $ Translated $ translations $ do
     english "Consider the following class diagram:"
-    german "Betrachten Sie folgendes Klassendiagramm:"
-  paragraph $ image $=<< cacheCd (cdDrawSettings task) mempty cd path
-  paragraph $ translate $ do
+    german "Betrachten Sie folgendes Klassendiagramm:",
+  Special GivenCd,
+  Paragraph $ singleton $ Translated $ translations $ do
     english "and the following object diagram (which conforms to it):"
-    german "und das folgende (dazu passende) Objektdiagramm:"
-  paragraph $ image $=<<
-    cacheOd od Forward True path
-  paragraph $ do
-    translate $ do
+    german "und das folgende (dazu passende) Objektdiagramm:",
+  Special GivenOd,
+  Paragraph [
+    Translated $ translations $ do
       english [iii|
         Which relationship in the class diagram (CD) corresponds
         to which of the links in the object diagram (OD)?
@@ -321,42 +418,11 @@ differentNamesTask path task = do
         \n
         Um anzugeben, dass a im CD zu x im OD und b im CD
         zu y im OD korrespondieren, schreiben Sie es als:
-        |]
-    code . show $ mappingShow differentNamesInitial
-    pure ()
-  paragraph $ translate $ do
-    english [iii|
-      Please note: Links are already grouped correctly and fully,
-      i.e., all links with the same name (and only links with the same name!)
-      in the OD correspond to exactly the same relationship name in the CD.
-      |]
-    german [iii|
-      Bitte beachten Sie: Links sind bereits vollständig und korrekt gruppiert,
-      d.h., alle Links mit dem selben Namen
-      (and auch nur Links mit dem selben Namen!)
-      im OD entsprechen genau dem selben Beziehungsnamen im CD.
-      |]
-  paragraph $ translate $ if usesAllRelationships task
-    then do
-    english [iii|
-      Thus, every link name and every relationship name should occur
-      exactly once in your mapping.
-      |]
-    german [iii|
-      Deshalb sollte jeder Linkname und jeder Beziehungsname
-      genau einmal in Ihrer Zuordnung auftauchen.
-      |]
-    else do
-    english [i|Thus, every link name should occur exactly once in your mapping.|]
-    german [iii|
-      Deshalb sollte jeder Linkname
-      genau einmal in Ihrer Zuordnung auftauchen.
-      |]
-    pure ()
-  paragraph simplifiedInformation
-  paragraph directionsAdvice
-  paragraph hoveringInformation
-  pure ()
+        |],
+    Code . uniform . show $ mappingShow differentNamesInitial
+    ],
+  Special MappingAdvice
+  ]
 
 differentNamesInitial :: [(Name, Name)]
 differentNamesInitial = bimap Name Name <$> [("a", "x"), ("b", "y")]
@@ -526,6 +592,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   showSolution = False,
   mapping = toNameMapping $ BM.fromList [("a","y"),("b","x"),("c","z")],
   linkShuffling = ConsecutiveLetters,
+  taskText = defaultDifferentNamesTaskText,
   usesAllRelationships = True
   }
 
@@ -582,6 +649,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
               showSolution = printSolution,
               mapping   = toNameMapping bm',
               linkShuffling = ConsecutiveLetters,
+              taskText = defaultDifferentNamesTaskText,
               usesAllRelationships = isCompleteMapping
               }
         else tryNext
@@ -645,6 +713,7 @@ instance RandomiseLayout DifferentNamesInstance where
       showSolution = showSolution,
       mapping = mapping,
       linkShuffling = linkShuffling,
+      taskText = taskText,
       usesAllRelationships = usesAllRelationships
       }
 
@@ -679,5 +748,6 @@ renameInstance inst@DifferentNamesInstance {..} names' nonInheritances' linkNs' 
     showSolution = showSolution,
     mapping   = toNameMapping bm',
     linkShuffling = shuffling,
+    taskText = taskText,
     usesAllRelationships = usesAllRelationships
     }
