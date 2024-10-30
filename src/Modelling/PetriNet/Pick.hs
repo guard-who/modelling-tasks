@@ -56,7 +56,6 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   LangM,
   OutputCapable,
-  Rated,
   english,
   german,
   singleChoice,
@@ -153,7 +152,7 @@ pickEvaluation
   :: OutputCapable m
   => PickInstance n
   -> Int
-  -> Rated m
+  -> LangM m
 pickEvaluation task = do
   let what = translations $ do
         english "petri net"

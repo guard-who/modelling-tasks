@@ -61,7 +61,6 @@ import Control.OutputCapable.Blocks (
   GenericOutputCapable (..),
   LangM,
   OutputCapable,
-  Rated,
   ($=<<),
   english,
   german,
@@ -281,7 +280,7 @@ selectASEvaluation
   :: OutputCapable m
   => SelectASInstance
   -> Int
-  -> Rated m
+  -> LangM m
 selectASEvaluation task n = addPretext $ do
   let as = translations $ do
         english "action sequence"

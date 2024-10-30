@@ -107,7 +107,6 @@ import Control.OutputCapable.Blocks       (
   LangM,
   Language,
   OutputCapable,
-  Rated,
   ($=<<),
   english,
   german,
@@ -449,7 +448,7 @@ graphToMathEvaluation
   :: OutputCapable m
   => GraphToMathInstance
   -> Int
-  -> Rated m
+  -> LangM m
 graphToMathEvaluation = do
   let what = translations $ do
         english "mathematical representation"
@@ -473,7 +472,7 @@ mathToGraphEvaluation
   :: OutputCapable m
   => MathToGraphInstance
   -> Int
-  -> Rated m
+  -> LangM m
 mathToGraphEvaluation = do
   let what = translations $ do
         english "graphical representation"
@@ -485,7 +484,7 @@ evaluation
   => Map Language String
   -> MatchInstance a b
   -> Int
-  -> Rated m
+  -> LangM m
 evaluation what task = do
   let solution = matchSolution task
       maybeSolution =

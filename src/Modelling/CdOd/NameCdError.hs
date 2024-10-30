@@ -161,7 +161,7 @@ import Control.OutputCapable.Blocks (
   translate,
   translations,
   )
-import Control.OutputCapable.Blocks.Generic (($>>=))
+import Control.OutputCapable.Blocks.Generic (($>>), ($>>=))
 import Control.OutputCapable.Blocks.Generic.Type (
   GenericOutput (Code, Paragraph, Special, Translated),
   )
@@ -615,10 +615,7 @@ nameCdErrorEvaluation inst x = addPretext $ do
         | otherwise = Nothing
   recoverWith 0 (
     singleChoice DefiniteArticle reasonTranslation Nothing solutionReason (reason x)
-    $>>= \p ->
-      if p < 1
-      then pure 0
-      else multipleChoice DefiniteArticle
+      $>> multipleChoice DefiniteArticle
         dueToTranslation
         Nothing
         solutionDueTo

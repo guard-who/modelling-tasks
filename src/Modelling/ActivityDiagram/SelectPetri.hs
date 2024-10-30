@@ -80,7 +80,6 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
-  Rated,
   OutputCapable,
   ($=<<),
   english,
@@ -381,7 +380,7 @@ selectPetriEvaluation
   :: OutputCapable m
   => SelectPetriInstance
   -> Int
-  -> Rated m
+  -> LangM m
 selectPetriEvaluation task n = addPretext $ do
   let as = translations $ do
         english "Petri net"
