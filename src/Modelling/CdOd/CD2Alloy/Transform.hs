@@ -232,15 +232,18 @@ fact CompletelyInhabited {
 }|]
     relationshipNameAppearance = case usesEveryRelationshipName of
       Nothing -> ""
-      Just False -> [i|
+      Just False ->
+        let notEvery = case allRelationshipNames of
+              [] -> "false"
+              names -> intercalate " or " $ map ("no " ++) names
+        in [i|
 fact UsesNotEveryRelationshipName {
-  #{intercalate " or " $ map ("no " ++) namesLinkingTo}
+  #{notEvery}
 }|]
       Just True -> [i|
 fact UsesEveryRelationshipName {
-#{unlines $ map ("  some " ++) namesLinkingTo}
+#{unlines $ map ("  some " ++) allRelationshipNames}
 }|]
-    namesLinkingTo = map ("Object." ++) allRelationshipNames
     loops            = case hasSelfLoops of
       Nothing    -> ""
       Just hasLoops

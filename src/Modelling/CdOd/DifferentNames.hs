@@ -574,19 +574,20 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   cdDrawSettings = defaultCdDrawSettings,
   oDiagram = ObjectDiagram {
     objects = [
-      Object {isAnonymous = True, objectName = "b", objectClass = "B"},
-      Object {isAnonymous = True, objectName = "c", objectClass = "C"},
-      Object {isAnonymous = True, objectName = "c2", objectClass = "C"},
+      Object {isAnonymous = True, objectName = "b2", objectClass = "B"},
+      Object {isAnonymous = True, objectName = "c1", objectClass = "C"},
+      Object {isAnonymous = True, objectName = "b1", objectClass = "B"},
       Object {isAnonymous = True, objectName = "d", objectClass = "D"},
-      Object {isAnonymous = True, objectName = "a", objectClass = "A"},
-      Object {isAnonymous = True, objectName = "c1", objectClass = "C"}
+      Object {isAnonymous = True, objectName = "c", objectClass = "C"},
+      Object {isAnonymous = True, objectName = "b", objectClass = "B"}
       ],
     links = [
       Link {linkName = "y", linkFrom = "c", linkTo = "d"},
-      Link {linkName = "x", linkFrom = "b", linkTo = "c2"},
-      Link {linkName = "y", linkFrom = "c2", linkTo = "d"},
-      Link {linkName = "x", linkFrom = "a", linkTo = "c2"},
-      Link {linkName = "z", linkFrom = "d", linkTo = "b"}
+      Link {linkName = "x", linkFrom = "b1", linkTo = "c1"},
+      Link {linkName = "x", linkFrom = "b2", linkTo = "c"},
+      Link {linkName = "y", linkFrom = "c1", linkTo = "d"},
+      Link {linkName = "x", linkFrom = "b", linkTo = "c1"},
+      Link {linkName = "z", linkFrom = "d", linkTo = "b1"}
       ]
     },
   showSolution = False,
