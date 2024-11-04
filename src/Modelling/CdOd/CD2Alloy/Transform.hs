@@ -273,7 +273,7 @@ Generates Alloy code which is a contradiction that can never be satisfied,
 i.e. essentially resolves to false.
 -}
 false :: String
-false = "one Object and no Object // i.e. false"
+false = "some none // i.e. false"
 
 {-|
 Given a possible counter formula and two limiters this function generates

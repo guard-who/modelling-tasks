@@ -16,18 +16,18 @@ abstract sig Object {
 }
 
 fact LimitIsolatedObjects {
-  false
+  some none // i.e. false
 }
 
 
 fact SizeConstraints {
   #Object >= 2
-  false
+  some none // i.e. false
 
 }
 
 fact SomeSelfLoops {
-  false
+  some none // i.e. false
 }
 
 
