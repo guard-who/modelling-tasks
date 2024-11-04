@@ -170,7 +170,7 @@ abstract sig Object {
     limitIsolatedObjects
       | null allRelationshipNames = [i|
 fact LimitIsolatedObjects {
-  false
+  #{false}
 }
 |]
       | otherwise = [i|
@@ -234,7 +234,7 @@ fact CompletelyInhabited {
       Nothing -> ""
       Just False ->
         let notEvery = case allRelationshipNames of
-              [] -> "false"
+              [] -> false
               names -> intercalate " or " $ map ("no " ++) names
         in [i|
 fact UsesNotEveryRelationshipName {
@@ -249,7 +249,7 @@ fact UsesEveryRelationshipName {
       Just hasLoops
         | null allRelationshipNames, hasLoops -> [__i|
           fact SomeSelfLoops {
-            false
+            #{false}
           }|]
         | null allRelationshipNames -> ""
         | otherwise ->
@@ -267,6 +267,13 @@ fact NoSelfLoops {
       = alloySetOf allRelationshipNames
       | otherwise
       = "(" ++ alloySetOf allRelationshipNames ++ ")"
+
+{-|
+Generates Alloy code which is a contradiction that can never be satisfied,
+i.e. essentially resolves to false.
+-}
+false :: String
+false = "one Object and no Object // i.e. false"
 
 {-|
 Given a possible counter formula and two limiters this function generates
@@ -289,7 +296,7 @@ alloyCompare
 alloyCompare maybeWhat maybeMin maybeMax = case maybeWhat of
   Nothing
     | fromMaybe 0 maybeMin == 0 -> const Nothing
-    | otherwise -> const $ Just "  false"
+    | otherwise -> const $ Just $ "  " ++ false
   Just what -> case maybeMax of
     Nothing -> case maybeMin of
       Nothing -> const Nothing
