@@ -425,7 +425,8 @@ selectValidCdFeedback path drawSettings xs x cdChange =
             Die Beziehungen in dem Klassendiagramm könnten auf folgende Weise
             mit Namen versehen werden:
             |]
-        paragraph $ image $=<< cacheCd drawSettings mempty (option cdChange) path
+        let withNames = drawSettings {printNames = True}
+        paragraph $ image $=<< cacheCd withNames mempty (option cdChange) path
         pure ()
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
