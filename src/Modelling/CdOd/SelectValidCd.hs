@@ -627,8 +627,8 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         annotated = Change {
           add = Nothing,
           remove = Just (Right Inheritance {
-            subClass = "D",
-            superClass = "C"
+            subClass = "C",
+            superClass = "D"
             })
           },
         annotation = DefiniteArticle

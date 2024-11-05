@@ -99,7 +99,7 @@ import Modelling.CdOd.Types (
   Cd,
   CdConstraints (..),
   CdDrawSettings (..),
-  CdMutation,
+  CdMutation (RemoveRelationship),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -896,7 +896,7 @@ repairIncorrect
       let alloyCode = Changes.transformImproveCd
             cd
             config
-            cdMutations
+            [RemoveRelationship]
             properties
       changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
       fmap (relationshipChange . head . instanceChangesAndCds)
