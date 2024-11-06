@@ -63,8 +63,8 @@ simplifiedInformation = translate $ do
   english [iii|
     Please note: Classes are represented simplified here.
     #{endLine}
-    That means they consist of a single box containing only its class name,
-    but do not contain boxes for attributes and methods.
+    That means they consist of a single box containing only the class name
+    but no sections for attributes or methods.
     #{endLine}
     Nevertheless you should treat these simplified class representations
     as valid classes.
