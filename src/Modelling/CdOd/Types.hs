@@ -66,6 +66,7 @@ module Modelling.CdOd.Types (
   maxObjects,
   maxRelationships,
   normaliseObjectDiagram,
+  omittedDefaultMultiplicityIsSet,
   relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
@@ -835,6 +836,21 @@ defaultOmittedDefaultMultiplicities = OmittedDefaultMultiplicities {
   associationOmittedDefaultMultiplicity = Just (0, Nothing),
   compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
   }
+
+{-|
+Returns just the parameter name of 'OmittedDefaultMultiplicities'
+which is set to 'Just' (or 'Nothing' if neither is).
+-}
+omittedDefaultMultiplicityIsSet :: OmittedDefaultMultiplicities -> Maybe String
+omittedDefaultMultiplicityIsSet OmittedDefaultMultiplicities {..}
+  | isJust aggregationWholeOmittedDefaultMultiplicity
+  = Just "aggregationWholeOmittedDefaultMultiplicity"
+  | isJust associationOmittedDefaultMultiplicity
+  = Just "associationOmittedDefaultMultiplicity"
+  | isJust compositionWholeOmittedDefaultMultiplicity
+  = Just "compositionWholeOmittedDefaultMultiplicity"
+  | otherwise
+  = Nothing
 
 checkOmittedDefaultMultiplicities :: OmittedDefaultMultiplicities -> Maybe String
 checkOmittedDefaultMultiplicities OmittedDefaultMultiplicities {..} =

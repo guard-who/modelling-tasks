@@ -126,6 +126,7 @@ import Modelling.CdOd.Types (
   defaultCdDrawSettings,
   isIllegal,
   maxObjects,
+  omittedDefaultMultiplicityIsSet,
   relationshipName,
   renameClassesAndRelationships,
   shuffleAnnotatedClassAndConnectionOrder,
@@ -284,6 +285,13 @@ checkNameCdErrorConfig :: NameCdErrorConfig -> Maybe String
 checkNameCdErrorConfig NameCdErrorConfig {..}
   | not (printNames drawSettings) && useNames
   = Just "use names is only possible when printing names"
+  | not useNames
+  , Just x <- omittedDefaultMultiplicityIsSet (omittedDefaults drawSettings)
+  = Just [iii|
+    #{x} must be set to 'Nothing' when useNames is set to 'False'
+    because all multiplicities need to be printed for all relationships
+    in order to refer to them.
+    |]
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
   | usesEveryRelationshipName objectProperties /= Just True
@@ -440,6 +448,13 @@ checkNameCdErrorInstance :: NameCdErrorInstance -> Maybe String
 checkNameCdErrorInstance NameCdErrorInstance {..}
   | not (printNames cdDrawSettings) && byName
   = Just "by name is only possible when printing names"
+  | not byName
+  , Just x <- omittedDefaultMultiplicityIsSet (omittedDefaults cdDrawSettings)
+  = Just [iii|
+    #{x} must be set to 'Nothing' when byName is set to 'False'
+    because all multiplicities need to be printed for all relationships
+    in order to refer to them.
+    |]
   | 1 /= length (filter fst $ M.elems errorReasons)
   = Just [iii|
       There needs to be exactly one error defined within errorReasons

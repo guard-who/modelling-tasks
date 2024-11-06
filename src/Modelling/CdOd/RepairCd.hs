@@ -125,6 +125,7 @@ import Modelling.CdOd.Types (
   defaultProperties,
   fromClassDiagram,
   maxObjects,
+  omittedDefaultMultiplicityIsSet,
   relationshipName,
   renameClassesAndRelationships,
   shuffleAnyClassAndConnectionOrder,
@@ -287,6 +288,13 @@ checkRepairCdConfig :: RepairCdConfig -> Maybe String
 checkRepairCdConfig RepairCdConfig {..}
   | not (printNames drawSettings) && useNames
   = Just "use names is only possible when printing names"
+  | not useNames
+  , Just x <- omittedDefaultMultiplicityIsSet (omittedDefaults drawSettings)
+  = Just [iii|
+    #{x} must be set to 'Nothing' when useNames is set to 'False'
+    because all multiplicities need to be printed for all relationships
+    in order to refer to them.
+    |]
   | completelyInhabited objectProperties /= Just True
   = Just "completelyInhabited needs to be set to 'Just True' for this task type"
   | usesEveryRelationshipName objectProperties /= Just True
@@ -472,6 +480,13 @@ checkRepairCdInstance :: RepairCdInstance -> Maybe String
 checkRepairCdInstance RepairCdInstance {..}
   | not (printNames cdDrawSettings) && byName
   = Just "by name is only possible when printing names"
+  | not byName
+  , Just x <- omittedDefaultMultiplicityIsSet (omittedDefaults cdDrawSettings)
+  = Just [iii|
+    #{x} must be set to 'Nothing' when byName is set to 'False'
+    because all multiplicities need to be printed for all relationships
+    in order to refer to them.
+    |]
   | showExtendedFeedback && not showSolution
   = Just [iii|
       showExtendedFeedback leaks the correct solution
