@@ -358,7 +358,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       notCorrect
       paragraph $ translate $ do
         english [iii|
-          Class diagram #{x} is in fact invalid.
+          Class diagram #{x} is invalid.
           |]
         german [iii|
           Klassendiagramm #{x} ist ungültig.
@@ -383,7 +383,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       notCorrect
       paragraph $ translate $ do
         english [iii|
-          Class diagram #{x} is in fact valid.
+          Class diagram #{x} is valid.
           |]
         german [iii|
           Klassendiagramm #{x} ist gültig.
