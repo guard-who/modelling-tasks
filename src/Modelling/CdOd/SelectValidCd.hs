@@ -103,7 +103,7 @@ import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad                    ((>=>), unless, void, when)
+import Control.Monad                    ((>=>), void, when)
 import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
@@ -389,15 +389,6 @@ selectValidCdFeedback path drawSettings xs x cdChange =
           Klassendiagramm #{x} ist gültig.
           |]
       showNamedCd (byName || onlyInheritances (option cdChange))
-      paragraph $ translate $ do
-        english [iii|
-          Now consider the following object diagram, which is an instance of this
-          class diagram:
-          |]
-        german [iii|
-          Betrachten Sie nun das folgende Objektdiagramm,
-          welches eine Instanz dieses Klassendiagramms ist:
-          |]
       paragraph $ image $=<< cacheOd od dir True path
       pure ()
     _ -> pure ()
@@ -415,8 +406,19 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       Right {} -> False
       Left InvalidInheritance {} -> True
     onlyInheritances = all isInheritance . anyRelationships
-    showNamedCd sufficient =
-      unless sufficient $ do
+    showNamedCd sufficient
+      | sufficient
+      = paragraph $ translate $ do
+          english [iii|
+            Consider the following object diagram, which is an instance of this
+            class diagram:
+            |]
+          german [iii|
+            Betrachten Sie das folgende Objektdiagramm,
+            welches eine Instanz dieses Klassendiagramms ist:
+            |]
+      | otherwise
+      = do
         paragraph $ translate $ do
           english [iii|
             The relationships in the class diagram could be named in the following way:
@@ -427,6 +429,15 @@ selectValidCdFeedback path drawSettings xs x cdChange =
             |]
         let withNames = drawSettings {printNames = True}
         paragraph $ image $=<< cacheCd withNames mempty (option cdChange) path
+        paragraph $ translate $ do
+          english [iii|
+            Now consider the following object diagram, which is an instance of this
+            class diagram:
+            |]
+          german [iii|
+            Betrachten Sie nun das folgende Objektdiagramm,
+            welches eine Instanz dieses Klassendiagramms ist:
+            |]
         pure ()
 
 selectValidCdSolution :: SelectValidCdInstance -> [Int]
