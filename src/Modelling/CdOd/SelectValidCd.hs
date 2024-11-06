@@ -391,12 +391,12 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       showNamedCd (byName || onlyInheritances (option cdChange))
       paragraph $ translate $ do
         english [iii|
-          Consider the following object diagram, which is an instance of this
+          Now consider the following object diagram, which is an instance of this
           class diagram:
           |]
         german [iii|
-          Betrachten Sie das folgende Objektdiagramm,
-          das Instanz dieses Klassendiagramms ist:
+          Betrachten Sie nun das folgende Objektdiagramm,
+          welches eine Instanz dieses Klassendiagramms ist:
           |]
       paragraph $ image $=<< cacheOd od dir True path
       pure ()
