@@ -12,6 +12,7 @@ dependencies:
   - containers
   - graphviz
   - modelling-tasks
+  - output-blocks
   - pretty-simple
 library:
   source-dirs: src

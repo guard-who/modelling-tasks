@@ -44,6 +44,9 @@ import Modelling.ActivityDiagram.SelectPetri.Config (
   task37,
   task38,
   )
+import Modelling.Auxiliary.Common (
+  ShuffleInstance (taskInstance),
+  )
 import Modelling.CdOd.DifferentNames (
   checkDifferentNamesConfig,
   )
@@ -75,10 +78,19 @@ import Modelling.CdOd.RepairCd.Config (
   )
 import Modelling.CdOd.SelectValidCd (
   checkSelectValidCdConfig,
+  checkSelectValidCdInstance,
   )
 import Modelling.CdOd.SelectValidCd.Config (
-  task05,
-  task06,
+  task2023_05,
+  task2023_06,
+  task2024_06,
+  task2024_07,
+  task2024_08,
+  )
+import Modelling.CdOd.SelectValidCd.Instance (
+  task2024_05,
+  task2024_06picked,
+  task2024_09,
   )
 import Modelling.PetriNet.Concurrency (
   checkFindConcurrencyConfig,
@@ -121,69 +133,84 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "check config" $ do
-    it "task05" $
-      checkSelectValidCdConfig task05 `shouldBe` Nothing
-    it "task06" $
-      checkSelectValidCdConfig task06 `shouldBe` Nothing
-    it "task07" $
-      checkRepairCdConfig task07 `shouldBe` Nothing
-    it "task08" $
-      checkRepairCdConfig task08 `shouldBe` Nothing
-    it "task09" $
-      checkNameCdErrorConfig task09 `shouldBe` Nothing
-    it "task10" $
-      checkNameCdErrorConfig task10 `shouldBe` Nothing
-    it "task12" $
-      checkDifferentNamesConfig task12 `shouldBe` Nothing
-    it "task13" $
-      checkDifferentNamesConfig task13 `shouldBe` Nothing
-    it "task14" $
-      checkMatchCdOdConfig task14 `shouldBe` Nothing
-    it "task15" $
-      checkMatchCdOdConfig task15 `shouldBe` Nothing
-    it "task16" $
-      checkPickConflictConfig task16 `shouldBe` Nothing
-    it "task17" $
-      checkMathConfig task17 `shouldBe` Nothing
-    it "task18" $
-      checkMathConfig task18 `shouldBe` Nothing
-    it "task19" $
-      checkMathConfig task19 `shouldBe` Nothing
-    it "task20" $
-      checkMathConfig task20 `shouldBe` Nothing
-    it "task21" $
-      checkPickConcurrencyConfig task21 `shouldBe` Nothing
-    it "task22" $
-      checkPickConflictConfig task22 `shouldBe` Nothing
-    it "task23" $
-      checkFindConcurrencyConfig task23 `shouldBe` Nothing
-    it "task24" $
-      checkFindConflictPlacesConfig task24 `shouldBe` Nothing
-    it "task25" $
-      checkDifferentNamesConfig task25 `shouldBe` Nothing
-    it "task26" $
-      checkFindConflictPlacesConfig task26 `shouldBe` Nothing
-    it "task31" $
-      checkMatchAdConfig task31 `shouldBe` Nothing
-    it "task32" $
-      checkMatchAdConfig task32 `shouldBe` Nothing
-    it "task33" $
-      checkSelectASConfig task33 `shouldBe` Nothing
-    it "task34" $
-      checkSelectASConfig task34 `shouldBe` Nothing
-    it "task35" $
-      checkEnterASConfig task35 `shouldBe` Nothing
-    it "task36" $
-      checkEnterASConfig task36 `shouldBe` Nothing
-    it "task37" $
-      checkSelectPetriConfig task37 `shouldBe` Nothing
-    it "task38" $
-      checkSelectPetriConfig task38 `shouldBe` Nothing
-    it "task39" $
-      checkMatchPetriConfig task39 `shouldBe` Nothing
-    it "task40" $
-      checkMatchPetriConfig task40 `shouldBe` Nothing
-    it "task41" $
-      checkFindAuxiliaryPetriNodesConfig task41 `shouldBe` Nothing
-    it "task42" $
-      checkFindAuxiliaryPetriNodesConfig task42 `shouldBe` Nothing
+    describe "2023" $ do
+      it "task05" $
+        checkSelectValidCdConfig task2023_05 `shouldBe` Nothing
+      it "task06" $
+        checkSelectValidCdConfig task2023_06 `shouldBe` Nothing
+      it "task07" $
+        checkRepairCdConfig task07 `shouldBe` Nothing
+      it "task08" $
+        checkRepairCdConfig task08 `shouldBe` Nothing
+      it "task09" $
+        checkNameCdErrorConfig task09 `shouldBe` Nothing
+      it "task10" $
+        checkNameCdErrorConfig task10 `shouldBe` Nothing
+      it "task12" $
+        checkDifferentNamesConfig task12 `shouldBe` Nothing
+      it "task13" $
+        checkDifferentNamesConfig task13 `shouldBe` Nothing
+      it "task14" $
+        checkMatchCdOdConfig task14 `shouldBe` Nothing
+      it "task15" $
+        checkMatchCdOdConfig task15 `shouldBe` Nothing
+      it "task16" $
+        checkPickConflictConfig task16 `shouldBe` Nothing
+      it "task17" $
+        checkMathConfig task17 `shouldBe` Nothing
+      it "task18" $
+        checkMathConfig task18 `shouldBe` Nothing
+      it "task19" $
+        checkMathConfig task19 `shouldBe` Nothing
+      it "task20" $
+        checkMathConfig task20 `shouldBe` Nothing
+      it "task21" $
+        checkPickConcurrencyConfig task21 `shouldBe` Nothing
+      it "task22" $
+        checkPickConflictConfig task22 `shouldBe` Nothing
+      it "task23" $
+        checkFindConcurrencyConfig task23 `shouldBe` Nothing
+      it "task24" $
+        checkFindConflictPlacesConfig task24 `shouldBe` Nothing
+      it "task25" $
+        checkDifferentNamesConfig task25 `shouldBe` Nothing
+      it "task26" $
+        checkFindConflictPlacesConfig task26 `shouldBe` Nothing
+      it "task31" $
+        checkMatchAdConfig task31 `shouldBe` Nothing
+      it "task32" $
+        checkMatchAdConfig task32 `shouldBe` Nothing
+      it "task33" $
+        checkSelectASConfig task33 `shouldBe` Nothing
+      it "task34" $
+        checkSelectASConfig task34 `shouldBe` Nothing
+      it "task35" $
+        checkEnterASConfig task35 `shouldBe` Nothing
+      it "task36" $
+        checkEnterASConfig task36 `shouldBe` Nothing
+      it "task37" $
+        checkSelectPetriConfig task37 `shouldBe` Nothing
+      it "task38" $
+        checkSelectPetriConfig task38 `shouldBe` Nothing
+      it "task39" $
+        checkMatchPetriConfig task39 `shouldBe` Nothing
+      it "task40" $
+        checkMatchPetriConfig task40 `shouldBe` Nothing
+      it "task41" $
+        checkFindAuxiliaryPetriNodesConfig task41 `shouldBe` Nothing
+      it "task42" $
+        checkFindAuxiliaryPetriNodesConfig task42 `shouldBe` Nothing
+    describe "2024" $ do
+      it "task05" $
+        checkSelectValidCdInstance task2024_05 `shouldBe` Nothing
+      it "task06" $
+        checkSelectValidCdConfig task2024_06 `shouldBe` Nothing
+      it "task06 picked" $
+        checkSelectValidCdInstance (taskInstance task2024_06picked)
+        `shouldBe` Nothing
+      it "task07" $
+        checkSelectValidCdConfig task2024_07 `shouldBe` Nothing
+      it "task08" $
+        checkSelectValidCdConfig task2024_08 `shouldBe` Nothing
+      it "task09" $
+        checkSelectValidCdInstance (taskInstance task2024_09) `shouldBe` Nothing

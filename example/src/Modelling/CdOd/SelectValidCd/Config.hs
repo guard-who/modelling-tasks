@@ -24,8 +24,8 @@ points: 0.15
 generation time: 24:00h
 CPU usage: 400%
 -}
-task05 :: SelectValidCdConfig
-task05 = SelectValidCdConfig {
+task2023_05 :: SelectValidCdConfig
+task2023_05 = SelectValidCdConfig {
   allowedCdMutations = [
     AddRelationship,
     RemoveRelationship,
@@ -85,8 +85,8 @@ points: 0.15
 generation time: 1:30h
 CPU usage: 400%
 -}
-task06 :: SelectValidCdConfig
-task06 = SelectValidCdConfig {
+task2023_06 :: SelectValidCdConfig
+task2023_06 = SelectValidCdConfig {
   allowedCdMutations = [
     AddRelationship,
     RemoveRelationship,
@@ -133,6 +133,183 @@ task06 = SelectValidCdConfig {
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = False,
     hasSelfLoops = Just False,
+    usesEveryRelationshipName = Just True
+    },
+  printExtendedFeedback = True,
+  printSolution = True,
+  shuffleEachCd = True,
+  timeout = Nothing
+  }
+
+{-|
+points: 0.15
+generation time: 24:00h
+CPU usage: 400%
+-}
+task2024_06 :: SelectValidCdConfig
+task2024_06 = SelectValidCdConfig {
+  allowedCdMutations = [
+    AddRelationship,
+    MutateRelationship ChangeKind,
+    MutateRelationship Flip
+    ],
+  allowedProperties = AllowedProperties {
+    compositionCycles = True,
+    doubleRelationships = False,
+    inheritanceCycles = False,
+    invalidInheritanceLimits = False,
+    reverseInheritances = False,
+    reverseRelationships = True,
+    selfInheritances = False,
+    selfRelationships = False,
+    wrongAssociationLimits = False,
+    wrongCompositionLimits = False
+    },
+  articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = CdConstraints {
+    anyCompositionCyclesInvolveInheritances = Just True
+    },
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (1, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (2, Just 2),
+    inheritanceLimits = (1, Just 2),
+    relationshipLimits = (7, Just 8)
+    },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Nothing
+      },
+    printNames = True,
+    printNavigations = False
+    },
+  maxInstances = Just 4000,
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 4,
+    completelyInhabited = Just True,
+    hasLimitedIsolatedObjects = False,
+    hasSelfLoops = Nothing,
+    usesEveryRelationshipName = Just True
+    },
+  printExtendedFeedback = True,
+  printSolution = True,
+  shuffleEachCd = True,
+  timeout = Nothing
+  }
+
+{-|
+points: 0.15
+generation time: 3:18min
+CPU usage: 278%
+-}
+task2024_07 :: SelectValidCdConfig
+task2024_07 = SelectValidCdConfig {
+  allowedCdMutations = [
+    AddRelationship,
+    RemoveRelationship,
+    MutateRelationship ChangeKind,
+    MutateRelationship Flip
+    ],
+  allowedProperties = AllowedProperties {
+    compositionCycles = False,
+    doubleRelationships = True,
+    inheritanceCycles = False,
+    invalidInheritanceLimits = True,
+    reverseInheritances = False,
+    reverseRelationships = False,
+    selfInheritances = False,
+    selfRelationships = False,
+    wrongAssociationLimits = False,
+    wrongCompositionLimits = False
+    },
+  articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = CdConstraints {
+    anyCompositionCyclesInvolveInheritances = Nothing
+    },
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (2, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (2, Just 2),
+    inheritanceLimits = (0, Just 1),
+    relationshipLimits = (6, Just 7)
+    },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Nothing
+      },
+    printNames = False,
+    printNavigations = True
+    },
+  maxInstances = Just 4000,
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
+    completelyInhabited = Just True,
+    hasLimitedIsolatedObjects = False,
+    hasSelfLoops = Nothing,
+    usesEveryRelationshipName = Just True
+    },
+  printExtendedFeedback = True,
+  printSolution = True,
+  shuffleEachCd = True,
+  timeout = Nothing
+  }
+
+{-|
+points: 0.15
+generation time: 1:30h
+CPU usage: 400%
+-}
+task2024_08 :: SelectValidCdConfig
+task2024_08 = SelectValidCdConfig {
+  allowedCdMutations = [
+    MutateRelationship ChangeKind,
+    MutateRelationship ChangeLimit
+    ],
+  allowedProperties = AllowedProperties {
+    compositionCycles = False,
+    doubleRelationships = True,
+    inheritanceCycles = False,
+    invalidInheritanceLimits = False,
+    reverseInheritances = False,
+    reverseRelationships = False,
+    selfInheritances = False,
+    selfRelationships = False,
+    wrongAssociationLimits = True,
+    wrongCompositionLimits = True
+    },
+  articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = CdConstraints {
+    anyCompositionCyclesInvolveInheritances = Nothing
+    },
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (2, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (2, Just 2),
+    inheritanceLimits = (1, Just 1),
+    relationshipLimits = (7, Just 7)
+    },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Nothing
+      },
+    printNames = False,
+    printNavigations = True
+    },
+  maxInstances = Just 4000,
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
+    completelyInhabited = Just True,
+    hasLimitedIsolatedObjects = False,
+    hasSelfLoops = Nothing,
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,
