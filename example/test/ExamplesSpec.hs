@@ -66,15 +66,19 @@ import Modelling.CdOd.NameCdError (
   checkNameCdErrorConfig,
   )
 import Modelling.CdOd.NameCdError.Config (
-  task09,
-  task10,
+  task2023_09,
+  task2023_10,
+  task2024_10,
+  task2024_11,
   )
 import Modelling.CdOd.RepairCd (
   checkRepairCdConfig,
   )
 import Modelling.CdOd.RepairCd.Config (
-  task07,
-  task08,
+  task2023_07,
+  task2023_08,
+  task2024_12,
+  task2024_13,
   )
 import Modelling.CdOd.SelectValidCd (
   checkSelectValidCdConfig,
@@ -139,13 +143,13 @@ spec =
       it "task06" $
         checkSelectValidCdConfig task2023_06 `shouldBe` Nothing
       it "task07" $
-        checkRepairCdConfig task07 `shouldBe` Nothing
+        checkRepairCdConfig task2023_07 `shouldBe` Nothing
       it "task08" $
-        checkRepairCdConfig task08 `shouldBe` Nothing
+        checkRepairCdConfig task2023_08 `shouldBe` Nothing
       it "task09" $
-        checkNameCdErrorConfig task09 `shouldBe` Nothing
+        checkNameCdErrorConfig task2023_09 `shouldBe` Nothing
       it "task10" $
-        checkNameCdErrorConfig task10 `shouldBe` Nothing
+        checkNameCdErrorConfig task2023_10 `shouldBe` Nothing
       it "task12" $
         checkDifferentNamesConfig task12 `shouldBe` Nothing
       it "task13" $
@@ -214,3 +218,11 @@ spec =
         checkSelectValidCdConfig task2024_08 `shouldBe` Nothing
       it "task09" $
         checkSelectValidCdInstance (taskInstance task2024_09) `shouldBe` Nothing
+      it "task10" $
+        checkNameCdErrorConfig task2024_10 `shouldBe` Nothing
+      it "task11" $
+        checkNameCdErrorConfig task2024_11 `shouldBe` Nothing
+      it "task12" $
+        checkRepairCdConfig task2024_12 `shouldBe` Nothing
+      it "task13" $
+        checkRepairCdConfig task2024_13 `shouldBe` Nothing
