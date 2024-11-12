@@ -336,8 +336,8 @@ defaultRepairCdTaskText = [
     german "Betrachten Sie folgendes Klassendiagramm, welches leider ungültig ist:",
   Paragraph $ singleton $ Special IncorrectCd,
   Paragraph $ singleton $ Translated $ translations $ do
-    english [i|Which of the following changes would repair the class diagram?|]
-    german [i|Welche der folgenden Änderungen würden das Klassendiagramm reparieren?|],
+    english [i|Which of the following changes would each repair the class diagram?|]
+    german [i|Welche der folgenden Änderungen würden jeweils das Klassendiagramm reparieren?|],
   Special PotentialFixes,
   Paragraph $ singleton $ Translated $ translations $ do
     english [i|Please state your answer by giving a list of numbers, indicating all changes each resulting in a valid class diagram.|]
