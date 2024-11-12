@@ -376,8 +376,8 @@ repairCdEvaluation
   -> Rated m
 repairCdEvaluation path inst xs = addPretext $ do
   let chs = M.fromAscList [
-        (English, "changes"),
-        (German, "Änderungen")
+        (English, "repairs"),
+        (German, "Reparaturen")
         ]
       solution = isRight . hint <$> changes inst
       correctAnswer
