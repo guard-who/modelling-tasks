@@ -344,8 +344,8 @@ defaultRepairCdTaskText = [
     german [i|Bitte geben Sie Ihre Antwort als Liste aller Zahlen an, deren Änderungen jeweils in einem gültigen Klassendiagramm resultieren.|],
   Paragraph [
     Translated $ translations $ do
-      english [i|Answer by giving a comma separated list of all valid options, e.g., |]
-      german [i|Antworten Sie durch Angabe einer durch Komma separierten Liste aller gültigen Optionen. Zum Beispiel |],
+      english [i|Answer by giving a comma separated list of all appropriate options, e.g., |]
+      german [i|Antworten Sie durch Angabe einer durch Komma separierten Liste aller zutreffenden Optionen. Zum Beispiel |],
     Code $ uniform "[1, 2]",
     Translated $ translations $ do
       english [i| would indicate that options 1 and 2 each repair the given class diagram.|]
