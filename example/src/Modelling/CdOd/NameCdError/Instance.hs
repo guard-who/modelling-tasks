@@ -162,7 +162,7 @@ task2024_14 = ShuffleInstance {
         (German, "ist vollständig richtig modelliert")
         ]))),
       ('d', (True, Custom (listToFM [
-        (English, "does violate a requirement of the scenario"),
+        (English, "violates a requirement of the scenario"),
         (German, "hält eine Vorgabe des Szenarios nicht ein")
         ])))
       ],
