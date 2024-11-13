@@ -177,7 +177,7 @@ task2024_14 = ShuffleInstance {
       Paragraph [
         Translated (listToFM [
           (English, "A university campus consists of different buildings. Each building is cared for by a facility manager who is responsible for it. A facility manager is a person. Another kind of persons are the professors, who each have a specific room as their office. A building consists of different rooms, not each of these is a professors office."),
-          (German, "Ein Universitätscampus besteht aus verschiedenen Gebäuden. Jedes Gebäude wird von einem Hausmeister betreut, der für es zuständig ist. Ein Hausmeister ist eine Person. Eine andere Art von Personen sind die Professoren, die jeweils einen bestimmten Raum als eigenes Büro haben. Ein Gebäude besteht aus verschiedenen Räumen, von denen nicht jeder jeder ein Professorenbüro.")
+          (German, "Ein Universitätscampus besteht aus verschiedenen Gebäuden. Jedes Gebäude wird von einem Hausmeister betreut, der für es zuständig ist. Ein Hausmeister ist eine Person. Eine andere Art von Personen sind die Professoren, die jeweils einen bestimmten Raum als eigenes Büro haben. Ein Gebäude besteht aus verschiedenen Räumen, von denen nicht jedes ein Professorenbüro ist.")
           ])
         ],
       Paragraph [
@@ -216,8 +216,8 @@ task2024_14 = ShuffleInstance {
           ],
         Paragraph [
           Code (listToFM [
-            (English, "contributing:\n- 3\n- 4\nreason: b\n"),
-            (German, "contributing:\n- 3\n- 4\nreason: b\n")
+            (English, "due-to:\n- 3\n- 4\nreason: b\n"),
+            (German, "due-to:\n- 3\n- 4\nreason: b\n")
             ])
           ],
         Paragraph [
@@ -230,5 +230,5 @@ task2024_14 = ShuffleInstance {
       ]
     },
   allowLayoutMangling = True,
-  shuffleNames = True
+  shuffleNames = False
   }
