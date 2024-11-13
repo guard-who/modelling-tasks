@@ -41,14 +41,14 @@ task2024_14 = ShuffleInstance {
   taskInstance =   NameCdErrorInstance {
     byName = True,
     classDiagram = AnnotatedClassDiagram {
-      annotatedClasses = ["University Campus", "Building", "Facility Manager", "Person", "Room", "Professor"],
+      annotatedClasses = ["UniversityCampus", "Building", "FacilityManager", "Person", "Room", "Professor"],
       annotatedRelationships = [
         Annotation {
           annotated = Right Association {
             associationName = "isResponsibleFor",
             associationFrom = LimitedLinking {
-              linking = "Facility Manager",
-              limits = (1, Nothing)
+              linking = "FacilityManager",
+              limits = (1, Just 1)
               },
             associationTo = LimitedLinking {
               linking = "Building",
@@ -84,10 +84,10 @@ task2024_14 = ShuffleInstance {
             compositionName = "isOn",
             compositionPart = LimitedLinking {
               linking = "Building",
-              limits = (0, Nothing)
+              limits = (2, Nothing)
               },
             compositionWhole = LimitedLinking {
-              linking = "University Campus",
+              linking = "UniversityCampus",
               limits = (0, Just 1)
               }
             },
@@ -102,7 +102,7 @@ task2024_14 = ShuffleInstance {
             compositionName = "isPartOf",
             compositionPart = LimitedLinking {
               linking = "Room",
-              limits = (1, Nothing)
+              limits = (2, Nothing)
               },
             compositionWhole = LimitedLinking {
               linking = "Building",
@@ -128,7 +128,7 @@ task2024_14 = ShuffleInstance {
           },
         Annotation {
           annotated = Right Inheritance {
-            subClass = "Facility Manager",
+            subClass = "FacilityManager",
             superClass = "Person"
             },
           annotation = Relevant {
@@ -158,11 +158,11 @@ task2024_14 = ShuffleInstance {
         (German, "hat gar kein passendes Objektdiagramm")
         ]))),
       ('c', (False, Custom (listToFM [
-        (English, "is correctly modelled"),
+        (English, "is fully correctly modelled"),
         (German, "ist vollständig richtig modelliert")
         ]))),
       ('d', (True, Custom (listToFM [
-        (English, "does not satisfy a requirement of the scenario"),
+        (English, "does violate a requirement of the scenario"),
         (German, "hält eine Vorgabe des Szenarios nicht ein")
         ])))
       ],
@@ -170,27 +170,27 @@ task2024_14 = ShuffleInstance {
     taskText = [
       Paragraph [
         Translated (listToFM [
-          (English, "A Student received the following scenario:"),
-          (German, "Eine Studentin hat folgendes Szenario erhalten:")
+          (English, "A student received the following scenario:"),
+          (German, "Ein Student hat folgendes Szenario erhalten:")
           ])
         ],
       Paragraph [
         Translated (listToFM [
-          (English, "A university campus consists of different buildings. Each building is cared for by a facility manager who is responsible for it. A facility manager is a person. Another kind of persons are the professors, who each have a specific room as their office. A building consists of different rooms, not each of these is a professors office."),
+          (English, "A university campus consists of different buildings. Each building is cared for by a facility manager who is responsible for it. A facility manager is a person. Another kind of persons are the professors, who each have a specific room as own office. A building consists of different rooms, not each of which is a professor's office."),
           (German, "Ein Universitätscampus besteht aus verschiedenen Gebäuden. Jedes Gebäude wird von einem Hausmeister betreut, der für es zuständig ist. Ein Hausmeister ist eine Person. Eine andere Art von Personen sind die Professoren, die jeweils einen bestimmten Raum als eigenes Büro haben. Ein Gebäude besteht aus verschiedenen Räumen, von denen nicht jeder ein Professorenbüro ist.")
           ])
         ],
       Paragraph [
         Translated (listToFM [
-          (English, "She solved the task of creating a class diagram for the scenario at hand in the following way:"),
-          (German, "Die Aufgabe, ein Klassendiagramm für dieses Szenario zu entwerfen hat sie folgendermaßen gelöst:")
+          (English, "He solved the task of creating a class diagram for this scenario in the following way:"),
+          (German, "Die Aufgabe, ein Klassendiagramm für dieses Szenario zu entwerfen, hat er folgendermaßen gelöst:")
           ])
         ],
       Paragraph [Special IncorrectCd],
       Paragraph [
         Translated (listToFM [
-          (English, "Analyse and take a stand on the created class diagram regarding the original task!"),
-          (German, "Analysieren Sie und beziehen Sie Stellung zum entworfenen Klassendiagramm hinsichtlich der ursprünglichen Aufgabe!")
+          (English, "Analyse and take a stance on the created class diagram regarding the scenario task of the student!"),
+          (German, "Analysieren Sie und beziehen Sie Stellung zum entworfenen Klassendiagramm hinsichtlich der Szenario-Aufgabe des Studenten!")
           ])
         ],
       Paragraph [
@@ -202,16 +202,16 @@ task2024_14 = ShuffleInstance {
       Paragraph [Special ReasonsList],
       Paragraph [
         Translated (listToFM [
-          (English, "Name the specific relationships, that need to be changed in order to fix the issue, if such exist:"),
-          (German, "Nennen Sie die konkreten Beziehungen, die geändert werden müssten, falls solche existieren:")
+          (English, "Name the specific relationships that would need to be changed on occasion:"),
+          (German, "Nennen Sie die konkreten Beziehungen, die gegebenenfalls geändert werden müssten:")
           ])
         ],
       Paragraph [Special RelationshipsList],
       Paragraph [
         Paragraph [
           Translated (listToFM [
-            (English, "Please state your answer by providing: a number for your conclusion on the class diagram as well as (a potentialy empty) listing of numbers, indicating the relationships that would require fixing in your opinion. For instance"),
-            (German, "Bitte geben Sie Ihre Antwort an, indem Sie folgendes angeben: eine Zahl für ihre Schlussfolgerung zum Klassendiagramm, und eine (eventuell leere) Auflistung von Zahlen für die Beziehungen, die Ihrer Meinung nach angepasst werden müssten. Zum Beispiel")
+            (English, "Please state your answer by providing a letter for your conclusion about the class diagram as well as a listing of numbers for those relationships that would need to be adapted in your opinion. For example,"),
+            (German, "Bitte geben Sie Ihre Antwort an, indem Sie Folgendes angeben: einen Buchstaben für Ihre Schlussfolgerung zum Klassendiagramm, und eine Auflistung von Zahlen für diejenigen Beziehungen, die Ihrer Meinung nach angepasst werden müssten. Zum Beispiel würde")
             ])
           ],
         Paragraph [
@@ -222,8 +222,8 @@ task2024_14 = ShuffleInstance {
           ],
         Paragraph [
           Translated (listToFM [
-            (English, "would mean, that b is your conclusion on the class diagram and that relationships 3 and 4 would require fixing."),
-            (German, "würde bedeuten, dass Ihre Folgerung zum Klassendiagramm b ist und dass die Beziehungen 3 und 4 angepasst werden müssten.")
+            (English, "would indicate that b is your conclusion about the class diagram and that the 3. and 4. relationship would need to be adapted."),
+            (German, "bedeuten, dass b Ihre Schlussfolgerung zum Klassendiagramm ist und dass die 3. und 4. Beziehung angepasst werden müssten.")
             ])
           ]
         ]
