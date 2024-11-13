@@ -208,7 +208,6 @@ task2024_13 :: RepairCdConfig
 task2024_13 = RepairCdConfig {
   allowedCdMutations = [
     MutateRelationship ChangeKind,
-    MutateRelationship ChangeLimit,
     MutateRelationship Flip
     ],
   allowedProperties = AllowedProperties {
@@ -217,7 +216,7 @@ task2024_13 = RepairCdConfig {
     inheritanceCycles = False,
     invalidInheritanceLimits = False,
     reverseInheritances = False,
-    reverseRelationships = True,
+    reverseRelationships = False,
     selfInheritances = False,
     selfRelationships = False,
     wrongAssociationLimits = False,
@@ -229,9 +228,9 @@ task2024_13 = RepairCdConfig {
     },
   classConfig = ClassConfig {
     classLimits = (5, 5),
-    aggregationLimits = (2, Just 2),
-    associationLimits = (1, Just 1),
-    compositionLimits = (3, Just 3),
+    aggregationLimits = (2, Just 3),
+    associationLimits = (1, Just 2),
+    compositionLimits = (2, Just 3),
     inheritanceLimits = (1, Just 1),
     relationshipLimits = (7, Just 7)
     },
@@ -249,7 +248,7 @@ task2024_13 = RepairCdConfig {
     anonymousObjectProportion = 0 % 1,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = False,
-    hasSelfLoops = Just False,
+    hasSelfLoops = Nothing,
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,

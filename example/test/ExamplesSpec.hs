@@ -64,12 +64,16 @@ import Modelling.CdOd.MatchCdOd.Config (
   )
 import Modelling.CdOd.NameCdError (
   checkNameCdErrorConfig,
+  checkNameCdErrorInstance,
   )
 import Modelling.CdOd.NameCdError.Config (
   task2023_09,
   task2023_10,
   task2024_10,
   task2024_11,
+  )
+import Modelling.CdOd.NameCdError.Instance (
+  task2024_14,
   )
 import Modelling.CdOd.RepairCd (
   checkRepairCdConfig,
@@ -226,3 +230,5 @@ spec =
         checkRepairCdConfig task2024_12 `shouldBe` Nothing
       it "task13" $
         checkRepairCdConfig task2024_13 `shouldBe` Nothing
+      it "task14" $
+        checkNameCdErrorInstance (taskInstance task2024_14) `shouldBe` Nothing

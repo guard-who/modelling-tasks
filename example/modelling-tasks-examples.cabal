@@ -19,6 +19,7 @@ library
       Modelling.CdOd.DifferentNames.Config
       Modelling.CdOd.MatchCdOd.Config
       Modelling.CdOd.NameCdError.Config
+      Modelling.CdOd.NameCdError.Instance
       Modelling.CdOd.RepairCd.Config
       Modelling.CdOd.SelectValidCd.Config
       Modelling.CdOd.SelectValidCd.Instance
