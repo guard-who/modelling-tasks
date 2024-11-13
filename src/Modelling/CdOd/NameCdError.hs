@@ -521,7 +521,7 @@ defaultNameCdErrorTaskText = [
         Please state your answer by providing a letter for the reason,
         indicating the most specifically expressed reason
         for which you think this class diagram is invalid,
-        and a list of numbers for those relationships
+        and a listing of numbers for those relationships
         on whose individual presence the problem depends.
         For example,
         |]
@@ -531,7 +531,7 @@ defaultNameCdErrorTaskText = [
         der Ihrer Meinung nach der am spezifischsten
         ausgedrückte Grund dafür ist,
         dass dieses Klassendiagramm ungültig ist,
-        und eine Liste von Zahlen für diejenigen Beziehungen,
+        und eine Auflistung von Zahlen für diejenigen Beziehungen,
         von deren individueller Präsenz das Problem abhängt.
         Zum Beispiel würde
         |],
