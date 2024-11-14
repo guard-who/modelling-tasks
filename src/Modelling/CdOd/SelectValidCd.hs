@@ -370,11 +370,11 @@ selectValidCdFeedback path drawSettings xs x cdChange =
           let phrase l =
                 phraseRelationship l article True withDir relation
           english [iii|
-            If #{phrase English} would not be there,
+            If for example #{phrase English} would not be there,
             it would be valid.
             |]
           german [iii|
-            Wenn es
+            Wenn es zum Beispiel
             #{trailingCommaGerman $ phrase German}
             nicht gäbe, wäre es gültig.
             |]
