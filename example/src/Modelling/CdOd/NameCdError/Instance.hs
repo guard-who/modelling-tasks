@@ -174,7 +174,7 @@ task2024_14 = NameCdErrorInstance {
         ],
       Paragraph [
         Translated (listToFM [
-          (English, "A university campus consists of different buildings. Each building is cared for by a facility manager who is responsible for it. A facility manager is a person. Another kind of persons are the professors, who each have a specific room as their own office. A building consists of different rooms, not each of which is a professor's office."),
+          (English, "A university campus consists of different buildings. Each building is cared for by a facility manager who is responsible for it. A facility manager is a person. Another kind of persons are the professors, who each have a specific room as own office. A building consists of different rooms, not each of which is a professor's office."),
           (German, "Ein Universitätscampus besteht aus verschiedenen Gebäuden. Jedes Gebäude wird von einem Hausmeister betreut, der für es zuständig ist. Ein Hausmeister ist eine Person. Eine andere Art von Personen sind die Professoren, die jeweils einen bestimmten Raum als eigenes Büro haben. Ein Gebäude besteht aus verschiedenen Räumen, von denen nicht jeder ein Professorenbüro ist.")
           ])
         ],
