@@ -509,7 +509,7 @@ defaultNameCdErrorTaskText = [
       d.h., deren Entfernung das Problem jeweils beheben würde.
       |],
   Paragraph $ singleton $ Translated $ translations $ do
-    english [i|Reasons available to chose from are:|]
+    english [i|Reasons available to choose from are:|]
     german [i|Gründe, die hierfür zur Auswahl stehen, sind:|],
   Paragraph $ singleton $ Translated $ translations $ do
     english [i|The class diagram ...|]
