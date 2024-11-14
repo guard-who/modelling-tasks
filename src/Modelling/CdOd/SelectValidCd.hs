@@ -363,7 +363,8 @@ selectValidCdFeedback path drawSettings xs x cdChange =
         german [iii|
           Klassendiagramm #{x} ist ungültig.
           |]
-      showNamedCd
+      let sufficient = byName || maybe True isInheritance (remove change)
+      unless sufficient showNamedCd
       paragraph $ case remove change of
         Nothing -> lift $ throwM NeverHappens
         Just relation -> translate $ do
@@ -388,6 +389,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
         german [iii|
           Klassendiagramm #{x} ist gültig.
           |]
+      let sufficient = byName || onlyInheritances (option cdChange)
       if sufficient
         then paragraph $ translate $ do
         english [iii|
@@ -427,9 +429,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       Right {} -> False
       Left InvalidInheritance {} -> True
     onlyInheritances = all isInheritance . anyRelationships
-    sufficient = byName || onlyInheritances (option cdChange)
-    showNamedCd =
-      unless sufficient $ do
+    showNamedCd = do
         paragraph $ translate $ do
           english [iii|
             The relationships in the class diagram could be named in the following way:
