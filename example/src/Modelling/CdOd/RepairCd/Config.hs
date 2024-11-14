@@ -190,7 +190,7 @@ task2024_12 = RepairCdConfig {
     anonymousObjectProportion = 1 % 3,
     completelyInhabited = Just True,
     hasLimitedIsolatedObjects = False,
-    hasSelfLoops = Just False,
+    hasSelfLoops = Just True, -- set to 'Nothing' in future
     usesEveryRelationshipName = Just True
     },
   printExtendedFeedback = True,
@@ -201,8 +201,8 @@ task2024_12 = RepairCdConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 03:54min
+CPU usage: 247%
 -}
 task2024_13 :: RepairCdConfig
 task2024_13 = RepairCdConfig {

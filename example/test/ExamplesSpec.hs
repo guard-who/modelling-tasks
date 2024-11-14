@@ -231,4 +231,4 @@ spec =
       it "task13" $
         checkRepairCdConfig task2024_13 `shouldBe` Nothing
       it "task14" $
-        checkNameCdErrorInstance (taskInstance task2024_14) `shouldBe` Nothing
+        checkNameCdErrorInstance task2024_14 `shouldBe` Nothing

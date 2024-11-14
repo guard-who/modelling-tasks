@@ -11,7 +11,6 @@ import Modelling.CdOd.NameCdError (
   Relevance (..),
   )
 
-import Modelling.Auxiliary.Common       (ShuffleInstance (..))
 import Modelling.CdOd.Types (
   Annotation (..),
   AnnotatedClassDiagram (..),
@@ -36,13 +35,30 @@ listToFM = M.fromList
 {-|
 points: 0.15
 -}
-task2024_14 :: ShuffleInstance NameCdErrorInstance
-task2024_14 = ShuffleInstance {
-  taskInstance =   NameCdErrorInstance {
+task2024_14 :: NameCdErrorInstance
+task2024_14 = NameCdErrorInstance {
     byName = True,
     classDiagram = AnnotatedClassDiagram {
-      annotatedClasses = ["UniversityCampus", "Building", "FacilityManager", "Person", "Room", "Professor"],
+      annotatedClasses = ["Professor", "FacilityManager", "Person", "Room", "Building", "UniversityCampus"],
       annotatedRelationships = [
+        Annotation {
+          annotated = Right Composition {
+            compositionName = "isPartOf",
+            compositionPart = LimitedLinking {
+              linking = "Room",
+              limits = (2, Nothing)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "Building",
+              limits = (1, Just 1)
+              }
+            },
+          annotation = Relevant {
+            contributingToProblem = False,
+            listingPriority = 4,
+            referenceUsing = DefiniteArticle
+            }
+          },
         Annotation {
           annotated = Right Association {
             associationName = "isResponsibleFor",
@@ -80,42 +96,6 @@ task2024_14 = ShuffleInstance {
             }
           },
         Annotation {
-          annotated = Right Composition {
-            compositionName = "isOn",
-            compositionPart = LimitedLinking {
-              linking = "Building",
-              limits = (2, Nothing)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "UniversityCampus",
-              limits = (0, Just 1)
-              }
-            },
-          annotation = Relevant {
-            contributingToProblem = False,
-            listingPriority = 3,
-            referenceUsing = DefiniteArticle
-            }
-          },
-        Annotation {
-          annotated = Right Composition {
-            compositionName = "isPartOf",
-            compositionPart = LimitedLinking {
-              linking = "Room",
-              limits = (2, Nothing)
-              },
-            compositionWhole = LimitedLinking {
-              linking = "Building",
-              limits = (1, Just 1)
-              }
-            },
-          annotation = Relevant {
-            contributingToProblem = False,
-            listingPriority = 4,
-            referenceUsing = DefiniteArticle
-            }
-          },
-        Annotation {
           annotated = Right Inheritance {
             subClass = "Professor",
             superClass = "Person"
@@ -134,6 +114,24 @@ task2024_14 = ShuffleInstance {
           annotation = Relevant {
             contributingToProblem = False,
             listingPriority = 6,
+            referenceUsing = DefiniteArticle
+            }
+          },
+        Annotation {
+          annotated = Right Composition {
+            compositionName = "isOn",
+            compositionPart = LimitedLinking {
+              linking = "Building",
+              limits = (2, Nothing)
+              },
+            compositionWhole = LimitedLinking {
+              linking = "UniversityCampus",
+              limits = (0, Just 1)
+              }
+            },
+          annotation = Relevant {
+            contributingToProblem = False,
+            listingPriority = 3,
             referenceUsing = DefiniteArticle
             }
           }
@@ -176,7 +174,7 @@ task2024_14 = ShuffleInstance {
         ],
       Paragraph [
         Translated (listToFM [
-          (English, "A university campus consists of different buildings. Each building is cared for by a facility manager who is responsible for it. A facility manager is a person. Another kind of persons are the professors, who each have a specific room as own office. A building consists of different rooms, not each of which is a professor's office."),
+          (English, "A university campus consists of different buildings. Each building is cared for by a facility manager who is responsible for it. A facility manager is a person. Another kind of persons are the professors, who each have a specific room as their own office. A building consists of different rooms, not each of which is a professor's office."),
           (German, "Ein Universitätscampus besteht aus verschiedenen Gebäuden. Jedes Gebäude wird von einem Hausmeister betreut, der für es zuständig ist. Ein Hausmeister ist eine Person. Eine andere Art von Personen sind die Professoren, die jeweils einen bestimmten Raum als eigenes Büro haben. Ein Gebäude besteht aus verschiedenen Räumen, von denen nicht jeder ein Professorenbüro ist.")
           ])
         ],
@@ -228,7 +226,4 @@ task2024_14 = ShuffleInstance {
           ]
         ]
       ]
-    },
-  allowLayoutMangling = True,
-  shuffleNames = False
   }
