@@ -390,27 +390,16 @@ selectValidCdFeedback path drawSettings xs x cdChange =
           Klassendiagramm #{x} ist gültig.
           |]
       let sufficient = byName || onlyInheritances (option cdChange)
-      if sufficient
-        then paragraph $ translate $ do
+      unless sufficient showNamedCd
+      paragraph $ translate $ do
         english [iii|
-          Consider the following object diagram, which is an instance of this
+          #{if sufficient then "Consider" else "Now consider"} the following object diagram, which is an instance of this
           class diagram:
           |]
         german [iii|
-          Betrachten Sie das folgende Objektdiagramm,
+          #{if sufficient then "Betrachten Sie" else "Betrachten Sie nun"} das folgende Objektdiagramm,
           welches eine Instanz dieses Klassendiagramms ist:
           |]
-        else do
-        showNamedCd
-        paragraph $ translate $ do
-          english [iii|
-            Now consider the following object diagram, which is an instance of this
-            class diagram:
-            |]
-          german [iii|
-            Betrachten Sie nun das folgende Objektdiagramm,
-            welches eine Instanz dieses Klassendiagramms ist:
-            |]
         pure ()
       paragraph $ image $=<< cacheOd od dir True path
       pure ()
