@@ -18,7 +18,9 @@ In order to do so you can change the provided flag in `stack.yaml` or `stack-*.y
     alloy-use-sat4j: true
 ```
 
-Or provide it as argument to stack, e.g. `stack build --flag modelling-tasks:alloy-use-sat4j`.
+Or provide it as argument to each call of `stack`, e.g. `stack build --flag modelling-tasks:alloy-use-sat4j`.
+
+LaTeX and Graphviz need to be installed on the system.
 
 ## Generating instances in GHCi
 
@@ -32,7 +34,7 @@ stack ghci --stack-yaml=stack-examples.yaml
 ```
 
 ``` haskell
-:m +Control.OutputCapable.Blocks Control.OutputCapable.Blocks.Generic
+:m + Control.OutputCapable.Blocks Control.OutputCapable.Blocks.Generic
 inst <- nameCdErrorGenerate defaultNameCdErrorConfig 0 0
 runLangMReport (return ()) (>>) (nameCdErrorTask "/tmp/" inst) >>= \(Just (), x) -> (x English :: IO ())
 runLangMReport (return ()) (>>) (nameCdErrorSyntax inst NameCdErrorAnswer {reason = 'b', dueTo = [1,2,4]}) >>= \(Just (), x) -> (x English :: IO ())
@@ -42,9 +44,9 @@ runLangMReport (return ()) (>>) (nameCdErrorEvaluation inst NameCdErrorAnswer {r
 For running all steps at once in `ghci`, the following approach is also possible:
 
 ``` haskell
-:m +Control.OutputCapable.Blocks.Debug System.Random Text.Parsec
+:m + Control.OutputCapable.Blocks.Debug System.Random Text.Parsec
 let getLines = init <$> getLines' where getLines' = do { x <- getLine; if null x then pure [] else (\l -> x ++ '\n' : l) <$> getLines' }
-testTask English (randomRIO (0,1000) >>= nameCdErrorGenerate defaultNameCdErrorConfig 0) (nameCdErrorTask "/tmp/") nameCdErrorSyntax nameCdErrorEvaluation (either (error . show) id . parse parseNameCdErrorAnswer "" <$> getLines)
+testTask Nothing English (randomRIO (0,1000) >>= nameCdErrorGenerate defaultNameCdErrorConfig 0) (nameCdErrorTask "/tmp/") nameCdErrorSyntax nameCdErrorEvaluation (either (error . show) id . parse parseNameCdErrorAnswer "" <$> getLines)
 ```
 
 Please also note that the `..Task`, `..Syntax`, and `..Evaluation` functions sometimes require arguments for a directory (above `"/tmp/"`) and sometimes don't.
