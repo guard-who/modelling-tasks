@@ -400,7 +400,6 @@ selectValidCdFeedback path drawSettings xs x cdChange =
           #{if sufficient then "Betrachten Sie" else "Betrachten Sie nun"} das folgende Objektdiagramm,
           welches eine Instanz dieses Klassendiagramms ist:
           |]
-        pure ()
       paragraph $ image $=<< cacheOd od dir True path
       pure ()
     _ -> pure ()
