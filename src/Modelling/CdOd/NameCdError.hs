@@ -540,12 +540,12 @@ defaultNameCdErrorTaskText = [
       english [iii|
         would indicate that the class diagram is invalid
         because of reason #{singleton $ reason answer}
-        and that the #{dueTo1}. and #{dueTo2}. relationship
-        make the problem appear.
+        and that the #{dueTo1}. and #{dueTo2}. relationship (appearing together)
+        create the problem.
         |]
       german [iii|
         bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
-        und dass die #{dueTo1}. und #{dueTo2}. Beziehung
+        und dass die #{dueTo1}. und #{dueTo2}. Beziehung (zusammen auftretend)
         das Problem erschaffen.
         |]
     ]
