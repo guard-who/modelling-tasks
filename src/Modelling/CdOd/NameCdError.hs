@@ -546,7 +546,7 @@ defaultNameCdErrorTaskText = [
       german [iii|
         bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
         und dass die #{dueTo1}. und #{dueTo2}. Beziehung (zusammen auftretend)
-        das Problem erschaffen.
+        das Problem erzeugen.
         |]
     ]
   ]
