@@ -523,7 +523,7 @@ differentNames config segment seed = do
   where
     tryGettingValidInstanceFor []             = throwM NoInstanceAvailable
     tryGettingValidInstanceFor (inst:instances) = do
-      cd <- instanceToCd inst
+      cd <- instanceToCd inst >>= shuffleClassAndConnectionOrder
       taskInstance <- getDifferentNamesTask
         (tryGettingValidInstanceFor instances)
         config
@@ -533,35 +533,35 @@ differentNames config segment seed = do
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
   cDiagram = ClassDiagram {
-    classNames = ["D","A","C","B"],
+    classNames = ["C","B","A","D"],
     relationships = [
       Association {
         associationName = "b",
         associationFrom = LimitedLinking {
-          linking = "A",
+          linking = "C",
           limits = (0, Nothing)
           },
         associationTo = LimitedLinking {
-          linking = "C",
+          linking = "D",
           limits = (0, Just 1)
           }
          },
-      Inheritance {subClass = "B", superClass = "A"},
+      Inheritance {subClass = "B", superClass = "C"},
       Composition {
         compositionName = "a",
         compositionPart = LimitedLinking {
-          linking = "C",
+          linking = "D",
           limits = (2, Nothing)
           },
         compositionWhole = LimitedLinking {
-          linking = "D",
+          linking = "A",
           limits = (0, Just 1)
           }
          },
       Aggregation {
         aggregationName = "c",
         aggregationPart = LimitedLinking {
-          linking = "D",
+          linking = "A",
           limits = (0, Just 2)
           },
         aggregationWhole = LimitedLinking {
@@ -574,20 +574,18 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   cdDrawSettings = defaultCdDrawSettings,
   oDiagram = ObjectDiagram {
     objects = [
-      Object {isAnonymous = True, objectName = "b2", objectClass = "B"},
-      Object {isAnonymous = True, objectName = "c1", objectClass = "C"},
+      Object {isAnonymous = True, objectName = "d1", objectClass = "D"},
       Object {isAnonymous = True, objectName = "b1", objectClass = "B"},
+      Object {isAnonymous = True, objectName = "a", objectClass = "A"},
       Object {isAnonymous = True, objectName = "d", objectClass = "D"},
-      Object {isAnonymous = True, objectName = "c", objectClass = "C"},
       Object {isAnonymous = True, objectName = "b", objectClass = "B"}
       ],
     links = [
-      Link {linkName = "y", linkFrom = "c", linkTo = "d"},
-      Link {linkName = "x", linkFrom = "b1", linkTo = "c1"},
-      Link {linkName = "x", linkFrom = "b2", linkTo = "c"},
-      Link {linkName = "y", linkFrom = "c1", linkTo = "d"},
-      Link {linkName = "x", linkFrom = "b", linkTo = "c1"},
-      Link {linkName = "z", linkFrom = "d", linkTo = "b1"}
+      Link {linkName = "y", linkFrom = "d", linkTo = "a"},
+      Link {linkName = "x", linkFrom = "b1", linkTo = "d1"},
+      Link {linkName = "y", linkFrom = "d1", linkTo = "a"},
+      Link {linkName = "x", linkFrom = "b", linkTo = "d1"},
+      Link {linkName = "z", linkFrom = "a", linkTo = "b1"}
       ]
     },
   showSolution = False,
