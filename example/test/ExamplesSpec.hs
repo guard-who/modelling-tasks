@@ -51,16 +51,22 @@ import Modelling.CdOd.DifferentNames (
   checkDifferentNamesConfig,
   )
 import Modelling.CdOd.DifferentNames.Config (
-  task12,
-  task13,
-  task25,
+  task2023_12,
+  task2023_13,
+  task2023_25,
+  task2024_15,
+  task2024_16,
   )
 import Modelling.CdOd.MatchCdOd (
   checkMatchCdOdConfig,
   )
 import Modelling.CdOd.MatchCdOd.Config (
-  task14,
-  task15,
+  task2023_14,
+  task2023_15,
+  task2024_17,
+  task2024_18,
+  task2024_19,
+  task2024_20,
   )
 import Modelling.CdOd.NameCdError (
   checkNameCdErrorConfig,
@@ -155,13 +161,13 @@ spec =
       it "task10" $
         checkNameCdErrorConfig task2023_10 `shouldBe` Nothing
       it "task12" $
-        checkDifferentNamesConfig task12 `shouldBe` Nothing
+        checkDifferentNamesConfig task2023_12 `shouldBe` Nothing
       it "task13" $
-        checkDifferentNamesConfig task13 `shouldBe` Nothing
+        checkDifferentNamesConfig task2023_13 `shouldBe` Nothing
       it "task14" $
-        checkMatchCdOdConfig task14 `shouldBe` Nothing
+        checkMatchCdOdConfig task2023_14 `shouldBe` Nothing
       it "task15" $
-        checkMatchCdOdConfig task15 `shouldBe` Nothing
+        checkMatchCdOdConfig task2023_15 `shouldBe` Nothing
       it "task16" $
         checkPickConflictConfig task16 `shouldBe` Nothing
       it "task17" $
@@ -181,7 +187,7 @@ spec =
       it "task24" $
         checkFindConflictPlacesConfig task24 `shouldBe` Nothing
       it "task25" $
-        checkDifferentNamesConfig task25 `shouldBe` Nothing
+        checkDifferentNamesConfig task2023_25 `shouldBe` Nothing
       it "task26" $
         checkFindConflictPlacesConfig task26 `shouldBe` Nothing
       it "task31" $
@@ -232,3 +238,15 @@ spec =
         checkRepairCdConfig task2024_13 `shouldBe` Nothing
       it "task14" $
         checkNameCdErrorInstance task2024_14 `shouldBe` Nothing
+      it "task15" $
+        checkDifferentNamesConfig task2024_15 `shouldBe` Nothing
+      it "task16" $
+        checkDifferentNamesConfig task2024_16 `shouldBe` Nothing
+      it "task17" $
+        checkMatchCdOdConfig task2024_17 `shouldBe` Nothing
+      it "task18" $
+        checkMatchCdOdConfig task2024_18 `shouldBe` Nothing
+      it "task19" $
+        checkMatchCdOdConfig task2024_19 `shouldBe` Nothing
+      it "task20" $
+        checkMatchCdOdConfig task2024_20 `shouldBe` Nothing
