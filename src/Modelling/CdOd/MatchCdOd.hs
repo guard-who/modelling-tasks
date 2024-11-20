@@ -310,8 +310,8 @@ toTaskSpecificText path MatchCdOdInstance {..} = \case
 defaultMatchCdOdTaskText :: MatchCdOdTaskText
 defaultMatchCdOdTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
-    english "Consider the following two class diagrams:"
-    german "Betrachten Sie die folgenden zwei Klassendiagramme:",
+    english "Consider the following two (valid) class diagrams:"
+    german "Betrachten Sie die folgenden zwei (validen) Klassendiagramme:",
   Special GivenCds,
   Paragraph $ singleton $ Translated $ translations $ do
     english [iii|

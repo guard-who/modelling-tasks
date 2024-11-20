@@ -390,8 +390,8 @@ toTaskSpecificText path DifferentNamesInstance {..} = \case
 defaultDifferentNamesTaskText :: DifferentNamesTaskText
 defaultDifferentNamesTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
-    english "Consider the following class diagram:"
-    german "Betrachten Sie folgendes Klassendiagramm:",
+    english "Consider the following (valid) class diagram:"
+    german "Betrachten Sie folgendes (valide) Klassendiagramm:",
   Special GivenCd,
   Paragraph $ singleton $ Translated $ translations $ do
     english "and the following object diagram (which conforms to it):"
@@ -407,7 +407,7 @@ defaultDifferentNamesTaskText = [
         relationships in the CD to links in the OD.
         \n
         To state that a in the CD corresponds to x in the OD and
-        b in the CD corresponds to y in the OD write it as:
+        b in the CD corresponds to y in the OD, write the mapping as:
         |]
       german [iii|
         Welche Beziehung im Klassendiagramm (CD)
@@ -417,7 +417,7 @@ defaultDifferentNamesTaskText = [
         Beziehungen im CD zu Links im OD an.
         \n
         Um anzugeben, dass a im CD zu x im OD und b im CD
-        zu y im OD korrespondieren, schreiben Sie es als:
+        zu y im OD korrespondieren, schreiben Sie die Zuordnung als:
         |],
     Code . uniform . show $ mappingShow differentNamesInitial
     ],
