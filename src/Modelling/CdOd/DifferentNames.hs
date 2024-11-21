@@ -97,6 +97,7 @@ import Modelling.CdOd.Types (
   relationshipName,
   renameObjectsWithClassesAndLinksInOd,
   renameClassesAndRelationships,
+  shuffleCdNames,
   shuffleClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
   )
@@ -143,6 +144,7 @@ import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bitraverse)
 import Data.Bool                        (bool)
 import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
+import Data.Functor.Identity            (Identity (Identity, runIdentity))
 import Data.GraphViz                    (DirType (Forward))
 import Data.List (
   group,
@@ -524,48 +526,53 @@ differentNames config segment seed = do
     tryGettingValidInstanceFor []             = throwM NoInstanceAvailable
     tryGettingValidInstanceFor (inst:instances) = do
       cd <- instanceToCd inst >>= shuffleClassAndConnectionOrder
+        >>= fmap runIdentity . shuffleCdNames . Identity
       taskInstance <- getDifferentNamesTask
         (tryGettingValidInstanceFor instances)
         config
         cd
       shuffleEverything taskInstance
 
+{-|
+A 'defaultDifferentNamesInstance' as generated
+using 'defaultDifferentNamesConfig'.
+-}
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
   cDiagram = ClassDiagram {
-    classNames = ["C","B","A","D"],
+    classNames = ["C", "A", "D", "B"],
     relationships = [
-      Association {
-        associationName = "b",
-        associationFrom = LimitedLinking {
-          linking = "C",
-          limits = (0, Nothing)
-          },
-        associationTo = LimitedLinking {
-          linking = "D",
-          limits = (0, Just 1)
-          }
-         },
-      Inheritance {subClass = "B", superClass = "C"},
+      Inheritance {subClass = "D", superClass = "A"},
       Composition {
         compositionName = "a",
         compositionPart = LimitedLinking {
-          linking = "D",
+          linking = "C",
           limits = (2, Nothing)
           },
         compositionWhole = LimitedLinking {
-          linking = "A",
+          linking = "B",
           limits = (0, Just 1)
           }
-         },
+        },
+      Association {
+        associationName = "b",
+        associationFrom = LimitedLinking {
+          linking = "A",
+          limits = (0, Nothing)
+          },
+        associationTo = LimitedLinking {
+          linking = "C",
+          limits = (0, Just 1)
+          }
+        },
       Aggregation {
         aggregationName = "c",
         aggregationPart = LimitedLinking {
-          linking = "A",
+          linking = "B",
           limits = (0, Just 2)
           },
         aggregationWhole = LimitedLinking {
-          linking = "B",
+          linking = "D",
           limits = (0, Just 2)
           }
         }
@@ -574,22 +581,23 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   cdDrawSettings = defaultCdDrawSettings,
   oDiagram = ObjectDiagram {
     objects = [
-      Object {isAnonymous = True, objectName = "d1", objectClass = "D"},
-      Object {isAnonymous = True, objectName = "b1", objectClass = "B"},
-      Object {isAnonymous = True, objectName = "a", objectClass = "A"},
       Object {isAnonymous = True, objectName = "d", objectClass = "D"},
-      Object {isAnonymous = True, objectName = "b", objectClass = "B"}
+      Object {isAnonymous = True, objectName = "c1", objectClass = "C"},
+      Object {isAnonymous = True, objectName = "c2", objectClass = "C"},
+      Object {isAnonymous = True, objectName = "b", objectClass = "B"},
+      Object {isAnonymous = True, objectName = "d1", objectClass = "D"},
+      Object {isAnonymous = True, objectName = "c", objectClass = "C"}
       ],
     links = [
-      Link {linkName = "y", linkFrom = "d", linkTo = "a"},
-      Link {linkName = "x", linkFrom = "b1", linkTo = "d1"},
-      Link {linkName = "y", linkFrom = "d1", linkTo = "a"},
-      Link {linkName = "x", linkFrom = "b", linkTo = "d1"},
-      Link {linkName = "z", linkFrom = "a", linkTo = "b1"}
+      Link {linkName = "y", linkFrom = "c1", linkTo = "b"},
+      Link {linkName = "x", linkFrom = "d1", linkTo = "c1"},
+      Link {linkName = "z", linkFrom = "b", linkTo = "d1"},
+      Link {linkName = "x", linkFrom = "d", linkTo = "c2"},
+      Link {linkName = "y", linkFrom = "c2", linkTo = "b"}
       ]
     },
   showSolution = False,
-  mapping = toNameMapping $ BM.fromList [("a","y"),("b","x"),("c","z")],
+  mapping = toNameMapping $ BM.fromList [("a", "y"), ("b", "x"), ("c", "z")],
   linkShuffling = ConsecutiveLetters,
   taskText = defaultDifferentNamesTaskText,
   usesAllRelationships = True

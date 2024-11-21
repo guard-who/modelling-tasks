@@ -71,6 +71,7 @@ module Modelling.CdOd.Types (
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
   shuffleAnnotatedClassAndConnectionOrder,
+  shuffleCdNames,
   shuffleClassAndConnectionOrder,
   shuffleAnyClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
@@ -1117,6 +1118,23 @@ linkNames
   -> [linkName]
 linkNames ObjectDiagram {..} = nubOrd $ map linkName links
 
+{-|
+Given a collection of CDs use all used class and relationship names
+and shuffle them respectively.
+-}
+shuffleCdNames
+  :: (MonadRandom m, Traversable t, MonadThrow m)
+  => t Cd
+  -> m (t Cd)
+shuffleCdNames cds = do
+  let names = nubOrd $ concatMap classNames cds
+      nonInheritances = nubOrd $ concatMap associationNames cds
+  names' <- shuffleM names
+  nonInheritances' <- shuffleM nonInheritances
+  let bmNames  = BM.fromList $ zip names names'
+      bmNonInheritances = BM.fromList $ zip nonInheritances nonInheritances'
+      renameCds = renameClassesAndRelationships bmNames bmNonInheritances
+  mapM renameCds cds
 
 {-|
 Renaming 'AnnotatedClassDiagram'gs, `ClassDiagram`s and `Relationship`s
