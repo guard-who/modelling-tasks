@@ -20,8 +20,8 @@ points: 0.15
 generation time: 2:30min
 CPU usage: 120%
 -}
-task19 :: MathConfig
-task19 = MathConfig {
+task2023_19 :: MathConfig
+task2023_19 = MathConfig {
   basicConfig = BasicConfig {
     places = 6,
     transitions = 5,
@@ -64,8 +64,8 @@ points: 0.15
 generation time: 8:30min
 CPU usage: 100%
 -}
-task20 :: MathConfig
-task20 = MathConfig {
+task2023_20 :: MathConfig
+task2023_20 = MathConfig {
   basicConfig = BasicConfig {
     places = 5,
     transitions = 7,
@@ -102,3 +102,19 @@ task20 = MathConfig {
     timeout = Nothing
     }
   }
+
+{-|
+points: 0.15
+generation time: ???
+CPU usage: ???
+-}
+task2024_23 :: MathConfig
+task2024_23 = task2023_19
+
+{-|
+points: 0.15
+generation time: ???
+CPU usage: ???
+-}
+task2024_24 :: MathConfig
+task2024_24 = task2023_20
