@@ -133,8 +133,8 @@ task2023_25 = DifferentNamesConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 1:10min
+CPU usage: 355%
 -}
 task2024_15 :: DifferentNamesConfig
 task2024_15 = DifferentNamesConfig {
@@ -172,8 +172,8 @@ task2024_15 = DifferentNamesConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 1:17min
+CPU usage: 346%
 -}
 task2024_16 :: DifferentNamesConfig
 task2024_16 = DifferentNamesConfig {

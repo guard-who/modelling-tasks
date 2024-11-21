@@ -105,16 +105,16 @@ task2023_18 = MathConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 5:16min
+CPU usage: 105%
 -}
 task2024_21 :: MathConfig
 task2024_21 = task2023_17
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 10:28min
+CPU usage: 103%
 -}
 task2024_22 :: MathConfig
 task2024_22 = task2023_18

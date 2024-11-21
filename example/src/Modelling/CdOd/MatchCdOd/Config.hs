@@ -108,8 +108,8 @@ task2023_15 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 16:54min
+CPU usage: 134%
 -}
 task2024_17 :: MatchCdOdConfig
 task2024_17 = MatchCdOdConfig {
@@ -149,8 +149,8 @@ task2024_17 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 13:14min
+CPU usage: 130%
 -}
 task2024_18 :: MatchCdOdConfig
 task2024_18 = MatchCdOdConfig {
@@ -190,8 +190,8 @@ task2024_18 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 5:14min
+CPU usage: 127%
 -}
 task2024_19 :: MatchCdOdConfig
 task2024_19 = MatchCdOdConfig {
@@ -231,8 +231,8 @@ task2024_19 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: ???
-CPU usage: ???
+generation time: 2:44min
+CPU usage: 133%
 -}
 task2024_20 :: MatchCdOdConfig
 task2024_20 = MatchCdOdConfig {
