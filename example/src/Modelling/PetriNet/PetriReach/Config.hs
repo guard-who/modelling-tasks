@@ -9,8 +9,8 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 {-|
 points: 0.2
 -}
-task27 :: ReachConfig
-task27 = ReachConfig {
+task2023_27 :: ReachConfig
+task2023_27 = ReachConfig {
   numPlaces = 4,
   numTransitions = 4,
   capacity = Unbounded,
@@ -29,8 +29,8 @@ task27 = ReachConfig {
 {-|
 points: 0.25
 -}
-task28 :: ReachConfig
-task28 = ReachConfig {
+task2023_28 :: ReachConfig
+task2023_28 = ReachConfig {
   numPlaces = 6,
   numTransitions = 6,
   capacity = Unbounded,
@@ -45,3 +45,15 @@ task28 = ReachConfig {
   showMinLengthHint = True,
   showTargetNet = True
   }
+
+{-|
+points: 0.2
+-}
+task2024_25 :: ReachConfig
+task2024_25 = task2023_27
+
+{-|
+points: 0.25
+-}
+task2024_26 :: ReachConfig
+task2024_26 = task2023_28
