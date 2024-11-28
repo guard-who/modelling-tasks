@@ -376,13 +376,13 @@ toTaskSpecificText path DifferentNamesInstance {..} = \case
         |]
       german [iii|
         Deshalb sollte jeder Linkname und jeder Beziehungsname
-        genau einmal in Ihrer Zuordnung auftauchen.
+        genau einmal in Ihrer Zuordnung auftreten.
         |]
       else do
       english [i|Thus, every link name should occur exactly once in your mapping.|]
       german [iii|
         Deshalb sollte jeder Linkname
-        genau einmal in Ihrer Zuordnung auftauchen.
+        genau einmal in Ihrer Zuordnung auftreten.
         |]
       pure ()
     pure ()
