@@ -367,24 +367,15 @@ toTaskSpecificText path DifferentNamesInstance {..} = \case
         (and auch nur Links mit dem selben Namen!)
         im OD entsprechen genau dem selben Beziehungsnamen im CD.
         |]
-    paragraph $ translate $
-      if usesAllRelationships
-      then do
+    paragraph $ translate $ do
       english [iii|
-        Thus, every link name and every relationship name should occur
-        exactly once in your mapping.
+        Thus, no relationship or link name should occur
+        more than once in your mapping.
         |]
       german [iii|
-        Deshalb sollte jeder Linkname und jeder Beziehungsname
-        genau einmal in Ihrer Zuordnung auftreten.
+        Deshalb sollte kein Beziehungs- oder Linkname
+        mehr als einmal in Ihrer Zuordnung auftreten.
         |]
-      else do
-      english [i|Thus, every link name should occur exactly once in your mapping.|]
-      german [iii|
-        Deshalb sollte jeder Linkname
-        genau einmal in Ihrer Zuordnung auftreten.
-        |]
-      pure ()
     pure ()
   where
     cd = fromClassDiagram cDiagram
