@@ -17,8 +17,8 @@ points: 0.1
 generation time: 3:30min
 CPU usage: 110%
 -}
-task22 :: PickConflictConfig
-task22 = PickConflictConfig {
+task2023_22 :: PickConflictConfig
+task2023_22 = PickConflictConfig {
   basicConfig = BasicConfig {
     places = 6,
     transitions = 6,
@@ -63,8 +63,8 @@ points: 0.1
 generation time: 6:00min
 CPU usage: 100%
 -}
-task16 :: PickConflictConfig
-task16 = PickConflictConfig {
+task2023_16 :: PickConflictConfig
+task2023_16 = PickConflictConfig {
   basicConfig = BasicConfig {
     places = 6,
     transitions = 6,
@@ -103,3 +103,19 @@ task16 = PickConflictConfig {
     timeout = Nothing
     }
   }
+
+{-|
+points: 0.1
+generation time: ?:??min
+CPU usage: ???%
+-}
+task2024_30 :: PickConflictConfig
+task2024_30 = task2023_16
+
+{-|
+points: 0.1
+generation time: ?:??min
+CPU usage: ???%
+-}
+task2024_31 :: PickConflictConfig
+task2024_31 = task2023_22

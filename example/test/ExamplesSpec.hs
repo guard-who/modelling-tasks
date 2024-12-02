@@ -140,11 +140,14 @@ import Modelling.PetriNet.PetriMathToGraph.Config (
   task2024_24,
   )
 import Modelling.PetriNet.PetriPickConcurrency.Config (
-  task21,
+  task2023_21,
+  task2024_29,
   )
 import Modelling.PetriNet.PetriPickConflict.Config (
-  task22,
-  task16,
+  task2023_22,
+  task2023_16,
+  task2024_30,
+  task2024_31,
   )
 
 import Test.Hspec
@@ -174,7 +177,7 @@ spec =
       it "task15" $
         checkMatchCdOdConfig task2023_15 `shouldBe` Nothing
       it "task16" $
-        checkPickConflictConfig task16 `shouldBe` Nothing
+        checkPickConflictConfig task2023_16 `shouldBe` Nothing
       it "task17" $
         checkGraphToMathConfig task2023_17 `shouldBe` Nothing
       it "task18" $
@@ -184,9 +187,9 @@ spec =
       it "task20" $
         checkMathConfig task2023_20 `shouldBe` Nothing
       it "task21" $
-        checkPickConcurrencyConfig task21 `shouldBe` Nothing
+        checkPickConcurrencyConfig task2023_21 `shouldBe` Nothing
       it "task22" $
-        checkPickConflictConfig task22 `shouldBe` Nothing
+        checkPickConflictConfig task2023_22 `shouldBe` Nothing
       it "task23" $
         checkFindConcurrencyConfig task23 `shouldBe` Nothing
       it "task24" $
@@ -263,3 +266,9 @@ spec =
         checkMathConfig task2024_23 `shouldBe` Nothing
       it "task24" $
         checkMathConfig task2024_24 `shouldBe` Nothing
+      it "task29" $
+        checkPickConcurrencyConfig task2024_29 `shouldBe` Nothing
+      it "task30" $
+        checkPickConflictConfig task2024_30 `shouldBe` Nothing
+      it "task21" $
+        checkPickConflictConfig task2024_31 `shouldBe` Nothing

@@ -16,8 +16,8 @@ points: 0.1
 generation time: 14:00min
 CPU usage: 100%
 -}
-task21 :: PickConcurrencyConfig
-task21 = PickConcurrencyConfig {
+task2023_21 :: PickConcurrencyConfig
+task2023_21 = PickConcurrencyConfig {
   basicConfig = BasicConfig {
     places = 6,
     transitions = 6,
@@ -48,3 +48,11 @@ task21 = PickConcurrencyConfig {
     timeout = Nothing
     }
   }
+
+{-|
+points: 0.1
+generation time: ?:??min
+CPU usage: ???%
+-}
+task2024_29 :: PickConcurrencyConfig
+task2024_29 = task2023_21

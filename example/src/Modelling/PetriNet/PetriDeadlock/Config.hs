@@ -9,8 +9,8 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 {-|
 points: 0.2
 -}
-task29 :: DeadlockConfig
-task29 = DeadlockConfig {
+task2023_29 :: DeadlockConfig
+task2023_29 = DeadlockConfig {
   numPlaces = 4,
   numTransitions = 4,
   capacity = Unbounded,
@@ -28,8 +28,8 @@ task29 = DeadlockConfig {
 {-|
 points: 0.25
 -}
-task30 :: DeadlockConfig
-task30 = DeadlockConfig {
+task2023_30 :: DeadlockConfig
+task2023_30 = DeadlockConfig {
   numPlaces = 6,
   numTransitions = 8,
   capacity = Unbounded,
@@ -43,3 +43,15 @@ task30 = DeadlockConfig {
   showLengthHint = True,
   showMinLengthHint = True
   }
+
+{-|
+points: 0.2
+-}
+task2024_27 :: DeadlockConfig
+task2024_27 = task2023_29
+
+{-|
+points: 0.25
+-}
+task2024_28 :: DeadlockConfig
+task2024_28 = task2023_30
