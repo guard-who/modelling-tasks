@@ -106,16 +106,16 @@ task2023_16 = PickConflictConfig {
 
 {-|
 points: 0.1
-generation time: ?:??min
-CPU usage: ???%
+generation time: 7:59min
+CPU usage: 105%
 -}
 task2024_30 :: PickConflictConfig
 task2024_30 = task2023_16
 
 {-|
 points: 0.1
-generation time: ?:??min
-CPU usage: ???%
+generation time: 7:01min
+CPU usage: 102%
 -}
 task2024_31 :: PickConflictConfig
 task2024_31 = task2023_22
