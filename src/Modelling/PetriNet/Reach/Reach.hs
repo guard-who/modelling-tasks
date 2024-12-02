@@ -208,32 +208,37 @@ reachEvaluation
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    Ord s,
-    OutputCapable m,
-    Show s
+    OutputCapable m
     )
   => FilePath
-  -> ReachInstance s Transition
+  -> ReachInstance Place Transition
   -> [Transition]
   -> Rated m
-reachEvaluation path inst ts =
-  do isNoLonger (noLongerThan inst) ts
+reachEvaluation path reach ts =
+  do isNoLonger (noLongerThan reachInstance) ts
      paragraph $ translate $ do
        english "Start marking:"
        german "Startmarkierung:"
      indent $ text $ show (start n)
      pure ()
-  $>> executes path (drawUsing inst) n ts
+  $>> executes path (drawUsing reachInstance) n (map ShowTransition ts)
   $>>= \eitherOutcome -> whenRight eitherOutcome (\outcome ->
-    yesNo (outcome == goal inst) $ translate $ do
+    yesNo (outcome == goal reachInstance) $ translate $ do
       english "Reached target marking?"
       german "Zielmarkierung erreicht?"
     )
-  $>> assertReachPoints aSolution ((==) . goal) minLength inst ts eitherOutcome
-  where
-    n = petriNet inst
+  $>> assertReachPoints
     aSolution
-      | showSolution inst = Just $ show $ TransitionsList $ reachSolution inst
+    ((==) . goal)
+    minLength
+    reachInstance
+    ts
+    eitherOutcome
+  where
+    reachInstance = toShowReachInstance reach
+    n = petriNet reachInstance
+    aSolution
+      | showSolution reach = Just $ show $ TransitionsList $ reachSolution reach
       | otherwise = Nothing
 
 reachSolution :: Ord s => ReachInstance s t -> [t]

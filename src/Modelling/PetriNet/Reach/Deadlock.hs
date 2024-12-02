@@ -109,7 +109,7 @@ deadlockInitial = TransitionsList . reverse . S.toList . transitions . petriNet
 
 deadlockSyntax
   :: OutputCapable m
-  => DeadlockInstance s Transition
+  => DeadlockInstance Place Transition
   -> [Transition]
   -> LangM m
 deadlockSyntax = transitionsValid . petriNet
@@ -121,17 +121,15 @@ deadlockEvaluation
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
-    Ord s,
-    OutputCapable m,
-    Show s
+    OutputCapable m
     )
   => FilePath
-  -> DeadlockInstance s Transition
+  -> DeadlockInstance Place Transition
   -> [Transition]
   -> Rated m
-deadlockEvaluation path deadlockInstance ts =
+deadlockEvaluation path deadlock ts =
   isNoLonger (noLongerThan deadlockInstance) ts
-  $>> executes path (drawUsing deadlockInstance) n ts
+  $>> executes path (drawUsing deadlockInstance) n (map ShowTransition ts)
   $>>= \eitherOutcome ->
     whenRight eitherOutcome (\outcome ->
       yesNo (null $ successors n outcome)
@@ -147,10 +145,11 @@ deadlockEvaluation path deadlockInstance ts =
     ts
     eitherOutcome
   where
+    deadlockInstance = toShowDeadlockInstance deadlock
     n = petriNet deadlockInstance
     aSolution
       | showSolution deadlockInstance
-      = Just $ show $ TransitionsList $ deadlockSolution deadlockInstance
+      = Just $ show $ TransitionsList $ deadlockSolution deadlock
       | otherwise
       = Nothing
 
