@@ -369,7 +369,7 @@ toTaskSpecificText path DifferentNamesInstance {..} = \case
         |]
     paragraph $ translate $ do
       english [iii|
-        Thus, no link or relationship name should occur
+        Thus, no relationship or link name should occur
         more than once in your mapping.
         |]
       german [iii|
