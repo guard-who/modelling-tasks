@@ -204,11 +204,11 @@ findConflictTask path task = do
     german "Betrachten Sie folgendes Petrinetz:"
   image $=<< renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
-    english "Which pair of transitions are in conflict under the initial marking?"
+    english "Which pair of transitions is in conflict under the initial marking?"
     german "Welches Paar von Transitionen steht unter der Startmarkierung in Konflikt?"
   paragraph $ do
     translate $ do
-      english "Please state your answer by giving a pair of conflicting transitions. "
+      english "State your answer by giving a pair of conflicting transitions. "
       german "Geben Sie Ihre Antwort durch Angabe eines Paars von in Konflikt stehenden Transitionen an. "
     translate $ do
       english [i|Stating |]
@@ -333,8 +333,8 @@ pickConflictTask path task = do
   images show snd $=<< renderPick path "conflict" task
   paragraph $ translate $ do
     english [iii|
-      Please state your answer by giving only the number of the Petri net
-      having these transitions in conflict.#{" "}
+      State your answer by giving the number of the Petri net
+      having these conflicting transitions.#{" "}
       |]
     german [iii|
       Geben Sie Ihre Antwort durch Angabe der Nummer des Petrinetzes an,
@@ -351,16 +351,16 @@ pickConflictTask path task = do
         #{" "}as answer would indicate that Petri net 1
         has exactly two transitions that are in conflict
         (and the other Petri
-        #{if plural then "nets don't" else "net doesn't"}!).
+        #{if plural then "nets don't" else "net doesn't"}).
         |]
       german $ [iii|
         #{" "}als Antwort würde bedeuten, dass Petrinetz 1 genau zwei
-        in Konflikt stehende Transitionen hat (und dass
+        in Konflikt stehende Transitionen hat (und
         #{" "}
         |]
         ++ (if plural
-            then "die anderen Petrinetze dies nicht tun"
-            else "das andere Petrinetz dies nicht tut")
+            then "die anderen Petrinetze nicht"
+            else "das andere Petrinetz nicht")
         ++ ")."
     pure ()
   paragraph hoveringInformation

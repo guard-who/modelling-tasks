@@ -174,7 +174,7 @@ findConcurrencyTask path task = do
     $=<< renderWith path "concurrent" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english [iii|
-      Which pair of transitions are concurrently activated
+      Which pair of transitions is concurrently activated
       under the initial marking?
       |]
     german [iii|
@@ -184,7 +184,7 @@ findConcurrencyTask path task = do
   paragraph $ do
     translate $ do
       english [iii|
-        Please state your answer by giving a pair
+        State your answer by giving a pair
         of concurrently activated transitions.
         #{" "}|]
       german [iii|
@@ -281,7 +281,7 @@ pickConcurrencyTask path task = do
     $=<< renderPick path "concurrent" task
   paragraph $ translate $ do
     english [iii|
-      Please state your answer by giving only the number of the Petri net
+      State your answer by giving the number of the Petri net
       having these concurrently activated transitions.
       #{" "}|]
     german [iii|
@@ -299,16 +299,16 @@ pickConcurrencyTask path task = do
         #{" "}as answer would indicate that Petri net 1 has
         exactly two transitions that are concurrently activated
         (and the other Petri
-        #{if plural then "nets don't" else "net doesn't"}!).
+        #{if plural then "nets don't" else "net doesn't"}).
         |]
       german $ [iii|
         #{" "}als Antwort würde bedeuten, dass Petrinetz 1
-        genau zwei nebenläufig aktivierte Transitionen hat (und dass
+        genau zwei nebenläufig aktivierte Transitionen hat (und
         #{" "}
         |]
         ++ (if plural
-            then "die anderen Petrinetze dies nicht tun"
-            else "das andere Petrinetz dies nicht tut")
+            then "die anderen Petrinetze nicht"
+            else "das andere Petrinetz nicht")
         ++ ")."
     pure ()
   paragraph hoveringInformation
