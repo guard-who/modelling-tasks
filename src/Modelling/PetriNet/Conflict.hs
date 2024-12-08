@@ -324,11 +324,12 @@ pickConflictTask path task = do
   paragraph $ translate $ do
     english [iii|
       Which of the following Petri nets has exactly
-      one pair of transitions that are in conflict?
+      one pair of transitions that are in conflict
+      under the initial marking?
       |]
     german [iii|
       Welches dieser Petrinetze hat genau ein Paar von Transitionen,
-      die in Konflikt stehen?
+      die unter der Startmarkierung in Konflikt stehen?
       |]
   images show snd $=<< renderPick path "conflict" task
   paragraph $ translate $ do
@@ -350,11 +351,12 @@ pickConflictTask path task = do
       english [iii|
         #{" "}as answer would indicate that Petri net 1
         has exactly two transitions that are in conflict
-        (and the other Petri
+        under the initial marking (and the other Petri
         #{if plural then "nets don't" else "net doesn't"}).
         |]
       german $ [iii|
         #{" "}als Antwort würde bedeuten, dass Petrinetz 1 genau zwei
+        unter der Startmarkierung
         in Konflikt stehende Transitionen hat (und
         #{" "}
         |]

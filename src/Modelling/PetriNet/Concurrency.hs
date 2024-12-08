@@ -271,11 +271,12 @@ pickConcurrencyTask path task = do
   paragraph $ translate $ do
     english [iii|
       Which of the following Petri nets has exactly
-      one pair of transitions that are concurrently activated?
+      one pair of transitions that are concurrently activated
+      under the initial marking?
       |]
     german [iii|
       Welches dieser Petrinetze hat genau ein Paar von Transitionen,
-      die nebenläufig aktiviert sind?
+      die unter der Startmarkierung nebenläufig aktiviert sind?
       |]
   images show snd
     $=<< renderPick path "concurrent" task
@@ -298,12 +299,13 @@ pickConcurrencyTask path task = do
       english [iii|
         #{" "}as answer would indicate that Petri net 1 has
         exactly two transitions that are concurrently activated
-        (and the other Petri
+        under the initial marking (and the other Petri
         #{if plural then "nets don't" else "net doesn't"}).
         |]
       german $ [iii|
         #{" "}als Antwort würde bedeuten, dass Petrinetz 1
-        genau zwei nebenläufig aktivierte Transitionen hat (und
+        genau zwei unter der Startmarkierung
+        nebenläufig aktivierte Transitionen hat (und
         #{" "}
         |]
         ++ (if plural
