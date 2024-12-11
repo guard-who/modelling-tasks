@@ -121,11 +121,16 @@ import Modelling.PetriNet.MatchToMath (
   checkMathConfig,
   )
 import Modelling.PetriNet.PetriFindConcurrency.Config (
-  task23,
+  task2023_23,
+  task2024_32,
+  task2024_33,
   )
 import Modelling.PetriNet.PetriFindConflictPlaces.Config (
-  task24,
-  task26,
+  task2023_24,
+  task2023_26,
+  task2024_34,
+  task2024_35,
+  task2024_36,
   )
 import Modelling.PetriNet.PetriGraphToMath.Config (
   task2023_17,
@@ -191,13 +196,13 @@ spec =
       it "task22" $
         checkPickConflictConfig task2023_22 `shouldBe` Nothing
       it "task23" $
-        checkFindConcurrencyConfig task23 `shouldBe` Nothing
+        checkFindConcurrencyConfig task2023_23 `shouldBe` Nothing
       it "task24" $
-        checkFindConflictPlacesConfig task24 `shouldBe` Nothing
+        checkFindConflictPlacesConfig task2023_24 `shouldBe` Nothing
       it "task25" $
         checkDifferentNamesConfig task2023_25 `shouldBe` Nothing
       it "task26" $
-        checkFindConflictPlacesConfig task26 `shouldBe` Nothing
+        checkFindConflictPlacesConfig task2023_26 `shouldBe` Nothing
       it "task31" $
         checkMatchAdConfig task31 `shouldBe` Nothing
       it "task32" $
@@ -270,5 +275,15 @@ spec =
         checkPickConcurrencyConfig task2024_29 `shouldBe` Nothing
       it "task30" $
         checkPickConflictConfig task2024_30 `shouldBe` Nothing
-      it "task21" $
+      it "task31" $
         checkPickConflictConfig task2024_31 `shouldBe` Nothing
+      it "task32" $
+        checkFindConcurrencyConfig task2024_32 `shouldBe` Nothing
+      it "task33" $
+        checkFindConcurrencyConfig task2024_33 `shouldBe` Nothing
+      it "task34" $
+        checkFindConflictPlacesConfig task2024_34 `shouldBe` Nothing
+      it "task35" $
+        checkFindConflictPlacesConfig task2024_35 `shouldBe` Nothing
+      it "task36" $
+        checkFindConflictPlacesConfig task2024_36 `shouldBe` Nothing
