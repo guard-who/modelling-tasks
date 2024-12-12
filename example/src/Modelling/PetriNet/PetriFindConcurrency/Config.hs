@@ -55,16 +55,16 @@ task2023_23 = FindConcurrencyConfig {
 
 {-|
 points: 0.15
-generation time: ??:??min
-CPU usage: ???%
+generation time: 12:10min
+CPU usage: 103%
 -}
 task2024_32 :: FindConcurrencyConfig
 task2024_32 = task2023_23
 
 {-|
 points: 0.15
-generation time: ??:??min
-CPU usage: ???%
+generation time: 26:15min
+CPU usage: 106%
 -}
 task2024_33 :: FindConcurrencyConfig
 task2024_33 = FindConcurrencyConfig {
