@@ -97,8 +97,8 @@ toFindSyntax withSol n (fi, si) = addPretext $ do
     assert = continueOrAbort withSol
     assertTransition t = assert (isValidTransition t) $ translate $ do
       let t' = show $ ShowTransition t
-      english $ t' ++ " is a valid transition of the given Petri net?"
-      german $ t' ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
+      english $ t' ++ " is a transition of the given Petri net?"
+      german $ t' ++ " ist eine Transition des gegebenen Petrinetzes?"
     isValidTransition (Transition x) = x >= 1 && x <= n
 
 findTaskInstance
@@ -127,7 +127,7 @@ toFindEvaluation what withSol (ft, st) (fi, si) = do
         then Just $ show $ transitionPairShow (ft, st)
         else Nothing
   assert correct $ translate $ do
-    english $ "Given transitions " ++ localise English what ++ "?"
+    english $ "The given transitions " ++ localise English what ++ "?"
     german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
   pure (maybeSolutionString, points)
   where

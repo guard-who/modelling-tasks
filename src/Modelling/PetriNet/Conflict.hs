@@ -264,8 +264,8 @@ findConflictPlacesEvaluation task (conflict, ps) =
   recoverFrom $ unless (null inducing || res == 0) $ do
     for_ ps' $ \x -> assert (x `elem` inducing) $ translate $ do
       let x' = show $ ShowPlace x
-      english $ x' ++ " is reason for the conflict?"
-      german $ x' ++ " ist auslösende Stelle für den Konflikt?"
+      english $ x' ++ " is a place causing the conflict?"
+      german $ x' ++ " ist eine den Konflikt verursachende Stelle?"
     assert (ps' == inducing) $ translate $ do
       english "The given solution is correct and complete?"
       german "Die angegebene Lösung ist korrekt und vollständig?"

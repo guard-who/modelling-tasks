@@ -122,7 +122,7 @@ findConflictPlacesTask path task = do
   image $=<< renderWith path "conflict" (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions is in conflict, and because of which conflict-causing place(s), under the initial marking?"
-    german "Welches Paar von Transitionen steht in Konflikt, und wegen welcher konfliktauslösenden Stelle(n), unter der Startmarkierung?"
+    german "Welches Paar von Transitionen steht in Konflikt, und wegen welcher konfliktverursachenden Stelle(n), unter der Startmarkierung?"
   paragraph $ do
     translate $ do
       english "State your answer by giving a pair of conflicting transitions and a list of all the places that induce the conflict. "
@@ -164,8 +164,8 @@ findConflictPlacesSyntax task (conflict, ps) = do
   findConflictSyntax task conflict
   for_ ps $ \x -> assert (isValidPlace x) $ translate $ do
     let x' = show $ ShowPlace x
-    english $ x' ++ " is a valid place of the given Petri net?"
-    german $ x' ++ " ist eine gültige Stelle des gegebenen Petrinetzes?"
+    english $ x' ++ " is a place of the given Petri net?"
+    german $ x' ++ " ist eine Stelle des gegebenen Petrinetzes?"
   pure ()
   where
     isValidPlace (Place x) = x >= 1 && x <= numberOfPlaces task
