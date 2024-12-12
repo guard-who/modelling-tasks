@@ -133,11 +133,11 @@ enforceConstraints underDefault activated BasicConfig {
   tokensOverall
   } = [i|
   let t = (sum p : #{places} | p.#{tokens}) |
-    t >= #{fst tokensOverall} and t <= #{snd tokensOverall}
+    #{fst tokensOverall} =< t and t =< #{snd tokensOverall}
   all p : #{places} | p.#{tokens} =< #{maxTokensPerPlace}
-  all weight : #{nodes}.#{flow}[#{nodes}] | weight =< #{maxFlowPerEdge}
+  all w : #{nodes}.#{flow}[#{nodes}] | w =< #{maxFlowPerEdge}
   let theFlow = (sum f, t : #{nodes} | f.#{flow}[t]) |
-    theFlow >= #{fst flowOverall} and #{snd flowOverall} >= theFlow
+    #{fst flowOverall} =< theFlow and theFlow =< #{snd flowOverall}
   \##{activated} >= #{atLeastActive}
   theActivated#{upperFirst which}Transitions[#{activated}]
   #{connected (prepend "graphIsConnected") isConnected}
@@ -182,10 +182,10 @@ compChange ChangeConfig
                   {flowChangeOverall, maxFlowChangePerEdge
                   , tokenChangeOverall, maxTokenChangePerPlace
                   } = [i|
-  #{flowChangeOverall} = (sum f, t : Nodes | abs[f.flowChange[t]])
-  maxFlowChangePerEdge [#{maxFlowChangePerEdge}]
-  #{tokenChangeOverall} = (sum p : Places | abs[p.tokenChange])
-  maxTokenChangePerPlace [#{maxTokenChangePerPlace}]
+  (sum f, t : Nodes | abs[f.flowChange[t]]) = #{flowChangeOverall}
+  maxFlowChangePerEdge[#{maxFlowChangePerEdge}]
+  (sum p : Places | abs[p.tokenChange]) = #{tokenChangeOverall}
+  maxTokenChangePerPlace[#{maxTokenChangePerPlace}]
 |]
 
 {-|

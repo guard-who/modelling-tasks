@@ -8,9 +8,9 @@ pred activated[t : Transitions]{
   all p : Places | p.tokens >= p.flow[t]
 }
 
-//check if a transition conflicts with another transitions
+//check if a transition conflicts with another transition
 pred conflict[t1, t2 : Transitions, p : Places]{
-  disj[t1,t2]
+  t1 != t2
   activated[t1]
   activated[t2]
   p.tokens < plus[p.flow[t1], p.flow[t2]]
@@ -22,13 +22,13 @@ pred concurrent[ts : set Transitions]{
 }
 
 //check activation under default condition
- pred activatedDefault[t : givenTransitions]{
+pred activatedDefault[t : givenTransitions]{
   all p : givenPlaces | p.defaultTokens >= p.defaultFlow[t]
 }
 
 //check conflict under default condition
 pred conflictDefault[t1, t2 : givenTransitions, p : givenPlaces]{
-  disj[t1,t2]
+  t1 != t2
   activatedDefault[t1]
   activatedDefault[t2]
   p.defaultTokens < plus[p.defaultFlow[t1], p.defaultFlow[t2]]

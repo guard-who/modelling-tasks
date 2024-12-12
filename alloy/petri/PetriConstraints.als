@@ -6,11 +6,11 @@ open Helpers
 //check if maximal set of concurrent transitions
 pred maximallyConcurrent[ts : set Transitions]{
   concurrent[ts]
-  no t : (Transitions - ts) | concurrent[ts+t]
+  no t : (Transitions - ts) | concurrent[ts + t]
 }
 
 pred maxTokenChangePerPlace[max : Int] {
-  no place : Places | abs[place.tokenChange] > max
+  no p : Places | abs[p.tokenChange] > max
 }
 
 pred maxFlowChangePerEdge[max : Int] {
