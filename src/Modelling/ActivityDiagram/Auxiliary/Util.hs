@@ -40,27 +40,6 @@ weightedShuffle xs = do
 auxiliaryNodesAdvice :: OutputCapable m => Bool -> LangM m
 auxiliaryNodesAdvice withFinalTransitionAdvice = do
   paragraph $ translate $ do
-    english [iii|
-      Please note:
-      On slides 217 and 219 it is still said that decision and merge nodes
-      are realised as "Hilfsstellen" (support/auxiliary places)
-      during the translation.
-      It is not actually intended this way.
-      The Stellen/places introduced for decision and merge nodes serve
-      a special purpose and are not "just" introduced to satisfy
-      the constraint mentioned in the first point on slide 218.
-      |]
-    german [iii|
-      Bitte beachten Sie:
-      Auf den Folien 217 und 219 wird noch gesagt,
-      dass Verzweigungs- und Verbindungsknoten bei der Übersetzung als
-      Hilfsstellen realisiert werden.
-      Das ist jedoch nicht so beabsichtigt.
-      Die für Verzweigungs- und Verbindungsknoten eingeführten Stellen
-      dienen einem besonderen Zweck und werden nicht "nur" eingeführt,
-      um die auf Folie 218 im ersten Punkt erwähnte Bedingung zu erfüllen.
-      |]
-  paragraph $ translate $ do
     english $ [iii|
       Hint on the translation to a Petri net:
       For final nodes no additional places are introduced.
