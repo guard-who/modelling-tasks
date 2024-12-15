@@ -277,12 +277,12 @@ isNoLonger maybeMaxLength ts =
   whenJust maybeMaxLength $ \maxLength ->
     assertion (length ts <= maxLength) $ translate $ do
       english $ unwords [
-        "Not more than",
+        "At most",
         show maxLength,
         "transitions provided?"
         ]
       german $ unwords [
-        "Nicht mehr als",
+        "Höchstens",
         show maxLength,
         "Transitionen angegeben?"
         ]
