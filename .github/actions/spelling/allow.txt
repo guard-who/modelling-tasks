@@ -62,7 +62,6 @@ disj
 distractor
 distractors
 elabel
-elementige
 elems
 enduml
 ensuremath

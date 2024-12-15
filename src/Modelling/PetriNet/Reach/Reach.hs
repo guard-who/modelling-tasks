@@ -153,31 +153,31 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
     Just maxL -> translate $ do
       english $ concat [
         "State your solution as a sequence of the following kind that does not exceed ",
-        show maxL," elements:"]
+        show maxL," steps:"]
       german $ concat [
         "Geben Sie Ihre Lösung als maximal ", show maxL,
-        "-elementige Auflistung der folgenden Art an:"]
+        "-schrittige Auflistung der folgenden Art an:"]
   let (t1, t2, t3) = (Transition 1, Transition 2, Transition 3)
       showT = show . ShowTransition
       (st1, st2, st3) = (showT t1, showT t2, showT t3)
   code $ show $ TransitionsList [t1, t2, t3]
   paragraph $ translate $ do
     english $ concat [
-      "Where this statement means that after firing ",
+      "Where giving these three steps means that after firing ",
       st1, ", then ", st2, ", and finally ", st3,
       " (in exactly this order), the sought marking is reached."
       ]
     german $ concat [
-      "Wobei diese Angabe bedeuten soll, dass nach dem Schalten von ",
+      "Wobei die Angabe dieser drei Schritte bedeuten soll, dass nach dem Schalten von ",
       st1, ", danach ", st2, ", und schließlich ", st3,
       " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
       ]
   whenJust lengthHint $ \count -> paragraph $ translate $ do
-    english [i|Hint: There is a solution with not more than #{count} transitions.|]
-    german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{count} Transitionen.|]
+    english [i|Hint: There is a solution with not more than #{count} steps.|]
+    german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{count} Schritten.|]
   whenJust minLengthHint $ \count -> paragraph $ translate $ do
-    english [i|Hint: There is no solution with less than #{count} transitions.|]
-    german [i|Hinweis: Es gibt keine Lösung mit weniger als #{count} Transitionen.|]
+    english [i|Hint: There is no solution with less than #{count} steps.|]
+    german [i|Hinweis: Es gibt keine Lösung mit weniger als #{count} Schritten.|]
   hoveringInformation
   pure ()
 
@@ -197,8 +197,8 @@ transitionsValid n =
   where
     assertTransition t = assertion (isValidTransition t) $ translate $ do
       let t' = show $ ShowTransition t
-      english $ t' ++ " is a valid transition of the given Petri net?"
-      german $ t' ++ " ist eine gültige Transition des gegebenen Petrinetzes?"
+      english $ t' ++ " is a transition of the given Petri net?"
+      german $ t' ++ " ist eine Transition des gegebenen Petrinetzes?"
     isValidTransition =  (`elem` transitions n)
 
 reachEvaluation
@@ -279,12 +279,12 @@ isNoLonger maybeMaxLength ts =
       english $ unwords [
         "At most",
         show maxLength,
-        "transitions provided?"
+        "steps provided?"
         ]
       german $ unwords [
         "Höchstens",
         show maxLength,
-        "Transitionen angegeben?"
+        "Schritte angegeben?"
         ]
 
 data ReachInstance s t = ReachInstance {
