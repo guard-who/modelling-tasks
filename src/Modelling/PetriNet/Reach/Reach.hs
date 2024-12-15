@@ -189,7 +189,7 @@ reachSyntax
   => ReachInstance s Transition
   -> [Transition]
   -> LangM m
-reachSyntax inst = transitionsValid (petriNet inst)
+reachSyntax inst ts = transitionsValid (petriNet inst) ts >> isNoLonger (noLongerThan inst) ts
 
 transitionsValid :: OutputCapable m => Net s Transition -> [Transition] -> LangM m
 transitionsValid n =
@@ -215,8 +215,7 @@ reachEvaluation
   -> [Transition]
   -> Rated m
 reachEvaluation path reach ts =
-  do isNoLonger (noLongerThan reachInstance) ts
-     paragraph $ translate $ do
+  do paragraph $ translate $ do
        english "Start marking:"
        german "Startmarkierung:"
      indent $ text $ show (start n)
