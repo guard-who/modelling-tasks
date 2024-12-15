@@ -189,7 +189,10 @@ reachSyntax
   => ReachInstance s Transition
   -> [Transition]
   -> LangM m
-reachSyntax inst ts = transitionsValid (petriNet inst) ts >> isNoLonger (noLongerThan inst) ts
+reachSyntax inst ts =
+  do transitionsValid (petriNet inst) ts
+     isNoLonger (noLongerThan inst) ts
+     pure ()
 
 transitionsValid :: OutputCapable m => Net s Transition -> [Transition] -> LangM m
 transitionsValid n =
