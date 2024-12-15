@@ -189,8 +189,8 @@ execute n t z0 = do
         german "Zwischenmarkierung (nach Einziehen der Marken im Vorbereich)"
       indent $ text $ show z1
       unless (allNonNegative z1) $ refuse $ paragraph $ translate $ do
-        english "contains negative markings (transition was not activated)!"
-        german "enthält negative Markierungen (Transition war nicht aktiviert)!"
+        english "Contains negative token count (transition was not activated)!"
+        german "Enthält negative Markenanzahl (Transition war nicht aktiviert)!"
       let z2 = change succ nach z1
       paragraph $ translate $ do
         english "Final marking (after distributing tokens)"
