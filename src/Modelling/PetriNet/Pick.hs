@@ -155,7 +155,7 @@ pickEvaluation
   -> LangM m
 pickEvaluation task = do
   let what = translations $ do
-        english "petri net"
+        english "Petri net"
         german "Petrinetz"
   singleChoice DefiniteArticle what maybeSolutionString solution
   where
