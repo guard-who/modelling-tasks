@@ -81,7 +81,7 @@ https
 iden
 includegraphics
 ispell
-konfliktauslösenden
+konfliktverursachenden
 labelbgnode
 lastline
 ldots
@@ -108,6 +108,7 @@ randomise
 readerlatex
 refactorings
 scanl
+schrittige
 similars
 skolem
 snd
