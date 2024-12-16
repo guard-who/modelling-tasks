@@ -6,7 +6,7 @@ import Modelling.ActivityDiagram.SelectAS (SelectASConfig(..))
 
 {-|
 points: 0.15
-generation time: 22:00min
+generation time per instance: 22:00min
 CPU usage: 100%
 -}
 task33 :: SelectASConfig
@@ -31,7 +31,7 @@ task33 = SelectASConfig {
 
 {-|
 points: 0.15
-generation time: 22:00min
+generation time per instance: 22:00min
 CPU usage: 100%
 -}
 task34 :: SelectASConfig

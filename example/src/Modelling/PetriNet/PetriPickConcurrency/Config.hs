@@ -13,7 +13,7 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 
 {-|
 points: 0.1
-generation time: 14:00min
+generation time per instance: 14:00min
 CPU usage: 100%
 -}
 task2023_21 :: PickConcurrencyConfig
@@ -51,7 +51,7 @@ task2023_21 = PickConcurrencyConfig {
 
 {-|
 points: 0.1
-generation time: 15:28min
+generation time per instance: 15:28min
 CPU usage: 102%
 -}
 task2024_29 :: PickConcurrencyConfig

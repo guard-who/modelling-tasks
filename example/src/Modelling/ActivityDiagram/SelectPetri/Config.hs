@@ -9,7 +9,7 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 
 {-|
 points: 0.15
-generation time: 2:30min
+generation time per instance: 2:30min
 CPU usage: 100%
 -}
 task37 :: SelectPetriConfig

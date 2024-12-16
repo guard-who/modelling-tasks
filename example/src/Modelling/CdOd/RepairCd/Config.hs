@@ -21,7 +21,7 @@ import Data.Ratio                       ((%))
 
 {-|
 points: 0.15
-generation time: 5:00h
+generation time per instance: 5:00h
 CPU usage: 600%
 -}
 task2023_07 :: RepairCdConfig
@@ -142,7 +142,7 @@ task2023_08 = RepairCdConfig {
 
 {-|
 points: 0.15
-generation time: 4:37:39h
+generation time per instance: 4:37:39h
 CPU usage: 361%
 -}
 task2024_12 :: RepairCdConfig
@@ -201,7 +201,7 @@ task2024_12 = RepairCdConfig {
 
 {-|
 points: 0.15
-generation time: 03:54min
+generation time per instance: 03:54min
 CPU usage: 247%
 -}
 task2024_13 :: RepairCdConfig

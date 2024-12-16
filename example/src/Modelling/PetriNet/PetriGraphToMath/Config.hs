@@ -17,7 +17,7 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 
 {-|
 points: 0.15
-generation time: 4:00min
+generation time per instance: 4:00min
 CPU usage: 110%
 -}
 task2023_17 :: MathConfig
@@ -61,7 +61,7 @@ task2023_17 = MathConfig {
 
 {-|
 points: 0.15
-generation time: 6:00min
+generation time per instance: 6:00min
 CPU usage: 110%
 -}
 task2023_18 :: MathConfig
@@ -105,7 +105,7 @@ task2023_18 = MathConfig {
 
 {-|
 points: 0.1
-generation time: 5:16min
+generation time per instance: 5:16min
 CPU usage: 105%
 -}
 task2024_21 :: MathConfig
@@ -113,7 +113,7 @@ task2024_21 = task2023_17
 
 {-|
 points: 0.1
-generation time: 10:28min
+generation time per instance: 10:28min
 CPU usage: 103%
 -}
 task2024_22 :: MathConfig

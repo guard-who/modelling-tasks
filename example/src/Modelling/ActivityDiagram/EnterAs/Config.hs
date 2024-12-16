@@ -7,7 +7,7 @@ import Modelling.ActivityDiagram.EnterAS (EnterASConfig(..))
 
 {-|
 points: 0.15
-generation time: 3:30min
+generation time per instance: 3:30min
 CPU usage: 100%
 -}
 task35 :: EnterASConfig
@@ -31,7 +31,7 @@ task35 = EnterASConfig {
 
 {-|
 points: 0.15
-generation time: 5:00min
+generation time per instance: 5:00min
 CPU usage: 100%
 -}
 task36 :: EnterASConfig

@@ -18,7 +18,7 @@ import Data.Ratio                       ((%))
 
 {-|
 points: 0.15
-generation time: 2:00min
+generation time per instance: 2:00min
 CPU usage: 150%
 -}
 task2023_14 :: MatchCdOdConfig
@@ -63,7 +63,7 @@ task2023_14 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: 1:10min
+generation time per instance: 1:10min
 CPU usage: 150%
 -}
 task2023_15 :: MatchCdOdConfig
@@ -108,7 +108,7 @@ task2023_15 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: 16:54min
+generation time per instance: 16:54min
 CPU usage: 134%
 -}
 task2024_17 :: MatchCdOdConfig
@@ -149,7 +149,7 @@ task2024_17 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: 13:14min
+generation time per instance: 13:14min
 CPU usage: 130%
 -}
 task2024_18 :: MatchCdOdConfig
@@ -190,7 +190,7 @@ task2024_18 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: 5:14min
+generation time per instance: 5:14min
 CPU usage: 127%
 -}
 task2024_19 :: MatchCdOdConfig
@@ -231,7 +231,7 @@ task2024_19 = MatchCdOdConfig {
 
 {-|
 points: 0.15
-generation time: 2:44min
+generation time per instance: 2:44min
 CPU usage: 133%
 -}
 task2024_20 :: MatchCdOdConfig
