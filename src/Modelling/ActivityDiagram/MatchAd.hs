@@ -209,8 +209,8 @@ matchAdSyntax task sub = addPretext $ do
   let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
       subNames = actionNodeNames sub ++ objectNodeNames sub
   assertion (all (`elem` adNames) subNames) $ translate $ do
-    english "Referenced node names were provided within task?"
-    german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
+    english "Referenced node names are part of the given activity diagram?"
+    german "Referenzierte Knotennamen sind Bestandteil des gegebenen Aktivitätsdiagramms?"
 
 matchAdEvaluation
   :: OutputCapable m
