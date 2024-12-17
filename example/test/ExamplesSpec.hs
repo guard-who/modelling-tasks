@@ -6,8 +6,10 @@ import Modelling.ActivityDiagram.EnterAS (
   checkEnterASConfig,
   )
 import Modelling.ActivityDiagram.EnterAs.Config (
-  task35,
-  task36,
+  task2023_35,
+  task2023_36,
+  task2024_41,
+  task2024_42,
   )
 import Modelling.ActivityDiagram.FindAuxiliaryPetriNodes (
   checkFindAuxiliaryPetriNodesConfig,
@@ -20,8 +22,10 @@ import Modelling.ActivityDiagram.MatchAd (
   checkMatchAdConfig,
   )
 import Modelling.ActivityDiagram.MatchAd.Config (
-  task31,
-  task32,
+  task2023_31,
+  task2023_32,
+  task2024_37,
+  task2024_38,
   )
 import Modelling.ActivityDiagram.MatchPetri (
   checkMatchPetriConfig,
@@ -34,8 +38,10 @@ import Modelling.ActivityDiagram.SelectAS (
   checkSelectASConfig,
   )
 import Modelling.ActivityDiagram.SelectAs.Config (
-  task33,
-  task34,
+  task2023_33,
+  task2023_34,
+  task2024_39,
+  task2024_40,
   )
 import Modelling.ActivityDiagram.SelectPetri (
   checkSelectPetriConfig,
@@ -204,17 +210,17 @@ spec =
       it "task26" $
         checkFindConflictPlacesConfig task2023_26 `shouldBe` Nothing
       it "task31" $
-        checkMatchAdConfig task31 `shouldBe` Nothing
+        checkMatchAdConfig task2023_31 `shouldBe` Nothing
       it "task32" $
-        checkMatchAdConfig task32 `shouldBe` Nothing
+        checkMatchAdConfig task2023_32 `shouldBe` Nothing
       it "task33" $
-        checkSelectASConfig task33 `shouldBe` Nothing
+        checkSelectASConfig task2023_33 `shouldBe` Nothing
       it "task34" $
-        checkSelectASConfig task34 `shouldBe` Nothing
+        checkSelectASConfig task2023_34 `shouldBe` Nothing
       it "task35" $
-        checkEnterASConfig task35 `shouldBe` Nothing
+        checkEnterASConfig task2023_35 `shouldBe` Nothing
       it "task36" $
-        checkEnterASConfig task36 `shouldBe` Nothing
+        checkEnterASConfig task2023_36 `shouldBe` Nothing
       it "task37" $
         checkSelectPetriConfig task37 `shouldBe` Nothing
       it "task38" $
@@ -287,3 +293,15 @@ spec =
         checkFindConflictPlacesConfig task2024_35 `shouldBe` Nothing
       it "task36" $
         checkFindConflictPlacesConfig task2024_36 `shouldBe` Nothing
+      it "task37" $
+        checkMatchAdConfig task2024_37 `shouldBe` Nothing
+      it "task38" $
+        checkMatchAdConfig task2024_38 `shouldBe` Nothing
+      it "task39" $
+        checkSelectASConfig task2024_39 `shouldBe` Nothing
+      it "task40" $
+        checkSelectASConfig task2024_40 `shouldBe` Nothing
+      it "task41" $
+        checkEnterASConfig task2024_41 `shouldBe` Nothing
+      it "task42" $
+        checkEnterASConfig task2024_42 `shouldBe` Nothing

@@ -9,8 +9,8 @@ points: 0.15
 generation time per instance: 22:00min
 CPU usage: 100%
 -}
-task33 :: SelectASConfig
-task33 = SelectASConfig {
+task2023_33 :: SelectASConfig
+task2023_33 = SelectASConfig {
   adConfig = AdConfig {
     actionLimits = (10, 10),
     objectNodeLimits = (2, 2),
@@ -34,8 +34,8 @@ points: 0.15
 generation time per instance: 22:00min
 CPU usage: 100%
 -}
-task34 :: SelectASConfig
-task34 = SelectASConfig {
+task2023_34 :: SelectASConfig
+task2023_34 = SelectASConfig {
   adConfig = AdConfig {
     actionLimits = (10, 10),
     objectNodeLimits = (5, 5),
@@ -53,3 +53,19 @@ task34 = SelectASConfig {
   answerLength = (9, 9),
   printSolution = True
   }
+
+{-|
+points: 0.15
+generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_39 :: SelectASConfig
+task2024_39 = task2023_33
+
+{-|
+points: 0.15
+generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_40 :: SelectASConfig
+task2024_40 = task2023_34

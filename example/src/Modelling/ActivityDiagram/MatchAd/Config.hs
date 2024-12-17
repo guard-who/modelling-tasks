@@ -8,8 +8,8 @@ import Modelling.ActivityDiagram.MatchAd (MatchAdConfig(..))
 {-|
 points: 0.15
 -}
-task31 :: MatchAdConfig
-task31 = MatchAdConfig {
+task2023_31 :: MatchAdConfig
+task2023_31 = MatchAdConfig {
   adConfig = AdConfig {
     actionLimits = (5, 6),
     objectNodeLimits = (5, 6),
@@ -29,8 +29,8 @@ task31 = MatchAdConfig {
 {-|
 points: 0.15
 -}
-task32 :: MatchAdConfig
-task32 = MatchAdConfig {
+task2023_32 :: MatchAdConfig
+task2023_32 = MatchAdConfig {
   adConfig = AdConfig {
     actionLimits = (5, 6),
     objectNodeLimits = (5, 6),
@@ -46,3 +46,15 @@ task32 = MatchAdConfig {
   noActivityFinalInForkBlocks = Just True,
   printSolution = True
   }
+
+{-|
+points: 0.15
+-}
+task2024_37 :: MatchAdConfig
+task2024_37 = task2023_31
+
+{-|
+points: 0.15
+-}
+task2024_38 :: MatchAdConfig
+task2024_38 = task2023_32

@@ -10,8 +10,8 @@ points: 0.15
 generation time per instance: 3:30min
 CPU usage: 100%
 -}
-task35 :: EnterASConfig
-task35 = EnterASConfig {
+task2023_35 :: EnterASConfig
+task2023_35 = EnterASConfig {
   adConfig = AdConfig {
     actionLimits = (12, 12),
     objectNodeLimits = (5, 5),
@@ -34,8 +34,8 @@ points: 0.15
 generation time per instance: 5:00min
 CPU usage: 100%
 -}
-task36 :: EnterASConfig
-task36 = EnterASConfig {
+task2023_36 :: EnterASConfig
+task2023_36 = EnterASConfig {
   adConfig = AdConfig {
     actionLimits = (14, 14),
     objectNodeLimits = (6, 6),
@@ -52,3 +52,35 @@ task36 = EnterASConfig {
   answerLength = (14, 14),
   printSolution = True
   }
+
+{-|
+points: 0.15
+generation time per instance: ?:??min
+CPU usage: ???%
+-}
+task2024_41 :: EnterASConfig
+task2024_41 = EnterASConfig {
+  adConfig = AdConfig {
+    actionLimits = (12, 12),
+    objectNodeLimits = (5, 5),
+    maxNamedNodes = 17,
+    decisionMergePairs = 3,
+    forkJoinPairs = 1,
+    activityFinalNodes = 0,
+    flowFinalNodes = 2,
+    cycles = 2
+    },
+  hideBranchConditions = True,
+  maxInstances = Just 2000,
+  objectNodeOnEveryPath = Just True,
+  answerLength = (11, 11),
+  printSolution = True
+  }
+
+{-|
+points: 0.15
+generation time per instance: ?:??min
+CPU usage: ???%
+-}
+task2024_42 :: EnterASConfig
+task2024_42 = task2023_36
