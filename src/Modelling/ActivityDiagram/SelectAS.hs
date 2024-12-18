@@ -240,9 +240,9 @@ selectASTask path task = do
   enumerateM (code . show) $ map (\(n,xs) -> (n, code $ show xs)) mapping
   paragraph $ translate $ do
     english [i|Which of these sequences is a valid action sequence?
-Please state your answer by giving a number indicating the valid action sequence.|]
+State your answer by giving a number indicating the one valid action sequence among the above sequences.|]
     german [i|Welche dieser Folgen ist eine valide Aktionsfolge?
-Bitte geben Sie Ihre Antwort als Zahl an, welche die valide Aktionsfolge repräsentiert.|]
+Geben Sie Ihre Antwort als Zahl an, welche die eine valide Aktionsfolge unter den obigen Folgen repräsentiert.|]
   paragraph $ do
     translate $ do
       english [i|For example,|]
@@ -250,10 +250,10 @@ Bitte geben Sie Ihre Antwort als Zahl an, welche die valide Aktionsfolge repräs
     code "2"
     translate $ do
       english [i|
-        would indicate that sequence 2 is the valid sequence of action nodes.
+        would indicate that sequence 2 is a valid sequence of action nodes.
         |]
       german  [i|
-        bedeuten, dass Folge 2 die valide Folge von Aktionsknoten ist.
+        bedeuten, dass Folge 2 eine valide Folge von Aktionsknoten ist.
         |]
     pure ()
   pure ()

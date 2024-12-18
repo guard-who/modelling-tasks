@@ -231,8 +231,8 @@ enterASSyntax task sub = addPretext $ do
         $ nodes
         $ activityDiagram task
   assertion (all (`elem` adNames) sub) $ translate $ do
-    english "Referenced node names were provided within task?"
-    german "Referenzierte Knotennamen sind Bestandteil der Aufgabenstellung?"
+    english "Referenced node names are part of the given activity diagram?"
+    german "Referenzierte Knotennamen sind Bestandteil des gegebenen Aktivitätsdiagramms?"
 
 enterASEvaluation
   :: OutputCapable m
