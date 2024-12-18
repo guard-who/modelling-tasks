@@ -55,8 +55,8 @@ task2023_36 = EnterASConfig {
 
 {-|
 points: 0.15
-generation time per instance: ?:??min
-CPU usage: ???%
+generation time per instance: 3:57min
+CPU usage: 109%
 -}
 task2024_41 :: EnterASConfig
 task2024_41 = EnterASConfig {
@@ -79,8 +79,8 @@ task2024_41 = EnterASConfig {
 
 {-|
 points: 0.15
-generation time per instance: ?:??min
-CPU usage: ???%
+generation time per instance: 3:23min
+CPU usage: 113%
 -}
 task2024_42 :: EnterASConfig
 task2024_42 = task2023_36

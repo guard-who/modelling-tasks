@@ -49,12 +49,16 @@ task2023_32 = MatchAdConfig {
 
 {-|
 points: 0.15
+generation time per instance: 0:28min
+CPU usage: 172%
 -}
 task2024_37 :: MatchAdConfig
 task2024_37 = task2023_31
 
 {-|
 points: 0.15
+generation time per instance: 0:35min
+CPU usage: 158%
 -}
 task2024_38 :: MatchAdConfig
 task2024_38 = task2023_32
