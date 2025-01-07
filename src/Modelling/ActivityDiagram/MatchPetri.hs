@@ -24,6 +24,10 @@ module Modelling.ActivityDiagram.MatchPetri (
 ) where
 
 import qualified Data.Map as M (empty, fromList, keys, null)
+
+import qualified Modelling.ActivityDiagram.Config as Config (
+  AdConfig (activityFinalNodes, flowFinalNodes),
+  )
 import qualified Modelling.ActivityDiagram.PetriNet as PK (label)
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
@@ -39,8 +43,10 @@ import Modelling.ActivityDiagram.Datatype (
   AdNode (..),
   AdConnection (..),
   isActionNode,
+  isActivityFinalNode,
   isObjectNode,
   isDecisionNode,
+  isFlowFinalNode,
   isMergeNode,
   isJoinNode,
   isInitialNode,
@@ -50,7 +56,7 @@ import Modelling.ActivityDiagram.Isomorphism (petriHasMultipleAutomorphisms)
 import Modelling.ActivityDiagram.PetriNet (PetriKey (..), convertToPetriNet)
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
-  AdConfig (..),
+  AdConfig (actionLimits, cycles, forkJoinPairs),
   checkAdConfig,
   defaultAdConfig,
   )
@@ -132,8 +138,12 @@ pickRandomLayout :: (MonadRandom m) => MatchPetriConfig -> m GraphvizCommand
 pickRandomLayout conf = oneOf (petriLayout conf)
 
 defaultMatchPetriConfig :: MatchPetriConfig
-defaultMatchPetriConfig = MatchPetriConfig
-  { adConfig = defaultAdConfig {activityFinalNodes = 0, flowFinalNodes = 2},
+defaultMatchPetriConfig =
+  MatchPetriConfig {
+    adConfig = defaultAdConfig {
+      Config.activityFinalNodes = 0,
+      Config.flowFinalNodes = 2
+      },
     maxInstances = Just 25,
     hideBranchConditions = False,
     petriLayout = [Dot],
@@ -159,9 +169,9 @@ checkMatchPetriConfig' MatchPetriConfig {
     avoidAddingSinksForFinals,
     noActivityFinalInForkBlocks
   }
-  | activityFinalNodes adConfig > 1
+  | Config.activityFinalNodes adConfig > 1
   = Just "There is at most one 'activityFinalNode' allowed."
-  | activityFinalNodes adConfig >= 1 && flowFinalNodes adConfig >= 1
+  | Config.activityFinalNodes adConfig >= 1 && Config.flowFinalNodes adConfig >= 1
   = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
@@ -173,9 +183,9 @@ checkMatchPetriConfig' MatchPetriConfig {
   | Just True <- avoidAddingSinksForFinals,
     fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
     = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
-  | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
+  | noActivityFinalInForkBlocks == Just True && Config.activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 'activityFinalNodes'"
-  | noActivityFinalInForkBlocks == Just False && activityFinalNodes adConfig == 0
+  | noActivityFinalInForkBlocks == Just False && Config.activityFinalNodes adConfig == 0
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to False implies that there are 'activityFinalNodes'"
   | null petriLayout
     = Just "The parameter 'petriLayout' can not be the empty list"
@@ -194,7 +204,7 @@ matchPetriAlloy MatchPetriConfig {
 }
   = adConfigToAlloy modules predicates adConfig
   where
-    activityFinalsExist = Just (activityFinalNodes adConfig > 0)
+    activityFinalsExist = Just (Config.activityFinalNodes adConfig > 0)
     modules = modulePetriNet
     predicates =
           [i|
@@ -216,8 +226,10 @@ mapTypesToLabels
 mapTypesToLabels petri =
   MatchPetriSolution {
     actionNodes = extractNameLabelTuple isActionNode,
+    activityFinalNodes = extractLabels isActivityFinalNode,
     objectNodes = extractNameLabelTuple isObjectNode,
     decisionNodes = extractLabels isDecisionNode,
+    flowFinalNodes = extractLabels isFlowFinalNode,
     mergeNodes = extractLabels isMergeNode,
     forks = extractLabels isForkNode,
     joins = extractLabels isJoinNode,
@@ -246,6 +258,8 @@ data MatchPetriSolution = MatchPetriSolution {
   forks :: [Int],
   joins :: [Int],
   initialNodes :: [Int],
+  activityFinalNodes :: [Int],
+  flowFinalNodes :: [Int],
   auxiliaryPetriNodes :: [Int]
 } deriving (Generic, Show, Eq, Read)
 
@@ -317,8 +331,10 @@ die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten und die Petrinetzknot
 matchPetriInitial :: MatchPetriSolution
 matchPetriInitial = MatchPetriSolution {
   actionNodes = [("A", 1), ("B", 2)],
+  activityFinalNodes = [16],
   objectNodes = [("C", 3), ("D", 4)],
   decisionNodes = [5, 7],
+  flowFinalNodes = [],
   mergeNodes = [6, 8],
   forks = [10],
   joins = [11],
