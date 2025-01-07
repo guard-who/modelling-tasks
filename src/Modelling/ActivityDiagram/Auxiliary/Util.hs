@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 module Modelling.ActivityDiagram.Auxiliary.Util (
-  auxiliaryNodesAdvice,
+  finalNodesAdvice,
   weightedShuffle
   ) where
 
@@ -37,8 +37,8 @@ weightedShuffle xs = do
   ys <- weightedShuffle (delete a xs)
   return (fst a : ys)
 
-auxiliaryNodesAdvice :: OutputCapable m => Bool -> LangM m
-auxiliaryNodesAdvice withFinalTransitionAdvice = do
+finalNodesAdvice :: OutputCapable m => Bool -> LangM m
+finalNodesAdvice withFinalTransitionAdvice = do
   paragraph $ translate $ do
     english $ [iii|
       Hint on the translation to a Petri net:

@@ -37,7 +37,7 @@ import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Capabilities.PlantUml            (MonadPlantUml)
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
-import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryNodesAdvice)
+import Modelling.ActivityDiagram.Auxiliary.Util (finalNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   AdNode (..),
@@ -325,7 +325,7 @@ the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes
       german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
 die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsstellen oder -transitionen.|]
     pure ()
-  auxiliaryNodesAdvice True
+  finalNodesAdvice True
   pure ()
 
 matchPetriInitial :: MatchPetriSolution

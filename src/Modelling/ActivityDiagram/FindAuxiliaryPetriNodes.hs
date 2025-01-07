@@ -40,7 +40,7 @@ import Modelling.ActivityDiagram.Alloy (
   adConfigToAlloy,
   modulePetriNet,
   )
-import Modelling.ActivityDiagram.Auxiliary.Util (auxiliaryNodesAdvice)
+import Modelling.ActivityDiagram.Auxiliary.Util (finalNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
   AdConnection (..),
   AdNode (..),
@@ -237,7 +237,7 @@ an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl
       english [i|In this example, the resulting net contains 10 nodes in total, of which 2 are auxiliary places and 3 are auxiliary transitions.|]
       german [i|In diesem Beispiel etwa enthält das entstehende Netz insgesamt 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransitionen.|]
     pure ()
-  auxiliaryNodesAdvice True
+  finalNodesAdvice True
   pure ()
 
 findAuxiliaryPetriNodesInitial :: FindAuxiliaryPetriNodesSolution

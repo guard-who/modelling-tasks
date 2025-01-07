@@ -34,7 +34,7 @@ import qualified Modelling.ActivityDiagram.PetriNet as PK (PetriKey (label))
 
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (
-  auxiliaryNodesAdvice,
+  finalNodesAdvice,
   weightedShuffle,
   )
 import Modelling.ActivityDiagram.Config (
@@ -355,7 +355,7 @@ Bitte geben Sie Ihre Antwort als Zahl an, welche das passende Petrinetz repräse
       english [i|would indicate that Petri net 2 is the matching Petri net.|]
       german  [i|bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
     pure ()
-  auxiliaryNodesAdvice False
+  finalNodesAdvice False
   pure ()
 
 selectPetriSolutionToMap
