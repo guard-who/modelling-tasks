@@ -50,7 +50,7 @@ auxiliaryNodesAdvice withFinalTransitionAdvice = do
       [iii|
       If an additional transition is required to realise this behavior
       at a position in the diagram where there is a final node,
-      this transition does not count as support/auxiliary node.
+      this transition does not count as auxiliary node.
       |]
     german $ [iii|
       Hinweis zur Übersetzung in ein Petrinetz:
