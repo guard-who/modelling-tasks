@@ -20,7 +20,7 @@ import Modelling.ActivityDiagram.Datatype (
   AdConnection (..),
   isActionNode, isObjectNode)
 
-import Modelling.ActivityDiagram.PetriNet (PetriKey(..))
+import Modelling.ActivityDiagram.PetriNet (PetriKey (..), updatePetriKey)
 import Modelling.PetriNet.Types (
   Net,
   )
@@ -95,11 +95,3 @@ shufflePetri petri = do
   let labels = map PK.label $ M.keys $ PN.nodes petri
   relabeling <- M.fromList . zip labels <$> shuffleM labels
   return (relabeling, PN.mapNet (updatePetriKey relabeling) petri)
-
-updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
-updatePetriKey relabeling key =
-  case key of
-    NormalPetriNode {label, sourceNode} ->
-      NormalPetriNode {label = relabel label, sourceNode = sourceNode}
-    AuxiliaryPetriNode {label} -> AuxiliaryPetriNode {label = relabel label}
-  where relabel n = relabeling M.! n

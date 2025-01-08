@@ -1,12 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Modelling.ActivityDiagram.PetriNet (
   PetriKey (..),
   convertToPetriNet,
   convertToSimple,
+  isAuxiliaryPetriNode,
+  updatePetriKey,
 ) where
 
 import qualified Data.Map as M (
@@ -25,6 +28,10 @@ import qualified Modelling.ActivityDiagram.Datatype as Ad (
   AdConnection (..)
   )
 
+import Modelling.ActivityDiagram.Datatype (
+  isActivityFinalNode,
+  isFlowFinalNode,
+  )
 import Modelling.PetriNet.Types (
   Net (..),
   PetriNode (..),
@@ -35,18 +42,24 @@ import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.List (find)
 import GHC.Generics (Generic)
-import Modelling.ActivityDiagram.Datatype (
-  isActivityFinalNode, isFlowFinalNode
-  )
 
 
 data PetriKey
   = AuxiliaryPetriNode {label :: Int}
+  | FinalPetriNode {
+    label :: Int,
+    sourceNode :: Ad.AdNode
+    }
   | NormalPetriNode {label :: Int, sourceNode :: Ad.AdNode}
   deriving (Generic, Eq, Read, Show)
 
 instance Ord PetriKey where
   pk1 `compare` pk2 = label pk1 `compare` label pk2
+
+isAuxiliaryPetriNode :: PetriKey -> Bool
+isAuxiliaryPetriNode = \case
+  AuxiliaryPetriNode {} -> True
+  _ -> False
 
 convertToSimple :: Ad.UMLActivityDiagram -> SimplePetriLike PetriKey
 convertToSimple = convertToPetriNet
@@ -61,14 +74,17 @@ convertToPetriNet diag =
         (M.keys $ nodes st_edges_petri)
   in relabelPetri $ removeFinalPlaces auxiliaryPetri
 
--- Relabels Petri net nodes in order to avoid "missing" numbers resulting from the creation of sink transitions
+{-|
+Relabel Petri net nodes in order to avoid "missing" numbers
+resulting from the creation of sink transitions.
+-}
 relabelPetri
   :: Net p n
   => p n PetriKey
   -> p n PetriKey
 relabelPetri petri =
   let labels = map label $ M.keys $ nodes petri
-      relabeling = M.fromList $ zip labels [1..(length labels)]
+      relabeling = M.fromList $ zip labels [1 ..]
   in mapNet (updatePetriKey relabeling) petri
 
 updatePetriKey :: Map Int Int -> PetriKey -> PetriKey
@@ -77,6 +93,8 @@ updatePetriKey relabeling key =
     NormalPetriNode {label, sourceNode} ->
       NormalPetriNode {label = relabel label, sourceNode = sourceNode}
     AuxiliaryPetriNode {label} -> AuxiliaryPetriNode {label = relabel label}
+    FinalPetriNode {label, sourceNode} ->
+      FinalPetriNode {label = relabel label, sourceNode = sourceNode}
   where relabel n = relabeling M.! n
 
 removeFinalPlaces
@@ -85,28 +103,38 @@ removeFinalPlaces
   -> p n PetriKey
 removeFinalPlaces petri = foldr removeIfFinal petri (M.keys $ nodes petri)
 
+{-|
+Removes normal nodes that reference final nodes in the activity diagram.
+'FinalPetriNodes' are not removed!
+(i.e only places at the end are removed, transitions are kept)
+-}
 removeIfFinal
   :: Net p n
   => PetriKey
   -> p n PetriKey
   -> p n PetriKey
-removeIfFinal key petri =
+removeIfFinal key =
   case key of
+    AuxiliaryPetriNode {} -> id
+    FinalPetriNode {} -> id
     NormalPetriNode {sourceNode} ->
-      if isActivityFinalNode sourceNode || isFlowFinalNode sourceNode then
-         deleteNode key petri
-      else petri
-    _ -> petri
+      if isActivityFinalNode sourceNode || isFlowFinalNode sourceNode
+      then deleteNode key
+      else id
 
 addAuxiliaryPetriNode :: Net p n => PetriKey -> p n PetriKey -> p n PetriKey
 addAuxiliaryPetriNode sourceKey petri =
-  let sourceNode = nodes petri M.! sourceKey
-      fn = if isPlaceNode sourceNode then isPlaceNode else isTransitionNode
+  let petriSourceNode = nodes petri M.! sourceKey
+      fn = if isPlaceNode petriSourceNode then isPlaceNode else isTransitionNode
       nodesToBeFixed = M.filter fn
         $ M.mapMaybeWithKey (\k _ -> M.lookup k (nodes petri))
         $ outFlow sourceKey petri
   in M.foldrWithKey (addAuxiliaryPetriNode' sourceKey) petri nodesToBeFixed
 
+{-|
+Add a 'FinalPetriNode' instead of a 'AuxiliaryPetriNode'
+if the target is a final node in the activity diagram.
+-}
 addAuxiliaryPetriNode'
   :: Net p n
   => PetriKey
@@ -115,14 +143,19 @@ addAuxiliaryPetriNode'
   -> p n PetriKey
   -> p n PetriKey
 addAuxiliaryPetriNode' sourceKey targetKey targetNode petri =
-  let supportKey = AuxiliaryPetriNode {
-        label = (+ 1) $ maximum $ map label $ M.keys $ nodes petri
-        }
-  in alterFlow supportKey 1 targetKey
-     . alterFlow sourceKey 1 supportKey
-     . alterNode supportKey (if isPlaceNode targetNode then Nothing else Just 0)
-     . deleteFlow sourceKey targetKey
-     $ petri
+  alterFlow supportKey 1 targetKey
+  . alterFlow sourceKey 1 supportKey
+  . alterNode supportKey (if isPlaceNode targetNode then Nothing else Just 0)
+  . deleteFlow sourceKey targetKey
+  $ petri
+  where
+    label' = (+ 1) $ maximum $ map label $ M.keys $ nodes petri
+    targetAdNode = sourceNode targetKey
+    supportKey
+      | isFlowFinalNode targetAdNode || isActivityFinalNode targetAdNode
+      = FinalPetriNode {label = label', sourceNode = targetAdNode}
+      | otherwise
+      = AuxiliaryPetriNode {label = label'}
 
 insertNode
   :: Net p n

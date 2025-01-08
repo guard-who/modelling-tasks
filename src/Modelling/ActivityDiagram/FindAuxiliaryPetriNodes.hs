@@ -30,7 +30,6 @@ import qualified Data.Map as M (
   filterWithKey,
   fromList,
   keys,
-  null,
   size,
   )
 
@@ -46,7 +45,11 @@ import Modelling.ActivityDiagram.Datatype (
   AdNode (..),
   UMLActivityDiagram (..),
   )
-import Modelling.ActivityDiagram.PetriNet (PetriKey(..), convertToPetriNet)
+import Modelling.ActivityDiagram.PetriNet (
+  PetriKey(..),
+  convertToPetriNet,
+  isAuxiliaryPetriNode,
+  )
 import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
@@ -201,17 +204,8 @@ findAuxiliaryPetriNodesSolution' petri = FindAuxiliaryPetriNodesSolution {
   }
   where
     auxiliaryPetriNodeMap = M.filterWithKey
-      (\k _ -> isAuxiliaryPetriNode k && not (isSinkPetriNode k petri))
+      (const . isAuxiliaryPetriNode)
       $ Petri.nodes petri
-
-isSinkPetriNode :: Net p n => PetriKey -> p n PetriKey -> Bool
-isSinkPetriNode key petri = M.null $ outFlow key petri
-
-isAuxiliaryPetriNode :: PetriKey -> Bool
-isAuxiliaryPetriNode key =
-  case key of
-    AuxiliaryPetriNode {} -> True
-    _ -> False
 
 findAuxiliaryPetriNodesTask
   :: (MonadPlantUml m, OutputCapable m)

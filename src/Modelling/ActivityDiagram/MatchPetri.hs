@@ -23,7 +23,7 @@ module Modelling.ActivityDiagram.MatchPetri (
   defaultMatchPetriInstance
 ) where
 
-import qualified Data.Map as M (empty, fromList, keys, null)
+import qualified Data.Map as M (empty, fromList, keys)
 
 import qualified Modelling.ActivityDiagram.Config as Config (
   AdConfig (activityFinalNodes, flowFinalNodes),
@@ -53,7 +53,11 @@ import Modelling.ActivityDiagram.Datatype (
   isForkNode
   )
 import Modelling.ActivityDiagram.Isomorphism (petriHasMultipleAutomorphisms)
-import Modelling.ActivityDiagram.PetriNet (PetriKey (..), convertToPetriNet)
+import Modelling.ActivityDiagram.PetriNet (
+  PetriKey (..),
+  convertToPetriNet,
+  isAuxiliaryPetriNode,
+  )
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
   AdConfig (actionLimits, cycles, forkJoinPairs),
@@ -71,7 +75,7 @@ import Modelling.Auxiliary.Output (addPretext)
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
-  Net (outFlow),
+  Net,
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
@@ -268,17 +272,8 @@ matchPetriSolution task = mapTypesToLabels $ petriNet task
 
 extractAuxiliaryPetriNodes :: Net p n => p n PetriKey -> [PetriKey]
 extractAuxiliaryPetriNodes petri = filter
-  (\x -> isAuxiliaryPetriNode x && not (isSinkPetriNode x petri))
+  isAuxiliaryPetriNode
   $ M.keys $ Petri.nodes petri
-
-isSinkPetriNode :: Net p n => PetriKey -> p n PetriKey -> Bool
-isSinkPetriNode key petri = M.null $ outFlow key petri
-
-isAuxiliaryPetriNode :: PetriKey -> Bool
-isAuxiliaryPetriNode key =
-  case key of
-    AuxiliaryPetriNode {} -> True
-    _ -> False
 
 matchPetriTask
   :: (
