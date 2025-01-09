@@ -330,8 +330,8 @@ matchPetriTask path task = do
         den Petrinetzknoten 1 und 2 zugeordnet,
         die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten,
         die Petrinetzknoten 13, 14 und 15 sind Hilfsstellen oder -transitionen,
-        der Petrinetzknoten 16 entspricht einem Aktivitätsendeknoten
-        und kein Petrinetzknoten entspricht einem Flussendeknoten.
+        der Petrinetzknoten 16 entspricht einem Aktivitätsende
+        und kein Petrinetzknoten entspricht einem Flussende.
         |]
     pure ()
   finalNodesAdvice True
@@ -624,8 +624,8 @@ defaultMatchPetriInstance = MatchPetriInstance
                   , name = "A" } }
               , 1 ) ] } )
       ,
-        ( AuxiliaryPetriNode
-          { label = 4 }
+        ( FinalPetriNode
+          { label = 4, sourceNode = AdActivityFinalNode {label = 15} }
         , SimpleTransition
           { flowOut = M.empty } )
       ,
@@ -690,8 +690,8 @@ defaultMatchPetriInstance = MatchPetriInstance
           { initial = 0
           , flowOut = M.fromList
             [
-              ( AuxiliaryPetriNode
-                { label = 4 }
+              ( FinalPetriNode
+                { label = 4, sourceNode = AdActivityFinalNode {label = 15} }
               , 1 ) ] } )
       ,
         ( NormalPetriNode
