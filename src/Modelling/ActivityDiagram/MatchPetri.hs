@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.ActivityDiagram.MatchPetri (
@@ -315,10 +316,23 @@ matchPetriTask path task = do
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
     code $ show matchPetriInitial
     translate $ do
-      english [i|In this example, the action nodes "A" and "B" are matched with the Petri net nodes 1 and 2,
-the Petri net nodes 5 and 7 correspond to decision nodes and the Petri net nodes 13, 14 and 15 are auxiliary places or auxiliary transitions.|]
-      german [i|In diesem Beispiel sind etwa die Aktionsknoten "A" und "B" den Petrinetzknoten 1 und 2 zugeordnet,
-die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten und die Petrinetzknoten 13, 14 und 15 sind Hilfsstellen oder -transitionen.|]
+      english [iii|
+        In this example, the action nodes "A" and "B"
+        are matched with the Petri net nodes 1 and 2,
+        the Petri net nodes 5 and 7 correspond to decision nodes,
+        the Petri net nodes 13, 14 and 15
+        are auxiliary places or auxiliary transitions,
+        the Petri net node 16 corresponds to a activity final node,
+        and no Petri net node corresponds to a flow final node.
+        |]
+      german [iii|
+        In diesem Beispiel sind etwa die Aktionsknoten "A" und "B"
+        den Petrinetzknoten 1 und 2 zugeordnet,
+        die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten,
+        die Petrinetzknoten 13, 14 und 15 sind Hilfsstellen oder -transitionen,
+        der Petrinetzknoten 16 entspricht einem Aktivitätsendknoten
+        und kein Petrinetzknoten entspricht einem Flussendknoten.
+        |]
     pure ()
   finalNodesAdvice True
   pure ()
@@ -384,16 +398,18 @@ matchPetriEvaluation task sub = addPretext $ do
 matchPetriSolutionMap
   :: MatchPetriSolution
   -> Map (Int, Either [(String, Int)] [Int]) Bool
-matchPetriSolutionMap sol =
+matchPetriSolutionMap MatchPetriSolution {..} =
   let xs = [
-        Left $ sort $ actionNodes sol,
-        Left $ sort $ objectNodes sol,
-        Right $ sort $ decisionNodes sol,
-        Right $ sort $ mergeNodes sol,
-        Right $ sort $ forks sol,
-        Right $ sort $ joins sol,
-        Right $ sort $ initialNodes sol,
-        Right $ sort $ auxiliaryPetriNodes sol
+        Left $ sort actionNodes,
+        Left $ sort objectNodes,
+        Right $ sort decisionNodes,
+        Right $ sort mergeNodes,
+        Right $ sort forks,
+        Right $ sort joins,
+        Right $ sort initialNodes,
+        Right $ sort activityFinalNodes,
+        Right $ sort flowFinalNodes,
+        Right $ sort auxiliaryPetriNodes
         ]
   in M.fromList $ zipWith (curry (,True)) [1..] xs
 

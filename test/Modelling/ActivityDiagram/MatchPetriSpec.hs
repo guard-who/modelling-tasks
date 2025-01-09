@@ -4,11 +4,15 @@ import Modelling.ActivityDiagram.MatchPetri (
   MatchPetriConfig (..),
   checkMatchPetriConfig,
   defaultMatchPetriConfig,
+  defaultMatchPetriInstance,
   extractAuxiliaryPetriNodes,
   matchPetriAlloy,
+  matchPetriEvaluation,
+  matchPetriSolution,
   )
 
 import Test.Hspec (Spec, describe, it, context, shouldBe, shouldSatisfy)
+import Control.OutputCapable.Blocks     (Language (English))
 import Data.Maybe (isJust)
 import Modelling.ActivityDiagram.Config (
   AdConfig (actionLimits, cycles, decisionMergePairs, forkJoinPairs),
@@ -17,6 +21,7 @@ import Modelling.ActivityDiagram.Config (
 
 import Modelling.ActivityDiagram.Instance(parseInstance)
 import Modelling.ActivityDiagram.PetriNet (convertToSimple)
+import Modelling.Common                 (withLang)
 
 import Language.Alloy.Call (getInstances)
 
@@ -49,4 +54,11 @@ spec = do
         inst <- getInstances (Just 50) spec'
         ad <- mapM parseInstance inst
         any (hasAuxiliaryPetriNodes . convertToSimple) ad `shouldBe` False
+  describe "matchPetriEvaluation" $
+    it "returns full points for a correct solution" $ do
+      matchPetriEvaluation
+        defaultMatchPetriInstance
+        (matchPetriSolution defaultMatchPetriInstance)
+      `withLang` English
+      `shouldBe` Right 1
   where hasAuxiliaryPetriNodes = not . null . extractAuxiliaryPetriNodes
