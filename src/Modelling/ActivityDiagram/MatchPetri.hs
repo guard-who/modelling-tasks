@@ -322,7 +322,7 @@ matchPetriTask path task = do
         the Petri net nodes 5 and 7 correspond to decision nodes,
         the Petri net nodes 13, 14 and 15
         are auxiliary places or auxiliary transitions,
-        the Petri net node 16 corresponds to a activity final node,
+        the Petri net node 16 corresponds to an activity final node,
         and no Petri net node corresponds to a flow final node.
         |]
       german [iii|
@@ -330,8 +330,8 @@ matchPetriTask path task = do
         den Petrinetzknoten 1 und 2 zugeordnet,
         die Petrinetzknoten 5 und 7 entsprechen Verzweigungsknoten,
         die Petrinetzknoten 13, 14 und 15 sind Hilfsstellen oder -transitionen,
-        der Petrinetzknoten 16 entspricht einem Aktivitätsendknoten
-        und kein Petrinetzknoten entspricht einem Flussendknoten.
+        der Petrinetzknoten 16 entspricht einem Aktivitätsendeknoten
+        und kein Petrinetzknoten entspricht einem Flussendeknoten.
         |]
     pure ()
   finalNodesAdvice True
