@@ -12,8 +12,8 @@ points: 0.15
 generation time per instance: 40:00min
 CPU usage: 100%
 -}
-task39 :: MatchPetriConfig
-task39 = MatchPetriConfig {
+task2023_39 :: MatchPetriConfig
+task2023_39 = MatchPetriConfig {
   adConfig = AdConfig {
     actionLimits = (8, 8),
     objectNodeLimits = (4, 4),
@@ -39,8 +39,8 @@ points: 0.15
 generation time per instance: 40:00min
 CPU usage: 100%
 -}
-task40 :: MatchPetriConfig
-task40 = MatchPetriConfig {
+task2023_40 :: MatchPetriConfig
+task2023_40 = MatchPetriConfig {
   adConfig = AdConfig {
     actionLimits = (8, 8),
     objectNodeLimits = (5, 5),
@@ -60,3 +60,19 @@ task40 = MatchPetriConfig {
   noActivityFinalInForkBlocks = Nothing,
   printSolution = True
   }
+
+{-|
+points: 0.15
+generation time per instance: ??:??min
+CPU usage: 100%
+-}
+task2024_45 :: MatchPetriConfig
+task2024_45 = task2023_39
+
+{-|
+points: 0.15
+generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_46 :: MatchPetriConfig
+task2024_46 = task2023_40

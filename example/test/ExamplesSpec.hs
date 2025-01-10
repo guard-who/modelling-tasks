@@ -15,8 +15,10 @@ import Modelling.ActivityDiagram.FindAuxiliaryPetriNodes (
   checkFindAuxiliaryPetriNodesConfig,
   )
 import Modelling.ActivityDiagram.FindAuxiliaryPetriNodes.Config (
-  task41,
-  task42,
+  task2023_41,
+  task2023_42,
+  task2024_47,
+  task2024_48,
   )
 import Modelling.ActivityDiagram.MatchAd (
   checkMatchAdConfig,
@@ -31,8 +33,10 @@ import Modelling.ActivityDiagram.MatchPetri (
   checkMatchPetriConfig,
   )
 import Modelling.ActivityDiagram.MatchPetri.Config (
-  task39,
-  task40,
+  task2023_39,
+  task2023_40,
+  task2024_45,
+  task2024_46,
   )
 import Modelling.ActivityDiagram.SelectAS (
   checkSelectASConfig,
@@ -47,8 +51,10 @@ import Modelling.ActivityDiagram.SelectPetri (
   checkSelectPetriConfig,
   )
 import Modelling.ActivityDiagram.SelectPetri.Config (
-  task37,
-  task38,
+  task2023_37,
+  task2023_38,
+  task2024_43,
+  task2024_44,
   )
 import Modelling.Auxiliary.Common (
   ShuffleInstance (taskInstance),
@@ -222,17 +228,17 @@ spec =
       it "task36" $
         checkEnterASConfig task2023_36 `shouldBe` Nothing
       it "task37" $
-        checkSelectPetriConfig task37 `shouldBe` Nothing
+        checkSelectPetriConfig task2023_37 `shouldBe` Nothing
       it "task38" $
-        checkSelectPetriConfig task38 `shouldBe` Nothing
+        checkSelectPetriConfig task2023_38 `shouldBe` Nothing
       it "task39" $
-        checkMatchPetriConfig task39 `shouldBe` Nothing
+        checkMatchPetriConfig task2023_39 `shouldBe` Nothing
       it "task40" $
-        checkMatchPetriConfig task40 `shouldBe` Nothing
+        checkMatchPetriConfig task2023_40 `shouldBe` Nothing
       it "task41" $
-        checkFindAuxiliaryPetriNodesConfig task41 `shouldBe` Nothing
+        checkFindAuxiliaryPetriNodesConfig task2023_41 `shouldBe` Nothing
       it "task42" $
-        checkFindAuxiliaryPetriNodesConfig task42 `shouldBe` Nothing
+        checkFindAuxiliaryPetriNodesConfig task2023_42 `shouldBe` Nothing
     describe "2024" $ do
       it "task05" $
         checkSelectValidCdInstance task2024_05 `shouldBe` Nothing
@@ -305,3 +311,15 @@ spec =
         checkEnterASConfig task2024_41 `shouldBe` Nothing
       it "task42" $
         checkEnterASConfig task2024_42 `shouldBe` Nothing
+      it "task43" $
+        checkSelectPetriConfig task2024_43 `shouldBe` Nothing
+      it "task44" $
+        checkSelectPetriConfig task2024_44 `shouldBe` Nothing
+      it "task45" $
+        checkMatchPetriConfig task2024_45 `shouldBe` Nothing
+      it "task46" $
+        checkMatchPetriConfig task2024_46 `shouldBe` Nothing
+      it "task47" $
+        checkFindAuxiliaryPetriNodesConfig task2024_47 `shouldBe` Nothing
+      it "task48" $
+        checkFindAuxiliaryPetriNodesConfig task2024_48 `shouldBe` Nothing
