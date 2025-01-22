@@ -71,16 +71,16 @@ task2023_38 = SelectPetriConfig {
 
 {-|
 points: 0.15
-generation time per instance: ??:??min
-CPU usage: ???%
+generation time per instance: 3:27min
+CPU usage: 110%
 -}
 task2024_43 :: SelectPetriConfig
 task2024_43 = task2023_37
 
 {-|
 points: 0.15
-generation time per instance: ??:??min
-CPU usage: ???%
+generation time per instance: 1:50min
+CPU usage: 114%
 -}
 task2024_44 :: SelectPetriConfig
 task2024_44 = SelectPetriConfig {

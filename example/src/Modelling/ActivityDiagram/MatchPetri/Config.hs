@@ -63,16 +63,16 @@ task2023_40 = MatchPetriConfig {
 
 {-|
 points: 0.15
-generation time per instance: ??:??min
-CPU usage: 100%
+generation time per instance: 23:20min
+CPU usage: 103%
 -}
 task2024_45 :: MatchPetriConfig
 task2024_45 = task2023_39
 
 {-|
 points: 0.15
-generation time per instance: ??:??min
-CPU usage: ???%
+generation time per instance: 1:06:10h
+CPU usage: 102%
 -}
 task2024_46 :: MatchPetriConfig
 task2024_46 = task2023_40
