@@ -9,7 +9,7 @@ import Modelling.ActivityDiagram.Config (AdConfig(..))
 
 {-|
 points: 0.15
-generation time per instance: 2:00min
+average generation time per instance: 2:00min
 CPU usage: 120%
 -}
 task2023_41 :: FindAuxiliaryPetriNodesConfig
@@ -34,7 +34,7 @@ task2023_41 = FindAuxiliaryPetriNodesConfig {
 
 {-|
 points: 0.15
-generation time per instance: 3:30min
+average generation time per instance: 3:30min
 CPU usage: 100%
 -}
 task2023_42 :: FindAuxiliaryPetriNodesConfig
@@ -59,7 +59,7 @@ task2023_42 = FindAuxiliaryPetriNodesConfig {
 
 {-|
 points: 0.15
-generation time per instance: 2:24min
+average generation time per instance: 2:24min
 CPU usage: 104%
 -}
 task2024_47 :: FindAuxiliaryPetriNodesConfig
@@ -84,7 +84,7 @@ task2024_47 = FindAuxiliaryPetriNodesConfig {
 
 {-|
 points: 0.15
-generation time per instance: 3:51min
+average generation time per instance: 3:51min
 CPU usage: 108%
 -}
 task2024_48 :: FindAuxiliaryPetriNodesConfig

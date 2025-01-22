@@ -16,7 +16,7 @@ import Data.Ratio                       ((%))
 
 {-|
 points: 0.15
-generation time per instance: 0:27min
+average generation time per instance: 0:27min
 CPU usage: 350%
 -}
 task2023_12 :: DifferentNamesConfig
@@ -55,7 +55,7 @@ task2023_12 = DifferentNamesConfig {
 
 {-|
 points: 0.15
-generation time per instance: 1:40min
+average generation time per instance: 1:40min
 CPU usage: 350%
 -}
 task2023_13 :: DifferentNamesConfig
@@ -94,7 +94,7 @@ task2023_13 = DifferentNamesConfig {
 
 {-|
 points: 0.25
-generation time per instance: 3:00min
+average generation time per instance: 3:00min
 CPU usage: 150%
 -}
 task2023_25 :: DifferentNamesConfig
@@ -133,7 +133,7 @@ task2023_25 = DifferentNamesConfig {
 
 {-|
 points: 0.15
-generation time per instance: 1:10min
+average generation time per instance: 1:10min
 CPU usage: 355%
 -}
 task2024_15 :: DifferentNamesConfig
@@ -172,7 +172,7 @@ task2024_15 = DifferentNamesConfig {
 
 {-|
 points: 0.15
-generation time per instance: 1:17min
+average generation time per instance: 1:17min
 CPU usage: 346%
 -}
 task2024_16 :: DifferentNamesConfig

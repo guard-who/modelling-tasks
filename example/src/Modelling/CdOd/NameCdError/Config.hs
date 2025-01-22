@@ -22,7 +22,7 @@ import Data.Ratio                       ((%))
 
 {-|
 points: 0.15
-generation time per instance: 0:20min
+average generation time per instance: 0:20min
 CPU usage: 200%
 -}
 task2023_09 :: NameCdErrorConfig
@@ -93,7 +93,7 @@ task2023_09 = NameCdErrorConfig {
 
 {-|
 points: 0.15
-generation time per instance: 0:20min
+average generation time per instance: 0:20min
 CPU usage: 200%
 -}
 task2023_10 :: NameCdErrorConfig
@@ -164,7 +164,7 @@ task2023_10 = NameCdErrorConfig {
 
 {-|
 points: 0.15
-generation time per instance: 0:57 min
+average generation time per instance: 0:57 min
 CPU usage: 171%
 -}
 task2024_10 :: NameCdErrorConfig
@@ -235,7 +235,7 @@ task2024_10 = NameCdErrorConfig {
 
 {-|
 points: 0.15
-generation time per instance: 0:38min
+average generation time per instance: 0:38min
 CPU usage: 180%
 -}
 task2024_11 :: NameCdErrorConfig

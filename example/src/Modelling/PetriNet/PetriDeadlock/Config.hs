@@ -52,7 +52,7 @@ task2024_27 = task2023_29
 
 {-|
 points: 0.25
-generation time per instance: 1:49min
+average generation time per instance: 1:49min
 CPU usage: 99%
 -}
 task2024_28 :: DeadlockConfig

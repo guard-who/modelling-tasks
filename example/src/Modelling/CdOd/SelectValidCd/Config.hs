@@ -21,7 +21,7 @@ import Data.Ratio                       ((%))
 
 {-|
 points: 0.15
-generation time per instance: 24:00h
+average generation time per instance: 24:00h
 CPU usage: 400%
 -}
 task2023_05 :: SelectValidCdConfig
@@ -82,7 +82,7 @@ task2023_05 = SelectValidCdConfig {
 
 {-|
 points: 0.15
-generation time per instance: 1:30h
+average generation time per instance: 1:30h
 CPU usage: 400%
 -}
 task2023_06 :: SelectValidCdConfig
@@ -143,7 +143,7 @@ task2023_06 = SelectValidCdConfig {
 
 {-|
 points: 0.15
-generation time per instance: 24:00h
+average generation time per instance: 24:00h
 CPU usage: 400%
 -}
 task2024_06 :: SelectValidCdConfig
@@ -202,7 +202,7 @@ task2024_06 = SelectValidCdConfig {
 
 {-|
 points: 0.15
-generation time per instance: 3:18min
+average generation time per instance: 3:18min
 CPU usage: 278%
 -}
 task2024_07 :: SelectValidCdConfig
@@ -262,7 +262,7 @@ task2024_07 = SelectValidCdConfig {
 
 {-|
 points: 0.15
-generation time per instance: 1:30h
+average generation time per instance: 1:30h
 CPU usage: 400%
 -}
 task2024_08 :: SelectValidCdConfig

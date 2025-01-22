@@ -9,7 +9,7 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 
 {-|
 points: 0.15
-generation time per instance: 40:00min
+average generation time per instance: 40:00min
 CPU usage: 100%
 -}
 task2023_39 :: MatchPetriConfig
@@ -36,7 +36,7 @@ task2023_39 = MatchPetriConfig {
 
 {-|
 points: 0.15
-generation time per instance: 40:00min
+average generation time per instance: 40:00min
 CPU usage: 100%
 -}
 task2023_40 :: MatchPetriConfig
@@ -63,7 +63,7 @@ task2023_40 = MatchPetriConfig {
 
 {-|
 points: 0.15
-generation time per instance: 23:20min
+average generation time per instance: 23:20min
 CPU usage: 103%
 -}
 task2024_45 :: MatchPetriConfig
@@ -71,7 +71,7 @@ task2024_45 = task2023_39
 
 {-|
 points: 0.15
-generation time per instance: 1:06:10h
+average generation time per instance: 1:06:10h
 CPU usage: 102%
 -}
 task2024_46 :: MatchPetriConfig

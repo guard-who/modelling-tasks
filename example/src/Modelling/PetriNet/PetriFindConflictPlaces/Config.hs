@@ -15,7 +15,7 @@ import Data.GraphViz.Commands           (GraphvizCommand(..))
 
 {-|
 points: 0.2
-generation time per instance: 20:00min
+average generation time per instance: 20:00min
 CPU usage: 100%
 -}
 task2023_24 :: FindConflictConfig
@@ -64,7 +64,7 @@ task2023_24 = FindConflictConfig {
 
 {-|
 points: 0.2
-generation time per instance: 20:00min
+average generation time per instance: 20:00min
 CPU usage: 100%
 -}
 task2023_26 :: FindConflictConfig
@@ -113,7 +113,7 @@ task2023_26 = FindConflictConfig {
 
 {-|
 points: 0.2
-generation time per instance: 31:14min
+average generation time per instance: 31:14min
 CPU usage: 104%
 -}
 task2024_34 :: FindConflictConfig
@@ -121,7 +121,7 @@ task2024_34 = task2023_24
 
 {-|
 points: 0.2
-generation time per instance: 35:16min
+average generation time per instance: 35:16min
 CPU usage: 103%
 -}
 task2024_35 :: FindConflictConfig
@@ -129,7 +129,7 @@ task2024_35 = task2023_26
 
 {-|
 points: 0.2
-generation time per instance: 35:16min
+average generation time per instance: 35:16min
 CPU usage: 103%
 -}
 task2024_36 :: FindConflictConfig
