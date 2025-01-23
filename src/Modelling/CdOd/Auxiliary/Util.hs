@@ -3,13 +3,16 @@ module Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   emptyArr,
   filterFirst,
-  redColor, underlinedLabel,
+  oneAndOther,
+  redColor,
+  underlinedLabel,
   ) where
 
 import qualified Data.Set                         as S
 
 import Modelling.Auxiliary.Common       (lowerFirst)
 import Modelling.CdOd.Types (
+  DefaultedLimitedLinking (..),
   Link (..),
   Object (..),
   ObjectDiagram (..),
@@ -85,3 +88,13 @@ alloyInstanceToOd allLinkNames i = do
       linkFrom = x,
       linkTo = y
       }
+
+oneAndOther
+  :: String
+  -> String
+  -> (DefaultedLimitedLinking, DefaultedLimitedLinking)
+  -> (DefaultedLimitedLinking, DefaultedLimitedLinking)
+oneAndOther linking1 linking2 (limit1, limit2) = (
+  limit1 {defaultedLinking = linking1},
+  limit2 {defaultedLinking = linking2}
+  )

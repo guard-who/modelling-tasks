@@ -11,25 +11,34 @@ module Modelling.CdOd.Phrasing.German (
 import Modelling.Types (
   Change (..),
   )
+import Modelling.CdOd.Auxiliary.Util    (oneAndOther)
 import Modelling.CdOd.Types (
   AnyRelationship,
+  DefaultedLimitedLinking (..),
   InvalidRelationship (..),
   LimitedLinking (..),
   NonInheritancePhrasing (..),
+  OmittedDefaultMultiplicities (..),
+  PhrasingKind (..),
   Relationship (..),
+  defaultedLimitedLinking,
+  sortLimits,
   toPhrasing,
   )
 
 import Control.OutputCapable.Blocks     (ArticleToUse (..))
 import Data.String.Interpolate          (iii)
+import Data.Tuple.Extra                 (curry3)
 
 phraseChange
-  :: ArticleToUse
+  :: OmittedDefaultMultiplicities
+  -> ArticleToUse
   -> Bool
   -> Bool
   -> Change (AnyRelationship String String)
   -> String
-phraseChange article byName withDir c = case (add c, remove c) of
+phraseChange defaultMultiplicities article byName withDir c =
+  case (add c, remove c) of
   (Nothing, Nothing) -> "verändere nichts"
   (Just a,  Nothing) -> "ergänze "
     ++ trailingComma (phrasingNew a)
@@ -38,8 +47,16 @@ phraseChange article byName withDir c = case (add c, remove c) of
     "ersetze " ++ trailingComma (phrasingOld e)
     ++ " durch " ++ phrasingNew a
   where
-    phrasingOld = phraseRelation article $ toPhrasing byName withDir
-    phrasingNew = phraseRelation IndefiniteArticle $ toPhrasing False withDir
+    phrasingOld = phraseRelation
+      defaultMultiplicities
+      article
+      Denoted
+      $ toPhrasing byName withDir
+    phrasingNew = phraseRelation
+      defaultMultiplicities
+      IndefiniteArticle
+      Participations
+      $ toPhrasing False withDir
 
 trailingComma :: String -> String
 trailingComma xs
@@ -52,88 +69,174 @@ femaleArticle = \case
   IndefiniteArticle -> "eine"
 
 phraseRelationship
-  :: ArticleToUse
+  :: OmittedDefaultMultiplicities
+  -> ArticleToUse
+  -> PhrasingKind
   -> Bool
   -> Bool
   -> AnyRelationship String String
   -> String
-phraseRelationship article byName withDir = phraseRelation article phrasing
+phraseRelationship defaultMultiplicities article kind byName withDir =
+  phraseRelation defaultMultiplicities article kind phrasing
   where
     phrasing = toPhrasing byName withDir
 
 phraseRelation
-  :: ArticleToUse
+  :: OmittedDefaultMultiplicities
+  -> ArticleToUse
+  -> PhrasingKind
   -> NonInheritancePhrasing
   -> AnyRelationship String String
   -> String
-phraseRelation article = curry $ \case
-  (_, Left InvalidInheritance {..}) -> [iii|
+phraseRelation OmittedDefaultMultiplicities {..} article = curry3 $ \case
+  (kind,_, Left InvalidInheritance {..}) -> [iii|
     #{femaleArticle article} Vererbung,
     bei der #{linking invalidSubClass} von #{linking invalidSuperClass} erbt
-    |] ++ participations invalidSubClass invalidSuperClass
-  (_, Right Inheritance {..}) -> [iii|
+    |]
+    ++ phraseParticipations
+      kind
+      (defaultedInheritance invalidSubClass)
+      (defaultedInheritance invalidSuperClass)
+  (_, _, Right Inheritance {..}) -> [iii|
     #{femaleArticle article} Vererbung,
     bei der #{subClass} von #{superClass} erbt
     |]
-  (ByName, Right Association {..}) -> "Assoziation " ++ associationName
-  (ByName, Right Aggregation {..}) -> "Aggregation " ++ aggregationName
-  (ByName, Right Composition {..}) -> "Komposition " ++ compositionName
-  (Lengthy, Right Association {..})
-    | linking associationFrom == linking associationTo -> [iii|
-    #{femaleArticle article} Selbst-Assoziation für #{linking associationFrom},
-    bei der #{linking associationFrom}
-    an einem Ende #{phraseLimit $ limits associationFrom}
-    und am anderen Ende #{phraseLimit $ limits associationTo} beteiligt ist
-    |]
-    | otherwise -> femaleArticle article ++ " Assoziation"
-      ++ participations associationFrom associationTo
-  (ByDirection, Right Association {..})
-    | linking associationFrom == linking associationTo -> [iii|
-    #{femaleArticle article} Selbst-Assoziation für #{linking associationFrom},
-    bei der {linking associationFrom}
-    am Anfang #{phraseLimit $ limits associationFrom}
-    und am Ende #{phraseLimit $ limits associationTo} beteiligt ist
-    |]
-    | otherwise -> [iii|
-    #{femaleArticle article} Assoziation von #{linking associationFrom}
-    nach #{linking associationTo}
-    |] ++ participations associationFrom associationTo
-  (_, Right Aggregation {..})
-    | linking aggregationPart == linking aggregationWhole -> [iii|
-    #{femaleArticle article} Selbst-Aggregation
-    #{selfParticipatesPartWhole aggregationPart aggregationWhole}
-    |]
-    | otherwise -> [iii|
-    #{femaleArticle article} Beziehung, die #{linking aggregationWhole}
-    eine Aggregation aus #{linking aggregationPart}s macht
-    |] ++ participations aggregationWhole aggregationPart
-  (_, Right Composition {..})
-    | linking compositionPart == linking compositionWhole -> [iii|
-    #{femaleArticle article} Selbst-Komposition
-    #{selfParticipatesPartWhole compositionPart compositionWhole}
-    |]
-    | otherwise -> [iii|
-    #{femaleArticle article} Beziehung, die #{linking compositionWhole}
-    eine Komposition aus #{linking compositionPart}s macht
-    |] ++ participations compositionWhole compositionPart
+  (_, ByName, Right Association {..}) -> "Assoziation " ++ associationName
+  (_, ByName, Right Aggregation {..}) -> "Aggregation " ++ aggregationName
+  (_, ByName, Right Composition {..}) -> "Komposition " ++ compositionName
+  (kind, how, Right Association {..})
+    | from <- defaultedAssociation associationFrom
+    , to <- defaultedAssociation associationTo
+    -> case (how, kind, linking associationFrom == linking associationTo) of
+      (Lengthy, Participations, True) -> [iii|
+        #{femaleArticle article} Selbst-Assoziation
+        für #{linking associationFrom},
+        bei der #{linking associationFrom}
+        an einem Ende #{phraseLimitDefault $ defaultedLimits from}
+        und am anderen Ende #{phraseLimitDefault $ defaultedLimits to}
+        beteiligt ist
+        |]
+      (Lengthy, Denoted, True)
+        | denoted <- uncurry denotions
+          $ oneAndOther "einem Ende" "dem anderen Ende"
+          $ sortLimits from to
+        -> [iii|
+          #{femaleArticle article} Selbst-Assoziation
+          für #{linking associationFrom}
+          |] ++ denoted
+      (Lengthy, _, False) -> femaleArticle article ++ " Assoziation"
+        ++ phraseParticipations kind from to
+      (ByDirection, Participations, True) -> [iii|
+        #{femaleArticle article} Selbst-Assoziation
+        für #{linking associationFrom},
+        bei der #{linking associationFrom}
+        am Anfang #{phraseLimitDefault $ defaultedLimits from}
+        und am Ende #{phraseLimitDefault $ defaultedLimits to} beteiligt ist
+        |]
+      (ByDirection, Denoted, True)
+        | denoted <- uncurry denotions
+          $ uncurry sortLimits
+          $ oneAndOther "seinem Anfang" "seinem Pfeilende" (from, to)
+        -> [iii|
+          #{femaleArticle article} Selbst-Assoziation
+          für #{linking associationFrom}
+          |] ++ denoted
+      (ByDirection, _, False) -> [iii|
+        #{femaleArticle article} Assoziation von #{linking associationFrom}
+        nach #{linking associationTo}
+        |] ++ phraseParticipations kind from to
+  (kind, _, Right Aggregation {..})
+    | part <- defaultedAssociation aggregationPart
+    , whole <- defaultedAssociation aggregationWhole
+    ->
+      if linking aggregationPart == linking aggregationWhole
+      then [iii|
+        #{femaleArticle article} Selbst-Aggregation
+        #{selfParticipatesPartWhole kind part whole}
+        |]
+      else [iii|
+        #{femaleArticle article} Beziehung, die #{linking aggregationWhole}
+        eine Aggregation aus #{linking aggregationPart}s macht
+        |] ++ phraseParticipations kind whole part
+  (kind, _, Right Composition {..})
+    | part <- defaultedAssociation compositionPart
+    , whole <- defaultedCompositionWhole compositionWhole
+    ->
+      if linking compositionPart == linking compositionWhole
+      then [iii|
+        #{femaleArticle article} Selbst-Komposition
+        #{selfParticipatesPartWhole kind part whole}
+        |]
+      else [iii|
+        #{femaleArticle article} Beziehung, die #{linking compositionWhole}
+        eine Komposition aus #{linking compositionPart}s macht
+        |] ++ phraseParticipations kind whole part
+  where
+    defaultedCompositionWhole =
+      defaultedLimitedLinking compositionWholeOmittedDefaultMultiplicity
+    defaultedAssociation =
+      defaultedLimitedLinking associationOmittedDefaultMultiplicity
+    defaultedInheritance = defaultedLimitedLinking Nothing
 
 selfParticipatesPartWhole
-  :: LimitedLinking String
-  -> LimitedLinking String
+  :: PhrasingKind
+  -> DefaultedLimitedLinking
+  -> DefaultedLimitedLinking
   -> String
-selfParticipatesPartWhole part whole = [iii|
-  für #{linking part}, wobei #{linking part} #{phraseLimit $ limits part}
-  als Teil and #{phraseLimit $ limits whole} als Ganzes beteiligt ist
+selfParticipatesPartWhole Denoted part whole = [iii|
+  für #{defaultedLinking part},
+  #{which}
+  |]
+  where
+    which = uncurry denotions $ sortLimits
+      part {defaultedLinking = "dem Teil-Ende"}
+      whole {defaultedLinking = "dem Ganzen-Ende"}
+selfParticipatesPartWhole Participations part whole = [iii|
+  für #{defaultedLinking part},
+  wobei es #{phraseLimitDefault $ defaultedLimits part} als Teil
+  und #{phraseLimitDefault $ defaultedLimits whole} als Ganzes beteiligt ist
   |]
 
+phraseParticipations
+  :: PhrasingKind
+  -> DefaultedLimitedLinking
+  -> DefaultedLimitedLinking
+  -> String
+phraseParticipations = \case
+  Denoted -> denotions
+  Participations -> participations
+
+denotions
+  :: DefaultedLimitedLinking
+  -> DefaultedLimitedLinking
+  -> String
+denotions from to = case (defaultedRange from, defaultedRange to) of
+  (Nothing, Nothing) -> [iii|, bei der keine Multiplizitäten angegeben sind|]
+  (Nothing, Just toRange) -> [iii|
+     , bei der keine Multiplizität neben #{defaultedLinking from}
+     und #{toRange} neben #{defaultedLinking to} angegeben ist
+     |]
+  (Just fromRange, Nothing) -> [iii|
+     , bei der keine Multiplizität neben #{defaultedLinking to}
+     und #{fromRange} neben #{defaultedLinking from} angegeben ist
+     |]
+  (Just fromRange, Just toRange) -> [iii|
+     , bei der die Multiplizität
+     #{fromRange} neben #{defaultedLinking from}
+     und #{toRange} neben #{defaultedLinking to} angegeben ist
+     |]
+
 participations
-  :: LimitedLinking String
-  -> LimitedLinking String
+  :: DefaultedLimitedLinking
+  -> DefaultedLimitedLinking
   -> String
 participations from to = [iii|
-  , wobei #{linking from} #{phraseLimit $ limits from}
-  und #{linking to} #{phraseLimit $ limits to} beteiligt ist
+  , wobei #{defaultedLinking from} #{phraseLimitDefault $ defaultedLimits from}
+  und #{defaultedLinking to} #{phraseLimitDefault $ defaultedLimits to} beteiligt ist
   |]
+
+phraseLimitDefault :: Maybe (Int, Maybe Int) -> String
+phraseLimitDefault = maybe "mit der Standardmultiplizität" phraseLimit
 
 phraseLimit :: (Int, Maybe Int) -> String
 phraseLimit (0, Just 0)  = "gar nicht"

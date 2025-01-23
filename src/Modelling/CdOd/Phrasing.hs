@@ -19,9 +19,13 @@ import Modelling.Types (
   )
 import Modelling.CdOd.Types (
   AnyRelationship,
+  OmittedDefaultMultiplicities,
+  PhrasingKind,
   )
 
-phraseChange :: Language
+phraseChange
+  :: Language
+  -> OmittedDefaultMultiplicities
   -> ArticleToUse
   -> Bool
   -> Bool
@@ -33,7 +37,9 @@ phraseChange = \case
 
 phraseRelationship
   :: Language
+  -> OmittedDefaultMultiplicities
   -> ArticleToUse
+  -> PhrasingKind
   -> Bool
   -> Bool
   -> AnyRelationship String String -> String

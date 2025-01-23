@@ -22,6 +22,7 @@ module Modelling.CdOd.Types (
   CdMutation (..),
   ClassConfig (..),
   ClassDiagram (..),
+  DefaultedLimitedLinking (..),
   InvalidRelationship (..),
   LimitedLinking (..),
   Link (..),
@@ -56,6 +57,7 @@ module Modelling.CdOd.Types (
   classNamesOd,
   defaultCdConstraints,
   defaultCdDrawSettings,
+  defaultedLimitedLinking,
   defaultOmittedDefaultMultiplicities,
   defaultProperties,
   fromClassDiagram,
@@ -66,7 +68,7 @@ module Modelling.CdOd.Types (
   maxObjects,
   maxRelationships,
   normaliseObjectDiagram,
-  omittedDefaultMultiplicityIsSet,
+  rangeWithDefault,
   relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
@@ -75,6 +77,7 @@ module Modelling.CdOd.Types (
   shuffleClassAndConnectionOrder,
   shuffleAnyClassAndConnectionOrder,
   shuffleObjectAndLinkOrder,
+  sortLimits,
   toPropertySet,
   toValidCd,
   towardsValidProperties,
@@ -82,6 +85,7 @@ module Modelling.CdOd.Types (
   -- * Phrasing
   ArticlePreference (..),
   NonInheritancePhrasing (..),
+  PhrasingKind (..),
   toArticleToUse,
   toPhrasing,
   ) where
@@ -282,6 +286,76 @@ data LimitedLinking nodeName = LimitedLinking {
   limits                      :: (Int, Maybe Int)
   }
   deriving (Eq, Functor, Foldable, Generic, Ord, Read, Show, Traversable)
+
+{-|
+A variation of 'LimitedLinking' that can fallback to a default limit
+and includes the range expression.
+-}
+data DefaultedLimitedLinking = DefaultedLimitedLinking {
+  -- | lower and upper bounds
+  defaultedLimits :: Maybe (Int, Maybe Int),
+  -- | a string representing the range
+  defaultedRange :: Maybe String,
+  -- | the target to which it is linking
+  defaultedLinking :: !String
+  }
+
+{-|
+Return lower limit first, higher second.
+-}
+sortLimits
+  :: DefaultedLimitedLinking
+  -> DefaultedLimitedLinking
+  -> (DefaultedLimitedLinking, DefaultedLimitedLinking)
+sortLimits limit1 limit2 = (lower, higher)
+  where
+    (lower, higher)
+      | defaultedLimits limit1 <= defaultedLimits limit2
+      = (limit1, limit2)
+      | otherwise
+      = (limit2, limit1)
+
+{-|
+Smart constructor for creating 'DefaultedLimitedLinking'
+based on a default and a 'LimitedLinking'.
+-}
+defaultedLimitedLinking
+  :: Maybe (Int, Maybe Int)
+  -> LimitedLinking String
+  -> DefaultedLimitedLinking
+defaultedLimitedLinking defaultLimits LimitedLinking {..}
+  = DefaultedLimitedLinking {
+    defaultedLimits = justNotDefault defaultLimits limits,
+    defaultedRange = rangeWithDefault defaultLimits limits,
+    defaultedLinking = linking
+    }
+
+{-|
+Nothing if default is hit, else 'Just' the value.
+-}
+justNotDefault :: Eq a => Maybe a -> a -> Maybe a
+justNotDefault defaultValue value
+  | Just value == defaultValue
+  = Nothing
+  | otherwise
+  = Just value
+
+{-|
+A range expression as shown in class diagrams (or 'Nothing' if default is hit).
+-}
+rangeWithDefault
+  :: Maybe (Int, Maybe Int)
+  -- ^ the default
+  -> (Int, Maybe Int)
+  -- ^ range for which to return the range expression
+  -> Maybe String
+rangeWithDefault defaultValue = fmap range . justNotDefault defaultValue
+  where
+    range (l, Nothing) = show l ++ "..*"
+    range (l, Just u)
+      | l == -1   = "*.." ++ show u
+      | l == u    = show l
+      | otherwise = show l ++ ".." ++ show u
 
 {-|
 All possible relationships within a `ClassDiagram`.
@@ -838,21 +912,6 @@ defaultOmittedDefaultMultiplicities = OmittedDefaultMultiplicities {
   compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
   }
 
-{-|
-Returns just the parameter name of 'OmittedDefaultMultiplicities'
-which is set to 'Just' (or 'Nothing' if neither is).
--}
-omittedDefaultMultiplicityIsSet :: OmittedDefaultMultiplicities -> Maybe String
-omittedDefaultMultiplicityIsSet OmittedDefaultMultiplicities {..}
-  | isJust aggregationWholeOmittedDefaultMultiplicity
-  = Just "aggregationWholeOmittedDefaultMultiplicity"
-  | isJust associationOmittedDefaultMultiplicity
-  = Just "associationOmittedDefaultMultiplicity"
-  | isJust compositionWholeOmittedDefaultMultiplicity
-  = Just "compositionWholeOmittedDefaultMultiplicity"
-  | otherwise
-  = Nothing
-
 checkOmittedDefaultMultiplicities :: OmittedDefaultMultiplicities -> Maybe String
 checkOmittedDefaultMultiplicities OmittedDefaultMultiplicities {..} =
   checkValidity aggregationWholeOmittedDefaultMultiplicity
@@ -1341,3 +1400,12 @@ toPhrasing byName withDir
   | byName = ByName
   | withDir = ByDirection
   | otherwise = Lengthy
+
+{-|
+For choosing a specific phrasing variation.
+-}
+data PhrasingKind
+  = Denoted
+  -- ^ refer to denoted multiplicities
+  | Participations
+  -- ^ describe how often objects can participate

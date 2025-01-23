@@ -82,6 +82,7 @@ import Modelling.CdOd.Types (
   ObjectProperties (..),
   Od,
   OmittedDefaultMultiplicities (..),
+  PhrasingKind (Denoted),
   Relationship (..),
   allowNothing,
   allCdMutations,
@@ -368,8 +369,14 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       paragraph $ case remove change of
         Nothing -> lift $ throwM NeverHappens
         Just relation -> translate $ do
-          let phrase l =
-                phraseRelationship l article True withDir relation
+          let phrase l = phraseRelationship
+                l
+                (omittedDefaults drawSettings)
+                article
+                Denoted
+                True
+                withDir
+                relation
           english [iii|
             If for example #{phrase English} would not be there,
             it would be valid.

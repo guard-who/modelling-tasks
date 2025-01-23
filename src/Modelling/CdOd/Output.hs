@@ -49,7 +49,9 @@ import Modelling.CdOd.Types (
   Od,
   OmittedDefaultMultiplicities (..),
   Relationship (..),
-  calculateThickAnyRelationships, anonymiseObjects,
+  anonymiseObjects,
+  calculateThickAnyRelationships,
+  rangeWithDefault,
   )
 
 import Control.Lens                     ((.~))
@@ -337,17 +339,6 @@ drawRelationship font CdDrawSettings {..} marking fl tl isThick relationship pat
         Right Association {..} -> Just associationName
         Right Aggregation {..} -> Just aggregationName
         Right Composition {..} -> Just compositionName
-
-rangeWithDefault :: Maybe (Int, Maybe Int) -> (Int, Maybe Int) -> Maybe String
-rangeWithDefault def fromTo
-  | def == Just fromTo = Nothing
-  | otherwise     = Just $ range fromTo
-  where
-    range (l, Nothing) = show l ++ "..*"
-    range (l, Just u)
-      | l == -1   = "*.." ++ show u
-      | l == u    = show l
-      | otherwise = show l ++ ".." ++ show u
 
 drawClass
   :: PreparedFont Double
