@@ -25,5 +25,6 @@ jobs:
       - name: Run Linter
         uses: github/super-linter/slim@v5
         env:
+          VALIDATE_JSCPD_ALL_CODEBASE: true
           YAML_ERROR_ON_WARNING: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
