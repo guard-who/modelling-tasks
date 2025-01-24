@@ -10,6 +10,7 @@ module Modelling.CdOd.Phrasing.English (
 import Modelling.Types (
   Change (..),
   )
+import Modelling.CdOd.Auxiliary.Util    (oneAndOther)
 import Modelling.CdOd.Types (
   AnyRelationship,
   DefaultedLimitedLinking (..),
@@ -160,7 +161,7 @@ phraseRelation OmittedDefaultMultiplicities {..} article = curry3 $ \case
         #{consonantArticle article} relationship
         that makes #{linking aggregationWhole}
         an aggregation of #{linking aggregationPart}s
-        #{phraseParticipations kind part whole}
+        #{phraseParticipations kind whole part}
         |]
   (kind, _, Right Composition {..})
     | part <- defaultedAssociation compositionPart
@@ -175,7 +176,7 @@ phraseRelation OmittedDefaultMultiplicities {..} article = curry3 $ \case
         #{consonantArticle article} relationship
         that makes #{linking compositionWhole}
         a composition of #{linking compositionPart}s
-        #{phraseParticipations kind part whole}
+        #{phraseParticipations kind whole part}
         |]
   where
     defaultedCompositionWhole =
@@ -183,16 +184,6 @@ phraseRelation OmittedDefaultMultiplicities {..} article = curry3 $ \case
     defaultedAssociation =
       defaultedLimitedLinking associationOmittedDefaultMultiplicity
     defaultedInheritance = defaultedLimitedLinking Nothing
-
-oneAndOther
-  :: String
-  -> String
-  -> (DefaultedLimitedLinking, DefaultedLimitedLinking)
-  -> (DefaultedLimitedLinking, DefaultedLimitedLinking)
-oneAndOther linking1 linking2 (limit1, limit2) = (
-  limit1 {defaultedLinking = linking1},
-  limit2 {defaultedLinking = linking2}
-  )
 
 selfParticipatesPartWhole
   :: PhrasingKind
