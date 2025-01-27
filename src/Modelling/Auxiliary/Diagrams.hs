@@ -149,7 +149,7 @@ arrowheadV theta arrowHeadLength shaftWidth =
       translate (unP $ (factor * sinA theta * arrowHeadLength / 2) *. unitY)
       . translate (unP $ (cosA theta * arrowHeadLength / 2) *. unitX)
       where factor = if right then -1 else 1
-    opposingTheta = - (theta ^. deg) @@ deg
+    opposingTheta = (- theta ^. deg) @@ deg
     jt = shift True (rotate opposingTheta line)
       <> shift False (rotate theta line)
       -- <> translate (unP $ (shaftWidth * sinA theta / 2) *. unitX) tip
