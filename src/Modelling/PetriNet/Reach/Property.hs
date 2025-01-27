@@ -171,7 +171,7 @@ guardBound name actual bound =
   when (actual > bound) $
     refuse $ do
       paragraph $ text $ name ++ '(' : show actual ++ ")"
-      paragraph $ text $ " ist größer als die Schranke " ++ show bound
+      paragraph $ text $ " ist höher als die Schranke " ++ show bound
       pure ()
 
 {-|
