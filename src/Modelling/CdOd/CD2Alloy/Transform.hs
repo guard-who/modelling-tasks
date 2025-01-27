@@ -459,8 +459,7 @@ makeNonInheritance
   -> [String]
   -> String
 makeNonInheritance fromSet name toSet = [i|
-  #{name}.Object in #{alloySetOf fromSet}
-  Object.#{name} in #{alloySetOf toSet}|]
+  #{name} in #{alloySetOfParens fromSet} -> #{alloySetOfParens toSet}|]
   -- alternative to @ObjectFieldNames@ predicate inlined and simplified
 
 {-|
@@ -549,3 +548,7 @@ alloySetOf :: [String] -> String
 alloySetOf xs
   | null xs = "none"
   | otherwise = intercalate " + " xs
+
+alloySetOfParens :: [String] -> String
+alloySetOfParens xs@(_:_:_) = [i|(#{alloySetOf xs})|]
+alloySetOfParens xs = alloySetOf xs

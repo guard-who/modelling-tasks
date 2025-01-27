@@ -59,8 +59,7 @@ pred cd1 {
 
   // Associations
 
-  x.Object in D
-  Object.x in C
+  x in D -> C
   all o : D | #o.x = 1
 
 

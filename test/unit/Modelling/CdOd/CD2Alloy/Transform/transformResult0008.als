@@ -60,13 +60,11 @@ pred cd1 {
 
   // Associations
 
-  x.Object in B + A
-  Object.x in C
+  x in (B + A) -> C
   all o : B + A | #o.x =< 1
 
 
-  y.Object in B + A
-  Object.y in D
+  y in (B + A) -> D
   all o : B + A | #o.y =< 1
 
 
