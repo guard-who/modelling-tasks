@@ -59,6 +59,7 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (
+  LinguisticReuse (None),
   combineParts,
   createRunCommand,
   mergeParts,
@@ -654,6 +655,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
   where
     renameEdges bm = either (error . show) id . bitraverse pure (`BM.lookup` bm)
     alloyFor n cd' = transform
+      None
       cd'
       Nothing
       []

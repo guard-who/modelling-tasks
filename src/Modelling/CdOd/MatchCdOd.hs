@@ -58,6 +58,7 @@ import Modelling.Auxiliary.Output (
   uniform,
   )
 import Modelling.CdOd.CD2Alloy.Transform (
+  LinguisticReuse (None),
   combineParts,
   createRunCommand,
   mergeParts,
@@ -765,6 +766,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
                        ([]   , instancesNot1not2)]
   where
     alloyForAllRelationships allRelationshipNames cd nr = transform
+      None
       cd
       (Just allRelationshipNames)
       []

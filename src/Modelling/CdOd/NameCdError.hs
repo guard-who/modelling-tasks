@@ -73,6 +73,7 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
+  LinguisticReuse (None),
   combineParts,
   createRunCommand,
   transform,
@@ -817,6 +818,7 @@ nameCdError NameCdErrorConfig {..}  = do
     getOD cd = do
       let maxNumberOfObjects = maxObjects $ snd $ classLimits classConfig
           parts = transform
+            None
             cd
             Nothing
             []
