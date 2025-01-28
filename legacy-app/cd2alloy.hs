@@ -2,7 +2,12 @@ module Main (main) where
 
 import Modelling.CdOd.Auxiliary.Lexer (lexer)
 import Modelling.CdOd.Auxiliary.Parser (parser)
-import Modelling.CdOd.CD2Alloy.Transform (Parts (..), createRunCommand, transform)
+import Modelling.CdOd.CD2Alloy.Transform (
+  LinguisticReuse (None),
+  Parts (..),
+  createRunCommand,
+  transform,
+  )
 import Modelling.CdOd.Types (
   ClassDiagram (..),
   ObjectProperties (..),
@@ -23,6 +28,7 @@ run input output template index = do
   let cd = uncurry toCd parsed
   time <- getZonedTime
   let parts = transform
+        None
         cd
         Nothing
         []

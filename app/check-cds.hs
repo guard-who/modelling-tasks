@@ -5,7 +5,13 @@ import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Capabilities.Diagrams.IO         ()
 import Capabilities.Graphviz.IO         ()
-import Modelling.CdOd.CD2Alloy.Transform (combineParts, createRunCommand, mergeParts, transform)
+import Modelling.CdOd.CD2Alloy.Transform (
+  LinguisticReuse (None),
+  combineParts,
+  createRunCommand,
+  mergeParts,
+  transform,
+  )
 import Modelling.CdOd.Output            (drawCd, drawOdFromInstance)
 import Modelling.CdOd.Types (
   Cd,
@@ -232,6 +238,7 @@ drawCdAndOdsFor is c cds cmd = do
     maxThreeObjects = maxFiveObjects { objectLimits = (1, 3) }
     getParts relationshipNames = zipWith (cdToAlloy relationshipNames) cds [0..]
     cdToAlloy relationshipNames cd i = transform
+      None
       cd
       (Just relationshipNames)
       []
