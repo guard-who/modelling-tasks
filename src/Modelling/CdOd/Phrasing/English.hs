@@ -219,29 +219,29 @@ denotions
   :: DefaultedLimitedLinking
   -> DefaultedLimitedLinking
   -> String
-denotions from to = case (defaultedRange from, defaultedRange to) of
+denotions one other = case (defaultedRange one, defaultedRange other) of
   (Nothing, Nothing) -> [iii|which has not denoted multiplicities at all|]
-  (Nothing, Just toRange) -> [iii|
-     which has no multiplicity denoted near #{defaultedLinking from}
-     and #{toRange} near #{defaultedLinking to}
+  (Nothing, Just otherRange) -> [iii|
+     which has no multiplicity denoted near #{defaultedLinking one}
+     and #{otherRange} near #{defaultedLinking other}
      |]
-  (Just fromRange, Nothing) -> [iii|
-     which has no multiplicity denoted near #{defaultedLinking to}
-     and #{fromRange} near #{defaultedLinking from}
+  (Just oneRange, Nothing) -> [iii|
+     which has no multiplicity denoted near #{defaultedLinking other}
+     and #{oneRange} near #{defaultedLinking one}
      |]
-  (Just fromRange, Just toRange) -> [iii|
+  (Just oneRange, Just otherRange) -> [iii|
      which has denoted the multiplicity
-     #{fromRange} near #{defaultedLinking from}
-     and #{toRange} near #{defaultedLinking to}
+     #{oneRange} near #{defaultedLinking one}
+     and #{otherRange} near #{defaultedLinking other}
      |]
 
 participations
   :: DefaultedLimitedLinking
   -> DefaultedLimitedLinking
   -> String
-participations from to = [iii|
-  where #{participates from}
-  and #{participates to}
+participations one other = [iii|
+  where #{participates one}
+  and #{participates other}
   |]
 
 participates :: DefaultedLimitedLinking -> String

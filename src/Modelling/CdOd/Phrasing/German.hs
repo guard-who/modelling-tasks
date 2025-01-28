@@ -210,29 +210,30 @@ denotions
   :: DefaultedLimitedLinking
   -> DefaultedLimitedLinking
   -> String
-denotions from to = case (defaultedRange from, defaultedRange to) of
+denotions one other = case (defaultedRange one, defaultedRange other) of
   (Nothing, Nothing) -> [iii|, bei der keine Multiplizitäten angegeben sind|]
-  (Nothing, Just toRange) -> [iii|
-     , bei der keine Multiplizität neben #{defaultedLinking from}
-     und #{toRange} neben #{defaultedLinking to} angegeben ist
+  (Nothing, Just otherRange) -> [iii|
+     , bei der keine Multiplizität neben #{defaultedLinking one}
+     und #{otherRange} neben #{defaultedLinking other} angegeben ist
      |]
-  (Just fromRange, Nothing) -> [iii|
-     , bei der keine Multiplizität neben #{defaultedLinking to}
-     und #{fromRange} neben #{defaultedLinking from} angegeben ist
+  (Just oneRange, Nothing) -> [iii|
+     , bei der keine Multiplizität neben #{defaultedLinking other}
+     und #{oneRange} neben #{defaultedLinking one} angegeben ist
      |]
-  (Just fromRange, Just toRange) -> [iii|
+  (Just oneRange, Just otherRange) -> [iii|
      , bei der die Multiplizität
-     #{fromRange} neben #{defaultedLinking from}
-     und #{toRange} neben #{defaultedLinking to} angegeben ist
+     #{oneRange} neben #{defaultedLinking one}
+     und #{otherRange} neben #{defaultedLinking other} angegeben ist
      |]
 
 participations
   :: DefaultedLimitedLinking
   -> DefaultedLimitedLinking
   -> String
-participations from to = [iii|
-  , wobei #{defaultedLinking from} #{phraseLimitDefault $ defaultedLimits from}
-  und #{defaultedLinking to} #{phraseLimitDefault $ defaultedLimits to} beteiligt ist
+participations one other = [iii|
+  , wobei #{defaultedLinking one} #{phraseLimitDefault $ defaultedLimits one}
+  und #{defaultedLinking other} #{phraseLimitDefault $ defaultedLimits other}
+  beteiligt ist
   |]
 
 phraseLimitDefault :: Maybe (Int, Maybe Int) -> String
