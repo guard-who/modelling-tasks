@@ -27,6 +27,7 @@ Multiplizitäten
 NTree
 Nachbereich
 Neato
+NOINLINE
 Perim
 Petrinetz
 Petrinetze
@@ -131,5 +132,6 @@ utf
 varepsilon
 vphantom
 weakenings
+xdescribe
 xlink
 xss

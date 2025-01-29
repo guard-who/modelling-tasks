@@ -17,7 +17,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           seconds: 86400 # One day in seconds
 
-      - name: Install ${{ matrix.os }} Packages
+      - name: Install Packages
         uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
         with:
           apt-get: graphviz texlive-base texlive-latex-base
@@ -31,11 +31,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.stack
-          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          key: ${{ runner.os }}-stack-global--${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
           save-always: true
           restore-keys: |
-            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-global--${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-stack-global-
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
@@ -43,10 +42,9 @@ jobs:
         name: Cache .stack-work
         with:
           path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
-            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-work--${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-stack-work-
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 

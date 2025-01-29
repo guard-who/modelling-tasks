@@ -2,7 +2,7 @@
 
 module Main where
 
-import qualified Spec                             as Spec (spec)
+import qualified Spec                             (spec)
 
 import Settings                         (skipNeedsTuning)
 import Test.Hspec.Core.Runner           (defaultConfig, hspecWith, readConfig)
