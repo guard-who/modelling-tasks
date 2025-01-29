@@ -48,9 +48,10 @@ library
 
 test-suite modelling-tasks-examples-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: Main.hs
   other-modules:
       ExamplesSpec
+      Spec
       Paths_modelling_tasks_examples
   hs-source-dirs:
       test
@@ -61,6 +62,7 @@ test-suite modelling-tasks-examples-test
     , containers
     , graphviz
     , hspec
+    , hspec-core
     , modelling-tasks
     , modelling-tasks-examples
     , output-blocks

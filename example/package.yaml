@@ -18,7 +18,7 @@ library:
   source-dirs: src
 tests:
   modelling-tasks-examples-test:
-    main: Spec.hs
+    main: Main.hs
     source-dirs:
       - test
     ghc-options:
@@ -30,3 +30,4 @@ tests:
       - modelling-tasks-examples
       - HUnit
       - hspec
+      - hspec-core

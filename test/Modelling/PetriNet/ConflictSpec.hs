@@ -51,7 +51,7 @@ import Modelling.PetriNet.TestCommon (
   validConfigsForPick,
   validGraphConfig,
   )
-import Settings                         (configDepth)
+import Settings                         (configDepth, needsTuning)
 
 import Control.Lens.Lens                ((??))
 import Data.Maybe                       (isNothing)
@@ -68,7 +68,8 @@ spec = do
           } 0)
       0
       $ checkFindConflictInstance @(SimplePetriLike _)
-    testFindConflictConfig findConfigs
+    needsTuning $
+      testFindConflictConfig findConfigs
   describe "validPickConflictConfigs" $
     checkConfigs checkPickConflictConfig pickConfigs
   describe "pickConflicts" $ do
@@ -78,7 +79,8 @@ spec = do
           } 0)
       0
       $ checkPickConflictInstance @(SimplePetriLike _)
-    testPickConflictConfig pickConfigs
+    needsTuning $
+      testPickConflictConfig pickConfigs
   where
     findConfigs' = validFindConflictConfigs
       validFinds

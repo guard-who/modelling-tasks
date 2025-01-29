@@ -73,7 +73,7 @@ withUnitTestsUsingPath
   -> Spec
 withUnitTestsUsingPath name does dir extension assertWith = describe name $ do
   fs <- runIO $ sort <$> getDirectoryContents dir
-  let testName = name ++ "Test"
+  let testName = takeWhile (/= ' ') name ++ "Test"
   forM_ (filter (testName `isPrefixOf`) fs) $ \fileName -> do
     let file = dir </> fileName
     input <- runIO $ readFile file

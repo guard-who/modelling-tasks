@@ -97,7 +97,9 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
+          stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --coverage \
+            --bench --no-run-benchmarks --haddock --no-haddock-deps \
+            --test-arguments="--skip-needs-tuning --times --maximum-generated-tests=50"
           set +ex
         env:
           ARGS: ${{ matrix.plan.resolver }}
@@ -107,7 +109,9 @@ jobs:
         id: test-windows
         shell: powershell
         run: |
-          stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps --test-arguments="--maximum-generated-tests=50"
+          stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --coverage \
+            --bench --no-run-benchmarks --haddock --no-haddock-deps \
+            --test-arguments="--skip-needs-tuning --times --maximum-generated-tests=50"
         env:
           ARGS: ${{ matrix.plan.resolver }}
         if: contains(matrix.os, 'windows')

@@ -48,7 +48,7 @@ import Modelling.PetriNet.TestCommon (
   validConfigsForPick,
   validGraphConfig,
   )
-import Settings                         (configDepth)
+import Settings                         (configDepth, needsTuning)
 
 import Control.Lens.Lens                ((??))
 import Test.Hspec
@@ -64,7 +64,8 @@ spec = do
           } 0)
       0
       $ checkFindConcurrencyInstance @(SimplePetriLike _)
-    testFindConcurrencyConfig findConfigs
+    needsTuning $
+      testFindConcurrencyConfig findConfigs
   describe "validPickConcurrencyConfigs" $
     checkConfigs checkPickConcurrencyConfig pickConfigs
   describe "pickConcurrency" $ do
@@ -74,7 +75,8 @@ spec = do
           } 0)
       0
       $ checkPickConcurrencyInstance @(SimplePetriLike _)
-    testPickConcurrencyConfig pickConfigs
+    needsTuning $
+      testPickConcurrencyConfig pickConfigs
   where
     findConfigs' = validFindConcurrencyConfigs
       validFinds

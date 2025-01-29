@@ -1,0 +1,87 @@
+---
+name: Haskell CI
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # daily at 3 am
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for new commits today
+        id: new-commits
+        uses: adriangl/check-new-commits-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          seconds: 86400 # One day in seconds
+
+      - name: Install ${{ matrix.os }} Packages
+        uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
+        with:
+          apt-get: graphviz texlive-base texlive-latex-base
+        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
+
+      - name: Cache Stack
+        id: cache-stack-unix
+        uses: actions/cache@v4
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          save-always: true
+          restore-keys: |
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-global-
+        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
+
+      - uses: actions/cache@v4
+        name: Cache .stack-work
+        with:
+          path: .stack-work
+          key: ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
+            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-work-
+        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
+
+      - name: Setup stack
+        uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-no-global: true
+        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
+
+      - name: Install dependencies
+        run: |
+          set -ex
+          # shellcheck disable=SC2086
+          stack --no-terminal --install-ghc test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+          set +ex
+        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
+
+      - name: Build and test
+        id: test-unix
+        run: |
+          set -ex
+          # shellcheck disable=SC2086
+          stack --no-terminal test --stack-yaml=stack-apps.yaml --coverage \
+            --bench --no-run-benchmarks --haddock --no-haddock-deps \
+            --test-arguments="--times"
+          set +ex
+        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
+
+      - name: Archive test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: artifacts
+        if: >-
+          ${{ steps.new-commits.outputs.has-new-commits == 'true'
+          && failure()
+          && (steps.test-unix.conclusion == 'failure' || steps.test-windows.conclusion == 'failure') }}

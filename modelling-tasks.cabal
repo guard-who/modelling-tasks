@@ -160,7 +160,7 @@ library
 
 test-suite modelling-tasks-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: Main.hs
   other-modules:
       Modelling.ActivityDiagram.ActionSequencesSpec
       Modelling.ActivityDiagram.AlloySpec
@@ -194,6 +194,7 @@ test-suite modelling-tasks-test
       Modelling.PetriNet.TestCommon
       Modelling.PetriNet.TypesSpec
       Settings
+      Spec
       SpecHook
       Test.Similarity
       Paths_modelling_tasks
@@ -232,6 +233,7 @@ test-suite modelling-tasks-test
     , graphviz
     , hgal
     , hspec
+    , hspec-core
     , hxt
     , latex-svg-image
     , lens
