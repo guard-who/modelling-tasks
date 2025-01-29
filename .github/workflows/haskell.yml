@@ -27,9 +27,10 @@ jobs:
 
     steps:
       - name: Install ${{ matrix.os }} Packages
-        uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
+        uses: delgurth/get-package@v6
         with:
           apt-get: ${{ matrix.apt-get }}
+
       - uses: actions/checkout@v4
 
       - name: Cache Stack on unix
@@ -78,7 +79,7 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc $ARGS test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+          stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --bench --only-dependencies
           set +ex
         env:
           ARGS: ${{ matrix.plan.resolver }}
@@ -87,7 +88,7 @@ jobs:
       - name: Install dependencies on windows
         shell: powershell
         run: |
-          stack --no-terminal --install-ghc ${env:ARGS} test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+          stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --bench --only-dependencies
         env:
           ARGS: ${{ matrix.plan.resolver }}
         if: contains(matrix.os, 'windows')

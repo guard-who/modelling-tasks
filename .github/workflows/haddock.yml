@@ -1,0 +1,97 @@
+---
+name: Haddock to Github pages
+
+on:
+  workflow_run:
+    workflows: ["Haskell CI"]
+    types:
+      - completed
+
+permissions: read-all
+
+jobs:
+  build:
+    permissions:
+      contents: read
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        include:
+          - os: ubuntu-latest
+            apt-get: graphviz texlive-base texlive-latex-base
+
+    runs-on: ${{ matrix.os }}
+
+    timeout-minutes: 30
+
+    steps:
+      - name: Install ${{ matrix.os }} Packages
+        uses: delgurth/get-package@v6
+        with:
+          apt-get: ${{ matrix.apt-get }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_commit }}
+
+      - name: Cache Stack
+        id: cache-stack-unix
+        uses: actions/cache@v4
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          save-always: true
+          restore-keys: |
+            ${{ runner.os }}-stack-global--${{ hashFiles('stack.yaml') }}
+            ${{ runner.os }}-stack-global-
+
+      - uses: actions/cache@v4
+        name: Cache .stack-work
+        with:
+          path: .stack-work
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-work--${{ hashFiles('stack.yaml') }}
+            ${{ runner.os }}-stack-work-
+
+      - name: Setup stack
+        uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-no-global: true
+
+      - name: Build Haddock
+        id: haddock
+        run: |
+          stack haddock --stack-yaml=stack-apps.yaml --no-haddock-deps \
+            --haddock-arguments "--hyperlinked-source --quickjump"
+          echo "doc_path=$(stack path --stack-yaml=stack-apps.yaml --no-haddock-deps --local-doc-root)" \
+            >> "${GITHUB_OUTPUT}"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          name: github-pages
+          path: ${{steps.haddock.outputs.doc_path}}
+          retention-days: 1
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

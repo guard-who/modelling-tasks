@@ -1,5 +1,5 @@
 ---
-name: Haskell CI
+name: Haskell Nightly CI
 
 on:
   schedule:
@@ -18,7 +18,7 @@ jobs:
           seconds: 86400 # One day in seconds
 
       - name: Install Packages
-        uses: mstksg/get-package@2a4b48d55d72d43ca89ae58ec9ca1397d34a1c35
+        uses: delgurth/get-package@v6
         with:
           apt-get: graphviz texlive-base texlive-latex-base
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
@@ -59,7 +59,7 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+          stack --no-terminal test --stack-yaml=stack-apps.yaml --bench --only-dependencies
           set +ex
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
@@ -82,4 +82,4 @@ jobs:
         if: >-
           ${{ steps.new-commits.outputs.has-new-commits == 'true'
           && failure()
-          && (steps.test-unix.conclusion == 'failure' || steps.test-windows.conclusion == 'failure') }}
+          && steps.test-unix.conclusion == 'failure' }}
