@@ -3,7 +3,8 @@ name: Haddock to Github pages
 
 on:
   workflow_run:
-    workflows: ["Haskell Nightly CI"]
+    workflows:
+      - Haskell CI
     branches:
       - dev
       - develop
@@ -42,25 +43,21 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Cache Stack
-        id: cache-stack-unix
-        uses: actions/cache@v4
+      - name: Restore Stack on Unix
+        id: cache-stack-unix-restore
+        uses: actions/cache/restore@v4
         with:
           path: ~/.stack
-          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-          save-always: true
-          restore-keys: |
-            ${{ runner.os }}-stack-global--${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-global-
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
+          fail-on-cache-miss: true
 
-      - name: Cache .stack-work
-        uses: actions/cache@v4
+      - name: Restore .stack-work
+        id: cache-stack-work-restore
+        uses: actions/cache/restore@v4
         with:
           path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-work--${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-work-
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          fail-on-cache-miss: true
 
       - name: Setup stack
         uses: haskell-actions/setup@v2
@@ -71,8 +68,9 @@ jobs:
       - name: Build Haddock
         id: haddock
         run: |
-          stack haddock --stack-yaml=stack-apps.yaml --no-haddock-deps \
-            --haddock-arguments "--hyperlinked-source --quickjump"
+          stack test --stack-yaml=stack-apps.yaml --haddock --no-haddock-deps \
+            --haddock-arguments "--hyperlinked-source --quickjump" \
+            --coverage --no-run-tests
           echo "doc_path=$(stack path --stack-yaml=stack-apps.yaml --no-haddock-deps --local-doc-root)" \
             >> "${GITHUB_OUTPUT}"
 

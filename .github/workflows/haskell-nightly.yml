@@ -26,26 +26,22 @@ jobs:
       - uses: actions/checkout@v4
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
-      - name: Cache Stack
-        id: cache-stack-unix
-        uses: actions/cache@v4
+      - name: Restore Stack on Unix
+        id: cache-stack-unix-restore
+        uses: actions/cache/restore@v4
         with:
           path: ~/.stack
-          key: ${{ runner.os }}-stack-global--${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-          save-always: true
-          restore-keys: |
-            ${{ runner.os }}-stack-global--${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-global-
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
+          fail-on-cache-miss: true
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
-      - uses: actions/cache@v4
-        name: Cache .stack-work
+      - name: Restore .stack-work
+        id: cache-stack-work-restore
+        uses: actions/cache/restore@v4
         with:
           path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-work--${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-work-
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          fail-on-cache-miss: true
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - name: Setup stack
@@ -53,14 +49,6 @@ jobs:
         with:
           enable-stack: true
           stack-no-global: true
-        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
-
-      - name: Install dependencies
-        run: |
-          set -ex
-          # shellcheck disable=SC2086
-          stack --no-terminal test --stack-yaml=stack-apps.yaml --bench --only-dependencies
-          set +ex
         if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - name: Build and test

@@ -19,8 +19,6 @@ jobs:
       matrix:
         # os: [ubuntu-latest, macOS-latest, windows-latest]
         os: [ubuntu-latest]
-        plan:
-          - {resolver: ""}
         include:
           - os: ubuntu-latest
             apt-get: graphviz texlive-base texlive-latex-base
@@ -35,40 +33,36 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Cache Stack on unix
-        id: cache-stack-unix
-        uses: actions/cache@v4
+      - name: Restore Stack on Unix
+        id: cache-stack-unix-restore
+        uses: actions/cache/restore@v4
         with:
           path: ~/.stack
-          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-          save-always: true
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}
             ${{ runner.os }}-stack-global-
         if: contains(matrix.os, 'windows') == false
 
-      - name: Cache Stack on windows
-        id: cache-stack-windows
-        uses: actions/cache@v4
+      - name: Restore Stack on Windows
+        id: cache-stack-windows-restore
+        uses: actions/cache/restore@v4
         with:
           path: ~/AppData/Local/Programs/stack
-          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-          save-always: true
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}
             ${{ runner.os }}-stack-global-
-        if: contains(matrix.os, 'windows')
+        if: contains(matrix.os, 'windows') == false
 
-      - uses: actions/cache@v4
-        name: Cache .stack-work
+      - name: Restore .stack-work
+        id: cache-stack-work-restore
+        uses: actions/cache/restore@v4
         with:
           path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
-            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
-            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}
             ${{ runner.os }}-stack-work-
 
       - name: Setup stack
@@ -81,18 +75,14 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --bench --only-dependencies
+          stack --no-terminal test --stack-yaml=stack-apps.yaml --bench --only-dependencies
           set +ex
-        env:
-          ARGS: ${{ matrix.plan.resolver }}
         if: contains(matrix.os, 'windows') == false
 
       - name: Install dependencies on windows
         shell: powershell
         run: |
-          stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --bench --only-dependencies
-        env:
-          ARGS: ${{ matrix.plan.resolver }}
+          stack --no-terminal test --stack-yaml=stack-apps.yaml --bench --only-dependencies
         if: contains(matrix.os, 'windows')
 
       - name: Build and test on unix
@@ -100,23 +90,19 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal $ARGS test --stack-yaml=stack-apps.yaml --coverage \
+          stack --no-terminal test --stack-yaml=stack-apps.yaml --coverage \
             --bench --no-run-benchmarks --haddock --no-haddock-deps \
             --test-arguments="--skip-needs-tuning --times --maximum-generated-tests=50"
           set +ex
-        env:
-          ARGS: ${{ matrix.plan.resolver }}
         if: contains(matrix.os, 'windows') == false
 
       - name: Build and test on windows
         id: test-windows
         shell: powershell
         run: |
-          stack --no-terminal ${env:ARGS} test --stack-yaml=stack-apps.yaml --coverage \
+          stack --no-terminal test --stack-yaml=stack-apps.yaml --coverage \
             --bench --no-run-benchmarks --haddock --no-haddock-deps \
             --test-arguments="--skip-needs-tuning --times --maximum-generated-tests=50"
-        env:
-          ARGS: ${{ matrix.plan.resolver }}
         if: contains(matrix.os, 'windows')
 
       - name: Archive test artifacts
@@ -125,3 +111,32 @@ jobs:
           name: test-results
           path: artifacts
         if: ${{ failure() && (steps.test-unix.conclusion == 'failure' || steps.test-windows.conclusion == 'failure') }}
+
+      - name: Cache Stack on Unix
+        id: cache-stack-unix-save
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.stack
+          key: ${{ steps.cache-stack-unix-restore.outputs.cache-primary-key }}
+        if: >-
+          always() && contains(matrix.os, 'windows') == false
+          && steps.cache-stack-unix-restore.outputs.cache-hit != 'true'
+
+      - name: Cache Stack on Windows
+        id: cache-stack-windows-save
+        uses: actions/cache/save@v4
+        with:
+          path: ~/AppData/Local/Programs/stack
+          key: ${{ steps.cache-stack-windows-restore.outputs.cache-primary-key }}
+        if: >-
+          always() && contains(matrix.os, 'windows')
+          && steps.cache-stack-windows-restore.outputs.cache-hit != 'true'
+
+      - name: Cache .stack-work
+        id: cache-stack-work-save
+        uses: actions/cache/save@v4
+        with:
+          path: .stack-work
+          key: ${{ steps.cache-stack-work-restore.outputs.cache-primary-key }}
+        if: >-
+          always() && steps.cache-stack-work-restore.outputs.cache-hit != 'true'
