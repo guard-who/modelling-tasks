@@ -119,7 +119,7 @@ jobs:
           path: ~/.stack
           key: ${{ steps.cache-stack-unix-restore.outputs.cache-primary-key }}
         if: >-
-          always() && contains(matrix.os, 'windows') == false
+          contains(matrix.os, 'windows') == false
           && steps.cache-stack-unix-restore.outputs.cache-hit != 'true'
 
       - name: Cache Stack on Windows
@@ -129,7 +129,7 @@ jobs:
           path: ~/AppData/Local/Programs/stack
           key: ${{ steps.cache-stack-windows-restore.outputs.cache-primary-key }}
         if: >-
-          always() && contains(matrix.os, 'windows')
+          contains(matrix.os, 'windows')
           && steps.cache-stack-windows-restore.outputs.cache-hit != 'true'
 
       - name: Cache .stack-work
@@ -139,4 +139,4 @@ jobs:
           path: .stack-work
           key: ${{ steps.cache-stack-work-restore.outputs.cache-primary-key }}
         if: >-
-          always() && steps.cache-stack-work-restore.outputs.cache-hit != 'true'
+          steps.cache-stack-work-restore.outputs.cache-hit != 'true'

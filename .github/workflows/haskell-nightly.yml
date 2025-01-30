@@ -6,8 +6,11 @@ on:
     - cron: '0 3 * * *' # daily at 3 am
 
 jobs:
-  build_and_test:
+  check:
     runs-on: ubuntu-latest
+
+    outputs:
+      has-changes: ${{ steps.new-commits.outputs.has-new-commits }}
 
     steps:
       - name: Check for new commits today
@@ -17,14 +20,19 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           seconds: 86400 # One day in seconds
 
+  build_and_test:
+    needs: check
+    if: needs.check.outputs.has-changes == 'true'
+
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Install Packages
         uses: delgurth/get-package@v6
         with:
           apt-get: graphviz texlive-base texlive-latex-base
-        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - uses: actions/checkout@v4
-        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - name: Restore Stack on Unix
         id: cache-stack-unix-restore
@@ -33,7 +41,6 @@ jobs:
           path: ~/.stack
           key: ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
           fail-on-cache-miss: true
-        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - name: Restore .stack-work
         id: cache-stack-work-restore
@@ -42,14 +49,12 @@ jobs:
           path: .stack-work
           key: ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
           fail-on-cache-miss: true
-        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - name: Setup stack
         uses: haskell-actions/setup@v2
         with:
           enable-stack: true
           stack-no-global: true
-        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - name: Build and test
         id: test-unix
@@ -60,14 +65,10 @@ jobs:
             --bench --no-run-benchmarks --haddock --no-haddock-deps \
             --test-arguments="--times"
           set +ex
-        if: ${{ steps.new-commits.outputs.has-new-commits == 'true' }}
 
       - name: Archive test artifacts
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: artifacts
-        if: >-
-          ${{ steps.new-commits.outputs.has-new-commits == 'true'
-          && failure()
-          && steps.test-unix.conclusion == 'failure' }}
+        if: ${{ failure() && steps.test-unix.conclusion == 'failure' }}
