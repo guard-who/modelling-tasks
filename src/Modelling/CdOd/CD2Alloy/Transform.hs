@@ -48,6 +48,7 @@ also the following Alloy predicates, have been inlined
  * @Composition@
 -}
 module Modelling.CdOd.CD2Alloy.Transform (
+  ExtendsAnd (..),
   LinguisticReuse (..),
   Parts {- only for legacy-apps: -} (..),
   combineParts,
@@ -69,7 +70,7 @@ import Modelling.CdOd.Types (
   )
 
 import Data.Bifunctor                   (first)
-import Data.Foldable                    (Foldable (toList))
+import Data.Foldable                    (Foldable (toList), find)
 import Data.Function                    ((&))
 import Data.List                        ((\\), intercalate, union)
 import Data.List.NonEmpty               (NonEmpty ((:|)))
@@ -102,6 +103,17 @@ Conciseness is increased when relying more on Alloy language features.
 data LinguisticReuse
   = None
   -- ^ not at all
+  | ExtendsAnd !ExtendsAnd
+  -- ^ use extends for inheritance
+  deriving Show
+
+{-|
+What further to reuse than extends
+-}
+data ExtendsAnd
+  = NothingMore
+  -- ^ i.e. only extends
+  deriving Show
 
 {-|
 Generates Alloy code to generate object diagrams for a given class diagram.
@@ -134,7 +146,7 @@ transform
   -- ^ a time stamp
   -> Parts
 transform
-  None
+  linguisticReuse
   ClassDiagram {classNames, relationships}
   maybeAllRelationshipNames
   abstractClassNames
@@ -224,7 +236,7 @@ fact SizeConstraints {
     maybeLow l x = if x <= l then Nothing else Just x
     part2 = [i|
 // Classes
-#{unlines (classSigs classNames)}
+#{unlines (classSigs linguisticReuse relationships classNames)}
 |] -- Figure 2.1, Rule 1, part 1
     part3 = [i|
 ///////////////////////////////////////////////////
@@ -365,8 +377,23 @@ maximumLimitOf = \case
     maximumLimit l1 l2 = max (maximumLinking l1) (maximumLinking l2)
     maximumLinking LimitedLinking {limits = (low, high)} = fromMaybe low high
 
-classSigs :: [String] -> [String]
-classSigs = map (\name -> "sig " ++ name ++ " extends Object {}")
+classSigs
+  :: LinguisticReuse
+  -> [Relationship String String]
+  -> [String]
+  -> [String]
+classSigs linguisticReuse relationships = map classSig
+  where
+    classSig :: String -> String
+    classSig name = case linguisticReuse of
+      None -> [i|sig #{name} extends Object {}|]
+      ExtendsAnd NothingMore ->
+        (\super -> [i|sig #{name} extends #{super} {}|])
+        $ maybe "Object" superClass
+        $ find (hasSuperClass name) relationships
+    hasSuperClass name = \case
+      Inheritance {..} | subClass == name -> True
+      _ -> False
 
 -- Figure 2.1, Rule 1, part 2, alternative implementation
 -- (SubsCD - inlined)
