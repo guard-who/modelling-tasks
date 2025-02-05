@@ -111,7 +111,11 @@ checkMatchAdConfig' MatchAdConfig {
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
-    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 Activity Final Node"
+    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to 'Just True' prohibits having more than 1 Activity Final Node"
+  | noActivityFinalInForkBlocks == Just False && activityFinalNodes adConfig < 1
+    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to 'Just False' requires having at least 1 Activity Final Node"
+  | noActivityFinalInForkBlocks == Nothing && activityFinalNodes adConfig < 1
+    = Just "Having no Activity Final Node means setting the parameter 'noActivityFinalInForkBlocks' to Nothing makes no sense."
   | otherwise
     = Nothing
 
