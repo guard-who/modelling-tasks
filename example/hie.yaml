@@ -7,5 +7,5 @@ cradle:
         component: "modelling-tasks:lib"
       - path: "src"
         component: "modelling-tasks-examples:lib"
-      - path: "src"
-        component: "modelling-tasks-examples:lib:modelling-tasks-examples-test"
+      - path: "test"
+        component: "modelling-tasks-examples:test:modelling-tasks-examples-test"
