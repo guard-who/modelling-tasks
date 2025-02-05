@@ -303,3 +303,74 @@ task2024_11 = NameCdErrorConfig {
   timeout = Nothing,
   useNames = False
   }
+
+{-|
+points: 0.08
+average generation time per instance: ?:??min
+CPU usage: ???%
+-}
+task2024_54 :: NameCdErrorConfig
+task2024_54 = NameCdErrorConfig {
+  allowedProperties = AllowedProperties {
+    compositionCycles = False,
+    doubleRelationships = True,
+    inheritanceCycles = False,
+    invalidInheritanceLimits = True,
+    reverseInheritances = False,
+    reverseRelationships = False,
+    selfInheritances = False,
+    selfRelationships = False,
+    wrongAssociationLimits = False,
+    wrongCompositionLimits = False
+    },
+  articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = CdConstraints {
+    anyCompositionCyclesInvolveInheritances = Nothing
+    },
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (2, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (2, Just 2),
+    inheritanceLimits = (0, Just 1),
+    relationshipLimits = (6, Just 7)
+    },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Nothing
+      },
+    printNames = True,
+    printNavigations = False
+    },
+  maxInstances = Just 4000,
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 0 % 1,
+    completelyInhabited = Just True,
+    hasLimitedIsolatedObjects = False,
+    hasSelfLoops = Just False,
+    usesEveryRelationshipName = Just True
+    },
+  possibleReasons = [
+    PreDefined CompositionCycles,
+    PreDefined DoubleRelationships,
+    PreDefined InheritanceCycles,
+    PreDefined InvalidInheritanceLimits,
+    PreDefined MultipleInheritances,
+    PreDefined ReverseInheritances,
+    PreDefined ReverseRelationships,
+    PreDefined SelfInheritances,
+    PreDefined SelfRelationships,
+    PreDefined WrongAssociationLimits,
+    PreDefined WrongCompositionLimits
+    ],
+  printSolution = True,
+  reasonsPerInstance = NumberOfReasons {
+    customReasons = 0,
+    preDefinedInvalid = 6,
+    preDefinedValid = 4
+    },
+  timeout = Nothing,
+  useNames = True
+  }

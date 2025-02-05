@@ -89,6 +89,7 @@ import Modelling.CdOd.NameCdError.Config (
   task2023_10,
   task2024_10,
   task2024_11,
+  task2024_54,
   )
 import Modelling.CdOd.NameCdError.Instance (
   task2024_14,
@@ -112,11 +113,14 @@ import Modelling.CdOd.SelectValidCd.Config (
   task2024_06,
   task2024_07,
   task2024_08,
+  task2024_51,
+  task2024_52,
   )
 import Modelling.CdOd.SelectValidCd.Instance (
   task2024_05,
   task2024_06picked,
   task2024_09,
+  task2024_53,
   )
 import Modelling.PetriNet.Concurrency (
   checkFindConcurrencyConfig,
@@ -323,3 +327,11 @@ spec =
         checkFindAuxiliaryPetriNodesConfig task2024_47 `shouldBe` Nothing
       it "task48" $
         checkFindAuxiliaryPetriNodesConfig task2024_48 `shouldBe` Nothing
+      it "task51" $
+        checkSelectValidCdConfig task2024_51 `shouldBe` Nothing
+      it "task52" $
+        checkSelectValidCdConfig task2024_52 `shouldBe` Nothing
+      it "task53" $
+        checkSelectValidCdInstance (taskInstance task2024_53) `shouldBe` Nothing
+      it "task54" $
+        checkNameCdErrorConfig task2024_54 `shouldBe` Nothing

@@ -867,3 +867,295 @@ task2024_09 = ShuffleInstance {
   allowLayoutMangling = True,
   shuffleNames = True
   }
+
+{-|
+points: 0.08
+-}
+task2024_53 :: ShuffleInstance SelectValidCdInstance
+task2024_53 = ShuffleInstance {
+  taskInstance = SelectValidCdInstance {
+    cdDrawSettings = CdDrawSettings {
+      omittedDefaults = OmittedDefaultMultiplicities {
+        aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+        associationOmittedDefaultMultiplicity = Just (0, Nothing),
+        compositionWholeOmittedDefaultMultiplicity = Nothing
+        },
+      printNames = False,
+      printNavigations = False
+      },
+    classDiagrams = listToFM [
+      (1, InValidOption {
+        hint = Left (Annotation {
+          annotated = Change {
+            add = Nothing,
+            remove = Just (Right (Composition {
+              compositionName = "u",
+              compositionPart =
+                LimitedLinking {linking = "E", limits = (1, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "B", limits = (1, Just 1)}
+              }))
+            },
+          annotation = DefiniteArticle
+          }),
+        option = AnyClassDiagram {
+          anyClassNames = ["E", "C", "B", "A", "D"],
+          anyRelationships = [
+            Right (Inheritance {subClass = "E", superClass = "C"}),
+            Right (Composition {
+              compositionName = "y",
+              compositionPart =
+                LimitedLinking {linking = "C", limits = (0, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "D", limits = (1, Just 1)}
+              }),
+            Right (Aggregation {
+              aggregationName = "t",
+              aggregationPart =
+                LimitedLinking {linking = "B", limits = (0, Just 2)},
+              aggregationWhole =
+                LimitedLinking {linking = "A", limits = (1, Just 2)}
+              }),
+            Right (Composition {
+              compositionName = "u",
+              compositionPart =
+                LimitedLinking {linking = "E", limits = (1, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "B", limits = (1, Just 1)}
+              }),
+            Right (Association {
+              associationName = "v",
+              associationFrom =
+                LimitedLinking {linking = "D", limits = (1, Just 1)},
+              associationTo =
+                LimitedLinking {linking = "B", limits = (1, Nothing)}
+              }),
+            Right (Aggregation {
+              aggregationName = "w",
+              aggregationPart =
+                LimitedLinking {linking = "A", limits = (0, Just 1)},
+              aggregationWhole =
+                LimitedLinking {linking = "C", limits = (1, Just 1)}
+              }),
+            Right (Inheritance {subClass = "D", superClass = "A"})
+            ]
+          }
+        }),
+      (2, InValidOption {
+        hint = Left (Annotation {
+          annotated = Change {
+            add = Nothing,
+            remove = Just (Right (Composition {
+              compositionName = "u",
+              compositionPart =
+                LimitedLinking {linking = "E", limits = (1, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "B", limits = (1, Just 2)}
+              }))
+            },
+          annotation = DefiniteArticle
+          }),
+        option = AnyClassDiagram {
+          anyClassNames = ["E", "C", "B", "D", "A"],
+          anyRelationships = [
+            Right (Inheritance {subClass = "E", superClass = "C"}),
+            Right (Inheritance {subClass = "D", superClass = "A"}),
+            Right (Composition {
+              compositionName = "y",
+              compositionPart =
+                LimitedLinking {linking = "D", limits = (0, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "C", limits = (0, Just 1)}
+              }),
+            Right (Aggregation {
+              aggregationName = "t",
+              aggregationPart =
+                LimitedLinking {linking = "B", limits = (0, Just 2)},
+              aggregationWhole =
+                LimitedLinking {linking = "A", limits = (1, Just 2)}
+              }),
+            Right (Association {
+              associationName = "r",
+              associationFrom =
+                LimitedLinking {linking = "D", limits = (1, Just 1)},
+              associationTo =
+                LimitedLinking {linking = "B", limits = (2, Nothing)}
+              }),
+            Right (Composition {
+              compositionName = "u",
+              compositionPart =
+                LimitedLinking {linking = "E", limits = (1, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "B", limits = (1, Just 2)}
+              }),
+            Right (Aggregation {
+              aggregationName = "x",
+              aggregationPart =
+                LimitedLinking {linking = "A", limits = (0, Just 1)},
+              aggregationWhole =
+                LimitedLinking {linking = "C", limits = (1, Just 2)}
+              })
+            ]
+          }
+        }),
+      (3, InValidOption {
+        hint = Right (ObjectDiagram {
+          objects = [
+            Object {isAnonymous = False, objectName = "c", objectClass = "C"},
+            Object {isAnonymous = False, objectName = "d", objectClass = "D"},
+            Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+            Object {isAnonymous = False, objectName = "e", objectClass = "E"},
+            Object {isAnonymous = False, objectName = "a", objectClass = "A"}
+            ],
+          links = [
+            Link {linkName = "z", linkFrom = "e", linkTo = "b"},
+            Link {linkName = "t", linkFrom = "b", linkTo = "d"},
+            Link {linkName = "x", linkFrom = "d", linkTo = "c"},
+            Link {linkName = "y", linkFrom = "c", linkTo = "d"},
+            Link {linkName = "x", linkFrom = "a", linkTo = "e"},
+            Link {linkName = "v", linkFrom = "d", linkTo = "b"}
+            ]
+          }),
+        option = AnyClassDiagram {
+          anyClassNames = ["E", "A", "B", "C", "D"],
+          anyRelationships = [
+            Right (Composition {
+              compositionName = "y",
+              compositionPart =
+                LimitedLinking {linking = "C", limits = (0, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "D", limits = (0, Just 1)}
+              }),
+            Right (Composition {
+              compositionName = "z",
+              compositionPart =
+                LimitedLinking {linking = "E", limits = (1, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "B", limits = (0, Just 1)}
+              }),
+            Right (Association {
+              associationName = "v",
+              associationFrom =
+                LimitedLinking {linking = "D", limits = (1, Just 1)},
+              associationTo =
+                LimitedLinking {linking = "B", limits = (1, Nothing)}
+              }),
+            Right (Inheritance {subClass = "D", superClass = "A"}),
+            Right (Inheritance {subClass = "E", superClass = "C"}),
+            Right (Aggregation {
+              aggregationName = "x",
+              aggregationPart =
+                LimitedLinking {linking = "A", limits = (0, Just 1)},
+              aggregationWhole =
+                LimitedLinking {linking = "C", limits = (1, Just 2)}
+              }),
+            Right (Aggregation {
+              aggregationName = "t",
+              aggregationPart =
+                LimitedLinking {linking = "B", limits = (0, Just 2)},
+              aggregationWhole =
+                LimitedLinking {linking = "A", limits = (1, Just 2)}
+              })
+            ]
+          }
+        }),
+      (4, InValidOption {
+        hint = Right (ObjectDiagram {
+          objects = [
+            Object {isAnonymous = False, objectName = "b", objectClass = "B"},
+            Object {isAnonymous = False, objectName = "a", objectClass = "A"},
+            Object {isAnonymous = False, objectName = "e", objectClass = "E"},
+            Object {isAnonymous = False, objectName = "c", objectClass = "C"},
+            Object {isAnonymous = False, objectName = "d", objectClass = "D"}
+            ],
+          links = [
+            Link {linkName = "y", linkFrom = "d", linkTo = "c"},
+            Link {linkName = "v", linkFrom = "d", linkTo = "b"},
+            Link {linkName = "s", linkFrom = "e", linkTo = "b"},
+            Link {linkName = "t", linkFrom = "b", linkTo = "d"},
+            Link {linkName = "x", linkFrom = "d", linkTo = "c"},
+            Link {linkName = "x", linkFrom = "a", linkTo = "e"}
+            ]
+          }),
+        option = AnyClassDiagram {
+          anyClassNames = ["C", "E", "B", "A", "D"],
+          anyRelationships = [
+            Right (Inheritance {subClass = "D", superClass = "A"}),
+            Right (Aggregation {
+              aggregationName = "t",
+              aggregationPart =
+                LimitedLinking {linking = "B", limits = (0, Just 2)},
+              aggregationWhole =
+                LimitedLinking {linking = "A", limits = (1, Just 2)}
+              }),
+            Right (Composition {
+              compositionName = "s",
+              compositionPart =
+                LimitedLinking {linking = "E", limits = (1, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "B", limits = (0, Just 1)}
+              }),
+            Right (Aggregation {
+              aggregationName = "x",
+              aggregationPart =
+                LimitedLinking {linking = "A", limits = (0, Just 1)},
+              aggregationWhole =
+                LimitedLinking {linking = "C", limits = (1, Just 2)}
+              }),
+            Right (Association {
+              associationName = "v",
+              associationFrom =
+                LimitedLinking {linking = "D", limits = (1, Just 1)},
+              associationTo =
+                LimitedLinking {linking = "B", limits = (1, Nothing)}
+              }),
+            Right (Inheritance {
+              subClass = "E",
+              superClass = "C"
+              }),
+            Right (Composition {
+              compositionName = "y",
+              compositionPart =
+                LimitedLinking {linking = "D", limits = (0, Nothing)},
+              compositionWhole =
+                LimitedLinking {linking = "C", limits = (0, Just 1)}
+              })
+            ]
+          }
+        })
+      ],
+    showExtendedFeedback = True,
+    showSolution = True,
+    taskText = [
+      Paragraph [
+        Translated (listToFM [
+          (English, "Consider the following class diagram candidates:"),
+          (German, "Betrachten Sie die folgenden Klassendiagrammkandidaten:")
+          ])
+        ],
+      Special CdCandidates,
+      Paragraph [
+        Translated (listToFM [
+          (English, "Which of these class diagram candidates are valid class diagrams?\nPlease state your answer by giving a list of numbers, indicating all valid class diagrams."),
+          (German, "Welche dieser Klassendiagrammkandidaten sind valide Klassendiagramme?\nBitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültigen Klassendiagramme enthält.")
+          ])
+        ],
+      Paragraph [
+        Translated (listToFM [
+          (English, "For example,"),
+          (German, "Zum Beispiel würde")
+          ]),
+        Code (listToFM [
+          (English, "[1, 2]"),
+          (German, "[1, 2]")
+          ]),
+        Translated (listToFM [
+          (English, "would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams."),
+          (German, "bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.")
+          ])
+        ]
+      ]
+    },
+  allowLayoutMangling = True,
+  shuffleNames = True
+  }
