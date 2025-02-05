@@ -68,7 +68,7 @@ import Control.Monad.Random (
   )
 import Data.List (sort)
 import Data.Map (Map)
-import Data.Maybe (isJust, fromJust)
+import Data.Maybe (isJust, isNothing, fromJust)
 import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
 import Modelling.Auxiliary.Output (addPretext)
@@ -114,7 +114,7 @@ checkMatchAdConfig' MatchAdConfig {
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to 'Just True' prohibits having more than 1 Activity Final Node"
   | noActivityFinalInForkBlocks == Just False && activityFinalNodes adConfig < 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to 'Just False' requires having at least 1 Activity Final Node"
-  | noActivityFinalInForkBlocks == Nothing && activityFinalNodes adConfig < 1
+  | isNothing noActivityFinalInForkBlocks && activityFinalNodes adConfig < 1
     = Just "Having no Activity Final Node means setting the parameter 'noActivityFinalInForkBlocks' to Nothing makes no sense."
   | otherwise
     = Nothing
