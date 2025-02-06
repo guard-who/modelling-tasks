@@ -208,3 +208,42 @@ task2024_16 = DifferentNamesConfig {
   timeout = Nothing,
   withObviousMapping = Nothing
   }
+
+{-|
+points: 0.08
+average generation time per instance: ?:??min
+CPU usage: ???%
+-}
+task2024_56 :: DifferentNamesConfig
+task2024_56 = DifferentNamesConfig {
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (2, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (2, Just 2),
+    inheritanceLimits = (3, Just 3),
+    relationshipLimits = (9, Just 9)
+    },
+  withNonTrivialInheritance = Just False,
+  maxInstances = Just 100,
+  objectConfig = ObjectConfig {
+    linkLimits = (14, Just 16),
+    linksPerObjectLimits = (2, Just 6),
+    objectLimits = (8, 10)
+    },
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 1,
+    completelyInhabited = Nothing,
+    hasLimitedIsolatedObjects = True,
+    hasSelfLoops = Just False,
+    usesEveryRelationshipName = Just True
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Nothing
+    },
+  printSolution = True,
+  timeout = Nothing,
+  withObviousMapping = Nothing
+  }

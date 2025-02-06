@@ -269,3 +269,126 @@ task2024_20 = MatchCdOdConfig {
   timeout = Nothing,
   withNonTrivialInheritance = Just True
   }
+
+{-|
+points: 0.08
+average generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_57 :: MatchCdOdConfig
+task2024_57 = MatchCdOdConfig {
+  allowedCdMutations = [
+    MutateRelationship ChangeLimit
+    ],
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (2, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (1, Just 1),
+    inheritanceLimits = (2, Just 2),
+    relationshipLimits = (7, Just 7)
+    },
+  maxInstances = Just 10000,
+  objectConfig = ObjectConfig {
+    linkLimits = (6, Just 8),
+    linksPerObjectLimits = (1, Just 4),
+    objectLimits = (6, 6)
+    },
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 4,
+    completelyInhabited = Nothing,
+    hasLimitedIsolatedObjects = True,
+    hasSelfLoops = Nothing,
+    usesEveryRelationshipName = Nothing
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Nothing
+    },
+  printSolution = True,
+  timeout = Nothing,
+  withNonTrivialInheritance = Just False
+  }
+
+{-|
+points: 0.08
+average generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_58 :: MatchCdOdConfig
+task2024_58 = MatchCdOdConfig {
+  allowedCdMutations = [
+    MutateRelationship Flip
+    ],
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (1, Just 1),
+    associationLimits = (2, Just 2),
+    compositionLimits = (2, Just 2),
+    inheritanceLimits = (2, Just 2),
+    relationshipLimits = (7, Just 7)
+    },
+  maxInstances = Just 10000,
+  objectConfig = ObjectConfig {
+    linkLimits = (5, Just 6),
+    linksPerObjectLimits = (0, Just 4),
+    objectLimits = (5, 6)
+    },
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 3,
+    completelyInhabited = Just True,
+    hasLimitedIsolatedObjects = True,
+    hasSelfLoops = Just False,
+    usesEveryRelationshipName = Nothing
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Nothing
+    },
+  printSolution = True,
+  timeout = Nothing,
+  withNonTrivialInheritance = Just True
+  }
+
+{-|
+points: 0.08
+average generation time per instance: ?:??min
+CPU usage: ???%
+-}
+task2024_59 :: MatchCdOdConfig
+task2024_59 = MatchCdOdConfig {
+  allowedCdMutations = [
+    MutateRelationship ChangeKind
+    ],
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (1, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (1, Just 2),
+    inheritanceLimits = (2, Just 2),
+    relationshipLimits = (7, Just 7)
+    },
+  maxInstances = Just 10000,
+  objectConfig = ObjectConfig {
+    linkLimits = (7, Just 8),
+    linksPerObjectLimits = (1, Just 4),
+    objectLimits = (6, 8)
+    },
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 3,
+    completelyInhabited = Nothing,
+    hasLimitedIsolatedObjects = True,
+    hasSelfLoops = Just False,
+    usesEveryRelationshipName = Just True
+    },
+  omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
+    aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+    associationOmittedDefaultMultiplicity = Just (0, Nothing),
+    compositionWholeOmittedDefaultMultiplicity = Nothing
+    },
+  printSolution = True,
+  timeout = Nothing,
+  withNonTrivialInheritance = Just False
+  }

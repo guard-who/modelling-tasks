@@ -68,6 +68,7 @@ import Modelling.CdOd.DifferentNames.Config (
   task2023_25,
   task2024_15,
   task2024_16,
+  task2024_56,
   )
 import Modelling.CdOd.MatchCdOd (
   checkMatchCdOdConfig,
@@ -79,6 +80,9 @@ import Modelling.CdOd.MatchCdOd.Config (
   task2024_18,
   task2024_19,
   task2024_20,
+  task2024_57,
+  task2024_58,
+  task2024_59,
   )
 import Modelling.CdOd.NameCdError (
   checkNameCdErrorConfig,
@@ -102,6 +106,7 @@ import Modelling.CdOd.RepairCd.Config (
   task2023_08,
   task2024_12,
   task2024_13,
+  task2024_55,
   )
 import Modelling.CdOd.SelectValidCd (
   checkSelectValidCdConfig,
@@ -335,3 +340,13 @@ spec =
         checkSelectValidCdInstance (taskInstance task2024_53) `shouldBe` Nothing
       it "task54" $
         checkNameCdErrorConfig task2024_54 `shouldBe` Nothing
+      it "task55" $
+        checkRepairCdConfig task2024_55 `shouldBe` Nothing
+      it "task56" $
+        checkDifferentNamesConfig task2024_56 `shouldBe` Nothing
+      it "task57" $
+        checkMatchCdOdConfig task2024_57 `shouldBe` Nothing
+      it "task58" $
+        checkMatchCdOdConfig task2024_58 `shouldBe` Nothing
+      it "task59" $
+        checkMatchCdOdConfig task2024_59 `shouldBe` Nothing

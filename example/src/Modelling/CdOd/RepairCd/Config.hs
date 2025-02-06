@@ -256,3 +256,62 @@ task2024_13 = RepairCdConfig {
   timeout = Nothing,
   useNames = False
   }
+
+{-|
+points: 0.08
+average generation time per instance: ?:??:??h
+CPU usage: ???%
+-}
+task2024_55 :: RepairCdConfig
+task2024_55 = RepairCdConfig {
+  allowedCdMutations = [
+    AddRelationship,
+    MutateRelationship ChangeKind,
+    MutateRelationship Flip
+    ],
+  allowedProperties = AllowedProperties {
+    compositionCycles = False,
+    doubleRelationships = True,
+    inheritanceCycles = False,
+    invalidInheritanceLimits = False,
+    reverseInheritances = False,
+    reverseRelationships = False,
+    selfInheritances = False,
+    selfRelationships = False,
+    wrongAssociationLimits = True,
+    wrongCompositionLimits = False
+    },
+  articleToUse = UseDefiniteArticleWherePossible,
+  cdConstraints = CdConstraints {
+    anyCompositionCyclesInvolveInheritances = Nothing
+    },
+  classConfig = ClassConfig {
+    classLimits = (5, 5),
+    aggregationLimits = (1, Just 2),
+    associationLimits = (2, Just 2),
+    compositionLimits = (1, Just 2),
+    inheritanceLimits = (1, Just 1),
+    relationshipLimits = (5, Just 7)
+    },
+  drawSettings = CdDrawSettings {
+    omittedDefaults = OmittedDefaultMultiplicities {
+      aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
+      associationOmittedDefaultMultiplicity = Just (0, Nothing),
+      compositionWholeOmittedDefaultMultiplicity = Nothing
+      },
+    printNames = True,
+    printNavigations = False
+    },
+  maxInstances = Just 4000,
+  objectProperties = ObjectProperties {
+    anonymousObjectProportion = 1 % 3,
+    completelyInhabited = Just True,
+    hasLimitedIsolatedObjects = False,
+    hasSelfLoops = Nothing,
+    usesEveryRelationshipName = Just True
+    },
+  printExtendedFeedback = True,
+  printSolution = True,
+  timeout = Nothing,
+  useNames = True
+  }
