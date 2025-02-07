@@ -84,3 +84,19 @@ CPU usage: 113%
 -}
 task2024_42 :: EnterASConfig
 task2024_42 = task2023_36
+
+{-|
+points: 0.08
+average generation time per instance: ?:??min
+CPU usage: ???%
+-}
+task2024_68 :: EnterASConfig
+task2024_68 = task2024_41
+
+{-|
+points: 0.08
+average generation time per instance: ?:??min
+CPU usage: ???%
+-}
+task2024_69 :: EnterASConfig
+task2024_69 = task2023_36

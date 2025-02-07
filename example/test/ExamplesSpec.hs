@@ -10,6 +10,8 @@ import Modelling.ActivityDiagram.EnterAs.Config (
   task2023_36,
   task2024_41,
   task2024_42,
+  task2024_68,
+  task2024_69,
   )
 import Modelling.ActivityDiagram.FindAuxiliaryPetriNodes (
   checkFindAuxiliaryPetriNodesConfig,
@@ -19,6 +21,8 @@ import Modelling.ActivityDiagram.FindAuxiliaryPetriNodes.Config (
   task2023_42,
   task2024_47,
   task2024_48,
+  task2024_72,
+  task2024_73,
   )
 import Modelling.ActivityDiagram.MatchAd (
   checkMatchAdConfig,
@@ -28,6 +32,7 @@ import Modelling.ActivityDiagram.MatchAd.Config (
   task2023_32,
   task2024_37,
   task2024_38,
+  task2024_67,
   )
 import Modelling.ActivityDiagram.MatchPetri (
   checkMatchPetriConfig,
@@ -37,6 +42,8 @@ import Modelling.ActivityDiagram.MatchPetri.Config (
   task2023_40,
   task2024_45,
   task2024_46,
+  task2024_70,
+  task2024_71,
   )
 import Modelling.ActivityDiagram.SelectAS (
   checkSelectASConfig,
@@ -365,3 +372,17 @@ spec =
         checkFindConflictPlacesConfig task2024_65 `shouldBe` Nothing
       it "task66" $
         checkFindConflictPlacesConfig task2024_66 `shouldBe` Nothing
+      it "task67" $
+        checkMatchAdConfig task2024_67 `shouldBe` Nothing
+      it "task68" $
+        checkEnterASConfig task2024_68 `shouldBe` Nothing
+      it "task69" $
+        checkEnterASConfig task2024_69 `shouldBe` Nothing
+      it "task70" $
+        checkMatchPetriConfig task2024_70 `shouldBe` Nothing
+      it "task71" $
+        checkMatchPetriConfig task2024_71 `shouldBe` Nothing
+      it "task72" $
+        checkFindAuxiliaryPetriNodesConfig task2024_72 `shouldBe` Nothing
+      it "task73" $
+        checkFindAuxiliaryPetriNodesConfig task2024_73 `shouldBe` Nothing
