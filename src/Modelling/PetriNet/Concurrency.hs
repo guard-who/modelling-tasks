@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Modelling.PetriNet.Concurrency (
   checkFindConcurrencyConfig,
@@ -95,7 +96,7 @@ import Modelling.PetriNet.Reach.Type (
   parseTransitionPrec,
   )
 import Modelling.PetriNet.Types         (
-  AdvConfig,
+  AdvConfig (..),
   BasicConfig (..),
   ChangeConfig,
   Concurrent (Concurrent),
@@ -110,6 +111,7 @@ import Modelling.PetriNet.Types         (
   transitionPairShow,
   )
 
+import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadThrow)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
@@ -483,11 +485,22 @@ parseConcurrency inst = do
 
 checkFindConcurrencyConfig :: FindConcurrencyConfig -> Maybe String
 checkFindConcurrencyConfig FindConcurrencyConfig {
+  advConfig,
   basicConfig,
   changeConfig,
   graphConfig
   }
   = checkConfigForFind basicConfig changeConfig graphConfig
+  <|> additionalCheck basicConfig advConfig
+  where
+    additionalCheck BasicConfig {..} AdvConfig {..}
+      | Just True <- presenceOfSourceTransitions, atLeastActive > 2
+      = Just [iii|
+        'atLeastActive' has to be 2
+        when 'presenceOfSourceTransitions' is enforced
+        |]
+      | otherwise
+      = Nothing
 
 checkPickConcurrencyConfig :: PickConcurrencyConfig -> Maybe String
 checkPickConcurrencyConfig PickConcurrencyConfig {
