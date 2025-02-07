@@ -57,3 +57,22 @@ CPU usage: 99%
 -}
 task2024_28 :: DeadlockConfig
 task2024_28 = task2023_30
+
+{-|
+points: 0.08
+-}
+task2024_61 :: DeadlockConfig
+task2024_61 = DeadlockConfig {
+  numPlaces = 4,
+  numTransitions = 4,
+  capacity = Unbounded,
+  drawCommands = [Circo],
+  maxTransitionLength = 8,
+  minTransitionLength = 8,
+  postconditionsRange = (1, Just 2),
+  preconditionsRange = (1, Just 2),
+  printSolution = True,
+  rejectLongerThan = Just 8,
+  showLengthHint = True,
+  showMinLengthHint = True
+  }

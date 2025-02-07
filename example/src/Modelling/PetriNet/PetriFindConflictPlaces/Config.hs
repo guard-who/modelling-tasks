@@ -175,3 +175,150 @@ task2024_36 = FindConflictConfig {
     timeout = Nothing
     }
   }
+
+{-|
+points: 0.08
+average generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_64 :: FindConflictConfig
+task2024_64 = FindConflictConfig {
+  basicConfig = BasicConfig {
+    places = 6,
+    transitions = 5,
+    atLeastActive = 3,
+    flowOverall = (14, 16),
+    maxTokensPerPlace = 2,
+    maxFlowPerEdge = 2,
+    tokensOverall = (2, 7),
+    isConnected = Just True
+    },
+  advConfig = AdvConfig {
+    presenceOfSelfLoops = Just False,
+    presenceOfSinkTransitions = Just True,
+    presenceOfSourceTransitions = Just False
+    },
+  changeConfig = ChangeConfig {
+    tokenChangeOverall = 2,
+    maxTokenChangePerPlace = 1,
+    flowChangeOverall = 2,
+    maxFlowChangePerEdge = 1
+    },
+  conflictConfig = ConflictConfig {
+    addConflictCommonPreconditions = Just True,
+    withConflictDistractors = Just True,
+    conflictDistractorAddExtraPreconditions = Just False,
+    conflictDistractorOnlyConflictLike = True,
+    conflictDistractorOnlyConcurrentLike = False
+    },
+  graphConfig = GraphConfig {
+    graphLayouts = [Neato],
+    hidePlaceNames = False,
+    hideTransitionNames = False,
+    hideWeight1 = True
+    },
+  printSolution = True,
+  uniqueConflictPlace = Just True,
+  alloyConfig = AlloyConfig {
+    maxInstances = Just 2000,
+    timeout = Nothing
+    }
+  }
+
+{-|
+points: 0.08
+average generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_65 :: FindConflictConfig
+task2024_65 = FindConflictConfig {
+  basicConfig = BasicConfig {
+    places = 6,
+    transitions = 5,
+    atLeastActive = 3,
+    flowOverall = (14, 16),
+    maxTokensPerPlace = 2,
+    maxFlowPerEdge = 2,
+    tokensOverall = (2, 7),
+    isConnected = Just True
+    },
+  advConfig = AdvConfig {
+    presenceOfSelfLoops = Just True,
+    presenceOfSinkTransitions = Just True,
+    presenceOfSourceTransitions = Just False
+    },
+  changeConfig = ChangeConfig {
+    tokenChangeOverall = 2,
+    maxTokenChangePerPlace = 1,
+    flowChangeOverall = 2,
+    maxFlowChangePerEdge = 1
+    },
+  conflictConfig = ConflictConfig {
+    addConflictCommonPreconditions = Just False,
+    withConflictDistractors = Just True,
+    conflictDistractorAddExtraPreconditions = Just True,
+    conflictDistractorOnlyConflictLike = True,
+    conflictDistractorOnlyConcurrentLike = False
+    },
+  graphConfig = GraphConfig {
+    graphLayouts = [Neato],
+    hidePlaceNames = False,
+    hideTransitionNames = False,
+    hideWeight1 = True
+    },
+  printSolution = True,
+  uniqueConflictPlace = Just False,
+  alloyConfig = AlloyConfig {
+    maxInstances = Just 2000,
+    timeout = Nothing
+    }
+  }
+
+{-|
+points: 0.08
+average generation time per instance: ??:??min
+CPU usage: ???%
+-}
+task2024_66 :: FindConflictConfig
+task2024_66 = FindConflictConfig {
+  basicConfig = BasicConfig {
+    places = 6,
+    transitions = 6,
+    atLeastActive = 4,
+    flowOverall = (16, 18),
+    maxTokensPerPlace = 2,
+    maxFlowPerEdge = 2,
+    tokensOverall = (3, 5),
+    isConnected = Just True
+    },
+  advConfig = AdvConfig {
+    presenceOfSelfLoops = Just False,
+    presenceOfSinkTransitions = Just True,
+    presenceOfSourceTransitions = Just False
+    },
+  changeConfig = ChangeConfig {
+    tokenChangeOverall = 2,
+    maxTokenChangePerPlace = 1,
+    flowChangeOverall = 2,
+    maxFlowChangePerEdge = 1
+    },
+  conflictConfig = ConflictConfig {
+    addConflictCommonPreconditions = Just True,
+    withConflictDistractors = Just True,
+    conflictDistractorAddExtraPreconditions = Just True,
+    conflictDistractorOnlyConflictLike = False,
+    conflictDistractorOnlyConcurrentLike = True
+    },
+  graphConfig = GraphConfig {
+    graphLayouts = [Neato],
+    hidePlaceNames = False,
+    hideTransitionNames = False,
+    hideWeight1 = True
+    },
+  printSolution = True,
+  uniqueConflictPlace = Just True,
+  alloyConfig = AlloyConfig {
+    maxInstances = Just 2000,
+    timeout = Nothing
+    }
+  }

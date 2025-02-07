@@ -145,6 +145,8 @@ import Modelling.PetriNet.PetriFindConcurrency.Config (
   task2023_23,
   task2024_32,
   task2024_33,
+  task2024_62,
+  task2024_63,
   )
 import Modelling.PetriNet.PetriFindConflictPlaces.Config (
   task2023_24,
@@ -152,6 +154,9 @@ import Modelling.PetriNet.PetriFindConflictPlaces.Config (
   task2024_34,
   task2024_35,
   task2024_36,
+  task2024_64,
+  task2024_65,
+  task2024_66,
   )
 import Modelling.PetriNet.PetriGraphToMath.Config (
   task2023_17,
@@ -350,3 +355,13 @@ spec =
         checkMatchCdOdConfig task2024_58 `shouldBe` Nothing
       it "task59" $
         checkMatchCdOdConfig task2024_59 `shouldBe` Nothing
+      it "task62" $
+        checkFindConcurrencyConfig task2024_62 `shouldBe` Nothing
+      it "task63" $
+        checkFindConcurrencyConfig task2024_63 `shouldBe` Nothing
+      it "task64" $
+        checkFindConflictPlacesConfig task2024_64 `shouldBe` Nothing
+      it "task65" $
+        checkFindConflictPlacesConfig task2024_65 `shouldBe` Nothing
+      it "task66" $
+        checkFindConflictPlacesConfig task2024_66 `shouldBe` Nothing

@@ -319,7 +319,7 @@ task2024_08 = SelectValidCdConfig {
   }
 
 {-|
-points: 0.8
+points: 0.08
 average generation time per instance: ?:??h
 CPU usage: ???%
 -}
