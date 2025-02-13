@@ -494,10 +494,10 @@ checkFindConcurrencyConfig FindConcurrencyConfig {
   <|> additionalCheck basicConfig advConfig
   where
     additionalCheck BasicConfig {..} AdvConfig {..}
-      | Just True <- presenceOfSourceTransitions, atLeastActive > 2
+      | Just False /= presenceOfSourceTransitions, atLeastActive > 2
       = Just [iii|
-        'atLeastActive' has to be 2
-        when 'presenceOfSourceTransitions' is enforced
+        When 'atLeastActive' is greater than 2
+        'presenceOfSourceTransitions' has to be 'Just False'
         |]
       | otherwise
       = Nothing
