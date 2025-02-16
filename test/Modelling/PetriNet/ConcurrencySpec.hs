@@ -80,7 +80,7 @@ spec = do
   where
     findConfigs' = validFindConcurrencyConfigs
       validFinds
-      (AdvConfig Nothing Nothing Nothing)
+      (AdvConfig Nothing Nothing (Just False))
     findConfigs = validAdvConfigs >>= validFindConcurrencyConfigs validFinds
     pickConfigs = validPickConcurrencyConfigs validPicks
     validFinds = validConfigsForFind 0 configDepth
@@ -111,12 +111,17 @@ validFindConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> AdvConfig
   -> [FindConcurrencyConfig]
-validFindConcurrencyConfigs cs advancedConfig =
+validFindConcurrencyConfigs cs advancedConfig = 
+ filter 
+ (\FindConcurrencyConfig{basicConfig = BasicConfig{..}, advConfig = AdvConfig{..}}
+  -> presenceOfSourceTransitions == Just False || atLeastActive == 2)
+ (
   uncurry (`FindConcurrencyConfig` advancedConfig)
     <$> cs
     ?? validGraphConfig
     ?? False
     ?? alloyTestConfig
+ )
 
 validPickConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
