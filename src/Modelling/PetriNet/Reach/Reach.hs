@@ -48,7 +48,7 @@ import Modelling.PetriNet.Reach.Type (
 
 import Control.Applicative              (Alternative)
 import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad                    (forM)
+import Control.Monad                    (forM, when)
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Extra              (whenJust)
 import Control.OutputCapable.Blocks (
@@ -172,7 +172,7 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
       st1, ", danach ", st2, ", und schließlich ", st3,
       " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
       ]
-  whenJust lengthHint $ \count -> paragraph $ translate $ do
+  whenJust lengthHint $ \count -> when (noLonger /= Just count) $ paragraph $ translate $ do
     english [i|Hint: There is a solution with not more than #{count} steps.|]
     german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{count} Schritten.|]
   whenJust minLengthHint $ \count -> paragraph $ translate $ do
