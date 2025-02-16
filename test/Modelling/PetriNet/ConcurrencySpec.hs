@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 module Modelling.PetriNet.ConcurrencySpec where
 
@@ -26,8 +27,8 @@ import Modelling.PetriNet.Pick (
   pickTaskInstance,
   )
 import Modelling.PetriNet.Types (
-  AdvConfig (AdvConfig),
-  BasicConfig,
+  AdvConfig (..),
+  BasicConfig (..),
   ChangeConfig,
   Concurrent (Concurrent),
   FindConcurrencyConfig (..),
@@ -111,8 +112,8 @@ validFindConcurrencyConfigs
   :: [(BasicConfig, ChangeConfig)]
   -> AdvConfig
   -> [FindConcurrencyConfig]
-validFindConcurrencyConfigs cs advancedConfig = 
- filter 
+validFindConcurrencyConfigs cs advancedConfig =
+ filter
  (\FindConcurrencyConfig{basicConfig = BasicConfig{..}, advConfig = AdvConfig{..}}
   -> presenceOfSourceTransitions == Just False || atLeastActive == 2)
  (
