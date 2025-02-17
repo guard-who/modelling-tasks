@@ -1157,5 +1157,5 @@ task2024_53 = ShuffleInstance {
       ]
     },
   allowLayoutMangling = True,
-  shuffleNames = True
+  shuffleNames = False
   }
