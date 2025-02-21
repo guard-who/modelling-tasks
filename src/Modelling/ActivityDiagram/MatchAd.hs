@@ -78,7 +78,7 @@ data MatchAdInstance = MatchAdInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUmlConfig,
   showSolution :: Bool
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 data MatchAdConfig = MatchAdConfig {
   adConfig :: AdConfig,
@@ -86,7 +86,7 @@ data MatchAdConfig = MatchAdConfig {
   hideBranchConditions :: Bool,
   noActivityFinalInForkBlocks :: Maybe Bool,
   printSolution :: Bool
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 defaultMatchAdConfig :: MatchAdConfig
 defaultMatchAdConfig = MatchAdConfig {

@@ -81,7 +81,7 @@ data EnterASInstance = EnterASInstance {
   drawSettings :: PlantUmlConfig,
   sampleSequence :: [String],
   showSolution :: Bool
-} deriving (Generic, Show, Eq)
+} deriving (Eq, Generic, Read, Show)
 
 data EnterASConfig = EnterASConfig {
   adConfig :: AdConfig,
@@ -90,7 +90,7 @@ data EnterASConfig = EnterASConfig {
   objectNodeOnEveryPath :: Maybe Bool,
   answerLength :: !(Int, Int),
   printSolution :: Bool
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 defaultEnterASConfig :: EnterASConfig
 defaultEnterASConfig = EnterASConfig {

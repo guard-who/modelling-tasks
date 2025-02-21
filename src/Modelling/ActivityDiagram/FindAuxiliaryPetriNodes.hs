@@ -103,7 +103,7 @@ data FindAuxiliaryPetriNodesInstance = FindAuxiliaryPetriNodesInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUmlConfig,
   showSolution :: Bool
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
   adConfig :: AdConfig,
@@ -116,7 +116,7 @@ data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
   -- | Avoid having to add new sink transitions for representing finals
   avoidAddingSinksForFinals :: Maybe Bool,
   printSolution :: Bool
-} deriving (Generic, Show)
+} deriving (Generic, Read, Show)
 
 defaultFindAuxiliaryPetriNodesConfig :: FindAuxiliaryPetriNodesConfig
 defaultFindAuxiliaryPetriNodesConfig =
