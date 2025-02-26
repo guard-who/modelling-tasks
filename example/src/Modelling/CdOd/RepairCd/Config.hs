@@ -259,8 +259,8 @@ task2024_13 = RepairCdConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??:??h
-CPU usage: ???%
+average generation time per instance: 8:05:42h
+CPU usage: 267%
 -}
 task2024_55 :: RepairCdConfig
 task2024_55 = RepairCdConfig {

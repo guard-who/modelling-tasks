@@ -109,8 +109,8 @@ task2024_48 = FindAuxiliaryPetriNodesConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??min
-CPU usage: ???%
+average generation time per instance: 1:51min
+CPU usage: 122%
 -}
 task2024_72 :: FindAuxiliaryPetriNodesConfig
 task2024_72 = FindAuxiliaryPetriNodesConfig {
@@ -134,8 +134,8 @@ task2024_72 = FindAuxiliaryPetriNodesConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??min
-CPU usage: ???%
+average generation time per instance: 3:28min
+CPU usage: 112%
 -}
 task2024_73 :: FindAuxiliaryPetriNodesConfig
 task2024_73 = FindAuxiliaryPetriNodesConfig {

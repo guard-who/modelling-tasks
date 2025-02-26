@@ -306,8 +306,8 @@ task2024_11 = NameCdErrorConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??min
-CPU usage: ???%
+average generation time per instance: 0:26min
+CPU usage: 208%
 -}
 task2024_54 :: NameCdErrorConfig
 task2024_54 = NameCdErrorConfig {

@@ -87,16 +87,16 @@ task2024_42 = task2023_36
 
 {-|
 points: 0.08
-average generation time per instance: ?:??min
-CPU usage: ???%
+average generation time per instance: 6:11min
+CPU usage: 107%
 -}
 task2024_68 :: EnterASConfig
 task2024_68 = task2024_41
 
 {-|
 points: 0.08
-average generation time per instance: ?:??min
-CPU usage: ???%
+average generation time per instance: 5:16min
+CPU usage: 109%
 -}
 task2024_69 :: EnterASConfig
 task2024_69 = task2023_36

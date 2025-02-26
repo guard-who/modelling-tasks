@@ -211,8 +211,8 @@ task2024_16 = DifferentNamesConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??min
-CPU usage: ???%
+average generation time per instance: 1:07min
+CPU usage: 227%
 -}
 task2024_56 :: DifferentNamesConfig
 task2024_56 = DifferentNamesConfig {

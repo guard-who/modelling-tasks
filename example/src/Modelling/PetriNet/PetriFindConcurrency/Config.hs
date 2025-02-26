@@ -104,8 +104,8 @@ task2024_33 = FindConcurrencyConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??min
-CPU usage: ???%
+average generation time per instance: 9:29min
+CPU usage: 104%
 -}
 task2024_62 :: FindConcurrencyConfig
 task2024_62 = FindConcurrencyConfig {
@@ -145,8 +145,8 @@ task2024_62 = FindConcurrencyConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ??:??min
-CPU usage: ???%
+average generation time per instance: 24:39min
+CPU usage: 109%
 -}
 task2024_63 :: FindConcurrencyConfig
 task2024_63 = FindConcurrencyConfig {

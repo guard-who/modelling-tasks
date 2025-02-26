@@ -178,8 +178,8 @@ task2024_36 = FindConflictConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ??:??min
-CPU usage: ???%
+average generation time per instance: 20:35min
+CPU usage: 106%
 -}
 task2024_64 :: FindConflictConfig
 task2024_64 = FindConflictConfig {
@@ -227,8 +227,8 @@ task2024_64 = FindConflictConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ??:??min
-CPU usage: ???%
+average generation time per instance: 24:28min
+CPU usage: 107%
 -}
 task2024_65 :: FindConflictConfig
 task2024_65 = FindConflictConfig {
@@ -276,8 +276,8 @@ task2024_65 = FindConflictConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ??:??min
-CPU usage: ???%
+average generation time per instance: 28:17min
+CPU usage: 108%
 -}
 task2024_66 :: FindConflictConfig
 task2024_66 = FindConflictConfig {

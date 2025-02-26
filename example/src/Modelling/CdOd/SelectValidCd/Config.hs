@@ -320,8 +320,8 @@ task2024_08 = SelectValidCdConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??h
-CPU usage: ???%
+average generation time per instance: 13:52h
+CPU usage: 384%
 -}
 task2024_51 :: SelectValidCdConfig
 task2024_51 = SelectValidCdConfig {
@@ -379,8 +379,8 @@ task2024_51 = SelectValidCdConfig {
 
 {-|
 points: 0.08
-average generation time per instance: ?:??h
-CPU usage: ???%
+average generation time per instance: 11:32min
+CPU usage: 317%
 -}
 task2024_52 :: SelectValidCdConfig
 task2024_52 = SelectValidCdConfig {
