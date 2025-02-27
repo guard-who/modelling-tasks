@@ -478,7 +478,7 @@ petriNetConflictAlloy
   -> ConflictConfig
   -> Maybe Bool
   -> Either Bool AdvConfig
-  -- ^ Right for find task; Left for pick task
+  -- ^ Right for find task; Left for pick task (and the Bool in there says whether source transitions should be prohibited)
   -> String
 petriNetConflictAlloy basicC changeC conflictC uniqueConflictP specific
   = [i|module PetriNetConflict

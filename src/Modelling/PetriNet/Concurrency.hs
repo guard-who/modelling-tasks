@@ -412,7 +412,7 @@ petriNetConcurrencyAlloy
   :: BasicConfig
   -> ChangeConfig
   -> Either Bool AdvConfig
-  -- ^ Right for find task; Left for pick task
+  -- ^ Right for find task; Left for pick task (and the Bool in there says whether source transitions should be prohibited)
   -> String
 petriNetConcurrencyAlloy basicC changeC specific
   = [i|module PetriNetConcur
