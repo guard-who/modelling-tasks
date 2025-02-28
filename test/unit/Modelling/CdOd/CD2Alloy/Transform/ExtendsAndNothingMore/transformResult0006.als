@@ -55,7 +55,7 @@ sig D extends C {}
 
 pred cd1 {
 
-  Object = A + B + C + D
+  Object = B + C
 
   // Contents
 
@@ -65,7 +65,7 @@ pred cd1 {
   all o : A | #o.x >= 1 and #o.x =< 2
 
 
-  y in D -> (C + A + D)
+  y in D -> C
   all o : D | #o.y = 1
 
 

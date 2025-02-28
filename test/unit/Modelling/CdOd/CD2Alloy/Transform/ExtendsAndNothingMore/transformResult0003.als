@@ -53,7 +53,7 @@ sig D extends Object {}
 
 pred cd1 {
 
-  Object = A + B + C + D
+  Object = B + C + D
 
   // Contents
 

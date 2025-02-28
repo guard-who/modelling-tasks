@@ -57,7 +57,7 @@ module Modelling.CdOd.CD2Alloy.Transform (
   transform,
   ) where
 
-import qualified Data.List.NonEmpty.Extra         as NE (nubOrd)
+import qualified Data.List.NonEmpty.Extra         as NE (nubOrd, singleton)
 
 import Modelling.CdOd.Types (
   Cd,
@@ -244,18 +244,28 @@ fact SizeConstraints {
 ///////////////////////////////////////////////////
 
 // Properties
-#{predicate index allRelationshipNames relationships nonAbstractClassNames}
+#{predicate
+  linguisticReuse
+  index
+  allRelationshipNames
+  relationships
+  nonAbstractClassNames
+  }
 |]
     nonAbstractClassNames = classNames \\ abstractClassNames
+    nonAbstractObjects = case linguisticReuse of
+      None -> nonAbstractClassNames
+      ExtendsAnd NothingMore -> (`map` nonAbstractClassNames) $ \name ->
+        intercalate " - " $ name : directSubclassesOf relationships name
     inhabitance = case completelyInhabited of
       Nothing   -> ""
       Just False -> [i|
 fact NotCompletelyInhabited {
-  #{intercalate " or " $ map ("no " ++) nonAbstractClassNames}
+  #{intercalate " or " $ map ("no " ++) nonAbstractObjects}
 }|]
       Just True -> [i|
 fact CompletelyInhabited {
-#{unlines $ map ("  some " ++) nonAbstractClassNames}
+#{unlines $ map ("  some " ++) nonAbstractObjects}
 }|]
     relationshipNameAppearance = case usesEveryRelationshipName of
       Nothing -> ""
@@ -395,6 +405,19 @@ classSigs linguisticReuse relationships = map classSig
       Inheritance {..} | subClass == name -> True
       _ -> False
 
+{-|
+Retrieve the set of direct subclasses of the given class.
+-}
+directSubclassesOf
+  :: [Relationship String String]
+  -- ^ all relationships of the class diagram
+  -> String
+  -- ^ the name of the class to consider
+  -> [String]
+directSubclassesOf relationships name = (`mapMaybe` relationships) $ \case
+  Inheritance {superClass = s, ..} | name == s -> Just subClass
+  _ -> Nothing
+
 -- Figure 2.1, Rule 1, part 2, alternative implementation
 -- (SubsCD - inlined)
 {-|
@@ -410,15 +433,15 @@ allSubclassesOf relationships name =
   NE.nubOrd
   $ name :| concatMap (toList . allSubclassesOf relationships) subclasses
   where
-    subclasses = (`mapMaybe` relationships) $ \case
-      Inheritance {superClass = s, ..} | name == s -> Just subClass
-      _ -> Nothing
+    subclasses = directSubclassesOf relationships name
 
 {-|
 The predicate constraining the specific class diagram.
 -}
 predicate
-  :: String
+  :: LinguisticReuse
+  -- ^ the degree of linguistic reuse to apply during the translation
+  -> String
   -- ^ an identifier for the class diagram
   -> [String]
   -- ^ all relationship names to consider
@@ -428,7 +451,13 @@ predicate
   -> [String]
   -- ^ the set of non abstract class names
   -> String
-predicate index allRelationshipNames relationships nonAbstractClassNames = [i|
+predicate
+  linguisticReuse
+  index
+  allRelationshipNames
+  relationships
+  nonAbstractClassNames
+  = [i|
 pred cd#{index} {
 
   #{objects}
@@ -442,8 +471,15 @@ pred cd#{index} {
 }
 |]
   where
+    nonAbstractSuperClassNames = nonAbstractClassNames \\ subClasses
+    subClasses = (`mapMaybe` relationships) $ \case
+        Inheritance {..} -> Just subClass
+        _ -> Nothing
+    complete = case linguisticReuse of
+      None -> nonAbstractClassNames
+      ExtendsAnd NothingMore -> nonAbstractSuperClassNames
     objects =
-      "Object = " ++ alloySetOf nonAbstractClassNames
+      "Object = " ++ alloySetOf complete
       -- Figure 2.2, Rule 5
     nonExistingRelationships = map ("  no " ++)
       $ toList allRelationshipNames \\ mapMaybe relationshipName relationships
@@ -465,7 +501,9 @@ pred cd#{index} {
       makeNonInheritanceLimits ((name ++) . ('.' :)) subsTo (limits from)
       ]
       where
-        subsCd = allSubclassesOf relationships
+        subsCd = case linguisticReuse of
+          None -> allSubclassesOf relationships
+          ExtendsAnd NothingMore -> NE.singleton
         subsFrom = subsCd $ linking from
         subsTo = subsCd $ linking to
     compositions = compositeConstraint

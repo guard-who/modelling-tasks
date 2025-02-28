@@ -54,18 +54,18 @@ sig D extends Object {}
 
 pred cd1 {
 
-  Object = A + B + C + D
+  Object = B + C + D
 
   // Contents
 
   // Associations
 
-  x in (B + A) -> C
-  all o : B + A | #o.x =< 1
+  x in B -> C
+  all o : B | #o.x =< 1
 
 
-  y in (B + A) -> D
-  all o : B + A | #o.y =< 1
+  y in B -> D
+  all o : B | #o.y =< 1
 
 
   // Compositions
