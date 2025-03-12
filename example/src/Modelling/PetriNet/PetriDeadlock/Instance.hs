@@ -1,4 +1,4 @@
-module Modelling.PetriNet.PetriDeadlock.Config where
+module Modelling.PetriNet.PetriDeadlock.Instance where
 
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList)
