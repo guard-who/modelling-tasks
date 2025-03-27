@@ -338,8 +338,7 @@ evaluateDifferentNames coins cs cs' = flip withLang English $ do
         showSolution = True,
         mapping = toNameMapping $ BM.fromList cs,
         linkShuffling = ConsecutiveLetters,
-        taskText = defaultDifferentNamesTaskText,
-        usesAllRelationships = True
+        taskText = defaultDifferentNamesTaskText
         }
       cs'' = bimap Name Name <$> cs'
   differentNamesSyntax i cs''

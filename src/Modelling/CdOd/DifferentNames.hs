@@ -185,9 +185,7 @@ data DifferentNamesInstance = DifferentNamesInstance {
     showSolution :: Bool,
     mapping  :: NameMapping,
     linkShuffling :: ShufflingOption String,
-    taskText :: !DifferentNamesTaskText,
-    -- | whether every relationship has an associated link (in the mapping)
-    usesAllRelationships :: Bool
+    taskText :: !DifferentNamesTaskText
   } deriving (Eq, Generic, Read, Show)
 
 checkDifferentNamesInstance :: DifferentNamesInstance -> Maybe String
@@ -591,8 +589,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   showSolution = False,
   mapping = toNameMapping $ BM.fromList [("a", "y"), ("b", "x"), ("c", "z")],
   linkShuffling = ConsecutiveLetters,
-  taskText = defaultDifferentNamesTaskText,
-  usesAllRelationships = True
+  taskText = defaultDifferentNamesTaskText
   }
 
 getDifferentNamesTask
@@ -649,8 +646,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
               showSolution = printSolution,
               mapping   = toNameMapping bm',
               linkShuffling = ConsecutiveLetters,
-              taskText = defaultDifferentNamesTaskText,
-              usesAllRelationships = isCompleteMapping
+              taskText = defaultDifferentNamesTaskText
               }
         else tryNext
   where
@@ -714,8 +710,7 @@ instance RandomiseLayout DifferentNamesInstance where
       showSolution = showSolution,
       mapping = mapping,
       linkShuffling = linkShuffling,
-      taskText = taskText,
-      usesAllRelationships = usesAllRelationships
+      taskText = taskText
       }
 
 renameInstance
@@ -749,6 +744,5 @@ renameInstance inst@DifferentNamesInstance {..} names' nonInheritances' linkNs' 
     showSolution = showSolution,
     mapping   = toNameMapping bm',
     linkShuffling = shuffling,
-    taskText = taskText,
-    usesAllRelationships = usesAllRelationships
+    taskText = taskText
     }
