@@ -216,6 +216,7 @@ drawCdAndOdsFor is c cds cmd = do
       allRelationshipNames = mapMaybe relationshipName allRelationships
   let parts' = combineParts mergedParts ++ createRunCommand
         cmd
+        Nothing
         3
         maxThreeObjects
         allRelationships

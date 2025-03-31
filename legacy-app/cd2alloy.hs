@@ -41,6 +41,7 @@ run input output template index = do
       p3 = part3 parts
       p4 = createRunCommand
         ("cd" ++ index)
+        Nothing
         (length $ classNames cd)
         maxFiveObjects
         (relationships cd)

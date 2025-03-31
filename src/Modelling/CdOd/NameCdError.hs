@@ -828,6 +828,7 @@ nameCdError NameCdErrorConfig {..}  = do
             ""
           command = createRunCommand
             "cd"
+            Nothing
             (length $ classNames cd)
             maxNumberOfObjects
             (relationships cd)

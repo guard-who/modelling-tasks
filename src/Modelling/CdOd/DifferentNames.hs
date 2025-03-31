@@ -613,6 +613,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
         runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
         onlyCd0 = createRunCommand
           runCmd
+          Nothing
           (length $ classNames cd)
           objectConfig
           (concatMap relationships cds)

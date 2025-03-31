@@ -22,6 +22,7 @@ spec :: Spec
 spec = do
   testTransform None
   testTransform $ ExtendsAnd NothingMore
+  testTransform $ ExtendsAnd FieldPlacement
 
 testTransform :: LinguisticReuse -> Spec
 testTransform linguisticReuse =

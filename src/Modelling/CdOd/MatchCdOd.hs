@@ -777,6 +777,7 @@ getODInstances config cd1 cd2 cd3 numClasses = do
     maxIs = maxInstances config
     runCommand x = createRunCommand
       x
+      Nothing
       numClasses
       (objectConfig config)
 
