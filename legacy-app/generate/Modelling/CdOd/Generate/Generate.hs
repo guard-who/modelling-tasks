@@ -17,7 +17,8 @@ import Modelling.CdOd.Types             (ClassConfig (..))
 
 import Control.Arrow                    (second)
 import Control.Monad.Random             (MonadRandom, getRandomR)
-import Data.List                        (delete, nub)
+import Data.List                        (delete)
+import Data.List.Extra                  (nubOrd)
 import Data.Maybe                       (isNothing)
 import Data.Tuple                       (swap)
 import System.Random.Shuffle            (shuffleM)
@@ -117,7 +118,7 @@ generateEdges wnti classs inh com ass agg = fmap (fmap snd) $ foldl
     ++ replicate agg (Just Aggregation')
   where
     getConfig = do
-      step <- oneOf $ nub [inh, inh + com, inh + com + ass]
+      step <- oneOf $ nubOrd [inh, inh + com, inh + com + ass]
       return $ GenerationConfig {
         available = [(x, y) | x <- classs, y <- classs, x > y],
         withNoFurtherConnection = maybe False not wnti,
