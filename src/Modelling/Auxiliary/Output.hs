@@ -5,6 +5,7 @@ module Modelling.Auxiliary.Output (
   addPretext,
   checkTaskText,
   directionsAdvice,
+  extra,
   hoveringInformation,
   simplifiedInformation,
   uniform,
@@ -12,6 +13,7 @@ module Modelling.Auxiliary.Output (
 
 import qualified Data.Map                         as M (empty, insert)
 
+import Control.Monad.State (put)
 import Control.OutputCapable.Blocks     (
   GenericOutputCapable (paragraph),
   Language,
@@ -115,3 +117,7 @@ checkTaskText taskText
   where
     usedElements = concatMap (concatMap singleton) taskText
     allElements = [minBound ..]
+
+extra :: OutputCapable m => Maybe (Map Language String) -> LangM m
+extra (Just extraMap) = paragraph $ translate $ put extraMap
+extra _ = pure ()

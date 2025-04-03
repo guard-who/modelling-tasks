@@ -56,7 +56,8 @@ main = do
           omittedDefaultMultiplicities = defaultOmittedDefaultMultiplicities,
           printSolution    = False,
           timeout          = Nothing,
-          withNonTrivialInheritance = Nothing
+          withNonTrivialInheritance = Nothing,
+          extraText        = Nothing
         }
   putStrLn $ "Seed: " ++ show seed
   putStrLn $ "Segment: " ++ show s

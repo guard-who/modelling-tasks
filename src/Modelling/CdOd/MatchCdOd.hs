@@ -127,6 +127,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   OutputCapable,
   Rated,
   ($=<<),
@@ -172,7 +173,8 @@ data MatchCdOdInstance
     diagrams       :: Map Int Cd,
     instances      :: Map Char ([Int], Od),
     showSolution   :: !Bool,
-    taskText       :: !MatchCdOdTaskText
+    taskText       :: !MatchCdOdTaskText,
+    addText        :: Maybe (Map Language String)
   } deriving (Eq, Generic, Read, Show)
 
 data MatchCdOdConfig
@@ -185,7 +187,8 @@ data MatchCdOdConfig
     omittedDefaultMultiplicities :: OmittedDefaultMultiplicities,
     printSolution    :: Bool,
     timeout          :: Maybe Int,
-    withNonTrivialInheritance :: Maybe Bool
+    withNonTrivialInheritance :: Maybe Bool,
+    extraText        :: Maybe (Map Language String)
   } deriving (Generic, Read, Show)
 
 defaultMatchCdOdConfig :: MatchCdOdConfig
@@ -216,7 +219,8 @@ defaultMatchCdOdConfig
     omittedDefaultMultiplicities = defaultOmittedDefaultMultiplicities,
     printSolution    = False,
     timeout          = Nothing,
-    withNonTrivialInheritance = Just True
+    withNonTrivialInheritance = Just True,
+    extraText        = Nothing
   }
 
 toMatching :: Map Char [Int] -> Map (Int, Char) Bool
@@ -458,7 +462,8 @@ getMatchCdOdTask f config@MatchCdOdConfig {..} = do
         diagrams       = cds,
         instances      = ods',
         showSolution = printSolution,
-        taskText = defaultMatchCdOdTaskText
+        taskText = defaultMatchCdOdTaskText,
+        addText = extraText
         }
   where
     toOd possibleLinkNames =
@@ -610,7 +615,8 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
       }))
     ],
   showSolution = False,
-  taskText = defaultMatchCdOdTaskText
+  taskText = defaultMatchCdOdTaskText,
+  addText = Nothing
   }
 
 classAndNonInheritanceNames :: MatchCdOdInstance -> ([String], [String])
@@ -645,7 +651,8 @@ shuffleNodesAndEdges MatchCdOdInstance {..} = do
     diagrams = cds,
     instances = ods,
     showSolution = showSolution,
-    taskText = taskText
+    taskText = taskText,
+    addText = addText
     }
 
 shuffleInstance
@@ -667,7 +674,8 @@ shuffleInstance MatchCdOdInstance {..} = do
     diagrams = M.fromAscList cds',
     instances = M.fromAscList ods',
     showSolution = showSolution,
-    taskText = taskText
+    taskText = taskText,
+    addText = addText
     }
 
 renameInstance
@@ -689,7 +697,8 @@ renameInstance inst@MatchCdOdInstance {..} names' nonInheritances' = do
     diagrams = cds,
     instances = ods,
     showSolution = showSolution,
-    taskText = taskText
+    taskText = taskText,
+    addText = addText
     }
 
 getRandomTask

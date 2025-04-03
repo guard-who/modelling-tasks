@@ -72,7 +72,10 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawAdToFile,
   )
 import Modelling.Auxiliary.Common (getFirstInstance, oneOf)
-import Modelling.Auxiliary.Output (addPretext)
+import Modelling.Auxiliary.Output (
+  addPretext,
+  extra
+  )
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
@@ -88,6 +91,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   Rated,
   OutputCapable,
   ($=<<),
@@ -120,7 +124,8 @@ data MatchPetriInstance = MatchPetriInstance {
   petriNet :: SimplePetriLike PetriKey,
   plantUMLConf :: PlantUmlConfig,
   petriDrawConf :: DrawSettings,
-  showSolution :: Bool
+  showSolution :: Bool,
+  addText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 data MatchPetriConfig = MatchPetriConfig {
@@ -136,7 +141,8 @@ data MatchPetriConfig = MatchPetriConfig {
   avoidAddingSinksForFinals :: Maybe Bool,
   -- | Avoid Activity Finals in concurrent flows to reduce confusion
   noActivityFinalInForkBlocks :: Maybe Bool,
-  printSolution :: Bool
+  printSolution :: Bool,
+  extraText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 pickRandomLayout :: (MonadRandom m) => MatchPetriConfig -> m GraphvizCommand
@@ -156,7 +162,8 @@ defaultMatchPetriConfig =
     auxiliaryPetriNodeAbsent = Nothing,
     avoidAddingSinksForFinals = Nothing,
     noActivityFinalInForkBlocks = Just True,
-    printSolution = False
+    printSolution = False,
+    extraText = Nothing
   }
 
 checkMatchPetriConfig :: MatchPetriConfig -> Maybe String
@@ -335,6 +342,9 @@ matchPetriTask path task = do
         |]
     pure ()
   finalNodesAdvice True
+
+  extra $ addText task
+
   pure ()
 
 matchPetriInitial :: MatchPetriSolution
@@ -455,7 +465,8 @@ getMatchPetriTask config = do
         with1Weights = False,
         withGraphvizCommand = layout
       },
-    showSolution = printSolution config
+    showSolution = printSolution config,
+    addText = extraText config
   }
 
 defaultMatchPetriInstance :: MatchPetriInstance
@@ -916,5 +927,6 @@ defaultMatchPetriInstance = MatchPetriInstance
       with1Weights = False,
       withGraphvizCommand = Dot
     },
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }

@@ -29,7 +29,8 @@ task2023_41 = FindAuxiliaryPetriNodesConfig {
   hideNodeNames = False,
   hideBranchConditions = True,
   avoidAddingSinksForFinals = Nothing,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -54,7 +55,8 @@ task2023_42 = FindAuxiliaryPetriNodesConfig {
   hideNodeNames = False,
   hideBranchConditions = True,
   avoidAddingSinksForFinals = Nothing,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -79,7 +81,8 @@ task2024_47 = FindAuxiliaryPetriNodesConfig {
   hideNodeNames = False,
   hideBranchConditions = True,
   avoidAddingSinksForFinals = Nothing,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -104,7 +107,8 @@ task2024_48 = FindAuxiliaryPetriNodesConfig {
   hideNodeNames = False,
   hideBranchConditions = True,
   avoidAddingSinksForFinals = Nothing,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -129,7 +133,8 @@ task2024_72 = FindAuxiliaryPetriNodesConfig {
   hideNodeNames = False,
   hideBranchConditions = True,
   avoidAddingSinksForFinals = Just True,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -154,5 +159,6 @@ task2024_73 = FindAuxiliaryPetriNodesConfig {
   hideNodeNames = False,
   hideBranchConditions = True,
   avoidAddingSinksForFinals = Just False,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }

@@ -77,7 +77,8 @@ task2023_05 = SelectValidCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   shuffleEachCd = True,
-  timeout = Nothing
+  timeout = Nothing,
+  extraText = Nothing
   }
 
 {-|
@@ -138,7 +139,8 @@ task2023_06 = SelectValidCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   shuffleEachCd = True,
-  timeout = Nothing
+  timeout = Nothing,
+  extraText = Nothing
   }
 
 {-|
@@ -197,7 +199,8 @@ task2024_06 = SelectValidCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   shuffleEachCd = True,
-  timeout = Nothing
+  timeout = Nothing,
+  extraText = Nothing
   }
 
 {-|
@@ -257,7 +260,8 @@ task2024_07 = SelectValidCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   shuffleEachCd = True,
-  timeout = Nothing
+  timeout = Nothing,
+  extraText = Nothing
   }
 
 {-|
@@ -315,7 +319,8 @@ task2024_08 = SelectValidCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   shuffleEachCd = True,
-  timeout = Nothing
+  timeout = Nothing,
+  extraText = Nothing
   }
 
 {-|
@@ -374,7 +379,8 @@ task2024_51 = SelectValidCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   shuffleEachCd = False,
-  timeout = Nothing
+  timeout = Nothing,
+  extraText = Nothing
   }
 
 {-|
@@ -432,5 +438,6 @@ task2024_52 = SelectValidCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   shuffleEachCd = False,
-  timeout = Nothing
+  timeout = Nothing,
+  extraText = Nothing
   }

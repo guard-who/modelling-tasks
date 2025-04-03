@@ -63,7 +63,10 @@ import Modelling.ActivityDiagram.PlantUMLConverter (
   drawAdToFile,
   )
 import Modelling.Auxiliary.Common       (getFirstInstance)
-import Modelling.Auxiliary.Output (addPretext)
+import Modelling.Auxiliary.Output (
+  addPretext,
+  extra
+  )
 import Modelling.PetriNet.Types (
   Net (..),
   PetriLike (..),
@@ -79,6 +82,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   OutputCapable,
   Rated,
   ($=<<),
@@ -102,7 +106,8 @@ import System.Random.Shuffle (shuffleM)
 data FindAuxiliaryPetriNodesInstance = FindAuxiliaryPetriNodesInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUmlConfig,
-  showSolution :: Bool
+  showSolution :: Bool,
+  addText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
@@ -115,7 +120,8 @@ data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
   hideBranchConditions :: Bool,
   -- | Avoid having to add new sink transitions for representing finals
   avoidAddingSinksForFinals :: Maybe Bool,
-  printSolution :: Bool
+  printSolution :: Bool,
+  extraText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 defaultFindAuxiliaryPetriNodesConfig :: FindAuxiliaryPetriNodesConfig
@@ -127,7 +133,8 @@ defaultFindAuxiliaryPetriNodesConfig =
     hideNodeNames = False,
     hideBranchConditions = False,
     avoidAddingSinksForFinals = Nothing,
-    printSolution = False
+    printSolution = False,
+    extraText = Nothing
   }
 
 checkFindAuxiliaryPetriNodesConfig :: FindAuxiliaryPetriNodesConfig -> Maybe String
@@ -232,6 +239,9 @@ an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl
       german [i|In diesem Beispiel etwa enthält das entstehende Netz insgesamt 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransitionen.|]
     pure ()
   finalNodesAdvice True
+
+  extra $ addText task
+
   pure ()
 
 findAuxiliaryPetriNodesInitial :: FindAuxiliaryPetriNodesSolution
@@ -299,7 +309,8 @@ getFindAuxiliaryPetriNodesTask config@FindAuxiliaryPetriNodesConfig {..} = do
         suppressNodeNames = hideNodeNames,
         suppressBranchConditions = hideBranchConditions
       },
-    showSolution = printSolution
+    showSolution = printSolution,
+    addText = extraText
   }
   where
     checkCount ad =
@@ -353,5 +364,6 @@ defaultFindAuxiliaryPetriNodesInstance = FindAuxiliaryPetriNodesInstance {
     ]
   },
   plantUMLConf = defaultPlantUmlConfig,
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
 }

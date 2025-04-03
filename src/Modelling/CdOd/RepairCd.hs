@@ -66,7 +66,7 @@ import Modelling.Auxiliary.Output (
   checkTaskText,
   hoveringInformation,
   simplifiedInformation,
-  uniform,
+  uniform, extra,
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
@@ -248,7 +248,8 @@ data RepairCdConfig
     printExtendedFeedback :: Bool,
     printSolution    :: Bool,
     timeout          :: Maybe Int,
-    useNames         :: Bool
+    useNames         :: Bool,
+    extraText        :: Maybe (Map Language String)
   } deriving (Generic, Read, Show)
 
 defaultRepairCdConfig :: RepairCdConfig
@@ -281,7 +282,8 @@ defaultRepairCdConfig
     printExtendedFeedback = True,
     printSolution    = True,
     timeout          = Nothing,
-    useNames         = True
+    useNames         = True,
+    extraText        = Nothing
   }
 
 checkRepairCdConfig :: RepairCdConfig -> Maybe String
@@ -355,6 +357,7 @@ repairCdTask path task = do
   toTaskText path task
   paragraph simplifiedInformation
   paragraph hoveringInformation
+  extra $ addText task
   pure ()
 
 repairCdSyntax :: OutputCapable m => RepairCdInstance -> [Int] -> LangM m
@@ -467,7 +470,8 @@ data RepairCdInstance
     classDiagram   :: AnyCd,
     showExtendedFeedback :: Bool,
     showSolution   :: !Bool,
-    taskText       :: !RepairCdTaskText
+    taskText       :: !RepairCdTaskText,
+    addText        :: Maybe (Map Language String)
   } deriving (Eq, Generic, Read, Show)
 
 checkRepairCdInstance :: RepairCdInstance -> Maybe String
@@ -520,7 +524,8 @@ instance RandomiseLayout RepairCdInstance where
       classDiagram = cd,
       showExtendedFeedback = showExtendedFeedback,
       showSolution = showSolution,
-      taskText = taskText
+      taskText = taskText,
+      addText = addText
       }
 
 shuffleInstance :: MonadRandom m => RepairCdInstance -> m RepairCdInstance
@@ -533,7 +538,8 @@ shuffleInstance RepairCdInstance {..} = do
     classDiagram = classDiagram,
     showExtendedFeedback = showExtendedFeedback,
     showSolution = showSolution,
-    taskText = taskText
+    taskText = taskText,
+    addText = addText
     }
 
 renameInstance
@@ -562,7 +568,8 @@ renameInstance inst@RepairCdInstance {..} names' nonInheritances' = do
     classDiagram   = cd,
     showExtendedFeedback = showExtendedFeedback,
     showSolution   = showSolution,
-    taskText       = taskText
+    taskText       = taskText,
+    addText        = addText
     }
 
 repairCd
@@ -589,7 +596,8 @@ repairCd RepairCdConfig {..} segment seed = flip evalRandT g $ do
     classDiagram = cd,
     showExtendedFeedback = printExtendedFeedback,
     showSolution = printSolution,
-    taskText = defaultRepairCdTaskText
+    taskText = defaultRepairCdTaskText,
+    addText = extraText
     }
   where
     g = mkStdGen $ (segment +) $ 4 * seed
@@ -790,7 +798,8 @@ defaultRepairCdInstance = RepairCdInstance {
     },
   showExtendedFeedback = True,
   showSolution = True,
-  taskText = defaultRepairCdTaskText
+  taskText = defaultRepairCdTaskText,
+  addText = Nothing
   }
 
 type StructuralWeakeningSet = ChangeSet StructuralWeakening

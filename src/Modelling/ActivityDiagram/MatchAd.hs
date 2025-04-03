@@ -51,6 +51,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   Rated,
   OutputCapable,
   ($=<<),
@@ -71,13 +72,17 @@ import Data.Map (Map)
 import Data.Maybe (isJust, isNothing, fromJust)
 import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
-import Modelling.Auxiliary.Output (addPretext)
+import Modelling.Auxiliary.Output (
+  addPretext,
+  extra
+  )
 import System.Random.Shuffle (shuffleM)
 
 data MatchAdInstance = MatchAdInstance {
   activityDiagram :: UMLActivityDiagram,
   plantUMLConf :: PlantUmlConfig,
-  showSolution :: Bool
+  showSolution :: Bool,
+  addText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 data MatchAdConfig = MatchAdConfig {
@@ -85,7 +90,8 @@ data MatchAdConfig = MatchAdConfig {
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
   noActivityFinalInForkBlocks :: Maybe Bool,
-  printSolution :: Bool
+  printSolution :: Bool,
+  extraText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 defaultMatchAdConfig :: MatchAdConfig
@@ -94,7 +100,8 @@ defaultMatchAdConfig = MatchAdConfig {
   maxInstances = Just 50,
   hideBranchConditions = False,
   noActivityFinalInForkBlocks = Just False,
-  printSolution = False
+  printSolution = False,
+  extraText = Nothing
 }
 
 checkMatchAdConfig :: MatchAdConfig -> Maybe String
@@ -189,6 +196,9 @@ matchAdTask path task = do
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
     code $ show matchAdInitial
     pure ()
+
+  extra $ addText task
+
   pure ()
 
 matchAdInitial :: MatchAdSolution
@@ -277,7 +287,8 @@ getMatchAdTask config = do
     plantUMLConf = defaultPlantUmlConfig {
       suppressBranchConditions = hideBranchConditions config
       },
-    showSolution = printSolution config
+    showSolution = printSolution config,
+    addText = extraText config
   }
 
 defaultMatchAdInstance :: MatchAdInstance
@@ -325,5 +336,6 @@ defaultMatchAdInstance = MatchAdInstance {
     ]
   },
   plantUMLConf = defaultPlantUmlConfig,
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
 }

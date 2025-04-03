@@ -88,7 +88,8 @@ task2023_09 = NameCdErrorConfig {
     preDefinedValid = 4
     },
   timeout = Nothing,
-  useNames = True
+  useNames = True,
+  extraText = Nothing
   }
 
 {-|
@@ -159,7 +160,8 @@ task2023_10 = NameCdErrorConfig {
     preDefinedValid = 4
     },
   timeout = Nothing,
-  useNames = True
+  useNames = True,
+  extraText = Nothing
   }
 
 {-|
@@ -230,7 +232,8 @@ task2024_10 = NameCdErrorConfig {
     preDefinedValid = 4
     },
   timeout = Nothing,
-  useNames = True
+  useNames = True,
+  extraText = Nothing
   }
 
 {-|
@@ -301,7 +304,8 @@ task2024_11 = NameCdErrorConfig {
     preDefinedValid = 4
     },
   timeout = Nothing,
-  useNames = False
+  useNames = False,
+  extraText = Nothing
   }
 
 {-|
@@ -372,5 +376,6 @@ task2024_54 = NameCdErrorConfig {
     preDefinedValid = 4
     },
   timeout = Nothing,
-  useNames = True
+  useNames = True,
+  extraText = Nothing
   }

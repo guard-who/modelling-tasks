@@ -26,7 +26,8 @@ task2023_35 = EnterASConfig {
   maxInstances = Just 2000,
   objectNodeOnEveryPath = Just True,
   answerLength = (10, 10),
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -50,7 +51,8 @@ task2023_36 = EnterASConfig {
   maxInstances = Just 2000,
   objectNodeOnEveryPath = Just False,
   answerLength = (14, 14),
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -74,7 +76,8 @@ task2024_41 = EnterASConfig {
   maxInstances = Just 2000,
   objectNodeOnEveryPath = Just True,
   answerLength = (11, 11),
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|

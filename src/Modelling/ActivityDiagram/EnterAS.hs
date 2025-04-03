@@ -56,6 +56,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (IndefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   Rated,
   OutputCapable,
   ($=<<),
@@ -70,17 +71,22 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen,
   )
+import Data.Map (Map)
 import Data.Maybe                       (isNothing)
 import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
-import Modelling.Auxiliary.Output (addPretext)
+import Modelling.Auxiliary.Output (
+  addPretext,
+  extra
+  )
 import System.Random.Shuffle (shuffleM)
 
 data EnterASInstance = EnterASInstance {
   activityDiagram :: UMLActivityDiagram,
   drawSettings :: PlantUmlConfig,
   sampleSequence :: [String],
-  showSolution :: Bool
+  showSolution :: Bool,
+  addText :: Maybe (Map Language String)
 } deriving (Eq, Generic, Read, Show)
 
 data EnterASConfig = EnterASConfig {
@@ -89,7 +95,8 @@ data EnterASConfig = EnterASConfig {
   maxInstances :: Maybe Integer,
   objectNodeOnEveryPath :: Maybe Bool,
   answerLength :: !(Int, Int),
-  printSolution :: Bool
+  printSolution :: Bool,
+  extraText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 defaultEnterASConfig :: EnterASConfig
@@ -105,7 +112,8 @@ defaultEnterASConfig = EnterASConfig {
   maxInstances = Just 50,
   objectNodeOnEveryPath = Just True,
   answerLength = (5, 8),
-  printSolution = False
+  printSolution = False,
+  extraText = Nothing
 }
 
 checkEnterASConfig :: EnterASConfig -> Maybe String
@@ -215,6 +223,7 @@ enterASTask path task = do
       english [i|expresses the execution of A followed by B (under the assumption that both are action nodes of the diagram).|]
       german [i|die Ausführung von A gefolgt von B aus (unter der Annahme, dass beides Aktionsknoten des Diagramms sind).|]
     pure ()
+  extra $ addText task
   pure ()
 
 enterASInitial :: [String]
@@ -282,7 +291,8 @@ getEnterASTask config = do
             suppressBranchConditions = hideBranchConditions config
             },
           sampleSequence = sampleSolution $ enterActionSequence x,
-          showSolution = printSolution config
+          showSolution = printSolution config,
+          addText = extraText config
         }) ad
 
 defaultEnterASInstance :: EnterASInstance
@@ -329,5 +339,6 @@ defaultEnterASInstance = EnterASInstance {
   },
   drawSettings = defaultPlantUmlConfig,
   sampleSequence = ["D","E","G","B","F"],
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
 }

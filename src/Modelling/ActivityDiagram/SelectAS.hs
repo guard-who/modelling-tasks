@@ -60,6 +60,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   OutputCapable,
   ($=<<),
   english,
@@ -82,14 +83,18 @@ import Data.Monoid (Sum(..), getSum)
 import Data.String.Interpolate          (i, iii)
 import Data.Vector.Distance (Params(..), leastChanges)
 import GHC.Generics (Generic)
-import Modelling.Auxiliary.Output (addPretext)
+import Modelling.Auxiliary.Output (
+  addPretext,
+  extra
+  )
 import System.Random.Shuffle (shuffleM)
 
 data SelectASInstance = SelectASInstance {
   activityDiagram :: UMLActivityDiagram,
   actionSequences :: Map Int (Bool, [String]),
   drawSettings :: PlantUmlConfig,
-  showSolution :: Bool
+  showSolution :: Bool,
+  addText :: Maybe (Map Language String)
 } deriving (Generic, Show, Eq)
 
 data SelectASConfig = SelectASConfig {
@@ -99,7 +104,8 @@ data SelectASConfig = SelectASConfig {
   objectNodeOnEveryPath :: Maybe Bool,
   numberOfWrongAnswers :: Int,
   answerLength :: !(Int, Int),
-  printSolution :: Bool
+  printSolution :: Bool,
+  extraText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
 
 defaultSelectASConfig :: SelectASConfig
@@ -116,7 +122,8 @@ defaultSelectASConfig = SelectASConfig {
   objectNodeOnEveryPath = Just True,
   numberOfWrongAnswers = 2,
   answerLength = (5, 8),
-  printSolution = False
+  printSolution = False,
+  extraText = Nothing
 }
 
 checkSelectASConfig :: SelectASConfig -> Maybe String
@@ -256,6 +263,7 @@ Geben Sie Ihre Antwort als Zahl an, welche die eine valide Aktionsfolge unter de
         bedeuten, dass Folge 2 eine valide Folge von Aktionsknoten ist.
         |]
     pure ()
+  extra $ addText task
   pure ()
 
 selectASSolutionToMap
@@ -327,7 +335,8 @@ getSelectASTask config = do
           drawSettings = defaultPlantUmlConfig {
             suppressBranchConditions = hideBranchConditions config
             },
-          showSolution = printSolution config
+          showSolution = printSolution config,
+          addText = extraText config
         }
     case checkSelectASInstanceForConfig selectASInst config of
       Just _ -> return Nothing
@@ -383,5 +392,6 @@ defaultSelectASInstance = SelectASInstance {
     (3, (False,["A","F","B","C","D"]))
     ],
   drawSettings = defaultPlantUmlConfig,
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
 }

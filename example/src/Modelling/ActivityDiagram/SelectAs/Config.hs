@@ -26,7 +26,8 @@ task2023_33 = SelectASConfig {
   objectNodeOnEveryPath = Just True,
   numberOfWrongAnswers = 6,
   answerLength = (10, 10),
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -51,7 +52,8 @@ task2023_34 = SelectASConfig {
   objectNodeOnEveryPath = Nothing,
   numberOfWrongAnswers = 9,
   answerLength = (9, 9),
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|

@@ -77,7 +77,8 @@ task2023_07 = RepairCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   timeout = Nothing,
-  useNames = True
+  useNames = True,
+  extraText = Nothing
   }
 
 {-|
@@ -137,7 +138,8 @@ task2023_08 = RepairCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   timeout = Nothing,
-  useNames = False
+  useNames = False,
+  extraText = Nothing
   }
 
 {-|
@@ -196,7 +198,8 @@ task2024_12 = RepairCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   timeout = Nothing,
-  useNames = True
+  useNames = True,
+  extraText = Nothing
   }
 
 {-|
@@ -254,7 +257,8 @@ task2024_13 = RepairCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   timeout = Nothing,
-  useNames = False
+  useNames = False,
+  extraText = Nothing
   }
 
 {-|
@@ -313,5 +317,6 @@ task2024_55 = RepairCdConfig {
   printExtendedFeedback = True,
   printSolution = True,
   timeout = Nothing,
-  useNames = True
+  useNames = True,
+  extraText = Nothing
   }

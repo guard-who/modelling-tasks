@@ -23,7 +23,8 @@ task2023_31 = MatchAdConfig {
   maxInstances = Just 500,
   hideBranchConditions = False,
   noActivityFinalInForkBlocks = Just False,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|
@@ -44,7 +45,8 @@ task2023_32 = MatchAdConfig {
   maxInstances = Just 500,
   hideBranchConditions = True,
   noActivityFinalInForkBlocks = Just True,
-  printSolution = True
+  printSolution = True,
+  extraText = Nothing
   }
 
 {-|

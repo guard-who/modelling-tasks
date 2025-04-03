@@ -56,6 +56,7 @@ import Modelling.Auxiliary.Output (
   hoveringInformation,
   simplifiedInformation,
   uniform,
+  extra,
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (
@@ -117,6 +118,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   OutputCapable,
   Rated,
   ($=<<),
@@ -154,6 +156,7 @@ import Data.List (
   singleton,
   sort,
   )
+import Data.Map (Map)
 import Data.Maybe (
   catMaybes,
   isJust,
@@ -185,7 +188,8 @@ data DifferentNamesInstance = DifferentNamesInstance {
     showSolution :: Bool,
     mapping  :: NameMapping,
     linkShuffling :: ShufflingOption String,
-    taskText :: !DifferentNamesTaskText
+    taskText :: !DifferentNamesTaskText,
+    addText :: Maybe (Map Language String)
   } deriving (Eq, Generic, Read, Show)
 
 checkDifferentNamesInstance :: DifferentNamesInstance -> Maybe String
@@ -226,7 +230,8 @@ data DifferentNamesConfig
     timeout          :: !(Maybe Int),
     -- | Obvious means here that each individual relationship to link mapping
     -- can be made without considering other relationships.
-    withObviousMapping :: !(Maybe Bool)
+    withObviousMapping :: !(Maybe Bool),
+    extraText :: Maybe (Map Language String)
   } deriving (Generic, Read, Show)
 
 checkDifferentNamesConfig :: DifferentNamesConfig -> Maybe String
@@ -291,7 +296,8 @@ defaultDifferentNamesConfig = DifferentNamesConfig {
     withNonTrivialInheritance = Just True,
     withObviousMapping = Nothing,
     maxInstances     = Just 200,
-    timeout          = Nothing
+    timeout          = Nothing,
+    extraText        = Nothing
   }
 
 newtype ShowName = ShowName { showName' :: Name }
@@ -333,8 +339,10 @@ toTaskText
   => FilePath
   -> DifferentNamesInstance
   -> LangM m
-toTaskText path task =
+toTaskText path task = do
   specialToOutputCapable (toTaskSpecificText path task) (taskText task)
+  extra $ addText task
+  pure ()
 
 toTaskSpecificText
   :: (
@@ -589,7 +597,8 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
   showSolution = False,
   mapping = toNameMapping $ BM.fromList [("a", "y"), ("b", "x"), ("c", "z")],
   linkShuffling = ConsecutiveLetters,
-  taskText = defaultDifferentNamesTaskText
+  taskText = defaultDifferentNamesTaskText,
+  addText = Nothing
   }
 
 getDifferentNamesTask
@@ -646,7 +655,8 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
               showSolution = printSolution,
               mapping   = toNameMapping bm',
               linkShuffling = ConsecutiveLetters,
-              taskText = defaultDifferentNamesTaskText
+              taskText = defaultDifferentNamesTaskText,
+              addText = extraText
               }
         else tryNext
   where
@@ -710,7 +720,8 @@ instance RandomiseLayout DifferentNamesInstance where
       showSolution = showSolution,
       mapping = mapping,
       linkShuffling = linkShuffling,
-      taskText = taskText
+      taskText = taskText,
+      addText = addText
       }
 
 renameInstance
@@ -744,5 +755,6 @@ renameInstance inst@DifferentNamesInstance {..} names' nonInheritances' linkNs' 
     showSolution = showSolution,
     mapping   = toNameMapping bm',
     linkShuffling = shuffling,
-    taskText = taskText
+    taskText = taskText,
+    addText = addText
     }

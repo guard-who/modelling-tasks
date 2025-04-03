@@ -191,7 +191,8 @@ task2024_05 = SelectValidCdInstance {
         (German, "bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.")
         ])
       ]
-    ]
+    ],
+  addText = Nothing
   }
 
 {-|
@@ -433,7 +434,8 @@ task2024_06picked = ShuffleInstance {
           (German, "bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.")
           ])
         ]
-      ]
+      ],
+    addText = Nothing
     },
   allowLayoutMangling = True,
   shuffleNames = True
@@ -862,7 +864,8 @@ task2024_09 = ShuffleInstance {
           (German, "bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.")
           ])
         ]
-      ]
+      ],
+    addText = Nothing
     },
   allowLayoutMangling = True,
   shuffleNames = True
@@ -1154,7 +1157,8 @@ task2024_53 = ShuffleInstance {
           (German, "bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.")
           ])
         ]
-      ]
+      ],
+    addText = Nothing
     },
   allowLayoutMangling = True,
   shuffleNames = False

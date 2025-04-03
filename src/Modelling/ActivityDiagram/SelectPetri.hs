@@ -64,7 +64,10 @@ import Modelling.Auxiliary.Common (
   TaskGenerationException (NoInstanceAvailable),
   oneOf,
   )
-import Modelling.Auxiliary.Output (addPretext)
+import Modelling.Auxiliary.Output (
+  addPretext,
+  extra
+  )
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
@@ -80,6 +83,7 @@ import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
   LangM,
+  Language,
   OutputCapable,
   ($=<<),
   english,
@@ -113,7 +117,8 @@ data SelectPetriInstance = SelectPetriInstance {
   plantUMLConf :: PlantUmlConfig,
   petriDrawConf :: DrawSettings,
   petriNets :: Map Int (Bool, SimplePetriLike PetriKey),
-  showSolution :: Bool
+  showSolution :: Bool,
+  addText :: Maybe (Map Language String)
 } deriving (Generic, Show)
 
 data SelectPetriConfig = SelectPetriConfig {
@@ -134,7 +139,8 @@ data SelectPetriConfig = SelectPetriConfig {
   avoidAddingSinksForFinals :: Maybe Bool,
   -- | Avoid Activity Finals in concurrent flows to reduce confusion
   noActivityFinalInForkBlocks :: Maybe Bool,
-  printSolution :: Bool
+  printSolution :: Bool,
+  extraText :: Maybe (Map Language String)
 } deriving (Generic, Show)
 
 pickRandomLayout :: (MonadRandom m) => SelectPetriConfig -> m GraphvizCommand
@@ -155,7 +161,8 @@ defaultSelectPetriConfig = SelectPetriConfig {
   auxiliaryPetriNodeAbsent = Nothing,
   avoidAddingSinksForFinals = Nothing,
   noActivityFinalInForkBlocks = Just True,
-  printSolution = False
+  printSolution = False,
+  extraText = Nothing
 }
 
 checkSelectPetriConfig :: SelectPetriConfig -> Maybe String
@@ -356,6 +363,9 @@ Bitte geben Sie Ihre Antwort als Zahl an, welche das passende Petrinetz repräse
       german  [i|bedeuten, dass Petrinetz 2 das passende Petrinetz ist.|]
     pure ()
   finalNodesAdvice False
+
+  extra $ addText task
+
   pure ()
 
 selectPetriSolutionToMap
@@ -441,7 +451,8 @@ getSelectPetriTask config = do
           plantUMLConf=plantUMLConf,
           petriDrawConf=petriDrawConf,
           petriNets = petriNets,
-          showSolution = printSolution config
+          showSolution = printSolution config,
+          addText = extraText config
         }
     case checkPetriInstance petriInst config of
       Just _ -> return Nothing
@@ -745,5 +756,6 @@ defaultSelectPetriInstance =  SelectPetriInstance {
         flowOut = M.fromList [(NormalPetriNode {label = 10, sourceNode = AdActionNode {label = 4, name = "G"}},1)]})
     ]
   }))],
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
 }

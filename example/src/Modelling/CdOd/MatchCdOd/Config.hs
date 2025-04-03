@@ -58,7 +58,8 @@ task2023_14 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just True
+  withNonTrivialInheritance = Just True,
+  extraText = Nothing
   }
 
 {-|
@@ -103,7 +104,8 @@ task2023_15 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just True
+  withNonTrivialInheritance = Just True,
+  extraText = Nothing
   }
 
 {-|
@@ -144,7 +146,8 @@ task2024_17 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just True
+  withNonTrivialInheritance = Just True,
+  extraText = Nothing
   }
 
 {-|
@@ -185,7 +188,8 @@ task2024_18 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just True
+  withNonTrivialInheritance = Just True,
+  extraText = Nothing
   }
 
 {-|
@@ -226,7 +230,8 @@ task2024_19 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just True
+  withNonTrivialInheritance = Just True,
+  extraText = Nothing
   }
 
 {-|
@@ -267,7 +272,8 @@ task2024_20 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just True
+  withNonTrivialInheritance = Just True,
+  extraText = Nothing
   }
 
 {-|
@@ -308,7 +314,8 @@ task2024_57 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just False
+  withNonTrivialInheritance = Just False,
+  extraText = Nothing
   }
 
 {-|
@@ -349,7 +356,8 @@ task2024_58 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just True
+  withNonTrivialInheritance = Just True,
+  extraText = Nothing
   }
 
 {-|
@@ -390,5 +398,6 @@ task2024_59 = MatchCdOdConfig {
     },
   printSolution = True,
   timeout = Nothing,
-  withNonTrivialInheritance = Just False
+  withNonTrivialInheritance = Just False,
+  extraText = Nothing
   }
