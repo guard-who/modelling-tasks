@@ -51,6 +51,7 @@ import Modelling.ActivityDiagram.Shuffle (shuffleAdNames)
 import Modelling.Auxiliary.Common       (getFirstInstance)
 
 import Control.Applicative (Alternative ((<|>)))
+import Control.Monad (unless)
 import Control.Monad.Catch              (MonadThrow)
 import Control.OutputCapable.Blocks (
   ArticleToUse (IndefiniteArticle),
@@ -63,7 +64,8 @@ import Control.OutputCapable.Blocks (
   english,
   german,
   translate,
-  printSolutionAndAssert
+  printSolutionAndAssert,
+  yesNo,
   )
 import Control.Monad.Random (
   RandT,
@@ -71,6 +73,8 @@ import Control.Monad.Random (
   evalRandT,
   mkStdGen,
   )
+import Data.List (intercalate, intersect)
+import Data.List.Extra (nubOrd)
 import Data.Map (Map)
 import Data.Maybe                       (isNothing)
 import Data.String.Interpolate (i, iii)
@@ -255,7 +259,24 @@ enterASEvaluation task sub = do
         if showSolution task
         then Just $ show $ sampleSequence task
         else Nothing
+
+  yesNo correct $ translate $ do
+    english "The submitted action sequence is correct?"
+    german "Die eingereichte Aktionsfolge ist korrekt?"
+
+  let objectNames = map name $ filter isObjectNode $ nodes $ activityDiagram task
+      objectNamesInSubmission = nubOrd $ sub `intersect` objectNames
+
+  unless (null objectNamesInSubmission) $ do
+    translate $ do
+      english "The following referenced nodes are object nodes and thus not actions:"
+      german "Die folgenden referenzierten Knoten sind Objektknoten und damit keine Aktionen:"
+    code $ intercalate ", " objectNamesInSubmission
+    pure ()
+
   printSolutionAndAssert IndefiniteArticle maybeSolutionString points
+
+  pure points
 
 enterASSolution
   :: EnterASInstance
