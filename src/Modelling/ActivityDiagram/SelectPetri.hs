@@ -135,7 +135,7 @@ data SelectPetriConfig = SelectPetriConfig {
   modifyAtMid :: Bool,
   -- | Option to prevent auxiliary PetriNodes from occurring
   auxiliaryPetriNodeAbsent :: Maybe Bool,
-  -- | Force presence of a new sink transitions for representing finals
+  -- | Force presence or absence of new sink transitions for representing finals
   presenceOfSinkTransitionsForFinals :: Maybe Bool,
   -- | Avoid Activity Finals in concurrent flows to reduce confusion
   noActivityFinalInForkBlocks :: Maybe Bool,
@@ -198,7 +198,7 @@ checkSelectPetriConfig' SelectPetriConfig {
     |]
   | Just False <- presenceOfSinkTransitionsForFinals,
     fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
-    = Just "The option 'presenceOfSinkTransitionsForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
+    = Just "The option 'presenceOfSinkTransitionsForFinals = Just False' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | noActivityFinalInForkBlocks == Just True && activityFinalNodes adConfig > 1
     = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 'activityFinalNodes'"
   | noActivityFinalInForkBlocks == Just False && activityFinalNodes adConfig == 0

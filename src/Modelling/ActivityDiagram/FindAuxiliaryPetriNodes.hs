@@ -118,7 +118,7 @@ data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
   hideBranchConditions :: Bool,
-  -- | Force presence of a new sink transitions for representing finals
+  -- | Force presence or absence of new sink transitions for representing finals
   presenceOfSinkTransitionsForFinals :: Maybe Bool,
   printSolution :: Bool,
   extraText :: Maybe (Map Language String)
@@ -161,7 +161,7 @@ findAuxiliaryPetriNodesConfig' FindAuxiliaryPetriNodesConfig {
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | Just False <- presenceOfSinkTransitionsForFinals,
     fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
-    = Just "The option 'presenceOfSinkTransitionsForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
+    = Just "The option 'presenceOfSinkTransitionsForFinals = Just False' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | otherwise
     = Nothing
 
