@@ -118,8 +118,8 @@ data FindAuxiliaryPetriNodesConfig = FindAuxiliaryPetriNodesConfig {
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
   hideBranchConditions :: Bool,
-  -- | Avoid having to add new sink transitions for representing finals
-  avoidAddingSinksForFinals :: Maybe Bool,
+  -- | Force presence of a new sink transitions for representing finals
+  presenceOfSinkTransitionsForFinals :: Maybe Bool,
   printSolution :: Bool,
   extraText :: Maybe (Map Language String)
 } deriving (Generic, Read, Show)
@@ -132,7 +132,7 @@ defaultFindAuxiliaryPetriNodesConfig =
     maxInstances = Just 50,
     hideNodeNames = False,
     hideBranchConditions = False,
-    avoidAddingSinksForFinals = Nothing,
+    presenceOfSinkTransitionsForFinals = Nothing,
     printSolution = False,
     extraText = Nothing
   }
@@ -147,7 +147,7 @@ findAuxiliaryPetriNodesConfig' FindAuxiliaryPetriNodesConfig {
     adConfig,
     countOfPetriNodesBounds,
     maxInstances,
-    avoidAddingSinksForFinals
+    presenceOfSinkTransitionsForFinals
   }
   | activityFinalNodes adConfig > 1
   = Just "There is at most one 'activityFinalNode' allowed."
@@ -159,16 +159,16 @@ findAuxiliaryPetriNodesConfig' FindAuxiliaryPetriNodesConfig {
   = Just "the second value of 'countOfPetriNodesBounds' must not be smaller than its first value"
   | Just instances <- maxInstances, instances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
-  | Just True <- avoidAddingSinksForFinals,
+  | Just False <- presenceOfSinkTransitionsForFinals,
     fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
-    = Just "The option 'avoidAddingSinksForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
+    = Just "The option 'presenceOfSinkTransitionsForFinals' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
   | otherwise
     = Nothing
 
 findAuxiliaryPetriNodesAlloy :: FindAuxiliaryPetriNodesConfig -> String
 findAuxiliaryPetriNodesAlloy FindAuxiliaryPetriNodesConfig {
   adConfig,
-  avoidAddingSinksForFinals
+  presenceOfSinkTransitionsForFinals
 }
   = adConfigToAlloy modules predicates adConfig
   where
@@ -178,7 +178,7 @@ findAuxiliaryPetriNodesAlloy FindAuxiliaryPetriNodesConfig {
           [i|
             not auxiliaryPetriNodeAbsent
             #{f activityFinalsExist "activityFinalsExist"}
-            #{f avoidAddingSinksForFinals "avoidAddingSinksForFinals"}
+            #{f (not <$> presenceOfSinkTransitionsForFinals) "avoidAddingSinksForFinals"}
           |]
     f opt s =
           case opt of

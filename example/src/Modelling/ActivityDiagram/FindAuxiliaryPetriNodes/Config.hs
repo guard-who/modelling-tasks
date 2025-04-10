@@ -28,7 +28,7 @@ task2023_41 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  avoidAddingSinksForFinals = Nothing,
+  presenceOfSinkTransitionsForFinals = Nothing,
   printSolution = True,
   extraText = Nothing
   }
@@ -54,7 +54,7 @@ task2023_42 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  avoidAddingSinksForFinals = Nothing,
+  presenceOfSinkTransitionsForFinals = Nothing,
   printSolution = True,
   extraText = Nothing
   }
@@ -80,7 +80,7 @@ task2024_47 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  avoidAddingSinksForFinals = Nothing,
+  presenceOfSinkTransitionsForFinals = Nothing,
   printSolution = True,
   extraText = Nothing
   }
@@ -106,7 +106,7 @@ task2024_48 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  avoidAddingSinksForFinals = Nothing,
+  presenceOfSinkTransitionsForFinals = Nothing,
   printSolution = True,
   extraText = Nothing
   }
@@ -132,7 +132,7 @@ task2024_72 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  avoidAddingSinksForFinals = Just True,
+  presenceOfSinkTransitionsForFinals = Just False,
   printSolution = True,
   extraText = Nothing
   }
@@ -158,7 +158,7 @@ task2024_73 = FindAuxiliaryPetriNodesConfig {
   maxInstances = Just 2000,
   hideNodeNames = False,
   hideBranchConditions = True,
-  avoidAddingSinksForFinals = Just False,
+  presenceOfSinkTransitionsForFinals = Just True,
   printSolution = True,
   extraText = Nothing
   }

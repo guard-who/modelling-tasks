@@ -24,6 +24,6 @@ spec =
       it "it returns a String with necessary changes" $
         checkFindAuxiliaryPetriNodesConfig defaultFindAuxiliaryPetriNodesConfig {
           adConfig = defaultAdConfig {actionLimits = (0, 4), forkJoinPairs = 0},
-          avoidAddingSinksForFinals = Just True
+          presenceOfSinkTransitionsForFinals = Just False
           }
             `shouldSatisfy` isJust

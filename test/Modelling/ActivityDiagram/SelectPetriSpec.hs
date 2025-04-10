@@ -22,6 +22,6 @@ spec =
             actionLimits = (0, 4),
             forkJoinPairs = 0
             },
-          avoidAddingSinksForFinals = Just True
+          presenceOfSinkTransitionsForFinals = Just False
           }
             `shouldSatisfy` isJust

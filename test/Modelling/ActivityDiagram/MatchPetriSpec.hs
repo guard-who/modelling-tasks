@@ -34,7 +34,7 @@ spec = do
       it "it returns a String with necessary changes" $
         checkMatchPetriConfig defaultMatchPetriConfig {
           adConfig = defaultAdConfig {actionLimits = (0, 4), forkJoinPairs = 0},
-          avoidAddingSinksForFinals = Just True
+          presenceOfSinkTransitionsForFinals = Just False
           }
             `shouldSatisfy` isJust
   describe "matchPetriAlloy" $ do
