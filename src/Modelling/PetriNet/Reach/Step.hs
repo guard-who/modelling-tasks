@@ -55,7 +55,7 @@ import Data.Foldable                    (foldl')
 import Data.GraphViz                    (GraphvizCommand)
 
 deadlocks :: Ord s => Net s t -> [[State s]]
-deadlocks n = [filter (null . successors n) zs | zs <- levels n]
+deadlocks n = map (filter (null . successors n)) (levels n)
 
 {-|
 The returned trace for each state is in reversed order,
@@ -65,7 +65,7 @@ leads to the initial state of the net.
 (Only states of and traces to deadlocks are returned.)
 -}
 deadlocks' :: Ord s => Net s t -> [[(State s, [t])]]
-deadlocks' n = [filter (\(s, _) -> null $ successors n s) zs | zs <- levels' n]
+deadlocks' n = map (filter (null . successors n . fst)) (levels' n)
 
 levels :: Ord s => Net s t -> [[State s]]
 levels n =
