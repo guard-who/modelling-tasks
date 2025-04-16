@@ -454,8 +454,8 @@ toTaskSpecificText path RepairCdInstance {..} = \case
     path
   PotentialFixes ->
     enumerateM (text . show)
-      $ second (phrase byName (printNavigations cdDrawSettings) . option)
-      <$> M.toList changes
+      $ map (second (phrase byName (printNavigations cdDrawSettings) . option))
+      $ M.toList changes
   where
     defaults = omittedDefaults cdDrawSettings
     phrase x y Annotation {..} = translate $ do

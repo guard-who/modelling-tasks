@@ -86,7 +86,7 @@ bimapNet :: (Ord a, Ord b) => (s -> a) -> (t -> b) -> Net s t -> Net a b
 bimapNet f g x = Net {
   places      = S.map f (places x),
   transitions = S.map g (transitions x),
-  connections = bimapConnection <$> connections x,
+  connections = map bimapConnection $ connections x,
   capacity    = mapCapacity f $ capacity x,
   start       = mapState f $ start x
   }

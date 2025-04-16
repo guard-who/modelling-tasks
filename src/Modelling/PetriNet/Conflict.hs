@@ -252,7 +252,7 @@ conflictPlacesShow
   -> ((ShowTransition, ShowTransition), [ShowPlace])
 conflictPlacesShow = bimap
   (bimap ShowTransition ShowTransition)
-  (fmap ShowPlace)
+  (map ShowPlace)
 
 findConflictPlacesEvaluation
   :: (Alternative m, Monad m, OutputCapable m)

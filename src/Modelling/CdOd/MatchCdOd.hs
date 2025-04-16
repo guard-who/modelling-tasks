@@ -375,7 +375,7 @@ instance Show ShowLetters where
   show = showLetters . showLetters'
 
 matchingShow :: [(Int, Letters)] -> [(Int, ShowLetters)]
-matchingShow = fmap (second ShowLetters)
+matchingShow = map (second ShowLetters)
 
 matchCdOdInitial :: [(Int, Letters)]
 matchCdOdInitial = [(1, Letters "ab"), (2, Letters "")]

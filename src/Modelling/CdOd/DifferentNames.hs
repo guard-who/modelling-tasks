@@ -306,7 +306,7 @@ instance Show ShowName where
   show = showName . showName'
 
 mappingShow :: [(Name, Name)] -> [(ShowName, ShowName)]
-mappingShow = fmap (bimap ShowName ShowName)
+mappingShow = map (bimap ShowName ShowName)
 
 type DifferentNamesTaskText = [SpecialOutput DifferentNamesTaskTextElement]
 
@@ -425,7 +425,7 @@ defaultDifferentNamesTaskText = [
   ]
 
 differentNamesInitial :: [(Name, Name)]
-differentNamesInitial = bimap Name Name <$> [("a", "x"), ("b", "y")]
+differentNamesInitial = map (bimap Name Name) [("a", "x"), ("b", "y")]
 
 differentNamesSyntax
   :: OutputCapable m

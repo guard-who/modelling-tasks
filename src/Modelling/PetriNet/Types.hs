@@ -213,7 +213,7 @@ instance Traversable PetriConflict' where
   traverse f = fmap PetriConflict' . bitraverse f f . toPetriConflict
 
 instance Bifunctor PetriConflict where
-  bimap f g (Conflict ts as) = Conflict (bimap g g ts) (f <$> as)
+  bimap f g (Conflict ts as) = Conflict (bimap g g ts) (map f as)
 
 instance Bifoldable PetriConflict where
   bifoldMap f g (Conflict ts as) = foldMap f as <> bifoldMap g g ts
@@ -638,7 +638,7 @@ petriLikeToPetri :: (MonadThrow m, Ord a) => PetriLike Node a -> m Petri
 petriLikeToPetri p = do
   isValid
   return $ Petri {
-    initialMarking = initialTokens <$> M.elems ps,
+    initialMarking = map initialTokens $ M.elems ps,
     trans          =
       foldr ((:) . toChangeTuple) [] ts
     }

@@ -226,7 +226,7 @@ removeDoctype True (c:cs)
 
 groupSVG :: LBS.ByteString -> IO LT.Text
 groupSVG s' = do
-  let s = w2c <$> LBS.unpack s'
+  let s = map w2c $ LBS.unpack s'
   (x:_) <- runX (parseXML (removeDoctype False s) >>> getSVGAttributes)
   return $ XML.renderText XML.def $ XML.Document
     (XML.Prologue [] Nothing [])

@@ -35,7 +35,7 @@ import Modelling.PetriNet.Reach.Type (
 
 import Control.Applicative              (Alternative)
 import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad                    (guard, unless)
+import Control.Monad                    (unless)
 import Control.Monad.Catch              (MonadThrow)
 import Control.OutputCapable.Blocks (
   GenericOutputCapable (image, indent, paragraph, refuse, text),
@@ -55,9 +55,7 @@ import Data.Foldable                    (foldl')
 import Data.GraphViz                    (GraphvizCommand)
 
 deadlocks :: Ord s => Net s t -> [[State s]]
-deadlocks n = do
-  zs <- levels n
-  return $ filter (null . successors n) zs
+deadlocks n = [filter (null . successors n) zs | zs <- levels n]
 
 {-|
 The returned trace for each state is in reversed order,
@@ -67,19 +65,14 @@ leads to the initial state of the net.
 (Only states of and traces to deadlocks are returned.)
 -}
 deadlocks' :: Ord s => Net s t -> [[(State s, [t])]]
-deadlocks' n = do
-  zs <- levels' n
-  return $ filter (\(s, _) -> null $ successors n s) zs
+deadlocks' n = [filter (\(s, _) -> null $ successors n s) zs | zs <- levels' n]
 
 levels :: Ord s => Net s t -> [[State s]]
 levels n =
   let f _    [] = []
       f done xs =
         let done' = S.union done $ S.fromList xs
-            next = S.fromList $ do
-              x <- xs
-              (_, y) <- successors n x
-              return y
+            next = S.fromList [ y | x <- xs, (_,y) <- successors n x]
          in xs :
             f
               done'
@@ -100,12 +93,11 @@ levels' n =
   let f _    [] = []
       f done xs =
         let done' = S.union done $ S.fromList $ map fst xs
-            next = M.toList $
-              M.fromList $ do
-                (x, p) <- xs
-                (t, y) <- successors n x
-                guard $ not $ S.member y done'
-                return (y, t : p)
+            next = M.toList $ M.fromList [ (y, t:p) |
+                (x,p) <- xs,
+                (t,y) <- successors n x,
+                not $ S.member y done'
+              ]
          in xs : f done' next
   in f S.empty [(start n, [])]
 
@@ -203,23 +195,20 @@ execute n t z0 = do
     _ -> undefined -- TODO Patern match not required?
   pure next
   where
-    cs = do
-        c@(_, t', _) <- connections n
-        guard $ t' == t
-        return c
+    cs = [ c | c@(_, t', _) <- connections n, t' == t]
 
 successors
   :: Ord s
   => Net s t
   -> State s
   -> [(t, State s)]
-successors n z0 = do
-  (vor, t, nach) <- connections n
-  let z1 = change pred vor z0
-  guard $ allNonNegative z1
-  let z2 = change succ nach z1
-  guard $ conforms (capacity n) z2
-  return (t, z2)
+successors n z0 = [ (t, z2) |
+    (vor, t, nach) <- connections n,
+    let z1 = change pred vor z0,
+    allNonNegative z1,
+    let z2 = change succ nach z1,
+    conforms (capacity n) z2
+  ]
 
 change
   :: Ord s

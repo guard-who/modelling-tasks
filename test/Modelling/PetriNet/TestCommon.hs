@@ -109,7 +109,7 @@ defaultConfigTaskGeneration generateInst seed checkInst =
 checkConfigs :: (Eq b, Show b) => (a -> Maybe b) -> [a] -> Spec
 checkConfigs check cs =
   it "contains only valid configs" $
-    take 1 (filter (/= Nothing) $ check <$> cs)
+    take 1 (filter (/= Nothing) $ map check cs)
     `shouldBe` []
 
 isResult :: MonadCatch m => (a -> Bool) -> m a -> m Property
@@ -167,8 +167,11 @@ validBasicAndChangeConfigs minActive low high =
     low1 = max 1 low
 
 validAdvConfigs :: [AdvConfig]
-validAdvConfigs =
-  AdvConfig <$> maybeBool <*> maybeBool <*> maybeBool
+validAdvConfigs = [ AdvConfig x y z |
+    x <- maybeBool,
+    y <- maybeBool,
+    z <- maybeBool
+    ]
 
 maybeBool :: [Maybe Bool]
 maybeBool = [Nothing, Just False, Just True]

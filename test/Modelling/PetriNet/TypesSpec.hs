@@ -80,7 +80,7 @@ instance (Arbitrary a, Net p n, Ord a) => Arbitrary (p n a) where
     if null ns
       then return emptyNet
       else do
-      let names = fst <$> ns
+      let names = map fst ns
       flows <- listOf $ (,,)
         <$> elements names
         <*> (abs <$> arbitrary)

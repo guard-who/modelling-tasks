@@ -13,6 +13,7 @@ import Modelling.ActivityDiagram.Datatype (
   )
 
 import Control.Monad.Catch              (Exception, MonadThrow (throwM))
+import Data.List (singleton)
 import Data.List.Extra                  (nubOrd)
 import Data.Map                         (Map)
 import Data.Maybe (
@@ -122,7 +123,7 @@ parseInstance alloyInstance = do
     <$> getNames scope alloyInstance nodes' "ActionObjectNodes" ComponentName
   let components = enumerateComponents $ toSet nodes'
       names = M.fromList
-        $ zip (nubOrd $ M.elems componentNames) $ pure <$> ['A'..]
+        $ zip (nubOrd $ M.elems componentNames) $ map singleton ['A'..]
       getName x = fromMaybe "" $ M.lookup x componentNames >>= (`M.lookup` names)
   conns <- getConnections scope alloyInstance nodes'
   let labelOf = getLabelOf components
@@ -152,7 +153,7 @@ setToActivityDiagram
   -> UMLActivityDiagram
 setToActivityDiagram getName components conns = UMLActivityDiagram {
   nodes = map (convertToAdNode getName) (S.toAscList components),
-  connections = uncurry3 AdConnection <$> S.toAscList conns
+  connections = map (uncurry3 AdConnection) $ S.toAscList conns
 }
 
 convertToAdNode :: (Node -> String) -> (Node, Int) -> AdNode
@@ -230,7 +231,7 @@ getConnections scope alloyInstance ns = do
       (returnX GuardName)
       activityEdges
   let labelMap :: Map GuardName String
-      labelMap = M.fromAscList . zip (S.toAscList triggers) $ pure <$> ['a'..]
+      labelMap = M.fromAscList . zip (S.toAscList triggers) $ map singleton ['a'..]
   return $ link to label labelMap from
   where
     only f xs = S.filter $ (`S.member` xs) . f

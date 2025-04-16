@@ -123,7 +123,7 @@ initialMarkingLaTeX
   -- ^ A list of nodes which should only contain place nodes.
   -> Formula
 initialMarkingLaTeX ns = "m_0 = "
-  ++ parenthesise (intercalate "," $ show . initialTokens <$> ns)
+  ++ parenthesise (intercalate "," $ map (show . initialTokens) ns)
 
 {-|
 Create LaTeX-'Formula's representing the tuples for incoming and outgoing flow
@@ -137,9 +137,9 @@ tokenChangeLaTeX
   -- ^ the transition names (in this given order).
   -> p n String
   -> [(Formula, Formula)]
-tokenChangeLaTeX ps ts net = (inT &&& outT) <$> ts
+tokenChangeLaTeX ps ts net = map (inT &&& outT) ts
   where
     inT  t = "^{\\bullet}" ++ t ++ tokens (`flow` t)
     outT t = t ++ "^{\\bullet}" ++ tokens (flow t)
-    tokens f  = " = " ++ parenthesise (intercalate "," $ show <$> flowList f)
-    flowList f = (\p -> fromMaybe 0 $ f p net) <$> ps
+    tokens f  = " = " ++ parenthesise (intercalate "," $ map show $ flowList f)
+    flowList f = map (\p -> fromMaybe 0 $ f p net) ps

@@ -50,4 +50,7 @@ hasMinTransitionLength p ts minL n =
     variants = transitionVariants $ minL - 1
     transitionVariants x
       | x < 1     = [[]]
-      | otherwise = (:) <$> S.toList ts <*> transitionVariants (x - 1)
+      | otherwise = [ a : as |
+          a <- S.toList ts,
+          as <- transitionVariants (x-1)
+          ]

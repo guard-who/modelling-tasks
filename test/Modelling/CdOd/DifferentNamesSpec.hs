@@ -107,7 +107,7 @@ spec = do
         `shouldReturn` defaultDifferentNamesInstance
   describe "differentNamesEvaluation" $ do
     it "accepts the initial example" $
-      let cs = bimap unName unName <$> differentNamesInitial
+      let cs = map (bimap unName unName) differentNamesInitial
       in property $ \bs ->
         not (null bs) ==> Right 1 == evaluateDifferentNames bs cs cs
     it "accepts correct solutions" $
@@ -142,10 +142,10 @@ spec = do
            >>= (\x -> renameInstance x names nonInheritances linkNs)
     it "renames solution" $ renameProperty $ \inst renamedInstance as ls ->
       let rename xs ys = Name . fromJust . (`lookup` zip xs ys)
-          origMap = bimap
+          origMap = map (bimap
             (rename (associationNames $ cDiagram inst) as)
-            (rename (linkNames $ oDiagram inst) ls)
-            <$> BM.toList (fromNameMapping $ mapping inst)
+            (rename (linkNames $ oDiagram inst) ls))
+            $ BM.toList (fromNameMapping $ mapping inst)
       in (Right 1 ==)
          $ maybe (Left "instance could not be renamed") return renamedInstance
          >>= \renamed ->
@@ -341,7 +341,7 @@ evaluateDifferentNames coins cs cs' = flip withLang English $ do
         taskText = defaultDifferentNamesTaskText,
         addText = Nothing
         }
-      cs'' = bimap Name Name <$> cs'
+      cs'' = map (bimap Name Name) cs'
   differentNamesSyntax i cs''
   points <- differentNamesEvaluation i cs''
   pure points

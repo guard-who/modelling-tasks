@@ -389,8 +389,8 @@ toTaskSpecificText path task@NameCdErrorInstance {..} = \case
       (unannotateCd classDiagram)
       path
     ReasonsList -> enumerateM (text . singleton)
-      $ second (renderReason (printNavigations cdDrawSettings) . snd)
-      <$> M.toList errorReasons
+      $ map (second (renderReason (printNavigations cdDrawSettings) . snd))
+      $ M.toList errorReasons
     RelationshipsList -> do
       let defaults = omittedDefaults cdDrawSettings
           phrase article x y z = translate $ do
@@ -776,9 +776,10 @@ nameCdError
   => NameCdErrorConfig
   -> RandT g m (AnyCd, Property, [AnyRelationship String String])
 nameCdError NameCdErrorConfig {..}  = do
-  structuralWeakenings <- shuffleM $ (,)
-    <$> illegalStructuralWeakenings allowedProperties
-    <*> legalStructuralWeakenings allowedProperties
+  structuralWeakenings <- shuffleM [ (x,y) |
+    x <- illegalStructuralWeakenings allowedProperties,
+    y <- legalStructuralWeakenings allowedProperties
+    ]
   getInstanceWithStructuralWeakenings structuralWeakenings
   where
     getFixWith cd properties = Changes.transformGetNextFix

@@ -54,12 +54,12 @@ main = do
     [] -> getContents >>= \contents -> run withNames redColor contents "output"
     [file] -> readFile file >>= \contents -> run withNames redColor contents file
     [file, format]
-      | fmap toUpper format == "SVG" ->
+      | map toUpper format == "SVG" ->
           readFile file >>= \contents -> run withNames redColor contents file
       | otherwise -> error $ "format " ++ format
           ++ "is not supported, only SVG is supported"
     [file, format, x]
-      | fmap toUpper format == "SVG" ->
+      | map toUpper format == "SVG" ->
         readFile file >>= \contents ->
           run withNames (specialStyle !! read x) contents file
       | otherwise -> error $ "format " ++ format

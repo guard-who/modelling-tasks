@@ -74,7 +74,7 @@ alloyInstanceToOd allLinkNames i = do
   links <- concat <$> mapM (getLink os) (nubOrd allLinkNames)
   return ObjectDiagram {..}
   where
-    getLink os l = fmap (toLink l) . S.toList
+    getLink os l = map (toLink l) . S.toList
       <$> getDoubleAs l oName oName os
     oName x = return . toObjectName x
     toObjectName x y = lowerFirst x ++ if y == 0 then [] else show y

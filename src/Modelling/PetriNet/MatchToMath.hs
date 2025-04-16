@@ -256,7 +256,7 @@ graphToMath c segment seed = evalWithStdGen seed $ do
   ds <- randomDrawSettings (graphConfig c)
   (d, m, ms) <-
     matchToMath ds (map toPetriMath) c segment
-  matchMathInstance c d m $ fst <$> ms
+  matchMathInstance c d m $ map fst ms
 
 mathToGraph
   :: (MonadAlloy m, MonadFail m, MonadThrow m, Net p n)
@@ -275,7 +275,7 @@ mathToGraph c segment seed = evalWithStdGen seed $ do
         <$> oneOf (graphLayouts $ graphConfig c)
       return (s, replicate (wrongInstances c) s)
   (d, m, ds) <- matchToMath x xs c segment
-  matchMathInstance c m d $ fst <$> ds
+  matchMathInstance c m d $ map fst ds
 
 matchMathInstance
   :: MonadRandom m
@@ -285,7 +285,7 @@ matchMathInstance
   -> [b]
   -> m (MatchInstance a b)
 matchMathInstance c x y ys = do
-  ys' <- shuffleM $ (True, y) : ((False,) <$> ys)
+  ys' <- shuffleM $ (True, y) : map (False,) ys
   return $ MatchInstance {
     from = x,
     showSolution = printSolution c,
@@ -358,7 +358,7 @@ graphToMathTask path task = do
     german "Welche der folgenden mathematischen Repräsentationen formalisiert dieses Petrinetz?"
   enumerateM
     (text . (++ ". ") . show)
-    $ second (mathToOutput latex . snd) <$> toList (to task)
+    $ map (second (mathToOutput latex . snd)) $ toList (to task)
   paragraph $ translate $ do
     english [i|Please state your answer by giving the number of the matching representation only.|]
     german [i|Geben Sie Ihre Antwort durch Angabe der Nummer der passenden Repräsentation an.|]
@@ -397,8 +397,8 @@ mathToOutput f pm = paragraph $ do
       f o
       pure ()
   translate $ english ":"
-  itemizeM $ f . fst <$> tokenChangeMath pm
-  itemizeM $ f . snd <$> tokenChangeMath pm
+  itemizeM $ map (f . fst) $ tokenChangeMath pm
+  itemizeM $ map (f . snd) $ tokenChangeMath pm
   translate $ do
     english "Moreover, "
     german "und "

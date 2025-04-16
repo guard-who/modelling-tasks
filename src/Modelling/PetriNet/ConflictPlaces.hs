@@ -135,7 +135,7 @@ findConflictPlacesTask path task = do
     translate $ do
       let ((t1, t2), [p1, p2]) = bimap
             (bimap show show)
-            (fmap show)
+            (map show)
             ts
       english [i| as answer would indicate that transitions #{t1} and #{t2} are in conflict under the initial marking
 and that places #{p1} and #{p2} are all those common places within the preconditions

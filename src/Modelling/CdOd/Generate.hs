@@ -30,6 +30,7 @@ import Modelling.CdOd.Types (
 
 import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom)
+import Data.List (singleton)
 import Data.Maybe                       (mapMaybe)
 import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
@@ -50,10 +51,10 @@ generateCds withNonTrivialInheritance config props maxInstances to = do
 instanceToAnyCd :: MonadThrow m => AlloyInstance -> m AnyCd
 instanceToAnyCd alloyInstance = do
   cd <- instanceClassDiagram <$> fromInstance alloyInstance
-  let classRenamingMap = BM.fromList $ zip (anyClassNames cd) $ map pure ['A'..]
+  let classRenamingMap = BM.fromList $ zip (anyClassNames cd) $ map singleton ['A'..]
       relationshipNames = mapMaybe anyRelationshipName $ anyRelationships cd
       relationshipRenamingMap =
-        BM.fromList $ zip relationshipNames $ map pure ['z', 'y' ..]
+        BM.fromList $ zip relationshipNames $ map singleton ['z', 'y' ..]
   renameClassesAndRelationships classRenamingMap relationshipRenamingMap cd
 
 instanceToCd :: MonadThrow m => AlloyInstance -> m Cd

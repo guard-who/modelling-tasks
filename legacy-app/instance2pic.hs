@@ -23,7 +23,7 @@ main = do
    [xs] -> getContents >>= drawOd (read xs) "output"
    [xs, file] -> readFile file >>= drawOd (read xs) file
    [xs, file, format]
-     | fmap toUpper format == "SVG" -> readFile file >>= drawOd (read xs) file
+     | map toUpper format == "SVG" -> readFile file >>= drawOd (read xs) file
      | otherwise -> error $ "format " ++ format
          ++ "is not supported, only SVG is supported"
    _ -> error "zu viele Parameter"
