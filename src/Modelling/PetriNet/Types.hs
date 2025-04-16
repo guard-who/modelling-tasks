@@ -158,8 +158,8 @@ changes.
 data PetriChange a = Change {
   -- | The token change 'Map': Mapping places to changes of their tokens.
   tokenChange :: Map a Int,
-  -- | The flow change 'Map': Mapping source places to a mapping from target
-  --   place to the flow change at the edge between source and target.
+  -- | The flow change 'Map': Mapping source nodes to a mapping from target
+  --   nodes to the flow change (if any) at the edge between source and target.
   flowChange  :: Map a (Map a Int)
   }
   deriving (Eq, Generic, Show)
