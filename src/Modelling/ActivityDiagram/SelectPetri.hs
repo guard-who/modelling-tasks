@@ -439,7 +439,7 @@ selectPetriEvaluation path task n = addPretext $ do
       unless (withPlaceNames $ petriDrawConf task) $ paragraph $ do
         translate $ do
           english "The translated Petri net (including node names) looks like this:"
-          german "Das aus dem Aktivitätsdiagramm übersetze Petrinetz sieht mit Knotennamen wie folgt aus:"
+          german "Das aus dem Aktivitätsdiagramm übersetzte Petrinetz sieht mit Knotennamen wie folgt aus:"
 
         let drawSetting = (petriDrawConf task)
               { withPlaceNames = True
