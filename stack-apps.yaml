@@ -11,7 +11,7 @@ flags:
     quick-testing: true
 extra-deps:
   - git: https://github.com/fmidue/output-blocks.git
-    commit: f14dca13e3fa06858ee6299333764b9b89d820c9
+    commit: 6a1a5452af9d50c7cf0d4abb47e3c930b10f96d3
     subdirs:
       - output-blocks
       - output-blocks-latex

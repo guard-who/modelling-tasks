@@ -29,6 +29,6 @@ main = do
       selectPetriTask path task `withLang` English
       sub <- read <$> getLine
       selectPetriSyntax task sub `withLang` English
-      _ <- selectPetriEvaluation task sub `withLang` English
+      _ <- selectPetriEvaluation path task sub `withLang` English
       return ()
     _ -> error "usage: three parameters required: FilePath (Output Folder) Segment (Int) Seed (Int)"

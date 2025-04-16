@@ -13,6 +13,7 @@ module Modelling.ActivityDiagram.MatchPetri (
   MatchPetriSolution(..),
   defaultMatchPetriConfig,
   checkMatchPetriConfig,
+  mapTypesToLabels,
   matchPetriAlloy,
   matchPetriSolution,
   extractAuxiliaryPetriNodes,
