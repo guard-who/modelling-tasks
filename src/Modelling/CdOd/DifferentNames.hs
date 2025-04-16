@@ -589,7 +589,7 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
     links = [
       Link {linkName = "y", linkFrom = "c", linkTo = "b"},
       Link {linkName = "x", linkFrom = "d1", linkTo = "c1"},
-      Link {linkName = "z", linkFrom = "b", linkTo = "d1"},
+      Link {linkName = "z", linkFrom = "b", linkTo = "d"},
       Link {linkName = "x", linkFrom = "d", linkTo = "c2"},
       Link {linkName = "y", linkFrom = "c1", linkTo = "b"}
       ]

@@ -41,7 +41,7 @@ dependencies:
   - bimap
   - bifunctors
   - bytestring
-  - call-alloy >= 0.5.0.1 && < 0.6
+  - call-alloy >= 0.6.0.2 && < 0.7
   - call-plantuml
   - composition
   - containers
