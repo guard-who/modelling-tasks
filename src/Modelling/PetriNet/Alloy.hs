@@ -193,7 +193,8 @@ Generates signatures of the given kind, number of places and transitions.
 -}
 signatures
   :: String
-  -- ^ What kind of signatures to generate (e.g., @places@)
+  -- ^ What kind of signatures to generate
+  -- (e.g., @"given"@ for @givenPlaces@ and @givenTransitions@)
   -> Int
   -- ^ How many places of that kind
   -> Int
