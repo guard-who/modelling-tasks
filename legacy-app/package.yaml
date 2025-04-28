@@ -1,5 +1,5 @@
 ---
-name: modelling-task-legacy-apps
+name: modelling-tasks-legacy-apps
 build-tools:
   - alex
   - happy
