@@ -1,0 +1,121 @@
+cradle:
+  stack:
+    components:
+    - path: "src"
+      stackYaml: "stack.yaml"
+      component: "modelling-tasks:lib"
+
+    - path: "test"
+      stackYaml: "stack.yaml"
+      component: "modelling-tasks:test:modelling-tasks-test"
+
+
+    - path: "app/common"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:check-cds"
+
+    - path: "app/check-cds.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:check-cds"
+
+    - path: "app/conflicts.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:conflicts"
+
+    - path: "app/concurrency.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:concurrency"
+
+    - path: "app/different-names.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:different-names"
+
+    - path: "app/enterASTaskDemo.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:enterASTaskDemo"
+
+    - path: "app/evalIsomorphic.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:evalIsomorphic"
+
+    - path: "app/evalTimeToGenerate.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:evalTimeToGenerate"
+
+    - path: "app/findAuxiliaryPetriNodesTaskDemo.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:findAuxiliaryPetriNodesTaskDemo"
+
+    - path: "app/matchAdTaskDemo.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:matchAdTaskDemo"
+
+    - path: "app/matchPetriTaskDemo.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:matchPetriTaskDemo"
+
+    - path: "app/match-cd-od.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:match-cd-od"
+
+    - path: "app/matchToMath.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:matchToMath"
+
+    - path: "app/repair-incorrect.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:repair-incorrect"
+
+    - path: "app/selectASTaskDemo.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:selectASTaskDemo"
+
+    - path: "app/selectPetriTaskDemo.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-apps:exe:selectPetriTaskDemo"
+
+
+    - path: "app/generate"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:different-names-legacy"
+
+    - path: "app/parser"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:cd2alloy"
+
+    - path: "legacy-app/cd2alloy.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:cd2alloy"
+
+    - path: "legacy-app/cd2pic.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:cd2pic"
+
+    - path: "legacy-app/generate/Modelling/CdOd/Generate/DifferentNames.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:different-names-legacy"
+
+    - path: "legacy-app/different-names.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:different-names-legacy"
+
+    - path: "legacy-app/instance2pic.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:instance2pic"
+
+    - path: "legacy-app/generate/Modelling/CdOd/Generate/MatchCdOd.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:match-cd-od-legacy"
+
+    - path: "legacy-app/match-cd-od.hs"
+      stackYaml: "stack-apps.yaml"
+      component: "modelling-tasks-legacy-apps:exe:match-cd-od-legacy"
+
+
+    - path: "example/src"
+      stackYaml: "stack-examples.yaml"
+      component: "modelling-tasks-examples:lib"
+
+    - path: "example/test"
+      stackYaml: "stack-examples.yaml"
+      component: "modelling-tasks-examples:test:modelling-tasks-examples-test"
