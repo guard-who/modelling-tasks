@@ -447,11 +447,13 @@ classSigs linguisticReuse relationships = map classSig
         $ maybe "" ((" extends " ++) . superClass)
         $ find (hasSuperClass name) relationships
     fromTos = mapMaybe nameFromTo relationships
-    fields className = linesWrappedInOrBraces $
+    fields className = linesWrappedInOrBraces $ commaSeparated $
       [ [iii|#{name} : set #{linking to}|]
       | (name, from, to) <- fromTos
       , linking from == className
       ]
+    commaSeparated (x:xs@(_:_)) = (x ++ ",") : commaSeparated xs
+    commaSeparated xs = xs
     spaced [] = []
     spaced xs = ' ':xs
     fieldConstraints className = linesWrappedInBraces $ filter (not . null) $

@@ -38,7 +38,7 @@ fact SomeSelfLoops {
 // Classes
 sig A extends B {}
 sig B {
-  x : set C
+  x : set C,
   y : set D
 } {
   #x =< 1
