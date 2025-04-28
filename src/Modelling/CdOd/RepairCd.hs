@@ -70,7 +70,8 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
-  LinguisticReuse (None),
+  ExtendsAnd (FieldPlacement),
+  LinguisticReuse (ExtendsAnd),
   combineParts,
   createRunCommand,
   transform,
@@ -137,7 +138,7 @@ import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, void, when, zipWithM)
-import Control.Monad.Catch              (MonadThrow (throwM))
+import Control.Monad.Catch              (MonadCatch, MonadThrow (throwM))
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -573,7 +574,7 @@ renameInstance inst@RepairCdInstance {..} names' nonInheritances' = do
     }
 
 repairCd
-  :: (MonadAlloy m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m)
   => RepairCdConfig
   -> Int
   -> Int
@@ -841,7 +842,7 @@ diversify = zipWith permutate [0..]
       in (illegalChange c, shuffle' [w, x, y, z] 4 $ mkStdGen g)
 
 repairIncorrect
-  :: (MonadAlloy m, MonadThrow m, RandomGen g)
+  :: (MonadAlloy m, MonadCatch m, RandomGen g)
   => AllowedProperties
   -> ClassConfig
   -> CdConstraints
@@ -912,11 +913,11 @@ repairIncorrect
       changes <- listToMaybe <$> getInstances (Just 1) to alloyCode
       fmap (relationshipChange . head . instanceChangesAndCds)
         <$> traverse fromInstanceWithPredefinedNames changes
-    getOD :: (MonadAlloy m, MonadRandom m, MonadThrow m) => Cd -> m (Maybe Od)
+    getOD :: (MonadAlloy m, MonadCatch m, MonadRandom m) => Cd -> m (Maybe Od)
     getOD cd = do
       let maxNumberOfObjects = maxObjects $ snd $ classLimits config
           parts = transform
-            None
+            (ExtendsAnd FieldPlacement)
             cd
             Nothing
             []
@@ -926,13 +927,14 @@ repairIncorrect
             ""
           command = createRunCommand
             "cd"
-            Nothing
+            (Just $ classNames cd)
             (length $ classNames cd)
             maxNumberOfObjects
             (relationships cd)
       od <- listToMaybe
         <$> getInstances (Just 1) to (combineParts parts ++ command)
       od' <- forM od $ alloyInstanceToOd
+        (Just $ classNames cd)
         $ mapMaybe relationshipName $ relationships cd
       mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 

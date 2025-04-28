@@ -60,7 +60,8 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (
-  LinguisticReuse (None),
+  ExtendsAnd (NothingMore),
+  LinguisticReuse (ExtendsAnd),
   combineParts,
   createRunCommand,
   mergeParts,
@@ -112,7 +113,7 @@ import Modelling.Types (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad.Catch              (MonadThrow, throwM)
+import Control.Monad.Catch              (MonadCatch, MonadThrow, throwM)
 import Control.Monad.Extra              (whenJust)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
@@ -505,7 +506,7 @@ differentNamesSolution :: DifferentNamesInstance -> [(Name, Name)]
 differentNamesSolution = BM.toAscList . nameMapping . mapping
 
 differentNames
-  :: (MonadAlloy m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m)
   => DifferentNamesConfig
   -> Int
   -> Int
@@ -538,71 +539,73 @@ using 'defaultDifferentNamesConfig'.
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
   cDiagram = ClassDiagram {
-    classNames = ["C", "A", "D", "B"],
+    classNames = ["D", "B", "C", "A"],
     relationships = [
-      Inheritance {subClass = "D", superClass = "A"},
       Composition {
         compositionName = "a",
         compositionPart = LimitedLinking {
-          linking = "C",
+          linking = "B",
           limits = (2, Nothing)
           },
         compositionWhole = LimitedLinking {
-          linking = "B",
-          limits = (0, Just 1)
-          }
-        },
-      Association {
-        associationName = "b",
-        associationFrom = LimitedLinking {
-          linking = "A",
-          limits = (0, Nothing)
-          },
-        associationTo = LimitedLinking {
-          linking = "C",
+          linking = "D",
           limits = (0, Just 1)
           }
         },
       Aggregation {
-        aggregationName = "c",
+        aggregationName = "b",
         aggregationPart = LimitedLinking {
-          linking = "B",
+          linking = "D",
           limits = (0, Just 2)
           },
         aggregationWhole = LimitedLinking {
-          linking = "D",
+          linking = "A",
           limits = (0, Just 2)
           }
+        },
+      Association {
+        associationName = "c",
+        associationFrom = LimitedLinking {
+          linking = "C",
+          limits = (0, Nothing)
+          },
+        associationTo = LimitedLinking {
+          linking = "B",
+          limits = (0, Just 1)
+          }
+        },
+      Inheritance {
+        subClass = "A",
+        superClass = "C"
         }
       ]
     },
   cdDrawSettings = defaultCdDrawSettings,
   oDiagram = ObjectDiagram {
     objects = [
-      Object {isAnonymous = True, objectName = "d", objectClass = "D"},
-      Object {isAnonymous = True, objectName = "c1", objectClass = "C"},
-      Object {isAnonymous = True, objectName = "c2", objectClass = "C"},
-      Object {isAnonymous = True, objectName = "b", objectClass = "B"},
-      Object {isAnonymous = True, objectName = "d1", objectClass = "D"},
-      Object {isAnonymous = True, objectName = "c", objectClass = "C"}
+      Object {isAnonymous = True, objectName = "a1", objectClass = "A"},
+      Object {isAnonymous = True, objectName = "a",  objectClass = "A"},
+      Object {isAnonymous = True, objectName = "d",  objectClass = "D"},
+      Object {isAnonymous = True, objectName = "b",  objectClass = "B"},
+      Object {isAnonymous = True, objectName = "b1", objectClass = "B"}
       ],
     links = [
-      Link {linkName = "y", linkFrom = "c", linkTo = "b"},
-      Link {linkName = "x", linkFrom = "d1", linkTo = "c1"},
-      Link {linkName = "z", linkFrom = "b", linkTo = "d"},
-      Link {linkName = "x", linkFrom = "d", linkTo = "c2"},
-      Link {linkName = "y", linkFrom = "c1", linkTo = "b"}
+      Link {linkName = "x", linkFrom = "b",  linkTo = "d"},
+      Link {linkName = "y", linkFrom = "d",  linkTo = "a1"},
+      Link {linkName = "x", linkFrom = "b1", linkTo = "d"},
+      Link {linkName = "z", linkFrom = "a",  linkTo = "b1"},
+      Link {linkName = "z", linkFrom = "a1", linkTo = "b1"}
       ]
     },
   showSolution = False,
-  mapping = toNameMapping $ BM.fromList [("a", "y"), ("b", "x"), ("c", "z")],
+  mapping = toNameMapping $ BM.fromList [("a", "x"), ("b", "y"), ("c", "z")],
   linkShuffling = ConsecutiveLetters,
   taskText = defaultDifferentNamesTaskText,
   addText = Nothing
   }
 
 getDifferentNamesTask
-  :: (MonadAlloy m, MonadRandom m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m, MonadRandom m)
   => m DifferentNamesInstance
   -> DifferentNamesConfig
   -> Cd
@@ -642,7 +645,8 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
         (usesEveryRelationshipName objectProperties)
         isCompleteMapping
         then do
-        od1' <- either error id <$> runExceptT (alloyInstanceToOd labels od1)
+        od1' <- either error id
+          <$> runExceptT (alloyInstanceToOd Nothing labels od1)
         od1'' <- anonymiseObjects (anonymousObjectProportion objectProperties) od1'
         return $ DifferentNamesInstance {
               cDiagram  = cd1,
@@ -662,7 +666,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
   where
     renameEdges bm = either (error . show) id . bitraverse pure (`BM.lookup` bm)
     alloyFor n cd' = transform
-      None
+      (ExtendsAnd NothingMore)
       cd'
       Nothing
       []

@@ -74,7 +74,8 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
-  LinguisticReuse (None),
+  ExtendsAnd (FieldPlacement),
+  LinguisticReuse (ExtendsAnd),
   combineParts,
   createRunCommand,
   transform,
@@ -142,7 +143,7 @@ import Modelling.Types                  (Change (..))
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    ((>=>), forM, join)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
 import Control.Monad.Except             (runExceptT)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
@@ -721,7 +722,7 @@ renameInstance inst@NameCdErrorInstance {..} names' nonInheritances' = do
     }
 
 nameCdErrorGenerate
-  :: (MonadAlloy m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m)
   => NameCdErrorConfig
   -> Int
   -> Int
@@ -731,7 +732,7 @@ nameCdErrorGenerate config segment seed = do
   flip evalRandT g $ generateAndRandomise config
 
 generateAndRandomise
-  :: (MonadAlloy m, MonadThrow m, RandomGen g)
+  :: (MonadAlloy m, MonadCatch m, RandomGen g)
   => NameCdErrorConfig
   -> RandT g m NameCdErrorInstance
 generateAndRandomise config@NameCdErrorConfig {..} = do
@@ -772,7 +773,7 @@ generateAndRandomise config@NameCdErrorConfig {..} = do
       }
 
 nameCdError
-  :: (MonadAlloy m, MonadThrow m, RandomGen g)
+  :: (MonadAlloy m, MonadCatch m, RandomGen g)
   => NameCdErrorConfig
   -> RandT g m (AnyCd, Property, [AnyRelationship String String])
 nameCdError NameCdErrorConfig {..}  = do
@@ -828,7 +829,7 @@ nameCdError NameCdErrorConfig {..}  = do
     getOD cd = do
       let maxNumberOfObjects = maxObjects $ snd $ classLimits classConfig
           parts = transform
-            None
+            (ExtendsAnd FieldPlacement)
             cd
             Nothing
             []
@@ -838,7 +839,7 @@ nameCdError NameCdErrorConfig {..}  = do
             ""
           command = createRunCommand
             "cd"
-            Nothing
+            (Just $ classNames cd)
             (length $ classNames cd)
             maxNumberOfObjects
             (relationships cd)
@@ -846,7 +847,7 @@ nameCdError NameCdErrorConfig {..}  = do
       od <- listToMaybe
         <$> getInstances (Just 1) timeout (combineParts parts ++ command)
       od' <- fmap join $ forM od
-        $ runExceptT . alloyInstanceToOd possibleLinkNames
+        $ runExceptT . alloyInstanceToOd (Just $ classNames cd) possibleLinkNames
         >=> return . eitherToMaybe
       mapM (anonymiseObjects (anonymousObjectProportion objectProperties)) od'
 

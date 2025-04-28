@@ -229,6 +229,7 @@ drawCdAndOdsFor is c cds cmd = do
   where
     drawOd allRelationshipNames od i = drawOdFromInstance
       od
+      Nothing
       allRelationshipNames
       Nothing
       Back

@@ -13,7 +13,7 @@ import Modelling.CdOd.Types (
   ClassConfig (..),
   )
 
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch)
 import Control.Monad.Random             (MonadRandom, evalRandT, mkStdGen)
 import System.Random.Shuffle            (shuffleM)
 
@@ -21,7 +21,7 @@ debug :: Bool
 debug = False
 
 differentNames
-  :: (MonadAlloy m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m)
   => Int
   -> DifferentNamesConfig
   -> Int

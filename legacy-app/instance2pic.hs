@@ -33,6 +33,7 @@ drawOd possibleLinks file contents = flip evalRandT (mkStdGen 0) $ do
   i <- parseInstance $ BS.pack contents
   output <- drawOdFromInstance
     i
+    Nothing
     possibleLinks
     (Just $ 1 % 3)
     NoDir

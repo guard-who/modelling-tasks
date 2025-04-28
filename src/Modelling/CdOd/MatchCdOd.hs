@@ -119,7 +119,7 @@ import Modelling.Types (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Exception                (Exception)
 import Control.Monad                    ((<=<))
-import Control.Monad.Catch              (MonadThrow, throwM)
+import Control.Monad.Catch              (MonadCatch, MonadThrow, throwM)
 #if __GLASGOW_HASKELL__ < 808
 import Control.Monad.Fail               (MonadFail)
 #endif
@@ -430,7 +430,7 @@ matchCdOdSolution = M.toList . reverseMapping . fmap fst . instances
       $ M.fromList [(1, []), (2, [])]
 
 matchCdOd
-  :: (MonadAlloy m, MonadFail m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m, MonadFail m)
   => MatchCdOdConfig
   -> Int
   -> Int
@@ -442,7 +442,7 @@ matchCdOd config segment seed = flip evalRandT g $ do
     g = mkStdGen $ (segment +) $ 4 * seed
 
 getMatchCdOdTask
-  :: (MonadRandom m, MonadThrow m)
+  :: (MonadCatch m, MonadRandom m)
   => (MatchCdOdConfig
     -> m (Map Int Cd, Map Char ([Int], AlloyInstance)))
   -> MatchCdOdConfig
@@ -468,7 +468,7 @@ getMatchCdOdTask f config@MatchCdOdConfig {..} = do
   where
     toOd possibleLinkNames =
       anonymiseObjects (anonymousObjectProportion objectProperties)
-      <=< alloyInstanceToOd possibleLinkNames
+      <=< alloyInstanceToOd Nothing possibleLinkNames
 
 {-|
 A 'defaultMatchCdOdInstance' as generated using 'defaultMatchCdOdConfig'.

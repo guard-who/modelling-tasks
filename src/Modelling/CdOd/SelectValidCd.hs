@@ -106,7 +106,7 @@ import Modelling.Types                  (Change (..))
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    ((>=>), unless, void, when)
-import Control.Monad.Catch              (MonadThrow (throwM))
+import Control.Monad.Catch              (MonadCatch, MonadThrow (throwM))
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -448,7 +448,7 @@ selectValidCdSolution =
   M.keys . M.filter id . fmap (isRight . hint) . classDiagrams
 
 selectValidCd
-  :: (MonadAlloy m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m)
   => SelectValidCdConfig
   -> Int
   -> Int

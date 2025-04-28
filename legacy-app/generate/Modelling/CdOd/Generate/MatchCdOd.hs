@@ -29,7 +29,7 @@ import Modelling.CdOd.Types (
   anyThickEdge,
   )
 
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch)
 import Control.Monad.Random (
   RandT,
   RandomGen,
@@ -42,7 +42,7 @@ import Language.Alloy.Call              (AlloyInstance)
 import System.Random.Shuffle            (shuffleM)
 
 matchCdOd
-  :: (MonadAlloy m, MonadFail m, MonadThrow m)
+  :: (MonadAlloy m, MonadCatch m, MonadFail m)
   => Int
   -> MatchCdOdConfig
   -> Int

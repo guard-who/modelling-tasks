@@ -56,7 +56,7 @@ import Modelling.CdOd.Types (
 
 import Control.Lens                     ((.~))
 import Control.Monad                    (guard)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
 import Control.Monad.Random (
   RandT,
   RandomGen,
@@ -357,9 +357,13 @@ Parses an Alloy object diagram instance, draws it and saves it to a file.
 (the path where it has been stored is returned)
 -}
 drawOdFromInstance
-  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, RandomGen g)
+  :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m, RandomGen g)
   => AlloyInstance
   -- ^ the Alloy object diagram instance
+  -> Maybe [String]
+  -- ^ all possible object names, for @ExtendsAnd FieldPlacement@
+  --
+  -- see 'alloyInstanceToOd' for more details.
   -> [String]
   -- ^ possible link names
   -> Maybe Rational
@@ -371,8 +375,16 @@ drawOdFromInstance
   -> FilePath
   -- ^ where to store the object diagram
   -> RandT g m FilePath
-drawOdFromInstance i possibleLinkNames anonymous direction printNames path = do
-  g <- alloyInstanceToOd possibleLinkNames i
+drawOdFromInstance
+  alloyInstance
+  possibleClassNames
+  possibleLinkNames
+  anonymous
+  direction
+  printNames
+  path
+  = do
+  g <- alloyInstanceToOd possibleClassNames possibleLinkNames alloyInstance
   od <- anonymiseObjects (fromMaybe (1 % 3) anonymous) g
   lift $ drawOd
     od

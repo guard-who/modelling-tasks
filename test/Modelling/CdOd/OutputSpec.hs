@@ -45,5 +45,12 @@ spec = do
       let possibleLinks = map (: []) ['w'..'y']
       void $ flip evalRandT
         (mkStdGen 0)
-        $ drawOdFromInstance alloyInstance possibleLinks (Just 1) Forward True file
+        $ drawOdFromInstance
+          alloyInstance
+          Nothing
+          possibleLinks
+          (Just 1)
+          Forward
+          True
+          file
       readFile file

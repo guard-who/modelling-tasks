@@ -1,4 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wwarn=orphans #-}
 module Modelling.CdOd.Auxiliary.Util (
   alloyInstanceToOd,
   emptyArr,
@@ -26,8 +28,9 @@ import Language.Alloy.Call              as Alloy (
   lookupSig,
   scoped,
   )
+import Language.Alloy.Exceptions        (AlloyLookupFailed (..))
 
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch (catch), MonadThrow (throwM))
 import Data.GraphViz                    (X11Color (..))
 import Data.GraphViz.Attributes.Complete (
   ArrowShape (..),
@@ -41,6 +44,7 @@ import Data.GraphViz.Attributes.HTML    as Html
   (Label, Format (..), Label (Text), TextItem (..))
 import Data.List.Extra                  (nubOrd)
 import Data.Text.Lazy                   (pack)
+import Control.Monad.Trans.Random       (RandT, liftCatch)
 
 filterFirst :: Eq a => a -> [a] -> [a]
 filterFirst _ []     = []
@@ -58,24 +62,45 @@ emptyArr = AType [(openMod, Normal)]
 redColor :: Attribute
 redColor = Color [toWColor Red]
 
+instance {-# OVERLAPPABLE #-} MonadCatch m => MonadCatch (RandT g m) where
+  catch = liftCatch catch
+
 {-|
 Parses the Alloy object diagram instance.
 -}
 alloyInstanceToOd
-  :: MonadThrow m
-  => [String]
+  :: MonadCatch m
+  => Maybe [String]
+  -- ^ the super class set of all potential objects
+  -- (all possible class names is also possible)
+  --
+  -- Only required for Alloy instances that were generated with
+  -- @LinguisticReuse@ set to @ExtendsAnd FieldPlacement@,
+  -- otherwise 'Nothing'
+  -> [String]
   -- ^ all possible link names
   -> AlloyInstance
   -- ^ the alloy instance to parse
   -> m Od
-alloyInstanceToOd allLinkNames i = do
-  os    <- lookupSig (scoped "this" "Object") i
-  objects <- S.toList <$> getSingleAs "" toObject os
-  links <- concat <$> mapM (getLink os) (nubOrd allLinkNames)
-  return ObjectDiagram {..}
+alloyInstanceToOd maybeAllClassNames allLinkNames i = case maybeAllClassNames of
+  Nothing -> do
+    os <- lookupSig (scoped "this" "Object") i
+    objects <- S.toList <$> getSingleAs "" toObject os
+    links <- concat <$> mapM (getLink os) (nubOrd allLinkNames)
+    return ObjectDiagram {..}
+  Just allClassNames -> do
+    os <- mapM (flip lookupSig i . scoped "this") (nubOrd allClassNames)
+    objects <- S.toList . S.unions <$> mapM (getSingleAs "" toObject) os
+    links <- concat <$> mapM (getLinks os) (nubOrd allLinkNames)
+    return ObjectDiagram {..}
   where
     getLink os l = map (toLink l) . S.toList
       <$> getDoubleAs l oName oName os
+    getLinks os l = map (toLink l) . S.toList . S.unions
+      <$> mapM (ignoreMissingRelation . getDoubleAs l oName oName) os
+    ignoreMissingRelation = flip catch $ \case
+      LookupAlloyRelationFailed {} -> pure S.empty
+      exception -> throwM exception
     oName x = return . toObjectName x
     toObjectName x y = lowerFirst x ++ if y == 0 then [] else show y
     toObject x y = return $ Object {
