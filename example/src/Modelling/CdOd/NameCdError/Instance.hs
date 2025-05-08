@@ -4,6 +4,7 @@ module Modelling.CdOd.NameCdError.Instance where
 
 import qualified Data.Map                         as M (fromList)
 
+import Modelling.Auxiliary.Shuffle.All  (ShuffleInstance (..))
 import Modelling.CdOd.NameCdError (
   NameCdErrorInstance (..),
   NameCdErrorTaskTextElement (..),
@@ -35,8 +36,9 @@ listToFM = M.fromList
 {-|
 points: 0.15
 -}
-task2024_14 :: NameCdErrorInstance
-task2024_14 = NameCdErrorInstance {
+task2024_14 :: ShuffleInstance NameCdErrorInstance
+task2024_14 = ShuffleInstance {
+  taskInstance = NameCdErrorInstance {
     byName = True,
     classDiagram = AnnotatedClassDiagram {
       annotatedClasses = ["Professor", "FacilityManager", "Person", "Room", "Building", "UniversityCampus"],
@@ -227,4 +229,8 @@ task2024_14 = NameCdErrorInstance {
         ]
       ],
     addText = Nothing
+    },
+  allowLayoutMangling = False,
+  shuffleNames = False,
+  shuffleOptions = True
   }
