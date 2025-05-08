@@ -9,7 +9,7 @@ import Modelling.CdOd.SelectValidCd (
   SelectValidCdTaskTextElement (..),
   )
 
-import Modelling.Auxiliary.Common       (ShuffleInstance (..))
+import Modelling.Auxiliary.Shuffle.All  (ShuffleInstance (..))
 import Modelling.CdOd.RepairCd          (InValidOption (..))
 import Modelling.CdOd.Types (
   Annotation (..),
@@ -438,7 +438,8 @@ task2024_06picked = ShuffleInstance {
     addText = Nothing
     },
   allowLayoutMangling = True,
-  shuffleNames = True
+  shuffleNames = True,
+  shuffleOptions = True
   }
 
 {-|
@@ -868,7 +869,8 @@ task2024_09 = ShuffleInstance {
     addText = Nothing
     },
   allowLayoutMangling = True,
-  shuffleNames = True
+  shuffleNames = True,
+  shuffleOptions = True
   }
 
 {-|
@@ -1161,5 +1163,6 @@ task2024_53 = ShuffleInstance {
     addText = Nothing
     },
   allowLayoutMangling = True,
-  shuffleNames = False
+  shuffleNames = False,
+  shuffleOptions = True
   }

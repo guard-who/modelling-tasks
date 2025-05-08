@@ -65,6 +65,8 @@ library
       Modelling.ActivityDiagram.SelectPetri
       Modelling.ActivityDiagram.Shuffle
       Modelling.Auxiliary.Common
+      Modelling.Auxiliary.Shuffle.All
+      Modelling.Auxiliary.Shuffle.NamesAndLayout
       Modelling.Auxiliary.Output
       Modelling.CdOd.Auxiliary.Util
       Modelling.CdOd.CD2Alloy.Transform

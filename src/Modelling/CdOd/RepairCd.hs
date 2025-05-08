@@ -58,8 +58,8 @@ import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
+  RandomiseNames (randomiseNames),
   TaskGenerationException (NoInstanceAvailable),
-  shuffleEverything,
   )
 import Modelling.Auxiliary.Output (
   addPretext,
@@ -68,6 +68,7 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   uniform, extra,
   )
+import Modelling.Auxiliary.Shuffle.All  (shuffleEverything)
 import Modelling.CdOd.Auxiliary.Util    (alloyInstanceToOd)
 import Modelling.CdOd.CD2Alloy.Transform (
   ExtendsAnd (FieldPlacement),
@@ -503,12 +504,14 @@ classAndNonInheritanceNames inst =
   in (names, nonInheritances)
 
 instance Randomise RepairCdInstance where
-  randomise inst = do
+  randomise = shuffleInstance
+
+instance RandomiseNames RepairCdInstance where
+  randomiseNames inst = do
     let (names, nonInheritances) = classAndNonInheritanceNames inst
     names' <- shuffleM names
     nonInheritances' <- shuffleM nonInheritances
     renameInstance inst names' nonInheritances'
-      >>= shuffleInstance
 
 instance RandomiseLayout RepairCdInstance where
   randomiseLayout RepairCdInstance {..} = do

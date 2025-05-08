@@ -2,6 +2,10 @@
 
 module ExamplesSpec where
 
+import qualified Modelling.Auxiliary.Shuffle.All as All (
+  ShuffleInstance (taskInstance),
+  )
+
 import Modelling.ActivityDiagram.EnterAS (
   checkEnterASConfig,
   )
@@ -62,9 +66,6 @@ import Modelling.ActivityDiagram.SelectPetri.Config (
   task2023_38,
   task2024_43,
   task2024_44,
-  )
-import Modelling.Auxiliary.Common (
-  ShuffleInstance (taskInstance),
   )
 import Modelling.CdOd.DifferentNames (
   checkDifferentNamesConfig,
@@ -266,14 +267,15 @@ spec =
       it "task06" $
         checkSelectValidCdConfig task2024_06 `shouldBe` Nothing
       it "task06 picked" $
-        checkSelectValidCdInstance (taskInstance task2024_06picked)
+        checkSelectValidCdInstance (All.taskInstance task2024_06picked)
         `shouldBe` Nothing
       it "task07" $
         checkSelectValidCdConfig task2024_07 `shouldBe` Nothing
       it "task08" $
         checkSelectValidCdConfig task2024_08 `shouldBe` Nothing
       it "task09" $
-        checkSelectValidCdInstance (taskInstance task2024_09) `shouldBe` Nothing
+        checkSelectValidCdInstance (All.taskInstance task2024_09)
+        `shouldBe` Nothing
       it "task10" $
         checkNameCdErrorConfig task2024_10 `shouldBe` Nothing
       it "task11" $
@@ -349,7 +351,8 @@ spec =
       it "task52" $
         checkSelectValidCdConfig task2024_52 `shouldBe` Nothing
       it "task53" $
-        checkSelectValidCdInstance (taskInstance task2024_53) `shouldBe` Nothing
+        checkSelectValidCdInstance (All.taskInstance task2024_53)
+        `shouldBe` Nothing
       it "task54" $
         checkNameCdErrorConfig task2024_54 `shouldBe` Nothing
       it "task55" $

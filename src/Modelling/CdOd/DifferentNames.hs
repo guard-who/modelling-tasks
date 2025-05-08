@@ -45,10 +45,9 @@ import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
-  Randomise (isRandomisable, randomise),
   RandomiseLayout (randomiseLayout),
+  RandomiseNames (hasRandomisableNames, randomiseNames),
   TaskGenerationException (NoInstanceAvailable),
-  shuffleEverything,
   )
 import Modelling.Auxiliary.Output (
   addPretext,
@@ -57,6 +56,9 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   uniform,
   extra,
+  )
+import Modelling.Auxiliary.Shuffle.NamesAndLayout (
+  shuffleEverything,
   )
 import Modelling.CdOd.Auxiliary.Util
 import Modelling.CdOd.CD2Alloy.Transform (
@@ -700,8 +702,11 @@ classNonInheritanceAndLinkNames DifferentNamesInstance {..} =
       links = linkNames oDiagram ++ additional
   in (names, nonInheritances, links)
 
-instance Randomise DifferentNamesInstance where
-  randomise inst@DifferentNamesInstance {..} = do
+instance RandomiseNames DifferentNamesInstance where
+  hasRandomisableNames DifferentNamesInstance {..} =
+    isObjectDiagramRandomisable oDiagram
+
+  randomiseNames inst@DifferentNamesInstance {..} = do
     let (names, nonInheritances, lNames) = classNonInheritanceAndLinkNames inst
         links = case linkShuffling of
           ConsecutiveLetters -> take (length lNames) (map (:[]) ['z', 'y' ..])
@@ -710,8 +715,6 @@ instance Randomise DifferentNamesInstance where
     nonInheritances' <- shuffleM nonInheritances
     links' <- shuffleM links
     renameInstance inst names' nonInheritances' links'
-  isRandomisable DifferentNamesInstance {..} =
-    isObjectDiagramRandomisable oDiagram
 
 instance RandomiseLayout DifferentNamesInstance where
   randomiseLayout DifferentNamesInstance {..} = do

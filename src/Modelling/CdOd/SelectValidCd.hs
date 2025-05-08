@@ -41,7 +41,7 @@ import Modelling.Auxiliary.Common (
   ModellingTasksException (NeverHappens),
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
-  shuffleEverything,
+  RandomiseNames (randomiseNames),
   )
 import Modelling.Auxiliary.Output (
   addPretext,
@@ -51,6 +51,7 @@ import Modelling.Auxiliary.Output (
   uniform,
   extra,
   )
+import Modelling.Auxiliary.Shuffle.All  (shuffleEverything)
 import Modelling.CdOd.CdAndChanges.Instance (
   AnnotatedChangeAndCd (..),
   )
@@ -479,12 +480,14 @@ selectValidCd SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
       | otherwise            = return
 
 instance Randomise SelectValidCdInstance where
-  randomise inst = do
+  randomise = shuffleInstance
+
+instance RandomiseNames SelectValidCdInstance where
+  randomiseNames inst = do
     let (names, nonInheritances) = classAndNonInheritanceNames inst
     names' <- shuffleM names
     nonInheritances' <- shuffleM nonInheritances
     renameInstance inst names' nonInheritances'
-      >>= shuffleInstance
 
 instance RandomiseLayout SelectValidCdInstance where
   randomiseLayout SelectValidCdInstance {..} = do

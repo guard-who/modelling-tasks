@@ -1,7 +1,9 @@
 module Modelling.CdOd.Generate.DifferentNames where
 
 import Capabilities.Alloy               (MonadAlloy)
-import Modelling.Auxiliary.Common       (Randomise (randomise))
+import Modelling.Auxiliary.Shuffle.NamesAndLayout (
+  shuffleEverything,
+  )
 import Modelling.CdOd.DifferentNames (
   DifferentNamesConfig (..),
   DifferentNamesInstance,
@@ -39,7 +41,7 @@ differentNames searchSpace config segment seed = do
           config'
           searchSpace
         getDifferentNamesTask fgen config $ fromEdges names edges
-      randomise inst
+      shuffleEverything inst
     continueWithHead []    _ = fgen
     continueWithHead (x:_) f = f x
 

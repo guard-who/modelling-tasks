@@ -1,13 +1,12 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Modelling.Auxiliary.Common (
   ModellingTasksException (..),
   Object (..),
   Randomise (..),
   RandomiseLayout (..),
-  ShuffleInstance (..),
+  RandomiseNames (..),
+  ShuffleExcept (..),
   TaskGenerationException (..),
   getFirstInstance,
   lensRulesL,
@@ -16,8 +15,6 @@ module Modelling.Auxiliary.Common (
   oneOf,
   parseInt,
   parseWith,
-  shuffleEverything,
-  shuffleInstanceWith,
   skipSpaces,
   toMap,
   upperFirst,
@@ -36,13 +33,10 @@ import qualified Data.Set                         as S (
   )
 
 import Control.Exception                (Exception, SomeException)
-import Control.Monad                    ((>=>))
 import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.Random (
   MonadRandom (getRandomR),
-  RandomGen,
   RandT,
-  evalRandT,
   )
 import Control.Monad.Trans.Class        (lift)
 import Data.Char (
@@ -61,7 +55,6 @@ import Control.Lens (
   lensRules,
   mappingNamer,
   )
-import GHC.Generics                     (Generic)
 import Text.Parsec                      (parse)
 import Text.ParserCombinators.Parsec (
   Parser,
@@ -117,40 +110,9 @@ newtype ShuffleExcept g a = ShuffleExcept {
 instance MonadThrow (ShuffleExcept g) where
   throwM = ShuffleExcept . lift . throwM
 
-shuffleInstanceWith
-  :: (RandomGen g, Randomise a, RandomiseLayout a)
-  => ShuffleInstance a
-  -> g
-  -> Either SomeException a
-shuffleInstanceWith x = evalRandT (unShuffleExcept $ shuffleInstance x)
-
-shuffleEverything
-  :: (MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
-  => a
-  -> m a
-shuffleEverything inst = shuffleInstance $ ShuffleInstance {
-  taskInstance                = inst,
-  allowLayoutMangling         = True,
-  shuffleNames                = True
-  }
-
-data ShuffleInstance a = ShuffleInstance {
-  taskInstance                :: a,
-  allowLayoutMangling         :: Bool,
-  shuffleNames                :: Bool
-  } deriving (Eq, Generic, Read, Show)
-
-shuffleInstance
-  :: (MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a)
-  => ShuffleInstance a
-  -> m a
-shuffleInstance ShuffleInstance {..} =
-  whenM shuffleNames randomise
-  >=> whenM allowLayoutMangling randomiseLayout
-  $ taskInstance
-  where
-    whenM p x = if p then x else return
-
+{-|
+The class of types that allow some form of randomisation.
+-}
 class Randomise a where
   -- | Shuffles every component without affecting basic overall properties
   randomise :: (MonadRandom m, MonadThrow m) => a -> m a
@@ -161,6 +123,9 @@ class Randomise a where
   isRandomisable :: a -> Maybe String
   isRandomisable _ = Nothing
 
+{-|
+The class of types that allow changing its layout randomly.
+-}
 class RandomiseLayout a where
   {-
   Shuffles the structure of every component
@@ -171,6 +136,19 @@ class RandomiseLayout a where
   how the used algorithm is laying out the graph.
   -}
   randomiseLayout :: (MonadRandom m, MonadThrow m) => a -> m a
+
+{-|
+The class of types that allow swapping (some of) its components names randomly.
+-}
+class RandomiseNames a where
+  -- | Checks the randomisability of names for the given value
+  --     * returns Nothing, if it is randomisable
+  --     * returns Just the explanation why not, otherwise
+  hasRandomisableNames :: a -> Maybe String
+  hasRandomisableNames _ = Nothing
+
+  -- | Shuffles the order of names of an instance, swapping names of components
+  randomiseNames :: (MonadRandom m, MonadThrow m) => a -> m a
 
 upperToDash :: String -> String
 upperToDash [] = []

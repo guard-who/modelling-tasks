@@ -46,9 +46,9 @@ import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
-  Randomise (isRandomisable, randomise),
+  Randomise (randomise),
   RandomiseLayout (randomiseLayout),
-  shuffleEverything,
+  RandomiseNames (hasRandomisableNames, randomiseNames),
   )
 import Modelling.Auxiliary.Output (
   addPretext,
@@ -57,6 +57,7 @@ import Modelling.Auxiliary.Output (
   simplifiedInformation,
   uniform,
   )
+import Modelling.Auxiliary.Shuffle.All  (shuffleEverything)
 import Modelling.CdOd.CD2Alloy.Transform (
   LinguisticReuse (None),
   combineParts,
@@ -635,13 +636,16 @@ classAndNonInheritanceNames inst =
   in (names, nonInheritances)
 
 instance Randomise MatchCdOdInstance where
-  randomise inst = do
+  randomise = shuffleInstance
+
+instance RandomiseNames MatchCdOdInstance where
+  randomiseNames inst = do
     let (names, nonInheritances) = classAndNonInheritanceNames inst
     names'  <- shuffleM names
     nonInheritances' <- shuffleM nonInheritances
     renameInstance inst names' nonInheritances'
-      >>= shuffleInstance
-  isRandomisable MatchCdOdInstance {..} = listToMaybe
+
+  hasRandomisableNames MatchCdOdInstance {..} = listToMaybe
     $ mapMaybe (isObjectDiagramRandomisable . snd) $ M.elems instances
 
 instance RandomiseLayout MatchCdOdInstance where
