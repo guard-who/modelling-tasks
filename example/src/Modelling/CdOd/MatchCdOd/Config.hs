@@ -95,7 +95,7 @@ task2023_15 = MatchCdOdConfig {
     completelyInhabited = Just False,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
-    usesEveryRelationshipName = Just False
+    usesEveryRelationshipName = Nothing
     },
   omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
     aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),
@@ -389,7 +389,7 @@ task2024_59 = MatchCdOdConfig {
     completelyInhabited = Nothing,
     hasLimitedIsolatedObjects = True,
     hasSelfLoops = Just False,
-    usesEveryRelationshipName = Just True
+    usesEveryRelationshipName = Nothing
     },
   omittedDefaultMultiplicities = OmittedDefaultMultiplicities {
     aggregationWholeOmittedDefaultMultiplicity = Just (0, Nothing),

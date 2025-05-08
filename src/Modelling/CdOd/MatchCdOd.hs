@@ -78,7 +78,7 @@ import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
   Cd,
   CdDrawSettings (..),
-  CdMutation,
+  CdMutation (..),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -90,6 +90,7 @@ import Modelling.CdOd.Types (
   Od,
   OmittedDefaultMultiplicities (..),
   Relationship (..),
+  RelationshipMutation (ChangeKind),
   allCdMutations,
   anonymiseObjects,
   associationNames,
@@ -156,7 +157,7 @@ import Data.Containers.ListUtils        (nubOrd)
 import Data.GraphViz                    (DirType (Forward))
 import Data.List                        (singleton)
 import Data.Map                         (Map)
-import Data.Maybe                       (fromJust, listToMaybe, mapMaybe)
+import Data.Maybe                       (fromJust, isJust, listToMaybe, mapMaybe)
 import Data.Ratio                       ((%))
 import Data.String.Interpolate          (iii)
 import GHC.Generics                     (Generic)
@@ -238,6 +239,16 @@ checkMatchCdOdConfig MatchCdOdConfig {..}
     Enforcing self-loops in all object diagrams is not supported.
     You might want to change 'hasSelfLoops' to 'Nothing' in order
     to have self-loops (by chance) in some (or even all) of the object diagrams.
+    |]
+  | isJust (usesEveryRelationshipName objectProperties)
+  , any
+    (`elem` allowedCdMutations)
+    [AddRelationship, RemoveRelationship, MutateRelationship ChangeKind]
+  = Just [iii|
+    Setting 'usesEveryRelationshipName' to anything but 'Nothing' is not
+    supported, if relationship names are not forcibly the same across all
+    class diagrams, i.e. if 'allowedCdMutations' include any of
+    'AddRelationship', 'RemoveRelationship' or 'MutateRelationship ChangeKind'.
     |]
   | otherwise
   = checkClassConfigWithProperties classConfig defaultProperties
