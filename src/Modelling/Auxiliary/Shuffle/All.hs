@@ -26,7 +26,7 @@ import Control.Monad.Catch              (MonadThrow)
 import Control.Monad.Random             (MonadRandom, RandomGen, evalRandT)
 import GHC.Generics                     (Generic)
 
--- | A datatype that allows setting all available shufflings
+-- | A datatype that allows setting all available shuffling methodss
 data ShuffleInstance a = ShuffleInstance {
   -- | The task instance to shuffle
   taskInstance :: !a,
@@ -39,7 +39,7 @@ data ShuffleInstance a = ShuffleInstance {
   } deriving (Eq, Generic, Read, Show)
 
 {-|
-Set all shuffling methods to enabled.
+Set all shuffling methods of 'ShuffleInstance' to enabled.
 -}
 shuffleEverything
   :: (MonadRandom m, MonadThrow m, Randomise a, RandomiseLayout a, RandomiseNames a)
