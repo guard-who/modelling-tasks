@@ -102,7 +102,7 @@ import Modelling.CdOd.Types (
   Cd,
   CdConstraints (..),
   CdDrawSettings (..),
-  CdMutation (RemoveRelationship),
+  CdMutation (AddRelationship, RemoveRelationship),
   ClassConfig (..),
   ClassDiagram (..),
   LimitedLinking (..),
@@ -111,7 +111,6 @@ import Modelling.CdOd.Types (
   OmittedDefaultMultiplicities (..),
   Relationship (..),
   RelationshipProperties (..),
-  allCdMutations,
   allowNothing,
   anonymiseObjects,
   anyAssociationNames,
@@ -177,6 +176,7 @@ import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.Either                      (isRight)
 import Data.List                        (singleton)
+import Data.List.Extra                  (sortOn)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
 import Data.Ratio                       ((%))
@@ -185,7 +185,7 @@ import GHC.Generics                     (Generic)
 import System.Random.Shuffle            (shuffle', shuffleM)
 
 data StructuralWeakening = StructuralWeakening {
-    weakeningName  :: !String,
+    weakeningName  :: ![Weakening],
     operation      :: RelationshipProperties -> RelationshipProperties,
     validityChange :: Bool -> Bool
   }
@@ -257,7 +257,7 @@ data RepairCdConfig
 defaultRepairCdConfig :: RepairCdConfig
 defaultRepairCdConfig
   = RepairCdConfig {
-    allowedCdMutations = allCdMutations,
+    allowedCdMutations = [AddRelationship, RemoveRelationship],
     allowedProperties = allowNothing {
         compositionCycles = True,
         selfRelationships = True
@@ -624,20 +624,34 @@ defaultRepairCdInstance = RepairCdInstance {
     },
   changes = M.fromList [
     (1, InValidOption {
-      hint = Right ClassDiagram {
-        classNames = ["C", "B", "D", "A"],
-        relationships = [
-          Composition {
-            compositionName = "w",
+      hint = Left AnyClassDiagram {
+        anyClassNames = ["A", "B", "D", "C"],
+        anyRelationships = [
+          Right Composition {
+            compositionName = "y",
             compositionPart =
-              LimitedLinking {linking = "A", limits = (0, Just 1)},
+              LimitedLinking {linking = "B", limits = (1, Just 1)},
             compositionWhole =
               LimitedLinking {linking = "C", limits = (1, Just 1)}
             },
-          Composition {
+          Right Association {
+            associationName = "w",
+            associationFrom =
+              LimitedLinking {linking = "D", limits = (2, Nothing)},
+            associationTo =
+              LimitedLinking {linking = "D", limits = (0, Just 1)}
+            },
+          Right Composition {
             compositionName = "x",
             compositionPart =
-              LimitedLinking {linking = "C", limits = (1, Just 1)},
+              LimitedLinking {linking = "C", limits = (0, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "A", limits = (0, Just 1)}
+            },
+          Right Composition {
+            compositionName = "v",
+            compositionPart =
+              LimitedLinking {linking = "A", limits = (0, Just 1)},
             compositionWhole =
               LimitedLinking {linking = "B", limits = (1, Just 1)}
             }
@@ -645,35 +659,35 @@ defaultRepairCdInstance = RepairCdInstance {
         },
       option = Annotation {
         annotated = Change {
-          add = Nothing,
-          remove = Just $ Right Composition {
-            compositionName = "y",
-            compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Nothing)},
-            compositionWhole =
-              LimitedLinking {linking = "A", limits = (0, Just 1)}
-            }
+          add = Just $ Right Association {
+            associationName = "w",
+            associationFrom =
+              LimitedLinking {linking = "D", limits = (2, Nothing)},
+            associationTo =
+              LimitedLinking {linking = "D", limits = (0, Just 1)}
+            },
+          remove = Nothing
           },
         annotation = DefiniteArticle
         }
       }),
     (2, InValidOption {
       hint = Right ClassDiagram {
-        classNames = ["D", "C", "A", "B"],
+        classNames = ["D", "A", "C", "B"],
         relationships = [
           Composition {
-            compositionName = "y",
+            compositionName = "x",
             compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Nothing)},
+              LimitedLinking {linking = "C", limits = (0, Just 1)},
             compositionWhole =
               LimitedLinking {linking = "A", limits = (0, Just 1)}
             },
           Composition {
-            compositionName = "x",
+            compositionName = "y",
             compositionPart =
-              LimitedLinking {linking = "C", limits = (1, Just 1)},
+              LimitedLinking {linking = "B", limits = (1, Just 1)},
             compositionWhole =
-              LimitedLinking {linking = "B", limits = (1, Just 1)}
+              LimitedLinking {linking = "C", limits = (1, Just 1)}
             }
           ]
         },
@@ -681,47 +695,81 @@ defaultRepairCdInstance = RepairCdInstance {
         annotated = Change {
           add = Nothing,
           remove = Just $ Right Composition {
-            compositionName = "w",
+            compositionName = "v",
             compositionPart =
               LimitedLinking {linking = "A", limits = (0, Just 1)},
             compositionWhole =
-              LimitedLinking {linking = "C", limits = (1, Just 1)}
+              LimitedLinking {linking = "B", limits = (1, Just 1)}
             }
           },
         annotation = DefiniteArticle
         }
       }),
     (3, InValidOption {
-      hint = Left AnyClassDiagram {
-        anyClassNames = ["C", "B", "A", "D"],
-        anyRelationships = [
-          Right Association {
-            associationName = "z",
-            associationFrom =
-              LimitedLinking {linking = "B", limits = (0, Just 1)},
-            associationTo =
-              LimitedLinking {linking = "B", limits = (0, Nothing)}
+      hint = Right ClassDiagram {
+        classNames = ["A", "C", "D", "B"],
+        relationships = [
+          Composition {
+            compositionName = "v",
+            compositionPart =
+              LimitedLinking {linking = "A", limits = (0, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "B", limits = (1, Just 1)}
             },
-          Right Composition {
+          Composition {
+            compositionName = "y",
+            compositionPart =
+              LimitedLinking {linking = "B", limits = (1, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "C", limits = (1, Just 1)}
+            }
+          ]
+        },
+      option = Annotation {
+        annotated = Change {
+          add = Nothing,
+          remove = Just $ Right Composition {
             compositionName = "x",
             compositionPart =
-              LimitedLinking {linking = "C", limits = (1, Just 1)},
+              LimitedLinking {linking = "C", limits = (0, Just 1)},
+            compositionWhole =
+              LimitedLinking {linking = "A", limits = (0, Just 1)}
+            }
+          },
+        annotation = DefiniteArticle
+        }
+      }),
+    (4, InValidOption {
+      hint = Left AnyClassDiagram {
+        anyClassNames = ["B", "D", "A", "C"],
+        anyRelationships = [
+          Right Composition {
+            compositionName = "v",
+            compositionPart =
+              LimitedLinking {linking = "A", limits = (0, Just 1)},
             compositionWhole =
               LimitedLinking {linking = "B", limits = (1, Just 1)}
             },
           Right Composition {
-            compositionName = "w",
+            compositionName = "y",
             compositionPart =
-              LimitedLinking {linking = "A", limits = (0, Just 1)},
+              LimitedLinking {linking = "B", limits = (1, Just 1)},
             compositionWhole =
               LimitedLinking {linking = "C", limits = (1, Just 1)}
             },
           Right Composition {
-            compositionName = "y",
+            compositionName = "x",
             compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Nothing)},
+              LimitedLinking {linking = "C", limits = (0, Just 1)},
             compositionWhole =
               LimitedLinking {linking = "A", limits = (0, Just 1)}
+            },
+          Right Association {
+            associationName = "z",
+            associationFrom =
+              LimitedLinking {linking = "A", limits = (2, Nothing)},
+            associationTo =
+              LimitedLinking {linking = "D", limits = (1, Just 1)}
             }
           ]
         },
@@ -730,71 +778,37 @@ defaultRepairCdInstance = RepairCdInstance {
           add = Just $ Right Association {
             associationName = "z",
             associationFrom =
-              LimitedLinking {linking = "B", limits = (0, Just 1)},
+              LimitedLinking {linking = "A", limits = (2, Nothing)},
             associationTo =
-              LimitedLinking {linking = "B", limits = (0, Nothing)}
+              LimitedLinking {linking = "D", limits = (1, Just 1)}
             },
           remove = Nothing
-          },
-        annotation = DefiniteArticle
-        }
-      }),
-    (4, InValidOption {
-      hint = Right ClassDiagram {
-        classNames = ["D", "B", "C", "A"],
-        relationships = [
-          Composition {
-            compositionName = "y",
-            compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Nothing)},
-            compositionWhole =
-              LimitedLinking {linking = "A", limits = (0, Just 1)}
-            },
-          Composition {
-            compositionName = "w",
-            compositionPart =
-              LimitedLinking {linking = "A", limits = (0, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "C", limits = (1, Just 1)}
-            }
-          ]
-        },
-      option = Annotation {
-        annotated = Change {
-          add = Nothing,
-          remove = Just $ Right Composition {
-            compositionName = "x",
-            compositionPart =
-              LimitedLinking {linking = "C", limits = (1, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "B", limits = (1, Just 1)}
-            }
           },
         annotation = DefiniteArticle
         }
       })
     ],
   classDiagram = AnyClassDiagram {
-    anyClassNames = ["D", "C", "B", "A"],
+    anyClassNames = ["D", "C", "A", "B"],
     anyRelationships = [
       Right Composition {
-        compositionName = "w",
+        compositionName = "x",
         compositionPart =
-          LimitedLinking {linking = "A", limits = (0, Just 1)},
-        compositionWhole =
-          LimitedLinking {linking = "C", limits = (1, Just 1)}
-        },
-      Right Composition {
-        compositionName = "y",
-        compositionPart =
-          LimitedLinking {linking = "B", limits = (1, Nothing)},
+          LimitedLinking {linking = "C", limits = (0, Just 1)},
         compositionWhole =
           LimitedLinking {linking = "A", limits = (0, Just 1)}
         },
       Right Composition {
-        compositionName = "x",
+        compositionName = "y",
         compositionPart =
-          LimitedLinking {linking = "C", limits = (1, Just 1)},
+          LimitedLinking {linking = "B", limits = (1, Just 1)},
+        compositionWhole =
+          LimitedLinking {linking = "C", limits = (1, Just 1)}
+        },
+      Right Composition {
+        compositionName = "v",
+        compositionPart =
+          LimitedLinking {linking = "A", limits = (0, Just 1)},
         compositionWhole =
           LimitedLinking {linking = "B", limits = (1, Just 1)}
         }
@@ -806,11 +820,11 @@ defaultRepairCdInstance = RepairCdInstance {
   addText = Nothing
   }
 
-type StructuralWeakeningSet = ChangeSet StructuralWeakening
+type StructuralWeakeningSet = WeakeningSet StructuralWeakening
 
-data ChangeSet a = ChangeSet {
-  illegalChange :: a,
-  otherChanges :: (a, a, a, a)
+data WeakeningSet a = WeakeningSet {
+  illegalWeakening :: !a,
+  otherWeakenings :: ![a]
   } deriving (Eq, Functor, Ord)
 
 possibleWeakenings
@@ -818,16 +832,18 @@ possibleWeakenings
   -> [StructuralWeakeningSet]
 possibleWeakenings allowed = nubOrdOn
   (fmap weakeningName)
-  [ ChangeSet e0 cs
-  | e0 <- illegalStructuralWeakenings allowed
-  , l0 <- legalStructuralWeakenings allowed
-  , let ls = delete l0 $ legalStructuralWeakenings allowed
-  , c0 <- allStructuralWeakenings allowed
-  , l1 <- if null ls then [[]] else map (\x -> [x .&. noStructuralWeakening, x]) ls
-  , let weakenings = [c0, noStructuralWeakening, e0] ++ l1
-  , c1 <- weakenings
-  , c2 <- delete c1 weakenings
-  , let cs = (l0 .&. e0, noStructuralWeakening, c1, c2)
+  [ WeakeningSet {
+      illegalWeakening = iw,
+      otherWeakenings =
+        sortOn weakeningName [l1 .&. iw, noStructuralWeakening, w1, w2]
+      }
+  | iw <- illegalStructuralWeakenings allowed
+  , l1 <- legalStructuralWeakenings allowed
+  , l2 <- legalStructuralWeakenings allowed
+  , w <- allStructuralWeakenings allowed
+  , let weakenings = [w, noStructuralWeakening, iw, l2, l2]
+  , w1 <- weakenings
+  , w2 <- delete w1 weakenings
   ]
   where
     delete x xs = M.elems . M.delete (weakeningName x) . M.fromList
@@ -837,12 +853,12 @@ possibleWeakenings allowed = nubOrdOn
 Introduces deterministic permutations on a a list of 'StructuralWeakeningSet's.
 The key point is to maintain reproducibility but achieving diversity nonetheless.
 -}
-diversify :: [StructuralWeakeningSet] -> [(StructuralWeakening, [StructuralWeakening])]
+diversify :: [StructuralWeakeningSet] -> [StructuralWeakeningSet]
 diversify = zipWith permutate [0..]
   where
-    permutate g c =
-      let (w, x, y, z) = otherChanges c
-      in (illegalChange c, shuffle' [w, x, y, z] 4 $ mkStdGen g)
+    permutate g c = c {
+      otherWeakenings = shuffle' (otherWeakenings c) 4 $ mkStdGen g
+      }
 
 repairIncorrect
   :: (MonadAlloy m, MonadCatch m, RandomGen g)
@@ -869,17 +885,17 @@ repairIncorrect
   tryNextWeakeningSet weakeningSets
   where
     tryNextWeakeningSet [] = lift $ throwM NoInstanceAvailable
-    tryNextWeakeningSet ((e0, structuralWeakenings) : weakeningSets) = do
+    tryNextWeakeningSet (WeakeningSet {..} : weakeningSets) = do
       let alloyCode = Changes.transformChanges
             config
             cdConstraints
             cdMutations
-            (toProperty e0)
+            (toProperty illegalWeakening)
             (Just config)
-            $ map toProperty structuralWeakenings
+            $ map toProperty otherWeakenings
       instances <- getInstances maxInstances to alloyCode
       randomInstances <- shuffleM instances
-      getInstanceWithODs weakeningSets structuralWeakenings randomInstances
+      getInstanceWithODs weakeningSets otherWeakenings randomInstances
     article = toArticleToUse preference
     getInstanceWithODs weakeningSets _  [] =
       tryNextWeakeningSet weakeningSets
@@ -945,26 +961,67 @@ allStructuralWeakenings :: AllowedProperties -> [StructuralWeakening]
 allStructuralWeakenings c =
   legalStructuralWeakenings c ++ illegalStructuralWeakenings c
 
+data Weakening
+  = None
+  | Add !AdditiveWeakening
+  | Force !ForcibleWeakening
+  deriving (Eq, Ord, Show)
+
+data AdditiveWeakening
+  = InvalidInheritance
+  | SelfInheritance
+  | SelfRelationship
+  | WrongAssociation
+  | WrongComposition
+  deriving (Eq, Ord, Show)
+
+data ForcibleWeakening
+  = CompositionCycles
+  | DoubleRelationships
+  | InheritanceCycles
+  | ReverseInheritances
+  | ReverseRelationships
+  deriving (Eq, Ord, Show)
+
+{-|
+Assumes the given lists to be ordered already.
+
+Removes duplicates, that do not enforce new property changes.
+(i.e. 'None' and 'Force')
+-}
+mergeWeakenings :: [Weakening] -> [Weakening] -> [Weakening]
+mergeWeakenings [] ys = ys
+mergeWeakenings xs [] = xs
+mergeWeakenings xs@(_:_) (None:ys) = mergeWeakenings xs ys
+mergeWeakenings (None:xs) ys@(_:_) = mergeWeakenings xs ys
+mergeWeakenings keeps@(x@Force {}:xs) others@(y@Force {}:ys)
+  | x == y = mergeWeakenings keeps ys
+  | x < y = x : mergeWeakenings xs others
+  | otherwise = y : mergeWeakenings keeps ys
+mergeWeakenings keeps@(x:xs) others@(y:ys)
+  | x <= y = x : mergeWeakenings xs others
+  | otherwise = y : mergeWeakenings keeps ys
+
 noStructuralWeakening :: StructuralWeakening
-noStructuralWeakening = StructuralWeakening "none" id id
+noStructuralWeakening = StructuralWeakening [None] id id
 
 infixl 9 .&.
 (.&.) :: StructuralWeakening -> StructuralWeakening -> StructuralWeakening
 StructuralWeakening n1 o1 v1 .&. StructuralWeakening n2 o2 v2 =
   StructuralWeakening
-  (n1 ++ " + " ++ n2)
+  (mergeWeakenings n1 n2)
   (o1 . o2)
   (v1 . v2)
 
 legalStructuralWeakenings :: AllowedProperties -> [StructuralWeakening]
 legalStructuralWeakenings allowed = noStructuralWeakening : [
-    StructuralWeakening "add one self relationship" addSelfRelationships id
+    StructuralWeakening [Add SelfRelationship] addSelfRelationships id
   | selfRelationships allowed] ++ [
-    StructuralWeakening "force double relationships" withDoubleRelationships id
+    StructuralWeakening [Force DoubleRelationships] withDoubleRelationships id
   | doubleRelationships allowed] ++ [
-    StructuralWeakening "force reverse relationships" withReverseRelationships id
+    StructuralWeakening [Force ReverseRelationships] withReverseRelationships id
   | reverseRelationships allowed]
---    StructuralWeakening "force multiple inheritances" withMultipleInheritances id
+--    StructuralWeakening [Force MultipleInheritances] withMultipleInheritances id
   where
     addSelfRelationships :: RelationshipProperties -> RelationshipProperties
     addSelfRelationships config@RelationshipProperties {..}
@@ -981,19 +1038,19 @@ legalStructuralWeakenings allowed = noStructuralWeakening : [
 
 illegalStructuralWeakenings :: AllowedProperties -> [StructuralWeakening]
 illegalStructuralWeakenings allowed = map ($ const False) $ [
-    StructuralWeakening "add invalid inheritance" addInvalidInheritances
+    StructuralWeakening [Add InvalidInheritance] addInvalidInheritances
   | invalidInheritanceLimits allowed] ++ [
-    StructuralWeakening "add wrong association" addWrongNonInheritances
+    StructuralWeakening [Add WrongAssociation] addWrongNonInheritances
   | wrongAssociationLimits allowed] ++ [
-    StructuralWeakening "add wrong composition" addWrongCompositions
+    StructuralWeakening [Add WrongComposition] addWrongCompositions
   | wrongCompositionLimits allowed] ++ [
-    StructuralWeakening "force inheritance cycles" withNonTrivialInheritanceCycles
+    StructuralWeakening [Force InheritanceCycles] withNonTrivialInheritanceCycles
   | inheritanceCycles allowed] ++ [
-    StructuralWeakening "force reverse inheritances" withReverseInheritances
+    StructuralWeakening [Force ReverseInheritances] withReverseInheritances
   | reverseInheritances allowed] ++ [
-    StructuralWeakening "add self inheritance" addSelfInheritance
+    StructuralWeakening [Add SelfInheritance] addSelfInheritance
   | selfInheritances allowed] ++ [
-    StructuralWeakening "force composition cycles" withCompositionCycles
+    StructuralWeakening [Force CompositionCycles] withCompositionCycles
   | compositionCycles allowed]
   where
     addInvalidInheritances :: RelationshipProperties -> RelationshipProperties
