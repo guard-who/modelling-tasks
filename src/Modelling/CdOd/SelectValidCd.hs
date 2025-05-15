@@ -177,7 +177,7 @@ defaultSelectValidCdConfig
       reverseInheritances = True
       },
     articleToUse = UseDefiniteArticleWherePossible,
-    basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
+    basePropertiesOfBaseCdOn = AnyStructuralWeakening,
     cdConstraints = defaultCdConstraints,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
@@ -616,16 +616,17 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         objects = [
           Object {isAnonymous = False, objectName = "a", objectClass = "A"},
           Object {isAnonymous = False, objectName = "c", objectClass = "C"},
-          Object {isAnonymous = False, objectName = "b", objectClass = "B"},
-          Object {isAnonymous = False, objectName = "d", objectClass = "D"}
+          Object {isAnonymous = False, objectName = "d", objectClass = "D"},
+          Object {isAnonymous = False, objectName = "b", objectClass = "B"}
           ],
         links = []
         },
       option = AnyClassDiagram {
-        anyClassNames = ["B", "A", "C", "D"],
+        anyClassNames = ["B", "C", "D", "A"],
         anyRelationships = [
-          Right Inheritance {subClass = "C", superClass = "D"},
-          Right Inheritance {subClass = "D", superClass = "B"}
+          Right Inheritance {subClass = "D", superClass = "A"},
+          Right Inheritance {subClass = "A", superClass = "C"},
+          Right Inheritance {subClass = "B", superClass = "D"}
           ]
         }
       }),
@@ -634,19 +635,19 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         annotated = Change {
           add = Nothing,
           remove = Just (Right Inheritance {
-            subClass = "D",
-            superClass = "B"
+            subClass = "A",
+            superClass = "D"
             })
           },
         annotation = DefiniteArticle
         },
       option = AnyClassDiagram {
-        anyClassNames = ["B", "D", "C", "A"],
+        anyClassNames = ["A", "B", "D", "C"],
         anyRelationships = [
-          Right Inheritance {subClass = "B", superClass = "C"},
-          Right Inheritance {subClass = "A", superClass = "C"},
-          Right Inheritance {subClass = "C", superClass = "D"},
-          Right Inheritance {subClass = "D", superClass = "B"}
+          Right Inheritance {subClass = "A", superClass = "D"},
+          Right Inheritance {subClass = "C", superClass = "A"},
+          Right Inheritance {subClass = "D", superClass = "A"},
+          Right Inheritance {subClass = "B", superClass = "D"}
           ]
         }
       }),
@@ -655,37 +656,40 @@ defaultSelectValidCdInstance = SelectValidCdInstance {
         annotated = Change {
           add = Nothing,
           remove = Just (Right Inheritance {
-            subClass = "D",
-            superClass = "B"
+            subClass = "B",
+            superClass = "D"
             })
           },
         annotation = DefiniteArticle
         },
       option = AnyClassDiagram {
-        anyClassNames = ["D", "B", "A", "C"],
+        anyClassNames = ["A", "C", "D", "B"],
         anyRelationships = [
-          Right Inheritance {subClass = "A", superClass = "D"},
-          Right Inheritance {subClass = "D", superClass = "B"},
-          Right Inheritance {subClass = "B", superClass = "C"},
-          Right Inheritance {subClass = "C", superClass = "D"}
+          Right Inheritance {subClass = "C", superClass = "A"},
+          Right Inheritance {subClass = "B", superClass = "D"},
+          Right Inheritance {subClass = "D", superClass = "A"},
+          Right Inheritance {subClass = "A", superClass = "B"}
           ]
         }
       }),
     (4, InValidOption {
-      hint = Right ObjectDiagram {
-        objects = [
-          Object {isAnonymous = False, objectName = "d", objectClass = "D"},
-          Object {isAnonymous = False, objectName = "b", objectClass = "B"},
-          Object {isAnonymous = False, objectName = "a", objectClass = "A"},
-          Object {isAnonymous = False, objectName = "c", objectClass = "C"}
-          ],
-        links = []
+      hint = Left Annotation {
+        annotated = Change {
+          add = Nothing,
+          remove = Just (Right Inheritance {
+            subClass = "A",
+            superClass = "C"
+            })
+          },
+        annotation = DefiniteArticle
         },
       option = AnyClassDiagram {
-        anyClassNames = ["B", "D", "A", "C"],
+        anyClassNames = ["B", "A", "C", "D"],
         anyRelationships = [
-          Right Inheritance {subClass = "B", superClass = "C"},
-          Right Inheritance {subClass = "D", superClass = "B"}
+          Right Inheritance {subClass = "D", superClass = "A"},
+          Right Inheritance {subClass = "B", superClass = "D"},
+          Right Inheritance {subClass = "A", superClass = "C"},
+          Right Inheritance {subClass = "C", superClass = "A"}
           ]
         }
       })

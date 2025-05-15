@@ -42,7 +42,6 @@ import qualified Modelling.CdOd.CdAndChanges.Transform as Changes (
 
 import qualified Data.Bimap                       as BM (fromList)
 import qualified Data.Map                         as M (
-  delete,
   elems,
   filter,
   fromAscList,
@@ -176,7 +175,8 @@ import Data.Bifunctor                   (bimap, first, second)
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd, nubOrdOn)
 import Data.Either                      (isRight)
-import Data.List                        (singleton)
+import Data.Function                    (on)
+import Data.List                        (deleteBy, singleton)
 import Data.List.Extra                  (sortOn)
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes, listToMaybe, mapMaybe)
@@ -627,46 +627,46 @@ defaultRepairCdInstance = RepairCdInstance {
   changes = M.fromList [
     (1, InValidOption {
       hint = Left AnyClassDiagram {
-        anyClassNames = ["A", "B", "D", "C"],
+        anyClassNames = ["D", "C", "A", "B"],
         anyRelationships = [
           Right Composition {
-            compositionName = "y",
+            compositionName = "z",
             compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Just 1)},
+              LimitedLinking {linking = "A", limits = (0, Just 2)},
             compositionWhole =
               LimitedLinking {linking = "C", limits = (1, Just 1)}
-            },
-          Right Association {
-            associationName = "w",
-            associationFrom =
-              LimitedLinking {linking = "D", limits = (2, Nothing)},
-            associationTo =
-              LimitedLinking {linking = "D", limits = (0, Just 1)}
-            },
-          Right Composition {
-            compositionName = "x",
-            compositionPart =
-              LimitedLinking {linking = "C", limits = (0, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "A", limits = (0, Just 1)}
             },
           Right Composition {
             compositionName = "v",
             compositionPart =
-              LimitedLinking {linking = "A", limits = (0, Just 1)},
+              LimitedLinking {linking = "D", limits = (1, Just 2)},
             compositionWhole =
-              LimitedLinking {linking = "B", limits = (1, Just 1)}
+              LimitedLinking {linking = "A", limits = (0, Just 1)}
+            },
+          Right Composition {
+            compositionName = "w",
+            compositionPart =
+              LimitedLinking {linking = "C", limits = (0, Nothing)},
+            compositionWhole =
+              LimitedLinking {linking = "D", limits = (1, Just 1)}
+            },
+          Right Association {
+            associationName = "x",
+            associationFrom =
+              LimitedLinking {linking = "B", limits = (2, Nothing)},
+            associationTo =
+              LimitedLinking {linking = "A", limits = (2, Nothing)}
             }
           ]
         },
       option = Annotation {
         annotated = Change {
           add = Just $ Right Association {
-            associationName = "w",
+            associationName = "x",
             associationFrom =
-              LimitedLinking {linking = "D", limits = (2, Nothing)},
+              LimitedLinking {linking = "B", limits = (2, Nothing)},
             associationTo =
-              LimitedLinking {linking = "D", limits = (0, Just 1)}
+              LimitedLinking {linking = "A", limits = (2, Nothing)}
             },
           remove = Nothing
           },
@@ -674,56 +674,70 @@ defaultRepairCdInstance = RepairCdInstance {
         }
       }),
     (2, InValidOption {
-      hint = Right ClassDiagram {
-        classNames = ["D", "A", "C", "B"],
-        relationships = [
-          Composition {
-            compositionName = "x",
-            compositionPart =
-              LimitedLinking {linking = "C", limits = (0, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "A", limits = (0, Just 1)}
+      hint = Left AnyClassDiagram {
+        anyClassNames = ["C", "D", "B", "A"],
+        anyRelationships = [
+          Right Association {
+            associationName = "y",
+            associationFrom =
+              LimitedLinking {linking = "A", limits = (2, Nothing)},
+            associationTo =
+              LimitedLinking {linking = "B", limits = (2, Nothing)}
             },
-          Composition {
-            compositionName = "y",
+          Right Composition {
+            compositionName = "z",
             compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Just 1)},
+              LimitedLinking {linking = "A", limits = (0, Just 2)},
             compositionWhole =
               LimitedLinking {linking = "C", limits = (1, Just 1)}
+            },
+          Right Composition {
+            compositionName = "w",
+            compositionPart =
+              LimitedLinking {linking = "C", limits = (0, Nothing)},
+            compositionWhole =
+              LimitedLinking {linking = "D", limits = (1, Just 1)}
+            },
+          Right Composition {
+            compositionName = "v",
+            compositionPart =
+              LimitedLinking {linking = "D", limits = (1, Just 2)},
+            compositionWhole =
+              LimitedLinking {linking = "A", limits = (0, Just 1)}
             }
           ]
         },
       option = Annotation {
         annotated = Change {
-          add = Nothing,
-          remove = Just $ Right Composition {
-            compositionName = "v",
-            compositionPart =
-              LimitedLinking {linking = "A", limits = (0, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "B", limits = (1, Just 1)}
-            }
+          add = Just $ Right Association {
+            associationName = "y",
+            associationFrom =
+              LimitedLinking {linking = "A", limits = (2, Nothing)},
+            associationTo =
+              LimitedLinking {linking = "B", limits = (2, Nothing)}
+            },
+          remove = Nothing
           },
         annotation = DefiniteArticle
         }
       }),
     (3, InValidOption {
       hint = Right ClassDiagram {
-        classNames = ["A", "C", "D", "B"],
+        classNames = ["D", "A", "B", "C"],
         relationships = [
           Composition {
-            compositionName = "v",
+            compositionName = "z",
             compositionPart =
-              LimitedLinking {linking = "A", limits = (0, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "B", limits = (1, Just 1)}
-            },
-          Composition {
-            compositionName = "y",
-            compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Just 1)},
+              LimitedLinking {linking = "A", limits = (0, Just 2)},
             compositionWhole =
               LimitedLinking {linking = "C", limits = (1, Just 1)}
+            },
+          Composition {
+            compositionName = "w",
+            compositionPart =
+              LimitedLinking {linking = "C", limits = (0, Nothing)},
+            compositionWhole =
+              LimitedLinking {linking = "D", limits = (1, Just 1)}
             }
           ]
         },
@@ -731,9 +745,9 @@ defaultRepairCdInstance = RepairCdInstance {
         annotated = Change {
           add = Nothing,
           remove = Just $ Right Composition {
-            compositionName = "x",
+            compositionName = "v",
             compositionPart =
-              LimitedLinking {linking = "C", limits = (0, Just 1)},
+              LimitedLinking {linking = "D", limits = (1, Just 2)},
             compositionWhole =
               LimitedLinking {linking = "A", limits = (0, Just 1)}
             }
@@ -742,77 +756,63 @@ defaultRepairCdInstance = RepairCdInstance {
         }
       }),
     (4, InValidOption {
-      hint = Left AnyClassDiagram {
-        anyClassNames = ["B", "D", "A", "C"],
-        anyRelationships = [
-          Right Composition {
+      hint = Right ClassDiagram {
+        classNames = ["C", "A", "D", "B"],
+        relationships = [
+          Composition {
             compositionName = "v",
             compositionPart =
-              LimitedLinking {linking = "A", limits = (0, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "B", limits = (1, Just 1)}
-            },
-          Right Composition {
-            compositionName = "y",
-            compositionPart =
-              LimitedLinking {linking = "B", limits = (1, Just 1)},
-            compositionWhole =
-              LimitedLinking {linking = "C", limits = (1, Just 1)}
-            },
-          Right Composition {
-            compositionName = "x",
-            compositionPart =
-              LimitedLinking {linking = "C", limits = (0, Just 1)},
+              LimitedLinking {linking = "D", limits = (1, Just 2)},
             compositionWhole =
               LimitedLinking {linking = "A", limits = (0, Just 1)}
             },
-          Right Association {
-            associationName = "z",
-            associationFrom =
-              LimitedLinking {linking = "A", limits = (2, Nothing)},
-            associationTo =
-              LimitedLinking {linking = "D", limits = (1, Just 1)}
+          Composition {
+            compositionName = "z",
+            compositionPart =
+              LimitedLinking {linking = "A", limits = (0, Just 2)},
+            compositionWhole =
+              LimitedLinking {linking = "C", limits = (1, Just 1)}
             }
           ]
         },
       option = Annotation {
         annotated = Change {
-          add = Just $ Right Association {
-            associationName = "z",
-            associationFrom =
-              LimitedLinking {linking = "A", limits = (2, Nothing)},
-            associationTo =
+          add = Nothing,
+          remove = Just $ Right Composition {
+            compositionName = "w",
+            compositionPart =
+              LimitedLinking {linking = "C", limits = (0, Nothing)},
+            compositionWhole =
               LimitedLinking {linking = "D", limits = (1, Just 1)}
-            },
-          remove = Nothing
+            }
           },
         annotation = DefiniteArticle
         }
       })
     ],
   classDiagram = AnyClassDiagram {
-    anyClassNames = ["D", "C", "A", "B"],
+    anyClassNames = ["C", "D", "B", "A"],
     anyRelationships = [
       Right Composition {
-        compositionName = "x",
+        compositionName = "w",
         compositionPart =
-          LimitedLinking {linking = "C", limits = (0, Just 1)},
+          LimitedLinking {linking = "C", limits = (0, Nothing)},
         compositionWhole =
-          LimitedLinking {linking = "A", limits = (0, Just 1)}
-        },
-      Right Composition {
-        compositionName = "y",
-        compositionPart =
-          LimitedLinking {linking = "B", limits = (1, Just 1)},
-        compositionWhole =
-          LimitedLinking {linking = "C", limits = (1, Just 1)}
+          LimitedLinking {linking = "D", limits = (1, Just 1)}
         },
       Right Composition {
         compositionName = "v",
         compositionPart =
-          LimitedLinking {linking = "A", limits = (0, Just 1)},
+          LimitedLinking {linking = "D", limits = (1, Just 2)},
         compositionWhole =
-          LimitedLinking {linking = "B", limits = (1, Just 1)}
+          LimitedLinking {linking = "A", limits = (0, Just 1)}
+        },
+      Right Composition {
+        compositionName = "z",
+        compositionPart =
+          LimitedLinking {linking = "A", limits = (0, Just 2)},
+        compositionWhole =
+          LimitedLinking {linking = "C", limits = (1, Just 1)}
         }
       ]
     },
@@ -866,11 +866,8 @@ possibleWeakenings basis allowed = nubOrdOn
   , w <- allStructuralWeakenings allowed
   , let weakenings = [w, noStructuralWeakening, iw, l2, l2]
   , w1 <- weakenings
-  , w2 <- delete w1 weakenings
+  , w2 <- deleteBy ((==) `on` weakeningName) w1 weakenings
   ]
-  where
-    delete x xs = M.elems . M.delete (weakeningName x) . M.fromList
-      $ zip (map weakeningName xs) xs
 
 {-|
 Introduces deterministic permutations on a a list of 'StructuralWeakeningSet's.
