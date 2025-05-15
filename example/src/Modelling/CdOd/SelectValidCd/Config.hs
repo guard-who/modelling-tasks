@@ -2,6 +2,9 @@
 
 module Modelling.CdOd.SelectValidCd.Config where
 
+import Modelling.CdOd.RepairCd (
+  WeakeningKind (..),
+  )
 import Modelling.CdOd.SelectValidCd (
   SelectValidCdConfig (..),
   )
@@ -46,6 +49,7 @@ task2023_05 = SelectValidCdConfig {
     wrongCompositionLimits = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
   cdConstraints = CdConstraints {
     anyCompositionCyclesInvolveInheritances = Just True
     },
@@ -108,6 +112,7 @@ task2023_06 = SelectValidCdConfig {
     wrongCompositionLimits = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
   cdConstraints = CdConstraints {
     anyCompositionCyclesInvolveInheritances = Nothing
     },
@@ -168,6 +173,7 @@ task2024_06 = SelectValidCdConfig {
     wrongCompositionLimits = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
   cdConstraints = CdConstraints {
     anyCompositionCyclesInvolveInheritances = Just True
     },
@@ -229,6 +235,7 @@ task2024_07 = SelectValidCdConfig {
     wrongCompositionLimits = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
   cdConstraints = CdConstraints {
     anyCompositionCyclesInvolveInheritances = Nothing
     },
@@ -288,6 +295,7 @@ task2024_08 = SelectValidCdConfig {
     wrongCompositionLimits = True
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
   cdConstraints = CdConstraints {
     anyCompositionCyclesInvolveInheritances = Nothing
     },
@@ -348,6 +356,7 @@ task2024_51 = SelectValidCdConfig {
     wrongCompositionLimits = False
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
   cdConstraints = CdConstraints {
     anyCompositionCyclesInvolveInheritances = Just True
     },
@@ -407,6 +416,7 @@ task2024_52 = SelectValidCdConfig {
     wrongCompositionLimits = True
     },
   articleToUse = UseDefiniteArticleWherePossible,
+  basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
   cdConstraints = CdConstraints {
     anyCompositionCyclesInvolveInheritances = Nothing
     },

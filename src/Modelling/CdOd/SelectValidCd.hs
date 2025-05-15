@@ -152,6 +152,8 @@ data SelectValidCdConfig
     allowedProperties :: AllowedProperties,
     -- | the preferred article to use when referring to relationships
     articleToUse      :: ArticlePreference,
+    -- | influences the validity of the base class diagram (see 'WeakeningKind')
+    basePropertiesOfBaseCdOn :: !WeakeningKind,
     cdConstraints :: CdConstraints,
     classConfig      :: ClassConfig,
     drawSettings     :: !CdDrawSettings,
@@ -175,6 +177,7 @@ defaultSelectValidCdConfig
       reverseInheritances = True
       },
     articleToUse = UseDefiniteArticleWherePossible,
+    basePropertiesOfBaseCdOn = IllegalStructuralWeakening,
     cdConstraints = defaultCdConstraints,
     classConfig = ClassConfig {
         classLimits        = (4, 4),
@@ -457,7 +460,7 @@ selectValidCd
   -> m SelectValidCdInstance
 selectValidCd SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
   (_, chs)  <- generateSetOfCds
-    IllegalStructuralWeakening
+    basePropertiesOfBaseCdOn
     allowedProperties
     classConfig
     cdConstraints
