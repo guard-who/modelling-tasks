@@ -830,18 +830,18 @@ data WeakeningSet a = WeakeningSet {
   } deriving (Eq, Functor, Ord)
 
 {-|
-Creates all sets of structural weakenings (considering the paremeters),
+Creates all sets of structural weakenings (considering the parameters),
 each in the following way:
 
 1. create possible structural weakenings
-    1. select one illegal structural weakening (\(isw$\))
-    2. select two legal structural weakenings (\(lsw_1, lsw_2$\))
+    1. select one illegal structural weakening (\(iw$\))
+    2. select two legal structural weakenings (\(l_1, l_2$\))
     3. select one illegal or legal structural weakening (\(sw$\))
     4. set no structural weakening (\(none$\))
-2. choose randomly two of \(sw, none, isw, lsw_2, lsw_2$\) (as \(w1, w2$\))
+2. choose randomly two of \(sw, none, iw, l_2, l_2$\) (as \(w1, w2$\))
 3. define the weakening set as
-    - 'initialWeakening' set to either \(lsw_1$\) or \(isw$\)
-    - 'otherWeakenings' set to: \(lsw_1 . isw, none, w1, w2$\)
+    - 'initialWeakening' set to either \(l_1$\) or \(iw$\)
+    - 'otherWeakenings' set to: \(l_1 . iw, none, w1, w2$\)
 -}
 possibleWeakenings
   :: WeakeningKind
@@ -920,7 +920,7 @@ generateSetOfCds
   -- class diagrams and object diagrams
   -> Maybe Int
   -- ^ when to abort any Alloy call early,
-  -- destroys reprodicibility when set (to 'Just')
+  -- destroys reproducibility when set (to 'Just')
   -> RandT g m (AnyCd, [CdChangeAndCd])
 generateSetOfCds
   basisCd
