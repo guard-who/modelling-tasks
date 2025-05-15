@@ -12,12 +12,14 @@ module Modelling.CdOd.RepairCd (
   RepairCdConfig (..),
   RepairCdInstance (..),
   RepairCdTaskTextElement (..),
+  WeakeningKind (..),
   checkClassConfigAndChanges,
   checkRepairCdConfig,
   checkRepairCdInstance,
   classAndNonInheritanceNames,
   defaultRepairCdConfig,
   defaultRepairCdInstance,
+  generateSetOfCds,
   mapInValidOption,
   mapInValidOptionM,
   renameInstance,
@@ -26,7 +28,6 @@ module Modelling.CdOd.RepairCd (
   repairCdSolution,
   repairCdSyntax,
   repairCdTask,
-  repairIncorrect,
   StructuralWeakening (..),
   (.&.),
   illegalStructuralWeakenings,
@@ -583,7 +584,8 @@ repairCd
   -> Int
   -> m RepairCdInstance
 repairCd RepairCdConfig {..} segment seed = flip evalRandT g $ do
-  (cd, chs) <- repairIncorrect
+  (cd, chs) <- generateSetOfCds
+    IllegalStructuralWeakening
     allowedProperties
     classConfig
     cdConstraints
@@ -823,22 +825,43 @@ defaultRepairCdInstance = RepairCdInstance {
 type StructuralWeakeningSet = WeakeningSet StructuralWeakening
 
 data WeakeningSet a = WeakeningSet {
-  illegalWeakening :: !a,
+  initialWeakening :: !a,
   otherWeakenings :: ![a]
   } deriving (Eq, Functor, Ord)
 
+{-|
+Creates all sets of structural weakenings (considering the paremeters),
+each in the following way:
+
+1. create possible structural weakenings
+    1. select one illegal structural weakening (\(isw$\))
+    2. select two legal structural weakenings (\(lsw_1, lsw_2$\))
+    3. select one illegal or legal structural weakening (\(sw$\))
+    4. set no structural weakening (\(none$\))
+2. choose randomly two of \(sw, none, isw, lsw_2, lsw_2$\) (as \(w1, w2$\))
+3. define the weakening set as
+    - 'initialWeakening' set to either \(lsw_1$\) or \(isw$\)
+    - 'otherWeakenings' set to: \(lsw_1 . isw, none, w1, w2$\)
+-}
 possibleWeakenings
-  :: AllowedProperties
+  :: WeakeningKind
+  -- ^ kind to choose for 'initialWeakening'
+  -> AllowedProperties
+  -- ^ properties to be considered for weakenings
   -> [StructuralWeakeningSet]
-possibleWeakenings allowed = nubOrdOn
+possibleWeakenings basis allowed = nubOrdOn
   (fmap weakeningName)
   [ WeakeningSet {
-      illegalWeakening = iw,
+      initialWeakening = initial,
       otherWeakenings =
-        sortOn weakeningName [l1 .&. iw, noStructuralWeakening, w1, w2]
+        sortOn weakeningName [other .&. initial, noStructuralWeakening, w1, w2]
       }
   | iw <- illegalStructuralWeakenings allowed
   , l1 <- legalStructuralWeakenings allowed
+  , (initial, other) <- case basis of
+      AnyStructuralWeakening -> [(l1, iw), (iw, l1)]
+      IllegalStructuralWeakening -> [(iw, l1) ]
+      LegalStructuralWeakening -> [(l1, iw)]
   , l2 <- legalStructuralWeakenings allowed
   , w <- allStructuralWeakenings allowed
   , let weakenings = [w, noStructuralWeakening, iw, l2, l2]
@@ -860,18 +883,50 @@ diversify = zipWith permutate [0..]
       otherWeakenings = shuffle' (otherWeakenings c) 4 $ mkStdGen g
       }
 
-repairIncorrect
+{-|
+This datatype specifies what kind of structural weakening to choose.
+-}
+data WeakeningKind
+  = AnyStructuralWeakening
+  -- ^ a weakening resulting in a valid or an invalid class diagram candidate
+  | IllegalStructuralWeakening
+  -- ^ a weakening resulting in an invalid class diagram candidate
+  | LegalStructuralWeakening
+  -- ^ a weakening resulting in a valid class diagram
+  deriving (Generic, Read, Show)
+
+{-|
+Generate one base class diagram candidate and four (one step) changes,
+resulting in four class diagram candidates based on the base candidate
+together with changes to repair invalid class diagram candidates
+and object diagrams witnessing correct class diagrams.
+-}
+generateSetOfCds
   :: (MonadAlloy m, MonadCatch m, RandomGen g)
-  => AllowedProperties
+  => WeakeningKind
+  -- ^ to be used for the base class diagram
+  -> AllowedProperties
+  -- ^ potentially to be chosen for all class diagrams
   -> ClassConfig
+  -- ^ to adhere to by all class diagrams
   -> CdConstraints
+  -- ^ also for all class diagrams
   -> [CdMutation]
+  -- ^ possible mutations to choose from in order to use for the changes
+  -- (and thus use to derive the four different class diagram candidate)
   -> ObjectProperties
+  -- ^ properties all object diagram witnesses need to satisfy
   -> ArticlePreference
+  -- ^ how to refer to relationships
   -> Maybe Integer
+  -- ^ number of instances to generate for both,
+  -- class diagrams and object diagrams
   -> Maybe Int
+  -- ^ when to abort any Alloy call early,
+  -- destroys reprodicibility when set (to 'Just')
   -> RandT g m (AnyCd, [CdChangeAndCd])
-repairIncorrect
+generateSetOfCds
+  basisCd
   cdProperties
   config
   cdConstraints
@@ -881,7 +936,8 @@ repairIncorrect
   maxInstances
   to
   = do
-  weakeningSets <- shuffleM $ diversify $ possibleWeakenings cdProperties
+  weakeningSets <- shuffleM $ diversify
+    $ possibleWeakenings basisCd cdProperties
   tryNextWeakeningSet weakeningSets
   where
     tryNextWeakeningSet [] = lift $ throwM NoInstanceAvailable
@@ -890,7 +946,7 @@ repairIncorrect
             config
             cdConstraints
             cdMutations
-            (toProperty illegalWeakening)
+            (toProperty initialWeakening)
             (Just config)
             $ map toProperty otherWeakenings
       instances <- getInstances maxInstances to alloyCode

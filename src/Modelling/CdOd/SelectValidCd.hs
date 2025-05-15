@@ -62,10 +62,11 @@ import Modelling.CdOd.Phrasing (
 import Modelling.CdOd.RepairCd (
   InValidOption (..),
   RelationshipChangeWithArticle,
+  WeakeningKind (..),
   checkClassConfigAndChanges,
+  generateSetOfCds,
   mapInValidOption,
   mapInValidOptionM,
-  repairIncorrect,
   )
 import Modelling.CdOd.Output            (cacheCd, cacheOd)
 import Modelling.CdOd.Types (
@@ -455,7 +456,8 @@ selectValidCd
   -> Int
   -> m SelectValidCdInstance
 selectValidCd SelectValidCdConfig {..} segment seed = flip evalRandT g $ do
-  (_, chs)  <- repairIncorrect
+  (_, chs)  <- generateSetOfCds
+    IllegalStructuralWeakening
     allowedProperties
     classConfig
     cdConstraints
