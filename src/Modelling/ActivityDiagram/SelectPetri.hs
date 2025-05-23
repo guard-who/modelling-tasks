@@ -148,7 +148,7 @@ data SelectPetriConfig = SelectPetriConfig {
   -- | Force presence or absence of new sink transitions for representing finals
   presenceOfSinkTransitionsForFinals :: Maybe Bool,
   -- | Avoid Activity Finals in concurrent flows to reduce confusion
-  noActivityFinalInForkBlocks :: Maybe Bool,
+  withActivityFinalInForkBlocks :: !(Maybe Bool),
   printSolution :: Bool,
   extraText :: Maybe (Map Language String)
 } deriving (Generic, Show)
@@ -173,7 +173,7 @@ defaultSelectPetriConfig = SelectPetriConfig {
   modifyAtMid = True,
   auxiliaryPetriNodeAbsent = Nothing,
   presenceOfSinkTransitionsForFinals = Nothing,
-  noActivityFinalInForkBlocks = Just True,
+  withActivityFinalInForkBlocks = Just False,
   printSolution = False,
   extraText = Nothing
 }
@@ -192,7 +192,7 @@ checkSelectPetriConfig' SelectPetriConfig {
     numberOfModifications,
     auxiliaryPetriNodeAbsent,
     presenceOfSinkTransitionsForFinals,
-    noActivityFinalInForkBlocks
+    withActivityFinalInForkBlocks
   }
   | Config.activityFinalNodes adConfig > 1
   = Just "There is at most one 'activityFinalNode' allowed."
@@ -212,10 +212,10 @@ checkSelectPetriConfig' SelectPetriConfig {
   | Just False <- presenceOfSinkTransitionsForFinals,
     fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
     = Just "The option 'presenceOfSinkTransitionsForFinals = Just False' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
-  | noActivityFinalInForkBlocks == Just True && Config.activityFinalNodes adConfig > 1
-    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to True prohibits having more than 1 'activityFinalNodes'"
-  | noActivityFinalInForkBlocks == Just False && Config.activityFinalNodes adConfig == 0
-    = Just "Setting the parameter 'noActivityFinalInForkBlocks' to False implies that there are 'activityFinalNodes'"
+  | withActivityFinalInForkBlocks == Just False && Config.activityFinalNodes adConfig > 1
+    = Just "Setting the parameter 'withActivityFinalInForkBlocks' to False prohibits having more than 1 'activityFinalNodes'"
+  | withActivityFinalInForkBlocks == Just True && Config.activityFinalNodes adConfig == 0
+    = Just "Setting the parameter 'withActivityFinalInForkBlocks' to True implies that there are 'activityFinalNodes'"
   | null petriLayout
     = Just "The parameter 'petriLayout' can not be the empty list"
   | any (`notElem` [Dot, Neato, TwoPi, Circo, Fdp]) petriLayout
@@ -228,7 +228,7 @@ selectPetriAlloy SelectPetriConfig {
   adConfig,
   auxiliaryPetriNodeAbsent,
   presenceOfSinkTransitionsForFinals,
-  noActivityFinalInForkBlocks
+  withActivityFinalInForkBlocks
 }
   = adConfigToAlloy modules predicates adConfig
   where
@@ -239,7 +239,7 @@ selectPetriAlloy SelectPetriConfig {
             #{f auxiliaryPetriNodeAbsent "auxiliaryPetriNodeAbsent"}
             #{f activityFinalsExist "activityFinalsExist"}
             #{f (not <$> presenceOfSinkTransitionsForFinals) "avoidAddingSinksForFinals"}
-            #{f noActivityFinalInForkBlocks "noActivityFinalInForkBlocks"}
+            #{f (not <$> withActivityFinalInForkBlocks) "noActivityFinalInForkBlocks"}
           |]
     f opt s =
           case opt of

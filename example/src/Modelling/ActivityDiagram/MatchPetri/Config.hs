@@ -30,7 +30,7 @@ task2023_39 = MatchPetriConfig {
   petriSvgHighlighting = True,
   auxiliaryPetriNodeAbsent = Nothing,
   presenceOfSinkTransitionsForFinals = Nothing,
-  noActivityFinalInForkBlocks = Nothing,
+  withActivityFinalInForkBlocks = Nothing,
   printSolution = True,
   extraText = Nothing
   }
@@ -58,7 +58,7 @@ task2023_40 = MatchPetriConfig {
   petriSvgHighlighting = True,
   auxiliaryPetriNodeAbsent = Nothing,
   presenceOfSinkTransitionsForFinals = Nothing,
-  noActivityFinalInForkBlocks = Nothing,
+  withActivityFinalInForkBlocks = Nothing,
   printSolution = True,
   extraText = Nothing
   }
@@ -102,7 +102,7 @@ task2024_70 = MatchPetriConfig {
   petriSvgHighlighting = True,
   auxiliaryPetriNodeAbsent = Just True,
   presenceOfSinkTransitionsForFinals = Just True,
-  noActivityFinalInForkBlocks = Just True,
+  withActivityFinalInForkBlocks = Just False,
   printSolution = True,
   extraText = Nothing
   }
@@ -130,7 +130,7 @@ task2024_71 = MatchPetriConfig {
   petriSvgHighlighting = True,
   auxiliaryPetriNodeAbsent = Just False,
   presenceOfSinkTransitionsForFinals = Nothing,
-  noActivityFinalInForkBlocks = Just True,
+  withActivityFinalInForkBlocks = Just False,
   printSolution = True,
   extraText = Nothing
   }

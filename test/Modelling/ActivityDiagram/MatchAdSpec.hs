@@ -21,5 +21,5 @@ spec = describe "checkMatchAdConfig" $ do
     it "it returns a String with necessary changes" $
       checkMatchAdConfig defaultMatchAdConfig {
         adConfig=defaultAdConfig{activityFinalNodes = 2},
-        noActivityFinalInForkBlocks=Just True
+        withActivityFinalInForkBlocks = Just False
       } `shouldSatisfy` isJust
