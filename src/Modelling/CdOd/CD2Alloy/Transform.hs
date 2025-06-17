@@ -580,7 +580,7 @@ this can be used to prevent or force overlapping links
 in order to steer difficulty.
 
 The function returns a list of both, the predicates names
-as well as the predicates themselfs.
+as well as the predicates themselves.
 -}
 overlappingLinksPredicates
   :: [Relationship String String]
