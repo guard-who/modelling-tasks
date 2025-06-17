@@ -67,6 +67,7 @@ import Modelling.CdOd.CD2Alloy.Transform (
   combineParts,
   createRunCommand,
   mergeParts,
+  overlappingLinksPredicates,
   transform,
   )
 import Modelling.CdOd.Generate          (generateCds, instanceToCd)
@@ -145,7 +146,7 @@ import Control.Monad.Random (
   mkStdGen,
   )
 import Control.Monad.Trans.Except       (runExceptT)
-import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Bifunctor                   (Bifunctor (bimap, first))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (bitraverse)
 import Data.Bool                        (bool)
@@ -154,6 +155,7 @@ import Data.Functor.Identity            (Identity (Identity, runIdentity))
 import Data.GraphViz                    (DirType (Forward))
 import Data.List (
   group,
+  intercalate,
   intersect,
   permutations,
   singleton,
@@ -541,37 +543,15 @@ using 'defaultDifferentNamesConfig'.
 defaultDifferentNamesInstance :: DifferentNamesInstance
 defaultDifferentNamesInstance = DifferentNamesInstance {
   cDiagram = ClassDiagram {
-    classNames = ["D", "B", "C", "A"],
+    classNames = ["C", "B", "D", "A"],
     relationships = [
       Composition {
-        compositionName = "a",
+        compositionName = "b",
         compositionPart = LimitedLinking {
-          linking = "B",
+          linking = "D",
           limits = (2, Nothing)
           },
         compositionWhole = LimitedLinking {
-          linking = "D",
-          limits = (0, Just 1)
-          }
-        },
-      Aggregation {
-        aggregationName = "b",
-        aggregationPart = LimitedLinking {
-          linking = "D",
-          limits = (0, Just 2)
-          },
-        aggregationWhole = LimitedLinking {
-          linking = "A",
-          limits = (0, Just 2)
-          }
-        },
-      Association {
-        associationName = "c",
-        associationFrom = LimitedLinking {
-          linking = "C",
-          limits = (0, Nothing)
-          },
-        associationTo = LimitedLinking {
           linking = "B",
           limits = (0, Just 1)
           }
@@ -579,28 +559,51 @@ defaultDifferentNamesInstance = DifferentNamesInstance {
       Inheritance {
         subClass = "A",
         superClass = "C"
+        },
+      Association {
+        associationName = "a",
+        associationFrom = LimitedLinking {
+          linking = "C",
+          limits = (0, Nothing)
+          },
+        associationTo = LimitedLinking {
+          linking = "D",
+          limits = (0, Just 1)
+          }
+        },
+      Aggregation {
+        aggregationName = "c",
+        aggregationPart = LimitedLinking {
+          linking = "B",
+          limits = (0, Just 2)
+          },
+        aggregationWhole = LimitedLinking {
+          linking = "A",
+          limits = (0, Just 2)
+          }
         }
       ]
     },
   cdDrawSettings = defaultCdDrawSettings,
   oDiagram = ObjectDiagram {
     objects = [
-      Object {isAnonymous = True, objectName = "a1", objectClass = "A"},
-      Object {isAnonymous = True, objectName = "a",  objectClass = "A"},
+      Object {isAnonymous = True, objectName = "c",  objectClass = "C"},
+      Object {isAnonymous = True, objectName = "c1", objectClass = "C"},
       Object {isAnonymous = True, objectName = "d",  objectClass = "D"},
       Object {isAnonymous = True, objectName = "b",  objectClass = "B"},
-      Object {isAnonymous = True, objectName = "b1", objectClass = "B"}
+      Object {isAnonymous = True, objectName = "d1", objectClass = "D"},
+      Object {isAnonymous = True, objectName = "a",  objectClass = "A"}
       ],
     links = [
-      Link {linkName = "x", linkFrom = "b",  linkTo = "d"},
-      Link {linkName = "y", linkFrom = "d",  linkTo = "a1"},
-      Link {linkName = "x", linkFrom = "b1", linkTo = "d"},
-      Link {linkName = "z", linkFrom = "a",  linkTo = "b1"},
-      Link {linkName = "z", linkFrom = "a1", linkTo = "b1"}
+      Link {linkName = "x", linkFrom = "d1", linkTo = "b"},
+      Link {linkName = "z", linkFrom = "b",  linkTo = "a"},
+      Link {linkName = "x", linkFrom = "d",  linkTo = "b"},
+      Link {linkName = "y", linkFrom = "c",  linkTo = "d1"},
+      Link {linkName = "y", linkFrom = "c1", linkTo = "d1"}
       ]
     },
   showSolution = False,
-  mapping = toNameMapping $ BM.fromList [("a", "x"), ("b", "y"), ("c", "z")],
+  mapping = toNameMapping $ BM.fromList [("a", "y"), ("b", "x"), ("c", "z")],
   linkShuffling = ConsecutiveLetters,
   taskText = defaultDifferentNamesTaskText,
   addText = Nothing
@@ -621,7 +624,9 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
           $ drop 1 (permutations labels)
         cds'   = zip [1 :: Integer ..] cds
         partsList = map (uncurry alloyFor) cds'
-        runCmd = foldr (\(n, _) -> (++ " and (not cd" ++ show n ++ ")")) "cd0" cds'
+        runCmd = "cd0 and "
+          ++ conjunctNegationsOf (map (("cd" ++) . show . fst) cds')
+          ++ overlappingConstraints
         onlyCd0 = createRunCommand
           runCmd
           Nothing
@@ -632,7 +637,7 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
     instances  <- getInstances
       maxInstances
       timeout
-      (combineParts partsList' ++ onlyCd0)
+      (combineParts partsList' ++ unlines overlappingPredicates ++ onlyCd0)
     instances' <- shuffleM (instances :: [AlloyInstance])
     continueWithHead instances' $ \od1 -> do
       labels' <- shuffleM labels
@@ -666,6 +671,15 @@ getDifferentNamesTask tryNext DifferentNamesConfig {..} cd = do
               }
         else tryNext
   where
+    negationOf p = [i|not (#{p})|]
+    conjunctNegationsOf = intercalate " and " . map negationOf
+    (overlappingConstraints, overlappingPredicates) =
+      case withObviousMapping of
+        Nothing -> ("", [])
+        Just True -> first (" and " ++) getOverlapping
+        Just False -> first ((" and " ++) . negationOf) getOverlapping
+    getOverlapping = first conjunctNegationsOf
+      $ unzip $ overlappingLinksPredicates $ relationships cd
     renameEdges bm = either (error . show) id . bitraverse pure (`BM.lookup` bm)
     alloyFor n cd' = transform
       (ExtendsAnd NothingMore)

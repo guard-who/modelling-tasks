@@ -59,14 +59,10 @@ pred cd1 {
   // Contents
 
   // Associations
-
   x in A -> (B + C + A)
   all o : A | #o.x >= 1 and #o.x =< 2
-
-
   y in D -> (C + A)
   all o : D | #o.y = 1
-
 
   // Compositions
 

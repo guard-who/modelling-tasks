@@ -52,6 +52,7 @@ pred cd1 {
 
   // Contents
 
+  // Associations
 
   // Compositions
   all o : B + C + D | #o.x =< 1

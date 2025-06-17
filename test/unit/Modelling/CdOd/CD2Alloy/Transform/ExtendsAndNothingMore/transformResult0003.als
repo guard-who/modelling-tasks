@@ -58,10 +58,8 @@ pred cd1 {
   // Contents
 
   // Associations
-
   x in D -> C
   all o : D | #o.x = 1
-
 
   // Compositions
   all o : Object | #o.x =< 1

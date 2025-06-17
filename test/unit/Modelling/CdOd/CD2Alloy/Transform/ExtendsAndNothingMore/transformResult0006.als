@@ -60,15 +60,10 @@ pred cd1 {
   // Contents
 
   // Associations
-
   x in A -> B
   all o : A | #o.x >= 1 and #o.x =< 2
-
-
   y in D -> C
   all o : D | #o.y = 1
-
-
   z in B -> D
   all o : B | #o.z = 1
   all o : D | #z.o =< 2
