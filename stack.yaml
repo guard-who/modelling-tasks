@@ -4,7 +4,7 @@ packages:
   - .
 flags:
   modelling-tasks:
-    alloy-use-sat4j: false
+    alloy-use-sat4j: true
     quick-testing: true
 extra-deps:
   - git: https://github.com/fmidue/output-blocks.git
