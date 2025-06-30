@@ -27,7 +27,6 @@ import Control.OutputCapable.Blocks     (
 import Control.OutputCapable.Blocks.Type (
   SpecialOutput,
   checkTranslations,
-  withRefusal,
   )
 import Data.List                        ((\\), singleton)
 import Data.Map                         (Map)
@@ -108,10 +107,6 @@ checkTaskText taskText
       |]
   | x:_ <- concatMap (checkTranslations (const [])) taskText
   = Just $ [iii|Problem within your task text: |] ++ x
-  | any (withRefusal (const False)) taskText
-  = Just [iii|
-    Your task text must not refuse output! (i.e. use Refuse or Assertion)
-    |]
   | otherwise
   = Nothing
   where
