@@ -39,8 +39,6 @@ library
   exposed-modules:
       Capabilities.Alloy
       Capabilities.Alloy.IO
-      Capabilities.Cache
-      Capabilities.Cache.IO
       Capabilities.Diagrams
       Capabilities.Diagrams.IO
       Capabilities.Graphviz
@@ -141,7 +139,7 @@ library
     , latex-svg-image
     , lens
     , mtl
-    , output-blocks ==0.5.*
+    , output-blocks >=0.5.0.1 && <0.6
     , parsec
     , polysemy-plugin
     , random
@@ -241,7 +239,7 @@ test-suite modelling-tasks-test
     , lens
     , modelling-tasks
     , mtl
-    , output-blocks ==0.5.*
+    , output-blocks >=0.5.0.1 && <0.6
     , parsec
     , polysemy-plugin
     , process

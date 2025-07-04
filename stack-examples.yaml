@@ -9,7 +9,7 @@ flags:
     quick-testing: true
 extra-deps:
   - git: https://github.com/fmidue/output-blocks.git
-    commit: 183ef461d4da8df4c2a249e92bc0b03242c159b9
+    commit: eb21aa6ddb483603dcc16b7694fc9bea10de31b8
     subdirs:
       - output-blocks
   - call-alloy-0.6.0.2
