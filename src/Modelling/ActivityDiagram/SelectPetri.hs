@@ -432,7 +432,8 @@ selectPetriEvaluation path task n = addPretext $ do
           german "Das originale Aktivitätsdiagramm sieht mit Knotennamen wie folgt aus:"
 
         let alteredConfig = (plantUMLConf task) { suppressNodeNames = False }
-        image $=<< drawAdToFile path alteredConfig $ activityDiagram task
+        image $=<< drawAdToFile (path ++ "feedback") alteredConfig
+          $ activityDiagram task
         pure ()
 
       let (_, correctNet) = fromJust $ find fst $ petriNets task
