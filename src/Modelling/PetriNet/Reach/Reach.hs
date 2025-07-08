@@ -110,10 +110,10 @@ reachTask
 reachTask path inst = do
   if showGoalNet inst
     then (,True) . Left
-    <$> lift (drawToFile True path (drawUsing inst) 0 (n { start = goal inst }))
+    <$> lift (drawToFile True path (drawUsing inst) (n { start = goal inst }))
     else pure (Right $ show $ goal inst, False)
   $>>= \(g, withoutPlaceNames) ->
-    lift (drawToFile withoutPlaceNames path (drawUsing inst) (-1) n)
+    lift (drawToFile withoutPlaceNames path (drawUsing inst) n)
   $>>= \img -> reportReachFor
     img
     (noLongerThan inst)

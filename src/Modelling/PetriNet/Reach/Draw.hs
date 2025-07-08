@@ -35,12 +35,10 @@ drawToFile
   => Bool
   -> FilePath
   -> GraphvizCommand
-  -> Int
   -> Net s t
   -> m FilePath
-drawToFile hidePlaceNames path cmd x net = cacheNet
-    (path ++ "graph" ++ show x)
-    id
+drawToFile hidePlaceNames path cmd net = cacheNet
+    path
     (toPetriLike show show net)
     DrawSettings {
       with1Weights = False,

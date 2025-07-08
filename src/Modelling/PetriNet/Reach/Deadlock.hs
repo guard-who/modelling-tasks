@@ -96,7 +96,7 @@ deadlockTask
   -> DeadlockInstance s t
   -> LangM m
 deadlockTask path inst = do
-  lift (drawToFile True path (drawUsing inst) 0 (petriNet inst))
+  lift (drawToFile True path (drawUsing inst) (petriNet inst))
   $>>= \img -> reportReachFor
     img
     (noLongerThan inst)

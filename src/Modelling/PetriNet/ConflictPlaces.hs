@@ -37,7 +37,7 @@ import Modelling.PetriNet.Find (
   findInitial,
   )
 import Modelling.PetriNet.Diagram (
-  renderWith,
+  cacheNet,
   )
 import Modelling.PetriNet.Reach.Type (
   Place (Place),
@@ -119,7 +119,7 @@ findConflictPlacesTask path task = do
   paragraph $ translate $ do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
-  image $=<< renderWith path "conflict" (net task) (drawFindWith task)
+  image $=<< cacheNet path (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions is in conflict, and because of which conflict-causing place(s), under the initial marking?"
     german "Welches Paar von Transitionen steht in Konflikt, und wegen welcher konfliktverursachenden Stelle(n), unter der Startmarkierung?"

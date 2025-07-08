@@ -33,7 +33,7 @@ import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
   )
-import Modelling.PetriNet.Diagram       (getDefaultNet, getNet, renderWith)
+import Modelling.PetriNet.Diagram       (cacheNet, getDefaultNet, getNet)
 import Modelling.PetriNet.Types         (
   BasicConfig (..),
   ChangeConfig (..),
@@ -172,14 +172,13 @@ pickSolution = head . M.keys . M.filter fst . nets
 renderPick
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => String
-  -> String
   -> PickInstance (p n String)
   -> m (Map Int (Bool, String))
-renderPick path task config =
+renderPick path config =
   M.foldrWithKey render' (pure mempty) $ nets config
   where
     render' x (b, (net, ds)) ns =
-      renderWith path (task ++ '-' : show x) net ds
+      cacheNet path net ds
       >>= \file -> M.insert x (b, file) <$> ns
 
 checkConfigForPick

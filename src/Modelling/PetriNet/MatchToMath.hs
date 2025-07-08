@@ -218,7 +218,7 @@ writeDia
   => FilePath
   -> MatchInstance (Drawable (p n String)) b
   -> m (MatchInstance FilePath b)
-writeDia path = bimapM (\(n, ds) -> writeGraph ds path "" n) pure
+writeDia path = bimapM (\(n, ds) -> writeGraph ds path n) pure
 
 writeDias
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
@@ -230,19 +230,17 @@ writeDias path inst =
         from = from inst,
         to   = mapWithKey (\k -> second (show k,)) $ to inst
         }
-  in bimapM pure (\(l, (n, d)) -> writeGraph d path l n) inst'
+  in bimapM pure (\(_, (n, d)) -> writeGraph d path n) inst'
 
 writeGraph
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
   => DrawSettings
   -> FilePath
-  -> String
   -> p n String
   -> m FilePath
-writeGraph drawSettings path index pl =
+writeGraph drawSettings path pl =
   cacheNet
-    (path ++ "graph" ++ index)
-    id
+    path
     pl
     drawSettings
 

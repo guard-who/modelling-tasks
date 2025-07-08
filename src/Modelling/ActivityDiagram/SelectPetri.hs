@@ -75,6 +75,7 @@ import Modelling.Auxiliary.Output (
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
+  Net (mapNet),
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
@@ -360,7 +361,7 @@ selectPetriTask path task = do
   images show id
     $=<< for
       mapping
-      (\c -> cacheNet path (show . PK.label) c drawSetting)
+      (\c -> cacheNet path (mapNet (show . PK.label) c) drawSetting)
   paragraph $ translate $ do
     english [i|Which of these Petri nets is the translation of the given activity diagram?
 Please state your answer by giving a number indicating the matching Petri net.|]
@@ -446,7 +447,7 @@ selectPetriEvaluation path task n = addPretext $ do
               { withPlaceNames = True
               , withTransitionNames = True
               }
-        image $=<< cacheNet path (show . PK.label) correctNet drawSetting
+        image $=<< cacheNet path (mapNet (show . PK.label) correctNet) drawSetting
         pure ()
 
       paragraph $ translate $ do

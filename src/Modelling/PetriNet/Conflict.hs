@@ -77,7 +77,7 @@ import Modelling.PetriNet.Alloy (
   unscopedSingleSig,
   )
 import Modelling.PetriNet.Diagram (
-  renderWith,
+  cacheNet,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
@@ -202,7 +202,7 @@ findConflictTask path task = do
   paragraph $ translate $ do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
-  image $=<< renderWith path "conflict" (net task) (drawFindWith task)
+  image $=<< cacheNet path (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions is in conflict under the initial marking?"
     german "Welches Paar von Transitionen steht unter der Startmarkierung in Konflikt?"
@@ -331,7 +331,7 @@ pickConflictTask path task = do
       Welches dieser Petrinetze hat genau ein Paar von Transitionen,
       die unter der Startmarkierung in Konflikt stehen?
       |]
-  images show snd $=<< renderPick path "conflict" task
+  images show snd $=<< renderPick path task
   paragraph $ translate $ do
     english [iii|
       State your answer by giving the number of the Petri net

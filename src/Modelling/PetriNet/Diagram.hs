@@ -10,7 +10,6 @@ module Modelling.PetriNet.Diagram (
   drawNet,
   getDefaultNet,
   getNet,
-  renderWith,
   ) where
 
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
@@ -33,29 +32,35 @@ import Modelling.PetriNet.Parser (
   )
 import Modelling.PetriNet.Types (
   DrawSettings (..),
-  Net (mapNet, traverseNet),
+  Net (traverseNet),
   )
 
-import Control.Arrow                    (first)
 import Control.Monad.Catch              (MonadThrow (throwM), Exception)
 import Data.Graph.Inductive             (Gr)
-import Data.GraphViz                    hiding (Path)
+import Data.GraphViz                    (AttributeNode, AttributeEdge)
 import Data.List                        (foldl')
 import Diagrams.Backend.SVG             (B, svgClass)
 import Diagrams.Prelude
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
 import Language.Alloy.Call              (AlloyInstance)
 
+{-|
+Uses 'cache' in order to cache the provided Petri net like graph ('Net').
+by distributing places and transitions using GraphViz.
+The provided 'GraphvizCommand' is used for this distribution.
+-}
 cacheNet
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
-  => String
-  -> (a -> String)
-  -> p n a
+  => FilePath
+  -- ^ a prefix to use for resulting files
+  -> p n String
+  -- ^ the graph to draw
   -> DrawSettings
+  -- ^ how to draw the graph
   -> m FilePath
-cacheNet path labelOf pl drawSettings@DrawSettings {..} =
-  cache path ext "petri" (mapNet labelOf pl) $ \svg pl' -> do
-    dia <- drawNet id pl' drawSettings
+cacheNet path pl drawSettings@DrawSettings {..} =
+  cache path ext "petri" pl $ \svg pl' -> do
+    dia <- drawNet pl' drawSettings
     writeSvg svg dia
   where
     ext = short withPlaceNames
@@ -76,20 +81,18 @@ by distributing places and transitions using GraphViz.
 The provided 'GraphvizCommand' is used for this distribution.
 -}
 drawNet
-  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n, Ord a)
-  => (a -> String)
-  -- ^ how to obtain labels of the nodes
-  -> p n a
+  :: (MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
+  => p n String
   -- ^ the graph definition
   -> DrawSettings
   -- ^ how to draw the graph
   -> m (Diagram B)
-drawNet labelOf pl drawSettings@DrawSettings {..} = do
-  gr    <- either (throwM . CouldNotFindNodeWithinGraph . labelOf) return
+drawNet pl drawSettings@DrawSettings {..} = do
+  gr <- either (throwM . CouldNotFindNodeWithinGraph) return
     $ netToGr pl
   graph <- layoutGraph withGraphvizCommand gr
   preparedFont <- lin
-  return $ drawGraph labelOf drawSettings preparedFont graph
+  return $ drawGraph drawSettings preparedFont graph
 
 getNet
   :: (MonadThrow m, Net p n, Traversable t)
@@ -136,27 +139,24 @@ Obtain the Petri net like graph by drawing Nodes and connections between them
 using the specific functions @drawNode@ and @drawEdge@.
 -}
 drawGraph
-  :: Ord a
-  => (a -> String)
-  -- ^ how to obtain labels from nodes
-  -> DrawSettings
+  :: DrawSettings
   -- ^ how to draw the graph
   -> PreparedFont Double
   -- ^ the font to be used for labels
-  -> Gr (AttributeNode (a, Maybe Int)) (AttributeEdge Int)
+  -> Gr (AttributeNode (String, Maybe Int)) (AttributeEdge Int)
   -- ^ the graph consisting of nodes and edges
   -> Diagram B
-drawGraph labelOf drawSettings@DrawSettings {..} preparedFont graph =
+drawGraph drawSettings@DrawSettings {..} preparedFont graph =
   graphEdges' # frame 1
   where
     (nodes, edges) = GV.getGraph graph
     graphNodes' = M.foldlWithKey
       (\g l p -> g
         `atop`
-        drawNode drawSettings preparedFont (withLabel l) p)
+        drawNode drawSettings preparedFont l p)
       mempty
       nodes
-    graphEdges' = foldl
+    graphEdges' = foldl'
       (\g (s, t, l, p) ->
         let ls = labelOnly s
             lt = labelOnly t
@@ -170,8 +170,7 @@ drawGraph labelOf drawSettings@DrawSettings {..} preparedFont graph =
       )
       graphNodes'
       edges
-    withLabel = first labelOf
-    labelOnly = labelOf . fst
+    labelOnly = fst
 
 {-|
 Nodes are either Places (having 'Just' tokens), or Transitions (having
@@ -265,12 +264,3 @@ drawEdge hide1 f l l1 l2 path d =
   in addLabel (connectOutside'' opts l1 l2 d # lwL 0.5) # svgClass "."
   where
     trail = trailBetween path l1 l2 d
-
-renderWith
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
-  => String
-  -> String
-  -> p n String
-  -> DrawSettings
-  -> m FilePath
-renderWith path task = cacheNet (path ++ task) id

@@ -69,7 +69,7 @@ import Modelling.PetriNet.Alloy (
   unscopedSingleSig,
   )
 import Modelling.PetriNet.Diagram (
-  renderWith,
+  cacheNet,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
@@ -173,7 +173,7 @@ findConcurrencyTask path task = do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
   image
-    $=<< renderWith path "concurrent" (net task) (drawFindWith task)
+    $=<< cacheNet path (net task) (drawFindWith task)
   paragraph $ translate $ do
     english [iii|
       Which pair of transitions is concurrently activated
@@ -281,7 +281,7 @@ pickConcurrencyTask path task = do
       die unter der Startmarkierung nebenläufig aktiviert sind?
       |]
   images show snd
-    $=<< renderPick path "concurrent" task
+    $=<< renderPick path task
   paragraph $ translate $ do
     english [iii|
       State your answer by giving the number of the Petri net

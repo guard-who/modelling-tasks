@@ -80,7 +80,7 @@ import Modelling.Auxiliary.Output (
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
-  Net,
+  Net (mapNet),
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
@@ -305,7 +305,7 @@ matchPetriTask path task = do
     english "Consider the following Petri net as translation of this activity diagram:"
     german "Betrachten Sie folgendes Petrinetz als Übersetzung dieses Aktivitätsdiagramms:"
   let drawSetting = petriDrawConf task
-  image $=<< cacheNet path (show . PK.label) (petriNet task) drawSetting
+  image $=<< cacheNet path (mapNet (show . PK.label) $ petriNet task) drawSetting
   paragraph $ translate $ do
     english [iii|
       State each matching of action node and Petri net node,
