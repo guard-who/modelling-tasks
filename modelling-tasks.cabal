@@ -82,6 +82,7 @@ library
       Modelling.PetriNet.Find
       Modelling.PetriNet.Pick
       Modelling.PetriNet.Reach.Deadlock
+      Modelling.PetriNet.Reach.Draw
       Modelling.PetriNet.Reach.Property
       Modelling.PetriNet.Reach.Reach
       Modelling.PetriNet.Reach.Step
@@ -92,7 +93,6 @@ library
       Modelling.CdOd.Phrasing
       Modelling.CdOd.Phrasing.English
       Modelling.CdOd.Phrasing.German
-      Modelling.PetriNet.Reach.Draw
       Modelling.PetriNet.Reach.Roll
       Paths_modelling_tasks
   hs-source-dirs:

@@ -123,6 +123,7 @@ library:
     - Modelling.PetriNet.Find
     - Modelling.PetriNet.Pick
     - Modelling.PetriNet.Reach.Deadlock
+    - Modelling.PetriNet.Reach.Draw
     - Modelling.PetriNet.Reach.Property
     - Modelling.PetriNet.Reach.Reach
     - Modelling.PetriNet.Reach.Step
