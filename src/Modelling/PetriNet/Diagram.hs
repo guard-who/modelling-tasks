@@ -13,7 +13,7 @@ module Modelling.PetriNet.Diagram (
   ) where
 
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
-import qualified Data.Map                         as M (foldlWithKey)
+import qualified Data.Map                         as M (foldlWithKey, lookupMin)
 
 import Capabilities.Cache               (MonadCache, cache, short)
 import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
@@ -32,13 +32,19 @@ import Modelling.PetriNet.Parser (
   )
 import Modelling.PetriNet.Types (
   DrawSettings (..),
-  Net (traverseNet),
+  Net (traverseNet, nodes),
   )
 
 import Control.Monad.Catch              (MonadThrow (throwM), Exception)
 import Data.Graph.Inductive             (Gr)
 import Data.GraphViz                    (AttributeNode, AttributeEdge)
 import Data.List                        (foldl')
+import Data.Data (
+  Data,
+  Typeable,
+  dataTypeName,
+  dataTypeOf,
+  )
 import Diagrams.Backend.SVG             (B, svgClass)
 import Diagrams.Prelude
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
@@ -50,7 +56,17 @@ by distributing places and transitions using GraphViz.
 The provided 'GraphvizCommand' is used for this distribution.
 -}
 cacheNet
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
+  :: (
+    Data (n String),
+    Data (p n String),
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    Typeable n,
+    Typeable p
+    )
   => FilePath
   -- ^ a prefix to use for resulting files
   -> p n String
@@ -59,10 +75,19 @@ cacheNet
   -- ^ how to draw the graph
   -> m FilePath
 cacheNet path pl drawSettings@DrawSettings {..} =
-  cache path ext "petri" pl $ \svg pl' -> do
+  cache path ext prefix pl $ \svg pl' -> do
     dia <- drawNet pl' drawSettings
     writeSvg svg dia
   where
+    prefix =
+      "petri-"
+      ++ petriType
+      ++ nodeType
+    petriType = dataTypeName . dataTypeOf $ pl
+    nodeType = maybe
+      ""
+      (('-' :) . dataTypeName . dataTypeOf . snd)
+      $ M.lookupMin $ nodes pl
     ext = short withPlaceNames
       ++ short withTransitionNames
       ++ short with1Weights
@@ -149,13 +174,13 @@ drawGraph
 drawGraph drawSettings@DrawSettings {..} preparedFont graph =
   graphEdges' # frame 1
   where
-    (nodes, edges) = GV.getGraph graph
+    (nodes', edges) = GV.getGraph graph
     graphNodes' = M.foldlWithKey
       (\g l p -> g
         `atop`
         drawNode drawSettings preparedFont l p)
       mempty
-      nodes
+      nodes'
     graphEdges' = foldl'
       (\g (s, t, l, p) ->
         let ls = labelOnly s

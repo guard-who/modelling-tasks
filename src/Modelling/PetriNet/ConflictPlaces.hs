@@ -77,6 +77,7 @@ import Control.OutputCapable.Blocks (
   translate,
   )
 import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Data                        (Data, Typeable)
 import Data.Function                    ((&))
 import Data.Foldable                    (for_)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo))
@@ -105,12 +106,16 @@ simpleFindConflictPlacesTask = findConflictPlacesTask
 
 findConflictPlacesTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> FindInstance (p n String) Conflict

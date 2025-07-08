@@ -161,6 +161,7 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Bool                        (bool)
+import Data.Data                        (Data, Typeable)
 import Data.Either                      (isLeft)
 import Data.Function                    ((&))
 import Data.Foldable                    (for_)
@@ -188,12 +189,16 @@ simpleFindConflictTask = findConflictTask
 
 findConflictTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> FindInstance (p n String) Conflict
@@ -310,12 +315,16 @@ simplePickConflictTask = pickConflictTask
 
 pickConflictTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> PickInstance (p n String)

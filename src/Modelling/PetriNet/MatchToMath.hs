@@ -125,6 +125,7 @@ import Control.Monad.Random             (
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
+import Data.Data                        (Data, Typeable)
 import Data.GraphViz                    (GraphvizCommand (Circo, Dot, Fdp, Sfdp))
 import Data.Map                         (Map, fromList, mapWithKey, toList)
 import Data.String.Interpolate          (i)
@@ -214,14 +215,34 @@ evalWithStdGen
 evalWithStdGen = flip evalRandT . mkStdGen
 
 writeDia
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
+  :: (
+    Data (n String),
+    Data (p n String),
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    Typeable n,
+    Typeable p
+    )
   => FilePath
   -> MatchInstance (Drawable (p n String)) b
   -> m (MatchInstance FilePath b)
 writeDia path = bimapM (\(n, ds) -> writeGraph ds path n) pure
 
 writeDias
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
+  :: (
+    Data (n String),
+    Data (p n String),
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    Typeable n,
+    Typeable p
+    )
   => FilePath
   -> MatchInstance a (Drawable (p n String))
   -> m (MatchInstance a FilePath)
@@ -233,7 +254,17 @@ writeDias path inst =
   in bimapM pure (\(_, (n, d)) -> writeGraph d path n) inst'
 
 writeGraph
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
+  :: (
+    Data (n String),
+    Data (p n String),
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    Typeable n,
+    Typeable p
+    )
   => DrawSettings
   -> FilePath
   -> p n String

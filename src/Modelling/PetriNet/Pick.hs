@@ -71,6 +71,7 @@ import Control.Monad.Random (
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bitraversable               (bimapM)
 import Data.Containers.ListUtils        (nubOrd)
+import Data.Data                        (Data, Typeable)
 import Data.Map                         (Map)
 import Data.Maybe                       (isJust)
 import GHC.Generics                     (Generic)
@@ -170,8 +171,18 @@ pickSolution :: PickInstance n -> Int
 pickSolution = head . M.keys . M.filter fst . nets
 
 renderPick
-  :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m, Net p n)
-  => String
+  :: (
+    Data (n String),
+    Data (p n String),
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    MonadThrow m,
+    Net p n,
+    Typeable n,
+    Typeable p
+    )
+  => FilePath
   -> PickInstance (p n String)
   -> m (Map Int (Bool, String))
 renderPick path config =

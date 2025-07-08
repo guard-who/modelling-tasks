@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# Language DeriveTraversable #-}
 {-# Language DuplicateRecordFields #-}
@@ -124,6 +125,7 @@ import Control.Monad.Catch              (Exception, MonadThrow (throwM))
 import Control.Monad.Random             (MonadRandom, RandT, RandomGen)
 import Control.Monad.Trans              (MonadTrans(lift))
 import Data.Bimap                       (Bimap)
+import Data.Data                        (Data)
 import Data.GraphViz.Attributes.Complete (GraphvizCommand (..))
 import Data.Map.Lazy                    (Map)
 import Data.Maybe                       (fromMaybe)
@@ -287,7 +289,7 @@ data Node a =
   flowIn  :: Map a Int,
   flowOut :: Map a Int
   }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Data, Eq, Generic, Read, Show)
 
 instance PetriNode Node where
   initialTokens PlaceNode {initial} = initial
@@ -318,7 +320,7 @@ data SimpleNode a =
   SimpleTransition {
   flowOut           :: Map a Int
   }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Data, Eq, Generic, Read, Show)
 
 instance PetriNode SimpleNode where
   initialTokens SimplePlace {initial} = initial
@@ -459,7 +461,7 @@ The 'PetriLike' graph is a valid Petri net only if
 newtype PetriLike n a = PetriLike {
   -- | the 'Map' of all nodes the Petri net like graph is made of
   allNodes :: Map a (n a)
-  } deriving (Eq, Generic, Read, Show)
+  } deriving (Data, Eq, Generic, Read, Show)
 
 instance Net PetriLike Node where
   emptyNet = PetriLike M.empty

@@ -136,6 +136,7 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Data                        (Data, Typeable)
 import Data.Either                      (isLeft)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
 import Data.String.Interpolate          (i, iii)
@@ -158,12 +159,16 @@ simpleFindConcurrencyTask = findConcurrencyTask
 
 findConcurrencyTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> FindInstance (p n String) (Concurrent Transition)
@@ -259,12 +264,16 @@ simplePickConcurrencyTask = pickConcurrencyTask
 
 pickConcurrencyTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> PickInstance (p n String)
