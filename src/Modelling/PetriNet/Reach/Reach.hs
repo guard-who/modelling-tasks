@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TupleSections #-}
 
 {-|
@@ -20,6 +21,7 @@ import qualified Data.Set                         as S (toList)
 import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
+import Data.Data                        (Data)
 import Modelling.Auxiliary.Common       (oneOf)
 import Modelling.Auxiliary.Output (
   hoveringInformation,
@@ -299,7 +301,9 @@ data ReachInstance s t = ReachInstance {
   showSolution      :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Maybe Int
-  } deriving (Generic, Read, Show, Typeable)
+  } deriving (Generic, Read, Show, Typeable, Data)
+
+deriving instance Data GraphvizCommand
 
 bimapReachInstance
   :: (Ord a, Ord b)
