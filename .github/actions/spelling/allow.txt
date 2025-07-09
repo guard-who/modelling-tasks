@@ -38,6 +38,7 @@ Programmierparadigmen
 QDiagram
 Rightarrow
 Sfdp
+Standalone
 Transitionsfolge
 UML
 Verzweigungs
