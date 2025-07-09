@@ -41,6 +41,7 @@ executable cd2pic
     , happy
   build-depends:
       array
+    , autotool-capabilities-io-instances
     , base
     , diagrams-lib
     , graphviz
@@ -65,6 +66,8 @@ executable different-names-legacy
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , call-alloy
@@ -95,6 +98,7 @@ executable instance2pic
   build-depends:
       MonadRandom
     , array
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , call-alloy
@@ -125,6 +129,8 @@ executable match-cd-od-legacy
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , call-alloy

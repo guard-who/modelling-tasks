@@ -36,26 +36,24 @@ dependencies:
   - MonadRandom
   - SHA
   - SVGFonts
+  - autotool-capabilities
   - aeson
   - base
   - bimap
   - bifunctors
   - bytestring
   - call-alloy >= 0.6.0.2 && < 0.7
-  - call-plantuml
   - composition
   - containers
   - diagrams-graphviz
   - diagrams-lib
   - diagrams-svg
-  - directory
   - edit-distance-vector
   - either
   - exceptions
   - extra
   - fgl
   - file-embed
-  - filepath
   - graphviz
   - hgal
   - latex-svg-image
@@ -69,13 +67,10 @@ dependencies:
   - size-based
   - split
   - string-interpolate
-  - svg-builder
   - text
   - transformers
   - utf8-string
   - vector
-  - hxt
-  - xml-conduit
   - yaml
 when:
   condition: flag(alloy-use-sat4j)
@@ -83,14 +78,6 @@ when:
 library:
   source-dirs: src
   exposed-modules:
-    - Capabilities.Alloy
-    - Capabilities.Alloy.IO
-    - Capabilities.Diagrams
-    - Capabilities.Diagrams.IO
-    - Capabilities.Graphviz
-    - Capabilities.Graphviz.IO
-    - Capabilities.PlantUml
-    - Capabilities.PlantUml.IO
     - Modelling.ActivityDiagram.ActionSequences
     - Modelling.ActivityDiagram.Alloy
     - Modelling.ActivityDiagram.Auxiliary.Util
@@ -151,6 +138,9 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - autotool-capabilities-io-instances
+      - directory
+      - filepath
       - modelling-tasks
       - QuickCheck
       - HUnit

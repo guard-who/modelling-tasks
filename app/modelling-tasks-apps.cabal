@@ -18,6 +18,7 @@ executable check-cds
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , call-alloy
@@ -44,6 +45,7 @@ executable concurrency
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , containers
@@ -70,6 +72,7 @@ executable conflicts
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , containers
@@ -97,6 +100,7 @@ executable different-names
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , containers
@@ -122,6 +126,7 @@ executable enterASTaskDemo
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , containers
     , diagrams-lib
@@ -197,6 +202,7 @@ executable findAuxiliaryPetriNodesTaskDemo
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , containers
     , diagrams-lib
@@ -221,6 +227,7 @@ executable match-cd-od
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , containers
@@ -246,6 +253,7 @@ executable matchAdTaskDemo
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , containers
     , diagrams-lib
@@ -269,6 +277,7 @@ executable matchPetriTaskDemo
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , containers
     , diagrams-lib
@@ -292,6 +301,7 @@ executable matchToMath
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , containers
@@ -319,6 +329,7 @@ executable repair-incorrect
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , bytestring
     , containers
@@ -344,6 +355,7 @@ executable selectASTaskDemo
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , containers
     , diagrams-lib
@@ -367,6 +379,7 @@ executable selectPetriTaskDemo
     , happy
   build-depends:
       MonadRandom
+    , autotool-capabilities-io-instances
     , base
     , containers
     , diagrams-lib

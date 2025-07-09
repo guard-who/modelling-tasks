@@ -37,14 +37,6 @@ flag quick-testing
 
 library
   exposed-modules:
-      Capabilities.Alloy
-      Capabilities.Alloy.IO
-      Capabilities.Diagrams
-      Capabilities.Diagrams.IO
-      Capabilities.Graphviz
-      Capabilities.Graphviz.IO
-      Capabilities.PlantUml
-      Capabilities.PlantUml.IO
       Modelling.ActivityDiagram.ActionSequences
       Modelling.ActivityDiagram.Alloy
       Modelling.ActivityDiagram.Auxiliary.Util
@@ -114,28 +106,25 @@ library
     , SHA
     , SVGFonts
     , aeson
+    , autotool-capabilities
     , base
     , bifunctors
     , bimap
     , bytestring
     , call-alloy >=0.6.0.2 && <0.7
-    , call-plantuml
     , composition
     , containers
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
-    , directory
     , edit-distance-vector
     , either
     , exceptions
     , extra
     , fgl
     , file-embed
-    , filepath
     , graphviz
     , hgal
-    , hxt
     , latex-svg-image
     , lens
     , mtl
@@ -147,12 +136,10 @@ library
     , size-based
     , split
     , string-interpolate
-    , svg-builder
     , text
     , transformers
     , utf8-string
     , vector
-    , xml-conduit
     , yaml
   default-language: Haskell2010
   if flag(alloy-use-sat4j)
@@ -211,12 +198,13 @@ test-suite modelling-tasks-test
     , SHA
     , SVGFonts
     , aeson
+    , autotool-capabilities
+    , autotool-capabilities-io-instances
     , base
     , bifunctors
     , bimap
     , bytestring
     , call-alloy >=0.6.0.2 && <0.7
-    , call-plantuml
     , composition
     , containers
     , diagrams-graphviz
@@ -234,7 +222,6 @@ test-suite modelling-tasks-test
     , hgal
     , hspec
     , hspec-core
-    , hxt
     , latex-svg-image
     , lens
     , modelling-tasks
@@ -248,12 +235,10 @@ test-suite modelling-tasks-test
     , size-based
     , split
     , string-interpolate
-    , svg-builder
     , text
     , transformers
     , utf8-string
     , vector
-    , xml-conduit
     , yaml
   default-language: Haskell2010
   if flag(alloy-use-sat4j)
