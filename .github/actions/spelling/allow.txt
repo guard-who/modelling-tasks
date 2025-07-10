@@ -48,6 +48,7 @@ WColor
 XNode
 apps
 automorphisms
+autotool
 basicstyle
 bigskip
 bigvee
