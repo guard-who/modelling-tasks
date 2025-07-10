@@ -88,13 +88,13 @@ mainPick i = forceErrors $ do
             }
         } :: PickConcurrencyConfig
   let c = checkPickConcurrencyConfig config
-  if isNothing c
-  then do
-    t <- pickConcurrencyGenerate config 0 i
-    lift . (`withLang` English) $ simplePickConcurrencyTask "" t
-    lift $ print t
-  else
-    lift $ print c
+  lift $
+    if isNothing c
+    then do
+      t <- pickConcurrencyGenerate config 0 i
+      (`withLang` English) $ simplePickConcurrencyTask "" t
+      print t
+    else print c
 
 userInput :: IO (Int,Int,Int,Int)
 userInput = do

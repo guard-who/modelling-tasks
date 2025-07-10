@@ -84,12 +84,10 @@ module Modelling.PetriNet.Types (
   lTokensOverall,
   lTransitions,
   lUniqueConflictPlace,
-  manyRandomDrawSettings,
   mapChange,
   maybeInitial,
   petriLikeToPetri,
   placeNames,
-  randomDrawSettings,
   shuffleNames,
   transformNet,
   transitionNames,
@@ -117,13 +115,13 @@ import qualified Data.Map.Lazy                    as M (
   )
 import qualified Data.Set                         as S (empty, union)
 
-import Modelling.Auxiliary.Common       (lensRulesL, oneOf)
+import Modelling.Auxiliary.Common       (lensRulesL)
 import Modelling.PetriNet.Reach.Type    (Place, ShowTransition (ShowTransition))
 
 import Control.Lens                     (makeLensesWith)
 import Control.Monad                    ((<=<))
 import Control.Monad.Catch              (Exception, MonadThrow (throwM))
-import Control.Monad.Random             (MonadRandom, RandT, RandomGen)
+import Control.Monad.Random             (RandT, RandomGen)
 import Control.Monad.Trans              (MonadTrans(lift))
 import Data.Bimap                       (Bimap)
 import Data.Data                        (Data)
@@ -909,35 +907,12 @@ drawSettingsWithCommand config c = DrawSettings {
   }
 
 {-|
-Provides a 'DrawSetting' by using 'drawSettingsWithCommand' and randomly picking
-one of the provided 'graphLayout's.
--}
-randomDrawSettings :: MonadRandom m => GraphConfig -> m DrawSettings
-randomDrawSettings config =
-  drawSettingsWithCommand config <$> oneOf (graphLayouts config)
-
-{-|
 Provides a list of all 'DrawSetting' that can be obtained by using
 'drawSettingsWithCommand' and all possible 'graphLayout's of the given config.
 -}
 allDrawSettings :: GraphConfig -> [DrawSettings]
 allDrawSettings config =
   map (drawSettingsWithCommand config) $ graphLayouts config
-
-{-|
-Provides a list of 'DrawSettings' with as many entries as specified by randomly
-picking while ensuring as few repetitions of provided 'graphLayout's as possible.
--}
-manyRandomDrawSettings
-  :: MonadRandom m
-  => GraphConfig
-  -- ^ providing layouts to pick from
-  -> Int
-  -- ^ how many entries to return
-  -> m [DrawSettings]
-manyRandomDrawSettings config n = map (drawSettingsWithCommand config) <$> do
-  layouts <- shuffleM $ graphLayouts config
-  shuffleM $ take n $ cycle layouts
 
 transitionPairShow
   :: (Petri.Transition, Petri.Transition)

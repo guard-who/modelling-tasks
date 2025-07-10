@@ -131,7 +131,7 @@ import Modelling.PetriNet.Types         (
 import Control.Applicative              (Alternative, (<|>))
 import Control.Lens                     ((.~), over)
 import Control.Monad                    (unless)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -409,7 +409,7 @@ findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
     gc = Find.graphConfig config
 
 pickConflictGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => PickConflictConfig
   -> Int
   -> Int

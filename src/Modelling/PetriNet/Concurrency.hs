@@ -112,7 +112,7 @@ import Modelling.PetriNet.Types         (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -369,7 +369,7 @@ findConcurrency = taskInstance
   Find.alloyConfig
 
 pickConcurrencyGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => PickConcurrencyConfig
   -> Int
   -> Int

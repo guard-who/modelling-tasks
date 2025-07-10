@@ -89,13 +89,13 @@ mainPick i = forceErrors $ do
             }
         } :: PickConflictConfig
   let c = checkPickConflictConfig config
-  if isNothing c
-  then do
-    t <- pickConflictGenerate config 0 i
-    lift . (`withLang` English) $ simplePickConflictTask "" t
-    lift $ print c
-  else
-    lift $ print c
+  lift $
+    if isNothing c
+    then do
+      t <- pickConflictGenerate config 0 i
+      (`withLang` English) $ simplePickConflictTask "" t
+      print c
+    else print c
 
 userInput :: IO (Int,Int,Int,Int)
 userInput = do

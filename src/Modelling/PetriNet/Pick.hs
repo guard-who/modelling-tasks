@@ -32,26 +32,32 @@ import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
+  findFittingRandom,
   )
-import Modelling.PetriNet.Diagram       (cacheNet, getDefaultNet, getNet)
+import Modelling.PetriNet.Diagram (
+  cacheNet,
+  getDefaultNet,
+  getNet,
+  isNetDrawable,
+  )
 import Modelling.PetriNet.Types         (
   BasicConfig (..),
   ChangeConfig (..),
   Drawable,
   GraphConfig (..),
   Net (..),
+  allDrawSettings,
   checkBasicConfig,
   checkChangeConfig,
   checkGraphLayouts,
-  manyRandomDrawSettings,
   placeNames,
-  randomDrawSettings,
   transitionNames,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (Arrow (second))
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
+import Control.Monad.Extra              (firstJustM, maybeM)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   LangM,
@@ -105,10 +111,10 @@ pickTaskInstance parseSpecial inst = do
   return [special, net]
 
 pickGenerate
-  :: (MonadThrow m, Net p n, Ord b)
+  :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => (c
     -> Int
-    -> RandT StdGen m [(p n b, Maybe a)]
+    -> RandT StdGen m [(p n String, Maybe a)]
     )
   -> (c -> GraphConfig)
   -> (c -> Bool)
@@ -116,28 +122,36 @@ pickGenerate
   -> c
   -> Int
   -> Int
-  -> m (PickInstance (p n b))
+  -> m (PickInstance (p n String))
 pickGenerate pick gc useDifferent withSol config segment seed
-  = flip evalRandT (mkStdGen seed) $ do
-  ns <- pick config segment
-  ns'  <- shuffleM ns
-  let ts = nubOrd $ concatMap (transitionNames . fst) ns'
-      ps = nubOrd $ concatMap (placeNames . fst) ns'
-  ts' <- shuffleM ts
-  ps' <- shuffleM ps
-  let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
-  ns'' <- lift $ bimapM (traverseNet (`BM.lookup` mapping)) return `mapM` ns'
-  s <- randomDrawSettings (gc config)
-  ns''' <- addDrawingSettings s ns''
-  return $ PickInstance {
-    nets = M.fromList $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- ns'''],
-    showSolution = withSol config
-    }
+  = evalRandT getInstance (mkStdGen seed)
   where
-    addDrawingSettings s ps = zip ps <$>
-      if useDifferent config
-      then manyRandomDrawSettings (gc config) (wrong + 1)
-      else return $ replicate (wrong + 1) s
+    getInstance = do
+      ns <- pick config segment
+      ns'  <- shuffleM ns
+      let ts = nubOrd $ concatMap (transitionNames . fst) ns'
+          ps = nubOrd $ concatMap (placeNames . fst) ns'
+      ts' <- shuffleM ts
+      ps' <- shuffleM ps
+      let mapping = BM.fromList $ zip (ps ++ ts) (ps' ++ ts')
+      ns'' <- lift $ bimapM (traverseNet (`BM.lookup` mapping)) return `mapM` ns'
+      getPickInstance ns''
+    toPickInstance ns ds =
+      pure $ PickInstance {
+        nets = M.fromList
+          $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- zip ns ds],
+        showSolution = withSol config
+        }
+    getPickInstance petris =
+      let predicates = map (\(x,_) -> lift . isNetDrawable x) petris
+      in
+        maybeM getInstance (toPickInstance petris)
+        $ if useDifferent config
+          then
+            findFittingRandom (allDrawSettings (gc config)) predicates
+          else do
+            ds <- shuffleM $ allDrawSettings (gc config)
+            firstJustM (\x -> findFittingRandom [x] predicates) ds
 
 pickSyntax
   :: OutputCapable m
