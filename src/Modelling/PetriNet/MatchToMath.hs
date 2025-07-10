@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# Language QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
 module Modelling.PetriNet.MatchToMath (
@@ -43,7 +44,7 @@ import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
-import Modelling.Auxiliary.Common       (Object (oName), oneOf)
+import Modelling.Auxiliary.Common       (Object (oName), findFittingRandom)
 import Modelling.Auxiliary.Output       (
   hoveringInformation,
   )
@@ -61,7 +62,7 @@ import Modelling.PetriNet.Alloy (
   signatures,
   taskInstance,
   )
-import Modelling.PetriNet.Diagram       (cacheNet)
+import Modelling.PetriNet.Diagram       (cacheNet, isNetDrawable)
 import Modelling.PetriNet.LaTeX         (toPetriMath)
 import Modelling.PetriNet.Parser (
   parseChange,
@@ -82,6 +83,7 @@ import Modelling.PetriNet.Types (
   PetriNode (..),
   SimpleNode (..),
   SimplePetriLike,
+  allDrawSettings,
   checkBasicConfig,
   checkChangeConfig,
   checkGraphLayouts,
@@ -90,17 +92,13 @@ import Modelling.PetriNet.Types (
   defaultBasicConfig,
   defaultChangeConfig,
   defaultGraphConfig,
-  drawSettingsWithCommand,
   isPlaceNode,
-  manyRandomDrawSettings,
   mapChange,
-  randomDrawSettings,
   shuffleNames,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Arrow                    (first)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
 import Control.OutputCapable.Blocks       (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -114,6 +112,7 @@ import Control.OutputCapable.Blocks       (
   translate,
   translations,
   )
+import Control.Monad.Extra              (findM)
 import Control.Monad.Random             (
   MonadRandom,
   RandT,
@@ -122,6 +121,7 @@ import Control.Monad.Random             (
   evalRandT,
   mkStdGen,
   )
+import Control.Monad.Trans              (lift)
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bifunctor                   (Bifunctor (bimap, second))
 import Data.Bitraversable               (Bitraversable (bitraverse), bimapM)
@@ -276,35 +276,38 @@ writeGraph drawSettings path pl =
     drawSettings
 
 graphToMath
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => MathConfig
   -> Int
   -> Int
   -> m (MatchInstance (Drawable (p n String)) Math)
-graphToMath c segment seed = evalWithStdGen seed $ do
-  ds <- randomDrawSettings (graphConfig c)
-  (d, m, ms) <-
-    matchToMath ds (map toPetriMath) c segment
-  matchMathInstance c d m $ map fst ms
+graphToMath config@MathConfig {..} segment seed = evalWithStdGen seed getInstance
+  where
+    getInstance = do
+      dss <- shuffleM $ allDrawSettings graphConfig
+      (petri, m, changes) <- matchToMath config segment
+      let maths = map (toPetriMath . fst) changes
+      mds <- findM (lift . isNetDrawable petri) dss
+      maybe getInstance (\d -> matchMathInstance config (petri, d) m maths) mds
 
 mathToGraph
-  :: (MonadAlloy m, MonadFail m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => MathConfig
   -> Int
   -> Int
   -> m (MatchInstance Math (Drawable (p n String)))
-mathToGraph c segment seed = evalWithStdGen seed $ do
-  (x, xs) <- second (flip zip) <$>
-    if useDifferentGraphLayouts c
-    then do
-      (x':xs') <- manyRandomDrawSettings (graphConfig c) (wrongInstances c + 1)
-      return (x', xs')
-    else do
-      s <- drawSettingsWithCommand (graphConfig c)
-        <$> oneOf (graphLayouts $ graphConfig c)
-      return (s, replicate (wrongInstances c) s)
-  (d, m, ds) <- matchToMath x xs c segment
-  matchMathInstance c m d $ map fst ds
+mathToGraph config@MathConfig {..} segment seed = evalWithStdGen seed getInstance
+  where
+    getInstance = do
+      (petri, math, changes) <- matchToMath config segment
+      let petris = map fst changes
+      mds <- findFittingRandom
+        (allDrawSettings graphConfig)
+        $ map (\x -> lift . isNetDrawable x) $ petri : petris
+      case mds of
+        Just (d : ds) -> matchMathInstance config math (petri, d) $ zip petris ds
+        Just [] -> error "impossible"
+        Nothing -> getInstance
 
 matchMathInstance
   :: MonadRandom m
@@ -322,13 +325,18 @@ matchMathInstance c x y ys = do
     }
 
 matchToMath
-  :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
-  => DrawSettings
-  -> ([p n String] -> [a])
-  -> MathConfig
+  :: (
+    MonadAlloy m,
+    MonadCatch m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    Net p n,
+    RandomGen g
+    )
+  => MathConfig
   -> Int
-  -> RandT g m (Drawable (p n String), Math, [(a, Change)])
-matchToMath ds toOutput config segment = do
+  -> RandT g m (p n String, Math, [(p n String, Change)])
+matchToMath config segment = do
   (f, net, math) <- netMathInstance config segment
   fList <- getInstances
     (Just $ toInteger $ generatedWrongInstances config)
@@ -339,9 +347,9 @@ matchToMath ds toOutput config segment = do
     then do
     alloyChanges <- mapM addChange fList'
     changes <- firstM parse `mapM` alloyChanges
-    let changes' = uncurry zip $ first toOutput (unzip changes)
-    return ((net, ds), math, changes')
-    else matchToMath ds toOutput config segment
+    let changes' = uncurry zip $ unzip changes
+    return (net, math, changes')
+    else matchToMath config segment
   where
     parse = parseRenamedNet "flow" "tokens"
 

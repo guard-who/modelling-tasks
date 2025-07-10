@@ -8,6 +8,7 @@ module Modelling.Auxiliary.Common (
   RandomiseNames (..),
   ShuffleExcept (..),
   TaskGenerationException (..),
+  findFittingRandom,
   getFirstInstance,
   lensRulesL,
   lowerFirst,
@@ -34,6 +35,7 @@ import qualified Data.Set                         as S (
 
 import Control.Exception                (Exception, SomeException)
 import Control.Monad.Catch              (MonadThrow (throwM))
+import Control.Monad.Extra              (ifM, maybeM)
 import Control.Monad.Random (
   MonadRandom (getRandomR),
   RandT,
@@ -55,6 +57,7 @@ import Control.Lens (
   lensRules,
   mappingNamer,
   )
+import System.Random.Shuffle            (shuffleM)
 import Text.Parsec                      (parse)
 import Text.ParserCombinators.Parsec (
   Parser,
@@ -204,3 +207,37 @@ instance Exception TaskGenerationException
 getFirstInstance :: MonadThrow m => [a] -> m a
 getFirstInstance [] = throwM NoInstanceAvailable
 getFirstInstance (x:_) = pure x
+
+{-|
+Provides a list of given elements with as many entries as provided predicates
+by randomly picking given elements while ensuring as few repetitions
+of these elements as possible occur.
+
+Each predicate restricts an element in the resulting list (in order).
+That means the resulting list is as long as the predicates list.
+'Nothing' will be returned if there is no way to match all the predicates.
+
+This function will attempt to distribute evenly, i.e. if 4 different elements
+and 4 predicates are provided and no permutation fits,
+'Nothing' will be returned although the predicates might hold,
+e.g. for choosing one of the elements 4 times.
+-}
+findFittingRandom
+  :: MonadRandom m
+  => [a]
+  -- ^ elements to choose from
+  -> [a -> m Bool]
+  -- ^ predicates to satisfy
+  -> m (Maybe [a])
+findFittingRandom xs predicates = do
+  xs' <- shuffleM $ concat
+    $ replicate ((length predicates - 1) `div` length xs + 1) xs
+  elementsFor predicates id xs'
+  where
+    elementsFor [] _ _ = pure (Just [])
+    elementsFor _ _ [] = pure Nothing
+    elementsFor (p : ps) prependFailed (c : cs) = do
+      let retry = elementsFor (p : ps) (prependFailed . (c:)) cs
+      ifM (p c)
+        (maybeM retry (pure . Just . (c:)) $ elementsFor ps id $ prependFailed cs)
+        retry

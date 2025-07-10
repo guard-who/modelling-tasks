@@ -48,6 +48,7 @@ module Modelling.PetriNet.Types (
   SimpleNode (..),
   SimplePetriLike,
   SimplePetriNet,
+  allDrawSettings,
   checkBasicConfig,
   checkChangeConfig,
   checkGraphLayouts,
@@ -894,6 +895,10 @@ data DrawSettings = DrawSettings {
 
 type Drawable n = (n, DrawSettings)
 
+{-|
+Converts a 'GraphConfig' into 'DrawSettings' by choosing
+the provided 'GraphvizCommand'.
+-}
 drawSettingsWithCommand :: GraphConfig -> GraphvizCommand -> DrawSettings
 drawSettingsWithCommand config c = DrawSettings {
   withPlaceNames = not $ hidePlaceNames config,
@@ -910,6 +915,14 @@ one of the provided 'graphLayout's.
 randomDrawSettings :: MonadRandom m => GraphConfig -> m DrawSettings
 randomDrawSettings config =
   drawSettingsWithCommand config <$> oneOf (graphLayouts config)
+
+{-|
+Provides a list of all 'DrawSetting' that can be obtained by using
+'drawSettingsWithCommand' and all possible 'graphLayout's of the given config.
+-}
+allDrawSettings :: GraphConfig -> [DrawSettings]
+allDrawSettings config =
+  map (drawSettingsWithCommand config) $ graphLayouts config
 
 {-|
 Provides a list of 'DrawSettings' with as many entries as specified by randomly

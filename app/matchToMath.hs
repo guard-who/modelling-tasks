@@ -51,15 +51,15 @@ main = forceErrors $ do
         | otherwise = True
   i <- lift instanceInput
   when (i < 0) $ error "There is no negative index"
-  if switch
+  lift $ if switch
     then do
     inst <- mathToGraph config 0 i
-    lift $ mathToGraphTask "fromMath-" inst `withLang` English
-    lift $ print inst
+    mathToGraphTask "fromMath-" inst `withLang` English
+    print inst
     else do
     inst <- graphToMath config 0 i
-    lift $ graphToMathTask "toMathh-" inst `withLang` English
-    lift $ print inst
+    graphToMathTask "toMathh-" inst `withLang` English
+    print inst
 
 userInput :: IO (Int,Int,Int,Int,String)
 userInput = do
