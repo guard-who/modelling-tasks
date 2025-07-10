@@ -284,11 +284,14 @@ graphToMath
 graphToMath config@MathConfig {..} segment seed = evalWithStdGen seed getInstance
   where
     getInstance = do
-      dss <- shuffleM $ allDrawSettings graphConfig
+      allShuffled <- shuffleM $ allDrawSettings graphConfig
       (petri, m, changes) <- matchToMath config segment
       let maths = map (toPetriMath . fst) changes
-      mds <- findM (lift . isNetDrawable petri) dss
-      maybe getInstance (\d -> matchMathInstance config (petri, d) m maths) mds
+      maybeDrawSettings <- findM (lift . isNetDrawable petri) allShuffled
+      maybe
+        getInstance
+        (\d -> matchMathInstance config (petri, d) m maths)
+        maybeDrawSettings
 
 mathToGraph
   :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
@@ -300,12 +303,13 @@ mathToGraph config@MathConfig {..} segment seed = evalWithStdGen seed getInstanc
   where
     getInstance = do
       (petri, math, changes) <- matchToMath config segment
-      let petris = map fst changes
-      mds <- findFittingRandom
+      let petriNets = map fst changes
+      maybeDrawSettings <- findFittingRandom
         (allDrawSettings graphConfig)
-        $ map (\x -> lift . isNetDrawable x) $ petri : petris
-      case mds of
-        Just (d : ds) -> matchMathInstance config math (petri, d) $ zip petris ds
+        $ map (\x -> lift . isNetDrawable x) $ petri : petriNets
+      case maybeDrawSettings of
+        Just (d : ds) ->
+          matchMathInstance config math (petri, d) $ zip petriNets ds
         Just [] -> error "impossible"
         Nothing -> getInstance
 

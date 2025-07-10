@@ -219,8 +219,8 @@ That means the resulting list is as long as the predicates list.
 
 This function will attempt to distribute evenly, i.e. if 4 different elements
 and 4 predicates are provided and no permutation fits,
-'Nothing' will be returned although the predicates might hold,
-e.g. for choosing one of the elements 4 times.
+'Nothing' will be returned although the predicates might hold for
+e.g. choosing one of the elements 4 times.
 -}
 findFittingRandom
   :: MonadRandom m
