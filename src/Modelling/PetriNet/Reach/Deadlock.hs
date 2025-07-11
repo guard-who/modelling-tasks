@@ -14,14 +14,14 @@ based on file: collection/src/Petri/Deadlock.hs
 -}
 module Modelling.PetriNet.Reach.Deadlock where
 
+import qualified Control.Monad.Trans              as Monad (lift)
 import qualified Data.Map                         as M (fromList)
 import qualified Data.Set                         as S (fromList, toList)
 
 import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
-import Modelling.Auxiliary.Common       (oneOf)
-import Modelling.PetriNet.Reach.Draw    (drawToFile)
+import Modelling.PetriNet.Reach.Draw    (drawToFile, isPetriDrawable)
 import Modelling.PetriNet.Reach.Property (
   Property (Default),
   validate,
@@ -65,8 +65,9 @@ import Data.Bifunctor                   (Bifunctor (second))
 import Data.Either.Combinators          (whenRight)
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (guard, replicateM)
-import Control.Monad.Catch              (MonadThrow)
-import Control.Monad.Random             (MonadRandom, evalRand, mkStdGen)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
+import Control.Monad.Extra              (findM, maybeM)
+import Control.Monad.Random             (MonadRandom, evalRandT, mkStdGen)
 import Data.GraphViz                    (GraphvizCommand (..))
 import Data.List                        (maximumBy)
 import Data.Maybe                       (fromMaybe)
@@ -231,30 +232,41 @@ defaultDeadlockInstance = DeadlockInstance {
   withMinLengthHint = Just 6
   }
 
-generateDeadlock :: DeadlockConfig -> Int -> DeadlockInstance Place Transition
-generateDeadlock conf@DeadlockConfig {..} seed = DeadlockInstance {
-  drawUsing         = cmd,
-  minLength         = minTransitionLength,
-  noLongerThan      = rejectLongerThan,
-  petriNet          = petri,
-  showSolution      = printSolution,
-  withLengthHint    =
-    if showLengthHint then Just maxTransitionLength else Nothing,
-  withMinLengthHint =
-    if showMinLengthHint then Just minTransitionLength else Nothing
-  }
-  where
-    (petri, cmd) = tries 1000 conf seed
+generateDeadlock
+  :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)
+  => DeadlockConfig
+  -> Int
+  -> m (DeadlockInstance Place Transition)
+generateDeadlock conf@DeadlockConfig {..} seed = do
+  (petri, cmd) <- tries 1000 conf seed
+  pure DeadlockInstance {
+    drawUsing         = cmd,
+    minLength         = minTransitionLength,
+    noLongerThan      = rejectLongerThan,
+    petriNet          = petri,
+    showSolution      = printSolution,
+    withLengthHint    =
+      if showLengthHint then Just maxTransitionLength else Nothing,
+    withMinLengthHint =
+      if showMinLengthHint then Just minTransitionLength else Nothing
+    }
 
-tries :: Int -> DeadlockConfig -> Int -> (Net Place Transition, GraphvizCommand)
+tries
+  :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)
+  => Int
+  -> DeadlockConfig
+  -> Int
+  -> m (Net Place Transition, GraphvizCommand)
 tries n conf seed = eval out
   where
-    eval f = evalRand f $ mkStdGen seed
+    eval f = evalRandT f $ mkStdGen seed
     out = do
       xs <- replicateM n $ try conf
       let (l, pn) = maximumBy (comparing fst) $ concat xs
       if l >= minTransitionLength conf
-        then (pn,) <$> oneOf (drawCommands conf)
+        then
+          maybeM out (pure . (pn,))
+          $ findM (Monad.lift . isPetriDrawable pn) $ drawCommands conf
         else out
 
 try :: MonadRandom m => DeadlockConfig -> m [(Int, Net Place Transition)]
