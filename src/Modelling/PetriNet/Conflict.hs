@@ -52,7 +52,6 @@ import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
-  oneOf,
   parseWith,
   upperFirst,
   )
@@ -78,6 +77,7 @@ import Modelling.PetriNet.Alloy (
   )
 import Modelling.PetriNet.Diagram (
   cacheNet,
+  isNetDrawable,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
@@ -116,7 +116,6 @@ import Modelling.PetriNet.Types         (
   ConflictConfig (..),
   DrawSettings (..),
   FindConflictConfig (..),
-  GraphConfig (..),
   Net,
   PetriConflict (Conflict, conflictPlaces, conflictTrans),
   PetriConflict' (PetriConflict', toPetriConflict),
@@ -124,6 +123,7 @@ import Modelling.PetriNet.Types         (
   PickConflictConfig (..),
   SimpleNode (..),
   SimplePetriNet,
+  allDrawSettings,
   lConflictPlaces,
   transitionPairShow,
   )
@@ -132,6 +132,7 @@ import Control.Applicative              (Alternative, (<|>))
 import Control.Lens                     ((.~), over)
 import Control.Monad                    (unless)
 import Control.Monad.Catch              (MonadCatch, MonadThrow)
+import Control.Monad.Extra              (findM)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -173,6 +174,7 @@ import Data.String.Interpolate          (i, iii)
 import Language.Alloy.Call (
   AlloyInstance
   )
+import System.Random.Shuffle            (shuffleM)
 
 simpleFindConflictTask
   :: (
@@ -378,35 +380,33 @@ pickConflictTask path task = do
   pure ()
 
 findConflictGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => FindConflictConfig
   -> Int
   -> Int
+  -- ^ Seed
   -> m (FindInstance (p n String) Conflict)
-findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
-  (d, c) <- findConflict config segment
-  gl <- oneOf $ graphLayouts gc
-  c' <- lift $ bitraverse
-    (parseWith parsePlacePrec)
-    (parseWith parseTransitionPrec)
-    $ toPetriConflict c
-  return $ FindInstance {
-    drawFindWith = DrawSettings {
-      withPlaceNames = not $ hidePlaceNames gc,
-      withSvgHighlighting = True,
-      withTransitionNames = not $ hideTransitionNames gc,
-      with1Weights = not $ hideWeight1 gc,
-      withGraphvizCommand = gl
-      },
-    toFind = over lConflictPlaces nubSort c',
-    net = d,
-    numberOfPlaces = places bc,
-    numberOfTransitions = transitions bc,
-    showSolution = Find.printSolution config
-    }
+findConflictGenerate config segment = evalRandT getInstance . mkStdGen
   where
+    getInstance = do
+      petriConflict <- findConflict config segment
+      ds <- shuffleM $ allDrawSettings $ Find.graphConfig config
+      d <- findM (lift . isNetDrawable (fst petriConflict)) ds
+      maybe getInstance (uncurry toInstance petriConflict) d
+    toInstance petri conflict drawSettings = do
+      c' <- lift $ bitraverse
+        (parseWith parsePlacePrec)
+        (parseWith parseTransitionPrec)
+        $ toPetriConflict conflict
+      return $ FindInstance {
+        drawFindWith = drawSettings,
+        toFind = over lConflictPlaces nubSort c',
+        net = petri,
+        numberOfPlaces = places bc,
+        numberOfTransitions = transitions bc,
+        showSolution = Find.printSolution config
+        }
     bc = Find.basicConfig config
-    gc = Find.graphConfig config
 
 pickConflictGenerate
   :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
