@@ -45,7 +45,6 @@ import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
-  oneOf,
   parseWith,
   )
 import Modelling.Auxiliary.Output (
@@ -70,6 +69,7 @@ import Modelling.PetriNet.Alloy (
   )
 import Modelling.PetriNet.Diagram (
   cacheNet,
+  isNetDrawable,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
@@ -102,17 +102,18 @@ import Modelling.PetriNet.Types         (
   Concurrent (Concurrent),
   DrawSettings (..),
   FindConcurrencyConfig (..),
-  GraphConfig (..),
   Net (..),
   PetriLike (PetriLike, allNodes),
   PickConcurrencyConfig (..),
   SimpleNode (..),
   SimplePetriNet,
+  allDrawSettings,
   transitionPairShow,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad.Catch              (MonadCatch, MonadThrow)
+import Control.Monad.Extra              (findM)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -143,6 +144,7 @@ import Data.String.Interpolate          (i, iii)
 import Language.Alloy.Call (
   AlloyInstance,
   )
+import System.Random.Shuffle            (shuffleM)
 
 simpleFindConcurrencyTask
   :: (
@@ -328,34 +330,31 @@ pickConcurrencyTask path task = do
   pure ()
 
 findConcurrencyGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => FindConcurrencyConfig
   -> Int
   -> Int
   -> m (FindInstance (p n String) (Concurrent Transition))
-findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
-  (d, c) <- findConcurrency config segment
-  gl <- oneOf $ graphLayouts gc
-  c' <- lift $ traverse
-     (parseWith parseTransitionPrec)
-     c
-  return $ FindInstance {
-    drawFindWith   = DrawSettings {
-      withPlaceNames = not $ hidePlaceNames gc,
-      withSvgHighlighting = True,
-      withTransitionNames = not $ hideTransitionNames gc,
-      with1Weights = not $ hideWeight1 gc,
-      withGraphvizCommand = gl
-      },
-    toFind = c',
-    net = d,
-    numberOfPlaces = places bc,
-    numberOfTransitions = transitions bc,
-    showSolution = Find.printSolution config
-    }
+findConcurrencyGenerate config segment = evalRandT getInstance . mkStdGen
   where
+    getInstance = do
+      petriConcurrency <- findConcurrency config segment
+      ds <- shuffleM $ allDrawSettings $ Find.graphConfig config
+      d <- findM (lift . isNetDrawable (fst petriConcurrency)) ds
+      maybe getInstance (uncurry toInstance petriConcurrency) d
+    toInstance petri concurrency drawSettings = do
+      c' <- lift $ traverse
+         (parseWith parseTransitionPrec)
+         concurrency
+      return $ FindInstance {
+        drawFindWith = drawSettings,
+        toFind = c',
+        net = petri,
+        numberOfPlaces = places bc,
+        numberOfTransitions = transitions bc,
+        showSolution = Find.printSolution config
+        }
     bc = Find.basicConfig config
-    gc = Find.graphConfig config
 
 findConcurrency
   :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
