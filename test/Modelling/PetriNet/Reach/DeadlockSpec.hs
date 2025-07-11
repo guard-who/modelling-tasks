@@ -30,6 +30,6 @@ spec =
             minL = minTransitionLength config
         deadlockInstance <- generateDeadlock config seed
         let net = petriNet deadlockInstance
-            ts = transitions n
+            ts = transitions net
         net `shouldSatisfy`
           hasMinTransitionLength (null . successors net) ts minL
