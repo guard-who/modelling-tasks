@@ -242,8 +242,8 @@ selectASTask path task = do
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< drawAdToFile path (drawSettings task) $ activityDiagram task
   paragraph $ translate $ do
-    english "Consider the following sequences:"
-    german "Betrachten Sie die folgenden Folgen:"
+    english "Consider the sequences given here:"
+    german "Betrachten Sie die hier gegebenen Folgen:"
   enumerateM (code . show) $ map (\(n,xs) -> (n, code $ show xs)) mapping
   paragraph $ translate $ do
     english [i|Which of these sequences is a valid action sequence?
@@ -257,10 +257,10 @@ Geben Sie Ihre Antwort als Zahl an, welche die eine valide Aktionsfolge unter de
     code "2"
     translate $ do
       english [i|
-        would indicate that sequence 2 is a valid sequence of action nodes.
+        would indicate that sequence 2 is an executable sequence of action nodes.
         |]
       german  [i|
-        bedeuten, dass Folge 2 eine valide Folge von Aktionsknoten ist.
+        bedeuten, dass Folge 2 eine ausführbare Folge von Aktionsknoten ist.
         |]
     pure ()
   extra $ addText task
