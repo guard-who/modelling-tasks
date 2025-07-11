@@ -142,10 +142,10 @@ pickGenerate pick gc useDifferent withSol config segment seed
           $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- zip ns ds],
         showSolution = withSol config
         }
-    getPickInstance petris =
-      let predicates = map (\(x,_) -> lift . isNetDrawable x) petris
+    getPickInstance petriNets =
+      let predicates = map (\(x,_) -> lift . isNetDrawable x) petriNets
       in
-        maybeM getInstance (toPickInstance petris)
+        maybeM getInstance (toPickInstance petriNets)
         $ if useDifferent config
           then
             findFittingRandom (allDrawSettings (gc config)) predicates
