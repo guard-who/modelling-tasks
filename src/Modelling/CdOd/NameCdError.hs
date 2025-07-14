@@ -603,11 +603,18 @@ nameCdErrorSyntax inst x = do
  * otherwise, multiple choice grading for answer on dueTo relationships
 -}
 nameCdErrorEvaluation
-  :: (Alternative m, Monad m, OutputCapable m)
-  => NameCdErrorInstance
+  :: (
+    Alternative m,
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    OutputCapable m
+    )
+  => FilePath
+  -> NameCdErrorInstance
   -> NameCdErrorAnswer
   -> Rated m
-nameCdErrorEvaluation inst x = addPretext $ do
+nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
   let reasonTranslation = M.fromAscList [
         (English, "reason"),
         (German, "Grund")
@@ -616,12 +623,12 @@ nameCdErrorEvaluation inst x = addPretext $ do
         (English, "relationships constituting the problem"),
         (German, "das Problem ausmachenden Beziehungen")
         ]
-      solutionReason = head . M.keys . M.filter fst $ errorReasons inst
+      solutionReason = head . M.keys . M.filter fst $ errorReasons
       solutionDueTo = M.fromAscList
         $ map (second (contributingToProblem . annotation))
-        $ relevantRelationships inst
+        relevant
       correctAnswer
-        | showSolution inst = Just $ toString $ encode $ nameCdErrorSolution inst
+        | showSolution = Just $ toString $ encode $ nameCdErrorSolution inst
         | otherwise = Nothing
   recoverWith 0 (
     singleChoice DefiniteArticle reasonTranslation Nothing solutionReason (reason x)
@@ -631,7 +638,51 @@ nameCdErrorEvaluation inst x = addPretext $ do
         solutionDueTo
         (dueTo x)
     )
-    $>>= printSolutionAndAssert DefiniteArticle correctAnswer . fromEither
+    $>>= \points -> do
+      paragraph $ translate $ classDiagramDescription points
+      paragraph $ image $=<< cacheCd cdDrawSettings mempty changedCd path
+      pure ()
+    $>> printSolutionAndAssert DefiniteArticle correctAnswer $ fromEither points
+  where
+    relevant = relevantRelationships inst
+    changedCd = unannotateCd $ classDiagram {
+      annotatedRelationships = annotatedRelationships classDiagram
+        \\ map snd chosenRelevant
+      }
+    chosenRelevant = filter ((`elem` nubOrd (dueTo x)) . fst) relevant
+    classDiagramDescription points
+      | points == Right 1 = do
+        english [iii|
+          If all relationships you correctly proposed as problematic
+          would be removed, the following class diagram would result:
+          |]
+        german [iii|
+          Wenn alle von Ihnen korrekterweise als problematisch angesehenen
+          Beziehungen entfernt würden,
+          würde das folgende Klassendiagramm entstehen:
+          |]
+      | any (contributingToProblem . annotation . snd) chosenRelevant = do
+        english [iii|
+          Nevertheless, the removal of all relationships you proposed as
+          problematic would result in resolving the underlying issue
+          as the class diagram then would then look like this:
+          |]
+        german [iii|
+          Dennoch behebt das Entfernen aller von Ihnen als problematisch
+          angesehenen Beziehungen das vorliegende Problem,
+          da das Klassendiagramm dann so aussehen würde:
+          |]
+      | otherwise = do
+        english [iii|
+          The removal of all relationships you proposed as problematic
+          would still not resolve the underlying issue
+          as the class diagram then would like this:
+          |]
+        german [iii|
+          Das Entfernen aller von Ihnen als problematisch angesehenen
+          Beziehungen behebt das vorliegende Problem nicht,
+          da das Klassendiagramm dann so aussehen würde:
+          |]
 
 nameCdErrorSolution :: NameCdErrorInstance -> NameCdErrorAnswer
 nameCdErrorSolution x = NameCdErrorAnswer {
