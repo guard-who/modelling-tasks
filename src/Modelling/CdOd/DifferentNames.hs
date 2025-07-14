@@ -89,6 +89,7 @@ import Modelling.CdOd.Types (
   anonymiseObjects,
   associationNames,
   checkCdDrawSettings,
+  checkClassConfigAndObjectProperties,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   checkObjectProperties,
@@ -269,6 +270,7 @@ checkDifferentNamesConfig DifferentNamesConfig {..}
       |]
   | otherwise = checkClassConfigWithProperties classConfig defaultProperties
     <|> checkObjectProperties objectProperties
+    <|> checkClassConfigAndObjectProperties classConfig objectProperties
     <|> checkOmittedDefaultMultiplicities omittedDefaultMultiplicities
   where
     different (_, Nothing) = True

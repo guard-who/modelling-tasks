@@ -125,6 +125,7 @@ import Modelling.CdOd.Types (
   anyAssociationNames,
   checkCdConstraints,
   checkCdDrawSettings,
+  checkClassConfigAndObjectProperties,
   checkObjectProperties,
   classNames,
   defaultCdConstraints,
@@ -334,6 +335,7 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
   = checkClassConfigAndChanges classConfig allowedProperties
   <|> checkCdConstraints allowedProperties cdConstraints
   <|> checkObjectProperties objectProperties
+  <|> checkClassConfigAndObjectProperties classConfig objectProperties
   <|> checkCdDrawSettings drawSettings
   where
     predefined = concatMap

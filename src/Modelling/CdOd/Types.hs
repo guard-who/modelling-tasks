@@ -50,6 +50,7 @@ module Modelling.CdOd.Types (
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
+  checkClassConfigAndObjectProperties,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   checkObjectProperties,
@@ -981,6 +982,31 @@ checkObjectProperties ObjectProperties {..}
     |]
   | otherwise
   = Nothing
+
+{-|
+Configuration checks for the interplay of provided class diagram
+and object diagram configurations.
+-}
+checkClassConfigAndObjectProperties
+  :: ClassConfig
+  -> ObjectProperties
+  -> Maybe String
+checkClassConfigAndObjectProperties ClassConfig {..} ObjectProperties {..}
+  | Just True <- hasSelfLoops
+  , noNonInheritanceRelationshipGuaranteed
+  = Just [iii|
+    hasSelfLoops can only be enforced if there is guaranteed
+    at least one non-inheritance relationship in each underlying class diagram
+    so that such a link can actually appear.
+    |]
+  | otherwise
+  = Nothing
+  where
+    noNonInheritanceRelationshipGuaranteed =
+      fst relationshipLimits <= fst inheritanceLimits
+      || fst aggregationLimits < 1
+      && fst associationLimits < 1
+      && fst compositionLimits < 1
 
 {-|
 Defines an 'ObjectConfig' demanding at least one but at most five objects

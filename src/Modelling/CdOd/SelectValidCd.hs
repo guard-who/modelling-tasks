@@ -94,6 +94,7 @@ import Modelling.CdOd.Types (
   checkCdConstraints,
   checkCdDrawSettings,
   checkCdMutations,
+  checkClassConfigAndObjectProperties,
   checkObjectProperties,
   defaultCdConstraints,
   defaultCdDrawSettings,
@@ -222,6 +223,7 @@ checkSelectValidCdConfig SelectValidCdConfig {..}
   <|> checkCdMutations allowedCdMutations
   <|> checkCdDrawSettings drawSettings
   <|> checkObjectProperties objectProperties
+  <|> checkClassConfigAndObjectProperties classConfig objectProperties
 
 type CdChange = InValidOption
   AnyCd

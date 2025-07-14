@@ -96,6 +96,7 @@ import Modelling.CdOd.Types (
   associationNames,
   checkCdDrawSettings,
   checkCdMutations,
+  checkClassConfigAndObjectProperties,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   checkObjectProperties,
@@ -254,6 +255,7 @@ checkMatchCdOdConfig MatchCdOdConfig {..}
   = checkClassConfigWithProperties classConfig defaultProperties
   <|> checkCdMutations allowedCdMutations
   <|> checkObjectProperties objectProperties
+  <|> checkClassConfigAndObjectProperties classConfig objectProperties
   <|> checkOmittedDefaultMultiplicities omittedDefaultMultiplicities
 
 checkMatchCdOdInstance :: MatchCdOdInstance -> Maybe String
