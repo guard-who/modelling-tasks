@@ -759,7 +759,24 @@ checkClassConfigWithProperties
       <*> snd compositionLimits
 
 checkClassConfig :: ClassConfig -> Maybe String
-checkClassConfig c@ClassConfig {..} = checkRange Just "classLimits" classLimits
+checkClassConfig c@ClassConfig {..}
+  | fst classLimits < 1
+  = Just [iii|
+    Having possibly no classes does not make any sense for this task type.
+    |]
+  | minimumMaxRelationships < fst relationshipLimits
+  = Just [iii|
+    The minimal number of classes does not even suffice for
+    the minimal number of relationships.
+    |]
+  | Just maximumMaxRelationships < snd relationshipLimits
+    || isNothing (snd relationshipLimits)
+    && Just maximumMaxRelationships < relationshipsSum c
+  = Just [iii|
+    The maximal number of classes is too low considering
+    the upper relationship bounds.
+    |]
+  | otherwise = checkRange Just "classLimits" classLimits
   <|> checkRange id "aggregationLimits" aggregationLimits
   <|> checkRange id "associationLimits" associationLimits
   <|> checkRange id "compositionLimits" compositionLimits
@@ -778,6 +795,8 @@ checkClassConfig c@ClassConfig {..} = checkRange Just "classLimits" classLimits
       must not be higher than the maximum number of relationships!
       |]
   where
+    minimumMaxRelationships = fst classLimits * (fst classLimits - 1) `div` 2
+    maximumMaxRelationships = snd classLimits * (snd classLimits - 1) `div` 2
     toMaybe True x = Just x
     toMaybe _    _ = Nothing
     isMaxHigherThanAnyIndividual = any
@@ -830,7 +849,7 @@ checkRange g what (low, h) = do
         |]
       | high < low = Just [iii|
         The upper limit (currently #{show h}; second value) for #{what}
-        has to be as high as its lower limit
+        has to be at least as high as its lower limit
         (currently #{show low}; first value)!
         |]
       | otherwise = Nothing
