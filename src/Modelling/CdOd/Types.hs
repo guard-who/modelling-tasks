@@ -992,6 +992,15 @@ checkClassConfigAndObjectProperties
   -> ObjectProperties
   -> Maybe String
 checkClassConfigAndObjectProperties ClassConfig {..} ObjectProperties {..}
+  | Just False /= hasSelfLoops
+  , noNonInheritanceRelationshipPossible
+  = Just [iii|
+    Setting hasSelfLoops to anything other than Just False
+    makes no sense if it is not even possible
+    that at least one non-inheritance relationship can even appear
+    in any underlying class diagram
+    so that such a link could actually appear.
+    |]
   | Just True <- hasSelfLoops
   , noNonInheritanceRelationshipGuaranteed
   = Just [iii|
@@ -1009,11 +1018,13 @@ checkClassConfigAndObjectProperties ClassConfig {..} ObjectProperties {..}
   | otherwise
   = Nothing
   where
+    nonInheritanceLimits =
+      [aggregationLimits, associationLimits, compositionLimits]
     noNonInheritanceRelationshipGuaranteed =
       fst relationshipLimits <= fst inheritanceLimits
-      || fst aggregationLimits < 1
-      && fst associationLimits < 1
-      && fst compositionLimits < 1
+      || all ((< 1) . fst) nonInheritanceLimits
+    noNonInheritanceRelationshipPossible =
+      all ((== Just 0) . snd) nonInheritanceLimits
 
 {-|
 Defines an 'ObjectConfig' demanding at least one but at most five objects

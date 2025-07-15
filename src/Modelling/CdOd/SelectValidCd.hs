@@ -194,7 +194,7 @@ defaultSelectValidCdConfig
       anonymousObjectProportion = 0 % 1,
       completelyInhabited = Just True,
       hasLimitedIsolatedObjects = False,
-      hasSelfLoops = Nothing,
+      hasSelfLoops = Just False,
       usesEveryRelationshipName = Just True
       },
     printExtendedFeedback = True,
