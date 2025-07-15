@@ -655,33 +655,33 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
     classDiagramDescription points
       | points == Right 1 = do
         english [iii|
-          If all relationships you correctly proposed as problematic
+          If all relationships you correctly gave as constituting the problem
           would be removed, the following class diagram would result:
           |]
         german [iii|
-          Wenn alle von Ihnen korrekterweise als problematisch angesehenen
+          Wenn alle von Ihnen korrekterweise als zum Problem beitragend angegebenen
           Beziehungen entfernt würden,
           würde das folgende Klassendiagramm entstehen:
           |]
       | any (contributingToProblem . annotation . snd) chosenRelevant = do
         english [iii|
-          Nevertheless, the removal of all relationships you proposed as
-          problematic would result in resolving the underlying issue
+          Nevertheless, the removal of all relationships you gave as
+          consituting the problem would result in resolving the underlying issue
           as the class diagram then would look like this:
           |]
         german [iii|
-          Dennoch behebt das Entfernen aller von Ihnen als problematisch
-          angesehenen Beziehungen das vorliegende Problem,
+          Dennoch behebt das Entfernen aller von Ihnen als zum Problem beitragend
+          angegebenen Beziehungen das vorliegende Problem,
           da das Klassendiagramm dann so aussehen würde:
           |]
       | otherwise = do
         english [iii|
-          The removal of all relationships you proposed as problematic
+          The removal of all relationships you gave as constituting the problem
           would still not resolve the underlying issue
           as the class diagram then would look like this:
           |]
         german [iii|
-          Das Entfernen aller von Ihnen als problematisch angesehenen
+          Das Entfernen aller von Ihnen als zum Problem beitragend angegebenen
           Beziehungen behebt das vorliegende Problem nicht,
           da das Klassendiagramm dann so aussehen würde:
           |]
