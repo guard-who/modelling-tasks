@@ -622,7 +622,7 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
         (German, "Grund")
         ]
       dueToTranslation = M.fromAscList [
-        (English, "relationships constituting the problem"),
+        (English, "relationships contributing to the problem"),
         (German, "das Problem ausmachenden Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons
@@ -655,7 +655,7 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
     classDiagramDescription points
       | points == Right 1 = do
         english [iii|
-          If all relationships you correctly gave as constituting the problem
+          If all relationships you correctly gave as contributing to the problem
           would be removed, the following class diagram would result:
           |]
         german [iii|
@@ -666,7 +666,7 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
       | any (contributingToProblem . annotation . snd) chosenRelevant = do
         english [iii|
           Nevertheless, the removal of all relationships you gave as
-          consituting the problem would result in resolving the underlying issue
+          contributing to the problem would result in resolving the underlying issue
           as the class diagram then would look like this:
           |]
         german [iii|
@@ -676,7 +676,7 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
           |]
       | otherwise = do
         english [iii|
-          The removal of all relationships you gave as constituting the problem
+          The removal of all relationships you gave as contributing to the problem
           would still not resolve the underlying issue
           as the class diagram then would look like this:
           |]
