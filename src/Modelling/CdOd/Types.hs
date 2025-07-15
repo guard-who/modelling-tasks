@@ -999,6 +999,13 @@ checkClassConfigAndObjectProperties ClassConfig {..} ObjectProperties {..}
     at least one non-inheritance relationship in each underlying class diagram
     so that such a link can actually appear.
     |]
+  | hasLimitedIsolatedObjects
+  , noNonInheritanceRelationshipGuaranteed
+  = Just [iii|
+    hasLimitedIsolatedObjects can only be enabled if there is guaranteed
+    at least one non-inheritance relationship in each underlying class diagram
+    so that links can actually be present between objects.
+    |]
   | otherwise
   = Nothing
   where
