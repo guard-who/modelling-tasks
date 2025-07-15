@@ -623,7 +623,7 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
         ]
       dueToTranslation = M.fromAscList [
         (English, "relationships constituting the problem"),
-        (German, "das Problem ausmachende Beziehungen")
+        (German, "das Problem ausmachenden Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons
       solutionDueTo = M.fromAscList
