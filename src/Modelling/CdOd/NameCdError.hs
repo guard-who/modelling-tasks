@@ -667,7 +667,7 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
         english [iii|
           Nevertheless, the removal of all relationships you proposed as
           problematic would result in resolving the underlying issue
-          as the class diagram then would then look like this:
+          as the class diagram then would look like this:
           |]
         german [iii|
           Dennoch behebt das Entfernen aller von Ihnen als problematisch
@@ -678,7 +678,7 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
         english [iii|
           The removal of all relationships you proposed as problematic
           would still not resolve the underlying issue
-          as the class diagram then would like this:
+          as the class diagram then would look like this:
           |]
         german [iii|
           Das Entfernen aller von Ihnen als problematisch angesehenen
