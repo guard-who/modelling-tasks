@@ -494,15 +494,15 @@ defaultNameCdErrorTaskText = [
   Paragraph $ singleton $ Special RelationshipsList,
   Paragraph $ singleton $ Translated $ translations $ do
     english [iii|
-      Choose what you think is the single reason that this class diagram is incorrect,
+      Choose what you think is the single reason that this class diagram is invalid,
       and mention all relationships that definitely contribute to the problem,
-      i.e., removing any of them would fix the problem.
+      i.e., removing any of them would fix the invalidity.
       |]
     german [iii|
       Wählen Sie aus, was Sie für den einen Grund dafür halten,
       dass dieses Klassendiagramm ungültig ist,
       und nennen Sie alle Beziehungen, die definitiv zum Problem beitragen,
-      d.h., deren Entfernung das Problem jeweils beheben würde.
+      d.h., deren Entfernung die Ungültigkeit jeweils beheben würde.
       |],
   Paragraph $ singleton $ Translated $ translations $ do
     english [i|Reasons available to choose from are:|]
@@ -518,7 +518,7 @@ defaultNameCdErrorTaskText = [
         indicating the most specifically expressed reason
         for which you think this class diagram is invalid,
         and a listing of numbers for those relationships
-        on whose individual presence the problem depends.
+        on whose individual presence the invalidity depends.
         For example,
         |]
       german [iii|
@@ -528,7 +528,7 @@ defaultNameCdErrorTaskText = [
         ausgedrückte Grund dafür ist,
         dass dieses Klassendiagramm ungültig ist,
         und eine Auflistung von Zahlen für diejenigen Beziehungen,
-        von deren individueller Präsenz das Problem abhängt.
+        von deren individueller Präsenz die Ungültigkeit abhängt.
         Zum Beispiel würde
         |],
     Paragraph $ singleton $ Code $ uniform $ showNameCdErrorAnswer answer,
@@ -537,12 +537,12 @@ defaultNameCdErrorTaskText = [
         would indicate that the class diagram is invalid
         because of reason #{singleton $ reason answer}
         and that the #{dueTo1}. and #{dueTo2}. relationship (appearing together)
-        create the problem.
+        create the invalidity.
         |]
       german [iii|
         bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
         und dass die #{dueTo1}. und #{dueTo2}. Beziehung (zusammen auftretend)
-        das Problem erzeugen.
+        die Ungültigkeit erzeugen.
         |]
     ]
   ]
@@ -622,8 +622,8 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
         (German, "Grund")
         ]
       dueToTranslation = M.fromAscList [
-        (English, "relationships contributing to the problem"),
-        (German, "das Problem ausmachenden Beziehungen")
+        (English, "relationships constituting the problem"),
+        (German, "das Problem ausmachende Beziehungen")
         ]
       solutionReason = head . M.keys . M.filter fst $ errorReasons
       solutionDueTo = M.fromAscList
@@ -655,29 +655,29 @@ nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
     classDiagramDescription points
       | points == Right 1 = do
         english [iii|
-          If all relationships you correctly gave as contributing to the problem
+          If all relationships you correctly gave as constituting the problem
           would be removed, the following class diagram would result:
           |]
         german [iii|
-          Wenn alle von Ihnen korrekterweise als zum Problem beitragend angegebenen
+          Wenn alle von Ihnen korrekterweise als das Problem ausmachend angegebenen
           Beziehungen entfernt würden,
           würde das folgende Klassendiagramm entstehen:
           |]
       | any (contributingToProblem . annotation . snd) chosenRelevant = do
         english [iii|
           Nevertheless, the removal of all relationships you gave as
-          contributing to the problem would result in resolving the underlying issue
+          contributing to the problem results in resolving the invalidity
           as the class diagram then would look like this:
           |]
         german [iii|
           Dennoch behebt das Entfernen aller von Ihnen als zum Problem beitragend
-          angegebenen Beziehungen das vorliegende Problem,
+          angegebenen Beziehungen die Ungültigkeit,
           da das Klassendiagramm dann so aussehen würde:
           |]
       | otherwise = do
         english [iii|
           The removal of all relationships you gave as contributing to the problem
-          would still not resolve the underlying issue
+          still does not resolve the underlying issue
           as the class diagram then would look like this:
           |]
         german [iii|
