@@ -225,10 +225,10 @@ findAuxiliaryPetriNodesTask path task = do
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english [i|Translate the given activity diagram into a Petri net (on paper or in your head) and then state the total count of nodes (places and transitions),
+    english [i|Translate the given activity diagram into a Petri net (on paper or in your head) and then state the total count of nodes (places and transitions, including auxiliary nodes),
 the count of auxiliary places and the count of auxiliary transitions in the net.|]
     german [i|Übersetzen Sie das gegebene Aktivitätsdiagramm in ein Petrinetz (auf dem Papier oder in Ihrem Kopf) und geben Sie dann die Gesamtanzahl
-an Knoten (Stellen und Transitionen), die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]
+an Knoten (Stellen und Transitionen, inklusive Hilfsknoten), die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]
   paragraph $ do
     translate $ do
       english [i|To do this, enter your answer as in the following example:|]
