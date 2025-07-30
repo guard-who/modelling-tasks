@@ -8,7 +8,7 @@ flags:
     quick-testing: true
 extra-deps:
   - git: https://github.com/fmidue/output-blocks.git
-    commit: e97c5f06a17c5b99f0bed2a733bfbf974304adf3
+    commit: af1ac8d1f62cb9f739919de1e9bc7989a2c61c95
     subdirs:
       - output-blocks
   - git: https://github.com/fmidue/autotool-capabilities.git
