@@ -95,7 +95,7 @@ data SelectASInstance = SelectASInstance {
   drawSettings :: PlantUmlConfig,
   showSolution :: Bool,
   addText :: Maybe (Map Language String)
-} deriving (Generic, Show, Eq)
+} deriving (Eq, Generic, Read, Show)
 
 data SelectASConfig = SelectASConfig {
   adConfig :: AdConfig,
