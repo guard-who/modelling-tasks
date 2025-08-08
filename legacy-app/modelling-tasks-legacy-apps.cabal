@@ -23,6 +23,7 @@ executable cd2alloy
   build-depends:
       array
     , base
+    , bytestring
     , modelling-tasks
     , time
   default-language: Haskell2010
@@ -43,6 +44,7 @@ executable cd2pic
       array
     , autotool-capabilities-io-instances
     , base
+    , bytestring
     , diagrams-lib
     , graphviz
     , modelling-tasks

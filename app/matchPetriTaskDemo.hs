@@ -5,6 +5,7 @@ import Capabilities.Cache.IO            ()
 import Capabilities.Diagrams.IO         ()
 import Capabilities.Graphviz.IO         ()
 import Capabilities.PlantUml.IO         ()
+import Capabilities.WriteFile.IO        ()
 import Modelling.ActivityDiagram.MatchPetri (
   defaultMatchPetriConfig,
   matchPetri,

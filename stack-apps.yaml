@@ -16,7 +16,7 @@ extra-deps:
       - output-blocks
       - output-blocks-latex
   - git: https://github.com/fmidue/autotool-capabilities.git
-    commit: fa712df18cba66ce45acfbd3c2a5fbf7ba756dbb
+    commit: 8067088f23759d787c049677a26868df26c1676f
     subdirs:
       - autotool-capabilities
       - autotool-capabilities-io-instances

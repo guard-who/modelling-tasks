@@ -35,6 +35,7 @@ import qualified Data.Map as M (
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.PlantUml            (MonadPlantUml)
+import Capabilities.WriteFile           (MonadWriteFile)
 import Modelling.ActivityDiagram.Alloy (
   adConfigToAlloy,
   modulePetriNet,
@@ -215,7 +216,7 @@ findAuxiliaryPetriNodesSolution' petri = FindAuxiliaryPetriNodesSolution {
       $ Petri.nodes petri
 
 findAuxiliaryPetriNodesTask
-  :: (MonadPlantUml m, OutputCapable m)
+  :: (MonadPlantUml m, MonadWriteFile m, OutputCapable m)
   => FilePath
   -> FindAuxiliaryPetriNodesInstance
   -> LangM m

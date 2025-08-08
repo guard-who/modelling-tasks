@@ -24,6 +24,7 @@ module Modelling.ActivityDiagram.EnterAS (
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.PlantUml            (MonadPlantUml)
+import Capabilities.WriteFile           (MonadWriteFile)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
 import Modelling.ActivityDiagram.Alloy (
   adConfigToAlloy,
@@ -199,7 +200,7 @@ enterActionSequence ad =
   EnterASSolution {sampleSolution=generateActionSequence ad}
 
 enterASTask
-  :: (MonadPlantUml m, OutputCapable m)
+  :: (MonadPlantUml m, MonadWriteFile m, OutputCapable m)
   => FilePath
   -> EnterASInstance
   -> LangM m

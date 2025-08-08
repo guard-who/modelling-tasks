@@ -38,6 +38,7 @@ import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Capabilities.PlantUml            (MonadPlantUml)
+import Capabilities.WriteFile           (MonadWriteFile)
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (finalNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
@@ -291,6 +292,7 @@ matchPetriTask
     MonadGraphviz m,
     MonadPlantUml m,
     MonadThrow m,
+    MonadWriteFile m,
     OutputCapable m
     )
   => FilePath

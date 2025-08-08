@@ -18,7 +18,7 @@ import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 import qualified Data.Map                         as M (foldlWithKey, lookupMin)
 
 import Capabilities.Cache               (MonadCache, cache, short)
-import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
+import Capabilities.Diagrams            (MonadDiagrams (lin, renderDiagram))
 import Capabilities.Graphviz            (MonadGraphviz (layoutGraph))
 import Modelling.Auxiliary.Common       (Object)
 import Modelling.Auxiliary.Diagrams (
@@ -83,9 +83,9 @@ cacheNet
   -- ^ how to draw the graph
   -> m FilePath
 cacheNet path pl drawSettings@DrawSettings {..} =
-  cache path ext prefix pl $ \svg pl' -> do
+  cache path ext prefix pl $ \pl' -> do
     dia <- drawNet pl' drawSettings
-    writeSvg svg dia
+    renderDiagram dia
   where
     prefix =
       "petri-"
