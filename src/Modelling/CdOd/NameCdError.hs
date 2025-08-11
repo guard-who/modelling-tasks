@@ -945,7 +945,7 @@ translatePropertyWithDirections x = translations $ case x of
   InvalidInheritanceLimits -> do
     english "contains at least one invalid multiplicity at some inheritance."
     german [iii|
-      enthält mindestens eine nicht erlaubte Multiplizität an einer Vererbung.
+      enthält mindestens eine ungültige Multiplizität an einer Vererbung.
       |]
   MultipleInheritances -> do
     english "contains at least one multiple inheritance."
@@ -977,7 +977,7 @@ translatePropertyWithDirections x = translations $ case x of
       that is no inheritance.
       |]
     german [iii|
-      enthält mindestens eine nicht erlaubte Multiplizität an einer Beziehung,
+      enthält mindestens eine ungültige Multiplizität an einer Beziehung,
       die keine Vererbung ist.
       |]
   WrongCompositionLimits -> do
@@ -985,7 +985,7 @@ translatePropertyWithDirections x = translations $ case x of
       contains at least one invalid multiplicity near the whole of a composition.
       |]
     german [iii|
-      enthält mindestens eine nicht erlaubte Multiplizität am Ganzen einer Komposition.
+      enthält mindestens eine ungültige Multiplizität am Ganzen einer Komposition.
       |]
 
 defaultNameCdErrorInstance :: NameCdErrorInstance

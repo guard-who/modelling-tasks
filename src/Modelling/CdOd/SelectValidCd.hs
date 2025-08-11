@@ -315,7 +315,7 @@ defaultSelectValidCdTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
     english [i|Which of these class diagram candidates are valid class diagrams?
 Please state your answer by giving a list of numbers, indicating all valid class diagrams.|]
-    german [i|Welche dieser Klassendiagrammkandidaten sind valide Klassendiagramme?
+    german [i|Welche dieser Klassendiagrammkandidaten sind gültige Klassendiagramme?
 Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültigen Klassendiagramme enthält.|],
   Paragraph [
     Translated $ translations $ do
