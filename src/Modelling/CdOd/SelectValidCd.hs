@@ -372,10 +372,10 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       notCorrect
       paragraph $ translate $ do
         english [iii|
-          Class diagram #{x} is invalid.
+          Class diagram candidate #{x} is invalid.
           |]
         german [iii|
-          Klassendiagramm #{x} ist ungültig.
+          Klassendiagrammkandidat #{x} ist ungültig.
           |]
       let sufficient = byName || maybe True isInheritance (remove change)
       unless sufficient showNamedCd
@@ -397,7 +397,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
           german [iii|
             Wenn es zum Beispiel
             #{trailingCommaGerman $ phrase German}
-            nicht gäbe, wäre es gültig.
+            nicht gäbe, wäre er gültig.
             |]
       pure ()
     Right od | x `notElem` xs -> do
@@ -430,8 +430,8 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       | withDir = Forward
       | otherwise = NoDir
     notCorrect = paragraph $ translate $ do
-      english [iii|Your answer about class diagram #{x} is not right.|]
-      german [iii|Ihre Antwort zu Klassendiagramm #{x} ist nicht richtig.|]
+      english [iii|Your answer about class diagram candidate #{x} is not right.|]
+      german [iii|Ihre Antwort zu Klassendiagrammkandidat #{x} ist nicht richtig.|]
     isInheritance = \case
       Right Inheritance {} -> True
       Right {} -> False
