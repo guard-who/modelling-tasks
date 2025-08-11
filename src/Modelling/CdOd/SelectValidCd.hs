@@ -430,7 +430,7 @@ selectValidCdFeedback path drawSettings xs x cdChange =
       | withDir = Forward
       | otherwise = NoDir
     notCorrect = paragraph $ translate $ do
-      english [iii|Your answer to class diagram #{x} is not correct.|]
+      english [iii|Your answer about class diagram #{x} is not right.|]
       german [iii|Ihre Antwort zu Klassendiagramm #{x} ist nicht richtig.|]
     isInheritance = \case
       Right Inheritance {} -> True
