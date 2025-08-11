@@ -323,8 +323,8 @@ Bitte geben Sie Ihre Antwort in Form einer Liste von Zahlen an, die alle gültig
       german [i|Zum Beispiel würde|],
     Code $ uniform "[1, 2]",
     Translated $ translations $ do
-      english [i|would indicate that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
-      german [i|bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der angegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
+      english [i|would mean that only class diagram candidates 1 and 2 of the given ones are valid class diagrams.|]
+      german [i|bedeuten, dass nur die Klassendiagrammkandidaten 1 und 2 der gegebenen Klassendiagrammkandidaten gültige Klassendiagramme sind.|]
     ]
   ]
 

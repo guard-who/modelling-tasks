@@ -130,7 +130,7 @@ findConflictPlacesTask path task = do
     german "Welches Paar von Transitionen steht in Konflikt, und wegen welcher konfliktverursachenden Stelle(n), unter der Startmarkierung?"
   paragraph $ do
     translate $ do
-      english "State your answer by giving a pair of conflicting transitions and a list of all the places that induce the conflict. "
+      english "State your answer by indicating a pair of conflicting transitions and a list of all the places that induce the conflict. "
       german "Geben Sie Ihre Antwort durch Angabe eines Paars von in Konflikt stehenden Transitionen und einer Liste aller Stellen, die den Konflikt verursachen. "
     translate $ do
       english [i|Stating |]
@@ -142,14 +142,14 @@ findConflictPlacesTask path task = do
             (bimap show show)
             (map show)
             ts
-      english [i| as answer would indicate that transitions #{t1} and #{t2} are in conflict under the initial marking
+      english [i| as answer would mean that transitions #{t1} and #{t2} are in conflict under the initial marking
 and that places #{p1} and #{p2} are all those common places within the preconditions
 which each separately do not have enough tokens for firing #{t1} and #{t2} at the same time. |]
       german [i| als Antwort würde bedeuten, dass Transitionen #{t1} und #{t2} unter der Startmarkierung in Konflikt stehen
 und dass die Stellen #{p1} und #{p2} all jene gemeinsamen Stellen in den Vorbedingungen sind,
 die jeweils einzeln nicht ausreichend Marken zum gleichzeitigen Feuern der Transitionen #{t1} und #{t2} haben. |]
     translate $ do
-      english [i|The order of transitions within the firstly given pair does not matter here.
+      english [i|The order of transitions within the firstly indicated pair does not matter here.
 The order of places within the listing of places inducing the conflict is irrelevant as well.|]
       german [i|Die Reihenfolge der Transitionen innerhalb des zuerst angegebenen Paars spielt hierbei keine Rolle.
 Die Reihenfolge von Stellen innerhalb der Auflistung der den Konflikt verursachenden Stellen spielt ebenso keine Rolle.|]

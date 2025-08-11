@@ -482,7 +482,7 @@ graphToMathSyntax
   -> LangM m
 graphToMathSyntax task x =
   assertion (1 <= x && x <= length (to task)) $ translate $ do
-    english "The given mathematical representation is part of the task?"
+    english "The indicated mathematical representation is part of the task?"
     german "Die angegebene mathematische Repräsentation ist Bestandteil der Aufgabenstellung?"
 
 graphToMathEvaluation
@@ -506,8 +506,8 @@ mathToGraphSyntax
   -> LangM m
 mathToGraphSyntax task x =
   assertion (1 <= x && x <= length (to task)) $ translate $ do
-    english "Given graphical representation is part of the task?"
-    german "Die angegebene grafische Darstellung ist Bestandteil der Aufgabenstellung?"
+    english "The indicated graphical representation is part of the task?"
+    german "Die angegebene grafische Repräsentation ist Bestandteil der Aufgabenstellung?"
 
 mathToGraphEvaluation
   :: OutputCapable m

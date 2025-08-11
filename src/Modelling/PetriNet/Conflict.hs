@@ -274,8 +274,8 @@ findConflictPlacesEvaluation task (conflict, ps) =
       english $ x' ++ " is a place causing the conflict?"
       german $ x' ++ " ist eine den Konflikt verursachende Stelle?"
     assert (ps' == inducing) $ translate $ do
-      english "The given solution is correct and complete?"
-      german "Die angegebene Lösung ist korrekt und vollständig?"
+      english "The submitted solution is correct and complete?"
+      german "Die eingereichte Lösung ist korrekt und vollständig?"
     pure ()
   let result = min
         res

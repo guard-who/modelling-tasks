@@ -462,7 +462,7 @@ differentNamesSyntax DifferentNamesInstance {..} cs = addPretext $ do
   case allMappingValues of
     (x:_):_ -> refuse $ paragraph $ translate $ do
       let y = ShowName x
-      english [i|The identifier '#{y}' appears twice within the given mappings.|]
+      english [i|The identifier '#{y}' appears twice within the provided mappings.|]
       german [i|
         Der Bezeichner '#{y}' existiert doppelt in den angegebenen Zuordnungen.
         |]

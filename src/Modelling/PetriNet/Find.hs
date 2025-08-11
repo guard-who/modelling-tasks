@@ -127,7 +127,7 @@ toFindEvaluation what withSol (ft, st) (fi, si) = do
         then Just $ show $ transitionPairShow (ft, st)
         else Nothing
   assert correct $ translate $ do
-    english $ "The given transitions " ++ localise English what ++ "?"
+    english $ "The indicated transitions " ++ localise English what ++ "?"
     german $ "Die angegebenen Transitionen " ++ localise German what ++ "?"
   pure (maybeSolutionString, points)
   where
