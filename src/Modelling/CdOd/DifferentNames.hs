@@ -398,7 +398,7 @@ defaultDifferentNamesTaskText :: DifferentNamesTaskText
 defaultDifferentNamesTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
     english "Consider the following (valid) class diagram:"
-    german "Betrachten Sie folgendes (valide) Klassendiagramm:",
+    german "Betrachten Sie das folgende (gültige) Klassendiagramm:",
   Special GivenCd,
   Paragraph $ singleton $ Translated $ translations $ do
     english "and the following object diagram (which conforms to it):"

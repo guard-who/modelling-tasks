@@ -331,7 +331,7 @@ defaultMatchCdOdTaskText :: MatchCdOdTaskText
 defaultMatchCdOdTaskText = [
   Paragraph $ singleton $ Translated $ translations $ do
     english "Consider the following two (valid) class diagrams:"
-    german "Betrachten Sie die folgenden zwei (validen) Klassendiagramme:",
+    german "Betrachten Sie die folgenden zwei (gültigen) Klassendiagramme:",
   Special GivenCds,
   Paragraph $ singleton $ Translated $ translations $ do
     english [iii|
