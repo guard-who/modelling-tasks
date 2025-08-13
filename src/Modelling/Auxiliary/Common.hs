@@ -82,7 +82,7 @@ data ModellingTasksException
 
 instance Exception ModellingTasksException
 
-instance MonadThrow m => MonadThrow (RandT g m) where
+instance {-# OVERLAPPABLE #-} MonadThrow m => MonadThrow (RandT g m) where
   throwM = lift . throwM
 
 mapIndicesTo :: (Eq a, MonadThrow m) => [a] -> [a] -> m [(Int, Int)]
