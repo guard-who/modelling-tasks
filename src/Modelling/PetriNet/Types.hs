@@ -9,6 +9,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-|
 This module provides types to represent Petri nets.
 
@@ -689,7 +690,7 @@ data PetriMath a = PetriMath {
   initialMarkingMath :: a,
   -- | the order of places used for notation of token changes ('tokenChangeMath')
   placeOrderMath     :: Maybe a
-  } deriving (Foldable, Functor, Generic, Read, Show, Traversable)
+  } deriving (Data, Foldable, Functor, Generic, Read, Show, Traversable)
 
 data Petri = Petri
   { initialMarking :: Marking
@@ -889,7 +890,9 @@ data DrawSettings = DrawSettings {
   withTransitionNames  :: Bool,
   with1Weights         :: Bool,
   withGraphvizCommand  :: GraphvizCommand
-  } deriving (Generic, Read, Show)
+  } deriving (Data, Generic, Read, Show)
+
+deriving instance Data GraphvizCommand
 
 type Drawable n = (n, DrawSettings)
 

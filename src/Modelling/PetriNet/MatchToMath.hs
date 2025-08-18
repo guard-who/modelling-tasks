@@ -7,6 +7,8 @@
 {-# Language QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Modelling.PetriNet.MatchToMath (
   GraphToMathInstance,
@@ -191,6 +193,8 @@ data MatchInstance a b = MatchInstance {
   to :: Map Int (Bool, b)
   }
   deriving (Functor, Generic, Read, Show)
+
+deriving instance (Data a, Data b) => Data (MatchInstance a b)
 
 instance Bifoldable MatchInstance where
   bifoldMap f g m@MatchInstance {} = f (from m) `mappend` foldMap (g . snd) (to m)
