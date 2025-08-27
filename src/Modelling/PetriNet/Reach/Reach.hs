@@ -6,7 +6,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TupleSections #-}
 
 {-|
@@ -303,7 +302,6 @@ data ReachInstance s t = ReachInstance {
   withMinLengthHint :: Maybe Int
   } deriving (Generic, Read, Show, Typeable, Data)
 
-deriving instance Data GraphvizCommand
 
 bimapReachInstance
   :: (Ord a, Ord b)
