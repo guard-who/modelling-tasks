@@ -25,6 +25,7 @@ module Modelling.CdOd.DifferentNames (
   getDifferentNamesTask,
   mappingShow,
   renameInstance,
+  toTaskSpecificText,
   ) where
 
 import qualified Data.Bimap                       as BM (
