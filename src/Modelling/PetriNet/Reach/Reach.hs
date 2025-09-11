@@ -88,9 +88,9 @@ verifyReach :: (Ord a, Ord t, OutputCapable m, Show a, Show t)
   => ReachInstance a t
   -> LangM m
 verifyReach inst = do
-  let n = petriNet inst
+  let n = petriNet (netGoal inst)
   validate Default n
-  validate Default $ n { start = goal inst }
+  validate Default $ n { start = goal (netGoal inst) }
   pure ()
 
 reachTask
@@ -111,10 +111,10 @@ reachTask
 reachTask path inst = do
   if showGoalNet inst
     then (,True) . Left
-    <$> lift (drawToFile True path (drawUsing inst) (n { start = goal inst }))
-    else pure (Right $ show $ goal inst, False)
+    <$> lift (drawToFile True path (drawUsing (netGoal inst)) (n { start = goal (netGoal inst) }))
+    else pure (Right $ show $ goal (netGoal inst), False)
   $>>= \(g, withoutPlaceNames) ->
-    lift (drawToFile withoutPlaceNames path (drawUsing inst) n)
+    lift (drawToFile withoutPlaceNames path (drawUsing (netGoal inst)) n)
   $>>= \img -> reportReachFor
     img
     (noLongerThan inst)
@@ -122,7 +122,7 @@ reachTask path inst = do
     (withMinLengthHint inst)
     (Just g)
   where
-    n = petriNet inst
+    n = petriNet (netGoal inst)
 
 reportReachFor
   :: OutputCapable m
@@ -183,7 +183,7 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
   pure ()
 
 reachInitial :: ReachInstance s Transition -> TransitionsList
-reachInitial = TransitionsList . reverse . S.toList . transitions . petriNet
+reachInitial = TransitionsList . reverse . S.toList . transitions . petriNet . netGoal
 
 reachSyntax
   :: OutputCapable m
@@ -191,7 +191,7 @@ reachSyntax
   -> [Transition]
   -> LangM m
 reachSyntax inst ts =
-  do transitionsValid (petriNet inst) ts
+  do transitionsValid (petriNet (netGoal inst)) ts
      isNoLonger (noLongerThan inst) ts
      pure ()
 
@@ -224,30 +224,33 @@ reachEvaluation path reach ts =
        german "Startmarkierung:"
      indent $ text $ show (start n)
      pure ()
-  $>> executes path (drawUsing reachInstance) n (map ShowTransition ts)
+  $>> executes path (drawUsing (netGoal reachInstance)) n (map ShowTransition ts)
   $>>= \eitherOutcome -> whenRight eitherOutcome (\outcome ->
-    yesNo (outcome == goal reachInstance) $ translate $ do
+    yesNo (outcome == goal (netGoal reachInstance)) $ translate $ do
       english "Reached target marking?"
       german "Zielmarkierung erreicht?"
     )
   $>> assertReachPoints
     aSolution
-    ((==) . goal)
+    ((==) . goal . netGoal)
     minLength
     reachInstance
     ts
     eitherOutcome
   where
     reachInstance = toShowReachInstance reach
-    n = petriNet reachInstance
+    n = petriNet (netGoal reachInstance)
     aSolution
       | showSolution reach = Just $ show $ TransitionsList $ reachSolution reach
       | otherwise = Nothing
 
+netGoalSolution :: Ord s => NetGoal s t -> [t]
+netGoalSolution netGoal = reverse $ snd $ head $ concatMap
+  (filter $ (== goal netGoal) . fst)
+  $ levels' $ petriNet netGoal
+
 reachSolution :: Ord s => ReachInstance s t -> [t]
-reachSolution inst = reverse $ snd $ head $ concatMap
-  (filter $ (== goal inst) . fst)
-  $ levels' $ petriNet inst
+reachSolution inst = netGoalSolution (netGoal inst)
 
 assertReachPoints
   :: OutputCapable m
@@ -291,17 +294,20 @@ isNoLonger maybeMaxLength ts =
         ]
 
 data ReachInstance s t = ReachInstance {
-  drawUsing         :: GraphvizCommand,
-  goal              :: State s,
+  netGoal           :: NetGoal s t,
   minLength         :: Int,
   noLongerThan      :: Maybe Int,
-  petriNet          :: Net s t,
   showGoalNet       :: Bool,
   showSolution      :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Maybe Int
   } deriving (Generic, Read, Show, Typeable, Data)
 
+data NetGoal s t = NetGoal {
+  drawUsing         :: GraphvizCommand,
+  petriNet          :: Net s t,
+  goal              :: State s
+  } deriving (Generic, Read, Show, Typeable, Data)
 
 bimapReachInstance
   :: (Ord a, Ord b)
@@ -310,15 +316,25 @@ bimapReachInstance
   -> ReachInstance s t
   -> ReachInstance a b
 bimapReachInstance f g ReachInstance {..} = ReachInstance {
-    drawUsing         = drawUsing,
-    goal              = mapState f goal,
+    netGoal           = bimapNetGoal f g netGoal,
     minLength         = minLength,
     noLongerThan      = noLongerThan,
-    petriNet          = bimapNet f g petriNet,
     showGoalNet       = showGoalNet,
     showSolution      = showSolution,
     withLengthHint    = withLengthHint,
     withMinLengthHint = withMinLengthHint
+    }
+
+bimapNetGoal
+  :: (Ord a, Ord b)
+  => (s -> a)
+  -> (t -> b)
+  -> NetGoal s t
+  -> NetGoal a b
+bimapNetGoal f g NetGoal {..} = NetGoal {
+    drawUsing = drawUsing,
+    goal      = mapState f goal,
+    petriNet  = bimapNet f g petriNet
     }
 
 toShowReachInstance
@@ -326,15 +342,13 @@ toShowReachInstance
   -> ReachInstance ShowPlace ShowTransition
 toShowReachInstance = bimapReachInstance ShowPlace ShowTransition
 
+toShowNetGoal
+  :: NetGoal Place Transition
+  -> NetGoal ShowPlace ShowTransition
+toShowNetGoal = bimapNetGoal ShowPlace ShowTransition
+
 data ReachConfig = ReachConfig {
-  numPlaces :: Int,
-  numTransitions :: Int,
-  capacity :: Capacity Place,
-  drawCommands        :: [GraphvizCommand],
-  maxTransitionLength :: Int,
-  minTransitionLength :: Int,
-  postconditionsRange :: (Int, Maybe Int),
-  preconditionsRange  :: (Int, Maybe Int),
+  netGoalConfig       :: NetGoalConfig,
   printSolution       :: Bool,
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
@@ -343,16 +357,30 @@ data ReachConfig = ReachConfig {
   }
   deriving (Generic, Read, Show, Typeable)
 
+data NetGoalConfig = NetGoalConfig {
+  numPlaces :: Int,
+  numTransitions :: Int,
+  capacity :: Capacity Place,
+  drawCommands        :: [GraphvizCommand],
+  maxTransitionLength :: Int,
+  minTransitionLength :: Int,
+  postconditionsRange :: (Int, Maybe Int),
+  preconditionsRange  :: (Int, Maybe Int)
+  }
+  deriving (Generic, Read, Show, Typeable)
+
 defaultReachConfig :: ReachConfig
 defaultReachConfig = ReachConfig {
-  numPlaces = 4,
-  numTransitions = 4,
-  Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
-  drawCommands        = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork],
-  maxTransitionLength = 8,
-  minTransitionLength = 6,
-  postconditionsRange = (0, Nothing),
-  preconditionsRange  = (0, Nothing),
+  netGoalConfig = NetGoalConfig {
+    numPlaces           = 4,
+    numTransitions      = 4,
+    Modelling.PetriNet.Reach.Reach.capacity = Unbounded,
+    drawCommands        = [Dot, Neato, TwoPi, Circo, Fdp, Sfdp, Osage, Patchwork],
+    maxTransitionLength = 8,
+    minTransitionLength = 6,
+    postconditionsRange = (0, Nothing),
+    preconditionsRange  = (0, Nothing)
+    },
   printSolution       = False,
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
@@ -362,32 +390,34 @@ defaultReachConfig = ReachConfig {
 
 defaultReachInstance :: ReachInstance Place Transition
 defaultReachInstance = ReachInstance {
-  drawUsing         = Circo,
-  goal              = snd example,
+  netGoal = NetGoal {
+    drawUsing         = Circo,
+    petriNet          = fst example,
+    goal              = snd example
+    },
   minLength         = 12,
   noLongerThan      = Nothing,
-  petriNet          = fst example,
   showGoalNet       = True,
   showSolution      = False,
   withLengthHint    = Just 12,
   withMinLengthHint = Nothing
 }
 
-generateReach
+generateNetGoal
   :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)
-  => ReachConfig
+  => NetGoalConfig
   -> Int
-  -> m (ReachInstance Place Transition)
-generateReach conf seed = do
-  let ps = [Place 1 .. Place (numPlaces conf)]
+  -> m (NetGoal Place Transition)
+generateNetGoal NetGoalConfig {..} seed = do
+  let ps = [Place 1 .. Place numPlaces]
       tries = forM [1 :: Int .. 1000] $ const $ do
         n <- netLimits vLow vHigh nLow nHigh
             ps
             ts
-            (Modelling.PetriNet.Reach.Reach.capacity conf)
+            capacity
         return $ do
           (l,zs) <-
-            take (maxTransitionLength conf + 1) $ zip [0 :: Int ..] $ levels n
+            take (maxTransitionLength + 1) $ zip [0 :: Int ..] $ levels n
           z' <- zs
           let d = sum $ do
                 p <- ps
@@ -396,28 +426,42 @@ generateReach conf seed = do
       out = do
         xs <- tries
         let ((l, _), pn) = minimumBy (comparing fst) $ concat xs
-        if negate l >= minTransitionLength conf
+        if negate l >= minTransitionLength
           then do
             maybeM out (pure . (pn,))
-            $ findM (Monad.lift . isPetriDrawable (fst pn)) $ drawCommands conf
+            $ findM (Monad.lift . isPetriDrawable (fst pn)) drawCommands
           else out
+
   ((petri, state), cmd) <- eval out
-  pure $ ReachInstance {
-    drawUsing         = cmd,
-    goal              = state,
-    minLength         = minTransitionLength conf,
-    noLongerThan      = rejectLongerThan conf,
-    petriNet          = petri,
-    showGoalNet       = showTargetNet conf,
-    showSolution      = printSolution conf,
-    withLengthHint    =
-      if showLengthHint conf then Just $ maxTransitionLength conf else Nothing,
-    withMinLengthHint =
-      if showMinLengthHint conf then Just $ minTransitionLength conf else Nothing
+
+  pure $ NetGoal {
+    drawUsing   = cmd,
+    goal        = state,
+    petriNet    = petri
     }
+
   where
-    fixMaximum = second (min (numPlaces conf) . fromMaybe maxBound)
-    (vLow, vHigh) = fixMaximum $ preconditionsRange conf
-    (nLow, nHigh) = fixMaximum $ postconditionsRange conf
-    ts = [Transition 1 .. Transition (numTransitions conf)]
+    fixMaximum = second (min numPlaces . fromMaybe maxBound)
+    (vLow, vHigh) = fixMaximum preconditionsRange
+    (nLow, nHigh) = fixMaximum postconditionsRange
+    ts = [Transition 1 .. Transition numTransitions]
     eval f = evalRandT f $ mkStdGen seed
+
+generateReach
+  :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)
+  => ReachConfig
+  -> Int
+  -> m (ReachInstance Place Transition)
+generateReach ReachConfig {..} seed = do
+  netGoal <- generateNetGoal netGoalConfig seed
+  pure $ ReachInstance {
+    netGoal           = netGoal,
+    minLength         = minTransitionLength netGoalConfig,
+    noLongerThan      = rejectLongerThan,
+    showGoalNet       = showTargetNet,
+    showSolution      = printSolution,
+    withLengthHint    =
+      if showLengthHint then Just $ maxTransitionLength netGoalConfig else Nothing,
+    withMinLengthHint =
+      if showMinLengthHint then Just $ minTransitionLength netGoalConfig else Nothing
+    }
