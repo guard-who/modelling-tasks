@@ -7,8 +7,9 @@ packages:
   - legacy-app
 flags:
   modelling-tasks:
-    alloy-use-sat4j: false
     quick-testing: true
+  autotool-capabilities:
+    alloy-use-sat4j: false
 extra-deps:
   - git: https://github.com/fmidue/output-blocks.git
     commit: af1ac8d1f62cb9f739919de1e9bc7989a2c61c95

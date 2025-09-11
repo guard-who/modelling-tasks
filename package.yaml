@@ -72,9 +72,7 @@ dependencies:
   - utf8-string
   - vector
   - yaml
-when:
-  condition: flag(alloy-use-sat4j)
-  cpp-options: -DALLOY_USE_SAT4J
+
 library:
   source-dirs: src
   exposed-modules:
@@ -153,10 +151,6 @@ tests:
       - condition: flag(quick-testing)
         cpp-options: -DQUICK_TESTING
 flags:
-  alloy-use-sat4j:
-    description: When calling alloy use the SAT4J SAT solver
-    manual: true
-    default: false
   quick-testing:
     description: Decreases the testing depth resulting in fewer test cases and thus faster testing
     manual: true

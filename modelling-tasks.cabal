@@ -25,11 +25,6 @@ extra-source-files:
     alloy/petri/PetriSignature.als
     README.md
 
-flag alloy-use-sat4j
-  description: When calling alloy use the SAT4J SAT solver
-  manual: True
-  default: False
-
 flag quick-testing
   description: Decreases the testing depth resulting in fewer test cases and thus faster testing
   manual: True
@@ -142,8 +137,6 @@ library
     , vector
     , yaml
   default-language: Haskell2010
-  if flag(alloy-use-sat4j)
-    cpp-options: -DALLOY_USE_SAT4J
 
 test-suite modelling-tasks-test
   type: exitcode-stdio-1.0
@@ -241,7 +234,5 @@ test-suite modelling-tasks-test
     , vector
     , yaml
   default-language: Haskell2010
-  if flag(alloy-use-sat4j)
-    cpp-options: -DALLOY_USE_SAT4J
   if flag(quick-testing)
     cpp-options: -DQUICK_TESTING
