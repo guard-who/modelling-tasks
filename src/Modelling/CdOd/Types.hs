@@ -48,6 +48,7 @@ module Modelling.CdOd.Types (
   associationNames,
   calculateThickAnyRelationships,
   checkCdConstraints,
+  checkCdDrawProperties,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
@@ -914,6 +915,22 @@ defaultCdDrawSettings = CdDrawSettings {
 checkCdDrawSettings :: CdDrawSettings -> Maybe String
 checkCdDrawSettings CdDrawSettings {..} =
   checkOmittedDefaultMultiplicities omittedDefaults
+
+{-|
+Checks compatibility of draw settings with allowed properties
+preventing situations that could be misinterpreted.
+-}
+checkCdDrawProperties :: CdDrawSettings -> AllowedProperties -> Maybe String
+checkCdDrawProperties CdDrawSettings {..} AllowedProperties {..}
+  | doubleRelationships && not printNames
+  = Just [iii|
+    'doubleRelationships' can only be enabled,
+    if relationship names are printed.
+    Otherwise this constellation might be determined as illegal
+    (as they could have the same name).
+    |]
+  | otherwise
+  = Nothing
 
 {-|
 Defines default multiplicities which should be omitted

@@ -273,7 +273,7 @@ task2024_11 = NameCdErrorConfig {
       associationOmittedDefaultMultiplicity = Nothing,
       compositionWholeOmittedDefaultMultiplicity = Nothing
       },
-    printNames = False,
+    printNames = True,
     printNavigations = True
     },
   maxInstances = Just 4000,

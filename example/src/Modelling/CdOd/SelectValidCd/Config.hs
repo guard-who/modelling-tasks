@@ -130,7 +130,7 @@ task2023_06 = SelectValidCdConfig {
       associationOmittedDefaultMultiplicity = Just (0, Nothing),
       compositionWholeOmittedDefaultMultiplicity = Just (1, Just 1)
       },
-    printNames = False,
+    printNames = True,
     printNavigations = True
     },
   maxInstances = Just 4000,
@@ -253,7 +253,7 @@ task2024_07 = SelectValidCdConfig {
       associationOmittedDefaultMultiplicity = Just (0, Nothing),
       compositionWholeOmittedDefaultMultiplicity = Nothing
       },
-    printNames = False,
+    printNames = True,
     printNavigations = True
     },
   maxInstances = Just 4000,
@@ -313,7 +313,7 @@ task2024_08 = SelectValidCdConfig {
       associationOmittedDefaultMultiplicity = Just (0, Nothing),
       compositionWholeOmittedDefaultMultiplicity = Nothing
       },
-    printNames = False,
+    printNames = True,
     printNavigations = True
     },
   maxInstances = Just 4000,
@@ -434,7 +434,7 @@ task2024_52 = SelectValidCdConfig {
       associationOmittedDefaultMultiplicity = Just (0, Nothing),
       compositionWholeOmittedDefaultMultiplicity = Nothing
       },
-    printNames = False,
+    printNames = True,
     printNavigations = False
     },
   maxInstances = Just 4000,

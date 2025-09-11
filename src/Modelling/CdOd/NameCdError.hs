@@ -126,6 +126,7 @@ import Modelling.CdOd.Types (
   anonymiseObjects,
   anyAssociationNames,
   checkCdConstraints,
+  checkCdDrawProperties,
   checkCdDrawSettings,
   checkClassConfigAndObjectProperties,
   checkObjectProperties,
@@ -339,6 +340,7 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
   <|> checkObjectProperties objectProperties
   <|> checkClassConfigAndObjectProperties classConfig objectProperties
   <|> checkCdDrawSettings drawSettings
+  <|> checkCdDrawProperties drawSettings allowedProperties
   where
     predefined = concatMap
       (\case Custom {} -> []; PreDefined x -> [x])
