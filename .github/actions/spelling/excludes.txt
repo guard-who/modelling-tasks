@@ -43,6 +43,7 @@ ignore$
 \.yml$
 \.zip$
 ^\.github/actions/spelling/
+^\.github/copilot-.*\.md$
 ^\.github/linters/
 ^app/
 ^legacy-app/
