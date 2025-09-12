@@ -899,15 +899,21 @@ type Drawable n = (n, DrawSettings)
 {-|
 Converts a 'GraphConfig' into 'DrawSettings' by choosing
 the provided 'GraphvizCommand'.
+
+Raises a runtime error if the provided 'GraphvizCommand' is not in the
+'graphLayouts' list of the 'GraphConfig'.
 -}
 drawSettingsWithCommand :: GraphConfig -> GraphvizCommand -> DrawSettings
-drawSettingsWithCommand config c = DrawSettings {
-  withPlaceNames = not $ hidePlaceNames config,
-  withSvgHighlighting = True,
-  withTransitionNames = not $ hideTransitionNames config,
-  with1Weights = not $ hideWeight1 config,
-  withGraphvizCommand = c
-  }
+drawSettingsWithCommand config c
+  | c `elem` graphLayouts config = DrawSettings {
+      withPlaceNames = not $ hidePlaceNames config,
+      withSvgHighlighting = True,
+      withTransitionNames = not $ hideTransitionNames config,
+      with1Weights = not $ hideWeight1 config,
+      withGraphvizCommand = c
+    }
+  | otherwise = error $ "drawSettingsWithCommand: GraphvizCommand " ++ show c
+                     ++ " is not in the allowed graphLayouts: " ++ show (graphLayouts config)
 
 {-|
 Provides a list of all 'DrawSetting' that can be obtained by using
