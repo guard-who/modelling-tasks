@@ -66,7 +66,7 @@ module Modelling.CdOd.Types (
   fromClassDiagram,
   isIllegal,
   isObjectDiagramRandomisable,
-  linkNames,
+  linkLabels,
   maxFiveObjects,
   maxObjects,
   maxRelationships,
@@ -163,12 +163,12 @@ instance Bitraversable Object where
     <*> g objectClass
 
 {-|
-A link connects two objects and has a name.
+A link connects two objects and has a label.
 -}
-data Link objectName linkName
+data Link objectName linkLabel
   = Link {
-    -- | how the link is called, indicating which relationship it belongs to
-    linkName                  :: linkName,
+    -- | how the link is labeled, indicating which relationship it belongs to
+    linkLabel                 :: linkLabel,
     -- | the starting point of the link
     linkFrom                  :: objectName,
     -- | the end point of the link
@@ -178,19 +178,19 @@ data Link objectName linkName
 
 instance Bifunctor Link where
   bimap f g Link {..} = Link {
-    linkName      = g linkName,
+    linkLabel     = g linkLabel,
     linkFrom      = f linkFrom,
     linkTo        = f linkTo
     }
 
 instance Bifoldable Link where
-  bifoldMap f g Link {..} = g linkName
+  bifoldMap f g Link {..} = g linkLabel
     <> f linkFrom
     <> f linkTo
 
 instance Bitraversable Link where
   bitraverse f g Link {..} = Link
-    <$> g linkName
+    <$> g linkLabel
     <*> f linkFrom
     <*> f linkTo
 
@@ -200,12 +200,12 @@ The object diagram consists of objects and links between them.
 Note, the order of both, links and objects,
 might influence its visual appearance when drawn.
 -}
-data ObjectDiagram objectName className linkName
+data ObjectDiagram objectName className linkLabel
   = ObjectDiagram {
     -- | all objects belonging to the object diagram
     objects                   :: [Object objectName className],
     -- | all links belonging to the object diagram
-    links                     :: [Link objectName linkName]
+    links                     :: [Link objectName linkLabel]
     }
   deriving (Eq, Functor, Generic, Ord, Read, Show)
 
@@ -229,9 +229,9 @@ Sort objects, and links of the 'ObjectDiagram'.
 This enables better comparison (especially for test cases).
 -}
 normaliseObjectDiagram
-  :: (Ord className, Ord linkName, Ord objectName)
-  => ObjectDiagram objectName className linkName
-  -> ObjectDiagram objectName className linkName
+  :: (Ord className, Ord linkLabel, Ord objectName)
+  => ObjectDiagram objectName className linkLabel
+  -> ObjectDiagram objectName className linkLabel
 normaliseObjectDiagram ObjectDiagram {..} = ObjectDiagram {
   objects = sort objects,
   links = sort links
@@ -239,8 +239,8 @@ normaliseObjectDiagram ObjectDiagram {..} = ObjectDiagram {
 
 shuffleObjectAndLinkOrder
   :: MonadRandom m
-  => ObjectDiagram objectName className linkName
-  -> m (ObjectDiagram objectName className linkName)
+  => ObjectDiagram objectName className linkLabel
+  -> m (ObjectDiagram objectName className linkLabel)
 shuffleObjectAndLinkOrder ObjectDiagram {..} = ObjectDiagram
   <$> shuffleM objects
   <*> shuffleM links
@@ -859,7 +859,7 @@ checkRange g what (low, h) = do
 
 checkObjectDiagram
   :: Ord objectName
-  => ObjectDiagram objectName className linkName
+  => ObjectDiagram objectName className linkLabel
   -> Maybe String
 checkObjectDiagram ObjectDiagram {..}
   | objectNames /= nubOrd objectNames
@@ -1249,15 +1249,15 @@ anyAssociationNames = mapMaybe names .  anyRelationships
 
 classNamesOd
   :: Ord className
-  => ObjectDiagram objectName className linkName
+  => ObjectDiagram objectName className linkLabel
   -> [className]
 classNamesOd ObjectDiagram {..} = nubOrd $ map objectClass objects
 
-linkNames
-  :: Ord linkName
-  => ObjectDiagram objectName className linkName
-  -> [linkName]
-linkNames ObjectDiagram {..} = nubOrd $ map linkName links
+linkLabels
+  :: Ord linkLabel
+  => ObjectDiagram objectName className linkLabel
+  -> [linkLabel]
+linkLabels ObjectDiagram {..} = nubOrd $ map linkLabel links
 
 {-|
 Given a collection of CDs use all used class and relationship names
@@ -1297,11 +1297,11 @@ data RenameException
 instance Exception RenameException
 
 renameObjectsWithClassesAndLinksInOd
-  :: (MonadThrow m, Ord linkNames, Ord linkNames')
+  :: (MonadThrow m, Ord linkLabels, Ord linkLabels')
   => Bimap String String
-  -> Bimap linkNames linkNames'
-  -> ObjectDiagram String String linkNames
-  -> m (ObjectDiagram String String linkNames')
+  -> Bimap linkLabels linkLabels'
+  -> ObjectDiagram String String linkLabels
+  -> m (ObjectDiagram String String linkLabels')
 renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
   objects' <- traverse renameObject objects
   let bmObjects = BM.fromList
@@ -1327,8 +1327,8 @@ renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
 anonymiseObjects
   :: MonadRandom m
   => Rational
-  -> ObjectDiagram className relationshipName linkName
-  -> m (ObjectDiagram className relationshipName linkName)
+  -> ObjectDiagram className relationshipName linkLabel
+  -> m (ObjectDiagram className relationshipName linkLabel)
 anonymiseObjects proportion ObjectDiagram {..} = do
   let objectCount = length objects
       anonymous = round (fromIntegral objectCount * proportion)
@@ -1342,12 +1342,12 @@ anonymiseObjects proportion ObjectDiagram {..} = do
     anonymise :: Bool -> Object a b -> Object a b
     anonymise anonymous o = o {isAnonymous = anonymous}
 
-canShuffleClassNames :: ObjectDiagram String String linkNames -> Bool
+canShuffleClassNames :: ObjectDiagram String String linkLabels -> Bool
 canShuffleClassNames ObjectDiagram {..} =
   all (\Object {..} -> lowerFirst objectClass `isPrefixOf` objectName) objects
 
 isObjectDiagramRandomisable
-  :: ObjectDiagram String String linkNames
+  :: ObjectDiagram String String linkLabels
   -> Maybe String
 isObjectDiagramRandomisable od
   | not $ canShuffleClassNames od

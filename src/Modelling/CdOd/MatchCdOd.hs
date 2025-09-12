@@ -106,7 +106,7 @@ import Modelling.CdOd.Types (
   defaultProperties,
   fromClassDiagram,
   isObjectDiagramRandomisable,
-  linkNames,
+  linkLabels,
   relationshipName,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
@@ -593,10 +593,10 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         Object {isAnonymous = True, objectName = "b1", objectClass = "B"}
         ],
       links = [
-        Link {linkName = "z", linkFrom = "b1", linkTo = "c"},
-        Link {linkName = "z", linkFrom = "b", linkTo = "c"},
-        Link {linkName = "x", linkFrom = "d", linkTo = "c"},
-        Link {linkName = "w", linkFrom = "c", linkTo = "d"}
+        Link {linkLabel = "z", linkFrom = "b1", linkTo = "c"},
+        Link {linkLabel = "z", linkFrom = "b", linkTo = "c"},
+        Link {linkLabel = "x", linkFrom = "d", linkTo = "c"},
+        Link {linkLabel = "w", linkFrom = "c", linkTo = "d"}
         ]
       })),
     ('b', ([], ObjectDiagram {
@@ -607,10 +607,10 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         Object {isAnonymous = False, objectName = "a", objectClass = "A"}
         ],
       links = [
-        Link {linkName = "w", linkFrom = "c", linkTo = "d"},
-        Link {linkName = "z", linkFrom = "b", linkTo = "c"},
-        Link {linkName = "z", linkFrom = "b", linkTo = "a"},
-        Link {linkName = "x", linkFrom = "a", linkTo = "d"}
+        Link {linkLabel = "w", linkFrom = "c", linkTo = "d"},
+        Link {linkLabel = "z", linkFrom = "b", linkTo = "c"},
+        Link {linkLabel = "z", linkFrom = "b", linkTo = "a"},
+        Link {linkLabel = "x", linkFrom = "a", linkTo = "d"}
         ]
       })),
     ('c', ([2], ObjectDiagram {
@@ -621,10 +621,10 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         Object {isAnonymous = False, objectName = "d", objectClass = "D"}
         ],
       links = [
-        Link {linkName = "w", linkFrom = "c", linkTo = "d"},
-        Link {linkName = "x", linkFrom = "c", linkTo = "d"},
-        Link {linkName = "x", linkFrom = "a1", linkTo = "d"},
-        Link {linkName = "x", linkFrom = "a", linkTo = "d"}
+        Link {linkLabel = "w", linkFrom = "c", linkTo = "d"},
+        Link {linkLabel = "x", linkFrom = "c", linkTo = "d"},
+        Link {linkLabel = "x", linkFrom = "a1", linkTo = "d"},
+        Link {linkLabel = "x", linkFrom = "a", linkTo = "d"}
         ]
       })),
     ('d', ([2], ObjectDiagram {
@@ -635,10 +635,10 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         Object {isAnonymous = False, objectName = "a", objectClass = "A"}
         ],
       links = [
-        Link {linkName = "w", linkFrom = "c", linkTo = "d"},
-        Link {linkName = "w", linkFrom = "c1", linkTo = "d"},
-        Link {linkName = "x", linkFrom = "c", linkTo = "d"},
-        Link {linkName = "x", linkFrom = "c1", linkTo = "d"}
+        Link {linkLabel = "w", linkFrom = "c", linkTo = "d"},
+        Link {linkLabel = "w", linkFrom = "c1", linkTo = "d"},
+        Link {linkLabel = "x", linkFrom = "c", linkTo = "d"},
+        Link {linkLabel = "x", linkFrom = "c1", linkTo = "d"}
         ]
       })),
     ('e', ([1], ObjectDiagram {
@@ -649,10 +649,10 @@ defaultMatchCdOdInstance = MatchCdOdInstance {
         Object {isAnonymous = False, objectName = "c", objectClass = "C"}
         ],
       links = [
-        Link {linkName = "w", linkFrom = "c", linkTo = "d"},
-        Link {linkName = "w", linkFrom = "c", linkTo = "d1"},
-        Link {linkName = "x", linkFrom = "d", linkTo = "a"},
-        Link {linkName = "x", linkFrom = "d1", linkTo = "c"}
+        Link {linkLabel = "w", linkFrom = "c", linkTo = "d"},
+        Link {linkLabel = "w", linkFrom = "c", linkTo = "d1"},
+        Link {linkLabel = "x", linkFrom = "d", linkTo = "a"},
+        Link {linkLabel = "x", linkFrom = "d1", linkTo = "c"}
         ]
       }))
     ],
@@ -665,7 +665,7 @@ classAndNonInheritanceNames :: MatchCdOdInstance -> ([String], [String])
 classAndNonInheritanceNames inst =
   let names = nubOrd $ concatMap classNames (diagrams inst)
       nonInheritances = nubOrd $ concatMap associationNames (diagrams inst)
-        ++ concatMap (linkNames . snd) (instances inst)
+        ++ concatMap (linkLabels . snd) (instances inst)
   in (names, nonInheritances)
 
 instance Randomise MatchCdOdInstance where

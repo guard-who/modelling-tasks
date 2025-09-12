@@ -99,7 +99,7 @@ import Modelling.CdOd.Types (
   checkObjectProperties,
   defaultCdConstraints,
   defaultCdDrawSettings,
-  linkNames,
+  linkLabels,
   shuffleAnyClassAndConnectionOrder,
   renameClassesAndRelationships,
   renameObjectsWithClassesAndLinksInOd,
@@ -574,7 +574,7 @@ classAndNonInheritanceNames inst =
       nonInheritances = nubOrd $ concatMap (anyAssociationNames . option) cds
         ++ mapMaybe (add . annotated >=> anyRelationshipName) improves
         ++ mapMaybe (remove . annotated >=> anyRelationshipName) improves
-        ++ concatMap linkNames evidences
+        ++ concatMap linkLabels evidences
   in (names, nonInheritances)
 
 renameInstance

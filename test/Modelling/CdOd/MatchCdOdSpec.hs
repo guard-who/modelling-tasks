@@ -82,14 +82,14 @@ spec = do
           Object {isAnonymous = False, objectName = "a", objectClass = "A"},
           Object {isAnonymous = False, objectName = "b", objectClass = "B"}],
         links = [
-          Link {linkName = "x", linkFrom = "a", linkTo = "b"}]
+          Link {linkLabel = "x", linkFrom = "a", linkTo = "b"}]
         },
       ObjectDiagram {
         objects = [
           Object {isAnonymous = False, objectName = "a", objectClass = "A"},
           Object {isAnonymous = False, objectName = "b", objectClass = "B"}],
         links = [
-          Link {linkName = "x", linkFrom = "b", linkTo = "a"}]
+          Link {linkLabel = "x", linkFrom = "b", linkTo = "a"}]
         }
       )
     inheritOd = (
@@ -100,8 +100,8 @@ spec = do
             Object {isAnonymous = False, objectName = "a1", objectClass = "A"}
             ],
           links = [
-            Link {linkName = "x", linkFrom = "a", linkTo = "a"},
-            Link {linkName = "x", linkFrom = "a1", linkTo = "a1"}
+            Link {linkLabel = "x", linkFrom = "a", linkTo = "a"},
+            Link {linkLabel = "x", linkFrom = "a1", linkTo = "a1"}
             ]
           },
         ObjectDiagram {
@@ -110,8 +110,8 @@ spec = do
             Object {isAnonymous = False, objectName = "a1", objectClass = "A"}
             ],
           links = [
-            Link {linkName = "x", linkFrom = "a", linkTo = "a1"},
-            Link {linkName = "x", linkFrom = "a1", linkTo = "a"}
+            Link {linkLabel = "x", linkFrom = "a", linkTo = "a1"},
+            Link {linkLabel = "x", linkFrom = "a1", linkTo = "a"}
             ]
           }
         ],
@@ -122,7 +122,7 @@ spec = do
             Object {isAnonymous = False, objectName = "b", objectClass = "B"}
             ],
           links = [
-            Link {linkName = "x", linkFrom = "a", linkTo = "b"}
+            Link {linkLabel = "x", linkFrom = "a", linkTo = "b"}
             ]
           }
         ]

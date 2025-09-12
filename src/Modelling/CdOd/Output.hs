@@ -434,7 +434,7 @@ drawOd ObjectDiagram {..} direction printNames = do
           ],
         fmtEdge = \(_,_,Link {..}) -> arrowHeads
           ++ [ArrowSize 0.4, FontSize 16]
-          ++ [toLabel linkName | printNames] }
+          ++ [toLabel linkLabel | printNames] }
   errorWithoutGraphviz
   graph' <- layoutGraph' params undirCommand graph
   font <- lin
@@ -476,7 +476,7 @@ drawLink font direction printNames fl tl Link {..} =
       & headGap .~ local 0
       & tailLength .~ local 7
     ml
-      | printNames = Just linkName
+      | printNames = Just linkLabel
       | otherwise  = Nothing
 
 drawObject

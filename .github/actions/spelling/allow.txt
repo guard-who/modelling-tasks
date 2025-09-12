@@ -21,7 +21,7 @@ HXT
 Hspec
 Leftrightarrow
 Lexer
-Linkname
+Linkbeschriftung
 Modellierung
 Multiplizitäten
 NTree

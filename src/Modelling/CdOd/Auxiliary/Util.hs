@@ -109,7 +109,7 @@ alloyInstanceToOd maybeAllClassNames allLinkNames i = case maybeAllClassNames of
       objectClass = x
       }
     toLink l (x, y) = Link {
-      linkName = l,
+      linkLabel = l,
       linkFrom = x,
       linkTo = y
       }
