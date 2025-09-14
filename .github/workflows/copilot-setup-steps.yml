@@ -57,20 +57,20 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.stack
-          key: stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
-            stack-global-${{ hashFiles('stack-apps.yaml') }}
-            stack-global-
+            ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}
+            ${{ runner.os }}-stack-global-
 
       - name: Restore .stack-work
         id: cache-stack-work-restore
         uses: actions/cache/restore@v4
         with:
           path: .stack-work
-          key: stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
-            stack-work-${{ hashFiles('stack-apps.yaml') }}
-            stack-work-
+            ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}
+            ${{ runner.os }}-stack-work-
 
       # Set up Haskell Stack environment
       - name: Setup stack
