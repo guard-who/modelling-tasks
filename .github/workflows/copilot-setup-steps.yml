@@ -1,0 +1,76 @@
+---
+name: "Copilot Setup Steps"
+
+# Automatically run the setup steps when they are changed to allow for easy
+# validation, and allow manual testing through the repository's "Actions" tab
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up
+  # by Copilot.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    # Set the permissions to the lowest permissions possible needed for your
+    # steps. Copilot will be given its own token for its operations.
+    permissions:
+      # If you want to clone the repository as part of your setup steps, for
+      # example to install dependencies, you'll need the `contents: read`
+      # permission. If you don't clone the repository in your setup steps,
+      # Copilot will do this for you automatically after the steps complete.
+      contents: read
+
+    # You can define any steps you want, and they will run before the agent
+    # starts. If you do not check out your code, Copilot will do this for you.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # Install essential system dependencies required by the Haskell project
+      # These are needed for building diagrams and documentation
+      - name: Install system dependencies
+        run: >
+          sudo apt-get update &&
+          sudo apt-get install -y graphviz texlive-base texlive-latex-base
+
+      # Verify installations to catch issues early
+      - name: Verify Graphviz installation
+        run: dot -V
+
+      - name: Verify LaTeX installation
+        run: pdflatex --version
+
+      # Test network connectivity to required domains
+      # This is critical for Haskell Stack to download dependencies
+      - name: Test network connectivity
+        run: curl -I https://hackage.haskell.org/root.json
+
+      # Set up Haskell Stack environment
+      - name: Setup stack
+        uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-no-global: true
+
+      # Set up HLint for code quality checking
+      - name: 'Set up HLint'
+        uses: haskell-actions/hlint-setup@v2
+        with:
+          version: 'latest'
+
+      # Install Haskell project dependencies
+      # This is the most time-consuming step but critical for the environment
+      - name: Install dependencies on unix
+        run: |
+          set -ex
+          # shellcheck disable=SC2086
+          stack --no-terminal test --stack-yaml=stack-apps.yaml \
+            --bench --only-dependencies
+          set +ex
