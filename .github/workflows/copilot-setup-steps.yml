@@ -67,10 +67,10 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          key: ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('src/**/*.hs') }}
           restore-keys: |
-            ${{ runner.os }}-stack-work-${{ hashFiles('stack-apps.yaml') }}
-            ${{ runner.os }}-stack-work-
+            ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack-apps.yaml') }}
+            ${{ runner.os }}-lib-stack-work-
 
       # Set up Haskell Stack environment
       - name: Setup stack
@@ -93,6 +93,13 @@ jobs:
           # shellcheck disable=SC2086
           stack --no-terminal test --stack-yaml=stack-apps.yaml \
             --bench --only-dependencies
+          set +ex
+
+      - name: Build the library
+        run: |
+          set -ex
+          # shellcheck disable=SC2086
+          stack --no-terminal build
           set +ex
 
       - name: Cache Stack
