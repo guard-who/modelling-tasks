@@ -55,7 +55,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-stack-global-${{ hashFiles('stack-apps.yaml') }}
             ${{ runner.os }}-stack-global-
-        if: contains(matrix.os, 'windows') == false
+        if: contains(matrix.os, 'windows')
 
       - name: Restore .stack-work
         id: cache-stack-work-restore
