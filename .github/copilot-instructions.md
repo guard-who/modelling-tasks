@@ -3,6 +3,21 @@ Modelling Tasks is a Haskell library and application suite for generating exerci
 
 **Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
+## 🤖 Automated Copilot Setup
+
+This repository includes an automated setup workflow (`.github/workflows/copilot-setup-steps.yml`) that prepares the environment for Copilot operations. The workflow automatically:
+
+- **Installs system dependencies**: graphviz, texlive-base, texlive-latex-base
+- **Verifies installations**: Checks Graphviz and LaTeX are working
+- **Tests network connectivity**: Validates access to hackage.haskell.org
+- **Sets up Haskell Stack**: Configures the build environment
+- **Installs HLint**: Enables code quality checking
+- **Pre-builds dependencies**: Downloads and builds Haskell project dependencies
+
+**When Copilot environment is provided**: System dependencies and Haskell dependencies should already be available. You can immediately proceed with builds and tests without manual setup.
+
+**Manual setup required when**: Working outside the automated Copilot environment or troubleshooting setup issues.
+
 ## 🚨 CRITICAL WARNINGS
 
 ### ⏰ NEVER CANCEL BUILDS OR TESTS
@@ -20,11 +35,13 @@ Modelling Tasks is a Haskell library and application suite for generating exerci
 ## Working Effectively
 
 ### System Dependencies
-Install required system dependencies before building:
+**Automated in Copilot environments**: The automated setup workflow handles system dependency installation. Check if dependencies are already available before manual installation.
+
+**Manual installation** (if needed):
 - `sudo apt-get update`
 - `sudo apt-get install -y graphviz texlive-base texlive-latex-base`
 
-Verify installations:
+**Verify installations**:
 - `dot -V` -- should show graphviz version 2.43.0 or later
 - `pdflatex --version` -- should show pdfTeX 3.141592653 or later
 
@@ -45,8 +62,11 @@ This project uses Haskell Stack as its primary build tool. Three Stack configura
 ### Building the Project
 **NEVER CANCEL builds or dependency installations - they can take 60+ minutes**
 
+**In Copilot environments**: Dependencies are pre-installed by the automated setup workflow. You can typically skip step 1 and proceed directly to building.
+
 #### Full Build Process
 1. Install dependencies: `stack --stack-yaml=stack-apps.yaml build --only-dependencies`
+   - **LIKELY AUTOMATED**: In Copilot environments, this step is handled by the setup workflow
    - **NEVER CANCEL**: Takes 45-75 minutes. Set timeout to 90+ minutes.
    - Downloads from hackage.haskell.org and github.com
    - Downloads custom dependencies: output-blocks, autotool-capabilities, call-alloy, etc.
@@ -128,9 +148,14 @@ pPrint defaultNameCdErrorConfig
 Always run these commands before committing changes:
 
 ### Linting
-**HLint is NOT pre-installed**. The CI uses GitHub Actions to install and run HLint 3.5:
+**Automated in Copilot environments**: HLint is pre-installed by the automated setup workflow.
+
+**Manual HLint installation** (if needed):
 - Local HLint installation: Follow [HLint installation guide](https://github.com/ndmitchell/hlint#installation)
-- Manual linting: `hlint src/ test/ app/` (after installation)
+- **Check if available**: Run `hlint --version` to verify installation
+
+**Running HLint**:
+- Manual linting: `hlint src/ test/ app/`
 - HLint configuration in `.hlint.yaml`: uses `--cpp-simple` flag and ignores "Redundant pure" warnings
 - **CI validation**: HLint runs automatically in GitHub Actions on push/PR
 
@@ -179,6 +204,7 @@ Follow `.editorconfig` standards (automatically applied by most editors):
 ## CI/CD Pipeline
 
 ### GitHub Actions Workflows
+- `.github/workflows/copilot-setup-steps.yml` -- Automated Copilot environment setup
 - `.github/workflows/haskell.yml` -- Main CI build and test
 - `.github/workflows/haskell-nightly.yml` -- Nightly builds with latest dependencies
 - `.github/workflows/hlint.yml` -- Haskell linting with HLint
@@ -248,21 +274,30 @@ Different tasks can be tested by following the naming pattern in GHCi:
 
 ## Validation Status
 
+### 🤖 Automated in Copilot Environments
+These components are automatically set up by the `.github/workflows/copilot-setup-steps.yml` workflow:
+- System dependencies installation (graphviz, texlive-base, texlive-latex-base)
+- Graphviz and LaTeX verification (`dot -V`, `pdflatex --version`)
+- Network connectivity testing (`curl -I https://hackage.haskell.org/root.json`)
+- Haskell Stack environment setup
+- HLint installation and configuration
+- Haskell project dependencies pre-installation (`stack build --only-dependencies`)
+
 ### ✅ Validated Commands
 These commands have been tested and work correctly:
-- `sudo apt-get install -y graphviz texlive-base texlive-latex-base` -- installs system deps (2-3 minutes)
 - `dot -V` -- verifies Graphviz installation (graphviz version 2.43.0)
 - `pdflatex --version` -- verifies LaTeX installation (pdfTeX 3.141592653)
 - `stack --version` -- verifies Stack installation (Version 3.7.1)
 - `ghc --version` -- verifies GHC installation (GHC 9.12.2)
+- `hlint --version` -- verifies HLint installation (automated in Copilot)
 - Repository structure and file access work correctly
 
-### ⚠️  Network-Dependent Commands (Cannot Validate)
-These commands require internet access and fail in restricted environments:
-- `stack build --only-dependencies` -- fails with `ConnectionTimeout`
-- `stack test` -- requires dependency build first
-- `stack exec <app-name>` -- requires successful build first
-- GHCi task generation -- requires dependencies
+### ⚠️  Network-Dependent Commands (Automated in Copilot)
+These commands require internet access but are handled by automated setup:
+- `stack build --only-dependencies` -- automated by setup workflow
+- `stack test` -- dependencies pre-installed in Copilot environments
+- `stack exec <app-name>` -- should work after automated setup
+- GHCi task generation -- dependencies available in Copilot environments
 
 ### 🔧 Workarounds for Restricted Networks
 - **CI/CD**: Use unrestricted GitHub Actions environment
@@ -272,10 +307,12 @@ These commands require internet access and fail in restricted environments:
 ## Complete Validation Scenarios
 
 ### End-to-End Testing (Requires Network Access)
+**In Copilot environments**: Steps 1-2 are automated by the setup workflow.
+
 After making changes, always validate:
-1. **System dependencies**: `dot -V && pdflatex --version`
-2. **Network connectivity**: `curl -I https://hackage.haskell.org/root.json`
-3. **Build succeeds**: `stack --stack-yaml=stack-apps.yaml build` (60+ minutes)
+1. **System dependencies**: `dot -V && pdflatex --version` (automated in Copilot)
+2. **Network connectivity**: `curl -I https://hackage.haskell.org/root.json` (automated in Copilot)
+3. **Build succeeds**: `stack --stack-yaml=stack-apps.yaml build` (dependencies pre-installed in Copilot)
 4. **Tests pass**: `stack --stack-yaml=stack-apps.yaml test` (30+ minutes)
 5. **App execution**: Test at least one app with `stack exec <app-name>`
 6. **GHCi interaction**: Load examples and generate task instances
