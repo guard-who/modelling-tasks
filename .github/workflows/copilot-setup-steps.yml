@@ -52,6 +52,26 @@ jobs:
       - name: Test network connectivity
         run: curl -I https://hackage.haskell.org/root.json
 
+      - name: Restore Stack
+        id: cache-stack-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.stack
+          key: stack-global-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}
+          restore-keys: |
+            stack-global-${{ hashFiles('stack-apps.yaml') }}
+            stack-global-
+
+      - name: Restore .stack-work
+        id: cache-stack-work-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .stack-work
+          key: stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          restore-keys: |
+            stack-work-${{ hashFiles('stack-apps.yaml') }}
+            stack-work-
+
       # Set up Haskell Stack environment
       - name: Setup stack
         uses: haskell-actions/setup@v2
@@ -67,10 +87,28 @@ jobs:
 
       # Install Haskell project dependencies
       # This is the most time-consuming step but critical for the environment
-      - name: Install dependencies on unix
+      - name: Install Haskell dependencies
         run: |
           set -ex
           # shellcheck disable=SC2086
           stack --no-terminal test --stack-yaml=stack-apps.yaml \
             --bench --only-dependencies
           set +ex
+
+      - name: Cache Stack
+        id: cache-stack-save
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.stack
+          key: ${{ steps.cache-stack-restore.outputs.cache-primary-key }}
+        if: >-
+          steps.cache-stack-restore.outputs.cache-hit != 'true'
+
+      - name: Cache .stack-work
+        id: cache-stack-work-save
+        uses: actions/cache/save@v4
+        with:
+          path: .stack-work
+          key: ${{ steps.cache-stack-work-restore.outputs.cache-primary-key }}
+        if: >-
+          steps.cache-stack-work-restore.outputs.cache-hit != 'true'
