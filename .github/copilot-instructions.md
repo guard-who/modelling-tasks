@@ -293,9 +293,10 @@ After making changes, always validate:
 1. **System dependencies**: `dot -V && pdflatex --version` (automated in Copilot)
 2. **Network connectivity**: `curl -I https://hackage.haskell.org/root.json` (automated in Copilot)
 3. **Build succeeds**: `stack --stack-yaml=stack-apps.yaml build` (dependencies pre-installed in Copilot)
-4. **Tests pass**: `stack --stack-yaml=stack-apps.yaml test` (30+ minutes)
-5. **App execution**: Test at least one app with `stack exec <app-name>`
-6. **GHCi interaction**: Load examples and generate task instances
+4. **HLint does not complain**: `hlint src/ test/ app/`
+5. **Tests pass**: `stack --stack-yaml=stack-apps.yaml test` (30+ minutes)
+6. **App execution**: Test at least one app with `stack exec <app-name>`
+7. **GHCi interaction**: Load examples and generate task instances
 
 ### Manual Testing Workflow
 1. **Start GHCi**: `stack ghci --stack-yaml=stack-examples.yaml`
@@ -309,6 +310,6 @@ When full builds aren't possible:
 1. **Syntax check**: `ghc -Wall --make -fno-code src/Modelling/Types.hs`
 2. **File structure**: Verify imports and exports align with exposed-modules
 3. **Configuration**: Check stack.yaml resolver and dependencies are consistent
-4. **Static analysis**: Use any available Haskell linting tools
+4. **Static analysis**: Use any available Haskell linting tools, in particular `hlint src/ test/ app/`
 
 **CRITICAL**: NEVER CANCEL builds, tests, or long-running operations. Allow 60+ minutes for builds and 30+ minutes for tests. Plan accordingly and set appropriate timeouts.
