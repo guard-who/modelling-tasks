@@ -84,17 +84,6 @@ This project uses Haskell Stack as its primary build tool. Three Stack configura
 - `stack --stack-yaml=stack-examples.yaml build --only-dependencies` -- 30-45 minutes
 - `stack --stack-yaml=stack-examples.yaml build` -- 15-30 minutes
 
-### Platform-Specific Notes
-**Windows Users**: You may need to use SAT4J solver instead of MiniSat. Add this flag:
-```yaml
-# In stack.yaml, stack-apps.yaml, or stack-examples.yaml
-flags:
-  autotool-capabilities:
-    alloy-use-sat4j: true
-```
-
-Or provide as argument: `stack build --flag autotool-capabilities:alloy-use-sat4j`
-
 ### Running Tests
 - `stack test` -- **NEVER CANCEL**: Takes 15-30 minutes. Set timeout to 45+ minutes.
 - `stack --stack-yaml=stack-apps.yaml test` -- includes all test suites
@@ -249,15 +238,6 @@ stack --no-terminal test --stack-yaml=stack-apps.yaml --coverage \
 - **Current supported**: GHC 9.12.2 with resolver lts-21.25
 - **Stack manages GHC**: Uses system GHC when `system-ghc: true` is configured
 - **Verify**: `stack ghc --version` should match expected version
-
-### Windows-Specific Issues
-- **Symptom**: Alloy solver failures
-- **Solution**: Use `--flag autotool-capabilities:alloy-use-sat4j` or configure in stack.yaml:
-  ```yaml
-  flags:
-    autotool-capabilities:
-      alloy-use-sat4j: true
-  ```
 
 ### Long Build Times - THIS IS NORMAL
 - **Expected**: 45-75 minutes for full dependency build, 30-45 minutes for project build
