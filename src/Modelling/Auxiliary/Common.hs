@@ -20,6 +20,7 @@ module Modelling.Auxiliary.Common (
   toMap,
   upperFirst,
   upperToDash,
+  weightedShuffle,
   ) where
 
 import qualified Data.Map                         as M (
@@ -39,6 +40,7 @@ import Control.Monad.Extra              (ifM, maybeM)
 import Control.Monad.Random (
   MonadRandom (getRandomR),
   RandT,
+  fromList,
   )
 import Control.Monad.Trans.Class        (lift)
 import Data.Char (
@@ -50,6 +52,7 @@ import Data.Char (
   )
 import Data.Foldable                    (Foldable (foldl'))
 import Data.Function                    ((&))
+import Data.List                       (delete)
 import Control.Lens (
   LensRules,
   (.~),
@@ -241,3 +244,19 @@ findFittingRandom xs predicates = do
       ifM (p c)
         (maybeM retry (pure . Just . (c:)) $ elementsFor ps id $ prependFailed cs)
         retry
+
+{-|
+  Shuffle a list of elements from type a based on given weights of type w,
+  where higher weight indicates a bigger probability of the element occurring
+  at a lower index of the list. The total weight of all elements must not be zero.
+-}
+weightedShuffle
+  :: (MonadRandom m, Eq a, Real w)
+  => [(a,w)]
+  -> m [a]
+weightedShuffle [] = return []
+weightedShuffle xs = do
+  let rs = map (\x -> (x, toRational $ snd x)) xs
+  a <- fromList rs
+  ys <- weightedShuffle (delete a xs)
+  return (fst a : ys)

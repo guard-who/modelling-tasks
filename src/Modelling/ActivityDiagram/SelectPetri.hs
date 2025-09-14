@@ -37,7 +37,6 @@ import qualified Modelling.ActivityDiagram.PetriNet as PK (PetriKey (label))
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (
   finalNodesAdvice,
-  weightedShuffle,
   )
 import qualified Modelling.ActivityDiagram.Config as Config (
   AdConfig(activityFinalNodes,flowFinalNodes),
@@ -68,6 +67,7 @@ import Modelling.ActivityDiagram.Shuffle (shuffleAdNames, shufflePetri)
 import Modelling.Auxiliary.Common (
   TaskGenerationException (NoInstanceAvailable),
   oneOf,
+  weightedShuffle,
   )
 import Modelling.Auxiliary.Output (
   addPretext,
