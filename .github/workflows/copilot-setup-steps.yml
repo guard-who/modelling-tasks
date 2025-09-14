@@ -67,9 +67,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .stack-work
-          key: ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack-apps.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('src/**/*.hs') }}
+          key: ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('src/**/*.hs') }}
           restore-keys: |
-            ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack-apps.yaml') }}
+            ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-lib-stack-work-
 
       # Set up Haskell Stack environment
