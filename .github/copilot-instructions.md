@@ -157,7 +157,7 @@ The repository includes comprehensive spell checking via GitHub Actions:
 - Configuration in `.github/actions/spelling/` directory
 
 ### Code Formatting
-Follow `.editorconfig` standards (automatically applied by most editors):
+Follow `.editorconfig` standards:
 - 2-space indentation
 - LF line endings
 - Trim trailing whitespace
@@ -218,6 +218,7 @@ stack --no-terminal test --stack-yaml=stack-apps.yaml --coverage \
 # - Super-linter for general code quality (linter.yml)
 # - Nightly builds with latest dependencies (haskell-nightly.yml)
 # - Haddock documentation generation (haddock.yml)
+# - Adherence to .editorconfig settings
 ```
 
 ## Common Tasks and Troubleshooting
@@ -297,6 +298,7 @@ After making changes, always validate:
 5. **Tests pass**: `stack --stack-yaml=stack-apps.yaml test` (30+ minutes)
 6. **App execution**: Test at least one app with `stack exec <app-name>`
 7. **GHCi interaction**: Load examples and generate task instances
+8. **No whitespace errors**: Check/trim trailing whitespace
 
 ### Manual Testing Workflow
 1. **Start GHCi**: `stack ghci --stack-yaml=stack-examples.yaml`
