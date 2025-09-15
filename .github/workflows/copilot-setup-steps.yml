@@ -69,6 +69,7 @@ jobs:
           path: .stack-work
           key: ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('src/**/*.hs') }}
           restore-keys: |
+            ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
             ${{ runner.os }}-lib-stack-work-${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-lib-stack-work-
 
