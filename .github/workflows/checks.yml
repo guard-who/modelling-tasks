@@ -29,3 +29,6 @@ jobs:
 
       - name: stack-examples.yaml has some additions to stack.yaml
         run: "comm -13 stack.yaml stack-examples.yaml | grep ."
+
+      - name: Check for runaway IO usage in src/ folder
+        run: ./scripts/check-no-runaway-io.sh

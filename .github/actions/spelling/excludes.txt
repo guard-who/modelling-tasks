@@ -51,3 +51,4 @@ ignore$
 ^\Qtest/Modelling/CdOd/MatchCdOdSpec.hs\E$
 ^\Qtest/Spec.hs\E$
 ^test/unit/
+^\Qscripts/check-no-runaway-io.sh\E$
