@@ -9,7 +9,6 @@ This repository includes an automated setup workflow (`.github/workflows/copilot
 
 - **Installs system dependencies**: graphviz, texlive-base, texlive-latex-base
 - **Verifies installations**: Checks Graphviz and LaTeX are working
-- **Tests network connectivity**: Validates access to hackage.haskell.org
 - **Sets up Haskell Stack**: Configures the build environment
 - **Installs HLint**: Enables code quality checking
 - **Pre-builds dependencies**: Downloads and builds Haskell project dependencies
@@ -127,26 +126,13 @@ inst <- nameCdErrorGenerate defaultNameCdErrorConfig 0 0
 runLangMReport (return ()) (>>) (nameCdErrorTask "/tmp/" inst) >>= \(Just (), x) -> (x English :: IO ())
 ```
 
-For pretty printing configurations:
-```haskell
-:m + Text.Pretty.Simple
-pPrint defaultNameCdErrorConfig
-```
-
 ## Validation and Linting
 Always run these commands before committing changes:
 
 ### Linting
-**Automated in Copilot environments**: HLint is pre-installed by the automated setup workflow.
-
-**Manual HLint installation** (if needed):
-- Local HLint installation: Follow [HLint installation guide](https://github.com/ndmitchell/hlint#installation)
-- **Check if available**: Run `hlint --version` to verify installation
-
 **Running HLint**:
 - Manual linting: `hlint src/ test/ app/`
 - HLint configuration in `.hlint.yaml`: uses `--cpp-simple` flag and ignores "Redundant pure" warnings
-- **CI validation**: HLint runs automatically in GitHub Actions on push/PR
 
 ### Spell Checking
 The repository includes comprehensive spell checking via GitHub Actions:
@@ -285,20 +271,17 @@ These commands require internet access but are handled by automated setup:
 - **Local development**: Configure network access or use pre-built environments
 - **Testing**: Use `ghc` directly for syntax checking individual modules
 - **Validation**: Rely on CI workflows for full build/test validation
+
 ## Complete Validation Scenarios
 
-### End-to-End Testing (Requires Network Access)
-**In Copilot environments**: Steps 1-2 are automated by the setup workflow.
-
+### End-to-End Testing
 After making changes, always validate:
-1. **System dependencies**: `dot -V && pdflatex --version` (automated in Copilot)
-2. **Network connectivity**: `curl -I https://hackage.haskell.org/root.json` (automated in Copilot)
-3. **Build succeeds**: `stack --stack-yaml=stack-apps.yaml build` (dependencies pre-installed in Copilot)
-4. **HLint does not complain**: `hlint src/ test/ app/`
-5. **Tests pass**: `stack --stack-yaml=stack-apps.yaml test` (30+ minutes)
-6. **App execution**: Test at least one app with `stack exec <app-name>`
-7. **GHCi interaction**: Load examples and generate task instances
-8. **No whitespace errors**: Check/trim trailing whitespace
+1. **Build succeeds**: `stack --stack-yaml=stack-apps.yaml build` (dependencies pre-installed in Copilot)
+2. **HLint does not complain**: `hlint src/ test/ app/`
+3. **Tests pass**: `stack --stack-yaml=stack-apps.yaml test` (30+ minutes)
+4. **App execution**: Test at least one app with `stack exec <app-name>`
+5. **GHCi interaction**: Load examples and generate task instances
+6. **No whitespace errors**: Check/trim trailing whitespace
 
 ### Manual Testing Workflow
 1. **Start GHCi**: `stack ghci --stack-yaml=stack-examples.yaml`
