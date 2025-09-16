@@ -10,7 +10,7 @@ checker ensures that:
 1. No direct System.IO imports are used in src/ folder
 2. No direct IO functions (readFile, writeFile, putStr, etc.) are used in
    src/ folder
-3. Only Capabilities.* modules are used for IO operations
+3. Only Capabilities.\* modules are used for IO operations
 4. The library maintains proper separation of concerns
 
 ## Usage
