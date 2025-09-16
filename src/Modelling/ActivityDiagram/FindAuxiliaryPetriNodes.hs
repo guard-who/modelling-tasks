@@ -100,7 +100,7 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Data.Map (Map)
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate (i, iii)
 import GHC.Generics (Generic)
 import System.Random.Shuffle (shuffleM)
 
@@ -188,7 +188,7 @@ findAuxiliaryPetriNodesAlloy FindAuxiliaryPetriNodesConfig {
             Nothing -> ""
 
 data FindAuxiliaryPetriNodesSolution = FindAuxiliaryPetriNodesSolution {
-  countOfPetriNodes :: Int,
+  countOfNonAuxiliaryNodes :: Int,
   countOfAuxiliaryPlaces :: Int,
   countOfAuxiliaryTransitions :: Int
 } deriving (Generic, Show, Eq, Read)
@@ -205,15 +205,17 @@ findAuxiliaryPetriNodesSolution'
   => p n PetriKey
   -> FindAuxiliaryPetriNodesSolution
 findAuxiliaryPetriNodesSolution' petri = FindAuxiliaryPetriNodesSolution {
-    countOfPetriNodes = M.size $ Petri.nodes petri,
-    countOfAuxiliaryPlaces = M.size $ M.filter isPlaceNode auxiliaryPetriNodeMap,
-    countOfAuxiliaryTransitions =
-      M.size $ M.filter isTransitionNode auxiliaryPetriNodeMap
+    countOfNonAuxiliaryNodes = totalNodes - auxiliaryPlacesCount - auxiliaryTransitionsCount,
+    countOfAuxiliaryPlaces = auxiliaryPlacesCount,
+    countOfAuxiliaryTransitions = auxiliaryTransitionsCount
   }
   where
+    totalNodes = M.size $ Petri.nodes petri
     auxiliaryPetriNodeMap = M.filterWithKey
       (const . isAuxiliaryPetriNode)
       $ Petri.nodes petri
+    auxiliaryPlacesCount = M.size $ M.filter isPlaceNode auxiliaryPetriNodeMap
+    auxiliaryTransitionsCount = M.size $ M.filter isTransitionNode auxiliaryPetriNodeMap
 
 findAuxiliaryPetriNodesTask
   :: (MonadPlantUml m, MonadWriteFile m, OutputCapable m)
@@ -226,18 +228,22 @@ findAuxiliaryPetriNodesTask path task = do
     german "Betrachten Sie folgendes Aktivitätsdiagramm:"
   image $=<< drawAdToFile path (plantUMLConf task) $ activityDiagram task
   paragraph $ translate $ do
-    english [i|Translate the given activity diagram into a Petri net (on paper or in your head) and then state the total count of nodes
-(places and transitions, including auxiliary nodes), the count of auxiliary places and the count of auxiliary transitions in the net.|]
-    german [i|Übersetzen Sie das gegebene Aktivitätsdiagramm in ein Petrinetz (auf dem Papier oder in Ihrem Kopf) und geben Sie dann die Gesamtanzahl
-an Knoten (Stellen und Transitionen, inklusive Hilfsknoten), die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]
+    english [iii|Translate the given activity diagram into a Petri net (on paper or in your head) and then state the total count of non-auxiliary nodes
+(places and transitions minus auxiliary places and auxiliary transitions), the count of auxiliary places and the count of auxiliary transitions in the net.|]
+    german [iii|Übersetzen Sie das gegebene Aktivitätsdiagramm in ein Petrinetz (auf dem Papier oder in Ihrem Kopf) und geben Sie dann die Gesamtanzahl
+an Nicht-Hilfsknoten (Stellen und Transitionen minus Hilfsstellen und Hilfstransitionen), die Anzahl der Hilfsstellen und die Anzahl der Hilfstransitionen des Netzes an.|]
   paragraph $ do
     translate $ do
       english [i|To do this, enter your answer as in the following example:|]
       german [i|Geben Sie dazu Ihre Antwort wie im folgenden Beispiel an:|]
     code $ show findAuxiliaryPetriNodesInitial
     translate $ do
-      english [i|In this example, the resulting net contains 10 nodes in total, of which 2 are auxiliary places and 3 are auxiliary transitions.|]
-      german [i|In diesem Beispiel etwa enthält das entstehende Netz insgesamt 10 Knoten, davon 2 Hilfsstellen und 3 Hilfstransitionen.|]
+      english [iii|In this example, the resulting net contains 5 non-auxiliary nodes
+(namely, 10 total nodes minus 2 auxiliary places minus 3 auxiliary transitions), plus
+2 auxiliary places and 3 auxiliary transitions.|]
+      german [iii|In diesem Beispiel etwa enthält das entstehende Netz 5 Nicht-Hilfsknoten
+(nämlich 10 Knoten insgesamt minus 2 Hilfsstellen minus 3 Hilfstransitionen),
+dazu 2 Hilfsstellen und 3 Hilfstransitionen.|]
     pure ()
   finalNodesAdvice True
 
@@ -247,7 +253,7 @@ an Knoten (Stellen und Transitionen, inklusive Hilfsknoten), die Anzahl der Hilf
 
 findAuxiliaryPetriNodesInitial :: FindAuxiliaryPetriNodesSolution
 findAuxiliaryPetriNodesInitial = FindAuxiliaryPetriNodesSolution {
-  countOfPetriNodes = 10,
+  countOfNonAuxiliaryNodes = 5,
   countOfAuxiliaryPlaces = 2,
   countOfAuxiliaryTransitions = 3
 }
@@ -275,7 +281,7 @@ findAuxiliaryPetriNodesSolutionMap
   -> Map (Int, Int) Bool
 findAuxiliaryPetriNodesSolutionMap sol =
   let xs = [
-        countOfPetriNodes sol,
+        countOfNonAuxiliaryNodes sol,
         countOfAuxiliaryPlaces sol,
         countOfAuxiliaryTransitions sol
         ]
