@@ -151,13 +151,22 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
     Nothing -> translate $ do
       english "State your answer as an (arbitrarily short or long) sequence of the following kind:"
       german "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
-    Just maxL -> translate $ do
-      english $ concat [
-        "State your solution as a sequence of the following kind that does not exceed ",
-        show maxL," steps:"]
-      german $ concat [
-        "Geben Sie Ihre Lösung als maximal ", show maxL,
-        "-schrittige Auflistung der folgenden Art an:"]
+    Just maxL ->
+      let
+        isExactMatch = case minLengthHint of
+          Just minSteps -> maxL == minSteps
+          _ -> False
+        (englishConstraint, germanConstraint) =
+          if isExactMatch
+          then ("has exactly", "genau")
+          else ("does not exceed", "maximal")
+      in translate $ do
+        english $ concat [
+          "State your solution as a sequence of the following kind that ",
+          englishConstraint, " ", show maxL, " steps:"]
+        german $ concat [
+          "Geben Sie Ihre Lösung als ", germanConstraint, " ", show maxL,
+          "-schrittige Auflistung der folgenden Art an:"]
   let (t1, t2, t3) = (Transition 1, Transition 2, Transition 3)
       showT = show . ShowTransition
       (st1, st2, st3) = (showT t1, showT t2, showT t3)
@@ -173,10 +182,15 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
       st1, ", danach ", st2, ", und schließlich ", st3,
       " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
       ]
-  whenJust lengthHint $ \count -> when (noLonger /= Just count) $ paragraph $ translate $ do
-    english [i|Hint: There is a solution with not more than #{count} steps.|]
-    german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{count} Schritten.|]
-  whenJust minLengthHint $ \count -> paragraph $ translate $ do
+  case (lengthHint, minLengthHint) of
+    (Just maxSteps, Just minSteps) | maxSteps == minSteps -> paragraph $ translate $ do
+      english [i|Hint: The shortest solutions have exactly #{maxSteps} steps.|]
+      german [i|Hinweis: Die kürzesten Lösungen haben genau #{maxSteps} Schritte.|]
+    (Just maxSteps, _) -> when (noLonger /= Just maxSteps) $ paragraph $ translate $ do
+      english [i|Hint: There is a solution with not more than #{maxSteps} steps.|]
+      german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{maxSteps} Schritten.|]
+    _ -> pure ()
+  whenJust minLengthHint $ \count -> when (lengthHint /= Just count) $ paragraph $ translate $ do
     english [i|Hint: There is no solution with less than #{count} steps.|]
     german [i|Hinweis: Es gibt keine Lösung mit weniger als #{count} Schritten.|]
   hoveringInformation
