@@ -45,6 +45,7 @@ import Modelling.PetriNet.Reach.Type (
   TransitionsList (TransitionsList),
   bimapNet,
   example,
+  hasIsolatedNodes,
   )
 
 import Control.Applicative              (Alternative)
@@ -278,6 +279,8 @@ try conf = do
       ts
       (Modelling.PetriNet.Reach.Deadlock.capacity conf)
   return $ do
+    -- Filter out nets with isolated nodes
+    guard $ not $ hasIsolatedNodes n
     let (no,yeah) = span (null . snd)
           $ take (maxTransitionLength conf + 1)
           $ zip [0 :: Int ..]

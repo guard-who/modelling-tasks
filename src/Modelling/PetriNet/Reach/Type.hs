@@ -17,7 +17,11 @@ import qualified Data.Map                         as M (
   mapKeys,
   toList,
   )
-import qualified Data.Set                         as S (fromList, map)
+import qualified Data.Set                         as S (
+  fromList,
+  isSubsetOf,
+  map,
+  )
 
 import Modelling.Auxiliary.Common       (parseInt, skipSpaces)
 
@@ -183,3 +187,10 @@ example =
     },
    State $ M.fromList [(Place 1, 0), (Place 2, 0), (Place 3, 1), (Place 4, 0)]
   )
+
+-- | Check if a net has any isolated nodes (nodes with no connections)
+hasIsolatedNodes :: (Ord s, Ord t) => Net s t -> Bool
+hasIsolatedNodes (Net ps ts cs _ _) =
+  let connectedPlaces = S.fromList $ concatMap (\(pre, _, post) -> pre ++ post) cs
+      connectedTransitions = S.fromList $ map (\(_, t, _) -> t) cs
+  in not (S.isSubsetOf ps connectedPlaces && S.isSubsetOf ts connectedTransitions)
