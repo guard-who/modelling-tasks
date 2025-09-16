@@ -12,6 +12,10 @@ on:
     paths:
       - .github/workflows/copilot-setup-steps.yml
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   # The job MUST be called `copilot-setup-steps` or it will not be picked up
   # by Copilot.
@@ -26,12 +30,16 @@ jobs:
       # permission. If you don't clone the repository in your setup steps,
       # Copilot will do this for you automatically after the steps complete.
       contents: read
+      # Cache actions require actions: write to save/restore cache
+      actions: write
 
     # You can define any steps you want, and they will run before the agent
     # starts. If you do not check out your code, Copilot will do this for you.
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       # Install essential system dependencies required by the Haskell project
       # These are needed for building diagrams and documentation
@@ -81,10 +89,10 @@ jobs:
           stack-no-global: true
 
       # Set up HLint for code quality checking
-      - name: 'Set up HLint'
+      - name: "Set up HLint"
         uses: haskell-actions/hlint-setup@v2
         with:
-          version: 'latest'
+          version: "latest"
 
       # Install Haskell project dependencies
       # This is the most time-consuming step but critical for the environment

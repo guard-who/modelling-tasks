@@ -5,7 +5,7 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
-indent_size = 2
+indent_size = unset
 max_line_length = 175
 
 [**.als]
@@ -16,5 +16,8 @@ end_of_line = unset
 insert_final_newline = unset
 max_line_length = unset
 
-[**.{yml,yaml,md,tex}]
+[example/**]
+max_line_length = unset
+
+[**.{yml,yaml,md,tex,cabal}]
 max_line_length = unset

@@ -10,7 +10,6 @@ cradle:
         stackYaml: "stack.yaml"
         component: "modelling-tasks:test:modelling-tasks-test"
 
-
       - path: "app/common"
         stackYaml: "stack-apps.yaml"
         component: "modelling-tasks-apps:exe:check-cds"
@@ -75,7 +74,6 @@ cradle:
         stackYaml: "stack-apps.yaml"
         component: "modelling-tasks-apps:exe:selectPetriTaskDemo"
 
-
       - path: "app/generate"
         stackYaml: "stack-apps.yaml"
         component: "modelling-tasks-legacy-apps:exe:different-names-legacy"
@@ -111,7 +109,6 @@ cradle:
       - path: "legacy-app/match-cd-od.hs"
         stackYaml: "stack-apps.yaml"
         component: "modelling-tasks-legacy-apps:exe:match-cd-od-legacy"
-
 
       - path: "example/src"
         stackYaml: "stack-examples.yaml"

@@ -3,13 +3,20 @@ name: Check .cabal Consistency
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   check-consistency:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Save original cabal files
         run: |

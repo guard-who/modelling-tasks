@@ -1,4 +1,4 @@
--- | 
+-- |
 
 module Modelling.CdOd.SelectValidCd.Instance where
 

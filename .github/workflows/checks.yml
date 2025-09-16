@@ -11,12 +11,19 @@ on:
       - dev
       - master
 
+permissions:
+  contents: read
+
 jobs:
   consistency:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: stack.yaml has no additions to stack-examples.yaml
         run: "! comm -23 stack.yaml stack-examples.yaml | grep ."

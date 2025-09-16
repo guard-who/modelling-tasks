@@ -3,7 +3,7 @@ name: Haskell Nightly CI
 
 on:
   schedule:
-    - cron: '0 3 * * *' # daily at 3 am
+    - cron: "0 3 * * *" # daily at 3 am
 
 permissions: read-all
 
