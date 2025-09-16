@@ -37,6 +37,7 @@ import qualified Modelling.ActivityDiagram.PetriNet as PK (PetriKey (label))
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (
   finalNodesAdvice,
+  checkCount,
   )
 import qualified Modelling.ActivityDiagram.Config as Config (
   AdConfig(activityFinalNodes,flowFinalNodes),
@@ -135,6 +136,9 @@ data SelectPetriInstance = SelectPetriInstance {
 
 data SelectPetriConfig = SelectPetriConfig {
   adConfig :: AdConfig,
+  -- | generate only activity diagrams with a corresponding Petri net
+  -- having a total count of nodes within the given bounds
+  countOfPetriNodesBounds :: !(Int, Maybe Int),
   maxInstances :: Maybe Integer,
   hideNodeNames :: Bool,
   hideBranchConditions :: Bool,
@@ -164,6 +168,7 @@ defaultSelectPetriConfig = SelectPetriConfig {
     { Config.activityFinalNodes = 0
     , Config.flowFinalNodes = 2
     },
+  countOfPetriNodesBounds = (0, Nothing),
   maxInstances = Just 50,
   hideNodeNames = False,
   hideBranchConditions = False,
@@ -188,6 +193,7 @@ checkSelectPetriConfig conf =
 checkSelectPetriConfig' :: SelectPetriConfig -> Maybe String
 checkSelectPetriConfig' SelectPetriConfig {
     adConfig,
+    countOfPetriNodesBounds,
     maxInstances,
     petriLayout,
     numberOfWrongAnswers,
@@ -200,6 +206,10 @@ checkSelectPetriConfig' SelectPetriConfig {
   = Just "There is at most one 'activityFinalNode' allowed."
   | Config.activityFinalNodes adConfig >= 1 && Config.flowFinalNodes adConfig >= 1
   = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
+  | fst countOfPetriNodesBounds < 0
+  = Just "'countOfPetriNodesBounds' must not contain negative values"
+  | Just high <- snd countOfPetriNodesBounds, fst countOfPetriNodesBounds > high
+  = Just "the second value of 'countOfPetriNodesBounds' must not be smaller than its first value"
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | numberOfWrongAnswers < 1
@@ -570,29 +580,32 @@ getSelectPetriTask config = do
         withGraphvizCommand = layout
       }
   ad <- mapM (fmap snd . shuffleAdNames) randomInstances
-  validInstances <- firstJustM (\x -> do
-    sol <- selectPetriNet
-      (numberOfWrongAnswers config)
-      (numberOfModifications config)
-      (modifyAtMid config)
-      x
-    p <- fmap snd $ shufflePetri $ matchingNet sol
-    ps <- mapM (fmap snd . shufflePetri) $ wrongNets sol
-    petriNets <- selectPetriSolutionToMap
-      $ SelectPetriSolution {matchingNet=p, wrongNets=ps}
-    let petriInst = SelectPetriInstance {
-          activityDiagram=x,
-          plantUMLConf=plantUMLConf,
-          petriDrawConf=petriDrawConf,
-          petriNets = petriNets,
-          showSolution = printSolution config,
-          addText = extraText config
-        }
-    case checkPetriInstance petriInst config of
-      Just _ -> return Nothing
-      Nothing -> return $ Just petriInst
-    ) ad
-  case validInstances of
+    >>= firstJustM (\x -> do
+      if not (checkCount (countOfPetriNodesBounds config) x)
+        then return Nothing
+        else do
+          sol <- selectPetriNet
+            (numberOfWrongAnswers config)
+            (numberOfModifications config)
+            (modifyAtMid config)
+            x
+          p <- fmap snd $ shufflePetri $ matchingNet sol
+          ps <- mapM (fmap snd . shufflePetri) $ wrongNets sol
+          petriNets <- selectPetriSolutionToMap
+            $ SelectPetriSolution {matchingNet=p, wrongNets=ps}
+          let petriInst = SelectPetriInstance {
+                activityDiagram=x,
+                plantUMLConf=plantUMLConf,
+                petriDrawConf=petriDrawConf,
+                petriNets = petriNets,
+                showSolution = printSolution config,
+                addText = extraText config
+              }
+          case checkPetriInstance petriInst config of
+            Just _ -> return Nothing
+            Nothing -> return $ Just petriInst
+    )
+  case ad of
     Just x -> return x
     Nothing -> throwM NoInstanceAvailable
 

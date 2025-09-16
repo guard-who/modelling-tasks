@@ -40,7 +40,7 @@ import Capabilities.Graphviz            (MonadGraphviz)
 import Capabilities.PlantUml            (MonadPlantUml)
 import Capabilities.WriteFile           (MonadWriteFile)
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
-import Modelling.ActivityDiagram.Auxiliary.Util (finalNodesAdvice)
+import Modelling.ActivityDiagram.Auxiliary.Util (finalNodesAdvice, checkCount)
 import Modelling.ActivityDiagram.Datatype (
   UMLActivityDiagram(..),
   AdNode (..),
@@ -132,6 +132,9 @@ data MatchPetriInstance = MatchPetriInstance {
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: AdConfig,
+  -- | generate only activity diagrams with a corresponding Petri net
+  -- having a total count of nodes within the given bounds
+  countOfPetriNodesBounds :: !(Int, Maybe Int),
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
   petriLayout :: [GraphvizCommand],
@@ -157,6 +160,7 @@ defaultMatchPetriConfig =
       Config.activityFinalNodes = 0,
       Config.flowFinalNodes = 2
       },
+    countOfPetriNodesBounds = (0, Nothing),
     maxInstances = Just 25,
     hideBranchConditions = False,
     petriLayout = [Dot],
@@ -177,6 +181,7 @@ checkMatchPetriConfig conf =
 checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
+    countOfPetriNodesBounds,
     maxInstances,
     petriLayout,
     auxiliaryPetriNodeAbsent,
@@ -187,6 +192,10 @@ checkMatchPetriConfig' MatchPetriConfig {
   = Just "There is at most one 'activityFinalNode' allowed."
   | Config.activityFinalNodes adConfig >= 1 && Config.flowFinalNodes adConfig >= 1
   = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
+  | fst countOfPetriNodesBounds < 0
+  = Just "'countOfPetriNodesBounds' must not contain negative values"
+  | Just high <- snd countOfPetriNodesBounds, fst countOfPetriNodesBounds > high
+  = Just "the second value of 'countOfPetriNodesBounds' must not be smaller than its first value"
   | isJust maxInstances && fromJust maxInstances < 1
     = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
   | auxiliaryPetriNodeAbsent == Just True && cycles adConfig > 0
@@ -448,6 +457,7 @@ getMatchPetriTask config = do
   randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
   activityDiagrams <- mapM (fmap snd . shuffleAdNames) randomInstances
   (ad, petri) <- getFirstInstance
+        $ filter (checkCount (countOfPetriNodesBounds config) . fst)
         $ filter (not . petriHasMultipleAutomorphisms . snd)
         $ map (second convertToPetriNet . dupe) activityDiagrams
   shuffledPetri <- snd <$> shufflePetri petri
