@@ -114,7 +114,10 @@ deadlockSyntax
   => DeadlockInstance Place Transition
   -> [Transition]
   -> LangM m
-deadlockSyntax = transitionsValid . petriNet
+deadlockSyntax inst ts =
+  do transitionsValid (petriNet inst) ts
+     isNoLonger (noLongerThan inst) ts
+     pure ()
 
 deadlockEvaluation
   :: (
@@ -130,8 +133,7 @@ deadlockEvaluation
   -> [Transition]
   -> Rated m
 deadlockEvaluation path deadlock ts =
-  isNoLonger (noLongerThan deadlockInstance) ts
-  $>> executes path (drawUsing deadlockInstance) n (map ShowTransition ts)
+  executes path (drawUsing deadlockInstance) n (map ShowTransition ts)
   $>>= \eitherOutcome ->
     whenRight eitherOutcome (\outcome ->
       yesNo (null $ successors n outcome)
@@ -232,6 +234,12 @@ defaultDeadlockInstance = DeadlockInstance {
   withLengthHint    = Just 9,
   withMinLengthHint = Just 6
   }
+
+checkDeadlockConfig :: DeadlockConfig -> Maybe String
+checkDeadlockConfig DeadlockConfig {..}
+  | rejectLongerThan == Just maxTransitionLength && showLengthHint
+  = Just "showLengthHint cannot be True when rejectLongerThan equals maxTransitionLength"
+  | otherwise = Nothing
 
 generateDeadlock
   :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)

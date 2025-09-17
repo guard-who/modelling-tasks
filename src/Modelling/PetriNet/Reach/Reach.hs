@@ -187,7 +187,7 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
     (Just maxSteps, Just minSteps) | maxSteps == minSteps -> paragraph $ translate $ do
       english [i|Hint: The shortest solutions have exactly #{maxSteps} steps.|]
       german [i|Hinweis: Die kürzesten Lösungen haben genau #{maxSteps} Schritte.|]
-    (Just maxSteps, _) -> when (noLonger /= Just maxSteps) $ paragraph $ translate $ do
+    (Just maxSteps, _) -> paragraph $ translate $ do
       english [i|Hint: There is a solution with not more than #{maxSteps} steps.|]
       german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{maxSteps} Schritten.|]
     _ -> pure ()
@@ -463,6 +463,12 @@ generateNetGoal NetGoalConfig {..} seed = do
     (nLow, nHigh) = fixMaximum postconditionsRange
     ts = [Transition 1 .. Transition numTransitions]
     eval f = evalRandT f $ mkStdGen seed
+
+checkReachConfig :: ReachConfig -> Maybe String
+checkReachConfig ReachConfig {..}
+  | rejectLongerThan == Just (maxTransitionLength netGoalConfig) && showLengthHint
+  = Just "showLengthHint cannot be True when rejectLongerThan equals maxTransitionLength"
+  | otherwise = Nothing
 
 generateReach
   :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)
