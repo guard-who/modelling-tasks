@@ -436,8 +436,8 @@ getMatchPetriTask config = do
   randomInstances <- shuffleM alloyInstances >>= mapM parseInstance
   activityDiagrams <- mapM (fmap snd . shuffleAdNames) randomInstances
   (ad, petri) <- getFirstInstance
-        $ filter (checkPetriNodeCount (countOfPetriNodesBounds config) . snd)
         $ filter (not . petriHasMultipleAutomorphisms . snd)
+        $ filter (checkPetriNodeCount (countOfPetriNodesBounds config) . snd)
         $ map (second convertToPetriNet . dupe) activityDiagrams
   shuffledPetri <- snd <$> shufflePetri petri
   layout <- pickRandomLayout config
