@@ -48,7 +48,7 @@ germanStrings = PhrasingStrings
   , removePrefix = "entferne "
   , replacePrefix = "ersetze "
   , byInfix = " durch "
-  , postProcess = \xs -> if ',' `elem` xs then xs ++ "," else xs
+  , postProcess = trailingComma
   , phraseRelationWith = phraseRelation
   }
 
