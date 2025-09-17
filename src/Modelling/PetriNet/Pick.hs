@@ -32,7 +32,7 @@ import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
-  findFittingRandom,
+  findFittingRandomElements,
   )
 import Modelling.PetriNet.Diagram (
   cacheNet,
@@ -57,7 +57,7 @@ import Modelling.PetriNet.Types         (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Arrow                    (Arrow (second))
 import Control.Monad.Catch              (MonadCatch, MonadThrow)
-import Control.Monad.Extra              (firstJustM, maybeM)
+import Control.Monad.Extra              (maybeM)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   LangM,
@@ -144,14 +144,10 @@ pickGenerate pick gc useDifferent withSol config segment seed
         }
     getPickInstance petriNets =
       let predicates = map (\(x,_) -> lift . isNetDrawable x) petriNets
+          availableLayouts = allDrawSettings (gc config)
       in
         maybeM getInstance (toPickInstance petriNets)
-        $ if useDifferent config
-          then
-            findFittingRandom (allDrawSettings (gc config)) predicates
-          else do
-            ds <- shuffleM $ allDrawSettings (gc config)
-            firstJustM (\x -> findFittingRandom [x] predicates) ds
+        $ findFittingRandomElements (useDifferent config) availableLayouts predicates
 
 pickSyntax
   :: OutputCapable m

@@ -50,6 +50,7 @@ dependencies:
   - diagrams-svg
   - edit-distance-vector
   - either
+  - exact-combinatorics
   - exceptions
   - extra
   - fgl
