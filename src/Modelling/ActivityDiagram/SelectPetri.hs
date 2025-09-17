@@ -6,6 +6,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Modelling.ActivityDiagram.SelectPetri (
   SelectPetriInstance(..),
@@ -16,6 +17,7 @@ module Modelling.ActivityDiagram.SelectPetri (
   checkPetriInstance,
   selectPetriAlloy,
   selectPetriNet,
+  selectPetriNetWithMatchingNet,
   selectPetriTask,
   selectPetriSyntax,
   selectPetriEvaluation,
@@ -40,7 +42,6 @@ import Modelling.ActivityDiagram.Auxiliary.PetriValidation (
   )
 import Modelling.ActivityDiagram.Auxiliary.Util (
   finalNodesAdvice,
-  checkCount,
   )
 import qualified Modelling.ActivityDiagram.Config as Config (
   AdConfig(activityFinalNodes,flowFinalNodes),
@@ -79,6 +80,7 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
+  checkPetriNodeCount,
   DrawSettings (..),
   Net (mapNet),
   PetriLike (..),
@@ -272,8 +274,18 @@ selectPetriNet
   -> Bool
   -> UMLActivityDiagram
   -> m SelectPetriSolution
-selectPetriNet numberOfWrongNets numberOfModifications modifyAtMid ad = do
-  let matchingNet = convertToPetriNet ad
+selectPetriNet numberOfWrongNets numberOfModifications modifyAtMid ad =
+  selectPetriNetWithMatchingNet numberOfWrongNets numberOfModifications modifyAtMid ad (convertToPetriNet ad)
+
+selectPetriNetWithMatchingNet
+  :: (MonadRandom m)
+  => Int
+  -> Int
+  -> Bool
+  -> UMLActivityDiagram
+  -> SimplePetriLike PetriKey
+  -> m SelectPetriSolution
+selectPetriNetWithMatchingNet numberOfWrongNets numberOfModifications modifyAtMid ad matchingNet = do
   wrongNets <- loopM (\xs -> do
       modAd <- modifyAd ad numberOfModifications modifyAtMid
       let petri = convertToPetriNet modAd
@@ -572,21 +584,23 @@ getSelectPetriTask config = do
         withGraphvizCommand = layout
       }
   ad <- mapM (fmap snd . shuffleAdNames) randomInstances
-    >>= firstJustM (\x -> do
-      if not (checkCount (countOfPetriNodesBounds config) x)
+    >>= firstJustM (\ad -> do
+      let petriNet = convertToPetriNet @PetriLike @SimpleNode ad
+      if not (checkPetriNodeCount (countOfPetriNodesBounds config) petriNet)
         then return Nothing
         else do
-          sol <- selectPetriNet
+          sol <- selectPetriNetWithMatchingNet
             (numberOfWrongAnswers config)
             (numberOfModifications config)
             (modifyAtMid config)
-            x
+            ad
+            petriNet
           p <- fmap snd $ shufflePetri $ matchingNet sol
           ps <- mapM (fmap snd . shufflePetri) $ wrongNets sol
           petriNets <- selectPetriSolutionToMap
             $ SelectPetriSolution {matchingNet=p, wrongNets=ps}
           let petriInst = SelectPetriInstance {
-                activityDiagram=x,
+                activityDiagram=ad,
                 plantUMLConf=plantUMLConf,
                 petriDrawConf=petriDrawConf,
                 petriNets = petriNets,
