@@ -56,7 +56,8 @@ task2023_17 = MathConfig {
   alloyConfig = AlloyConfig {
     maxInstances = Just 2000,
     timeout = Nothing
-    }
+    },
+  extraText = Nothing
   }
 
 {-|
@@ -100,7 +101,8 @@ task2023_18 = MathConfig {
   alloyConfig = AlloyConfig {
     maxInstances = Just 2000,
     timeout = Nothing
-    }
+    },
+  extraText = Nothing
   }
 
 {-|

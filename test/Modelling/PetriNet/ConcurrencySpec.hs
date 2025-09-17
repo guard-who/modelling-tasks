@@ -122,6 +122,7 @@ validFindConcurrencyConfigs cs advancedConfig =
     ?? validGraphConfig
     ?? False
     ?? alloyTestConfig
+    ?? Nothing
  )
 
 validPickConcurrencyConfigs
@@ -135,7 +136,8 @@ validPickConcurrencyConfigs cs = [
     False
     printSolution
     False
-    alloyTestConfig |
+    alloyTestConfig
+    Nothing |
       (basic,change) <- cs,
       printSolution <- [False, True]
     ]

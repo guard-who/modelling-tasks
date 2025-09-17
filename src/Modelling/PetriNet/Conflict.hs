@@ -31,6 +31,8 @@ module Modelling.PetriNet.Conflict (
   ) where
 
 import qualified Modelling.PetriNet.Find          as F (showSolution)
+import qualified Modelling.PetriNet.Find          as Find (FindInstance (..))
+import qualified Modelling.PetriNet.Pick          as Pick (PickInstance (..))
 import qualified Modelling.PetriNet.Types         as Find (
   FindConflictConfig (..),
   )
@@ -57,6 +59,7 @@ import Modelling.Auxiliary.Common (
   )
 import Modelling.Auxiliary.Output (
   hoveringInformation,
+  extra,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -231,6 +234,7 @@ findConflictTask path task = do
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
     pure ()
   paragraph hoveringInformation
+  extra $ Find.addText task
   pure ()
 
 findConflictSyntax
@@ -381,6 +385,7 @@ pickConflictTask path task = do
         ++ ")."
     pure ()
   paragraph hoveringInformation
+  extra $ Pick.addText task
   pure ()
 
 findConflictGenerate
@@ -408,7 +413,8 @@ findConflictGenerate config segment = evalRandT getInstance . mkStdGen
         net = petri,
         numberOfPlaces = places bc,
         numberOfTransitions = transitions bc,
-        showSolution = Find.printSolution config
+        showSolution = Find.printSolution config,
+        addText = Find.extraText config
         }
     bc = Find.basicConfig config
 
@@ -418,11 +424,12 @@ pickConflictGenerate
   -> Int
   -> Int
   -> m (PickInstance (p n String))
-pickConflictGenerate = pickGenerate pickConflict gc ud ws
+pickConflictGenerate = pickGenerate pickConflict gc ud ws et
   where
     gc = Pick.graphConfig
     ud = Pick.useDifferentGraphLayouts
     ws = Pick.printSolution
+    et = Pick.extraText
 
 findConflict
   :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
@@ -720,7 +727,8 @@ defaultPickConflictInstance = PickInstance {
         }
       )))
     ],
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }
 
 defaultFindConflictInstance :: FindInstance SimplePetriNet Conflict
@@ -749,5 +757,6 @@ defaultFindConflictInstance = FindInstance {
     },
   numberOfPlaces = 4,
   numberOfTransitions = 3,
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }

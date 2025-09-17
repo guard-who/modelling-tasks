@@ -46,7 +46,8 @@ task2023_21 = PickConcurrencyConfig {
   alloyConfig = AlloyConfig {
     maxInstances = Just 2000,
     timeout = Nothing
-    }
+    },
+  extraText = Nothing
   }
 
 {-|

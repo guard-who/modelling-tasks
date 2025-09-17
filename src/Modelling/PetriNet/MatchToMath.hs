@@ -48,6 +48,7 @@ import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common       (Object (oName), findFittingRandomElements)
 import Modelling.Auxiliary.Output       (
   hoveringInformation,
+  extra,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -167,7 +168,8 @@ data MathConfig = MathConfig {
   printSolution :: Bool,
   useDifferentGraphLayouts :: Bool,
   wrongInstances :: Int,
-  alloyConfig :: AlloyConfig
+  alloyConfig :: AlloyConfig,
+  extraText :: Maybe (Map Language String)
   } deriving (Generic, Read, Show)
 
 defaultMathConfig :: MathConfig
@@ -183,13 +185,15 @@ defaultMathConfig = MathConfig {
   printSolution = False,
   useDifferentGraphLayouts = False,
   wrongInstances = 3,
-  alloyConfig = defaultAlloyConfig
+  alloyConfig = defaultAlloyConfig,
+  extraText = Nothing
   }
 
 data MatchInstance a b = MatchInstance {
   from :: a,
   showSolution :: Bool,
-  to :: Map Int (Bool, b)
+  to :: Map Int (Bool, b),
+  addText :: Maybe (Map Language String)
   }
   deriving (Data, Functor, Generic, Read, Show)
 
@@ -199,7 +203,8 @@ instance Bifoldable MatchInstance where
 instance Bifunctor MatchInstance where
   bimap f g m@MatchInstance {} = m {
     from = f $ from m,
-    to   = second g <$> to m
+    to   = second g <$> to m,
+    addText = addText m
     }
 
 instance Bitraversable MatchInstance where
@@ -207,6 +212,7 @@ instance Bitraversable MatchInstance where
     <$> f (from m)
     <*> pure (showSolution m)
     <*> traverse (traverse g) (to m)
+    <*> pure (addText m)
 
 evalWithStdGen
   :: Monad m
@@ -327,7 +333,8 @@ matchMathInstance c x y ys = do
   return $ MatchInstance {
     from = x,
     showSolution = printSolution c,
-    to = fromList $ zip [1..] ys'
+    to = fromList $ zip [1..] ys',
+    addText = extraText c
     }
 
 matchToMath
@@ -415,6 +422,7 @@ graphToMathTask path task = do
       german [i| als Antwort würde bedeuten, dass Repräsentation 1 zur gegebenen grafischen Darstellung passt (und die anderen mathematischen Repräsentationen nicht).|]
     pure ()
   paragraph hoveringInformation
+  extra $ addText task
   pure ()
 
 mathToOutput :: OutputCapable m => (a -> LangM m) -> PetriMath a -> LangM m
@@ -475,6 +483,7 @@ mathToGraphTask path task = do
       german [i| als Antwort würde bedeuten, dass Diagramm 1 zur gegebenen mathematischen Repräsentation passt (und die anderen Diagramme nicht).|]
     pure ()
   paragraph hoveringInformation
+  extra $ addText task
   pure ()
 
 graphToMathSyntax
@@ -733,7 +742,8 @@ defaultGraphToMathInstance = MatchInstance {
       initialMarkingMath = "m_0 = \\left(2,0,1,0\\right)",
       placeOrderMath = Just "\\left(s_{1},s_{2},s_{3},s_{4}\\right)"
       }))
-    ]
+    ],
+    addText = Nothing
   }
 
 defaultMathToGraphInstance :: MathToGraphInstance
@@ -831,5 +841,6 @@ defaultMathToGraphInstance = MatchInstance {
         withGraphvizCommand = Fdp
         }
       )))
-    ]
+    ],
+    addText = Nothing
   }

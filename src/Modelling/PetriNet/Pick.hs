@@ -61,6 +61,7 @@ import Control.Monad.Extra              (maybeM)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   LangM,
+  Language,
   OutputCapable,
   english,
   german,
@@ -88,7 +89,8 @@ import System.Random.Shuffle            (shuffleM)
 
 data PickInstance n = PickInstance {
   nets :: !(Map Int (Bool, Drawable n)),
-  showSolution :: !Bool
+  showSolution :: !Bool,
+  addText :: !(Maybe (Map Language String))
   }
   deriving (Generic, Read, Show)
 
@@ -119,11 +121,12 @@ pickGenerate
   -> (c -> GraphConfig)
   -> (c -> Bool)
   -> (c -> Bool)
+  -> (c -> Maybe (Map Language String))
   -> c
   -> Int
   -> Int
   -> m (PickInstance (p n String))
-pickGenerate pick gc useDifferent withSol config segment seed
+pickGenerate pick gc useDifferent withSol getExtraText config segment seed
   = evalRandT getInstance (mkStdGen seed)
   where
     getInstance = do
@@ -140,7 +143,8 @@ pickGenerate pick gc useDifferent withSol config segment seed
       pure $ PickInstance {
         nets = M.fromList
           $ zip [1 ..] [(isJust m, (n, d)) | ((n, m), d) <- zip ns ds],
-        showSolution = withSol config
+        showSolution = withSol config,
+        addText = getExtraText config
         }
     getPickInstance petriNets =
       let predicates = map (\(x,_) -> lift . isNetDrawable x) petriNets

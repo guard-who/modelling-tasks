@@ -55,7 +55,8 @@ task2023_22 = PickConflictConfig {
   alloyConfig = AlloyConfig {
     maxInstances = Just 2000,
     timeout = Nothing
-    }
+    },
+  extraText = Nothing
   }
 
 {-|
@@ -101,7 +102,8 @@ task2023_16 = PickConflictConfig {
   alloyConfig = AlloyConfig {
     maxInstances = Just 1000,
     timeout = Nothing
-    }
+    },
+  extraText = Nothing
   }
 
 {-|

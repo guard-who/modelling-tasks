@@ -74,7 +74,8 @@ data FindInstance n a = FindInstance {
   net :: !n,
   numberOfPlaces :: !Int,
   numberOfTransitions :: !Int,
-  showSolution :: !Bool
+  showSolution :: !Bool,
+  addText :: !(Maybe (Map Language String))
   }
   deriving (Functor, Generic, Read, Show)
 

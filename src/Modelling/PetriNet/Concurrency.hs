@@ -27,6 +27,8 @@ module Modelling.PetriNet.Concurrency (
   ) where
 
 import qualified Modelling.PetriNet.Find          as F (showSolution)
+import qualified Modelling.PetriNet.Find          as Find (FindInstance (..))
+import qualified Modelling.PetriNet.Pick          as Pick (PickInstance (..))
 import qualified Modelling.PetriNet.Types         as Find (
   FindConcurrencyConfig (..),
   )
@@ -49,6 +51,7 @@ import Modelling.Auxiliary.Common (
   )
 import Modelling.Auxiliary.Output (
   hoveringInformation,
+  extra,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -223,6 +226,7 @@ findConcurrencyTask path task = do
         |]
     pure ()
   paragraph hoveringInformation
+  extra $ Find.addText task
   pure ()
 
 findConcurrencySyntax
@@ -327,6 +331,7 @@ pickConcurrencyTask path task = do
         ++ ")."
     pure ()
   paragraph hoveringInformation
+  extra $ Pick.addText task
   pure ()
 
 findConcurrencyGenerate
@@ -352,7 +357,8 @@ findConcurrencyGenerate config segment = evalRandT getInstance . mkStdGen
         net = petri,
         numberOfPlaces = places bc,
         numberOfTransitions = transitions bc,
-        showSolution = Find.printSolution config
+        showSolution = Find.printSolution config,
+        addText = Find.extraText config
         }
     bc = Find.basicConfig config
 
@@ -373,11 +379,12 @@ pickConcurrencyGenerate
   -> Int
   -> Int
   -> m (PickInstance (p n String))
-pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws
+pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws et
   where
     gc = Pick.graphConfig
     ud = Pick.useDifferentGraphLayouts
     ws = Pick.printSolution
+    et = Pick.extraText
 
 
 pickConcurrency
@@ -568,7 +575,8 @@ defaultPickConcurrencyInstance = PickInstance {
         }
       )))
     ],
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }
 
 defaultFindConcurrencyInstance :: FindInstance SimplePetriNet (Concurrent Transition)
@@ -594,5 +602,6 @@ defaultFindConcurrencyInstance = FindInstance {
     },
   numberOfPlaces = 4,
   numberOfTransitions = 3,
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }
