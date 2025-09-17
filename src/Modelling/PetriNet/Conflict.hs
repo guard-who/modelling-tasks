@@ -30,8 +30,7 @@ module Modelling.PetriNet.Conflict (
   simplePickConflictTask,
   ) where
 
-import qualified Modelling.PetriNet.Find          as F (showSolution)
-import qualified Modelling.PetriNet.Find          as Find (FindInstance (..))
+import qualified Modelling.PetriNet.Find          as Find (FindInstance (..), showSolution)
 import qualified Modelling.PetriNet.Pick          as Pick (PickInstance (..))
 import qualified Modelling.PetriNet.Types         as Find (
   FindConflictConfig (..),
@@ -297,7 +296,7 @@ findConflictPlacesEvaluation task (conflict, ps) =
     fixSolution
       | null inducing = id
       | otherwise    = const $ show $ conflictPlacesShow (conf, inducing)
-    withSol = F.showSolution task
+    withSol = Find.showSolution task
     ps' = nubSort ps
     (correct, wrong') = partition (`elem` inducing) ps
     base = fromIntegral $ 2 + numberOfPlaces task

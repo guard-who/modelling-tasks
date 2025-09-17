@@ -26,8 +26,7 @@ module Modelling.PetriNet.Concurrency (
   simplePickConcurrencyTask,
   ) where
 
-import qualified Modelling.PetriNet.Find          as F (showSolution)
-import qualified Modelling.PetriNet.Find          as Find (FindInstance (..))
+import qualified Modelling.PetriNet.Find          as Find (FindInstance (..), showSolution)
 import qualified Modelling.PetriNet.Pick          as Pick (PickInstance (..))
 import qualified Modelling.PetriNet.Types         as Find (
   FindConcurrencyConfig (..),
@@ -249,7 +248,7 @@ findConcurrencyEvaluation task x = do
     $=<< unLangM $ toFindEvaluation what withSol concur x
   where
     concur = findConcurrencySolution task
-    withSol = F.showSolution task
+    withSol = Find.showSolution task
 
 findConcurrencySolution :: FindInstance net (Concurrent a) -> (a, a)
 findConcurrencySolution task = concur
