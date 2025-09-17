@@ -79,7 +79,7 @@ task2024_60 = ReachConfig {
     },
   printSolution = True,
   rejectLongerThan = Just 8,
-  showLengthHint = True,
+  showLengthHint = False,
   showMinLengthHint = True,
   showTargetNet = True
   }
