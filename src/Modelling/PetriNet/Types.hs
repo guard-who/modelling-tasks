@@ -928,7 +928,9 @@ allDrawSettings config =
 transitionPairShow
   :: (Petri.Transition, Petri.Transition)
   -> (ShowTransition, ShowTransition)
-transitionPairShow = bimap ShowTransition ShowTransition
+transitionPairShow (t1, t2) =
+  let (first, second) = if t1 <= t2 then (t1, t2) else (t2, t1)
+  in bimap ShowTransition ShowTransition (first, second)
 
 checkBasicConfig :: BasicConfig -> Maybe String
 checkBasicConfig BasicConfig{
