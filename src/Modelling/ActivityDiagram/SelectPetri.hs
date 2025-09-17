@@ -272,24 +272,27 @@ selectPetriNet
   => Int
   -> Int
   -> Bool
+  -> (Int, Maybe Int)
   -> UMLActivityDiagram
   -> m SelectPetriSolution
-selectPetriNet numberOfWrongNets numberOfModifications modifyAtMid ad =
-  selectPetriNetWithMatchingNet numberOfWrongNets numberOfModifications modifyAtMid ad (convertToPetriNet ad)
+selectPetriNet numberOfWrongNets numberOfModifications modifyAtMid countOfPetriNodesBounds ad =
+  selectPetriNetWithMatchingNet numberOfWrongNets numberOfModifications modifyAtMid countOfPetriNodesBounds ad (convertToPetriNet ad)
 
 selectPetriNetWithMatchingNet
   :: (MonadRandom m)
   => Int
   -> Int
   -> Bool
+  -> (Int, Maybe Int)
   -> UMLActivityDiagram
   -> SimplePetriLike PetriKey
   -> m SelectPetriSolution
-selectPetriNetWithMatchingNet numberOfWrongNets numberOfModifications modifyAtMid ad matchingNet = do
+selectPetriNetWithMatchingNet numberOfWrongNets numberOfModifications modifyAtMid countOfPetriNodesBounds ad matchingNet = do
   wrongNets <- loopM (\xs -> do
       modAd <- modifyAd ad numberOfModifications modifyAtMid
       let petri = convertToPetriNet modAd
-      if any (isPetriIsomorphic petri) (matchingNet:xs)
+      if not (checkPetriNodeCount countOfPetriNodesBounds petri)
+         || any (isPetriIsomorphic petri) (matchingNet:xs)
         then return $ Left xs
       else
         if length (petri:xs) < numberOfWrongNets
@@ -593,6 +596,7 @@ getSelectPetriTask config = do
             (numberOfWrongAnswers config)
             (numberOfModifications config)
             (modifyAtMid config)
+            (countOfPetriNodesBounds config)
             ad
             petriNet
           p <- fmap snd $ shufflePetri $ matchingNet sol
