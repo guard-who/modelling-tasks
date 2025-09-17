@@ -30,6 +30,7 @@ import qualified Data.Map as M (empty, fromList, keys)
 import qualified Modelling.ActivityDiagram.Config as Config (
   AdConfig (activityFinalNodes, flowFinalNodes),
   )
+import Modelling.ActivityDiagram.Auxiliary.PetriValidation (validatePetriConfig)
 import qualified Modelling.ActivityDiagram.PetriNet as PK (label)
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
@@ -63,7 +64,7 @@ import Modelling.ActivityDiagram.PetriNet (
   )
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
-  AdConfig (actionLimits, cycles, forkJoinPairs),
+  AdConfig,
   checkAdConfig,
   defaultAdConfig,
   )
@@ -114,7 +115,6 @@ import Data.Bifunctor                   (second)
 import Data.GraphViz.Commands (GraphvizCommand(..))
 import Data.List (sort)
 import Data.Map (Map)
-import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate (i, iii)
 import Data.Tuple.Extra                 (dupe)
 import GHC.Generics (Generic)
@@ -187,36 +187,14 @@ checkMatchPetriConfig' MatchPetriConfig {
     auxiliaryPetriNodeAbsent,
     presenceOfSinkTransitionsForFinals,
     withActivityFinalInForkBlocks
-  }
-  | Config.activityFinalNodes adConfig > 1
-  = Just "There is at most one 'activityFinalNode' allowed."
-  | Config.activityFinalNodes adConfig >= 1 && Config.flowFinalNodes adConfig >= 1
-  = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
-  | fst countOfPetriNodesBounds < 0
-  = Just "'countOfPetriNodesBounds' must not contain negative values"
-  | Just high <- snd countOfPetriNodesBounds, fst countOfPetriNodesBounds > high
-  = Just "the second value of 'countOfPetriNodesBounds' must not be smaller than its first value"
-  | isJust maxInstances && fromJust maxInstances < 1
-    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
-  | auxiliaryPetriNodeAbsent == Just True && cycles adConfig > 0
-  = Just [iii|
-    Setting the parameter 'auxiliaryPetriNodeAbsent' to True
-    prohibits having more than 0 cycles
-    |]
-  | Just False <- presenceOfSinkTransitionsForFinals,
-    fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
-    = Just "The option 'presenceOfSinkTransitionsForFinals = Just False' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
-  | withActivityFinalInForkBlocks == Just False && Config.activityFinalNodes adConfig > 1
-    = Just "Setting the parameter 'withActivityFinalInForkBlocks' to False prohibits having more than 1 'activityFinalNodes'"
-  | withActivityFinalInForkBlocks == Just True && Config.activityFinalNodes adConfig == 0
-    = Just "Setting the parameter 'withActivityFinalInForkBlocks' to True implies that there are 'activityFinalNodes'"
-  | null petriLayout
-    = Just "The parameter 'petriLayout' can not be the empty list"
-  | any (`notElem` [Dot, Neato, TwoPi, Circo, Fdp]) petriLayout
-    = Just "The parameter 'petriLayout' can only contain the options Dot, Neato, TwoPi, Circo and Fdp"
-  | otherwise
-    = Nothing
-
+  } = validatePetriConfig
+        adConfig
+        countOfPetriNodesBounds
+        maxInstances
+        petriLayout
+        auxiliaryPetriNodeAbsent
+        presenceOfSinkTransitionsForFinals
+        withActivityFinalInForkBlocks
 
 matchPetriAlloy :: MatchPetriConfig -> String
 matchPetriAlloy MatchPetriConfig {

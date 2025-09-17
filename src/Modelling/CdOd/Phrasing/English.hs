@@ -11,6 +11,7 @@ import Modelling.Types (
   Change (..),
   )
 import Modelling.CdOd.Auxiliary.Util    (oneAndOther)
+import Modelling.CdOd.Phrasing.Common   (phraseChangeWith, PhrasingStrings (..))
 import Modelling.CdOd.Types (
   AnyRelationship,
   DefaultedLimitedLinking (..),
@@ -36,25 +37,19 @@ phraseChange
   -> Bool
   -> Change (AnyRelationship String String)
   -> String
-phraseChange defaultMultiplicities article byName withDir c =
-  case (add c, remove c) of
-  (Nothing, Nothing) -> "change nothing"
-  (Just e,  Nothing) -> "add " ++ phrasingNew e
-  (Nothing, Just e ) -> "remove " ++ phrasingOld e
-  (Just e1, Just e2) ->
-    "replace " ++ phrasingOld e2
-    ++ " by " ++ phrasingNew e1
-  where
-    phrasingOld = phraseRelation
-      defaultMultiplicities
-      article
-      Denoted
-      $ toPhrasing byName withDir
-    phrasingNew = phraseRelation
-      defaultMultiplicities
-      IndefiniteArticle
-      Participations
-      $ toPhrasing False withDir
+phraseChange = phraseChangeWith englishStrings
+
+-- | English phrasing strings
+englishStrings :: PhrasingStrings
+englishStrings = PhrasingStrings
+  { changeNothing = "change nothing"
+  , addPrefix = "add "
+  , removePrefix = "remove "
+  , replacePrefix = "replace "
+  , byInfix = " by "
+  , postProcess = id
+  , phraseRelationWith = phraseRelation
+  }
 
 consonantArticle :: ArticleToUse -> String
 consonantArticle = \case

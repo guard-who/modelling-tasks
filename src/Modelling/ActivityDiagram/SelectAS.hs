@@ -29,10 +29,7 @@ import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.PlantUml            (MonadPlantUml)
 import Capabilities.WriteFile           (MonadWriteFile)
 import Modelling.ActivityDiagram.ActionSequences (generateActionSequence, validActionSequence)
-import Modelling.ActivityDiagram.Alloy (
-  adConfigToAlloy,
-  moduleActionSequencesRules,
-  )
+import Modelling.ActivityDiagram.Auxiliary.ActionSequences (actionSequencesAlloy)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
   checkAdConfig,
@@ -160,20 +157,7 @@ selectASAlloy :: SelectASConfig -> String
 selectASAlloy SelectASConfig {
     adConfig,
     objectNodeOnEveryPath
-  }
-  = adConfigToAlloy modules predicates adConfig
-  where modules = moduleActionSequencesRules
-        predicates =
-          [i|
-            noActivityFinalNodes
-            someActionNodesExistInEachBlock
-            #{f objectNodeOnEveryPath "checkIfStudentKnowsDifferenceBetweenObjectAndActionNodes"}
-          |]
-        f opt s =
-          case opt of
-            Just True -> s
-            Just False -> [i| not #{s}|]
-            Nothing -> ""
+  } = actionSequencesAlloy adConfig objectNodeOnEveryPath
 
 checkSelectASInstance :: SelectASInstance -> Maybe String
 checkSelectASInstance inst

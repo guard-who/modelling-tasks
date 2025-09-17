@@ -84,8 +84,11 @@ library
       Modelling.PetriNet.Reach.Type
       Modelling.Types
   other-modules:
+      Modelling.ActivityDiagram.Auxiliary.ActionSequences
+      Modelling.ActivityDiagram.Auxiliary.PetriValidation
       Modelling.Auxiliary.Diagrams
       Modelling.CdOd.Phrasing
+      Modelling.CdOd.Phrasing.Common
       Modelling.CdOd.Phrasing.English
       Modelling.CdOd.Phrasing.German
       Modelling.PetriNet.Reach.Roll
