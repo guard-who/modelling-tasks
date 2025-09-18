@@ -20,6 +20,8 @@ This repository includes an automated setup workflow (`.github/workflows/copilot
 
 ## 🚨 CRITICAL WARNINGS
 
+### NEVER COMMIT FILES THAT CONTAIN TRAILING WHITESPACE
+
 ### ⏰ NEVER CANCEL BUILDS OR TESTS
 
 - **Dependency builds**: 45-75 minutes (set timeout to 90+ minutes)
