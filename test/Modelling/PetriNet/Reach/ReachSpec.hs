@@ -20,9 +20,12 @@ import Modelling.PetriNet.Reach.Type (
   Net (transitions),
   State,
   Transition (..),
+  Capacity(..),
+  Place(..),
   )
 
 import Data.Maybe                        (isJust)
+import qualified Data.Map                 as M
 import Data.Set                         (Set)
 import Test.Hspec
 import Test.QuickCheck                  (Testable (property))
@@ -60,12 +63,13 @@ spec = do
             }
       checkReachConfig config `shouldSatisfy` isJust
 
-    it "accepts non-conflicting length hint configuration" $ do
+    it "accepts non-conflicting length hint configuration with rejectLongerThan > maxTransitionLength" $ do
       let config = defaultReachConfig {
             netGoalConfig = (netGoalConfig defaultReachConfig) {
-              maxTransitionLength = 8
+              maxTransitionLength = 8,
+              minTransitionLength = 6
               },
-            rejectLongerThan = Just 7,
+            rejectLongerThan = Just 10,
             showLengthHint = True
             }
       checkReachConfig config `shouldBe` Nothing
@@ -79,6 +83,95 @@ spec = do
             showLengthHint = True
             }
       checkReachConfig problematicConfig `shouldSatisfy` isJust
+
+    it "rejects minTransitionLength > maxTransitionLength" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              minTransitionLength = 10,
+              maxTransitionLength = 5
+              }
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
+    it "rejects preconditionsRange where upper < lower" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              preconditionsRange = (5, Just 2)
+              }
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
+    it "rejects postconditionsRange where upper < lower" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              postconditionsRange = (5, Just 2)
+              }
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
+    it "rejects empty drawCommands" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              drawCommands = []
+              }
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
+    it "rejects rejectLongerThan < minTransitionLength" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              minTransitionLength = 10
+              },
+            rejectLongerThan = Just 5,
+            showLengthHint = False
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
+    it "accepts rejectLongerThan = minTransitionLength" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              minTransitionLength = 10,
+              maxTransitionLength = 10
+              },
+            rejectLongerThan = Just 10,
+            showLengthHint = False
+            }
+      checkReachConfig config `shouldBe` Nothing
+
+    it "rejects rejectLongerThan < maxTransitionLength" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              maxTransitionLength = 10,
+              minTransitionLength = 5
+              },
+            rejectLongerThan = Just 8,
+            showLengthHint = False
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
+    it "accepts Unbounded capacity" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              capacity = Unbounded
+              }
+            }
+      checkReachConfig config `shouldBe` Nothing
+
+    it "rejects AllBounded capacity" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              capacity = AllBounded 5
+              }
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
+    it "rejects Bounded capacity" $ do
+      let config = defaultReachConfig {
+            netGoalConfig = (netGoalConfig defaultReachConfig) {
+              capacity = Bounded (M.fromList [(Place 1, 3), (Place 2, 5)])
+              }
+            }
+      checkReachConfig config `shouldSatisfy` isJust
 
 hasMinTransitionLength
   :: (Ord s, Show s)

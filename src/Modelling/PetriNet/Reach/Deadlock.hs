@@ -26,6 +26,9 @@ import Modelling.PetriNet.Reach.Property (
   Property (Default),
   validate,
   )
+import Modelling.PetriNet.Reach.ConfigValidation (
+  checkBasicPetriConfig,
+  )
 import Modelling.PetriNet.Reach.Reach   (
   assertReachPoints,
   isNoLonger,
@@ -236,10 +239,18 @@ defaultDeadlockInstance = DeadlockInstance {
   }
 
 checkDeadlockConfig :: DeadlockConfig -> Maybe String
-checkDeadlockConfig DeadlockConfig {..}
-  | rejectLongerThan == Just maxTransitionLength && showLengthHint
-  = Just "showLengthHint cannot be True when rejectLongerThan equals maxTransitionLength"
-  | otherwise = Nothing
+checkDeadlockConfig DeadlockConfig {..} =
+  checkBasicPetriConfig
+    numPlaces
+    numTransitions
+    capacity
+    minTransitionLength
+    maxTransitionLength
+    preconditionsRange
+    postconditionsRange
+    drawCommands
+    rejectLongerThan
+    showLengthHint
 
 generateDeadlock
   :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)

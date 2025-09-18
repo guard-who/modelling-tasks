@@ -188,6 +188,26 @@ import Modelling.PetriNet.PetriPickConflict.Config (
   task2024_30,
   task2024_31,
   )
+import Modelling.PetriNet.Reach.Deadlock (
+  checkDeadlockConfig,
+  )
+import Modelling.PetriNet.PetriDeadlock.Config (
+  task2023_29,
+  task2023_30,
+  task2024_27,
+  task2024_28,
+  task2024_61,
+  )
+import Modelling.PetriNet.Reach.Reach (
+  checkReachConfig,
+  )
+import Modelling.PetriNet.PetriReach.Config (
+  task2023_27,
+  task2023_28,
+  task2024_25,
+  task2024_26,
+  task2024_60,
+  )
 
 import Test.Hspec
 
@@ -237,6 +257,14 @@ spec =
         checkDifferentNamesConfig task2023_25 `shouldBe` Nothing
       it "task26" $
         checkFindConflictPlacesConfig task2023_26 `shouldBe` Nothing
+      it "task27" $
+        checkReachConfig task2023_27 `shouldBe` Nothing
+      it "task28" $
+        checkReachConfig task2023_28 `shouldBe` Nothing
+      it "task29" $
+        checkDeadlockConfig task2023_29 `shouldBe` Nothing
+      it "task30" $
+        checkDeadlockConfig task2023_30 `shouldBe` Nothing
       it "task31" $
         checkMatchAdConfig task2023_31 `shouldBe` Nothing
       it "task32" $
@@ -307,6 +335,14 @@ spec =
         checkMathConfig task2024_23 `shouldBe` Nothing
       it "task24" $
         checkMathConfig task2024_24 `shouldBe` Nothing
+      it "task25" $
+        checkReachConfig task2024_25 `shouldBe` Nothing
+      it "task26" $
+        checkReachConfig task2024_26 `shouldBe` Nothing
+      it "task27" $
+        checkDeadlockConfig task2024_27 `shouldBe` Nothing
+      it "task28" $
+        checkDeadlockConfig task2024_28 `shouldBe` Nothing
       it "task29" $
         checkPickConcurrencyConfig task2024_29 `shouldBe` Nothing
       it "task30" $
@@ -366,6 +402,10 @@ spec =
         checkMatchCdOdConfig task2024_58 `shouldBe` Nothing
       it "task59" $
         checkMatchCdOdConfig task2024_59 `shouldBe` Nothing
+      it "task60" $
+        checkReachConfig task2024_60 `shouldBe` Nothing
+      it "task61" $
+        checkDeadlockConfig task2024_61 `shouldBe` Nothing
       it "task62" $
         checkFindConcurrencyConfig task2024_62 `shouldBe` Nothing
       it "task63" $
