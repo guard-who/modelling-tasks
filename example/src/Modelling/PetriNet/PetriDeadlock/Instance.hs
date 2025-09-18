@@ -37,6 +37,7 @@ examWs2024 = DeadlockInstance {
         ]
       }
     },
+  showPlaceNames = False,
   showSolution = True,
   withLengthHint = Just 14,
   withMinLengthHint = True

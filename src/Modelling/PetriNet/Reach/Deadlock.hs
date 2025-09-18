@@ -101,7 +101,7 @@ deadlockTask
   -> DeadlockInstance s t
   -> LangM m
 deadlockTask path inst = do
-  lift (drawToFile True path (drawUsing inst) (petriNet inst))
+  lift (drawToFile (not $ showPlaceNames inst) path (drawUsing inst) (petriNet inst))
   $>>= \img -> reportReachFor
     img
     (noLongerThan inst)
@@ -169,6 +169,7 @@ data DeadlockInstance s t = DeadlockInstance {
   minLength         :: Int,
   noLongerThan      :: Maybe Int,
   petriNet          :: Net s t,
+  showPlaceNames    :: Bool,
   showSolution      :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Bool
@@ -185,6 +186,7 @@ bimapDeadlockInstance f g DeadlockInstance {..} = DeadlockInstance {
     minLength         = minLength,
     noLongerThan      = noLongerThan,
     petriNet          = bimapNet f g petriNet,
+    showPlaceNames    = showPlaceNames,
     showSolution      = showSolution,
     withLengthHint    = withLengthHint,
     withMinLengthHint = withMinLengthHint
@@ -207,7 +209,8 @@ data DeadlockConfig = DeadlockConfig {
   printSolution       :: Bool,
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
-  showMinLengthHint   :: Bool
+  showMinLengthHint   :: Bool,
+  showPlaceNamesInNet :: Bool
   }
   deriving (Generic, Read, Show, Typeable)
 
@@ -225,7 +228,8 @@ defaultDeadlockConfig =
   printSolution       = False,
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
-  showMinLengthHint   = True
+  showMinLengthHint   = True,
+  showPlaceNamesInNet = False
   }
 
 defaultDeadlockInstance :: DeadlockInstance Place Transition
@@ -234,6 +238,7 @@ defaultDeadlockInstance = DeadlockInstance {
   minLength         = 6,
   noLongerThan      = Nothing,
   petriNet          = fst example,
+  showPlaceNames    = False,
   showSolution      = False,
   withLengthHint    = Just 9,
   withMinLengthHint = True
@@ -265,6 +270,7 @@ generateDeadlock conf@DeadlockConfig {..} seed = do
     minLength         = minTransitionLength,
     noLongerThan      = rejectLongerThan,
     petriNet          = petri,
+    showPlaceNames    = showPlaceNamesInNet,
     showSolution      = printSolution,
     withLengthHint    =
       if showLengthHint then Just maxTransitionLength else Nothing,

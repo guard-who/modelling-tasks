@@ -173,6 +173,13 @@ spec = do
             }
       checkReachConfig config `shouldSatisfy` isJust
 
+    it "rejects configuration with both showTargetNet = False and showPlaceNamesInNet = False" $ do
+      let config = defaultReachConfig {
+            showTargetNet = False,
+            showPlaceNamesInNet = False
+            }
+      checkReachConfig config `shouldSatisfy` isJust
+
 hasMinTransitionLength
   :: (Ord s, Show s)
   => (State s -> Bool)

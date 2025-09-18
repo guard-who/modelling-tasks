@@ -48,7 +48,7 @@ import Modelling.PetriNet.Reach.Type (
   mark,
   )
 
-import Control.Applicative              (Alternative)
+import Control.Applicative              (Alternative, (<|>))
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (forM, guard, when)
 import Control.Monad.Catch              (MonadCatch, MonadThrow)
@@ -95,6 +95,9 @@ verifyReach inst = do
   let n = petriNet (netGoal inst)
   validate Default n
   validate Default $ n { start = goal (netGoal inst) }
+  assertion (showGoalNet inst || showPlaceNames inst) $ translate $ do
+    english "At least one of goal net or place names must be shown."
+    german "Mindestens eines von Zielnetz oder Plätze-Namen muss angezeigt werden."
   pure ()
 
 reachTask
@@ -114,11 +117,11 @@ reachTask
   -> LangM m
 reachTask path inst = do
   if showGoalNet inst
-    then (,True) . Left
-    <$> lift (drawToFile True path (drawUsing (netGoal inst)) (n { start = goal (netGoal inst) }))
-    else pure (Right $ show $ goal (netGoal inst), False)
-  $>>= \(g, withoutPlaceNames) ->
-    lift (drawToFile withoutPlaceNames path (drawUsing (netGoal inst)) n)
+    then Left
+    <$> lift (drawFileWithSettings (n { start = goal (netGoal inst) }))
+    else pure (Right $ show $ goal (netGoal inst))
+  $>>= \g ->
+    lift (drawFileWithSettings n)
   $>>= \img -> reportReachFor
     img
     (noLongerThan inst)
@@ -128,6 +131,7 @@ reachTask path inst = do
     (Just g)
   where
     n = petriNet (netGoal inst)
+    drawFileWithSettings = drawToFile (not $ showPlaceNames inst) path (drawUsing (netGoal inst))
 
 reportReachFor
   :: OutputCapable m
@@ -316,6 +320,7 @@ data ReachInstance s t = ReachInstance {
   minLength         :: Int,
   noLongerThan      :: Maybe Int,
   showGoalNet       :: Bool,
+  showPlaceNames    :: Bool,
   showSolution      :: Bool,
   withLengthHint    :: Maybe Int,
   withMinLengthHint :: Bool
@@ -338,6 +343,7 @@ bimapReachInstance f g ReachInstance {..} = ReachInstance {
     minLength         = minLength,
     noLongerThan      = noLongerThan,
     showGoalNet       = showGoalNet,
+    showPlaceNames    = showPlaceNames,
     showSolution      = showSolution,
     withLengthHint    = withLengthHint,
     withMinLengthHint = withMinLengthHint
@@ -371,7 +377,8 @@ data ReachConfig = ReachConfig {
   rejectLongerThan    :: Maybe Int,
   showLengthHint      :: Bool,
   showMinLengthHint   :: Bool,
-  showTargetNet       :: Bool
+  showTargetNet       :: Bool,
+  showPlaceNamesInNet :: Bool
   }
   deriving (Generic, Read, Show, Typeable)
 
@@ -403,7 +410,8 @@ defaultReachConfig = ReachConfig {
   rejectLongerThan    = Nothing,
   showLengthHint      = True,
   showMinLengthHint   = True,
-  showTargetNet       = True
+  showTargetNet       = True,
+  showPlaceNamesInNet = False
   }
 
 defaultReachInstance :: ReachInstance Place Transition
@@ -416,6 +424,7 @@ defaultReachInstance = ReachInstance {
   minLength         = 12,
   noLongerThan      = Nothing,
   showGoalNet       = True,
+  showPlaceNames    = False,
   showSolution      = False,
   withLengthHint    = Just 12,
   withMinLengthHint = False
@@ -480,6 +489,9 @@ checkReachConfig ReachConfig {..} =
     (drawCommands netGoalConfig)
     rejectLongerThan
     showLengthHint
+  <|> if showTargetNet || showPlaceNamesInNet
+      then Nothing
+      else Just "At least one of showTargetNet or showPlaceNamesInNet must be True"
 
 generateReach
   :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m)
@@ -493,6 +505,7 @@ generateReach ReachConfig {..} seed = do
     minLength         = minTransitionLength netGoalConfig,
     noLongerThan      = rejectLongerThan,
     showGoalNet       = showTargetNet,
+    showPlaceNames    = showPlaceNamesInNet,
     showSolution      = printSolution,
     withLengthHint    =
       if showLengthHint then Just $ maxTransitionLength netGoalConfig else Nothing,
