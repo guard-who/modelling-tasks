@@ -39,5 +39,5 @@ examWs2024 = DeadlockInstance {
     },
   showSolution = True,
   withLengthHint = Just 14,
-  withMinLengthHint = Just 14
+  withMinLengthHint = True
   }

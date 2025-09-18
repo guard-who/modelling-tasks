@@ -123,6 +123,7 @@ reachTask path inst = do
     img
     (noLongerThan inst)
     (withLengthHint inst)
+    (minLength inst)
     (withMinLengthHint inst)
     (Just g)
   where
@@ -133,10 +134,11 @@ reportReachFor
   => FilePath
   -> Maybe Int
   -> Maybe Int
-  -> Maybe Int
+  -> Int
+  -> Bool
   -> Maybe (Either FilePath String)
   -> LangM m
-reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
+reportReachFor img noLonger lengthHint minLength showMinLengthHint maybeGoal = do
   paragraph $ translate $ do
     english "For the Petri net"
     german "Gesucht ist für das Petrinetz"
@@ -157,9 +159,7 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
       german "Geben Sie Ihre Lösung als (beliebig kurze oder lange) Auflistung der folgenden Art an:"
     Just maxL ->
       let
-        isExactMatch = case minLengthHint of
-          Just minSteps -> maxL == minSteps
-          _ -> False
+        isExactMatch = showMinLengthHint && maxL == minLength
         (englishConstraint, germanConstraint) =
           if isExactMatch
           then ("has exactly", "genau")
@@ -186,17 +186,17 @@ reportReachFor img noLonger lengthHint minLengthHint maybeGoal = do
       st1, ", danach ", st2, ", und schließlich ", st3,
       " (in genau dieser Reihenfolge), die gesuchte Markierung erreicht wird."
       ]
-  case (lengthHint, minLengthHint) of
-    (Just maxSteps, Just minSteps) | maxSteps == minSteps -> paragraph $ translate $ do
+  case lengthHint of
+    Just maxSteps | showMinLengthHint && maxSteps == minLength -> paragraph $ translate $ do
       english [i|Hint: The shortest solutions have exactly #{maxSteps} steps.|]
       german [i|Hinweis: Die kürzesten Lösungen haben genau #{maxSteps} Schritte.|]
-    (Just maxSteps, _) -> paragraph $ translate $ do
+    Just maxSteps -> paragraph $ translate $ do
       english [i|Hint: There is a solution with not more than #{maxSteps} steps.|]
       german [i|Hinweis: Es gibt eine Lösung mit nicht mehr als #{maxSteps} Schritten.|]
-    _ -> pure ()
-  whenJust minLengthHint $ \count -> when (lengthHint /= Just count) $ paragraph $ translate $ do
-    english [i|Hint: There is no solution with less than #{count} steps.|]
-    german [i|Hinweis: Es gibt keine Lösung mit weniger als #{count} Schritten.|]
+    Nothing -> pure ()
+  when (showMinLengthHint && lengthHint /= Just minLength) $ paragraph $ translate $ do
+    english [i|Hint: There is no solution with less than #{minLength} steps.|]
+    german [i|Hinweis: Es gibt keine Lösung mit weniger als #{minLength} Schritten.|]
   hoveringInformation
   pure ()
 
@@ -318,7 +318,7 @@ data ReachInstance s t = ReachInstance {
   showGoalNet       :: Bool,
   showSolution      :: Bool,
   withLengthHint    :: Maybe Int,
-  withMinLengthHint :: Maybe Int
+  withMinLengthHint :: Bool
   } deriving (Generic, Read, Show, Typeable, Data)
 
 data NetGoal s t = NetGoal {
@@ -418,7 +418,7 @@ defaultReachInstance = ReachInstance {
   showGoalNet       = True,
   showSolution      = False,
   withLengthHint    = Just 12,
-  withMinLengthHint = Nothing
+  withMinLengthHint = False
 }
 
 generateNetGoal
@@ -496,6 +496,5 @@ generateReach ReachConfig {..} seed = do
     showSolution      = printSolution,
     withLengthHint    =
       if showLengthHint then Just $ maxTransitionLength netGoalConfig else Nothing,
-    withMinLengthHint =
-      if showMinLengthHint then Just $ minTransitionLength netGoalConfig else Nothing
+    withMinLengthHint = showMinLengthHint
     }
