@@ -113,8 +113,9 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Data.Bifunctor                   (second)
+import Data.Containers.ListUtils (nubOrd)
 import Data.GraphViz.Commands (GraphvizCommand(..))
-import Data.List (sort)
+import Data.List (intersect, sort)
 import Data.Map (Map)
 import Data.String.Interpolate (i, iii)
 import Data.Tuple.Extra                 (dupe)
@@ -268,6 +269,39 @@ data MatchPetriSolution = MatchPetriSolution {
 matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
 matchPetriSolution task = mapTypesToLabels $ petriNet task
 
+petriSolutionPairwiseDisjunct :: MatchPetriSolution -> Bool
+petriSolutionPairwiseDisjunct MatchPetriSolution{..} =
+  and [ null (xs `intersect` ys) | xs <- allLists, ys <- allLists, xs /= ys ] && length allLists == length (nubOrd allLists)
+    where allLists =
+            [ map snd actionNodes
+            , map snd objectNodes
+            , decisionNodes
+            , mergeNodes
+            , forks
+            , joins
+            , initialNodes
+            , activityFinalNodes
+            , flowFinalNodes
+            , auxiliaryPetriNodes]
+
+petriSolutionContainsPetriNodes :: MatchPetriSolution -> [PetriKey] -> Bool
+petriSolutionContainsPetriNodes MatchPetriSolution{..} = all ((`elem` solutionKeys) . petriKeyToIndex)
+  where
+    solutionKeys = concat
+      [ map snd actionNodes
+      , map snd objectNodes
+      , decisionNodes
+      , mergeNodes
+      , forks
+      , joins
+      , initialNodes
+      , activityFinalNodes
+      , flowFinalNodes
+      , auxiliaryPetriNodes]
+    petriKeyToIndex (AuxiliaryPetriNode index) = index
+    petriKeyToIndex (FinalPetriNode index _) = index
+    petriKeyToIndex (NormalPetriNode index _) = index
+
 extractAuxiliaryPetriNodes :: Net p n => p n PetriKey -> [PetriKey]
 extractAuxiliaryPetriNodes petri = filter
   isAuxiliaryPetriNode
@@ -332,7 +366,7 @@ matchPetriTask path task = do
         und kein Petrinetzknoten entspricht einem Flussende.
         |]
     pure ()
-  finalNodesAdvice True
+  finalNodesAdvice False
 
   extra $ addText task
 
@@ -360,7 +394,8 @@ matchPetriSyntax
 matchPetriSyntax task sub = addPretext $ do
   let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
       subNames = map fst (actionNodes sub) ++ map fst (objectNodes sub)
-      petriLabels = map PK.label $ M.keys $ allNodes $ petriNet task
+      petriNodeKeys = M.keys $ allNodes $ petriNet task
+      petriLabels = map PK.label petriNodeKeys
       subLabels =
         map snd (actionNodes sub)
         ++ map snd (objectNodes sub)
@@ -376,6 +411,18 @@ matchPetriSyntax task sub = addPretext $ do
   assertion (all (`elem` petriLabels) subLabels) $ translate $ do
     english "Referenced Petri net nodes were provided within task?"
     german "Referenzierte Petrinetzknoten sind Bestandteil der Aufgabenstellung?"
+  assertion (petriSolutionContainsPetriNodes sub petriNodeKeys) $ translate $ do
+    english "All petri net nodes are assigned to an element in the activity diagram?"
+    german "Alle Petrinetzknoten sind einem Element in dem Aktivitätsdiagramm zugewiesen?"
+  assertion (petriSolutionPairwiseDisjunct sub) $ translate $ do
+    english "All petri net nodes are assigned uniquely?"
+    german "Alle Petrinetzknoten sind eindeutig zugeordnet?"
+  assertion (all (`elem` subNames) adNames) $ translate $ do
+    english "All action and object nodes are referenced?"
+    german "Alle Aktions- und Objektknoten wurden referenziert?"
+  assertion (length subNames == length (nubOrd subNames)) $ translate $ do
+    english "All action and object nodes were referenced exactly once?"
+    german "Alle Aktions- und Objektknoten wurden genau einmal referenziert?"
   pure ()
 
 matchPetriEvaluation
