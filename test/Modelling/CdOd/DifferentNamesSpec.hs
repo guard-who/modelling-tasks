@@ -40,6 +40,7 @@ import Modelling.CdOd.Types (
   defaultCdDrawSettings,
   linkLabels,
   normaliseObjectDiagram,
+  renameObjectsWithClassesAndLinksInOd,
   )
 import Modelling.Common                 (withLang)
 import Modelling.Types (
@@ -187,10 +188,18 @@ spec = do
         }
 
 odFor :: Cd -> IO Od
-odFor cd = normaliseObjectDiagram . oDiagram <$> do
+odFor cd = normaliseObjectDiagram <$> do
   g <- getStdGen
   evalRandT (getDifferentNamesTask failed fewObjects cd) g
+    >>= getOriginalOd
   where
+    names = classNames cd
+    keepClassNames = BM.fromList $ zip names names
+    getOriginalOd x =
+      renameObjectsWithClassesAndLinksInOd
+      keepClassNames
+      (BM.twist $ fromNameMapping $ mapping x)
+      $ oDiagram x
     failed = error "failed generating instance"
     fewObjects = defaultDifferentNamesConfig { objectConfig = oc }
     oc = ObjectConfig {
@@ -337,7 +346,7 @@ evaluateDifferentNames coins cs cs' = flip withLang English $ do
           },
         showSolution = True,
         mapping = toNameMapping $ BM.fromList cs,
-        linkShuffling = ConsecutiveLetters,
+        linkShuffling = ConsecutiveNumbers,
         taskText = defaultDifferentNamesTaskText,
         addText = Nothing
         }
