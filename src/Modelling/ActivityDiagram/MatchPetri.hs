@@ -413,7 +413,7 @@ matchPetriSyntax task sub = addPretext $ do
     german "Referenzierte Petrinetzknoten sind Bestandteil der Aufgabenstellung?"
   assertion (petriSolutionContainsPetriNodes sub petriNodeKeys) $ translate $ do
     english "All petri net nodes are associated to an element in the activity diagram?"
-    german "Alle Petrinetzknoten sind einem Element in dem Aktivitätsdiagramm zugeordned?"
+    german "Alle Petrinetzknoten sind einem Element in dem Aktivitätsdiagramm zugeordnet?"
   assertion (petriSolutionPairwiseDisjunct sub) $ translate $ do
     english "All petri net nodes are associated uniquely?"
     german "Alle Petrinetzknoten sind eindeutig zugeordnet?"
