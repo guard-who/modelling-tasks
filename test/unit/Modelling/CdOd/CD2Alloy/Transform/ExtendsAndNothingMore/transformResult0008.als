@@ -59,14 +59,10 @@ pred cd1 {
   // Contents
 
   // Associations
-
   x in B -> C
   all o : B | #o.x =< 1
-
-
   y in B -> D
   all o : B | #o.y =< 1
-
 
   // Compositions
   all o : Object | plus[#o.x, #o.y] =< 1

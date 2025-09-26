@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE LambdaCase #-}
@@ -47,9 +48,11 @@ module Modelling.CdOd.Types (
   associationNames,
   calculateThickAnyRelationships,
   checkCdConstraints,
+  checkCdDrawProperties,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
+  checkClassConfigAndObjectProperties,
   checkClassConfigWithProperties,
   checkObjectDiagram,
   checkObjectProperties,
@@ -63,7 +66,7 @@ module Modelling.CdOd.Types (
   fromClassDiagram,
   isIllegal,
   isObjectDiagramRandomisable,
-  linkNames,
+  linkLabels,
   maxFiveObjects,
   maxObjects,
   maxRelationships,
@@ -113,6 +116,7 @@ import Data.Bifunctor.TH (
 import Data.Bifoldable                  (Bifoldable (bifoldMap))
 import Data.Bimap                       (Bimap)
 import Data.Bitraversable               (Bitraversable (bitraverse))
+import Data.Data                        (Data)
 import Data.List                        ((\\), isPrefixOf, sort, stripPrefix)
 import Data.List.Extra                  (nubOrd)
 import Data.Maybe (
@@ -159,12 +163,12 @@ instance Bitraversable Object where
     <*> g objectClass
 
 {-|
-A link connects two objects and has a name.
+A link connects two objects and has a label.
 -}
-data Link objectName linkName
+data Link objectName linkLabel
   = Link {
-    -- | how the link is called, indicating which relationship it belongs to
-    linkName                  :: linkName,
+    -- | how the link is labeled, indicating which relationship it belongs to
+    linkLabel                 :: linkLabel,
     -- | the starting point of the link
     linkFrom                  :: objectName,
     -- | the end point of the link
@@ -174,19 +178,19 @@ data Link objectName linkName
 
 instance Bifunctor Link where
   bimap f g Link {..} = Link {
-    linkName      = g linkName,
+    linkLabel     = g linkLabel,
     linkFrom      = f linkFrom,
     linkTo        = f linkTo
     }
 
 instance Bifoldable Link where
-  bifoldMap f g Link {..} = g linkName
+  bifoldMap f g Link {..} = g linkLabel
     <> f linkFrom
     <> f linkTo
 
 instance Bitraversable Link where
   bitraverse f g Link {..} = Link
-    <$> g linkName
+    <$> g linkLabel
     <*> f linkFrom
     <*> f linkTo
 
@@ -196,12 +200,12 @@ The object diagram consists of objects and links between them.
 Note, the order of both, links and objects,
 might influence its visual appearance when drawn.
 -}
-data ObjectDiagram objectName className linkName
+data ObjectDiagram objectName className linkLabel
   = ObjectDiagram {
     -- | all objects belonging to the object diagram
     objects                   :: [Object objectName className],
     -- | all links belonging to the object diagram
-    links                     :: [Link objectName linkName]
+    links                     :: [Link objectName linkLabel]
     }
   deriving (Eq, Functor, Generic, Ord, Read, Show)
 
@@ -225,9 +229,9 @@ Sort objects, and links of the 'ObjectDiagram'.
 This enables better comparison (especially for test cases).
 -}
 normaliseObjectDiagram
-  :: (Ord className, Ord linkName, Ord objectName)
-  => ObjectDiagram objectName className linkName
-  -> ObjectDiagram objectName className linkName
+  :: (Ord className, Ord linkLabel, Ord objectName)
+  => ObjectDiagram objectName className linkLabel
+  -> ObjectDiagram objectName className linkLabel
 normaliseObjectDiagram ObjectDiagram {..} = ObjectDiagram {
   objects = sort objects,
   links = sort links
@@ -235,8 +239,8 @@ normaliseObjectDiagram ObjectDiagram {..} = ObjectDiagram {
 
 shuffleObjectAndLinkOrder
   :: MonadRandom m
-  => ObjectDiagram objectName className linkName
-  -> m (ObjectDiagram objectName className linkName)
+  => ObjectDiagram objectName className linkLabel
+  -> m (ObjectDiagram objectName className linkLabel)
 shuffleObjectAndLinkOrder ObjectDiagram {..} = ObjectDiagram
   <$> shuffleM objects
   <*> shuffleM links
@@ -285,7 +289,7 @@ data LimitedLinking nodeName = LimitedLinking {
   linking                     :: nodeName,
   limits                      :: (Int, Maybe Int)
   }
-  deriving (Eq, Functor, Foldable, Generic, Ord, Read, Show, Traversable)
+  deriving (Data, Eq, Functor, Foldable, Generic, Ord, Read, Show, Traversable)
 
 {-|
 A variation of 'LimitedLinking' that can fallback to a default limit
@@ -380,7 +384,7 @@ data Relationship className relationshipName
     subClass                  :: className,
     superClass                :: className
     }
-  deriving (Eq, Functor, Generic, Ord, Read, Show)
+  deriving (Data, Eq, Functor, Generic, Ord, Read, Show)
 
 instance Bifunctor Relationship where
   bimap f g r = case r of
@@ -441,7 +445,7 @@ data InvalidRelationship className relationshipName
     invalidSubClass :: !(LimitedLinking className),
     invalidSuperClass :: !(LimitedLinking className)
     }
-  deriving (Eq, Functor, Generic, Ord, Read, Show)
+  deriving (Data, Eq, Functor, Generic, Ord, Read, Show)
 
 $(deriveBifunctor ''InvalidRelationship)
 $(deriveBifoldable ''InvalidRelationship)
@@ -494,7 +498,7 @@ data Annotation annotation annotated = Annotation {
   annotated                   :: annotated,
   annotation                  :: annotation
   }
-  deriving (Eq, Foldable, Functor, Generic, Read, Show, Traversable)
+  deriving (Data, Eq, Foldable, Functor, Generic, Read, Show, Traversable)
 
 $(deriveBifunctor ''Annotation)
 $(deriveBifoldable ''Annotation)
@@ -507,7 +511,7 @@ data AnnotatedClassDiagram relationshipAnnotation className relationshipName
     annotatedRelationships
       :: [Annotation relationshipAnnotation (AnyRelationship className relationshipName)]
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Data, Eq, Generic, Read, Show)
 
 instance Functor (AnnotatedClassDiagram relationshipAnnotation className) where
   fmap f AnnotatedClassDiagram {..} = AnnotatedClassDiagram {
@@ -758,7 +762,24 @@ checkClassConfigWithProperties
       <*> snd compositionLimits
 
 checkClassConfig :: ClassConfig -> Maybe String
-checkClassConfig c@ClassConfig {..} = checkRange Just "classLimits" classLimits
+checkClassConfig c@ClassConfig {..}
+  | fst classLimits < 1
+  = Just [iii|
+    Having possibly no classes does not make any sense for this task type.
+    |]
+  | minimumMaxRelationships < fst relationshipLimits
+  = Just [iii|
+    The minimal number of classes does not even suffice for
+    the minimal number of relationships.
+    |]
+  | Just maximumMaxRelationships < snd relationshipLimits
+    || isNothing (snd relationshipLimits)
+    && Just maximumMaxRelationships < relationshipsSum c
+  = Just [iii|
+    The maximal number of classes is too low considering
+    the upper relationship bounds.
+    |]
+  | otherwise = checkRange Just "classLimits" classLimits
   <|> checkRange id "aggregationLimits" aggregationLimits
   <|> checkRange id "associationLimits" associationLimits
   <|> checkRange id "compositionLimits" compositionLimits
@@ -777,6 +798,8 @@ checkClassConfig c@ClassConfig {..} = checkRange Just "classLimits" classLimits
       must not be higher than the maximum number of relationships!
       |]
   where
+    minimumMaxRelationships = fst classLimits * (fst classLimits - 1) `div` 2
+    maximumMaxRelationships = snd classLimits * (snd classLimits - 1) `div` 2
     toMaybe True x = Just x
     toMaybe _    _ = Nothing
     isMaxHigherThanAnyIndividual = any
@@ -829,14 +852,14 @@ checkRange g what (low, h) = do
         |]
       | high < low = Just [iii|
         The upper limit (currently #{show h}; second value) for #{what}
-        has to be as high as its lower limit
+        has to be at least as high as its lower limit
         (currently #{show low}; first value)!
         |]
       | otherwise = Nothing
 
 checkObjectDiagram
   :: Ord objectName
-  => ObjectDiagram objectName className linkName
+  => ObjectDiagram objectName className linkLabel
   -> Maybe String
 checkObjectDiagram ObjectDiagram {..}
   | objectNames /= nubOrd objectNames
@@ -880,7 +903,7 @@ data CdDrawSettings
     -- | When set to 'False' association arrows will be omitted
     printNavigations :: !Bool
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Data, Eq, Generic, Read, Show)
 
 defaultCdDrawSettings :: CdDrawSettings
 defaultCdDrawSettings = CdDrawSettings {
@@ -894,6 +917,22 @@ checkCdDrawSettings CdDrawSettings {..} =
   checkOmittedDefaultMultiplicities omittedDefaults
 
 {-|
+Checks compatibility of draw settings with allowed properties
+preventing situations that could be misinterpreted.
+-}
+checkCdDrawProperties :: CdDrawSettings -> AllowedProperties -> Maybe String
+checkCdDrawProperties CdDrawSettings {..} AllowedProperties {..}
+  | doubleRelationships && not printNames
+  = Just [iii|
+    'doubleRelationships' can only be enabled,
+    if relationship names are printed.
+    Otherwise this constellation might be determined as illegal
+    (as they could have the same name).
+    |]
+  | otherwise
+  = Nothing
+
+{-|
 Defines default multiplicities which should be omitted
 when drawing the class diagram.
 -}
@@ -903,7 +942,7 @@ data OmittedDefaultMultiplicities
     associationOmittedDefaultMultiplicity :: !(Maybe (Int, Maybe Int)),
     compositionWholeOmittedDefaultMultiplicity :: !(Maybe (Int, Maybe Int))
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Data, Eq, Generic, Read, Show)
 
 defaultOmittedDefaultMultiplicities :: OmittedDefaultMultiplicities
 defaultOmittedDefaultMultiplicities = OmittedDefaultMultiplicities {
@@ -981,6 +1020,49 @@ checkObjectProperties ObjectProperties {..}
     |]
   | otherwise
   = Nothing
+
+{-|
+Configuration checks for the interplay of provided class diagram
+and object diagram configurations.
+-}
+checkClassConfigAndObjectProperties
+  :: ClassConfig
+  -> ObjectProperties
+  -> Maybe String
+checkClassConfigAndObjectProperties ClassConfig {..} ObjectProperties {..}
+  | Just False /= hasSelfLoops
+  , noNonInheritanceRelationshipPossible
+  = Just [iii|
+    Setting hasSelfLoops to anything other than Just False
+    makes no sense if it is not even possible
+    that at least one non-inheritance relationship can even appear
+    in any underlying class diagram
+    so that such a link could actually appear.
+    |]
+  | Just True <- hasSelfLoops
+  , noNonInheritanceRelationshipGuaranteed
+  = Just [iii|
+    hasSelfLoops can only be enforced if there is guaranteed
+    at least one non-inheritance relationship in each underlying class diagram
+    so that such a link can actually appear.
+    |]
+  | hasLimitedIsolatedObjects
+  , noNonInheritanceRelationshipGuaranteed
+  = Just [iii|
+    hasLimitedIsolatedObjects can only be enabled if there is guaranteed
+    at least one non-inheritance relationship in each underlying class diagram
+    so that links can actually be present between objects.
+    |]
+  | otherwise
+  = Nothing
+  where
+    nonInheritanceLimits =
+      [aggregationLimits, associationLimits, compositionLimits]
+    noNonInheritanceRelationshipGuaranteed =
+      fst relationshipLimits <= fst inheritanceLimits
+      || all ((< 1) . fst) nonInheritanceLimits
+    noNonInheritanceRelationshipPossible =
+      all ((== Just 0) . snd) nonInheritanceLimits
 
 {-|
 Defines an 'ObjectConfig' demanding at least one but at most five objects
@@ -1076,7 +1158,7 @@ data Property =
   | SelfRelationships
   | WrongAssociationLimits
   | WrongCompositionLimits
-  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+  deriving (Bounded, Data, Enum, Eq, Generic, Ord, Read, Show)
 
 isIllegal :: Property -> Bool
 isIllegal x = case x of
@@ -1167,15 +1249,15 @@ anyAssociationNames = mapMaybe names .  anyRelationships
 
 classNamesOd
   :: Ord className
-  => ObjectDiagram objectName className linkName
+  => ObjectDiagram objectName className linkLabel
   -> [className]
 classNamesOd ObjectDiagram {..} = nubOrd $ map objectClass objects
 
-linkNames
-  :: Ord linkName
-  => ObjectDiagram objectName className linkName
-  -> [linkName]
-linkNames ObjectDiagram {..} = nubOrd $ map linkName links
+linkLabels
+  :: Ord linkLabel
+  => ObjectDiagram objectName className linkLabel
+  -> [linkLabel]
+linkLabels ObjectDiagram {..} = nubOrd $ map linkLabel links
 
 {-|
 Given a collection of CDs use all used class and relationship names
@@ -1215,11 +1297,11 @@ data RenameException
 instance Exception RenameException
 
 renameObjectsWithClassesAndLinksInOd
-  :: (MonadThrow m, Ord linkNames, Ord linkNames')
+  :: (MonadThrow m, Ord linkLabels, Ord linkLabels')
   => Bimap String String
-  -> Bimap linkNames linkNames'
-  -> ObjectDiagram String String linkNames
-  -> m (ObjectDiagram String String linkNames')
+  -> Bimap linkLabels linkLabels'
+  -> ObjectDiagram String String linkLabels
+  -> m (ObjectDiagram String String linkLabels')
 renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
   objects' <- traverse renameObject objects
   let bmObjects = BM.fromList
@@ -1245,8 +1327,8 @@ renameObjectsWithClassesAndLinksInOd bmClasses bmLinks ObjectDiagram {..} = do
 anonymiseObjects
   :: MonadRandom m
   => Rational
-  -> ObjectDiagram className relationshipName linkName
-  -> m (ObjectDiagram className relationshipName linkName)
+  -> ObjectDiagram className relationshipName linkLabel
+  -> m (ObjectDiagram className relationshipName linkLabel)
 anonymiseObjects proportion ObjectDiagram {..} = do
   let objectCount = length objects
       anonymous = round (fromIntegral objectCount * proportion)
@@ -1260,12 +1342,12 @@ anonymiseObjects proportion ObjectDiagram {..} = do
     anonymise :: Bool -> Object a b -> Object a b
     anonymise anonymous o = o {isAnonymous = anonymous}
 
-canShuffleClassNames :: ObjectDiagram String String linkNames -> Bool
+canShuffleClassNames :: ObjectDiagram String String linkLabels -> Bool
 canShuffleClassNames ObjectDiagram {..} =
   all (\Object {..} -> lowerFirst objectClass `isPrefixOf` objectName) objects
 
 isObjectDiagramRandomisable
-  :: ObjectDiagram String String linkNames
+  :: ObjectDiagram String String linkLabels
   -> Maybe String
 isObjectDiagramRandomisable od
   | not $ canShuffleClassNames od

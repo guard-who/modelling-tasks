@@ -25,6 +25,7 @@ import qualified Data.Map as M (fromList, keys)
 
 import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.PlantUml            (MonadPlantUml)
+import Capabilities.WriteFile           (MonadWriteFile)
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy)
 import Modelling.ActivityDiagram.Config (
   AdConfig (..),
@@ -171,7 +172,7 @@ matchAdSolution task =
     }
 
 matchAdTask
-  :: (MonadPlantUml m, OutputCapable m)
+  :: (MonadPlantUml m, MonadWriteFile m, OutputCapable m)
   => FilePath
   -> MatchAdInstance
   -> LangM m

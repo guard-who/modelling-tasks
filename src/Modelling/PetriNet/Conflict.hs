@@ -30,7 +30,8 @@ module Modelling.PetriNet.Conflict (
   simplePickConflictTask,
   ) where
 
-import qualified Modelling.PetriNet.Find          as F (showSolution)
+import qualified Modelling.PetriNet.Find          as Find (FindInstance (..), showSolution)
+import qualified Modelling.PetriNet.Pick          as Pick (PickInstance (..))
 import qualified Modelling.PetriNet.Types         as Find (
   FindConflictConfig (..),
   )
@@ -52,12 +53,12 @@ import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
-  oneOf,
   parseWith,
   upperFirst,
   )
 import Modelling.Auxiliary.Output (
   hoveringInformation,
+  extra,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -77,7 +78,8 @@ import Modelling.PetriNet.Alloy (
   unscopedSingleSig,
   )
 import Modelling.PetriNet.Diagram (
-  renderWith,
+  cacheNet,
+  isNetDrawable,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
@@ -116,7 +118,6 @@ import Modelling.PetriNet.Types         (
   ConflictConfig (..),
   DrawSettings (..),
   FindConflictConfig (..),
-  GraphConfig (..),
   Net,
   PetriConflict (Conflict, conflictPlaces, conflictTrans),
   PetriConflict' (PetriConflict', toPetriConflict),
@@ -124,6 +125,7 @@ import Modelling.PetriNet.Types         (
   PickConflictConfig (..),
   SimpleNode (..),
   SimplePetriNet,
+  allDrawSettings,
   lConflictPlaces,
   transitionPairShow,
   )
@@ -131,7 +133,8 @@ import Modelling.PetriNet.Types         (
 import Control.Applicative              (Alternative, (<|>))
 import Control.Lens                     ((.~), over)
 import Control.Monad                    (unless)
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
+import Control.Monad.Extra              (findM)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -161,17 +164,19 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (bimap))
 import Data.Bitraversable               (Bitraversable (bitraverse))
 import Data.Bool                        (bool)
+import Data.Data                        (Data, Typeable)
 import Data.Either                      (isLeft)
 import Data.Function                    ((&))
 import Data.Foldable                    (for_)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
-import Data.List                        (partition)
+import Data.List                        (partition, sort)
 import Data.List.Extra                  (nubSort)
 import Data.Ratio                       ((%))
 import Data.String.Interpolate          (i, iii)
 import Language.Alloy.Call (
   AlloyInstance
   )
+import System.Random.Shuffle            (shuffleM)
 
 simpleFindConflictTask
   :: (
@@ -188,12 +193,16 @@ simpleFindConflictTask = findConflictTask
 
 findConflictTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> FindInstance (p n String) Conflict
@@ -202,7 +211,7 @@ findConflictTask path task = do
   paragraph $ translate $ do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
-  image $=<< renderWith path "conflict" (net task) (drawFindWith task)
+  image $=<< cacheNet path (net task) (drawFindWith task)
   paragraph $ translate $ do
     english "Which pair of transitions is in conflict under the initial marking?"
     german "Welches Paar von Transitionen steht unter der Startmarkierung in Konflikt?"
@@ -224,6 +233,7 @@ findConflictTask path task = do
       german "Die Reihenfolge der Transitionen innerhalb des Paars spielt hierbei keine Rolle."
     pure ()
   paragraph hoveringInformation
+  extra $ Find.addText task
   pure ()
 
 findConflictSyntax
@@ -251,8 +261,12 @@ conflictPlacesShow
   :: ConflictPlaces
   -> ((ShowTransition, ShowTransition), [ShowPlace])
 conflictPlacesShow = bimap
-  (bimap ShowTransition ShowTransition)
-  (map ShowPlace)
+  sortedTransitionPair
+  (map ShowPlace . sort)
+  where
+    sortedTransitionPair (t1, t2) =
+      let (first, second) = if t1 <= t2 then (t1, t2) else (t2, t1)
+      in bimap ShowTransition ShowTransition (first, second)
 
 findConflictPlacesEvaluation
   :: (Alternative m, Monad m, OutputCapable m)
@@ -267,8 +281,8 @@ findConflictPlacesEvaluation task (conflict, ps) =
       english $ x' ++ " is a place causing the conflict?"
       german $ x' ++ " ist eine den Konflikt verursachende Stelle?"
     assert (ps' == inducing) $ translate $ do
-      english "The given solution is correct and complete?"
-      german "Die angegebene Lösung ist korrekt und vollständig?"
+      english "The submitted solution is correct and complete?"
+      german "Die eingereichte Lösung ist korrekt und vollständig?"
     pure ()
   let result = min
         res
@@ -282,7 +296,7 @@ findConflictPlacesEvaluation task (conflict, ps) =
     fixSolution
       | null inducing = id
       | otherwise    = const $ show $ conflictPlacesShow (conf, inducing)
-    withSol = F.showSolution task
+    withSol = Find.showSolution task
     ps' = nubSort ps
     (correct, wrong') = partition (`elem` inducing) ps
     base = fromIntegral $ 2 + numberOfPlaces task
@@ -310,12 +324,16 @@ simplePickConflictTask = pickConflictTask
 
 pickConflictTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> PickInstance (p n String)
@@ -331,7 +349,7 @@ pickConflictTask path task = do
       Welches dieser Petrinetze hat genau ein Paar von Transitionen,
       die unter der Startmarkierung in Konflikt stehen?
       |]
-  images show snd $=<< renderPick path "conflict" task
+  images show snd $=<< renderPick path task
   paragraph $ translate $ do
     english [iii|
       State your answer by giving the number of the Petri net
@@ -366,50 +384,51 @@ pickConflictTask path task = do
         ++ ")."
     pure ()
   paragraph hoveringInformation
+  extra $ Pick.addText task
   pure ()
 
 findConflictGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => FindConflictConfig
   -> Int
   -> Int
+  -- ^ Seed
   -> m (FindInstance (p n String) Conflict)
-findConflictGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
-  (d, c) <- findConflict config segment
-  gl <- oneOf $ graphLayouts gc
-  c' <- lift $ bitraverse
-    (parseWith parsePlacePrec)
-    (parseWith parseTransitionPrec)
-    $ toPetriConflict c
-  return $ FindInstance {
-    drawFindWith = DrawSettings {
-      withPlaceNames = not $ hidePlaceNames gc,
-      withSvgHighlighting = True,
-      withTransitionNames = not $ hideTransitionNames gc,
-      with1Weights = not $ hideWeight1 gc,
-      withGraphvizCommand = gl
-      },
-    toFind = over lConflictPlaces nubSort c',
-    net = d,
-    numberOfPlaces = places bc,
-    numberOfTransitions = transitions bc,
-    showSolution = Find.printSolution config
-    }
+findConflictGenerate config segment = evalRandT getInstance . mkStdGen
   where
+    getInstance = do
+      petriConflict <- findConflict config segment
+      ds <- shuffleM $ allDrawSettings $ Find.graphConfig config
+      d <- findM (lift . isNetDrawable (fst petriConflict)) ds
+      maybe getInstance (uncurry toInstance petriConflict) d
+    toInstance petri conflict drawSettings = do
+      c' <- lift $ bitraverse
+        (parseWith parsePlacePrec)
+        (parseWith parseTransitionPrec)
+        $ toPetriConflict conflict
+      return $ FindInstance {
+        drawFindWith = drawSettings,
+        toFind = over lConflictPlaces nubSort c',
+        net = petri,
+        numberOfPlaces = places bc,
+        numberOfTransitions = transitions bc,
+        showSolution = Find.printSolution config,
+        addText = Find.extraText config
+        }
     bc = Find.basicConfig config
-    gc = Find.graphConfig config
 
 pickConflictGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => PickConflictConfig
   -> Int
   -> Int
   -> m (PickInstance (p n String))
-pickConflictGenerate = pickGenerate pickConflict gc ud ws
+pickConflictGenerate = pickGenerate pickConflict gc ud ws et
   where
     gc = Pick.graphConfig
     ud = Pick.useDifferentGraphLayouts
     ws = Pick.printSolution
+    et = Pick.extraText
 
 findConflict
   :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
@@ -707,7 +726,8 @@ defaultPickConflictInstance = PickInstance {
         }
       )))
     ],
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }
 
 defaultFindConflictInstance :: FindInstance SimplePetriNet Conflict
@@ -736,5 +756,6 @@ defaultFindConflictInstance = FindInstance {
     },
   numberOfPlaces = 4,
   numberOfTransitions = 3,
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }

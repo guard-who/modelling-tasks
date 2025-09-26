@@ -36,32 +36,31 @@ dependencies:
   - MonadRandom
   - SHA
   - SVGFonts
+  - autotool-capabilities
   - aeson
   - base
   - bimap
   - bifunctors
   - bytestring
   - call-alloy >= 0.6.0.2 && < 0.7
-  - call-plantuml
   - composition
   - containers
   - diagrams-graphviz
   - diagrams-lib
   - diagrams-svg
-  - directory
   - edit-distance-vector
   - either
+  - exact-combinatorics
   - exceptions
   - extra
   - fgl
   - file-embed
-  - filepath
   - graphviz
   - hgal
   - latex-svg-image
   - lens
   - mtl
-  - output-blocks >= 0.5 && < 0.6
+  - output-blocks >= 0.5.0.1 && < 0.6
   - parsec
   - polysemy-plugin
   - random
@@ -69,30 +68,15 @@ dependencies:
   - size-based
   - split
   - string-interpolate
-  - svg-builder
   - text
   - transformers
   - utf8-string
   - vector
-  - hxt
-  - xml-conduit
   - yaml
-when:
-  condition: flag(alloy-use-sat4j)
-  cpp-options: -DALLOY_USE_SAT4J
+
 library:
   source-dirs: src
   exposed-modules:
-    - Capabilities.Alloy
-    - Capabilities.Alloy.IO
-    - Capabilities.Cache
-    - Capabilities.Cache.IO
-    - Capabilities.Diagrams
-    - Capabilities.Diagrams.IO
-    - Capabilities.Graphviz
-    - Capabilities.Graphviz.IO
-    - Capabilities.PlantUml
-    - Capabilities.PlantUml.IO
     - Modelling.ActivityDiagram.ActionSequences
     - Modelling.ActivityDiagram.Alloy
     - Modelling.ActivityDiagram.Auxiliary.Util
@@ -138,6 +122,7 @@ library:
     - Modelling.PetriNet.Find
     - Modelling.PetriNet.Pick
     - Modelling.PetriNet.Reach.Deadlock
+    - Modelling.PetriNet.Reach.Draw
     - Modelling.PetriNet.Reach.Property
     - Modelling.PetriNet.Reach.Reach
     - Modelling.PetriNet.Reach.Step
@@ -153,6 +138,9 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - autotool-capabilities-io-instances
+      - directory
+      - filepath
       - modelling-tasks
       - QuickCheck
       - HUnit
@@ -164,10 +152,6 @@ tests:
       - condition: flag(quick-testing)
         cpp-options: -DQUICK_TESTING
 flags:
-  alloy-use-sat4j:
-    description: When calling alloy use the SAT4J SAT solver
-    manual: true
-    default: false
   quick-testing:
     description: Decreases the testing depth resulting in fewer test cases and thus faster testing
     manual: true

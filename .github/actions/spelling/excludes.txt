@@ -43,6 +43,7 @@ ignore$
 \.yml$
 \.zip$
 ^\.github/actions/spelling/
+^\.github/copilot-.*\.md$
 ^\.github/linters/
 ^app/
 ^legacy-app/
@@ -50,3 +51,4 @@ ignore$
 ^\Qtest/Modelling/CdOd/MatchCdOdSpec.hs\E$
 ^\Qtest/Spec.hs\E$
 ^test/unit/
+^\Qscripts/check-no-runaway-io.sh\E$

@@ -7,6 +7,7 @@ import Modelling.PetriNet.Diagram
 import Modelling.PetriNet.MatchToMath    (petriNetRnd)
 import Modelling.PetriNet.Types (
   DrawSettings (..),
+  Net (mapNet),
   SimplePetriLike,
   defaultAdvConfig,
   defaultBasicConfig,
@@ -28,7 +29,7 @@ spec =
         (inst:_) <- getInstances (Just 1)
            (petriNetRnd defaultBasicConfig defaultAdvConfig)
         pl <- parseNet "flow" "tokens" inst
-        dia <- drawNet show (pl :: SimplePetriLike Object) DrawSettings {
+        dia <- drawNet (mapNet show (pl :: SimplePetriLike Object)) DrawSettings {
           withPlaceNames = True,
           withSvgHighlighting = True,
           withTransitionNames = False,

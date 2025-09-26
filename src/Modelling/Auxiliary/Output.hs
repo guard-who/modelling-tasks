@@ -78,7 +78,7 @@ simplifiedInformation = translate $ do
     aber keine Abschnitte für Attribute oder Methoden.
     #{endLine}
     Trotzdem sollten Sie diese vereinfachten Klassendarstellungen
-    als valide Klassen ansehen.
+    als gültige Klassen ansehen.
     |]
   where
     endLine :: String

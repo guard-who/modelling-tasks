@@ -21,7 +21,7 @@ HXT
 Hspec
 Leftrightarrow
 Lexer
-Linkname
+Linkbeschriftung
 Modellierung
 Multiplizitäten
 NTree
@@ -38,6 +38,7 @@ Programmierparadigmen
 QDiagram
 Rightarrow
 Sfdp
+Standalone
 Transitionsfolge
 UML
 Verzweigungs
@@ -47,6 +48,7 @@ WColor
 XNode
 apps
 automorphisms
+autotool
 basicstyle
 bigskip
 bigvee

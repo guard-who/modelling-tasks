@@ -4,13 +4,19 @@ packages:
   - .
 flags:
   modelling-tasks:
-    alloy-use-sat4j: true
     quick-testing: true
+  autotool-capabilities:
+    alloy-use-sat4j: false
 extra-deps:
   - git: https://github.com/fmidue/output-blocks.git
-    commit: 183ef461d4da8df4c2a249e92bc0b03242c159b9
+    commit: af1ac8d1f62cb9f739919de1e9bc7989a2c61c95
     subdirs:
       - output-blocks
+  - git: https://github.com/fmidue/autotool-capabilities.git
+    commit: ab7bff15b0666c49c8854671468232c9755659b8
+    subdirs:
+      - autotool-capabilities
+      - autotool-capabilities-io-instances
   - call-alloy-0.6.0.2
   - call-plantuml-0.0.1.3
   - diagrams-graphviz-1.4.1.1@sha256:e71afa8f89904c2a6a2cb490dba7108c6425779c2174b90bd90dbaf507a9d3dc,1388

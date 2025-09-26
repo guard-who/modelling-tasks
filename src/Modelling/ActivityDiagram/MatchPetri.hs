@@ -30,6 +30,7 @@ import qualified Data.Map as M (empty, fromList, keys)
 import qualified Modelling.ActivityDiagram.Config as Config (
   AdConfig (activityFinalNodes, flowFinalNodes),
   )
+import Modelling.ActivityDiagram.Auxiliary.PetriValidation (validatePetriConfig)
 import qualified Modelling.ActivityDiagram.PetriNet as PK (label)
 import qualified Modelling.PetriNet.Types as Petri (Net (nodes))
 
@@ -38,6 +39,7 @@ import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Capabilities.PlantUml            (MonadPlantUml)
+import Capabilities.WriteFile           (MonadWriteFile)
 import Modelling.ActivityDiagram.Alloy  (adConfigToAlloy, modulePetriNet)
 import Modelling.ActivityDiagram.Auxiliary.Util (finalNodesAdvice)
 import Modelling.ActivityDiagram.Datatype (
@@ -62,7 +64,7 @@ import Modelling.ActivityDiagram.PetriNet (
   )
 import Modelling.ActivityDiagram.Shuffle (shufflePetri, shuffleAdNames)
 import Modelling.ActivityDiagram.Config (
-  AdConfig (actionLimits, cycles, forkJoinPairs),
+  AdConfig,
   checkAdConfig,
   defaultAdConfig,
   )
@@ -79,8 +81,9 @@ import Modelling.Auxiliary.Output (
   )
 import Modelling.PetriNet.Diagram (cacheNet)
 import Modelling.PetriNet.Types (
+  checkPetriNodeCount,
   DrawSettings (..),
-  Net,
+  Net (mapNet),
   PetriLike (..),
   SimpleNode (..),
   SimplePetriLike,
@@ -110,10 +113,10 @@ import Control.Monad.Random (
   mkStdGen
   )
 import Data.Bifunctor                   (second)
+import Data.Containers.ListUtils (nubOrd)
 import Data.GraphViz.Commands (GraphvizCommand(..))
-import Data.List (sort)
+import Data.List (intersect, sort)
 import Data.Map (Map)
-import Data.Maybe (isJust, fromJust)
 import Data.String.Interpolate (i, iii)
 import Data.Tuple.Extra                 (dupe)
 import GHC.Generics (Generic)
@@ -131,6 +134,9 @@ data MatchPetriInstance = MatchPetriInstance {
 
 data MatchPetriConfig = MatchPetriConfig {
   adConfig :: AdConfig,
+  -- | generate only activity diagrams with a corresponding Petri net
+  -- having a total count of nodes within the given bounds
+  countOfPetriNodesBounds :: !(Int, Maybe Int),
   maxInstances :: Maybe Integer,
   hideBranchConditions :: Bool,
   petriLayout :: [GraphvizCommand],
@@ -156,6 +162,7 @@ defaultMatchPetriConfig =
       Config.activityFinalNodes = 0,
       Config.flowFinalNodes = 2
       },
+    countOfPetriNodesBounds = (0, Nothing),
     maxInstances = Just 25,
     hideBranchConditions = False,
     petriLayout = [Dot],
@@ -176,37 +183,20 @@ checkMatchPetriConfig conf =
 checkMatchPetriConfig' :: MatchPetriConfig -> Maybe String
 checkMatchPetriConfig' MatchPetriConfig {
     adConfig,
+    countOfPetriNodesBounds,
     maxInstances,
     petriLayout,
     auxiliaryPetriNodeAbsent,
     presenceOfSinkTransitionsForFinals,
     withActivityFinalInForkBlocks
-  }
-  | Config.activityFinalNodes adConfig > 1
-  = Just "There is at most one 'activityFinalNode' allowed."
-  | Config.activityFinalNodes adConfig >= 1 && Config.flowFinalNodes adConfig >= 1
-  = Just "There is no 'flowFinalNode' allowed if there is an 'activityFinalNode'."
-  | isJust maxInstances && fromJust maxInstances < 1
-    = Just "The parameter 'maxInstances' must either be set to a positive value or to Nothing"
-  | auxiliaryPetriNodeAbsent == Just True && cycles adConfig > 0
-  = Just [iii|
-    Setting the parameter 'auxiliaryPetriNodeAbsent' to True
-    prohibits having more than 0 cycles
-    |]
-  | Just False <- presenceOfSinkTransitionsForFinals,
-    fst (actionLimits adConfig) + forkJoinPairs adConfig < 1
-    = Just "The option 'presenceOfSinkTransitionsForFinals = Just False' can only be achieved if the number of Actions, Fork Nodes and Join Nodes together is positive"
-  | withActivityFinalInForkBlocks == Just False && Config.activityFinalNodes adConfig > 1
-    = Just "Setting the parameter 'withActivityFinalInForkBlocks' to False prohibits having more than 1 'activityFinalNodes'"
-  | withActivityFinalInForkBlocks == Just True && Config.activityFinalNodes adConfig == 0
-    = Just "Setting the parameter 'withActivityFinalInForkBlocks' to True implies that there are 'activityFinalNodes'"
-  | null petriLayout
-    = Just "The parameter 'petriLayout' can not be the empty list"
-  | any (`notElem` [Dot, Neato, TwoPi, Circo, Fdp]) petriLayout
-    = Just "The parameter 'petriLayout' can only contain the options Dot, Neato, TwoPi, Circo and Fdp"
-  | otherwise
-    = Nothing
-
+  } = validatePetriConfig
+        adConfig
+        countOfPetriNodesBounds
+        maxInstances
+        petriLayout
+        auxiliaryPetriNodeAbsent
+        presenceOfSinkTransitionsForFinals
+        withActivityFinalInForkBlocks
 
 matchPetriAlloy :: MatchPetriConfig -> String
 matchPetriAlloy MatchPetriConfig {
@@ -279,6 +269,39 @@ data MatchPetriSolution = MatchPetriSolution {
 matchPetriSolution :: MatchPetriInstance -> MatchPetriSolution
 matchPetriSolution task = mapTypesToLabels $ petriNet task
 
+petriSolutionPairwiseDisjunct :: MatchPetriSolution -> Bool
+petriSolutionPairwiseDisjunct MatchPetriSolution{..} =
+  and [ null (xs `intersect` ys) | xs <- allLists, ys <- allLists, xs /= ys ] && length allLists == length (nubOrd allLists)
+    where allLists =
+            [ map snd actionNodes
+            , map snd objectNodes
+            , decisionNodes
+            , mergeNodes
+            , forks
+            , joins
+            , initialNodes
+            , activityFinalNodes
+            , flowFinalNodes
+            , auxiliaryPetriNodes]
+
+petriSolutionContainsPetriNodes :: MatchPetriSolution -> [PetriKey] -> Bool
+petriSolutionContainsPetriNodes MatchPetriSolution{..} = all ((`elem` solutionKeys) . petriKeyToIndex)
+  where
+    solutionKeys = concat
+      [ map snd actionNodes
+      , map snd objectNodes
+      , decisionNodes
+      , mergeNodes
+      , forks
+      , joins
+      , initialNodes
+      , activityFinalNodes
+      , flowFinalNodes
+      , auxiliaryPetriNodes]
+    petriKeyToIndex (AuxiliaryPetriNode index) = index
+    petriKeyToIndex (FinalPetriNode index _) = index
+    petriKeyToIndex (NormalPetriNode index _) = index
+
 extractAuxiliaryPetriNodes :: Net p n => p n PetriKey -> [PetriKey]
 extractAuxiliaryPetriNodes petri = filter
   isAuxiliaryPetriNode
@@ -291,6 +314,7 @@ matchPetriTask
     MonadGraphviz m,
     MonadPlantUml m,
     MonadThrow m,
+    MonadWriteFile m,
     OutputCapable m
     )
   => FilePath
@@ -305,7 +329,7 @@ matchPetriTask path task = do
     english "Consider the following Petri net as translation of this activity diagram:"
     german "Betrachten Sie folgendes Petrinetz als Übersetzung dieses Aktivitätsdiagramms:"
   let drawSetting = petriDrawConf task
-  image $=<< cacheNet path (show . PK.label) (petriNet task) drawSetting
+  image $=<< cacheNet path (mapNet (show . PK.label) $ petriNet task) drawSetting
   paragraph $ translate $ do
     english [iii|
       State each matching of action node and Petri net node,
@@ -342,7 +366,7 @@ matchPetriTask path task = do
         und kein Petrinetzknoten entspricht einem Flussende.
         |]
     pure ()
-  finalNodesAdvice True
+  finalNodesAdvice False
 
   extra $ addText task
 
@@ -370,7 +394,8 @@ matchPetriSyntax
 matchPetriSyntax task sub = addPretext $ do
   let adNames = map name $ filter (\n -> isActionNode n || isObjectNode n) $ nodes $ activityDiagram task
       subNames = map fst (actionNodes sub) ++ map fst (objectNodes sub)
-      petriLabels = map PK.label $ M.keys $ allNodes $ petriNet task
+      petriNodeKeys = M.keys $ allNodes $ petriNet task
+      petriLabels = map PK.label petriNodeKeys
       subLabels =
         map snd (actionNodes sub)
         ++ map snd (objectNodes sub)
@@ -386,6 +411,18 @@ matchPetriSyntax task sub = addPretext $ do
   assertion (all (`elem` petriLabels) subLabels) $ translate $ do
     english "Referenced Petri net nodes were provided within task?"
     german "Referenzierte Petrinetzknoten sind Bestandteil der Aufgabenstellung?"
+  assertion (petriSolutionContainsPetriNodes sub petriNodeKeys) $ translate $ do
+    english "All petri net nodes are associated to an element in the activity diagram?"
+    german "Alle Petrinetzknoten sind einem Element in dem Aktivitätsdiagramm zugeordnet?"
+  assertion (petriSolutionPairwiseDisjunct sub) $ translate $ do
+    english "All petri net nodes are associated uniquely?"
+    german "Alle Petrinetzknoten sind eindeutig zugeordnet?"
+  assertion (all (`elem` subNames) adNames) $ translate $ do
+    english "All action and object nodes are referenced?"
+    german "Alle Aktions- und Objektknoten wurden referenziert?"
+  assertion (length subNames == length (nubOrd subNames)) $ translate $ do
+    english "All action and object nodes were referenced exactly once?"
+    german "Alle Aktions- und Objektknoten wurden genau einmal referenziert?"
   pure ()
 
 matchPetriEvaluation
@@ -447,6 +484,7 @@ getMatchPetriTask config = do
   activityDiagrams <- mapM (fmap snd . shuffleAdNames) randomInstances
   (ad, petri) <- getFirstInstance
         $ filter (not . petriHasMultipleAutomorphisms . snd)
+        $ filter (checkPetriNodeCount (countOfPetriNodesBounds config) . snd)
         $ map (second convertToPetriNet . dupe) activityDiagrams
   shuffledPetri <- snd <$> shufflePetri petri
   layout <- pickRandomLayout config

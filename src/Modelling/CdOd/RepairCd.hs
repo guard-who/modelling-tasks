@@ -116,9 +116,11 @@ import Modelling.CdOd.Types (
   anyAssociationNames,
   anyRelationshipName,
   checkCdConstraints,
+  checkCdDrawProperties,
   checkCdDrawSettings,
   checkCdMutations,
   checkClassConfig,
+  checkClassConfigAndObjectProperties,
   checkClassConfigWithProperties,
   checkObjectProperties,
   classNames,
@@ -310,6 +312,8 @@ checkRepairCdConfig RepairCdConfig {..}
   <|> checkCdMutations allowedCdMutations
   <|> checkCdDrawSettings drawSettings
   <|> checkObjectProperties objectProperties
+  <|> checkClassConfigAndObjectProperties classConfig objectProperties
+  <|> checkCdDrawProperties drawSettings allowedProperties
 
 checkClassConfigAndChanges
   :: ClassConfig

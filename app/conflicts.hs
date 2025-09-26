@@ -66,13 +66,13 @@ mainFind i = forceErrors $ do
             }
         } :: FindConflictConfig
   let c = checkFindConflictConfig config
-  if isNothing c
-  then do
-    t <- findConflictGenerate config 0 i
-    lift . (`withLang` English) $ simpleFindConflictTask "" t
-    lift $ print t
-  else
-    lift $ print c
+  lift $
+    if isNothing c
+    then do
+      t <- findConflictGenerate config 0 i
+      simpleFindConflictTask "" t `withLang` English
+      print t
+    else print c
 
 mainPick :: Int -> IO ()
 mainPick i = forceErrors $ do
@@ -89,13 +89,13 @@ mainPick i = forceErrors $ do
             }
         } :: PickConflictConfig
   let c = checkPickConflictConfig config
-  if isNothing c
-  then do
-    t <- pickConflictGenerate config 0 i
-    lift . (`withLang` English) $ simplePickConflictTask "" t
-    lift $ print c
-  else
-    lift $ print c
+  lift $
+    if isNothing c
+    then do
+      t <- pickConflictGenerate config 0 i
+      simplePickConflictTask "" t `withLang` English
+      print t
+    else print c
 
 userInput :: IO (Int,Int,Int,Int)
 userInput = do

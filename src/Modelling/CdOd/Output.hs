@@ -16,10 +16,11 @@ import qualified Data.Map                         as M (
 import qualified Diagrams.TwoD.GraphViz           as GV (getGraph)
 
 import Capabilities.Cache               (MonadCache, cache, short)
-import Capabilities.Diagrams            (MonadDiagrams (lin, writeSvg))
+import Capabilities.Diagrams            (MonadDiagrams (lin, renderDiagram))
 import Capabilities.Graphviz (
   MonadGraphviz (errorWithoutGraphviz, layoutGraph'),
   )
+import Capabilities.WriteFile           (MonadWriteFile (writeToFile))
 import Modelling.Auxiliary.Diagrams (
   arrowheadDiamond,
   arrowheadFilledDiamond,
@@ -63,6 +64,7 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans              (MonadTrans(lift))
 import Data.Bifunctor                   (Bifunctor (second))
+import Data.ByteString                  (ByteString)
 import Data.Digest.Pure.SHA             (sha1, showDigest)
 import Data.Graph.Inductive             (Gr, mkGraph)
 import Data.GraphViz (
@@ -186,8 +188,7 @@ cacheCd
   -> FilePath
   -> m FilePath
 cacheCd config@CdDrawSettings{..} marking syntax path =
-  cache path ext "cd" syntax $ flip $
-    drawCd config marking
+  cache path ext "cd" syntax $ drawCd config marking
   where
     ext = short printNavigations
       ++ short printNames
@@ -199,9 +200,8 @@ drawCd
   => CdDrawSettings
   -> Style V2 Double
   -> AnyCd
-  -> FilePath
-  -> m FilePath
-drawCd config marking cd@AnyClassDiagram {..} file = do
+  -> m ByteString
+drawCd config marking cd@AnyClassDiagram {..} = do
   let theNodes = anyClassNames
   let toIndexed xs = [(
           fromJust (elemIndex from theNodes),
@@ -238,8 +238,7 @@ drawCd config marking cd@AnyClassDiagram {..} file = do
         (\(s, t, (isThick, r), p) g -> g # drawEdge font s t isThick r p)
         graphNodes
         edges
-  writeSvg file graphEdges
-  return file
+  renderDiagram graphEdges
   where
     getFromToInvalid = \case
       InvalidInheritance {..} -> both linking (invalidSubClass, invalidSuperClass)
@@ -356,7 +355,7 @@ Parses an Alloy object diagram instance, draws it and saves it to a file.
 (the path where it has been stored is returned)
 -}
 drawOdFromInstance
-  :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m, RandomGen g)
+  :: (MonadCatch m, MonadDiagrams m, MonadGraphviz m, MonadWriteFile m, RandomGen g)
   => AlloyInstance
   -- ^ the Alloy object diagram instance
   -> Maybe [String]
@@ -385,11 +384,10 @@ drawOdFromInstance
   = do
   g <- alloyInstanceToOd possibleClassNames possibleLinkNames alloyInstance
   od <- anonymiseObjects (fromMaybe (1 % 3) anonymous) g
-  lift $ drawOd
-    od
-    direction
-    printNames
-    path
+  lift $ do
+    renderedOd <- drawOd od direction printNames
+    writeToFile path renderedOd
+    pure path
 
 cacheOd
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, MonadThrow m)
@@ -399,8 +397,8 @@ cacheOd
   -> FilePath
   -> m FilePath
 cacheOd od direction printNames path =
-  cache path ext "od" od $ \file od' ->
-    drawOd od' direction printNames file
+  cache path ext "od" od $ \od' ->
+    drawOd od' direction printNames
   where
     ext = short printNames
       ++ short direction
@@ -411,9 +409,8 @@ drawOd
   => Od
   -> DirType
   -> Bool
-  -> FilePath
-  -> m FilePath
-drawOd ObjectDiagram {..} direction printNames file = do
+  -> m ByteString
+drawOd ObjectDiagram {..} direction printNames = do
   let numberedObjects = zip [0..] objects
       bmObjects = BM.fromList $ map (second objectName) numberedObjects
       toEdge l@Link {..} = (,,)
@@ -436,7 +433,7 @@ drawOd ObjectDiagram {..} direction printNames file = do
           ],
         fmtEdge = \(_,_,Link {..}) -> arrowHeads
           ++ [ArrowSize 0.4, FontSize 16]
-          ++ [toLabel linkName | printNames] }
+          ++ [toLabel linkLabel | printNames] }
   errorWithoutGraphviz
   graph' <- layoutGraph' params dirCommand graph
   font <- lin
@@ -450,8 +447,7 @@ drawOd ObjectDiagram {..} direction printNames file = do
            g # drawLink font direction printNames s t l p)
         graphNodes
         edges
-  writeSvg file graphEdges
-  return file
+  renderDiagram graphEdges
   where
     arrowHeads = case direction of
       NoDir  -> [edgeEnds NoDir]
@@ -479,7 +475,7 @@ drawLink font direction printNames fl tl Link {..} =
       & headGap .~ local 0
       & tailLength .~ local 7
     ml
-      | printNames = Just linkName
+      | printNames = Just linkLabel
       | otherwise  = Nothing
 
 drawObject

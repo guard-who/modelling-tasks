@@ -123,7 +123,8 @@ validFindConflictConfigs cs advancedConfig = [
     validGraphConfig
     False
     uniqueConflictPlace
-    alloyTestConfig |
+    alloyTestConfig
+    Nothing |
       (bc, ch) <- cs,
       validConflictConfig <- validConflictConfigs bc,
       uniqueConflictPlace <- [Nothing, Just True, Just False]
@@ -157,7 +158,8 @@ validPickConflictConfigs cs = [
     prohibitSourceTransitions
     uniqueConflictPlace
     False
-    alloyTestConfig |
+    alloyTestConfig
+    Nothing |
       (bc, ch) <- cs,
       validConflictConfig <- validConflictConfigs bc,
       prohibitSourceTransitions <- [False, True],

@@ -133,7 +133,7 @@ executes path cmd n ts = foldl'
       paragraph $ translate $ do
         english $ "Step " ++ show k
         german $ "Schritt " ++ show k
-      next <- executeIO path cmd k n t z
+      next <- executeIO path cmd n t z
       pure next
 
 executeIO
@@ -150,13 +150,12 @@ executeIO
     )
   => FilePath
   -> GraphvizCommand
-  -> Int
   -> Net k a
   -> a
   -> State k
   -> LangM' m (State k)
-executeIO path cmd i n t z0 = execute n t z0
-  $>>= \z2 -> lift (drawToFile False path cmd i (n {start = z2}))
+executeIO path cmd n t z0 = execute n t z0
+  $>>= \z2 -> lift (drawToFile False path cmd (n {start = z2}))
   $>>= \g -> image g
   $>>= pure (pure z2)
 

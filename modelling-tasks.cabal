@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -25,11 +25,6 @@ extra-source-files:
     alloy/petri/PetriSignature.als
     README.md
 
-flag alloy-use-sat4j
-  description: When calling alloy use the SAT4J SAT solver
-  manual: True
-  default: False
-
 flag quick-testing
   description: Decreases the testing depth resulting in fewer test cases and thus faster testing
   manual: True
@@ -37,16 +32,6 @@ flag quick-testing
 
 library
   exposed-modules:
-      Capabilities.Alloy
-      Capabilities.Alloy.IO
-      Capabilities.Cache
-      Capabilities.Cache.IO
-      Capabilities.Diagrams
-      Capabilities.Diagrams.IO
-      Capabilities.Graphviz
-      Capabilities.Graphviz.IO
-      Capabilities.PlantUml
-      Capabilities.PlantUml.IO
       Modelling.ActivityDiagram.ActionSequences
       Modelling.ActivityDiagram.Alloy
       Modelling.ActivityDiagram.Auxiliary.Util
@@ -92,17 +77,21 @@ library
       Modelling.PetriNet.Find
       Modelling.PetriNet.Pick
       Modelling.PetriNet.Reach.Deadlock
+      Modelling.PetriNet.Reach.Draw
       Modelling.PetriNet.Reach.Property
       Modelling.PetriNet.Reach.Reach
       Modelling.PetriNet.Reach.Step
       Modelling.PetriNet.Reach.Type
       Modelling.Types
   other-modules:
+      Modelling.ActivityDiagram.Auxiliary.ActionSequences
+      Modelling.ActivityDiagram.Auxiliary.PetriValidation
       Modelling.Auxiliary.Diagrams
       Modelling.CdOd.Phrasing
+      Modelling.CdOd.Phrasing.Common
       Modelling.CdOd.Phrasing.English
       Modelling.CdOd.Phrasing.German
-      Modelling.PetriNet.Reach.Draw
+      Modelling.PetriNet.Reach.ConfigValidation
       Modelling.PetriNet.Reach.Roll
       Paths_modelling_tasks
   hs-source-dirs:
@@ -116,32 +105,30 @@ library
     , SHA
     , SVGFonts
     , aeson
+    , autotool-capabilities
     , base
     , bifunctors
     , bimap
     , bytestring
     , call-alloy >=0.6.0.2 && <0.7
-    , call-plantuml
     , composition
     , containers
     , diagrams-graphviz
     , diagrams-lib
     , diagrams-svg
-    , directory
     , edit-distance-vector
     , either
+    , exact-combinatorics
     , exceptions
     , extra
     , fgl
     , file-embed
-    , filepath
     , graphviz
     , hgal
-    , hxt
     , latex-svg-image
     , lens
     , mtl
-    , output-blocks ==0.5.*
+    , output-blocks >=0.5.0.1 && <0.6
     , parsec
     , polysemy-plugin
     , random
@@ -149,16 +136,12 @@ library
     , size-based
     , split
     , string-interpolate
-    , svg-builder
     , text
     , transformers
     , utf8-string
     , vector
-    , xml-conduit
     , yaml
   default-language: Haskell2010
-  if flag(alloy-use-sat4j)
-    cpp-options: -DALLOY_USE_SAT4J
 
 test-suite modelling-tasks-test
   type: exitcode-stdio-1.0
@@ -213,12 +196,13 @@ test-suite modelling-tasks-test
     , SHA
     , SVGFonts
     , aeson
+    , autotool-capabilities
+    , autotool-capabilities-io-instances
     , base
     , bifunctors
     , bimap
     , bytestring
     , call-alloy >=0.6.0.2 && <0.7
-    , call-plantuml
     , composition
     , containers
     , diagrams-graphviz
@@ -227,6 +211,7 @@ test-suite modelling-tasks-test
     , directory
     , edit-distance-vector
     , either
+    , exact-combinatorics
     , exceptions
     , extra
     , fgl
@@ -236,12 +221,11 @@ test-suite modelling-tasks-test
     , hgal
     , hspec
     , hspec-core
-    , hxt
     , latex-svg-image
     , lens
     , modelling-tasks
     , mtl
-    , output-blocks ==0.5.*
+    , output-blocks >=0.5.0.1 && <0.6
     , parsec
     , polysemy-plugin
     , process
@@ -250,15 +234,11 @@ test-suite modelling-tasks-test
     , size-based
     , split
     , string-interpolate
-    , svg-builder
     , text
     , transformers
     , utf8-string
     , vector
-    , xml-conduit
     , yaml
   default-language: Haskell2010
-  if flag(alloy-use-sat4j)
-    cpp-options: -DALLOY_USE_SAT4J
   if flag(quick-testing)
     cpp-options: -DQUICK_TESTING

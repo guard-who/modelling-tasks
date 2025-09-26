@@ -402,8 +402,6 @@ matchCdOdChanges config withNonTrivialInheritance =
 sig C1, C2, C3 extends Change {}
 
 pred changes {
-  one m1, m2 : Boolean {
-    m1 = False or m2 = False
     let c1NonInheritances = NonInheritance - (Change.add - NonInheritance <: C1.add) - C1.remove,
         c2NonInheritances = NonInheritance - (Change.add - NonInheritance <: C2.add) - C2.remove {
       some c1NonInheritances or some c2NonInheritances
@@ -413,10 +411,9 @@ pred changes {
         #{nonTrivialInheritanceConstraint "c2Inheritances" "c2NonInheritances" withNonTrivialInheritance}
       }
     }
-    changeOfFirstCD [C1, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, m1]
-    changeOfFirstCD [C2, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, m2]
-    changeOfFirstCD [C3, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, False]
-  }
+    changeOfFirstCD [C1, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, none]
+    changeOfFirstCD [C2, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, none]
+    changeOfFirstCD [C3, 0, 0, 0, 0, 0, none, False, False, False, False, False, False, False, none]
 }
 |] ++ changeLimits config
 

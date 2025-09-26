@@ -1,10 +1,12 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 module Main where
 
+import qualified Data.ByteString.Char8            as BS (writeFile)
 import qualified Language.Alloy.Call              as Alloy (getInstances)
 
 import Capabilities.Diagrams.IO         ()
 import Capabilities.Graphviz.IO         ()
+import Capabilities.WriteFile.IO        ()
 import Modelling.CdOd.CD2Alloy.Transform (
   LinguisticReuse (None),
   combineParts,
@@ -235,8 +237,10 @@ drawCdAndOdsFor is c cds cmd = do
       Back
       True
       (c ++ '-' : shorten cmd ++ "-od" ++ show i ++ ".svg")
-    drawCd' cd i =
-      drawCd defaultCdDrawSettings mempty cd (c ++ "-cd" ++ show i ++ ".svg")
+    drawCd' cd i = do
+      renderedCd <- drawCd defaultCdDrawSettings mempty cd
+      BS.writeFile (c ++ "-cd" ++ show i ++ ".svg") renderedCd
+      pure $ c ++ "-cd" ++ show i ++ ".svg"
     maxThreeObjects = maxFiveObjects { objectLimits = (1, 3) }
     getParts relationshipNames = zipWith (cdToAlloy relationshipNames) cds [0..]
     cdToAlloy relationshipNames cd i = transform

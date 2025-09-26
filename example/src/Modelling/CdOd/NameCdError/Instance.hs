@@ -1,4 +1,4 @@
--- | 
+-- |
 
 module Modelling.CdOd.NameCdError.Instance where
 

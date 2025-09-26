@@ -47,6 +47,7 @@ instance GenericOutputCapable Language (Either String) where
     lift $ Left "refused"
     pure ()
   latex _         = pure ()
+  folded _ _ _    = pure ()
   code _          = pure ()
   translated _    = pure ()
   translatedCode _ = pure ()

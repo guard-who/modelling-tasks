@@ -26,7 +26,8 @@ module Modelling.PetriNet.Concurrency (
   simplePickConcurrencyTask,
   ) where
 
-import qualified Modelling.PetriNet.Find          as F (showSolution)
+import qualified Modelling.PetriNet.Find          as Find (FindInstance (..), showSolution)
+import qualified Modelling.PetriNet.Pick          as Pick (PickInstance (..))
 import qualified Modelling.PetriNet.Types         as Find (
   FindConcurrencyConfig (..),
   )
@@ -45,11 +46,11 @@ import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
 import Modelling.Auxiliary.Common (
   Object,
-  oneOf,
   parseWith,
   )
 import Modelling.Auxiliary.Output (
   hoveringInformation,
+  extra,
   )
 import Modelling.PetriNet.Alloy (
   compAdvConstraints,
@@ -69,7 +70,8 @@ import Modelling.PetriNet.Alloy (
   unscopedSingleSig,
   )
 import Modelling.PetriNet.Diagram (
-  renderWith,
+  cacheNet,
+  isNetDrawable,
   )
 import Modelling.PetriNet.Find (
   FindInstance (..),
@@ -102,17 +104,18 @@ import Modelling.PetriNet.Types         (
   Concurrent (Concurrent),
   DrawSettings (..),
   FindConcurrencyConfig (..),
-  GraphConfig (..),
   Net (..),
   PetriLike (PetriLike, allNodes),
   PickConcurrencyConfig (..),
   SimpleNode (..),
   SimplePetriNet,
+  allDrawSettings,
   transitionPairShow,
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad.Catch              (MonadThrow)
+import Control.Monad.Catch              (MonadCatch, MonadThrow)
+import Control.Monad.Extra              (findM)
 import Control.OutputCapable.Blocks (
   ArticleToUse (DefiniteArticle),
   GenericOutputCapable (..),
@@ -136,12 +139,14 @@ import Control.Monad.Random (
   )
 import Control.Monad.Trans              (MonadTrans (lift))
 import Data.Bifunctor                   (Bifunctor (bimap))
+import Data.Data                        (Data, Typeable)
 import Data.Either                      (isLeft)
 import Data.GraphViz.Commands           (GraphvizCommand (Circo, Fdp))
 import Data.String.Interpolate          (i, iii)
 import Language.Alloy.Call (
   AlloyInstance,
   )
+import System.Random.Shuffle            (shuffleM)
 
 simpleFindConcurrencyTask
   :: (
@@ -158,12 +163,16 @@ simpleFindConcurrencyTask = findConcurrencyTask
 
 findConcurrencyTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> FindInstance (p n String) (Concurrent Transition)
@@ -173,7 +182,7 @@ findConcurrencyTask path task = do
     english "Consider the following Petri net:"
     german "Betrachten Sie folgendes Petrinetz:"
   image
-    $=<< renderWith path "concurrent" (net task) (drawFindWith task)
+    $=<< cacheNet path (net task) (drawFindWith task)
   paragraph $ translate $ do
     english [iii|
       Which pair of transitions is concurrently activated
@@ -216,6 +225,7 @@ findConcurrencyTask path task = do
         |]
     pure ()
   paragraph hoveringInformation
+  extra $ Find.addText task
   pure ()
 
 findConcurrencySyntax
@@ -238,7 +248,7 @@ findConcurrencyEvaluation task x = do
     $=<< unLangM $ toFindEvaluation what withSol concur x
   where
     concur = findConcurrencySolution task
-    withSol = F.showSolution task
+    withSol = Find.showSolution task
 
 findConcurrencySolution :: FindInstance net (Concurrent a) -> (a, a)
 findConcurrencySolution task = concur
@@ -259,12 +269,16 @@ simplePickConcurrencyTask = pickConcurrencyTask
 
 pickConcurrencyTask
   :: (
+    Data (n String),
+    Data (p n String),
     MonadCache m,
     MonadDiagrams m,
     MonadGraphviz m,
     MonadThrow m,
     Net p n,
-    OutputCapable m
+    OutputCapable m,
+    Typeable n,
+    Typeable p
     )
   => FilePath
   -> PickInstance (p n String)
@@ -281,7 +295,7 @@ pickConcurrencyTask path task = do
       die unter der Startmarkierung nebenläufig aktiviert sind?
       |]
   images show snd
-    $=<< renderPick path "concurrent" task
+    $=<< renderPick path task
   paragraph $ translate $ do
     english [iii|
       State your answer by giving the number of the Petri net
@@ -316,37 +330,36 @@ pickConcurrencyTask path task = do
         ++ ")."
     pure ()
   paragraph hoveringInformation
+  extra $ Pick.addText task
   pure ()
 
 findConcurrencyGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => FindConcurrencyConfig
   -> Int
   -> Int
   -> m (FindInstance (p n String) (Concurrent Transition))
-findConcurrencyGenerate config segment seed = flip evalRandT (mkStdGen seed) $ do
-  (d, c) <- findConcurrency config segment
-  gl <- oneOf $ graphLayouts gc
-  c' <- lift $ traverse
-     (parseWith parseTransitionPrec)
-     c
-  return $ FindInstance {
-    drawFindWith   = DrawSettings {
-      withPlaceNames = not $ hidePlaceNames gc,
-      withSvgHighlighting = True,
-      withTransitionNames = not $ hideTransitionNames gc,
-      with1Weights = not $ hideWeight1 gc,
-      withGraphvizCommand = gl
-      },
-    toFind = c',
-    net = d,
-    numberOfPlaces = places bc,
-    numberOfTransitions = transitions bc,
-    showSolution = Find.printSolution config
-    }
+findConcurrencyGenerate config segment = evalRandT getInstance . mkStdGen
   where
+    getInstance = do
+      petriConcurrency <- findConcurrency config segment
+      ds <- shuffleM $ allDrawSettings $ Find.graphConfig config
+      d <- findM (lift . isNetDrawable (fst petriConcurrency)) ds
+      maybe getInstance (uncurry toInstance petriConcurrency) d
+    toInstance petri concurrency drawSettings = do
+      c' <- lift $ traverse
+         (parseWith parseTransitionPrec)
+         concurrency
+      return $ FindInstance {
+        drawFindWith = drawSettings,
+        toFind = c',
+        net = petri,
+        numberOfPlaces = places bc,
+        numberOfTransitions = transitions bc,
+        showSolution = Find.printSolution config,
+        addText = Find.extraText config
+        }
     bc = Find.basicConfig config
-    gc = Find.graphConfig config
 
 findConcurrency
   :: (MonadAlloy m, MonadThrow m, Net p n, RandomGen g)
@@ -360,16 +373,17 @@ findConcurrency = taskInstance
   Find.alloyConfig
 
 pickConcurrencyGenerate
-  :: (MonadAlloy m, MonadThrow m, Net p n)
+  :: (MonadAlloy m, MonadCatch m, MonadDiagrams m, MonadGraphviz m, Net p n)
   => PickConcurrencyConfig
   -> Int
   -> Int
   -> m (PickInstance (p n String))
-pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws
+pickConcurrencyGenerate = pickGenerate pickConcurrency gc ud ws et
   where
     gc = Pick.graphConfig
     ud = Pick.useDifferentGraphLayouts
     ws = Pick.printSolution
+    et = Pick.extraText
 
 
 pickConcurrency
@@ -560,7 +574,8 @@ defaultPickConcurrencyInstance = PickInstance {
         }
       )))
     ],
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }
 
 defaultFindConcurrencyInstance :: FindInstance SimplePetriNet (Concurrent Transition)
@@ -586,5 +601,6 @@ defaultFindConcurrencyInstance = FindInstance {
     },
   numberOfPlaces = 4,
   numberOfTransitions = 3,
-  showSolution = False
+  showSolution = False,
+  addText = Nothing
   }

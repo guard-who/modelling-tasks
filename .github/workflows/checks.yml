@@ -11,12 +11,19 @@ on:
       - dev
       - master
 
+permissions:
+  contents: read
+
 jobs:
   consistency:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: stack.yaml has no additions to stack-examples.yaml
         run: "! comm -23 stack.yaml stack-examples.yaml | grep ."
@@ -29,3 +36,6 @@ jobs:
 
       - name: stack-examples.yaml has some additions to stack.yaml
         run: "comm -13 stack.yaml stack-examples.yaml | grep ."
+
+      - name: Check for runaway IO usage in src/ folder
+        run: ./scripts/check-no-runaway-io.sh

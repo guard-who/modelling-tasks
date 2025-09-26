@@ -12,7 +12,6 @@ module Modelling.Auxiliary.Diagrams (
   connectWithPath,
   flipArrow,
   nonEmptyPathBetween,
-  renderSVG,
   text',
   textU,
   trailBetween,
@@ -20,7 +19,6 @@ module Modelling.Auxiliary.Diagrams (
   ) where
 
 import Control.Lens.Operators           ((.~), (^.))
-import Data.ByteString.Lazy             (ByteString)
 import Data.Data                        (Typeable)
 import Data.Function                    ((&))
 import Data.GraphViz                    (DirType (Back, Both, Forward, NoDir))
@@ -46,8 +44,7 @@ import Diagrams.Attributes (
   )
 import Diagrams.Backend.SVG (
   B,
-  Options (SVGOptions),
-  SVG (SVG),
+  SVG,
   svgClass,
   )
 import Diagrams.BoundingBox             (boundingBox, boxExtents)
@@ -80,12 +77,10 @@ import Diagrams.Prelude (
   fromMeasured,
   negated,
   norm,
-  renderDia,
   unP,
   unitX,
   unitY,
   )
-import Diagrams.Size                    (SizeSpec)
 import Diagrams.Tangent (
   Tangent,
   normalAtParam,
@@ -135,7 +130,6 @@ import Graphics.SVGFonts (
 #endif
   )
 import Graphics.SVGFonts.ReadFont       (PreparedFont)
-import Graphics.Svg.Core                (renderBS)
 
 veeArrow :: ArrowHT Double
 veeArrow = arrowheadVee (150 @@ deg)
@@ -605,12 +599,3 @@ textU
   -- ^ what to write
   -> Diagram B
 textU = renderText True
-
-renderSVG :: (Show n, Typeable n, RealFloat n, Monoid m)
-  => SizeSpec V2 n
-  -> QDiagram
-     SVG V2 n m
-  -> ByteString
-renderSVG spec = renderBS . renderDia SVG opts
-  where
-    opts = SVGOptions spec Nothing mempty [] True

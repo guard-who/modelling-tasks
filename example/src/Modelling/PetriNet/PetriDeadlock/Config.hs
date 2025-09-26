@@ -21,8 +21,9 @@ task2023_29 = DeadlockConfig {
   preconditionsRange = (1, Just 2),
   printSolution = True,
   rejectLongerThan = Just 7,
-  showLengthHint = True,
-  showMinLengthHint = True
+  showLengthHint = False,
+  showMinLengthHint = True,
+  showPlaceNamesInNet = False
   }
 
 {-|
@@ -40,8 +41,9 @@ task2023_30 = DeadlockConfig {
   preconditionsRange = (1, Just 2),
   printSolution = True,
   rejectLongerThan = Just 14,
-  showLengthHint = True,
-  showMinLengthHint = True
+  showLengthHint = False,
+  showMinLengthHint = True,
+  showPlaceNamesInNet = False
   }
 
 {-|
@@ -73,6 +75,7 @@ task2024_61 = DeadlockConfig {
   preconditionsRange = (1, Just 2),
   printSolution = True,
   rejectLongerThan = Just 8,
-  showLengthHint = True,
-  showMinLengthHint = True
+  showLengthHint = False,
+  showMinLengthHint = True,
+  showPlaceNamesInNet = False
   }

@@ -17,11 +17,16 @@ import qualified Data.Map                         as M (
   mapKeys,
   toList,
   )
-import qualified Data.Set                         as S (fromList, map)
+import qualified Data.Set                         as S (
+  fromList,
+  isSubsetOf,
+  map,
+  )
 
 import Modelling.Auxiliary.Common       (parseInt, skipSpaces)
 
 import Control.Monad                    (void)
+import Data.Data                        (Data)
 import Data.List                        (intercalate)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
@@ -39,7 +44,7 @@ import Text.ParserCombinators.Parsec (
 type Connection s t = ([s], t, [s])
 
 newtype State s = State {unState :: Map s Int}
-  deriving (Generic, Typeable)
+  deriving (Generic, Typeable, Data)
 
 mapState :: Ord b => (a -> b) -> State a -> State b
 mapState f (State x) = State { unState = M.mapKeys f x }
@@ -66,7 +71,7 @@ data Capacity s
   = Unbounded
   | AllBounded Int
   | Bounded (Map s Int)
-  deriving (Eq, Generic, Ord, Read, Show, Typeable)
+  deriving (Eq, Generic, Ord, Read, Show, Typeable, Data)
 
 mapCapacity :: Ord a => (s -> a) -> Capacity s -> Capacity a
 mapCapacity _ Unbounded      = Unbounded
@@ -80,7 +85,7 @@ data Net s t = Net {
   capacity :: Capacity s,
   start :: State s
   }
-  deriving (Eq, Generic, Ord, Read, Show, Typeable)
+  deriving (Eq, Generic, Ord, Read, Show, Typeable, Data)
 
 bimapNet :: (Ord a, Ord b) => (s -> a) -> (t -> b) -> Net s t -> Net a b
 bimapNet f g x = Net {
@@ -110,7 +115,7 @@ conforms cap (State z) = case cap of
     (M.toList z)
 
 newtype Place = Place Int
-  deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable)
+  deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable, Data)
 
 newtype ShowPlace = ShowPlace Place
   deriving (Eq, Ord)
@@ -128,7 +133,7 @@ parsePlacePrec _ = do
   Place <$> parseInt <* skipMany space
 
 newtype Transition = Transition Int
-  deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable)
+  deriving (Enum, Eq, Generic, Ord, Read, Show, Typeable, Data)
 
 newtype ShowTransition = ShowTransition Transition
   deriving (Eq, Ord)
@@ -182,3 +187,10 @@ example =
     },
    State $ M.fromList [(Place 1, 0), (Place 2, 0), (Place 3, 1), (Place 4, 0)]
   )
+
+-- | Check if a net has any isolated nodes (nodes with no connections)
+hasIsolatedNodes :: (Ord s, Ord t) => Net s t -> Bool
+hasIsolatedNodes (Net ps ts cs _ _) =
+  let connectedPlaces = S.fromList $ concatMap (\(pre, _, post) -> pre ++ post) cs
+      connectedTransitions = S.fromList $ map (\(_, t, _) -> t) cs
+  in not (S.isSubsetOf ps connectedPlaces && S.isSubsetOf ts connectedTransitions)

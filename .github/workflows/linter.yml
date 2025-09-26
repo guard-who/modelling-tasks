@@ -3,7 +3,11 @@ name: Super-Linter
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
+
+permissions:
+  contents: read
+  statuses: write
 
 jobs:
   build:
@@ -21,10 +25,14 @@ jobs:
           # Full git history is needed to get a proper
           # list of changed files within `super-linter`
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Run Linter
-        uses: github/super-linter/slim@v5
+        uses: super-linter/super-linter/slim@v8.1.0
         env:
           VALIDATE_JSCPD_ALL_CODEBASE: true
           YAML_ERROR_ON_WARNING: true
+          # Disable - overly strict for this project, apparently
+          VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
+          VALIDATE_YAML_PRETTIER: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

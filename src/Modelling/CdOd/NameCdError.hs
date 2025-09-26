@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -58,6 +59,7 @@ import Capabilities.Alloy               (MonadAlloy, getInstances)
 import Capabilities.Cache               (MonadCache)
 import Capabilities.Diagrams            (MonadDiagrams)
 import Capabilities.Graphviz            (MonadGraphviz)
+import Data.Data                        (Data)
 import Modelling.Auxiliary.Common (
   Randomise (randomise),
   RandomiseLayout (randomiseLayout),
@@ -124,7 +126,9 @@ import Modelling.CdOd.Types (
   anonymiseObjects,
   anyAssociationNames,
   checkCdConstraints,
+  checkCdDrawProperties,
   checkCdDrawSettings,
+  checkClassConfigAndObjectProperties,
   checkObjectProperties,
   classNames,
   defaultCdConstraints,
@@ -212,7 +216,7 @@ $(deriveJSON defaultOptions {fieldLabelModifier = upperToDash} ''NameCdErrorAnsw
 data Reason
   = Custom (Map Language String)
   | PreDefined Property
-  deriving (Eq, Generic, Ord, Read, Show)
+  deriving (Data, Eq, Generic, Ord, Read, Show)
 
 isCustom :: Reason -> Bool
 isCustom = \case
@@ -334,7 +338,9 @@ checkNameCdErrorConfig NameCdErrorConfig {..}
   = checkClassConfigAndChanges classConfig allowedProperties
   <|> checkCdConstraints allowedProperties cdConstraints
   <|> checkObjectProperties objectProperties
+  <|> checkClassConfigAndObjectProperties classConfig objectProperties
   <|> checkCdDrawSettings drawSettings
+  <|> checkCdDrawProperties drawSettings allowedProperties
   where
     predefined = concatMap
       (\case Custom {} -> []; PreDefined x -> [x])
@@ -368,7 +374,7 @@ data NameCdErrorTaskTextElement =
   IncorrectCd |
   ReasonsList |
   RelationshipsList
-  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+  deriving (Bounded, Data, Enum, Eq, Generic, Ord, Read, Show)
 
 toTaskText
   :: (MonadCache m, MonadDiagrams m, MonadGraphviz m, OutputCapable m)
@@ -415,7 +421,7 @@ data NameCdErrorInstance = NameCdErrorInstance {
   showSolution                :: Bool,
   taskText                    :: !NameCdErrorTaskText,
   addText                     :: Maybe (Map Language String)
-  } deriving (Eq, Generic, Read, Show)
+  } deriving (Data, Eq, Generic, Read, Show)
 
 relevantRelationships
   :: NameCdErrorInstance
@@ -438,7 +444,7 @@ data Relevance
     listingPriority           :: Int,
     referenceUsing            :: ArticleToUse
     }
-  deriving (Eq, Generic, Read, Show)
+  deriving (Data, Eq, Generic, Read, Show)
 
 isRelevant :: Annotation Relevance annotated -> Bool
 isRelevant =
@@ -492,15 +498,15 @@ defaultNameCdErrorTaskText = [
   Paragraph $ singleton $ Special RelationshipsList,
   Paragraph $ singleton $ Translated $ translations $ do
     english [iii|
-      Choose what you think is the single reason that this class diagram is incorrect,
+      Choose what you think is the single reason that this class diagram is invalid,
       and mention all relationships that definitely contribute to the problem,
-      i.e., removing any of them would fix the problem.
+      i.e., removing any of them would fix the invalidity.
       |]
     german [iii|
       Wählen Sie aus, was Sie für den einen Grund dafür halten,
       dass dieses Klassendiagramm ungültig ist,
       und nennen Sie alle Beziehungen, die definitiv zum Problem beitragen,
-      d.h., deren Entfernung das Problem jeweils beheben würde.
+      d.h., deren Entfernung die Ungültigkeit jeweils beheben würde.
       |],
   Paragraph $ singleton $ Translated $ translations $ do
     english [i|Reasons available to choose from are:|]
@@ -516,7 +522,7 @@ defaultNameCdErrorTaskText = [
         indicating the most specifically expressed reason
         for which you think this class diagram is invalid,
         and a listing of numbers for those relationships
-        on whose individual presence the problem depends.
+        on whose individual presence the invalidity depends.
         For example,
         |]
       german [iii|
@@ -526,7 +532,7 @@ defaultNameCdErrorTaskText = [
         ausgedrückte Grund dafür ist,
         dass dieses Klassendiagramm ungültig ist,
         und eine Auflistung von Zahlen für diejenigen Beziehungen,
-        von deren individueller Präsenz das Problem abhängt.
+        von deren individueller Präsenz die Ungültigkeit abhängt.
         Zum Beispiel würde
         |],
     Paragraph $ singleton $ Code $ uniform $ showNameCdErrorAnswer answer,
@@ -535,12 +541,12 @@ defaultNameCdErrorTaskText = [
         would indicate that the class diagram is invalid
         because of reason #{singleton $ reason answer}
         and that the #{dueTo1}. and #{dueTo2}. relationship (appearing together)
-        create the problem.
+        create the invalidity.
         |]
       german [iii|
         bedeuten, dass das Klassendiagramm wegen Grund #{singleton $ reason answer} ungültig ist
         und dass die #{dueTo1}. und #{dueTo2}. Beziehung (zusammen auftretend)
-        das Problem erzeugen.
+        die Ungültigkeit erzeugen.
         |]
     ]
   ]
@@ -603,11 +609,18 @@ nameCdErrorSyntax inst x = do
  * otherwise, multiple choice grading for answer on dueTo relationships
 -}
 nameCdErrorEvaluation
-  :: (Alternative m, Monad m, OutputCapable m)
-  => NameCdErrorInstance
+  :: (
+    Alternative m,
+    MonadCache m,
+    MonadDiagrams m,
+    MonadGraphviz m,
+    OutputCapable m
+    )
+  => FilePath
+  -> NameCdErrorInstance
   -> NameCdErrorAnswer
   -> Rated m
-nameCdErrorEvaluation inst x = addPretext $ do
+nameCdErrorEvaluation path inst@NameCdErrorInstance {..} x = addPretext $ do
   let reasonTranslation = M.fromAscList [
         (English, "reason"),
         (German, "Grund")
@@ -616,12 +629,12 @@ nameCdErrorEvaluation inst x = addPretext $ do
         (English, "relationships constituting the problem"),
         (German, "das Problem ausmachenden Beziehungen")
         ]
-      solutionReason = head . M.keys . M.filter fst $ errorReasons inst
+      solutionReason = head . M.keys . M.filter fst $ errorReasons
       solutionDueTo = M.fromAscList
         $ map (second (contributingToProblem . annotation))
-        $ relevantRelationships inst
+        relevant
       correctAnswer
-        | showSolution inst = Just $ toString $ encode $ nameCdErrorSolution inst
+        | showSolution = Just $ toString $ encode $ nameCdErrorSolution inst
         | otherwise = Nothing
   recoverWith 0 (
     singleChoice DefiniteArticle reasonTranslation Nothing solutionReason (reason x)
@@ -631,7 +644,51 @@ nameCdErrorEvaluation inst x = addPretext $ do
         solutionDueTo
         (dueTo x)
     )
-    $>>= printSolutionAndAssert DefiniteArticle correctAnswer . fromEither
+    $>>= \points -> do
+      paragraph $ translate $ classDiagramDescription points
+      paragraph $ image $=<< cacheCd cdDrawSettings mempty changedCd path
+      pure ()
+    $>> printSolutionAndAssert DefiniteArticle correctAnswer $ fromEither points
+  where
+    relevant = relevantRelationships inst
+    changedCd = unannotateCd $ classDiagram {
+      annotatedRelationships = annotatedRelationships classDiagram
+        \\ map snd chosenRelevant
+      }
+    chosenRelevant = filter ((`elem` nubOrd (dueTo x)) . fst) relevant
+    classDiagramDescription points
+      | points == Right 1 = do
+        english [iii|
+          If all relationships you correctly gave as constituting the problem
+          would be removed, the following class diagram would result:
+          |]
+        german [iii|
+          Wenn alle von Ihnen korrekterweise als das Problem ausmachend angegebenen
+          Beziehungen entfernt würden,
+          würde das folgende Klassendiagramm entstehen:
+          |]
+      | any (contributingToProblem . annotation . snd) chosenRelevant = do
+        english [iii|
+          Nevertheless, the removal of all relationships you gave as
+          contributing to the problem results in resolving the invalidity
+          as the class diagram then would look like this:
+          |]
+        german [iii|
+          Dennoch behebt das Entfernen aller von Ihnen als zum Problem beitragend
+          angegebenen Beziehungen die Ungültigkeit,
+          da das Klassendiagramm dann so aussehen würde:
+          |]
+      | otherwise = do
+        english [iii|
+          The removal of all relationships you gave as contributing to the problem
+          still does not resolve the underlying issue
+          as the class diagram then would look like this:
+          |]
+        german [iii|
+          Das Entfernen aller von Ihnen als zum Problem beitragend angegebenen
+          Beziehungen behebt das vorliegende Problem nicht,
+          da das Klassendiagramm dann so aussehen würde:
+          |]
 
 nameCdErrorSolution :: NameCdErrorInstance -> NameCdErrorAnswer
 nameCdErrorSolution x = NameCdErrorAnswer {
@@ -890,7 +947,7 @@ translatePropertyWithDirections x = translations $ case x of
   InvalidInheritanceLimits -> do
     english "contains at least one invalid multiplicity at some inheritance."
     german [iii|
-      enthält mindestens eine nicht erlaubte Multiplizität an einer Vererbung.
+      enthält mindestens eine ungültige Multiplizität an einer Vererbung.
       |]
   MultipleInheritances -> do
     english "contains at least one multiple inheritance."
@@ -922,7 +979,7 @@ translatePropertyWithDirections x = translations $ case x of
       that is no inheritance.
       |]
     german [iii|
-      enthält mindestens eine nicht erlaubte Multiplizität an einer Beziehung,
+      enthält mindestens eine ungültige Multiplizität an einer Beziehung,
       die keine Vererbung ist.
       |]
   WrongCompositionLimits -> do
@@ -930,7 +987,7 @@ translatePropertyWithDirections x = translations $ case x of
       contains at least one invalid multiplicity near the whole of a composition.
       |]
     german [iii|
-      enthält mindestens eine nicht erlaubte Multiplizität am Ganzen einer Komposition.
+      enthält mindestens eine ungültige Multiplizität am Ganzen einer Komposition.
       |]
 
 defaultNameCdErrorInstance :: NameCdErrorInstance

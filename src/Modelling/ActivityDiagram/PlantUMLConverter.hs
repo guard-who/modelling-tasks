@@ -16,6 +16,7 @@ import Data.String.Interpolate ( i, __i )
 import GHC.Generics (Generic)
 
 import Capabilities.PlantUml            (MonadPlantUml (drawPlantUmlSvg))
+import Capabilities.WriteFile           (MonadWriteFile (writeToFile))
 import Modelling.ActivityDiagram.Datatype (
   AdNode (..),
   UMLActivityDiagram(..),
@@ -35,13 +36,14 @@ defaultPlantUmlConfig = PlantUmlConfig {
 }
 
 drawAdToFile
-  :: MonadPlantUml m
+  :: (MonadPlantUml m, MonadWriteFile m)
   => FilePath
   -> PlantUmlConfig
   -> UMLActivityDiagram
   -> m FilePath
 drawAdToFile path conf ad = do
-  drawPlantUmlSvg adFilename $ convertToPlantUML' conf ad
+  renderedAd <- drawPlantUmlSvg $ convertToPlantUML' conf ad
+  writeToFile adFilename renderedAd
   return adFilename
   where
     adFilename :: FilePath

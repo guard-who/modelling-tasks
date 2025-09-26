@@ -24,6 +24,7 @@ task2023_39 = MatchPetriConfig {
     flowFinalNodes = 2,
     cycles = 1
     },
+  countOfPetriNodesBounds = (0, Nothing),
   maxInstances = Just 10000,
   hideBranchConditions = True,
   petriLayout = [Fdp],
@@ -52,6 +53,7 @@ task2023_40 = MatchPetriConfig {
     flowFinalNodes = 3,
     cycles = 3
     },
+  countOfPetriNodesBounds = (0, Nothing),
   maxInstances = Just 2000,
   hideBranchConditions = True,
   petriLayout = [Fdp],
@@ -96,6 +98,7 @@ task2024_70 = MatchPetriConfig {
     flowFinalNodes = 1,
     cycles = 0
     },
+  countOfPetriNodesBounds = (0, Nothing),
   maxInstances = Just 10000,
   hideBranchConditions = True,
   petriLayout = [Fdp],
@@ -124,6 +127,7 @@ task2024_71 = MatchPetriConfig {
     flowFinalNodes = 3,
     cycles = 3
     },
+  countOfPetriNodesBounds = (0, Nothing),
   maxInstances = Just 2000,
   hideBranchConditions = True,
   petriLayout = [Fdp],

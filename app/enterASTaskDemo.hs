@@ -2,6 +2,7 @@ module Main (main) where
 
 import Capabilities.Alloy.IO            ()
 import Capabilities.PlantUml.IO         ()
+import Capabilities.WriteFile.IO        ()
 import Modelling.ActivityDiagram.EnterAS (
   defaultEnterASConfig,
   enterAS,
